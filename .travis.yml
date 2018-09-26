@@ -1,0 +1,31 @@
+language: go
+
+go:
+  - 1.11.x
+
+cache:
+  directories:
+    - /home/travis/gopath
+
+services:
+  - docker
+  - postgresql
+
+addons:
+  postgresql: "9.5"
+
+before_install:
+  - docker run -d -p "127.0.0.1:8086:8086" influxdb:1.6.3-alpine
+
+install:
+  - go get -u github.com/alecthomas/gometalinter
+  - gometalinter --install
+
+before_script:
+  - psql -c "CREATE DATABASE reserve_stats;" -U postgres
+  - psql -c "CREATE USER reserve_stats WITH PASSWORD 'reserve_stats';" -U postgres
+
+script:
+  - gometalinter --config=gometalinter.json ./...
+  - env GO111MODULE=on go build -v -mod=vendor ./...
+  - env GO111MODULE=on go test -v -mod=vendor ./...

@@ -1,0 +1,13 @@
+language: go
+
+go:
+  - 1.11.x
+
+install:
+  - go get -u github.com/alecthomas/gometalinter
+  - gometalinter --install
+
+script:
+  - gometalinter --config=gometalinter.json ./...
+  - env GO111MODULE=on go build -v -mod=vendor ./...
+  - env GO111MODULE=on go test -v -mod=vendor ./...

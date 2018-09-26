@@ -3,9 +3,19 @@ language: go
 go:
   - 1.11.x
 
+services:
+  - postgresql
+
+addons:
+  postgresql: "9.5"
+
 install:
   - go get -u github.com/alecthomas/gometalinter
   - gometalinter --install
+
+before_script:
+  - psql -c "CREATE DATABASE reserve_stats;" -U postgres
+  - psql -c "CREATE USER reserve_stats WITH PASSWORD 'reserve_stats';" -U postgres
 
 script:
   - gometalinter --config=gometalinter.json ./...

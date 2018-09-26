@@ -19,4 +19,5 @@ require (
 	golang.org/x/net v0.0.0-20180926154720-4dfa2610cdf3 // indirect
 	golang.org/x/tools v0.0.0-20180926203008-ef4a2a23bb35 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
+	rsc.io/quote v1.5.2 // indirect
 )

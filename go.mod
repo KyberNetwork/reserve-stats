@@ -39,6 +39,23 @@ require (
 	github.com/syndtr/goleveldb v0.0.0-20180815032940-ae2bd5eed72d // indirect
 	github.com/ugorji/go/codec v0.0.0-20180927125128-99ea80c8b19a // indirect
 	github.com/urfave/cli v1.20.0
+	github.com/deckarep/golang-set v1.7.1 // indirect
+	github.com/ethereum/go-ethereum v1.8.16 // indirect
+	github.com/gin-contrib/cors v0.0.0-20180922014233-214f318e72cc
+	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
+	github.com/gin-gonic/gin v1.3.0
+	github.com/go-stack/stack v1.8.0 // indirect
+	github.com/golang/protobuf v1.2.0 // indirect
+	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
+	github.com/json-iterator/go v1.1.5 // indirect
+	github.com/mattn/go-isatty v0.0.4 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.1 // indirect
+	github.com/pborman/uuid v1.2.0 // indirect
+	github.com/rjeczalik/notify v0.9.1 // indirect
+	github.com/rs/cors v1.5.0 // indirect
+	github.com/syndtr/goleveldb v0.0.0-20180815032940-ae2bd5eed72d // indirect
+	github.com/ugorji/go/codec v0.0.0-20180920200043-2c86ab75771c // indirect
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
@@ -51,6 +68,12 @@ require (
 	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
+	golang.org/x/net v0.0.0-20180925072008-f04abc6bdfa7 // indirect
+	golang.org/x/sys v0.0.0-20180925112736-b09afc3d579e // indirect
+	golang.org/x/tools v0.0.0-20180926012507-d5fdb01c2f8f // indirect
+	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
+	gopkg.in/yaml.v2 v2.2.1 // indirect
+	rsc.io/quote v1.5.2 // indirect
 )
 
 replace github.com/ethereum/go-ethereum => github.com/favadi/go-ethereum v1.8.16-fork

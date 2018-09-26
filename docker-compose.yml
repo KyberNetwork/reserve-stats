@@ -12,6 +12,6 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: reserve-stats
-      POSTGRES_USER: reserve-stats
-      POSTGRES_PASSWORD: reserve-stats
+      POSTGRES_DB: reserve_stats
+      POSTGRES_USER: reserve_stats
+      POSTGRES_PASSWORD: reserve_stats

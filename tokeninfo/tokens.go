@@ -1,4 +1,4 @@
-package token
+package tokeninfo
 
 const tokenData = `
 [

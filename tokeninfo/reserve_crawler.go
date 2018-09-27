@@ -1,4 +1,4 @@
-package token
+package tokeninfo
 
 import (
 	"bytes"
@@ -37,7 +37,7 @@ type reserveInfo struct {
 	Address common.Address
 }
 
-// ReserveCrawler gets the token reserve mapping information from blockchain.
+// ReserveCrawler gets the tokeninfo reserve mapping information from blockchain.
 type ReserveCrawler struct {
 	sugar  *zap.SugaredLogger
 	client *ethclient.Client

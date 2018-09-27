@@ -3,10 +3,6 @@ language: go
 go:
   - 1.11.x
 
-cache:
-  directories:
-    - /home/travis/gopath
-
 services:
   - docker
   - postgresql
@@ -26,6 +22,6 @@ before_script:
   - psql -c "CREATE USER reserve_stats WITH PASSWORD 'reserve_stats';" -U postgres
 
 script:
-  - gometalinter --config=gometalinter.json ./...
+  - env GO111MODULE=on gometalinter --config=gometalinter.json ./...
   - env GO111MODULE=on go build -v -mod=vendor ./...
   - env GO111MODULE=on go test -v -mod=vendor ./...

@@ -1,5 +1,6 @@
 package tokeninfo
 
+// TODO: fetching token data from core API
 const tokenData = `
 [
   {

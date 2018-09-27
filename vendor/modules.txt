@@ -120,3 +120,9 @@ gopkg.in/go-playground/validator.v8
 gopkg.in/natefinch/npipe.v2
 # gopkg.in/yaml.v2 v2.2.1
 gopkg.in/yaml.v2
+# golang.org/x/net v0.0.0-20180926154720-4dfa2610cdf3
+golang.org/x/net/websocket
+# gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce
+gopkg.in/natefinch/npipe.v2
+# gopkg.in/urfave/cli.v1 v1.20.0
+gopkg.in/urfave/cli.v1

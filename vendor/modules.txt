@@ -10,8 +10,8 @@ github.com/ethereum/go-ethereum/accounts/abi
 github.com/ethereum/go-ethereum/accounts/abi/bind
 github.com/ethereum/go-ethereum/common
 github.com/ethereum/go-ethereum/core/types
-github.com/ethereum/go-ethereum/ethclient
 github.com/ethereum/go-ethereum/event
+github.com/ethereum/go-ethereum/ethclient
 github.com/ethereum/go-ethereum/common/math
 github.com/ethereum/go-ethereum/crypto
 github.com/ethereum/go-ethereum/accounts/keystore
@@ -21,8 +21,8 @@ github.com/ethereum/go-ethereum/crypto/sha3
 github.com/ethereum/go-ethereum/params
 github.com/ethereum/go-ethereum/rlp
 github.com/ethereum/go-ethereum/trie
-github.com/ethereum/go-ethereum/rpc
 github.com/ethereum/go-ethereum/common/mclock
+github.com/ethereum/go-ethereum/rpc
 github.com/ethereum/go-ethereum/crypto/secp256k1
 github.com/ethereum/go-ethereum/accounts
 github.com/ethereum/go-ethereum/common/prque
@@ -37,7 +37,7 @@ github.com/golang/snappy
 github.com/google/uuid
 # github.com/pborman/uuid v1.2.0
 github.com/pborman/uuid
-# github.com/rjeczalik/notify v0.9.1
+# github.com/rjeczalik/notify v0.9.2
 github.com/rjeczalik/notify
 # github.com/rs/cors v1.5.0
 github.com/rs/cors
@@ -59,11 +59,11 @@ github.com/urfave/cli
 # golang.org/x/crypto v0.0.0-20180910181607-0e37d006457b
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
-# golang.org/x/net v0.0.0-20180925072008-f04abc6bdfa7
+# golang.org/x/net v0.0.0-20180926154720-4dfa2610cdf3
 golang.org/x/net/websocket
-# golang.org/x/sys v0.0.0-20180925112736-b09afc3d579e
+# golang.org/x/sys v0.0.0-20180926160741-c2ed4eda69e7
 golang.org/x/sys/unix
-# golang.org/x/tools v0.0.0-20180926032708-9eb9690e392a
+# golang.org/x/tools v0.0.0-20180926203008-ef4a2a23bb35
 golang.org/x/tools/imports
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/internal/fastwalk

@@ -6,14 +6,11 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"log"
+	"go.uber.org/zap"
 	"math/big"
-	"os"
 )
 
-const (
-	emptyErrMsg = "abi: unmarshalling empty output"
-)
+const emptyErrMsg = "abi: unmarshalling empty output"
 
 var (
 	reserveNames = map[common.Address]string{
@@ -32,82 +29,76 @@ var (
 
 type tokenInfo struct {
 	Name    string
-	Address string
+	Address common.Address
 }
 
-// Fetcher gets the token reserve mapping information from blockchain.
-type Fetcher struct {
-	client *ethclient.Client
-
-	output string
-}
-
-// NewFetcher creates a new Fetcher instance.
-func NewFetcher(nodeURL string, output string) (*Fetcher, error) {
-	client, err := ethclient.Dial(nodeURL)
-	if err != nil {
-		return nil, err
-	}
-	return &Fetcher{
-		client: client,
-		output: output,
-	}, nil
-}
-
-type ReserveInfo struct {
+type reserveInfo struct {
 	Name    string
 	Address common.Address
 }
 
-func (f *Fetcher) Fetch() error {
+// ReserveCrawler gets the token reserve mapping information from blockchain.
+type ReserveCrawler struct {
+	sugar  *zap.SugaredLogger
+	client *ethclient.Client
+}
+
+// NewReserveCrawler creates a new ReserveCrawler instance.
+func NewReserveCrawler(sugar *zap.SugaredLogger, nodeURL string) (*ReserveCrawler, error) {
+	client, err := ethclient.Dial(nodeURL)
+	if err != nil {
+		return nil, err
+	}
+	return &ReserveCrawler{
+		sugar:  sugar,
+		client: client,
+	}, nil
+}
+
+func (f *ReserveCrawler) Fetch() (map[string][]*reserveInfo, error) {
 	var (
 		tokens []*tokenInfo
-		r      = make(map[string][]*ReserveInfo)
+		result = make(map[string][]*reserveInfo)
 	)
 
 	err := json.NewDecoder(bytes.NewReader([]byte(tokenData))).Decode(&tokens)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	internalNetworkClient, err := contracts.NewInternalNetwork(
 		common.HexToAddress(contracts.InternalNetworkContractAddress),
 		f.client)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, token := range tokens {
 		var reserveAddrs = make(map[common.Address]bool)
-		r[token.Name] = []*ReserveInfo{}
+		result[token.Name] = []*reserveInfo{}
 
-		log.Printf("fetching reserve infor for token %s", token.Name)
+		f.sugar.Infow("fetching reserve info",
+			"token", token.Name)
 
 		for i := 0; ; i++ {
 			var reserveAddr common.Address
 			reserveAddr, err = internalNetworkClient.ReservesPerTokenSrc(
 				nil,
-				common.HexToAddress(token.Address),
+				token.Address,
 				big.NewInt(int64(i)))
 
 			if err != nil {
 				if err.Error() == emptyErrMsg {
 					break
 				}
-				return err
+				return nil, err
 			}
 			reserveAddrs[reserveAddr] = true
 		}
 
 		for reserveAddr := range reserveAddrs {
-			r[token.Name] = append(r[token.Name], &ReserveInfo{Name: reserveNames[reserveAddr], Address: reserveAddr})
+			result[token.Name] = append(result[token.Name], &reserveInfo{Name: reserveNames[reserveAddr], Address: reserveAddr})
 		}
 	}
-
-	output, err := os.Create(f.output)
-	if err != nil {
-		return err
-	}
-
-	return json.NewEncoder(output).Encode(r)
+	return result, nil
 }

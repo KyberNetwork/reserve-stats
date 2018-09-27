@@ -32,7 +32,8 @@ type tokenInfo struct {
 	Address common.Address
 }
 
-type reserveInfo struct {
+// ReserveInfo is the information of a KyberNetwork reserve.
+type ReserveInfo struct {
 	Name    string
 	Address common.Address
 }
@@ -55,10 +56,11 @@ func NewReserveCrawler(sugar *zap.SugaredLogger, nodeURL string) (*ReserveCrawle
 	}, nil
 }
 
-func (f *ReserveCrawler) Fetch() (map[string][]*reserveInfo, error) {
+// Fetch returns the reserve information of all tokens.
+func (f *ReserveCrawler) Fetch() (map[string][]*ReserveInfo, error) {
 	var (
 		tokens []*tokenInfo
-		result = make(map[string][]*reserveInfo)
+		result = make(map[string][]*ReserveInfo)
 	)
 
 	err := json.NewDecoder(bytes.NewReader([]byte(tokenData))).Decode(&tokens)
@@ -75,7 +77,7 @@ func (f *ReserveCrawler) Fetch() (map[string][]*reserveInfo, error) {
 
 	for _, token := range tokens {
 		var reserveAddrs = make(map[common.Address]bool)
-		result[token.Name] = []*reserveInfo{}
+		result[token.Name] = []*ReserveInfo{}
 
 		f.sugar.Infow("fetching reserve info",
 			"token", token.Name)
@@ -97,7 +99,7 @@ func (f *ReserveCrawler) Fetch() (map[string][]*reserveInfo, error) {
 		}
 
 		for reserveAddr := range reserveAddrs {
-			result[token.Name] = append(result[token.Name], &reserveInfo{Name: reserveNames[reserveAddr], Address: reserveAddr})
+			result[token.Name] = append(result[token.Name], &ReserveInfo{Name: reserveNames[reserveAddr], Address: reserveAddr})
 		}
 	}
 	return result, nil

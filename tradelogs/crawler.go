@@ -33,6 +33,13 @@ const (
 	ethAddress  string = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 )
 
+// TradeLogCrawler gets trade logs on KyberNetwork on blockchain, adding the
+// information about USD equivalent on each trade.
+type TradeLogCrawler struct {
+	ethClient *ethclient.Client
+	ethRate   EthUSDRate
+}
+
 func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash) {
 	srcAddr := ethereum.BytesToAddress(data[0:32])
 	desAddr := ethereum.BytesToAddress(data[32:64])
@@ -122,15 +129,16 @@ func calculateFiatAmount(tradeLog common.TradeLog, rate float64) common.TradeLog
 	return tradeLog
 }
 
-type TradeLogCrawler struct {
-	ethClient *ethclient.Client
-	ethRate   EthUSDRate
+// NewTradeLogCrawler create a new TradeLogCrawler instance.
+func NewTradeLogCrawler(nodeURL string, ethRate EthUSDRate) (*TradeLogCrawler, error) {
+	client, err := ethclient.Dial(nodeURL)
+	if err != nil {
+		return nil, err
+	}
+	return &TradeLogCrawler{client, ethRate}, nil
 }
 
-func NewTradeLogCrawler(ethClient *ethclient.Client, ethRate EthUSDRate) *TradeLogCrawler {
-	return &TradeLogCrawler{ethClient, ethRate}
-}
-
+// GetTradeLogs returns trade logs from KyberNetwork.
 func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock uint64, toBlock uint64) ([]common.KNLog, error) {
 	var result []common.KNLog
 
@@ -179,7 +187,7 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock uint64, toBlock uint64) (
 		switch topic.Hex() {
 		case etherReceivalEvent, tradeEvent:
 			// add logItem to result
-			log.Println("Trade.")
+			log.Printf("Trade Event at %d.", ts)
 			if result, err = updateTradeLogs(result, logItem, ts); err != nil {
 				return result, err
 			}
@@ -203,9 +211,15 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock uint64, toBlock uint64) (
 	return result, nil
 }
 
+// CachedBlockno is block number of a block which was cached it's header.
 var CachedBlockno uint64
+
+// CachedBlockHeader is the cached block header
 var CachedBlockHeader *types.Header
 
+// InterpretTimestamp returns timestamp from block number and transaction index.
+// It cached block number and block header to reduces the number of request
+// to node.
 func (crawler *TradeLogCrawler) InterpretTimestamp(blockno uint64, txindex uint) (uint64, error) {
 	timeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -220,13 +234,13 @@ func (crawler *TradeLogCrawler) InterpretTimestamp(blockno uint64, txindex uint)
 	if err != nil {
 		if block == nil {
 			return uint64(0), err
-		} else {
-			// error because parity and geth are not compatible in mix hash
-			// so we ignore it
-			CachedBlockno = blockno
-			CachedBlockHeader = block
-			err = nil
 		}
+
+		// error because parity and geth are not compatible in mix hash
+		// so we ignore it
+		CachedBlockno = blockno
+		CachedBlockHeader = block
+		err = nil
 	}
 	unixSecond := block.Time.Uint64()
 	unixNano := uint64(time.Unix(int64(unixSecond), 0).UnixNano())

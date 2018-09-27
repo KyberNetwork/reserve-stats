@@ -38,6 +38,11 @@ type TradeLog struct {
 	Country        string
 }
 
-func (self TradeLog) BlockNo() uint64       { return self.BlockNumber }
-func (self TradeLog) Type() string          { return "TradeLog" }
-func (self TradeLog) TxHash() ethereum.Hash { return self.TransactionHash }
+// BlockNo returns block number which the trade event happened.
+func (tradeLog TradeLog) BlockNo() uint64 { return tradeLog.BlockNumber }
+
+// Type returns type of log for trade event..
+func (tradeLog TradeLog) Type() string { return "TradeLog" }
+
+// TxHash returns the corresponding transaction hash of trade event.
+func (tradeLog TradeLog) TxHash() ethereum.Hash { return tradeLog.TransactionHash }

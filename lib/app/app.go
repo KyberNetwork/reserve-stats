@@ -1,4 +1,4 @@
-package application
+package app
 
 import (
 	"github.com/urfave/cli"
@@ -17,7 +17,7 @@ func NewApp() *cli.App {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:  modeFlag,
-			Usage: "application running mode",
+			Usage: "app running mode",
 			Value: developmentMode,
 		},
 	}

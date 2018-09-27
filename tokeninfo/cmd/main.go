@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/KyberNetwork/reserve-stats/lib/application"
-	"github.com/KyberNetwork/reserve-stats/token"
+	"github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/tokeninfo"
 	"github.com/urfave/cli"
 )
 
@@ -17,7 +17,7 @@ const (
 )
 
 func main() {
-	app := application.NewApp()
+	app := app.NewApp()
 	app.Name = "token reserve fetcher"
 	app.Usage = "fetching token reserve mapping information"
 	app.Version = "0.0.1"
@@ -50,7 +50,7 @@ func main() {
 }
 
 func reserve(c *cli.Context) error {
-	logger, err := application.NewLogger(c)
+	logger, err := app.NewLogger(c)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func reserve(c *cli.Context) error {
 
 	sugar := logger.Sugar()
 
-	f, err := token.NewReserveCrawler(
+	f, err := tokeninfo.NewReserveCrawler(
 		sugar,
 		c.GlobalString(nodeURLFlag))
 	if err != nil {

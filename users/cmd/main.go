@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/KyberNetwork/reserve-stats/users/cmc"
 	"github.com/KyberNetwork/reserve-stats/users/http"
+	"github.com/KyberNetwork/reserve-stats/users/stats"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -83,9 +85,13 @@ func run(c *cli.Context) error {
 		c.String(databaseFlag),
 	)
 
+	// init stats
+	cmc := cmc.NewCMCEthUSDRate()
+	userStats := stats.NewUserStats(cmc, userDB)
+
 	// run http server
 	host := fmt.Sprintf(":%d", servePort)
-	server := http.NewServer(userDB, host)
+	server := http.NewServer(userStats, host)
 	server.Run()
 	return nil
 }

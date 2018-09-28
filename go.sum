@@ -1,5 +1,6 @@
 github.com/aristanetworks/goarista v0.0.0-20180907105523-ff33da284e76 h1:64W/KrGykPTfDI9xTkZtnjZRYA5p2+c/IuGgjzeWCpI=
 github.com/aristanetworks/goarista v0.0.0-20180907105523-ff33da284e76/go.mod h1:D/tb0zPVXnP7fmsLZjtdUhSsumbK/ij54UXjjVgMGxQ=
+github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf h1:eg0MeVzsP1G42dRafH3vf+al2vQIJU0YHX+1Tw87oco=
 github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
 github.com/btcsuite/btcd v0.0.0-20180924021209-2a560b2036be h1:okpkDD2klX1OdvDlxlUW9bnfODro1x7y7IeGMxs8VvE=
 github.com/btcsuite/btcd v0.0.0-20180924021209-2a560b2036be/go.mod h1:Dmm/EzmjnCiweXmzRIAiUWCInVmPgjkzgv5k4tVyXiQ=

@@ -21,3 +21,9 @@ type User struct {
 	Address   string `json:"address" sql:",unique"`
 	Timestamp uint64 `json:"timestamp"`
 }
+
+//UserCap cap for user
+type UserCap struct {
+	DailyLimit float64
+	TxLimit    float64
+}

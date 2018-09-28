@@ -8,64 +8,41 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/users/common"
-	"github.com/KyberNetwork/reserve-stats/users/storage"
+	"github.com/KyberNetwork/reserve-stats/users/stats"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/go-pg/pg"
 	"go.uber.org/zap"
-)
-
-const (
-	kycedTxLimit    = 6000
-	nonKycedTxLimit = 3000
 )
 
 //Server struct to represent a http server service
 type Server struct {
-	db   *storage.UserDB
-	r    *gin.Engine
-	host string
+	userStats *stats.UserStats
+	r         *gin.Engine
+	host      string
 }
 
 //GetUserInfo return infomation of an user
 func (s *Server) GetUserInfo(c *gin.Context) {
 	address := c.Param("address")
-	_, err := s.db.GetUserInfo(address)
+	txLimit, kyced, err := s.userStats.GetTxCapByAddress(address)
 	if err != nil {
-		if err != pg.ErrNoRows {
-			zap.S().Errorf("Cannot get user info: %+v", err)
-			c.JSON(
-				http.StatusOK,
-				gin.H{
-					"success": false,
-					"reason":  fmt.Sprintf("Cannot get user info: %s", err.Error()),
-				},
-			)
-			return
-		}
-		response := common.UserResponse{
-			KYC: false,
-			Cap: nonKycedTxLimit,
-		}
+		zap.S().Errorf("Cannot get user info: %+v", err)
 		c.JSON(
 			http.StatusOK,
 			gin.H{
-				"success": true,
-				"data":    response,
+				"success": false,
+				"reason":  fmt.Sprintf("Cannot get user info: %s", err.Error()),
 			},
 		)
 		return
-	}
-	response := common.UserResponse{
-		KYC: true,
-		Cap: kycedTxLimit,
 	}
 	c.JSON(
 		http.StatusOK,
 		gin.H{
 			"success": true,
-			"data":    response,
+			"data":    txLimit,
+			"kyced":   kyced,
 		},
 	)
 }
@@ -123,7 +100,7 @@ func (s *Server) UpdateUserInfo(c *gin.Context) {
 		return
 	}
 
-	if err := s.db.StoreUserInfo(email, userAddresses); err != nil {
+	if err := s.userStats.StoreUserInfo(email, userAddresses); err != nil {
 		c.JSON(
 			http.StatusOK,
 			gin.H{
@@ -155,7 +132,7 @@ func (s *Server) Run() {
 }
 
 //NewServer return new server instance
-func NewServer(userDB *storage.UserDB, host string) *Server {
+func NewServer(userStats *stats.UserStats, host string) *Server {
 	r := gin.Default()
 	corsConfig := cors.DefaultConfig()
 	// corsConfig.AddAllowHeaders("signed")
@@ -163,5 +140,5 @@ func NewServer(userDB *storage.UserDB, host string) *Server {
 	corsConfig.MaxAge = 5 * time.Minute
 	r.Use(cors.New(corsConfig))
 
-	return &Server{userDB, r, host}
+	return &Server{userStats, r, host}
 }

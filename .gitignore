@@ -18,3 +18,4 @@ data/
 */cmd/cmd
 tokeninfo/cmd/output.json
 .DS_Store
+tradelogs/cmd/trade-logs-crawler/trade-logs-crawler

@@ -139,7 +139,7 @@ func NewTradeLogCrawler(nodeURL string, ethRate EthUSDRate) (*TradeLogCrawler, e
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.
-func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock uint64, toBlock uint64) ([]common.KNLog, error) {
+func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int) ([]common.KNLog, error) {
 	var result []common.KNLog
 
 	addresses := []ethereum.Address{
@@ -155,8 +155,8 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock uint64, toBlock uint64) (
 	}
 
 	query := ether.FilterQuery{
-		FromBlock: big.NewInt(int64(fromBlock)),
-		ToBlock:   big.NewInt(int64(toBlock)),
+		FromBlock: fromBlock,
+		ToBlock:   toBlock,
 		Addresses: addresses,
 		Topics:    topics,
 	}

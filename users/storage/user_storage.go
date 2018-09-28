@@ -26,9 +26,9 @@ func createSchema(db *pg.DB) error {
 }
 
 //NewDB open a new database connection
-func NewDB(network, user, password, database string) *UserDB {
+func NewDB(address, user, password, database string) *UserDB {
 	db := pg.Connect(&pg.Options{
-		Addr:     network,
+		Addr:     address,
 		User:     user,
 		Password: password,
 		Database: database,

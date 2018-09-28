@@ -427,12 +427,6 @@ type Selfer interface {
 	CodecDecodeSelf(*Decoder)
 }
 
-// MissingFieldPair is a convenience value composed of the field name and the value of the field.
-type MissingFieldPair struct {
-	Field string
-	Value interface{}
-}
-
 // MissingFielder defines the interface allowing structs to internally decode or encode
 // values which do not map to struct fields.
 //
@@ -451,9 +445,15 @@ type MissingFielder interface {
 	// CodecMissingFields returns the set of fields which are not struct fields
 	CodecMissingFields() map[string]interface{}
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	CodecMissingFields() []MissingFieldPair
 >>>>>>> 34e4768... init modules
+=======
+	CodecMissingFields() []MissingFieldPair
+=======
+>>>>>>> 73d1cd9... update vendor
+>>>>>>> 4c22446... update vendor
 }
 
 // MapBySlice is a tag interface that denotes wrapped slice should encode as a map in the stream.

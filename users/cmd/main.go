@@ -11,8 +11,11 @@ import (
 )
 
 const (
-	servePort = 9000
-	hostFlag  = "host"
+	servePort    = 9000
+	hostFlag     = "host"
+	userFlag     = "user"
+	passwordFlag = "password"
+	databaseFlag = "database"
 )
 
 func configLog(stdoutLog bool) {
@@ -39,8 +42,26 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:   hostFlag,
-			Usage:  "",
+			Usage:  "Postgresql host to connect",
 			EnvVar: "POSTGRE_HOST",
+			Value:  "127.0.0.1:5432",
+		},
+		cli.StringFlag{
+			Name:   userFlag,
+			Usage:  "Postgresql user to connect",
+			EnvVar: "POSTGRE_USER",
+			Value:  "",
+		},
+		cli.StringFlag{
+			Name:   passwordFlag,
+			Usage:  "",
+			EnvVar: "POSTGRE_PASSWORD",
+			Value:  "",
+		},
+		cli.StringFlag{
+			Name:   databaseFlag,
+			Usage:  "",
+			EnvVar: "POSTGRE_DATABASE",
 			Value:  "",
 		},
 	}
@@ -54,11 +75,12 @@ func main() {
 func run(c *cli.Context) error {
 	zap.S().Info("Run user module")
 	// init storage
+	zap.S().Infof("Postgresql address: %s", c.String(hostFlag))
 	userDB := storage.NewDB(
-		"127.0.0.1:5432",
-		"hahoang",
-		"",
-		"hahoang",
+		c.String(hostFlag),
+		c.String(userFlag),
+		c.String(passwordFlag),
+		c.String(databaseFlag),
 	)
 
 	// run http server

@@ -1,5 +1,7 @@
 # github.com/aristanetworks/goarista v0.0.0-20180907105523-ff33da284e76
 github.com/aristanetworks/goarista/monotime
+# github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
+github.com/asaskevich/govalidator
 # github.com/btcsuite/btcd v0.0.0-20180924021209-2a560b2036be
 github.com/btcsuite/btcd/btcec
 # github.com/deckarep/golang-set v1.7.1
@@ -29,6 +31,9 @@ github.com/ethereum/go-ethereum/common/prque
 github.com/ethereum/go-ethereum/ethdb
 github.com/ethereum/go-ethereum/metrics
 github.com/ethereum/go-ethereum/p2p/netutil
+# github.com/go-ozzo/ozzo-validation v3.4.0+incompatible
+github.com/go-ozzo/ozzo-validation
+github.com/go-ozzo/ozzo-validation/is
 # github.com/go-stack/stack v1.8.0
 github.com/go-stack/stack
 # github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db

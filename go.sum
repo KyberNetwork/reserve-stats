@@ -1,11 +1,15 @@
 github.com/aristanetworks/goarista v0.0.0-20180907105523-ff33da284e76 h1:64W/KrGykPTfDI9xTkZtnjZRYA5p2+c/IuGgjzeWCpI=
 github.com/aristanetworks/goarista v0.0.0-20180907105523-ff33da284e76/go.mod h1:D/tb0zPVXnP7fmsLZjtdUhSsumbK/ij54UXjjVgMGxQ=
+github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf h1:eg0MeVzsP1G42dRafH3vf+al2vQIJU0YHX+1Tw87oco=
+github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
 github.com/btcsuite/btcd v0.0.0-20180924021209-2a560b2036be h1:okpkDD2klX1OdvDlxlUW9bnfODro1x7y7IeGMxs8VvE=
 github.com/btcsuite/btcd v0.0.0-20180924021209-2a560b2036be/go.mod h1:Dmm/EzmjnCiweXmzRIAiUWCInVmPgjkzgv5k4tVyXiQ=
 github.com/deckarep/golang-set v1.7.1 h1:SCQV0S6gTtp6itiFrTqI+pfmJ4LN85S1YzhDf9rTHJQ=
 github.com/deckarep/golang-set v1.7.1/go.mod h1:93vsz/8Wt4joVM7c2AVqh+YRMiUSc14yDtF28KmMOgQ=
 github.com/ethereum/go-ethereum v1.8.16 h1:mWSfeuH5G3WDvHcY/aXDgSjy+mXQ6UyL7w0hrMbE/ds=
 github.com/ethereum/go-ethereum v1.8.16/go.mod h1:PwpWDrCLZrV+tfrhqqF6kPknbISMHaJv9Ln3kPCZLwY=
+github.com/go-ozzo/ozzo-validation v3.4.0+incompatible h1:eWAtmczpQ8DgToOVUvRjr1f4QNweasbuS5LJdoSQ3+4=
+github.com/go-ozzo/ozzo-validation v3.4.0+incompatible/go.mod h1:gsEKFIVnabGBt6mXmxK0MoFy+cZoTJY6mu5Ll3LVLBU=
 github.com/go-stack/stack v1.8.0 h1:5SgMzNM5HxrEjV0ww2lTmX6E2Izsfxas4+YHWRs3Lsk=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
 github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db h1:woRePGFeVFfLKN/pOkfl+p/TAqKOfFu+7KPlMVpok/w=

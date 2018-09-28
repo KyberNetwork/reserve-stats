@@ -2,9 +2,11 @@ module github.com/KyberNetwork/reserve-stats
 
 require (
 	github.com/aristanetworks/goarista v0.0.0-20180907105523-ff33da284e76 // indirect
+	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
 	github.com/btcsuite/btcd v0.0.0-20180924021209-2a560b2036be // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/ethereum/go-ethereum v1.8.16
+	github.com/go-ozzo/ozzo-validation v3.4.0+incompatible
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/pborman/uuid v1.2.0 // indirect

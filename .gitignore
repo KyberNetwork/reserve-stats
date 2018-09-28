@@ -17,3 +17,4 @@ data/
 
 */cmd/cmd
 tokeninfo/cmd/output.json
+tradelogs/cmd/trade-logs-crawler/trade-logs-crawler

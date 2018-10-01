@@ -11,5 +11,5 @@ pushd "$src_dir"
 [[ -d go-ethereum ]] || git clone https://github.com/ethereum/go-ethereum.git
 popd
 
-cp -R "$src_dir"/go-ethereum/crypto/secp256k1/libsecp256k1/ \
+cp -R "$src_dir"/go-ethereum/crypto/secp256k1/libsecp256k1 \
    ./vendor/github.com/ethereum/go-ethereum/crypto/secp256k1/

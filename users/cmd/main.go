@@ -14,10 +14,10 @@ import (
 
 const (
 	servePort    = 9000
-	hostFlag     = "host"
-	userFlag     = "user"
-	passwordFlag = "password"
-	databaseFlag = "database"
+	hostFlag     = "postgres_host"
+	userFlag     = "postgres_user"
+	passwordFlag = "postgres_password"
+	databaseFlag = "postgres_database"
 )
 
 func configLog(stdoutLog bool) {
@@ -45,25 +45,25 @@ func main() {
 		cli.StringFlag{
 			Name:   hostFlag,
 			Usage:  "Postgresql host to connect",
-			EnvVar: "POSTGRE_HOST",
+			EnvVar: "POSTGRES_HOST",
 			Value:  "127.0.0.1:5432",
 		},
 		cli.StringFlag{
 			Name:   userFlag,
 			Usage:  "Postgresql user to connect",
-			EnvVar: "POSTGRE_USER",
+			EnvVar: "POSTGRES_USER",
 			Value:  "",
 		},
 		cli.StringFlag{
 			Name:   passwordFlag,
 			Usage:  "",
-			EnvVar: "POSTGRE_PASSWORD",
+			EnvVar: "POSTGRES_PASSWORD",
 			Value:  "",
 		},
 		cli.StringFlag{
 			Name:   databaseFlag,
 			Usage:  "",
-			EnvVar: "POSTGRE_DATABASE",
+			EnvVar: "POSTGRES_DATABASE",
 			Value:  "",
 		},
 	}

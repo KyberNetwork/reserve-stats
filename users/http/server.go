@@ -62,13 +62,10 @@ func (s *Server) UpdateUserInfo(c *gin.Context) {
 	}
 	postForm := c.Request.Form
 	email := postForm.Get("user")
-	zap.S().Infof("email: %s", email)
 
 	addresses := postForm.Get("addresses")
-	zap.S().Infof("addresses: %s", addresses)
 
 	times := postForm.Get("timestamps")
-	zap.S().Infof("timestamps: %s", times)
 
 	addrsStr := strings.Split(addresses, "-")
 	timesStr := strings.Split(times, "-")

@@ -1,150 +1,62 @@
 package http
 
 import (
-	"reflect"
+	"fmt"
+	"net/http"
+	"os"
 	"testing"
 
-	"github.com/gin-gonic/gin"
+	"github.com/KyberNetwork/reserve-stats/users/cmc"
+	"github.com/KyberNetwork/reserve-stats/users/stats"
+	"github.com/KyberNetwork/reserve-stats/users/storage"
+	"go.uber.org/zap"
 )
 
-func TestServer_GetUsers(t *testing.T) {
-	type fields struct {
-		r    *gin.Engine
-		host string
-	}
-	type args struct {
-		c *gin.Context
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := &Server{
-				r:    tt.fields.r,
-				host: tt.fields.host,
-			}
-			s.GetUsers(tt.args.c)
-		})
-	}
+func connectToTestDB() *storage.UserDB {
+	return storage.NewDB(
+		os.Getenv("POSTGRES_HOST"),
+		os.Getenv("POSTGRES_USER"),
+		os.Getenv("POSTGRES_PASSWORD"),
+		os.Getenv("POSTGRESS_DATABASE"),
+	)
 }
 
-func TestServer_GetUserInfo(t *testing.T) {
-	type fields struct {
-		r    *gin.Engine
-		host string
-	}
-	type args struct {
-		c *gin.Context
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := &Server{
-				r:    tt.fields.r,
-				host: tt.fields.host,
-			}
-			s.GetUserInfo(tt.args.c)
-		})
-	}
+func clearTestDB() {
+
 }
 
-func TestServer_UpdateUserInfo(t *testing.T) {
-	type fields struct {
-		r    *gin.Engine
-		host string
-	}
-	type args struct {
-		c *gin.Context
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := &Server{
-				r:    tt.fields.r,
-				host: tt.fields.host,
-			}
-			s.UpdateUserInfo(tt.args.c)
-		})
-	}
-}
+func TestUserHTTPServer(t *testing.T) {
+	userStorage := connectToTestDB()
+	cmc := cmc.NewCMCEthUSDRate()
+	userStats := stats.NewUserStats(cmc, userStorage)
+	defer clearTestDB()
 
-func TestServer_register(t *testing.T) {
-	type fields struct {
-		r    *gin.Engine
-		host string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := &Server{
-				r:    tt.fields.r,
-				host: tt.fields.host,
-			}
-			s.register()
-		})
-	}
-}
+	// create new Server instance
+	//TODO: turn into variable
+	host := fmt.Sprintf(":%s", "9000")
+	s := NewServer(userStats, host)
 
-func TestServer_Run(t *testing.T) {
-	type fields struct {
-		r    *gin.Engine
-		host string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := &Server{
-				r:    tt.fields.r,
-				host: tt.fields.host,
-			}
-			s.Run()
-		})
-	}
-}
+	zap.S().Infof("Server instance: %+v", s)
 
-func TestNewServer(t *testing.T) {
-	type args struct {
-		host string
+	// test case
+	const (
+		requestEndpoint = "/users"
+		userEmail       = "test@gmail.com"
+		wrongUserEmail  = "test"
+
+		userAddresses          = "0xc9a658f87d7432ff897f31dce318f0856f66acb7_0x2ea6200a999f4c6c982be525f8dc294f14f4cb08"
+		wrongUserAddresses     = "wrong-address_0x13197"
+		wrongNumberOfAddresses = "0xc9a658f87d7432ff897f31dce318f0856f66acb7_0x2ea6200a999f4c6c982be525f8dc294f14f4cb08_0x4e012a6445ba2a590b8b1ee4e95d03e345a0c2e5"
+		userTimeStamp          = "1538380670000_1538380682000"
+	)
+
+	var tests = []testCase{
+		{
+			msg:      "test get empty db",
+			endpoint: requestEndpoint,
+			method:   http.MethodGet,
+			assertFn: httputil.ExpectSuccess,
+		},
 	}
-	tests := []struct {
-		name string
-		args args
-		want *Server
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewServer(tt.args.host); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewServer() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+
 }

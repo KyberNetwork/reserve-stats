@@ -3,7 +3,6 @@ package tradelogs
 import (
 	"context"
 	"errors"
-	"log"
 	"math"
 	"math/big"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/common"
 )
@@ -36,6 +36,7 @@ const (
 // TradeLogCrawler gets trade logs on KyberNetwork on blockchain, adding the
 // information about USD equivalent on each trade.
 type TradeLogCrawler struct {
+	sugar     *zap.SugaredLogger
 	ethClient *ethclient.Client
 	ethRate   EthUSDRate
 }
@@ -130,12 +131,12 @@ func calculateFiatAmount(tradeLog common.TradeLog, rate float64) common.TradeLog
 }
 
 // NewTradeLogCrawler create a new TradeLogCrawler instance.
-func NewTradeLogCrawler(nodeURL string, ethRate EthUSDRate) (*TradeLogCrawler, error) {
+func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, ethRate EthUSDRate) (*TradeLogCrawler, error) {
 	client, err := ethclient.Dial(nodeURL)
 	if err != nil {
 		return nil, err
 	}
-	return &TradeLogCrawler{client, ethRate}, nil
+	return &TradeLogCrawler{sugar, client, ethRate}, nil
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.
@@ -187,12 +188,12 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int) ([]com
 		switch topic.Hex() {
 		case etherReceivalEvent, tradeEvent:
 			// add logItem to result
-			log.Printf("Trade Event at %d.", ts)
+			crawler.sugar.Infof("Got TradeEvent at %d", ts)
 			if result, err = updateTradeLogs(result, logItem, ts); err != nil {
 				return result, err
 			}
 		default:
-			log.Println("Unknow topic.")
+			crawler.sugar.Info("Unknown log topic.")
 		}
 	}
 

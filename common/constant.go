@@ -14,7 +14,8 @@ var ETHToken = Token{
 	Internal: true,
 }
 
-var ( //WrapperAddrV1 is the Kyber's wrapper Address before block 5726056
+var (
+	//WrapperAddrV1 is the Kyber's wrapper Address before block 5726056
 	WrapperAddrV1 = ethereum.HexToAddress("0x533e6d1ffa2b96cf9c157475c76c38d1b13bc584")
 	//WrapperAddrV2 is the Kyber's wrapper Address after block 5726056
 	WrapperAddrV2 = ethereum.HexToAddress("0x6172AFC8c00c46E0D07ce3AF203828198194620a")
@@ -23,18 +24,8 @@ var ( //WrapperAddrV1 is the Kyber's wrapper Address before block 5726056
 )
 
 const (
-	//InfuraEndpoint: url for infura node
+	//InfuraEndpoint is url for infura node
 	InfuraEndpoint = "https://mainnet.infura.io"
 	//StartingBlockV2 is the block where wrapper contract v2 is deployed and used.
 	StartingBlockV2 = 5926056
 )
-
-// WrapperontractAddrs returns the proper network, contract addresses to use with given block number.
-func WrapperContractAddr(block uint64) (wrapperAddr ethereum.Address) {
-	if block < StartingBlockV2 {
-		wrapperAddr = WrapperAddrV1
-	} else {
-		wrapperAddr = WrapperAddrV2
-	}
-	return
-}

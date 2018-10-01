@@ -7,6 +7,8 @@ require (
 	github.com/ethereum/go-ethereum v1.8.16
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
+	github.com/oschwald/geoip2-golang v1.2.1
+	github.com/oschwald/maxminddb-golang v1.3.0 // indirect
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/rs/cors v1.5.0 // indirect

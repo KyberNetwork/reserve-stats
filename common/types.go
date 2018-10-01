@@ -10,9 +10,10 @@ type Token struct {
 	LastActivationChange uint64 `json:"last_activation_change"`
 }
 
-// A map tof token- ratesEntry
+// ReserveTokenRateEntry is a  map[ETH-tokenID]ratesEntry
 type ReserveTokenRateEntry map[string]ReserveRateEntry
 
+// ReserveRateEntry hold 4 float number represent necessary data for a rate entry
 type ReserveRateEntry struct {
 	BuyReserveRate  float64
 	BuySanityRate   float64
@@ -20,6 +21,7 @@ type ReserveRateEntry struct {
 	SellSanityRate  float64
 }
 
+// ReserveRates hold all the pairs's rate for a particular reserve and metadata
 type ReserveRates struct {
 	Timestamp     uint64
 	ReturnTime    uint64

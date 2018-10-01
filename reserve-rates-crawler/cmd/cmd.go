@@ -6,6 +6,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/crawler"
 	"github.com/KyberNetwork/reserve-stats/setting"
+	"github.com/ethereum/go-ethereum/ethclient"
 	cli "gopkg.in/urfave/cli.v1"
 )
 
@@ -49,7 +50,11 @@ func newReserveCrawlerCli() *cli.App {
 		if err != nil {
 			panic(err)
 		}
-		reserveRateCrawler, err := crawler.NewReserveRatesCrawler(addrs, endpoint, sett)
+		client, err := ethclient.Dial(endpoint)
+		if err != nil {
+			panic(err)
+		}
+		reserveRateCrawler, err := crawler.NewReserveRatesCrawler(addrs, client, sett)
 		if err != nil {
 			panic(err)
 		}

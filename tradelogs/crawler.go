@@ -140,7 +140,7 @@ func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, ethRate EthUSD
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.
-func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int) ([]common.KNLog, error) {
+func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.KNLog, error) {
 	var result []common.KNLog
 
 	addresses := []ethereum.Address{
@@ -162,7 +162,7 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int) ([]com
 		Topics:    topics,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	logs, err := crawler.ethClient.FilterLogs(ctx, query)

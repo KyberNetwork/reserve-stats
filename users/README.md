@@ -11,7 +11,7 @@
 
 ```
     cd cmd
-    ./cmd --host=127.0.01:5432 --user=admin --password="" --database=user_storage
+    ./cmd --postgres_host=127.0.01:5432 --postgres_user=admin --postgres_password="" --postgres_database=user_storage
 ```
 
 ## Available flags

@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/common"
 )
@@ -28,13 +29,14 @@ type CoinCapRateResponse []struct {
 	PriceUSD string `json:"price_usd"`
 }
 
-// CMCEthUSDRate represents ETH pricing in USD
+// CMCEthUSDRate is a fetcher which fetch ETH pricing in USD from CoinMarketCap.
 type CMCEthUSDRate struct {
 	mu                *sync.RWMutex
 	cachedRates       [][]float64
 	currentCacheMonth uint64
 	realtimeTimepoint uint64
 	realtimeRate      float64
+	sugar             *zap.SugaredLogger
 }
 
 // RateLogResponse represents ETH price in USD at a timestamp
@@ -81,14 +83,14 @@ func (cmcRate *CMCEthUSDRate) rateFromCache(timepoint uint64) float64 {
 
 	monthTimeStamp := GetMonthTimeStamp(timepoint)
 	if monthTimeStamp != cmcRate.currentCacheMonth {
-		ethRates, err := fetchRate(timepoint)
+		ethRates, err := cmcRate.fetchRate(timepoint)
 		if err != nil {
-			log.Println("Cannot get rate from coinmarketcap")
+			cmcRate.sugar.Info("Cannot get rate from CoinMarketCap")
 			return cmcRate.realtimeRate
 		}
 		rate, err := findEthRate(ethRates, timepoint)
 		if err != nil {
-			log.Println(err)
+			cmcRate.sugar.Info(err)
 			return cmcRate.realtimeRate
 		}
 		cmcRate.currentCacheMonth = monthTimeStamp
@@ -103,7 +105,7 @@ func (cmcRate *CMCEthUSDRate) rateFromCache(timepoint uint64) float64 {
 	return rate
 }
 
-func fetchRate(timepoint uint64) ([][]float64, error) {
+func (cmcRate *CMCEthUSDRate) fetchRate(timepoint uint64) ([][]float64, error) {
 	t := time.Unix(int64(timepoint/1000), 0).UTC()
 	month, year := t.Month(), t.Year()
 	fromTime := GetTimeStamp(year, month, 1, 0, 0, 0, 0, time.UTC)
@@ -116,7 +118,7 @@ func fetchRate(timepoint uint64) ([][]float64, error) {
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			log.Printf("Response body close error: %s", cErr.Error())
+			cmcRate.sugar.Infof("Response body close error: %s", cErr.Error())
 		}
 	}()
 	body, err := ioutil.ReadAll(resp.Body)
@@ -150,7 +152,7 @@ func (cmcRate *CMCEthUSDRate) RunGetEthRate() {
 		for {
 			err := cmcRate.FetchEthRate()
 			if err != nil {
-				log.Println(err)
+				cmcRate.sugar.Info(err)
 			}
 			<-tick.C
 		}
@@ -165,20 +167,20 @@ func (cmcRate *CMCEthUSDRate) FetchEthRate() (err error) {
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			log.Printf("Response body close error: %s", cErr.Error())
+			cmcRate.sugar.Infof("Response body close error: %s", cErr.Error())
 		}
 	}()
 	body, err := ioutil.ReadAll(resp.Body)
 	rateResponse := CoinCapRateResponse{}
 	err = json.Unmarshal(body, &rateResponse)
 	if err != nil {
-		log.Printf("Getting eth-usd rate failed: %+v", err)
+		cmcRate.sugar.Infof("Getting eth-usd rate failed: %+v", err)
 	} else {
 		for _, rate := range rateResponse {
 			if rate.Symbol == "ETH" {
 				newrate, err := strconv.ParseFloat(rate.PriceUSD, 64)
 				if err != nil {
-					log.Printf("Cannot get usd rate: %s", err.Error())
+					cmcRate.sugar.Infof("Cannot get USD rate: %s", err.Error())
 					return err
 				}
 

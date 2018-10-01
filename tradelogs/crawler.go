@@ -18,6 +18,12 @@ import (
 )
 
 const (
+	// feeToWalletEvent is the topic of event AssignFeeToWallet(address reserve, address wallet, uint walletFee).
+	feeToWalletEvent = "0x366bc34352215bf0bd3b527cfd6718605e1f5938777e42bcd8ed92f578368f52"
+	// burnFeeEvent is the topic of event AssignBurnFees(address reserve, uint burnFee).
+	burnFeeEvent = "0xf838f6ddc89706878e3c3e698e9b5cbfbf2c0e3d3dcd0bd2e00f1ccf313e0185"
+	// tradeEvent is the topic of event
+	// ExecuteTrade(address indexed sender, ERC20 src, ERC20 dest, uint actualSrcAmount, uint actualDestAmount).
 	// tradeEvent is the topic of event
 	// ExecuteTrade(address indexed sender, ERC20 src, ERC20 dest, uint actualSrcAmount, uint actualDestAmount).
 	tradeEvent = "0x1849bd6a030a1bca28b83437fd3de96f3d27a5d172fa7e9c78e7b61468928a39"
@@ -28,6 +34,8 @@ const (
 	pricingAddr = "0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B"
 	// address of network contract
 	networkAddr = "0x818E6FECD516Ecc3849DAf6845e3EC868087B755"
+	// address of bunner contract
+	burnerAddr = "0xed4f53268bfdFF39B36E8786247bA3A02Cf34B04"
 
 	ethDecimals int64  = 18
 	ethAddress  string = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
@@ -54,7 +62,20 @@ func logDataToEtherReceivalParams(data []byte) ethereum.Hash {
 	return amount
 }
 
-func updateTradeLogs(allLogs []common.KNLog, logItem types.Log, ts uint64) ([]common.KNLog, error) {
+func logDataToFeeWalletParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash) {
+	reserveAddr := ethereum.BytesToAddress(data[0:32])
+	walletAddr := ethereum.BytesToAddress(data[32:64])
+	walletFee := ethereum.BytesToHash(data[64:96])
+	return reserveAddr, walletAddr, walletFee
+}
+
+func logDataToBurnFeeParams(data []byte) (ethereum.Address, ethereum.Hash) {
+	reserveAddr := ethereum.BytesToAddress(data[0:32])
+	burnFees := ethereum.BytesToHash(data[32:64])
+	return reserveAddr, burnFees
+}
+
+func updateTradeLogs(allLogs []common.TradeLog, logItem types.Log, ts uint64) ([]common.TradeLog, error) {
 	var (
 		tradeLog      common.TradeLog
 		updateLastLog = false
@@ -64,13 +85,11 @@ func updateTradeLogs(allLogs []common.KNLog, logItem types.Log, ts uint64) ([]co
 		return allLogs, errors.New("log item has no topic")
 	}
 
-	// if the transaction hash is the same and last log is a TradeLog, update it,
+	// if the transaction hash is the same with last log is a TradeLog, update it,
 	// otherwise append new one
-	if len(allLogs) > 0 && allLogs[len(allLogs)-1].TxHash() == logItem.TxHash {
-		var ok bool
-		if tradeLog, ok = allLogs[len(allLogs)-1].(common.TradeLog); ok {
-			updateLastLog = true
-		}
+	if len(allLogs) > 0 && allLogs[len(allLogs)-1].TransactionHash == logItem.TxHash {
+		tradeLog = allLogs[len(allLogs)-1]
+		updateLastLog = true
 	}
 
 	if !updateLastLog {
@@ -83,6 +102,15 @@ func updateTradeLogs(allLogs []common.KNLog, logItem types.Log, ts uint64) ([]co
 	}
 
 	switch logItem.Topics[0].Hex() {
+	case feeToWalletEvent:
+		reserveAddr, walletAddr, walletFee := logDataToFeeWalletParams(logItem.Data)
+		tradeLog.ReserveAddress = reserveAddr
+		tradeLog.WalletAddress = walletAddr
+		tradeLog.WalletFee = walletFee.Big()
+	case burnFeeEvent:
+		reserveAddr, burnFees := logDataToBurnFeeParams(logItem.Data)
+		tradeLog.ReserveAddress = reserveAddr
+		tradeLog.BurnFee = burnFees.Big()
 	case etherReceivalEvent:
 		amount := logDataToEtherReceivalParams(logItem.Data)
 		tradeLog.EtherReceivalSender = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
@@ -140,17 +168,20 @@ func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, ethRate EthUSD
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.
-func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.KNLog, error) {
-	var result []common.KNLog
+func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
+	var result []common.TradeLog
 
 	addresses := []ethereum.Address{
 		ethereum.HexToAddress(pricingAddr), // pricing
 		ethereum.HexToAddress(networkAddr), // network
+		ethereum.HexToAddress(burnerAddr),  // network
 	}
 
 	topics := [][]ethereum.Hash{
 		{
 			ethereum.HexToHash(tradeEvent),
+			ethereum.HexToHash(burnFeeEvent),
+			ethereum.HexToHash(feeToWalletEvent),
 			ethereum.HexToHash(etherReceivalEvent),
 		},
 	}
@@ -186,9 +217,9 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 
 		topic := logItem.Topics[0]
 		switch topic.Hex() {
-		case etherReceivalEvent, tradeEvent:
+		case feeToWalletEvent, burnFeeEvent, etherReceivalEvent, tradeEvent:
 			// add logItem to result
-			crawler.sugar.Infof("Got TradeEvent at %d", ts)
+			crawler.sugar.Infof("Got TradeEvent log at %d", ts)
 			if result, err = updateTradeLogs(result, logItem, ts); err != nil {
 				return result, err
 			}
@@ -197,12 +228,7 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 		}
 	}
 
-	for i, logItem := range result {
-		tradeLog, ok := logItem.(common.TradeLog)
-		if !ok {
-			continue
-		}
-
+	for i, tradeLog := range result {
 		ethRate := crawler.ethRate.GetUSDRate(tradeLog.Timestamp / 1000000)
 		if ethRate != 0 {
 			result[i] = calculateFiatAmount(tradeLog, ethRate)

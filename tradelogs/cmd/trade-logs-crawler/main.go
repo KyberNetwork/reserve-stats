@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
@@ -106,9 +107,5 @@ func getTradeLogs(c *cli.Context) error {
 		return err
 	}
 
-	for _, logItem := range tradeLogs {
-		fmt.Printf("%+v\n", logItem)
-	}
-
-	return nil
+	return json.NewEncoder(os.Stdout).Encode(tradeLogs)
 }

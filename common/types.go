@@ -6,13 +6,6 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
-// KNLog is the common interface of some important logging events.
-type KNLog interface {
-	TxHash() ethereum.Hash
-	BlockNo() uint64
-	Type() string
-}
-
 // TradeLog represent trade event on KyberNetwork
 type TradeLog struct {
 	Timestamp       uint64
@@ -37,12 +30,3 @@ type TradeLog struct {
 	IP             string
 	Country        string
 }
-
-// BlockNo returns block number which the trade event happened.
-func (tradeLog TradeLog) BlockNo() uint64 { return tradeLog.BlockNumber }
-
-// Type returns type of log for trade event..
-func (tradeLog TradeLog) Type() string { return "TradeLog" }
-
-// TxHash returns the corresponding transaction hash of trade event.
-func (tradeLog TradeLog) TxHash() ethereum.Hash { return tradeLog.TransactionHash }

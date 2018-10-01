@@ -1,5 +1,6 @@
 package common
 
+// Token holds all necessary data regard a token.
 type Token struct {
 	ID                   string `json:"id"`
 	Name                 string `json:"name"`

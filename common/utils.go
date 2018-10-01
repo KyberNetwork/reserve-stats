@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// GetTimepoint return current Unix Timestamp in millisecond with uint64 format
 func GetTimepoint() uint64 {
 	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 	return uint64(timestamp)

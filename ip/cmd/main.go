@@ -44,7 +44,7 @@ func iplocator(c *cli.Context) error {
 
 	sugar := logger.Sugar()
 
-	f, err := ip.NewIPLocator(
+	f, err := ip.NewLocator(
 		sugar,
 	)
 	if err != nil {

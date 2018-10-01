@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"time"
 
 	"github.com/urfave/cli"
 
@@ -100,11 +101,13 @@ func getTradeLogs(c *cli.Context) error {
 		return err
 	}
 
-	tradeLogs, err := crawler.GetTradeLogs(fromBlock, toBlock)
-	if err == nil {
-		for _, logItem := range tradeLogs {
-			fmt.Printf("%+v\n", logItem)
-		}
+	tradeLogs, err := crawler.GetTradeLogs(fromBlock, toBlock, time.Second*5)
+	if err != nil {
+		return err
+	}
+
+	for _, logItem := range tradeLogs {
+		fmt.Printf("%+v\n", logItem)
 	}
 
 	return nil

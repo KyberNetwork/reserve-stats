@@ -27,3 +27,16 @@ type ReserveRates struct {
 	ToBlockNumber uint64
 	Data          ReserveTokenRateEntry
 }
+
+// NewToken creates a new Token.
+func NewToken(id, name, address string, decimal int64, active, internal bool, timepoint uint64) Token {
+	return Token{
+		ID:                   id,
+		Name:                 name,
+		Address:              address,
+		Decimals:             decimal,
+		Active:               active,
+		Internal:             internal,
+		LastActivationChange: timepoint,
+	}
+}

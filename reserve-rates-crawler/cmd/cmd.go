@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -41,10 +40,10 @@ func newReserveCrawlerCli() *cli.App {
 		cli.StringFlag{
 			Name:        "coreURL",
 			Destination: &coreURL,
+			EnvVar:      "CORE_URL",
 		},
 	}
 	app.Action = func(c *cli.Context) error {
-		fmt.Printf("block is %d\n", block)
 		addrs := c.StringSlice("addresses")
 		sett, err := setting.NewSettingClient(coreURL)
 		if err != nil {

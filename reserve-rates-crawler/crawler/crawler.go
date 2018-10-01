@@ -32,13 +32,13 @@ func NewReserveRatesCrawler(addrs []string, endpoint string, sett Setting) (*Res
 }
 
 func (rrc *ResreveRatesCrawler) GetSupportedTokens(rsvAddr ethereum.Address) ([]common.Token, error) {
-	var result []common.Token
-	return result, nil
+	return rrc.setting.GetInternalTokens()
 }
 
 func (rrc *ResreveRatesCrawler) GetEachReserveRate(block uint64, rsvAddr ethereum.Address, data *sync.Map, wg *sync.WaitGroup) {
 	defer wg.Done()
 	tokens, err := rrc.GetSupportedTokens(rsvAddr)
+	log.Printf("token is %v", tokens)
 	if err != nil {
 		log.Printf("can not get supported tokens for reserve %s", rsvAddr.Hex())
 		return
@@ -51,10 +51,27 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) map[string]common.
 	result := make(map[string]common.ReserveRates)
 	data := sync.Map{}
 	wg := sync.WaitGroup{}
+	log.Printf("rcc addrs is %v", rrc.Addresses)
 	for _, rsvAddr := range rrc.Addresses {
 		wg.Add(1)
 		go rrc.GetEachReserveRate(block, rsvAddr, &data, &wg)
 	}
 	wg.Wait()
+	data.Range(func(key, value interface{}) bool {
+		reserveAddr, ok := key.(ethereum.Address)
+
+		//if there is conversion error, continue to next key,val
+		if !ok {
+			log.Printf("key (%v) cannot be asserted to ethereum.Address", key)
+			return true
+		}
+		rates, ok := value.(common.ReserveRates)
+		if !ok {
+			log.Printf("value (%v) cannot be asserted to reserveRates", value)
+			return true
+		}
+		result[reserveAddr.Hex()] = rates
+		return true
+	})
 	return result
 }

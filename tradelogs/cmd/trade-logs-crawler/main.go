@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/urfave/cli"
 	"log"
 	"math/big"
 	"os"
+
+	"github.com/urfave/cli"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
@@ -73,6 +74,8 @@ func getTradeLogs(c *cli.Context) error {
 	}
 	defer logger.Sync()
 
+	sugar := logger.Sugar()
+
 	fromBlock, err := parseBigIntFlag(c, fromBlockFlag)
 	if err != nil {
 		return fmt.Errorf("invalid from block: %q, error: %s", c.String(fromBlockFlag), err)
@@ -89,6 +92,7 @@ func getTradeLogs(c *cli.Context) error {
 	}
 
 	crawler, err := tradelogs.NewTradeLogCrawler(
+		sugar,
 		nodeURL,
 		tradelogs.NewCMCEthUSDRate(),
 	)

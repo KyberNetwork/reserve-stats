@@ -15,3 +15,5 @@ services:
       POSTGRES_DB: reserve_stats
       POSTGRES_USER: reserve_stats
       POSTGRES_PASSWORD: reserve_stats
+    ports:
+      - "127.0.0.1:5432:5432"

@@ -20,3 +20,5 @@ require (
 	golang.org/x/tools v0.0.0-20180926203008-ef4a2a23bb35 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 )
+
+replace github.com/ethereum/go-ethereum => github.com/favadi/go-ethereum v1.8.16-fork

@@ -6,6 +6,10 @@ github.com/deckarep/golang-set v1.7.1 h1:SCQV0S6gTtp6itiFrTqI+pfmJ4LN85S1YzhDf9r
 github.com/deckarep/golang-set v1.7.1/go.mod h1:93vsz/8Wt4joVM7c2AVqh+YRMiUSc14yDtF28KmMOgQ=
 github.com/ethereum/go-ethereum v1.8.16 h1:mWSfeuH5G3WDvHcY/aXDgSjy+mXQ6UyL7w0hrMbE/ds=
 github.com/ethereum/go-ethereum v1.8.16/go.mod h1:PwpWDrCLZrV+tfrhqqF6kPknbISMHaJv9Ln3kPCZLwY=
+github.com/favadi/go-ethereum v0.0.0-20180927101017-5a13b3b5be1d/go.mod h1:RXg+C0ufsFEtlGWtMKri6DcnB9Jz4Y9SHpdVtFX2Njs=
+github.com/favadi/go-ethereum v1.8.11-0.20180927101017-5a13b3b5be1d/go.mod h1:RXg+C0ufsFEtlGWtMKri6DcnB9Jz4Y9SHpdVtFX2Njs=
+github.com/favadi/go-ethereum v1.8.16-fork h1:ASa5GemfLDtin5vqCqJk7F8mrBJAs7aj08SIGltAn4w=
+github.com/favadi/go-ethereum v1.8.16-fork/go.mod h1:RXg+C0ufsFEtlGWtMKri6DcnB9Jz4Y9SHpdVtFX2Njs=
 github.com/go-stack/stack v1.8.0 h1:5SgMzNM5HxrEjV0ww2lTmX6E2Izsfxas4+YHWRs3Lsk=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
 github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db h1:woRePGFeVFfLKN/pOkfl+p/TAqKOfFu+7KPlMVpok/w=
@@ -36,5 +40,6 @@ golang.org/x/sys v0.0.0-20180926160741-c2ed4eda69e7 h1:bit1t3mgdR35yN0cX0G8orgLt
 golang.org/x/sys v0.0.0-20180926160741-c2ed4eda69e7/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/tools v0.0.0-20180926203008-ef4a2a23bb35 h1:1j+JOCsLri5Rws1a90OLKwunjyaCJcRORpcVahoc/Jo=
 golang.org/x/tools v0.0.0-20180926203008-ef4a2a23bb35/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
+gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 h1:qIbj1fsPNlZgppZ+VLlY7N33q108Sa+fhmuc+sWQYwY=
 gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce h1:+JknDZhAj8YMt7GC73Ei8pv4MzjDUNPHgQWJdtMAaDU=
 gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce/go.mod h1:5AcXVHNjg+BDxry382+8OKon8SEWiKktQR07RKPsv1c=

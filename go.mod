@@ -1,7 +1,7 @@
 module github.com/KyberNetwork/reserve-stats
 
 require (
-	github.com/KyberNetwork/reserve-data v0.1.0
+	github.com/KyberNetwork/reserve-data v0.1.0 // indirect
 	github.com/aristanetworks/goarista v0.0.0-20180907105523-ff33da284e76 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
 	github.com/btcsuite/btcd v0.0.0-20180924021209-2a560b2036be // indirect

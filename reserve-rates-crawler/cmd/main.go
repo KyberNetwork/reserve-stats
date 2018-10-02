@@ -1,66 +1,69 @@
 package main
 
 import (
+	"log"
 	"os"
 
-	kyberlib "github.com/KyberNetwork/reserve-stats/lib/app"
+	kyberApp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/crawler"
 	"github.com/KyberNetwork/reserve-stats/setting"
-	"github.com/ethereum/go-ethereum/ethclient"
 	cli "github.com/urfave/cli"
 	"go.uber.org/zap"
 )
 
+const (
+	addressesFlag = "addresses"
+	blockFlag     = "block"
+	coreFlag      = "coreURL"
+)
+
 func newReserveCrawlerCli() *cli.App {
-	app := cli.NewApp()
+	app := kyberApp.NewApp()
 	app.Name = "reserve-rates-crawler"
 	app.Usage = "get the rates of all configured reserves at a certain block"
 	var block uint64
-	var endpoint string
 	var coreURL string
-	app.Flags = []cli.Flag{
+	app.Flags = append(app.Flags,
 		cli.StringSliceFlag{
-			Name:   "addresses",
+			Name:   addressesFlag,
 			EnvVar: "RESERVE_ADDRESSES",
-			Usage:  "--addresses=\"0x1111,0x222\" or set env RESERVE_ADDRESSES=\"0x1111,0x222\"",
+			Usage:  "list of reserve contract addresses. Example: --addresses=\"0x1111,0x222\"",
 		},
 		cli.Uint64Flag{
-			Name:        "block",
+			Name:        blockFlag,
 			Value:       0,
+			Usage:       "block from which rate is queried. Default value is 0, in which case the latest rate is returned",
 			Destination: &block,
 		},
 		cli.StringFlag{
-			Name:        "endpoint",
-			EnvVar:      "ENDPOINT",
-			Usage:       "--endpoint=\"infura.io\" or set env ENDPOINT=\"infura.io\"",
-			Destination: &endpoint,
-		},
-		cli.StringFlag{
-			Name:        "coreURL",
+			Name:        coreFlag,
 			Destination: &coreURL,
 			EnvVar:      "CORE_URL",
 		},
-	}
+		kyberApp.NewEthereumNodeFlags(""),
+	)
 	app.Action = func(c *cli.Context) error {
-		addrs := c.StringSlice("addresses")
+		addrs := c.StringSlice(addressesFlag)
 		sett, err := setting.NewSettingClient(coreURL)
 		if err != nil {
-			panic(err)
+			return err
 		}
-		client, err := ethclient.Dial(endpoint)
+		client, err := kyberApp.NewEthereumClientFromFlag(c)
 		if err != nil {
-			panic(err)
+			return err
 		}
-		logger, err := kyberlib.NewLogger(c)
-
+		logger, err := kyberApp.NewLogger(c)
 		if err != nil {
-			panic(err)
+			return err
 		}
 		reserveRateCrawler, err := crawler.NewReserveRatesCrawler(addrs, client, sett, logger.Sugar())
 		if err != nil {
-			panic(err)
+			return err
 		}
-		result := reserveRateCrawler.GetReserveRates(block)
+		result, err := reserveRateCrawler.GetReserveRates(block)
+		if err != nil {
+			return err
+		}
 		logger.Info("rate result is", zap.Reflect("rates", result))
 		return nil
 	}
@@ -71,6 +74,6 @@ func newReserveCrawlerCli() *cli.App {
 func main() {
 	app := newReserveCrawlerCli()
 	if err := app.Run(os.Args); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }

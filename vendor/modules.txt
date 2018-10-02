@@ -49,6 +49,12 @@ github.com/gin-gonic/gin/render
 # github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
 github.com/go-ozzo/ozzo-validation
 github.com/go-ozzo/ozzo-validation/is
+# github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
+github.com/go-ozzo/ozzo-validation
+github.com/go-ozzo/ozzo-validation/is
+# github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
+github.com/go-ozzo/ozzo-validation
+github.com/go-ozzo/ozzo-validation/is
 # github.com/go-pg/pg v6.15.0+incompatible
 github.com/go-pg/pg
 github.com/go-pg/pg/orm

@@ -34,6 +34,7 @@ require (
 	github.com/fjl/memsize v0.0.0-20180427083637-f6d5545993d6 // indirect
 	github.com/gin-contrib/cors v0.0.0-20180922014233-214f318e72cc
 	github.com/aristanetworks/goarista v0.0.0-20180907105523-ff33da284e76 // indirect
+	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
 	github.com/btcsuite/btcd v0.0.0-20180924021209-2a560b2036be // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect
@@ -41,6 +42,7 @@ require (
 	github.com/gin-contrib/cors v0.0.0-20180926132136-4f98e8b8e930
 	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
 	github.com/gin-gonic/gin v1.3.0
+	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
 	github.com/go-pg/pg v6.15.0+incompatible
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect

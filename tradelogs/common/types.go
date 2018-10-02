@@ -2,13 +2,14 @@ package common
 
 import (
 	"math/big"
+	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 // TradeLog represent trade event on KyberNetwork
 type TradeLog struct {
-	Timestamp       uint64
+	Timestamp       time.Time
 	BlockNumber     uint64
 	TransactionHash ethereum.Hash
 	Index           uint

@@ -13,7 +13,7 @@ import (
 
 const (
 	ipFlag      = "ip"
-	dataDirFlag = "dataDir"
+	dataDirFlag = "data-dir"
 )
 
 func main() {

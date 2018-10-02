@@ -52,30 +52,65 @@ type TradeLogCrawler struct {
 	ethRate   ethrate.EthUSDRate
 }
 
-func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash) {
-	srcAddr := ethereum.BytesToAddress(data[0:32])
-	desAddr := ethereum.BytesToAddress(data[32:64])
-	srcAmount := ethereum.BytesToHash(data[64:96])
-	desAmount := ethereum.BytesToHash(data[96:128])
-	return srcAddr, desAddr, srcAmount, desAmount
+func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
+	var srcAddr, desAddr ethereum.Address
+	var srcAmount, desAmount ethereum.Hash
+	var err error
+
+	if len(data) != 128 {
+		err = errors.New("invalid trade data")
+	} else {
+		srcAddr = ethereum.BytesToAddress(data[0:32])
+		desAddr = ethereum.BytesToAddress(data[32:64])
+		srcAmount = ethereum.BytesToHash(data[64:96])
+		desAmount = ethereum.BytesToHash(data[96:128])
+	}
+
+	return srcAddr, desAddr, srcAmount, desAmount, err
 }
 
-func logDataToEtherReceivalParams(data []byte) ethereum.Hash {
-	amount := ethereum.BytesToHash(data[0:32])
-	return amount
+func logDataToEtherReceivalParams(data []byte) (ethereum.Hash, error) {
+	var amount ethereum.Hash
+	var err error
+
+	if len(data) != 32 {
+		err = errors.New("invalid eth receival data")
+	} else {
+		amount = ethereum.BytesToHash(data[0:32])
+	}
+
+	return amount, err
 }
 
-func logDataToFeeWalletParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash) {
-	reserveAddr := ethereum.BytesToAddress(data[0:32])
-	walletAddr := ethereum.BytesToAddress(data[32:64])
-	walletFee := ethereum.BytesToHash(data[64:96])
-	return reserveAddr, walletAddr, walletFee
+func logDataToFeeWalletParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, error) {
+	var reserveAddr, walletAddr ethereum.Address
+	var walletFee ethereum.Hash
+	var err error
+
+	if len(data) != 96 {
+		err = errors.New("invalid fee wallet data")
+	} else {
+		reserveAddr = ethereum.BytesToAddress(data[0:32])
+		walletAddr = ethereum.BytesToAddress(data[32:64])
+		walletFee = ethereum.BytesToHash(data[64:96])
+	}
+
+	return reserveAddr, walletAddr, walletFee, err
 }
 
-func logDataToBurnFeeParams(data []byte) (ethereum.Address, ethereum.Hash) {
-	reserveAddr := ethereum.BytesToAddress(data[0:32])
-	burnFees := ethereum.BytesToHash(data[32:64])
-	return reserveAddr, burnFees
+func logDataToBurnFeeParams(data []byte) (ethereum.Address, ethereum.Hash, error) {
+	var reserveAddr ethereum.Address
+	var burnFees ethereum.Hash
+	var err error
+
+	if len(data) != 64 {
+		err = errors.New("invalid burn fee data")
+	} else {
+		reserveAddr = ethereum.BytesToAddress(data[0:32])
+		burnFees = ethereum.BytesToHash(data[32:64])
+	}
+
+	return reserveAddr, burnFees, err
 }
 
 func updateTradeLogs(allLogs []common.TradeLog, logItem types.Log, ts time.Time) ([]common.TradeLog, error) {
@@ -106,20 +141,32 @@ func updateTradeLogs(allLogs []common.TradeLog, logItem types.Log, ts time.Time)
 
 	switch logItem.Topics[0].Hex() {
 	case feeToWalletEvent:
-		reserveAddr, walletAddr, walletFee := logDataToFeeWalletParams(logItem.Data)
+		reserveAddr, walletAddr, walletFee, err := logDataToFeeWalletParams(logItem.Data)
+		if err != nil {
+			return allLogs, err
+		}
 		tradeLog.ReserveAddress = reserveAddr
 		tradeLog.WalletAddress = walletAddr
 		tradeLog.WalletFee = walletFee.Big()
 	case burnFeeEvent:
-		reserveAddr, burnFees := logDataToBurnFeeParams(logItem.Data)
+		reserveAddr, burnFees, err := logDataToBurnFeeParams(logItem.Data)
+		if err != nil {
+			return allLogs, err
+		}
 		tradeLog.ReserveAddress = reserveAddr
 		tradeLog.BurnFee = burnFees.Big()
 	case etherReceivalEvent:
-		amount := logDataToEtherReceivalParams(logItem.Data)
+		amount, err := logDataToEtherReceivalParams(logItem.Data)
+		if err != nil {
+			return allLogs, err
+		}
 		tradeLog.EtherReceivalSender = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
 		tradeLog.EtherReceivalAmount = amount.Big()
 	case tradeEvent:
-		srcAddr, destAddr, srcAmount, destAmount := logDataToTradeParams(logItem.Data)
+		srcAddr, destAddr, srcAmount, destAmount, err := logDataToTradeParams(logItem.Data)
+		if err != nil {
+			return allLogs, err
+		}
 		tradeLog.SrcAddress = srcAddr
 		tradeLog.DestAddress = destAddr
 		tradeLog.SrcAmount = srcAmount.Big()

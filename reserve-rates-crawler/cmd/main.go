@@ -27,7 +27,7 @@ func newReserveCrawlerCli() *cli.App {
 		cli.StringSliceFlag{
 			Name:   addressesFlag,
 			EnvVar: "RESERVE_ADDRESSES",
-			Usage:  "list of reserve contract addresses. Example: --addresses=\"0x1111,0x222\"",
+			Usage:  "list of reserve contract addresses. Example: --addresses={\"0x1111\",\"0x222\"}",
 		},
 		cli.Uint64Flag{
 			Name:        blockFlag,

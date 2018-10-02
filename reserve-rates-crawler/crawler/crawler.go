@@ -88,10 +88,10 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]common
 	errs := make(chan error, len(rrc.Addresses))
 	for _, rsvAddr := range rrc.Addresses {
 		wg.Add(1)
-		go func() {
-			err := rrc.getEachReserveRate(block, rsvAddr, &data, &wg)
+		go func(addr ethereum.Address) {
+			err := rrc.getEachReserveRate(block, addr, &data, &wg)
 			errs <- err
-		}()
+		}(rsvAddr)
 	}
 	wg.Wait()
 	defer close(errs)

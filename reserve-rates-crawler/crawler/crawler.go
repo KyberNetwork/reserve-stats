@@ -2,7 +2,6 @@ package crawler
 
 import (
 	"fmt"
-	"log"
 	"math/big"
 	"sync"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"go.uber.org/zap"
 )
 
 // ResreveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
@@ -20,10 +20,11 @@ type ResreveRatesCrawler struct {
 	WrapperContractV2 *contracts.Wrapper
 	Addresses         []ethereum.Address
 	setting           Setting
+	logger			  *zap.SugaredLogger
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
-func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett Setting) (*ResreveRatesCrawler, error) {
+func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett Setting, lger *zap.SugaredLogger) (*ResreveRatesCrawler, error) {
 	wrapperContractV1, err := contracts.NewWrapper(common.WrapperAddrV1, client)
 	wrapperContractV2, err := contracts.NewWrapper(common.WrapperAddrV2, client)
 
@@ -39,6 +40,7 @@ func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett Setti
 		WrapperContractV2: wrapperContractV2,
 		Addresses:         ethAddrs,
 		setting:           sett,
+		logger: lger,
 	}, nil
 }
 
@@ -50,8 +52,7 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 	defer wg.Done()
 	tokens, err := rrc.getSupportedTokens(rsvAddr)
 	if err != nil {
-		log.Printf("can not get supported tokens for reserve %s", rsvAddr.Hex())
-		return
+		rrc.logger.Errorf("cannot get supported tokens for reserve %s. Error: %s", rsvAddr.Hex(), err)
 	}
 	ETH := common.ETHToken
 	srcAddresses := []ethereum.Address{}
@@ -71,7 +72,7 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 		reserveRate, sanityRate, callError = rrc.WrapperContractV2.GetReserveRate(&bind.CallOpts{BlockNumber: big.NewInt(int64(block))}, rsvAddr, srcAddresses, destAddresses)
 	}
 	if callError != nil {
-		log.Printf("can not get reserve rate for reserve %s, error : %s", rsvAddr.Hex(), callError)
+		rrc.logger.Errorf("cannot get rates for reserve %s. Error: %s", rsvAddr.Hex(), callError)
 		return
 	}
 	rates := common.ReserveRates{}
@@ -107,12 +108,12 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) map[string]common.
 		reserveAddr, ok := key.(ethereum.Address)
 		//if there is conversion error, continue to next key,val
 		if !ok {
-			log.Printf("key (%v) cannot be asserted to ethereum.Address", key)
+			rrc.logger.Errorf("key (%v) cannot be asserted to ethereum.Address", key)
 			return true
 		}
 		rates, ok := value.(common.ReserveRates)
 		if !ok {
-			log.Printf("value (%v) cannot be asserted to reserveRates", value)
+			rrc.logger.Errorf("value (%v) cannot be asserted to reserveRates", value)
 			return true
 		}
 		result[reserveAddr.Hex()] = rates

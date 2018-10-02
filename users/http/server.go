@@ -101,7 +101,7 @@ func (s *Server) UpdateUserInfo(c *gin.Context) {
 			http.StatusOK,
 			gin.H{
 				"success": false,
-				"reason": fmt.Sprintf("userAddresses should not be empty"),
+				"reason":  fmt.Sprintf("userAddresses should not be empty"),
 			},
 		)
 		return

@@ -14,8 +14,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
 
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 const (
@@ -52,7 +52,7 @@ type TradeLogCrawler struct {
 	ethRate   ethrate.EthUSDRate
 }
 
-func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash) {	
+func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash) {
 	srcAddr := ethereum.BytesToAddress(data[0:32])
 	desAddr := ethereum.BytesToAddress(data[32:64])
 	srcAmount := ethereum.BytesToHash(data[64:96])
@@ -223,7 +223,6 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 		switch topic.Hex() {
 		case feeToWalletEvent, burnFeeEvent, etherReceivalEvent, tradeEvent:
 			// add logItem to result
-			crawler.sugar.Infof("Got TradeEvent log at %d", ts)
 			if result, err = updateTradeLogs(result, logItem, ts); err != nil {
 				return result, err
 			}
@@ -233,8 +232,7 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 	}
 
 	for i, tradeLog := range result {
-		timepoint := uint64(tradeLog.Timestamp.UnixNano() / int64(time.Millisecond))
-		ethRate := crawler.ethRate.GetUSDRate(timepoint)
+		ethRate := crawler.ethRate.GetUSDRate(tradeLog.Timestamp)
 		if ethRate != 0 {
 			result[i] = calculateFiatAmount(tradeLog, ethRate)
 		}
@@ -277,5 +275,5 @@ func (crawler *TradeLogCrawler) InterpretTimestamp(blockno uint64, txindex uint)
 
 	unixSecond := block.Time.Int64()
 	unixNano := int64(txindex)
-	return time.Unix(unixSecond, unixNano), nil
+	return time.Unix(unixSecond, unixNano).UTC(), nil
 }

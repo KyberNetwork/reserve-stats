@@ -3,20 +3,19 @@ package ethrate
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"fmt"
 	"net/http"
 	"strconv"
 	"sync"
 	"time"
 
 	"go.uber.org/zap"
-
-	"github.com/KyberNetwork/reserve-stats/common"
 )
 
 const (
 	cmcEthereumPricingAPIEndpoint = "https://graphs2.coinmarketcap.com/currencies/ethereum/"
 	cmcTopUSDPricingAPIEndpoint   = "https://api.coinmarketcap.com/v1/ticker/?convert=USD&limit=10"
+	historyRateTimeRange          = time.Hour * 24 * 30
 )
 
 // CMCRateResponse represents response from CoinMarketCap for digital
@@ -31,12 +30,12 @@ type CMCRateResponse []struct {
 
 // CMCRate is a fetcher which fetch ETH pricing in USD from CoinMarketCap.
 type CMCRate struct {
-	mu                *sync.RWMutex
-	cachedRates       [][]float64
-	currentCacheMonth uint64
-	realtimeTimepoint uint64
-	realtimeRate      float64
-	sugar             *zap.SugaredLogger
+	mu                    *sync.RWMutex
+	cachedRates           [][]float64 // contain history rates within historyRateTimeRange started at currentCacheTimepoint,
+	currentCacheTimepoint time.Time   // represents the start timepoint of cached history rates
+	realtimeTimepoint     time.Time   // the first timepoint when it get recent rate from CMC
+	realtimeRate          float64     // recent eth-usd rate from CMC
+	sugar                 *zap.SugaredLogger
 }
 
 // RateLogResponse represents ETH price in USD at a timestamp
@@ -44,56 +43,39 @@ type RateLogResponse struct {
 	PriceUSD [][]float64 `json:"price_usd"`
 }
 
-// GetTimeStamp get timestamp in miliseconds
-func GetTimeStamp(year int, month time.Month, day int, hour int, minute int, sec int, nanosec int, loc *time.Location) uint64 {
-	return uint64(time.Date(year, month, day, hour, minute, sec, nanosec, loc).Unix() * 1000)
-}
-
-// GetMonthTimeStamp get timestamp at the beginning of given month
-func GetMonthTimeStamp(timepoint uint64) uint64 {
-	t := time.Unix(int64(timepoint/1000), 0).UTC()
-	month, year := t.Month(), t.Year()
-	return GetTimeStamp(year, month, 1, 0, 0, 0, 0, time.UTC)
-}
-
-// GetNextMonth get the next month, year of given month, year
-func GetNextMonth(month, year int) (int, int) {
-	var toMonth, toYear int
-	if int(month) == 12 {
-		toMonth = 1
-		toYear = year + 1
-	} else {
-		toMonth = int(month) + 1
-		toYear = year
-	}
-	return toMonth, toYear
-}
-
 // GetUSDRate get the ETH price in USD at given timepoint
-func (cmcRate *CMCRate) GetUSDRate(timepoint uint64) float64 {
-	if timepoint >= cmcRate.realtimeTimepoint {
+func (cmcRate *CMCRate) GetUSDRate(timepoint time.Time) float64 {
+	if timepoint.After(cmcRate.realtimeTimepoint) {
 		return cmcRate.realtimeRate
 	}
 	return cmcRate.rateFromCache(timepoint)
 }
 
-func (cmcRate *CMCRate) rateFromCache(timepoint uint64) float64 {
+// rateFromCache return rate from cache, given a timepoint.
+// The cache contain rates in a time range specify by historyRateTimeRange,
+// started at cmcRate.currentCacheTimepoint.
+// If the timepoint not in cache, we call CMC to update it.
+func (cmcRate *CMCRate) rateFromCache(timepoint time.Time) float64 {
 	cmcRate.mu.Lock()
 	defer cmcRate.mu.Unlock()
 
-	monthTimeStamp := GetMonthTimeStamp(timepoint)
-	if monthTimeStamp != cmcRate.currentCacheMonth {
-		ethRates, err := cmcRate.fetchRate(timepoint)
+	roundedTimepoint := timepoint.Round(historyRateTimeRange).UTC()
+	if roundedTimepoint.After(timepoint) {
+		roundedTimepoint = roundedTimepoint.Add(-historyRateTimeRange)
+	}
+
+	if !roundedTimepoint.Equal(cmcRate.currentCacheTimepoint) {
+		ethRates, err := cmcRate.fetchHistoryRates(roundedTimepoint)
 		if err != nil {
-			cmcRate.sugar.Info("Cannot get rate from CoinMarketCap")
+			cmcRate.sugar.Error("Cannot get rate from CoinMarketCap")
 			return cmcRate.realtimeRate
 		}
 		rate, err := findEthRate(ethRates, timepoint)
 		if err != nil {
-			cmcRate.sugar.Info(err)
+			cmcRate.sugar.Error(err)
 			return cmcRate.realtimeRate
 		}
-		cmcRate.currentCacheMonth = monthTimeStamp
+		cmcRate.currentCacheTimepoint = roundedTimepoint
 		cmcRate.cachedRates = ethRates
 		return rate
 	}
@@ -105,39 +87,37 @@ func (cmcRate *CMCRate) rateFromCache(timepoint uint64) float64 {
 	return rate
 }
 
-func (cmcRate *CMCRate) fetchRate(timepoint uint64) ([][]float64, error) {
-	t := time.Unix(int64(timepoint/1000), 0).UTC()
-	month, year := t.Month(), t.Year()
-	fromTime := GetTimeStamp(year, month, 1, 0, 0, 0, 0, time.UTC)
-	toMonth, toYear := GetNextMonth(int(month), year)
-	toTime := GetTimeStamp(toYear, time.Month(toMonth), 1, 0, 0, 0, 0, time.UTC)
-	api := cmcEthereumPricingAPIEndpoint + strconv.FormatInt(int64(fromTime), 10) + "/" + strconv.FormatInt(int64(toTime), 10) + "/"
-	resp, err := http.Get(api)
+// fetchHistoryRates get rate from CMC in historyRateTimeRange, which contain the
+// timepoint
+func (cmcRate *CMCRate) fetchHistoryRates(timepoint time.Time) ([][]float64, error) {
+	fromTime := timepoint.UnixNano() / int64(time.Millisecond)
+	toTime := fromTime + int64(historyRateTimeRange/time.Millisecond)
+	url := fmt.Sprintf("%s/%d/%d/", cmcEthereumPricingAPIEndpoint, fromTime, toTime)
+
+	resp, err := http.Get(url)
 	if err != nil {
+		cmcRate.sugar.Errorf("Getting history eth-usd rate failed: %v. Url: %s", err, url)
 		return [][]float64{}, err
 	}
-	defer func() {
-		if cErr := resp.Body.Close(); cErr != nil {
-			cmcRate.sugar.Infof("Response body close error: %s", cErr.Error())
-		}
-	}()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return [][]float64{}, err
-	}
+
+	defer resp.Body.Close()
 	rateResponse := RateLogResponse{}
-	err = json.Unmarshal(body, &rateResponse)
+
+	err = json.NewDecoder(resp.Body).Decode(&rateResponse)
 	if err != nil {
+		cmcRate.sugar.Errorf("Got bad response for history eth-usd rate: %v", err)
 		return [][]float64{}, err
 	}
-	ethRates := rateResponse.PriceUSD
-	return ethRates, nil
+
+	return rateResponse.PriceUSD, nil
 }
 
-func findEthRate(ethRateLog [][]float64, timepoint uint64) (float64, error) {
+func findEthRate(ethRateLog [][]float64, timepoint time.Time) (float64, error) {
+	timepointInMillis := timepoint.UnixNano() / int64(time.Millisecond)
+
 	var ethRate float64
 	for _, e := range ethRateLog {
-		if uint64(e[0]) >= timepoint {
+		if e[0] >= float64(timepointInMillis) {
 			ethRate = e[1]
 			return ethRate, nil
 		}
@@ -152,7 +132,7 @@ func (cmcRate *CMCRate) RunGetEthRate() {
 		for {
 			err := cmcRate.FetchEthRate()
 			if err != nil {
-				cmcRate.sugar.Info(err)
+				cmcRate.sugar.Error(err)
 			}
 			<-tick.C
 		}
@@ -163,35 +143,33 @@ func (cmcRate *CMCRate) RunGetEthRate() {
 func (cmcRate *CMCRate) FetchEthRate() (err error) {
 	resp, err := http.Get(cmcTopUSDPricingAPIEndpoint)
 	if err != nil {
+		cmcRate.sugar.Errorf("Getting eth-usd rate failed: %v", err)
 		return err
 	}
-	defer func() {
-		if cErr := resp.Body.Close(); cErr != nil {
-			cmcRate.sugar.Infof("Response body close error: %s", cErr.Error())
-		}
-	}()
-	body, err := ioutil.ReadAll(resp.Body)
-	rateResponse := CMCRateResponse{}
-	err = json.Unmarshal(body, &rateResponse)
-	if err != nil {
-		cmcRate.sugar.Infof("Getting eth-usd rate failed: %+v", err)
-	} else {
-		for _, rate := range rateResponse {
-			if rate.Symbol == "ETH" {
-				newrate, err := strconv.ParseFloat(rate.PriceUSD, 64)
-				if err != nil {
-					cmcRate.sugar.Infof("Cannot get USD rate: %s", err.Error())
-					return err
-				}
+	defer resp.Body.Close()
 
-				if cmcRate.realtimeRate == 0 {
-					// set realtimeTimepoint to the timepoint that realtime rate is updated for the
-					// first time
-					cmcRate.realtimeTimepoint = common.GetTimepoint()
-				}
-				cmcRate.realtimeRate = newrate
-				return nil
+	rateResponse := CMCRateResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&rateResponse)
+	if err != nil {
+		cmcRate.sugar.Errorf("Got bad response for eth-usd rate: %v", err)
+		return err
+	}
+
+	for _, rate := range rateResponse {
+		if rate.Symbol == "ETH" {
+			newrate, err := strconv.ParseFloat(rate.PriceUSD, 64)
+			if err != nil {
+				cmcRate.sugar.Infof("Cannot get USD rate: %s", err.Error())
+				return err
 			}
+
+			if cmcRate.realtimeRate == 0 {
+				// set realtimeTimepoint to the timepoint that realtime rate is updated for the
+				// first time
+				cmcRate.realtimeTimepoint = time.Now()
+			}
+			cmcRate.realtimeRate = newrate
+			return nil
 		}
 	}
 	return nil
@@ -204,9 +182,10 @@ func (cmcRate *CMCRate) Run() {
 }
 
 // NewCMCRate fetch rate of ETH vs USD from CoinMarketCap
-func NewCMCRate() *CMCRate {
+func NewCMCRate(sugar *zap.SugaredLogger) *CMCRate {
 	result := &CMCRate{
-		mu: &sync.RWMutex{},
+		mu:    &sync.RWMutex{},
+		sugar: sugar,
 	}
 	result.Run()
 	return result

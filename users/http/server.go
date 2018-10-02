@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -50,12 +51,13 @@ func (s *Server) GetUserInfo(c *gin.Context) {
 //UpdateUserInfo update info of an user
 func (s *Server) UpdateUserInfo(c *gin.Context) {
 	err := c.Request.ParseForm()
+	log.Printf("Request: %+v", c.Request)
 	if err != nil {
 		c.JSON(
 			http.StatusOK,
 			gin.H{
 				"success": false,
-				"reason":  "Request malformed",
+				"reason":  fmt.Sprintf("Request malformed: %s", err.Error()),
 			},
 		)
 		return
@@ -74,7 +76,7 @@ func (s *Server) UpdateUserInfo(c *gin.Context) {
 			http.StatusOK,
 			gin.H{
 				"success": false,
-				"reason":  "",
+				"reason":  "Addresses and timestamps length does not match",
 			},
 		)
 		return
@@ -93,7 +95,15 @@ func (s *Server) UpdateUserInfo(c *gin.Context) {
 			})
 		}
 	}
+	log.Printf("user addresses: %v", userAddresses)
 	if len(userAddresses) == 0 {
+		c.JSON(
+			http.StatusOK,
+			gin.H{
+				"success": false,
+				"reason": fmt.Sprintf("userAddresses should not be empty"),
+			},
+		)
 		return
 	}
 

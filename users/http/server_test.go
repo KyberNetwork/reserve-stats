@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	host             = ":9000"
 	postgresHost     = "127.0.0.1:5432"
 	postgresUser     = "reserve_stats"
 	postgresPassword = "reserve_stats"
@@ -29,8 +30,10 @@ func connectToTestDB() *storage.UserDB {
 	)
 }
 
-func clearTestDB() {
-
+func tearDownDB(t *testing.T, storage *storage.UserDB) {
+	if err := storage.CloseDBConnection(); err != nil {
+		t.Fatalf("cannot teardown db connection")
+	}
 }
 
 func TestUserHTTPServer(t *testing.T) {
@@ -40,11 +43,8 @@ func TestUserHTTPServer(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	userStats := stats.NewUserStats(cmc, userStorage)
-	defer clearTestDB()
+	defer tearDownDB(t, userStorage)
 
-	// create new Server instance
-	//TODO: turn into variable
-	host := fmt.Sprintf(":%s", "9000")
 	s := NewServer(userStats, host)
 	s.register()
 

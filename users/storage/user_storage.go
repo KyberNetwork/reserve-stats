@@ -42,6 +42,11 @@ func NewDB(address, user, password, database string) *UserDB {
 	}
 }
 
+//CloseDBConnection close db connection and return error if any
+func (udb *UserDB) CloseDBConnection() error {
+	return udb.db.Close()
+}
+
 //StoreUserInfo store user info to persist in database
 func (udb *UserDB) StoreUserInfo(email string, addresses []common.UserAddress) error {
 	userModel := common.User{}

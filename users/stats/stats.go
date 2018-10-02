@@ -24,7 +24,7 @@ func (us UserStats) GetTxCapByAddress(addr string) (*big.Int, bool, error) {
 	kyced := true
 	usdCap = common.KycedCap().DailyLimit
 	if err != nil {
-		if err != pg.ErrNoRows {
+		if err == pg.ErrNoRows {
 			usdCap = common.NonKycedCap().TxLimit
 			kyced = false
 		} else {

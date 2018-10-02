@@ -1,14 +1,16 @@
 package app
 
 import (
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
 
 const (
-	modeFlag        = "mode"
-	developmentMode = "development"
-	productionMode  = "production"
+	modeFlag         = "mode"
+	developmentMode  = "development"
+	productionMode   = "production"
+	ethereumNodeFlag = "ethereum-node"
 )
 
 // NewApp creates a new cli App instance with common flags pre-loaded.
@@ -22,6 +24,19 @@ func NewApp() *cli.App {
 		},
 	}
 	return app
+}
+
+func NewEthereumNodeFlags(prefix string) cli.Flag {
+	return cli.StringFlag{
+		Name:   ethereumNodeFlag,
+		Usage:  "Ethereum Node URL",
+		EnvVar: prefix + "ETHEREUM_NODE",
+	}
+}
+
+func NewEthereumClientFromFlag(c *cli.Context) (*ethclient.Client, error) {
+	ethereumNodeURL := c.GlobalString(ethereumNodeFlag)
+	return ethclient.Dial(ethereumNodeURL)
 }
 
 // NewLogger creates a new logger instance.

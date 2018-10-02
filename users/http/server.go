@@ -13,6 +13,8 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
 	"go.uber.org/zap"
 )
 
@@ -64,6 +66,22 @@ func (s *Server) UpdateUserInfo(c *gin.Context) {
 	}
 	postForm := c.Request.Form
 	email := postForm.Get("user")
+
+	// validate email
+	err = validation.Validate(email,
+		validation.Required, // not empty
+		is.Email,            // is a valid email
+	)
+	if err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"success": false,
+				"reason":  "Email is not valid",
+			},
+		)
+		return
+	}
 
 	addresses := postForm.Get("addresses")
 

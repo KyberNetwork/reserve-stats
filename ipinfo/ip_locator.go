@@ -10,8 +10,6 @@ import (
 	"path"
 
 	"github.com/KyberNetwork/reserve-stats/util"
-	validation "github.com/go-ozzo/ozzo-validation"
-	is "github.com/go-ozzo/ozzo-validation/is"
 	geoip2 "github.com/oschwald/geoip2-golang"
 	"go.uber.org/zap"
 )
@@ -70,14 +68,9 @@ func NewLocator(sugar *zap.SugaredLogger) (*Locator, error) {
 
 // IPToCountry returns the country of given IP address.
 func (il *Locator) IPToCountry(ip string) (string, error) {
-	err := validation.Validate(ip, is.IP)
-	if err != nil {
-		il.sugar.Error(err)
-		return "", err
-	}
 	IPParsed := net.ParseIP(ip)
 	if IPParsed == nil {
-		return "", fmt.Errorf("invalid ip %s", ip)
+		return "", fmt.Errorf("%s is invalid ip", ip)
 	}
 	record, err := il.r.Country(IPParsed)
 	if err != nil {

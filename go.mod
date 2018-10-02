@@ -47,7 +47,7 @@ require (
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
-	gopkg.in/urfave/cli.v1 v1.20.0
+	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
 )
 
 replace github.com/ethereum/go-ethereum => github.com/favadi/go-ethereum v1.8.16-fork

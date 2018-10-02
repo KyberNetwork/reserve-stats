@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -40,7 +41,7 @@ func iplocator(c *cli.Context) error {
 		validation.Required,
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("--ip flags is required")
 	}
 
 	logger, err := app.NewLogger(c)

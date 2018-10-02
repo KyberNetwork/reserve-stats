@@ -7,6 +7,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
+// VersionedWrapper is the wrapper for wrapper contract, since there are two version of wrapper deployed on mainnet
 type VersionedWrapper struct {
 	WrapperContractV1 *Wrapper
 	WrapperContractV2 *Wrapper
@@ -24,6 +25,7 @@ const (
 	startingBlockV2 = 5926056
 )
 
+// NewVersionedWrapper create wrapper contract with 2 different versions inside
 func NewVersionedWrapper(client bind.ContractBackend) (*VersionedWrapper, error) {
 	wrapperContractV1, err := NewWrapper(wrapperAddrV1, client)
 	if err != nil {
@@ -39,6 +41,8 @@ func NewVersionedWrapper(client bind.ContractBackend) (*VersionedWrapper, error)
 	}, nil
 }
 
+// GetReserveRate call to the appropriate contract depends on block number
+// return reserveRate, SanityRate and error if occurs
 func (vw *VersionedWrapper) GetReserveRate(block uint64, rsvAddr ethereum.Address, srcs, dest []ethereum.Address) ([]*big.Int, []*big.Int, error) {
 	if block == 0 {
 		//Latest rate from latest block at V2 contract

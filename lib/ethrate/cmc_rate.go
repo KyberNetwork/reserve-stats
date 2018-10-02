@@ -1,4 +1,4 @@
-package tradelogs
+package ethrate
 
 import (
 	"encoding/json"
@@ -19,9 +19,9 @@ const (
 	cmcTopUSDPricingAPIEndpoint   = "https://api.coinmarketcap.com/v1/ticker/?convert=USD&limit=10"
 )
 
-// CoinCapRateResponse represents response from CoinMarketCap for digital
+// CMCRateResponse represents response from CoinMarketCap for digital
 // currency pricing in USD
-type CoinCapRateResponse []struct {
+type CMCRateResponse []struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Symbol   string `json:"symbol"`
@@ -29,8 +29,8 @@ type CoinCapRateResponse []struct {
 	PriceUSD string `json:"price_usd"`
 }
 
-// CMCEthUSDRate is a fetcher which fetch ETH pricing in USD from CoinMarketCap.
-type CMCEthUSDRate struct {
+// CMCRate is a fetcher which fetch ETH pricing in USD from CoinMarketCap.
+type CMCRate struct {
 	mu                *sync.RWMutex
 	cachedRates       [][]float64
 	currentCacheMonth uint64
@@ -70,14 +70,14 @@ func GetNextMonth(month, year int) (int, int) {
 }
 
 // GetUSDRate get the ETH price in USD at given timepoint
-func (cmcRate *CMCEthUSDRate) GetUSDRate(timepoint uint64) float64 {
+func (cmcRate *CMCRate) GetUSDRate(timepoint uint64) float64 {
 	if timepoint >= cmcRate.realtimeTimepoint {
 		return cmcRate.realtimeRate
 	}
 	return cmcRate.rateFromCache(timepoint)
 }
 
-func (cmcRate *CMCEthUSDRate) rateFromCache(timepoint uint64) float64 {
+func (cmcRate *CMCRate) rateFromCache(timepoint uint64) float64 {
 	cmcRate.mu.Lock()
 	defer cmcRate.mu.Unlock()
 
@@ -105,7 +105,7 @@ func (cmcRate *CMCEthUSDRate) rateFromCache(timepoint uint64) float64 {
 	return rate
 }
 
-func (cmcRate *CMCEthUSDRate) fetchRate(timepoint uint64) ([][]float64, error) {
+func (cmcRate *CMCRate) fetchRate(timepoint uint64) ([][]float64, error) {
 	t := time.Unix(int64(timepoint/1000), 0).UTC()
 	month, year := t.Month(), t.Year()
 	fromTime := GetTimeStamp(year, month, 1, 0, 0, 0, 0, time.UTC)
@@ -146,7 +146,7 @@ func findEthRate(ethRateLog [][]float64, timepoint uint64) (float64, error) {
 }
 
 // RunGetEthRate schedule to get rate each 10 minutes.
-func (cmcRate *CMCEthUSDRate) RunGetEthRate() {
+func (cmcRate *CMCRate) RunGetEthRate() {
 	tick := time.NewTicker(10 * time.Minute)
 	go func() {
 		for {
@@ -160,7 +160,7 @@ func (cmcRate *CMCEthUSDRate) RunGetEthRate() {
 }
 
 // FetchEthRate get current rate ETH vs USD from CoinMarketCap.
-func (cmcRate *CMCEthUSDRate) FetchEthRate() (err error) {
+func (cmcRate *CMCRate) FetchEthRate() (err error) {
 	resp, err := http.Get(cmcTopUSDPricingAPIEndpoint)
 	if err != nil {
 		return err
@@ -171,7 +171,7 @@ func (cmcRate *CMCEthUSDRate) FetchEthRate() (err error) {
 		}
 	}()
 	body, err := ioutil.ReadAll(resp.Body)
-	rateResponse := CoinCapRateResponse{}
+	rateResponse := CMCRateResponse{}
 	err = json.Unmarshal(body, &rateResponse)
 	if err != nil {
 		cmcRate.sugar.Infof("Getting eth-usd rate failed: %+v", err)
@@ -198,14 +198,14 @@ func (cmcRate *CMCEthUSDRate) FetchEthRate() (err error) {
 }
 
 // Run start a schedule to fetch data from CoinMarketCap
-func (cmcRate *CMCEthUSDRate) Run() {
+func (cmcRate *CMCRate) Run() {
 	// run real time fetcher
 	cmcRate.RunGetEthRate()
 }
 
-// NewCMCEthUSDRate fetch rate of ETH vs USD from CoinMarketCap
-func NewCMCEthUSDRate() *CMCEthUSDRate {
-	result := &CMCEthUSDRate{
+// NewCMCRate fetch rate of ETH vs USD from CoinMarketCap
+func NewCMCRate() *CMCRate {
+	result := &CMCRate{
 		mu: &sync.RWMutex{},
 	}
 	result.Run()

@@ -15,6 +15,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
 )
 
 const (
@@ -48,10 +49,10 @@ const (
 type TradeLogCrawler struct {
 	sugar     *zap.SugaredLogger
 	ethClient *ethclient.Client
-	ethRate   EthUSDRate
+	ethRate   ethrate.EthUSDRate
 }
 
-func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash) {
+func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash) {	
 	srcAddr := ethereum.BytesToAddress(data[0:32])
 	desAddr := ethereum.BytesToAddress(data[32:64])
 	srcAmount := ethereum.BytesToHash(data[64:96])
@@ -161,7 +162,7 @@ func calculateFiatAmount(tradeLog common.TradeLog, rate float64) common.TradeLog
 }
 
 // NewTradeLogCrawler create a new TradeLogCrawler instance.
-func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, ethRate EthUSDRate) (*TradeLogCrawler, error) {
+func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, ethRate ethrate.EthUSDRate) (*TradeLogCrawler, error) {
 	client, err := ethclient.Dial(nodeURL)
 	if err != nil {
 		return nil, err

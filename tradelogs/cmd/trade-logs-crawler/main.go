@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/urfave/cli"
-
-	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
+
+	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
+	"github.com/KyberNetwork/reserve-stats/tradelogs"
 )
 
 const (
@@ -96,7 +97,7 @@ func getTradeLogs(c *cli.Context) error {
 	crawler, err := tradelogs.NewTradeLogCrawler(
 		sugar,
 		nodeURL,
-		tradelogs.NewCMCEthUSDRate(),
+		ethrate.NewCMCRate(),
 	)
 	if err != nil {
 		return err

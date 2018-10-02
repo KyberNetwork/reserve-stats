@@ -1,4 +1,4 @@
-package tradelogs
+package ethrate
 
 // EthUSDRate contains method to get ETH/USD conversion rate.
 type EthUSDRate interface {

@@ -36,6 +36,8 @@ const (
 	networkAddr = "0x818E6FECD516Ecc3849DAf6845e3EC868087B755"
 	// address of bunner contract
 	burnerAddr = "0xed4f53268bfdFF39B36E8786247bA3A02Cf34B04"
+	// address of internal network contract
+	internalNetworkAddr = "0x91a502C678605fbCe581eae053319747482276b9"
 
 	ethDecimals int64  = 18
 	ethAddress  string = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
@@ -75,7 +77,7 @@ func logDataToBurnFeeParams(data []byte) (ethereum.Address, ethereum.Hash) {
 	return reserveAddr, burnFees
 }
 
-func updateTradeLogs(allLogs []common.TradeLog, logItem types.Log, ts uint64) ([]common.TradeLog, error) {
+func updateTradeLogs(allLogs []common.TradeLog, logItem types.Log, ts time.Time) ([]common.TradeLog, error) {
 	var (
 		tradeLog      common.TradeLog
 		updateLastLog = false
@@ -172,9 +174,10 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 	var result []common.TradeLog
 
 	addresses := []ethereum.Address{
-		ethereum.HexToAddress(pricingAddr), // pricing
-		ethereum.HexToAddress(networkAddr), // network
-		ethereum.HexToAddress(burnerAddr),  // network
+		ethereum.HexToAddress(pricingAddr),         // pricing
+		ethereum.HexToAddress(networkAddr),         // network
+		ethereum.HexToAddress(burnerAddr),          // burner
+		ethereum.HexToAddress(internalNetworkAddr), // internal network
 	}
 
 	topics := [][]ethereum.Hash{
@@ -229,7 +232,8 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 	}
 
 	for i, tradeLog := range result {
-		ethRate := crawler.ethRate.GetUSDRate(tradeLog.Timestamp / 1000000)
+		timepoint := uint64(tradeLog.Timestamp.UnixNano() / int64(time.Millisecond))
+		ethRate := crawler.ethRate.GetUSDRate(timepoint)
 		if ethRate != 0 {
 			result[i] = calculateFiatAmount(tradeLog, ethRate)
 		}
@@ -247,7 +251,7 @@ var CachedBlockHeader *types.Header
 // InterpretTimestamp returns timestamp from block number and transaction index.
 // It cached block number and block header to reduces the number of request
 // to node.
-func (crawler *TradeLogCrawler) InterpretTimestamp(blockno uint64, txindex uint) (uint64, error) {
+func (crawler *TradeLogCrawler) InterpretTimestamp(blockno uint64, txindex uint) (time.Time, error) {
 	timeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -260,7 +264,7 @@ func (crawler *TradeLogCrawler) InterpretTimestamp(blockno uint64, txindex uint)
 	}
 	if err != nil {
 		if block == nil {
-			return uint64(0), err
+			return time.Unix(0, 0), err
 		}
 
 		// error because parity and geth are not compatible in mix hash
@@ -269,8 +273,8 @@ func (crawler *TradeLogCrawler) InterpretTimestamp(blockno uint64, txindex uint)
 		CachedBlockHeader = block
 		err = nil
 	}
-	unixSecond := block.Time.Uint64()
-	unixNano := uint64(time.Unix(int64(unixSecond), 0).UnixNano())
-	result := unixNano + uint64(txindex)
-	return result, nil
+
+	unixSecond := block.Time.Int64()
+	unixNano := int64(txindex)
+	return time.Unix(unixSecond, unixNano), nil
 }

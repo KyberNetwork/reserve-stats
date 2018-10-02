@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/urfave/cli"
 	"github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
+	"github.com/urfave/cli"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
@@ -97,7 +97,7 @@ func getTradeLogs(c *cli.Context) error {
 	crawler, err := tradelogs.NewTradeLogCrawler(
 		sugar,
 		nodeURL,
-		ethrate.NewCMCRate(),
+		ethrate.NewCMCRate(sugar),
 	)
 	if err != nil {
 		return err

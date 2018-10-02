@@ -14,7 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
 
-	"github.com/KyberNetwork/reserve-stats/common"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 const (

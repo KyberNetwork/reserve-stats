@@ -10,7 +10,6 @@ import (
 	"path"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/util"
 	geoip2 "github.com/oschwald/geoip2-golang"
 	"go.uber.org/zap"
 )
@@ -29,7 +28,7 @@ func getGeoDBFile(sugar *zap.SugaredLogger, dbPath string) error {
 		return err
 	}
 	defer f.Close()
-	sugar.Debug("Begin download dbfile from url", url)
+	sugar.Debug("Begin download dbfile from url ", url)
 	client := &http.Client{Timeout: 5 * time.Minute}
 	resp, err := client.Get(url)
 	if err != nil {
@@ -42,7 +41,7 @@ func getGeoDBFile(sugar *zap.SugaredLogger, dbPath string) error {
 	}
 
 	_, err = io.Copy(f, r)
-	sugar.Debug("Finish download dbfile.")
+	sugar.Debug("Finish download dbfile to ", dbPath)
 	return err
 }
 
@@ -53,8 +52,8 @@ type Locator struct {
 }
 
 // NewLocator returns an instance of ipLocator.
-func NewLocator(sugar *zap.SugaredLogger) (*Locator, error) {
-	dbPath := path.Join(util.CurrentDir(), geoDBFile)
+func NewLocator(sugar *zap.SugaredLogger, dataDir string) (*Locator, error) {
+	dbPath := path.Join(dataDir, geoDBFile)
 	err := getGeoDBFile(sugar, dbPath)
 	if err != nil {
 		return nil, err

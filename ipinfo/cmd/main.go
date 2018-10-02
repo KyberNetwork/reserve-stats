@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	ipFlag = "ip"
+	ipFlag      = "ip"
+	dataDirFlag = "dataDir"
 )
 
 func main() {
@@ -27,6 +28,11 @@ func main() {
 		cli.StringFlag{
 			Name:  ipFlag,
 			Usage: "IP want to check",
+		},
+		cli.StringFlag{
+			Name:  dataDirFlag,
+			Usage: "directory to store the GeoLite2-Country.mmdb file",
+			Value: ".",
 		},
 	)
 
@@ -52,7 +58,7 @@ func locateIP(c *cli.Context) error {
 
 	sugar := logger.Sugar()
 
-	f, err := ipinfo.NewLocator(sugar)
+	f, err := ipinfo.NewLocator(sugar, c.String(dataDirFlag))
 	if err != nil {
 		return err
 	}

@@ -72,6 +72,17 @@ func TestUserHTTPServer(t *testing.T) {
 			assert:   httputil.ExpectSuccess,
 		},
 		{
+			msg:      "email is not valid",
+			endpoint: requestEndpoint,
+			method:   http.MethodPost,
+			data: map[string]string{
+				"user":       wrongUserEmail,
+				"addresses":  userAddresses,
+				"timestamps": userTimeStamp,
+			},
+			assert: httputil.ExpectBadRequest,
+		},
+		{
 			msg:      "update user addresses with wrong number of addresses",
 			endpoint: requestEndpoint,
 			method:   http.MethodPost,

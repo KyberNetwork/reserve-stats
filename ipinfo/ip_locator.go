@@ -20,11 +20,11 @@ const (
 )
 
 func getGeoDBFile(sugar *zap.SugaredLogger, dbPath string) error {
+	if _, err := os.Stat(dbPath); !os.IsNotExist(err) {
+		return nil
+	}
 	f, err := os.OpenFile(dbPath, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
 	if err != nil {
-		if !os.IsNotExist(err) {
-			return nil
-		}
 		return err
 	}
 	defer f.Close()

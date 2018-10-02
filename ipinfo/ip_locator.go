@@ -8,28 +8,30 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"time"
 
 	"github.com/KyberNetwork/reserve-stats/util"
 	geoip2 "github.com/oschwald/geoip2-golang"
 	"go.uber.org/zap"
 )
 
-const geoDBFile = "GeoLite2-Country.mmdb"
-const url = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz"
+const (
+	geoDBFile = "GeoLite2-Country.mmdb"
+	url       = "https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz"
+)
 
-func getGeoDBFile(dbPath string) error {
-	// if _, err := os.Stat(geoDBFile); !os.IsNotExist(err) {
-	// 	return nil
-	// }
+func getGeoDBFile(sugar *zap.SugaredLogger, dbPath string) error {
 	f, err := os.OpenFile(dbPath, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
-	defer f.Close()
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return nil
 		}
 		return err
 	}
-	resp, err := http.Get(url)
+	defer f.Close()
+	sugar.Debug("Begin download dbfile from url", url)
+	client := &http.Client{Timeout: 5 * time.Minute}
+	resp, err := client.Get(url)
 	if err != nil {
 		return err
 	}
@@ -40,6 +42,7 @@ func getGeoDBFile(dbPath string) error {
 	}
 
 	_, err = io.Copy(f, r)
+	sugar.Debug("Finish download dbfile.")
 	return err
 }
 
@@ -52,7 +55,7 @@ type Locator struct {
 // NewLocator returns an instance of ipLocator.
 func NewLocator(sugar *zap.SugaredLogger) (*Locator, error) {
 	dbPath := path.Join(util.CurrentDir(), geoDBFile)
-	err := getGeoDBFile(dbPath)
+	err := getGeoDBFile(sugar, dbPath)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +77,7 @@ func (il *Locator) IPToCountry(ip string) (string, error) {
 	}
 	record, err := il.r.Country(IPParsed)
 	if err != nil {
-		il.sugar.Infow("failed to query data from geo-database!")
+		il.sugar.Infow("failed to query data from geo-database!", "error", err)
 		return "", err
 	}
 

@@ -21,7 +21,7 @@ func main() {
 	app.Usage = "get countery of given IP address"
 	app.Version = "0.0.1"
 
-	app.Action = iplocator
+	app.Action = locateIP
 
 	app.Flags = append(app.Flags,
 		cli.StringFlag{
@@ -35,7 +35,7 @@ func main() {
 	}
 }
 
-func iplocator(c *cli.Context) error {
+func locateIP(c *cli.Context) error {
 	err := validation.Validate(
 		c.String(ipFlag),
 		validation.Required,

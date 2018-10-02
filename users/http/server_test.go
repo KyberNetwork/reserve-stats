@@ -61,7 +61,7 @@ func TestUserHTTPServer(t *testing.T) {
 		wrongNumberOfAddresses = "0xc9a658f87d7432ff897f31dce318f0856f66acb7-0x2ea6200a999f4c6c982be525f8dc294f14f4cb08-0x4e012a6445ba2a590b8b1ee4e95d03e345a0c2e5"
 		userTimeStamp          = "1538380670000-1538380682000"
 		queryAddress           = "0xc9a658f87d7432ff897f31dce318f0856f66acb7"
-		nonKycAddress = "0xb8df4cf4b7ad086cd5139a75033566164e41a0b4"
+		nonKycAddress          = "0xb8df4cf4b7ad086cd5139a75033566164e41a0b4"
 	)
 
 	var tests = []testCase{
@@ -93,33 +93,33 @@ func TestUserHTTPServer(t *testing.T) {
 		// 	assert: httputil.ExpectFailure,
 		// },
 		{
-			msg: "request malformed",
+			msg:      "request malformed",
 			endpoint: requestEndpoint,
-			method: http.MethodPost,
-			assert: httputil.ExpectFailure,
+			method:   http.MethodPost,
+			assert:   httputil.ExpectFailure,
 		},
 		{
-			msg: "update correct user addresses",
+			msg:      "update correct user addresses",
 			endpoint: requestEndpoint,
-			method: http.MethodPost,
+			method:   http.MethodPost,
 			data: map[string]string{
-				"user": userEmail,
-				"addresses": userAddresses,
+				"user":       userEmail,
+				"addresses":  userAddresses,
 				"timestamps": userTimeStamp,
 			},
 			assert: httputil.ExpectSuccess,
 		},
 		{
-			msg: "user is not kyced",
+			msg:      "user is not kyced",
 			endpoint: fmt.Sprintf("%s/%s", requestEndpoint, nonKycAddress),
-			method: http.MethodGet,
-			assert: httputil.ExpectNonKYC,
+			method:   http.MethodGet,
+			assert:   httputil.ExpectNonKYC,
 		},
 		{
-			msg: "user is kyced",
+			msg:      "user is kyced",
 			endpoint: fmt.Sprintf("%s/%s", requestEndpoint, queryAddress),
-			method: http.MethodGet,
-			assert: httputil.ExpectKYC,
+			method:   http.MethodGet,
+			assert:   httputil.ExpectKYC,
 		},
 	}
 

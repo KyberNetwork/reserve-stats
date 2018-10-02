@@ -1,18 +1,15 @@
 package main
 
 import (
-	"log"
 	"os"
 
+	kyberlib "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/crawler"
 	"github.com/KyberNetwork/reserve-stats/setting"
 	"github.com/ethereum/go-ethereum/ethclient"
-	cli "gopkg.in/urfave/cli.v1"
+	cli "github.com/urfave/cli"
+	"go.uber.org/zap"
 )
-
-func startService(c *cli.Context) error {
-	return nil
-}
 
 func newReserveCrawlerCli() *cli.App {
 	app := cli.NewApp()
@@ -54,12 +51,17 @@ func newReserveCrawlerCli() *cli.App {
 		if err != nil {
 			panic(err)
 		}
-		reserveRateCrawler, err := crawler.NewReserveRatesCrawler(addrs, client, sett)
+		logger, err := kyberlib.NewLogger(c)
+
+		if err != nil {
+			panic(err)
+		}
+		reserveRateCrawler, err := crawler.NewReserveRatesCrawler(addrs, client, sett, logger.Sugar())
 		if err != nil {
 			panic(err)
 		}
 		result := reserveRateCrawler.GetReserveRates(block)
-		log.Printf("result is %v", result)
+		logger.Info("rate result is", zap.Reflect("rates", result))
 		return nil
 	}
 	return app

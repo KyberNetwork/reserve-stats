@@ -1,7 +1,6 @@
 package ipinfo
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/KyberNetwork/reserve-stats/util"
@@ -29,11 +28,14 @@ func NewHTTPServer(sugar *zap.SugaredLogger, dataDir string) (*HTTPServer, error
 	}, nil
 }
 
+func (h *HTTPServer) register() {
+	h.r.GET("/ip/:ip", h.checkIPLocator)
+}
+
 // Run start HTTPServer
 func (h *HTTPServer) Run() error {
-	port := fmt.Sprintf(":%d", util.IPLocatorPort)
-	h.r.GET("/ip/:ip", h.checkIPLocator)
-	return h.r.Run(port)
+	h.register()
+	return h.r.Run(util.IPLocatorPort.GinPort())
 }
 
 func (h *HTTPServer) checkIPLocator(c *gin.Context) {

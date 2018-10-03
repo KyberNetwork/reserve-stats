@@ -9,18 +9,18 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-// TxTime is a helper to get transaction timestamp from block number and
-// block header, it has a cache for one block
+// TxTime is a helper to get transaction timestamp from block number.
+// It has a cache for one block.
 type TxTime struct {
 	cachedBlockNo     uint64            // cache 1 block number
 	cachedBlockHeader *types.Header     // cache 1 block header
 	EthClient         *ethclient.Client // eth client
 }
 
-// InterpretTimestamp returns timestamp from block number and transaction index.
+// InterpretTimestamp returns timestamp from block number.
 // It cached block number and block header to reduces the number of request
 // to node.
-func (txTime *TxTime) InterpretTimestamp(blockno uint64, txindex uint) (time.Time, error) {
+func (txTime *TxTime) InterpretTimestamp(blockno uint64) (time.Time, error) {
 	timeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -43,7 +43,5 @@ func (txTime *TxTime) InterpretTimestamp(blockno uint64, txindex uint) (time.Tim
 		err = nil
 	}
 
-	unixSecond := block.Time.Int64()
-	unixNano := int64(txindex)
-	return time.Unix(unixSecond, unixNano).UTC(), nil
+	return time.Unix(block.Time.Int64(), 0).UTC(), nil
 }

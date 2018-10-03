@@ -260,10 +260,7 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 			continue // Removed due to chain reorg
 		}
 
-		ts, err := crawler.txTime.InterpretTimestamp(
-			logItem.BlockNumber,
-			logItem.Index,
-		)
+		ts, err := crawler.txTime.InterpretTimestamp(logItem.BlockNumber)
 
 		if err != nil {
 			return result, err

@@ -6,7 +6,6 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/ipinfo"
 	"github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/go-ozzo/ozzo-validation"
 	"github.com/urfave/cli"
 )
 

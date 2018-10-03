@@ -1,20 +1,20 @@
 # Kyber Reserve Stat User Component
 
-# Build
+## Build
 
 ```shell
     cd cmd
     go build - v .
 ```
 
-# Run
+## Run
 
 ```
     cd cmd
     ./cmd --postgres_host=127.0.01:5432 --postgres_user=admin --postgres_password="" --postgres_database=user_storage
 ```
 
-## Available flags
+### Available flags
 
 **host**: where to connect to postgresql db, default is localhost: *127.0.0.1:5432*
 **user**: postgresql db user, default is empty

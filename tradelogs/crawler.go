@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
 
+	lib_blockchain "github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
@@ -50,6 +51,7 @@ type TradeLogCrawler struct {
 	sugar     *zap.SugaredLogger
 	ethClient *ethclient.Client
 	ethRate   ethrate.EthUSDRate
+	txTime    *lib_blockchain.TxTime
 }
 
 func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
@@ -214,7 +216,8 @@ func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, ethRate ethrat
 	if err != nil {
 		return nil, err
 	}
-	return &TradeLogCrawler{sugar, client, ethRate}, nil
+	txTime := &lib_blockchain.TxTime{EthClient: client}
+	return &TradeLogCrawler{sugar, client, ethRate, txTime}, nil
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.
@@ -257,7 +260,7 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 			continue // Removed due to chain reorg
 		}
 
-		ts, err := crawler.InterpretTimestamp(
+		ts, err := crawler.txTime.InterpretTimestamp(
 			logItem.BlockNumber,
 			logItem.Index,
 		)
@@ -286,41 +289,4 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 	}
 
 	return result, nil
-}
-
-// CachedBlockno is block number of a block which was cached it's header.
-var CachedBlockno uint64
-
-// CachedBlockHeader is the cached block header
-var CachedBlockHeader *types.Header
-
-// InterpretTimestamp returns timestamp from block number and transaction index.
-// It cached block number and block header to reduces the number of request
-// to node.
-func (crawler *TradeLogCrawler) InterpretTimestamp(blockno uint64, txindex uint) (time.Time, error) {
-	timeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	var block *types.Header
-	var err error
-	if CachedBlockno == blockno {
-		block = CachedBlockHeader
-	} else {
-		block, err = crawler.ethClient.HeaderByNumber(timeout, big.NewInt(int64(blockno)))
-	}
-	if err != nil {
-		if block == nil {
-			return time.Unix(0, 0), err
-		}
-
-		// error because parity and geth are not compatible in mix hash
-		// so we ignore it
-		CachedBlockno = blockno
-		CachedBlockHeader = block
-		err = nil
-	}
-
-	unixSecond := block.Time.Int64()
-	unixNano := int64(txindex)
-	return time.Unix(unixSecond, unixNano).UTC(), nil
 }

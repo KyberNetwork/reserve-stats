@@ -19,6 +19,7 @@ import (
 
 //Server struct to represent a http server service
 type Server struct {
+	sugar     *zap.SugaredLogger
 	userStats *stats.UserStats
 	r         *gin.Engine
 	host      string
@@ -192,17 +193,17 @@ func (s *Server) register() {
 func (s *Server) Run() {
 	s.register()
 	if err := s.r.Run(s.host); err != nil {
-		zap.S().Panic(err)
+		s.sugar.Panic(err)
 	}
 }
 
 //NewServer return new server instance
-func NewServer(userStats *stats.UserStats, host string) *Server {
+func NewServer(sugar *zap.SugaredLogger, userStats *stats.UserStats, host string) *Server {
 	r := gin.Default()
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 	corsConfig.MaxAge = 5 * time.Minute
 	r.Use(cors.New(corsConfig))
 
-	return &Server{userStats, r, host}
+	return &Server{sugar, userStats, r, host}
 }

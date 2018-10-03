@@ -4,11 +4,13 @@ import (
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/go-pg/pg"
 	"github.com/go-pg/pg/orm"
+	"go.uber.org/zap"
 )
 
 //UserDB is storage of user data
 type UserDB struct {
-	db *pg.DB
+	sugar *zap.SugaredLogger
+	db    *pg.DB
 }
 
 func createSchema(db *pg.DB) error {
@@ -26,7 +28,7 @@ func createSchema(db *pg.DB) error {
 }
 
 //NewDB open a new database connection
-func NewDB(address, user, password, database string) *UserDB {
+func NewDB(sugar *zap.SugaredLogger, address, user, password, database string) *UserDB {
 	db := pg.Connect(&pg.Options{
 		Addr:     address,
 		User:     user,
@@ -38,6 +40,7 @@ func NewDB(address, user, password, database string) *UserDB {
 		panic(err)
 	}
 	return &UserDB{
+		sugar,
 		db,
 	}
 }

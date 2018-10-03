@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"testing"
 	"time"
@@ -21,8 +22,9 @@ const (
 	postgresDatabase = "reserve_stats"
 )
 
-func connectToTestDB() *storage.UserDB {
+func connectToTestDB(sugar *zap.SugaredLogger) *storage.UserDB {
 	return storage.NewDB(
+		sugar,
 		postgresHost,
 		postgresUser,
 		postgresPassword,
@@ -37,15 +39,20 @@ func tearDownDB(t *testing.T, storage *storage.UserDB) {
 }
 
 func TestUserHTTPServer(t *testing.T) {
-	userStorage := connectToTestDB()
-	cmc := cmc.NewCMCEthUSDRate()
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		log.Fatal(err)
+	}
+	sugar := logger.Sugar()
+	userStorage := connectToTestDB(sugar)
+	cmc := cmc.NewCMCEthUSDRate(sugar)
 	// sleep so cmc fetcher can get rate from cmc
 	time.Sleep(1 * time.Second)
 
 	userStats := stats.NewUserStats(cmc, userStorage)
 	defer tearDownDB(t, userStorage)
 
-	s := NewServer(userStats, host)
+	s := NewServer(sugar, userStats, host)
 	s.register()
 
 	zap.S().Infof("Server instance: %+v", s)

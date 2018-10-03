@@ -37,6 +37,7 @@ github.com/ethereum/go-ethereum/crypto/secp256k1
 github.com/ethereum/go-ethereum/common/prque
 github.com/ethereum/go-ethereum/ethdb
 github.com/ethereum/go-ethereum/metrics
+<<<<<<< HEAD
 github.com/ethereum/go-ethereum/accounts
 # github.com/gin-contrib/cors v0.0.0-20181008113111-488de3ec974f
 github.com/gin-contrib/cors
@@ -54,6 +55,16 @@ github.com/gin-gonic/gin/render
 # github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
 github.com/go-ozzo/ozzo-validation
 github.com/go-ozzo/ozzo-validation/is
+=======
+github.com/ethereum/go-ethereum/p2p/netutil
+# github.com/go-pg/pg v6.15.0+incompatible
+github.com/go-pg/pg
+github.com/go-pg/pg/internal
+github.com/go-pg/pg/internal/pool
+github.com/go-pg/pg/orm
+github.com/go-pg/pg/types
+github.com/go-pg/pg/internal/parser
+>>>>>>> 5f0c5d1... update vendor
 # github.com/go-stack/stack v1.8.0
 github.com/go-stack/stack
 # github.com/golang/protobuf v1.2.0
@@ -62,6 +73,7 @@ github.com/golang/protobuf/proto
 github.com/golang/snappy
 # github.com/google/uuid v1.0.0
 github.com/google/uuid
+<<<<<<< HEAD
 # github.com/influxdata/influxdb v1.6.3
 github.com/influxdata/influxdb/client/v2
 github.com/influxdata/influxdb/models
@@ -84,6 +96,10 @@ github.com/modern-go/reflect2
 github.com/oschwald/geoip2-golang
 # github.com/oschwald/maxminddb-golang v1.3.0
 github.com/oschwald/maxminddb-golang
+=======
+# github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a
+github.com/jinzhu/inflection
+>>>>>>> 5f0c5d1... update vendor
 # github.com/pborman/uuid v1.2.0
 github.com/pborman/uuid
 # github.com/pmezard/go-difflib v1.0.0
@@ -112,6 +128,8 @@ github.com/syndtr/goleveldb/leveldb/table
 github.com/ugorji/go/codec
 # github.com/urfave/cli v1.20.0
 github.com/urfave/cli
+# github.com/vmihailenco/sasl v0.0.0-20180925064641-2f13c189728a
+github.com/vmihailenco/sasl
 # go.uber.org/atomic v1.3.2
 go.uber.org/atomic
 # go.uber.org/multierr v1.1.0

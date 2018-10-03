@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/KyberNetwork/reserve-stats/lib/utils"
 	"github.com/KyberNetwork/reserve-stats/users/cmc"
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
@@ -31,14 +32,14 @@ func (us UserStats) GetTxCapByAddress(addr string) (*big.Int, bool, error) {
 			return nil, false, err
 		}
 	}
-	timepoint := common.GetTimepoint()
+	timepoint := utils.GetTimepoint()
 	rate := us.cmcEthUSDRate.GetUSDRate(timepoint)
 	var txLimit *big.Int
 	if rate == 0 {
 		return txLimit, kyced, errors.New("cannot get eth usd rate from cmc")
 	}
 	ethLimit := usdCap / rate
-	txLimit = common.EthToWei(ethLimit)
+	txLimit = utils.EthToWei(ethLimit)
 	return txLimit, kyced, nil
 }
 

@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/users/common"
+	"github.com/KyberNetwork/reserve-stats/lib/utils"
 )
 
 const (
@@ -167,7 +167,7 @@ func (cmc *EthUSDRate) FetchEthRate() (err error) {
 				if cmc.realtimeRate == 0 {
 					// set realtimeTimepoint to the timepoint that realtime rate is updated for the
 					// first time
-					cmc.realtimeTimepoint = common.GetTimepoint()
+					cmc.realtimeTimepoint = utils.GetTimepoint()
 				}
 				cmc.realtimeRate = newrate
 				return nil

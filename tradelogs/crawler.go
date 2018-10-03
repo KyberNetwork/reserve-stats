@@ -14,7 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
 
-	lib_blockchain "github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
@@ -51,68 +51,64 @@ type TradeLogCrawler struct {
 	sugar     *zap.SugaredLogger
 	ethClient *ethclient.Client
 	ethRate   ethrate.EthUSDRate
-	txTime    *lib_blockchain.TxTime
+	txTime    *blockchain.TxTime
 }
 
 func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
 	var srcAddr, desAddr ethereum.Address
 	var srcAmount, desAmount ethereum.Hash
-	var err error
 
 	if len(data) != 128 {
-		err = errors.New("invalid trade data")
-	} else {
-		srcAddr = ethereum.BytesToAddress(data[0:32])
-		desAddr = ethereum.BytesToAddress(data[32:64])
-		srcAmount = ethereum.BytesToHash(data[64:96])
-		desAmount = ethereum.BytesToHash(data[96:128])
+		err := errors.New("invalid trade data")
+		return srcAddr, desAddr, srcAmount, desAmount, err
 	}
 
-	return srcAddr, desAddr, srcAmount, desAmount, err
+	srcAddr = ethereum.BytesToAddress(data[0:32])
+	desAddr = ethereum.BytesToAddress(data[32:64])
+	srcAmount = ethereum.BytesToHash(data[64:96])
+	desAmount = ethereum.BytesToHash(data[96:128])
+	return srcAddr, desAddr, srcAmount, desAmount, nil
 }
 
 func logDataToEtherReceivalParams(data []byte) (ethereum.Hash, error) {
 	var amount ethereum.Hash
-	var err error
 
 	if len(data) != 32 {
-		err = errors.New("invalid eth receival data")
-	} else {
-		amount = ethereum.BytesToHash(data[0:32])
+		err := errors.New("invalid eth receival data")
+		return amount, err
 	}
 
-	return amount, err
+	amount = ethereum.BytesToHash(data[0:32])
+	return amount, nil
 }
 
 func logDataToFeeWalletParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, error) {
 	var reserveAddr, walletAddr ethereum.Address
 	var walletFee ethereum.Hash
-	var err error
 
 	if len(data) != 96 {
-		err = errors.New("invalid fee wallet data")
-	} else {
-		reserveAddr = ethereum.BytesToAddress(data[0:32])
-		walletAddr = ethereum.BytesToAddress(data[32:64])
-		walletFee = ethereum.BytesToHash(data[64:96])
+		err := errors.New("invalid fee wallet data")
+		return reserveAddr, walletAddr, walletFee, err
 	}
 
-	return reserveAddr, walletAddr, walletFee, err
+	reserveAddr = ethereum.BytesToAddress(data[0:32])
+	walletAddr = ethereum.BytesToAddress(data[32:64])
+	walletFee = ethereum.BytesToHash(data[64:96])
+	return reserveAddr, walletAddr, walletFee, nil
 }
 
 func logDataToBurnFeeParams(data []byte) (ethereum.Address, ethereum.Hash, error) {
 	var reserveAddr ethereum.Address
 	var burnFees ethereum.Hash
-	var err error
 
 	if len(data) != 64 {
-		err = errors.New("invalid burn fee data")
-	} else {
-		reserveAddr = ethereum.BytesToAddress(data[0:32])
-		burnFees = ethereum.BytesToHash(data[32:64])
+		err := errors.New("invalid burn fee data")
+		return reserveAddr, burnFees, err
 	}
 
-	return reserveAddr, burnFees, err
+	reserveAddr = ethereum.BytesToAddress(data[0:32])
+	burnFees = ethereum.BytesToHash(data[32:64])
+	return reserveAddr, burnFees, nil
 }
 
 func updateTradeLogs(allLogs []common.TradeLog, logItem types.Log, ts time.Time) ([]common.TradeLog, error) {
@@ -216,7 +212,10 @@ func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, ethRate ethrat
 	if err != nil {
 		return nil, err
 	}
-	txTime := &lib_blockchain.TxTime{EthClient: client}
+	txTime, err := blockchain.NewTxTime(nodeURL)
+	if err != nil {
+		return nil, err
+	}
 	return &TradeLogCrawler{sugar, client, ethRate, txTime}, nil
 }
 

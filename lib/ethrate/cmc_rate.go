@@ -163,15 +163,13 @@ func (cmcRate *CMCRate) FetchEthRate() (err error) {
 				return err
 			}
 
-			if cmcRate.realtimeRate == 0 {
-				// set realtimeTimepoint to the timepoint that realtime rate is updated for the
-				// first time
-				cmcRate.realtimeTimepoint = time.Now()
-			}
+			cmcRate.realtimeTimepoint = time.Now()
 			cmcRate.realtimeRate = newrate
+
 			return nil
 		}
 	}
+
 	return nil
 }
 

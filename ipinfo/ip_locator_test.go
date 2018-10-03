@@ -2,6 +2,7 @@ package ipinfo
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"go.uber.org/zap"
@@ -16,6 +17,7 @@ func createIPLocator() (*Locator, error) {
 
 //TestValidIP test when input is a valid IP of US
 func TestValidIP(t *testing.T) {
+	os.Remove("GeoLite2-Country.mmdb")
 	l, err := createIPLocator()
 	if err != nil {
 		t.Errorf(err.Error())

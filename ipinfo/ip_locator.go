@@ -31,7 +31,7 @@ func getGeoDBFile(sugar *zap.SugaredLogger, dbPath string) error {
 	}
 	defer f.Close()
 
-	sugar.Debugw("begin downloading db file from url ", "uwl", url)
+	sugar.Debugw("begin downloading db file from url", "url", url)
 	client := &http.Client{Timeout: timeout}
 	resp, err := client.Get(url)
 	if err != nil {
@@ -44,7 +44,7 @@ func getGeoDBFile(sugar *zap.SugaredLogger, dbPath string) error {
 	}
 
 	_, err = io.Copy(f, r)
-	sugar.Debugw("finished downloading db file to ", "db_path", dbPath)
+	sugar.Debugw("finished downloading db file to", "db_path", dbPath)
 	return err
 }
 

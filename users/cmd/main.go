@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/users/cmc"
 	"github.com/KyberNetwork/reserve-stats/users/http"
 	"github.com/KyberNetwork/reserve-stats/users/stats"
@@ -13,16 +14,15 @@ import (
 )
 
 const (
-	servePort    = 9000
 	hostFlag     = "postgres_host"
 	userFlag     = "postgres_user"
 	passwordFlag = "postgres_password"
 	databaseFlag = "postgres_database"
+	bindFlag     = "bind"
 )
 
 func configLog(stdoutLog bool) {
 	logConfig := zap.NewDevelopmentConfig()
-	//TODO: if stdout true write log to stdout and file else
 	if stdoutLog {
 		logConfig.OutputPaths = []string{"stdout"}
 	}
@@ -35,13 +35,13 @@ func configLog(stdoutLog bool) {
 
 func main() {
 	configLog(true)
-	app := cli.NewApp()
+	app := app.NewApp()
 	app.Name = "User stat module"
 	app.Usage = "Store and return user stat information"
 	app.Action = run
 	app.Version = "0.0.1"
 
-	app.Flags = []cli.Flag{
+	app.Flags = append(app.Flags,
 		cli.StringFlag{
 			Name:   hostFlag,
 			Usage:  "Postgresql host to connect",
@@ -56,17 +56,17 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   passwordFlag,
-			Usage:  "",
+			Usage:  "Postgresql password to connect",
 			EnvVar: "POSTGRES_PASSWORD",
 			Value:  "",
 		},
 		cli.StringFlag{
 			Name:   databaseFlag,
-			Usage:  "",
+			Usage:  "Postgres database to connect",
 			EnvVar: "POSTGRES_DATABASE",
 			Value:  "",
 		},
-	}
+	)
 
 	if err := app.Run(os.Args); err != nil {
 		zap.S().Fatal(err)
@@ -90,6 +90,7 @@ func run(c *cli.Context) error {
 	userStats := stats.NewUserStats(cmc, userDB)
 
 	// run http server
+	servePort := c.Int(bindFlag)
 	host := fmt.Sprintf(":%d", servePort)
 	server := http.NewServer(userStats, host)
 	server.Run()

@@ -2,7 +2,6 @@ package http
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -32,10 +31,9 @@ func (s *Server) GetUserInfo(c *gin.Context) {
 	if err != nil {
 		zap.S().Errorf("Cannot get user info: %+v", err)
 		c.JSON(
-			http.StatusOK,
+			http.StatusInternalServerError,
 			gin.H{
-				"success": false,
-				"reason":  fmt.Sprintf("Cannot get user info: %s", err.Error()),
+				"error": fmt.Sprintf("Cannot get user info: %s", err.Error()),
 			},
 		)
 		return
@@ -43,32 +41,18 @@ func (s *Server) GetUserInfo(c *gin.Context) {
 	c.JSON(
 		http.StatusOK,
 		gin.H{
-			"success": true,
-			"data":    txLimit,
-			"kyced":   kyced,
+			"data":  txLimit,
+			"kyced": kyced,
 		},
 	)
 }
 
-//UpdateUserInfo update info of an user
-func (s *Server) UpdateUserInfo(c *gin.Context) {
-	err := c.Request.ParseForm()
-	log.Printf("Request: %+v", c.Request)
-	if err != nil {
-		c.JSON(
-			http.StatusOK,
-			gin.H{
-				"success": false,
-				"reason":  fmt.Sprintf("Request malformed: %s", err.Error()),
-			},
-		)
-		return
-	}
+func getUserField(c *gin.Context) (string, error) {
 	postForm := c.Request.Form
 	email := postForm.Get("user")
 
 	// validate email
-	err = validation.Validate(email,
+	err := validation.Validate(email,
 		validation.Required, // not empty
 		is.Email,            // is a valid email
 	)
@@ -76,50 +60,109 @@ func (s *Server) UpdateUserInfo(c *gin.Context) {
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
-				"success": false,
-				"reason":  "Email is not valid",
+				"reason": fmt.Sprintf("Email is not valid: %s", err.Error()),
+			},
+		)
+		return "", err
+	}
+	return email, nil
+}
+
+func getAddresses(c *gin.Context) ([]string, error) {
+	var addresses []string
+	addrs := c.Request.Form.Get("addresses")
+	if err := validation.Validate(addrs, validation.Required); err != nil {
+		return addresses, err
+	}
+	addresses = strings.Split(addrs, "-")
+	for _, addr := range addresses {
+		a := ethereum.HexToAddress(addr)
+		if a.Big().Cmp(ethereum.Big0) == 0 {
+			return addresses, fmt.Errorf("address %s is not valid", addr)
+		}
+	}
+	return addresses, nil
+}
+
+func getTimestamps(c *gin.Context) ([]time.Time, error) {
+	times := []time.Time{}
+	timestamps := c.Request.Form.Get("timestamps")
+	if err := validation.Validate(timestamps, validation.Required); err != nil {
+		return times, err
+	}
+	timesArr := strings.Split(timestamps, "-")
+	for _, t := range timesArr {
+		timeInt, err := strconv.ParseInt(t, 10, 64)
+		// convert to second
+		timeInt = timeInt / 1000
+		if err != nil {
+			return times, err
+		}
+		nativeTime := time.Unix(timeInt, 0)
+		times = append(times, nativeTime)
+	}
+	return times, nil
+}
+
+//UpdateUserInfo update info of an user
+func (s *Server) UpdateUserInfo(c *gin.Context) {
+	err := c.Request.ParseForm()
+	if err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": fmt.Sprintf("Request malformed: %s", err.Error()),
+			},
+		)
+		return
+	}
+	email, err := getUserField(c)
+	if err != nil {
+		return
+	}
+	addresses, err := getAddresses(c)
+	if err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": fmt.Sprintf("addresses error: %s", err.Error()),
 			},
 		)
 		return
 	}
 
-	addresses := postForm.Get("addresses")
-
-	times := postForm.Get("timestamps")
-
-	addrsStr := strings.Split(addresses, "-")
-	timesStr := strings.Split(times, "-")
-	if len(addrsStr) != len(timesStr) {
+	times, err := getTimestamps(c)
+	if err != nil {
 		c.JSON(
-			http.StatusOK,
+			http.StatusBadRequest,
 			gin.H{
-				"success": false,
-				"reason":  "Addresses and timestamps length does not match",
+				"error": fmt.Sprintf("timestamps error: %s", err.Error()),
+			},
+		)
+		return
+	}
+
+	if len(addresses) != len(times) {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": "Addresses and timestamps length does not match",
 			},
 		)
 		return
 	}
 	userAddresses := []common.UserAddress{}
-	for i, addr := range addrsStr {
-		var (
-			t uint64
-			a = ethereum.HexToAddress(addr)
-		)
-		t, err = strconv.ParseUint(timesStr[i], 10, 64)
-		if a.Big().Cmp(ethereum.Big0) != 0 && err == nil {
-			userAddresses = append(userAddresses, common.UserAddress{
-				Address:   addr,
-				Timestamp: t,
-			})
-		}
+	for i, addr := range addresses {
+		userAddresses = append(userAddresses, common.UserAddress{
+			Address:   addr,
+			Timestamp: times[i],
+		})
 	}
-	log.Printf("user addresses: %v", userAddresses)
 	if len(userAddresses) == 0 {
 		c.JSON(
-			http.StatusOK,
+			http.StatusBadRequest,
 			gin.H{
-				"success": false,
-				"reason":  fmt.Sprintf("userAddresses should not be empty"),
+				"error": fmt.Sprintf("userAddresses should not be empty"),
 			},
 		)
 		return
@@ -127,19 +170,16 @@ func (s *Server) UpdateUserInfo(c *gin.Context) {
 
 	if err := s.userStats.StoreUserInfo(email, userAddresses); err != nil {
 		c.JSON(
-			http.StatusOK,
+			http.StatusInternalServerError,
 			gin.H{
-				"success": false,
-				"reason":  fmt.Sprintf("Cannot store user info: %s", err.Error()),
+				"error": fmt.Sprintf("Cannot store user info: %s", err.Error()),
 			},
 		)
 		return
 	}
 	c.JSON(
 		http.StatusOK,
-		gin.H{
-			"success": true,
-		},
+		gin.H{},
 	)
 }
 
@@ -160,7 +200,6 @@ func (s *Server) Run() {
 func NewServer(userStats *stats.UserStats, host string) *Server {
 	r := gin.Default()
 	corsConfig := cors.DefaultConfig()
-	// corsConfig.AddAllowHeaders("signed")
 	corsConfig.AllowAllOrigins = true
 	corsConfig.MaxAge = 5 * time.Minute
 	r.Use(cors.New(corsConfig))

@@ -91,7 +91,7 @@ func TestUserHTTPServer(t *testing.T) {
 				"addresses":  wrongNumberOfAddresses,
 				"timestamps": userTimeStamp,
 			},
-			assert: httputil.ExpectFailure,
+			assert: httputil.ExpectBadRequest,
 		},
 		// { msg:      "wrong user addresses",
 		// 	endpoint: requestEndpoint,
@@ -107,7 +107,7 @@ func TestUserHTTPServer(t *testing.T) {
 			msg:      "request malformed",
 			endpoint: requestEndpoint,
 			method:   http.MethodPost,
-			assert:   httputil.ExpectFailure,
+			assert:   httputil.ExpectBadRequest,
 		},
 		{
 			msg:      "update correct user addresses",

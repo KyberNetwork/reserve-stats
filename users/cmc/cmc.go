@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/utils"
+	"go.uber.org/zap"
 )
 
 const (
@@ -29,6 +30,7 @@ type CoinCapRateResponse []struct {
 
 //EthUSDRate represent the rate from cmc
 type EthUSDRate struct {
+	sugar             *zap.SugaredLogger
 	mu                *sync.RWMutex
 	cachedRates       [][]float64
 	currentCacheMonth uint64
@@ -79,9 +81,9 @@ func (cmc *EthUSDRate) rateFromCache(timepoint uint64) float64 {
 	defer cmc.mu.Unlock()
 	monthTimeStamp := GetMonthTimestamp(timepoint)
 	if monthTimeStamp != cmc.currentCacheMonth {
-		ethRates, err := fetchRate(timepoint)
+		ethRates, err := fetchRate(timepoint, cmc.sugar)
 		if err != nil {
-			log.Println("Cannot get rate from coinmarketcap")
+			cmc.sugar.Error("Cannot get rate from coinmarketcap")
 			return cmc.realtimeRate
 		}
 		rate, err := findEthRate(ethRates, timepoint)
@@ -100,7 +102,7 @@ func (cmc *EthUSDRate) rateFromCache(timepoint uint64) float64 {
 	return rate
 }
 
-func fetchRate(timepoint uint64) ([][]float64, error) {
+func fetchRate(timepoint uint64, sugar *zap.SugaredLogger) ([][]float64, error) {
 	t := time.Unix(int64(timepoint/1000), 0).UTC()
 	month, year := t.Month(), t.Year()
 	fromTime := GetTimestamp(year, month, 1, 0, 0, 0, 0, time.UTC)
@@ -113,7 +115,7 @@ func fetchRate(timepoint uint64) ([][]float64, error) {
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			log.Printf("Response body close error: %s", cErr.Error())
+			sugar.Errorf("Response body close error: %s", cErr.Error())
 		}
 	}()
 	body, err := ioutil.ReadAll(resp.Body)
@@ -148,7 +150,7 @@ func (cmc *EthUSDRate) FetchEthRate() (err error) {
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			log.Printf("Response body close error: %s", cErr.Error())
+			cmc.sugar.Errorf("Response body close error: %s", cErr.Error())
 		}
 	}()
 	body, err := ioutil.ReadAll(resp.Body)
@@ -161,7 +163,7 @@ func (cmc *EthUSDRate) FetchEthRate() (err error) {
 			if rate.Symbol == "ETH" {
 				newrate, err := strconv.ParseFloat(rate.PriceUSD, 64)
 				if err != nil {
-					log.Printf("Cannot get usd rate: %s", err.Error())
+					cmc.sugar.Errorf("Cannot get usd rate: %s", err.Error())
 					return err
 				}
 				if cmc.realtimeRate == 0 {
@@ -184,7 +186,7 @@ func (cmc *EthUSDRate) Run() {
 		for {
 			err := cmc.FetchEthRate()
 			if err != nil {
-				log.Println(err)
+				cmc.sugar.Error(err)
 			}
 			<-tick.C
 		}
@@ -192,9 +194,10 @@ func (cmc *EthUSDRate) Run() {
 }
 
 //NewCMCEthUSDRate return new instance for cmc fetcher
-func NewCMCEthUSDRate() *EthUSDRate {
+func NewCMCEthUSDRate(sugar *zap.SugaredLogger) *EthUSDRate {
 	result := &EthUSDRate{
-		mu: &sync.RWMutex{},
+		sugar: sugar,
+		mu:    &sync.RWMutex{},
 	}
 	result.Run()
 	return result

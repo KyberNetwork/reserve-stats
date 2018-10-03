@@ -446,6 +446,7 @@ type MissingFielder interface {
 	CodecMissingFields() map[string]interface{}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	CodecMissingFields() []MissingFieldPair
 >>>>>>> 34e4768... init modules
@@ -454,6 +455,8 @@ type MissingFielder interface {
 =======
 >>>>>>> 73d1cd9... update vendor
 >>>>>>> 4c22446... update vendor
+=======
+>>>>>>> ea57eea... update logger
 }
 
 // MapBySlice is a tag interface that denotes wrapped slice should encode as a map in the stream.

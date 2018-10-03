@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/KyberNetwork/reserve-stats/lib/app"
@@ -10,7 +11,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/users/stats"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 	"github.com/urfave/cli"
-	"go.uber.org/zap"
 )
 
 const (
@@ -21,20 +21,7 @@ const (
 	bindFlag     = "bind"
 )
 
-func configLog(stdoutLog bool) {
-	logConfig := zap.NewDevelopmentConfig()
-	if stdoutLog {
-		logConfig.OutputPaths = []string{"stdout"}
-	}
-	logger, err := logConfig.Build()
-	if err != nil {
-		zap.S().Error("Cannot init zap logger")
-	}
-	zap.ReplaceGlobals(logger)
-}
-
 func main() {
-	configLog(true)
 	app := app.NewApp()
 	app.Name = "User stat module"
 	app.Usage = "Store and return user stat information"
@@ -45,40 +32,47 @@ func main() {
 		cli.StringFlag{
 			Name:   hostFlag,
 			Usage:  "Postgresql host to connect",
-			EnvVar: "POSTGRES_HOST",
+			EnvVar: "USER_POSTGRES_HOST",
 			Value:  "127.0.0.1:5432",
 		},
 		cli.StringFlag{
 			Name:   userFlag,
 			Usage:  "Postgresql user to connect",
-			EnvVar: "POSTGRES_USER",
+			EnvVar: "USER_POSTGRES_USER",
 			Value:  "",
 		},
 		cli.StringFlag{
 			Name:   passwordFlag,
 			Usage:  "Postgresql password to connect",
-			EnvVar: "POSTGRES_PASSWORD",
+			EnvVar: "USER_POSTGRES_PASSWORD",
 			Value:  "",
 		},
 		cli.StringFlag{
 			Name:   databaseFlag,
 			Usage:  "Postgres database to connect",
-			EnvVar: "POSTGRES_DATABASE",
+			EnvVar: "USER_POSTGRES_DATABASE",
 			Value:  "",
 		},
 	)
 
 	if err := app.Run(os.Args); err != nil {
-		zap.S().Fatal(err)
+		log.Fatal(err)
 	}
 
 }
 
 func run(c *cli.Context) error {
-	zap.S().Info("Run user module")
+	logger, err := app.NewLogger(c)
+	if err != nil {
+		return err
+	}
+	defer logger.Sync()
+
+	sugar := logger.Sugar()
+	sugar.Info("Run user module")
 	// init storage
-	zap.S().Infof("Postgresql address: %s", c.String(hostFlag))
 	userDB := storage.NewDB(
+		sugar,
 		c.String(hostFlag),
 		c.String(userFlag),
 		c.String(passwordFlag),
@@ -86,13 +80,13 @@ func run(c *cli.Context) error {
 	)
 
 	// init stats
-	cmc := cmc.NewCMCEthUSDRate()
+	cmc := cmc.NewCMCEthUSDRate(sugar)
 	userStats := stats.NewUserStats(cmc, userDB)
 
 	// run http server
 	servePort := c.Int(bindFlag)
 	host := fmt.Sprintf(":%d", servePort)
-	server := http.NewServer(userStats, host)
+	server := http.NewServer(sugar, userStats, host)
 	server.Run()
 	return nil
 }

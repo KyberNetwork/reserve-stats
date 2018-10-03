@@ -50,13 +50,11 @@ response: Return user info
 POST http://localhost:9000/users
 Content-Type: Application/x-www-form-urlencoded
 
-user=halink0803@gmail.com&addresses=0x829bd824b016326a401d083b33d092293333a830-0xc499ae5806b7888aa3c539b3be7a691e83908a04&timestamps=1538020234000-1538020242000
+user=test_user@gmail.com&addresses=0x829bd824b016326a401d083b33d092293333a830-0xc499ae5806b7888aa3c539b3be7a691e83908a04&timestamps=1538020234000-1538020242000
 ```
 
 Sample response:
 
-```json
-{
-    "success": true
-}
+```http
+http code: 200
 ```

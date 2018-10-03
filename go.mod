@@ -1,7 +1,7 @@
 module github.com/KyberNetwork/reserve-stats
 
 require (
-	github.com/KyberNetwork/reserve-data v0.1.0
+	github.com/KyberNetwork/reserve-data v0.1.0 // indirect
 	github.com/aristanetworks/goarista v0.0.0-20180907105523-ff33da284e76 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
 	github.com/btcsuite/btcd v0.0.0-20180924021209-2a560b2036be // indirect
@@ -32,13 +32,6 @@ require (
 	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/ethereum/go-ethereum v1.8.16
 	github.com/fjl/memsize v0.0.0-20180427083637-f6d5545993d6 // indirect
-	github.com/gin-contrib/cors v0.0.0-20180922014233-214f318e72cc
-	github.com/aristanetworks/goarista v0.0.0-20180907105523-ff33da284e76 // indirect
-	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
-	github.com/btcsuite/btcd v0.0.0-20180924021209-2a560b2036be // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/deckarep/golang-set v1.7.1 // indirect
-	github.com/ethereum/go-ethereum v1.8.16
 	github.com/gin-contrib/cors v0.0.0-20180926132136-4f98e8b8e930
 	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
 	github.com/gin-gonic/gin v1.3.0
@@ -52,6 +45,8 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/onsi/gomega v1.4.2 // indirect
+	github.com/oschwald/geoip2-golang v1.2.1
+	github.com/oschwald/maxminddb-golang v1.3.0 // indirect
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/pkg/errors v0.8.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -65,15 +60,6 @@ require (
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
-	golang.org/x/crypto v0.0.0-20180910181607-0e37d006457b // indirect
-	golang.org/x/net v0.0.0-20180926154720-4dfa2610cdf3 // indirect
-	golang.org/x/tools v0.0.0-20180926203008-ef4a2a23bb35 // indirect
-	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
-	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
-	golang.org/x/net v0.0.0-20180925072008-f04abc6bdfa7 // indirect
-	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f // indirect
-	golang.org/x/sys v0.0.0-20180925112736-b09afc3d579e // indirect
-	golang.org/x/tools v0.0.0-20180926012507-d5fdb01c2f8f // indirect
 	golang.org/x/crypto v0.0.0-20180927165925-5295e8364332 // indirect
 	golang.org/x/net v0.0.0-20180926154720-4dfa2610cdf3 // indirect
 	golang.org/x/sys v0.0.0-20180927150500-dad3d9fb7b6e // indirect

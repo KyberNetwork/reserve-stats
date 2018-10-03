@@ -444,10 +444,6 @@ type MissingFielder interface {
 
 	// CodecMissingFields returns the set of fields which are not struct fields
 	CodecMissingFields() map[string]interface{}
-<<<<<<< HEAD
-	CodecMissingFields() []MissingFieldPair
-=======
->>>>>>> 73d1cd9... update vendor
 }
 
 // MapBySlice is a tag interface that denotes wrapped slice should encode as a map in the stream.

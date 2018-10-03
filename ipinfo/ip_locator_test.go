@@ -7,16 +7,19 @@ import (
 	"go.uber.org/zap"
 )
 
-func createIPLocator() (*Locator, error) {
-	logger, _ := zap.NewDevelopment()
+func newTestLocator() (*Locator, error) {
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		return nil, err
+	}
 	defer logger.Sync()
 	sugar := logger.Sugar()
-	return NewLocator(sugar, "test/")
+	return NewLocator(sugar, "testdata")
 }
 
 //TestValidIP test when input is a valid IP of US
 func TestValidIP(t *testing.T) {
-	l, err := createIPLocator()
+	l, err := newTestLocator()
 	if err != nil {
 		t.Error("Could not create Locator", "error", err.Error())
 	}
@@ -32,7 +35,7 @@ func TestValidIP(t *testing.T) {
 
 //TestValidIP test when input is an invalid IP
 func TestInvalidIP(t *testing.T) {
-	l, err := createIPLocator()
+	l, err := newTestLocator()
 	if err != nil {
 		t.Error("Could not create Locator", "error", err.Error())
 	}
@@ -45,7 +48,7 @@ func TestInvalidIP(t *testing.T) {
 
 //TestNotFoundIP test when input ip could not be locate
 func TestNotFoundIP(t *testing.T) {
-	l, err := createIPLocator()
+	l, err := newTestLocator()
 	if err != nil {
 		t.Error("Could not create Locator", "error", err.Error())
 	}

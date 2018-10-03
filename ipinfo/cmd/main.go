@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -12,7 +11,6 @@ import (
 )
 
 const (
-	ipFlag      = "ip"
 	dataDirFlag = "data-dir"
 )
 
@@ -22,13 +20,9 @@ func main() {
 	app.Usage = "get countery of given IP address"
 	app.Version = "0.0.1"
 
-	app.Action = locateIP
+	app.Action = iplocatorServer
 
 	app.Flags = append(app.Flags,
-		cli.StringFlag{
-			Name:  ipFlag,
-			Usage: "IP want to check",
-		},
 		cli.StringFlag{
 			Name:   dataDirFlag,
 			Usage:  "directory to store the GeoLite2-Country.mmdb file",
@@ -42,15 +36,7 @@ func main() {
 	}
 }
 
-func locateIP(c *cli.Context) error {
-	err := validation.Validate(
-		c.String(ipFlag),
-		validation.Required,
-	)
-	if err != nil {
-		return fmt.Errorf("--ip flags is required")
-	}
-
+func iplocatorServer(c *cli.Context) error {
 	logger, err := app.NewLogger(c)
 	if err != nil {
 		return err
@@ -58,18 +44,9 @@ func locateIP(c *cli.Context) error {
 	defer logger.Sync()
 
 	sugar := logger.Sugar()
-
-	f, err := ipinfo.NewLocator(sugar, c.String(dataDirFlag))
+	server, err := ipinfo.NewHTTPServer(sugar, c.String(dataDirFlag))
 	if err != nil {
 		return err
 	}
-
-	result, err := f.IPToCountry(c.String(ipFlag))
-	if err != nil {
-		return err
-	}
-
-	sugar.Infow(result)
-
-	return nil
+	return server.Run()
 }

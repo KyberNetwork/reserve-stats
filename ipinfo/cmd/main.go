@@ -7,7 +7,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/ipinfo"
 	"github.com/KyberNetwork/reserve-stats/lib/app"
-	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation"
 	"github.com/urfave/cli"
 )
 
@@ -30,9 +30,10 @@ func main() {
 			Usage: "IP want to check",
 		},
 		cli.StringFlag{
-			Name:  dataDirFlag,
-			Usage: "directory to store the GeoLite2-Country.mmdb file",
-			Value: ".",
+			Name:   dataDirFlag,
+			Usage:  "directory to store the GeoLite2-Country.mmdb file",
+			Value:  ".",
+			EnvVar: "IP_INFO_DATA_DIR",
 		},
 	)
 

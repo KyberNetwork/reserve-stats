@@ -10,7 +10,7 @@ import (
 	"path"
 	"time"
 
-	geoip2 "github.com/oschwald/geoip2-golang"
+	"github.com/oschwald/geoip2-golang"
 	"go.uber.org/zap"
 )
 
@@ -20,16 +20,19 @@ const (
 )
 
 func getGeoDBFile(sugar *zap.SugaredLogger, dbPath string) error {
-	if _, err := os.Stat(dbPath); !os.IsNotExist(err) {
-		return nil
-	}
+	const timeout = time.Minute * 5
+
 	f, err := os.OpenFile(dbPath, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
-	if err != nil {
+	if os.IsExist(err) {
+		sugar.Debugw("db file already exists", "db_path", dbPath)
+		return nil
+	} else if err != nil {
 		return err
 	}
 	defer f.Close()
-	sugar.Debug("Begin download dbfile from url ", url)
-	client := &http.Client{Timeout: 5 * time.Minute}
+
+	sugar.Debugw("begin downloading db file from url ", "uwl", url)
+	client := &http.Client{Timeout: timeout}
 	resp, err := client.Get(url)
 	if err != nil {
 		return err
@@ -41,7 +44,7 @@ func getGeoDBFile(sugar *zap.SugaredLogger, dbPath string) error {
 	}
 
 	_, err = io.Copy(f, r)
-	sugar.Debug("Finish download dbfile to ", dbPath)
+	sugar.Debugw("finished downloading db file to ", "db_path", dbPath)
 	return err
 }
 
@@ -70,11 +73,11 @@ func NewLocator(sugar *zap.SugaredLogger, dataDir string) (*Locator, error) {
 
 // IPToCountry returns the country of given IP address.
 func (il *Locator) IPToCountry(ip string) (string, error) {
-	IPParsed := net.ParseIP(ip)
-	if IPParsed == nil {
+	ipParsed := net.ParseIP(ip)
+	if ipParsed == nil {
 		return "", fmt.Errorf("%s is invalid ip", ip)
 	}
-	record, err := il.r.Country(IPParsed)
+	record, err := il.r.Country(ipParsed)
 	if err != nil {
 		il.sugar.Infow("failed to query data from geo-database!", "error", err)
 		return "", err

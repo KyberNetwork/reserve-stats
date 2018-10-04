@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/users/cmc"
+	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
 	"github.com/KyberNetwork/reserve-stats/users/http"
 	"github.com/KyberNetwork/reserve-stats/users/stats"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
@@ -80,7 +80,7 @@ func run(c *cli.Context) error {
 	)
 
 	// init stats
-	cmc := cmc.NewCMCEthUSDRate(sugar)
+	cmc := ethrate.NewCMCRate(sugar)
 	userStats := stats.NewUserStats(cmc, userDB)
 
 	// run http server

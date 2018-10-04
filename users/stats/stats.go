@@ -3,9 +3,10 @@ package stats
 import (
 	"errors"
 	"math/big"
+	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
 	"github.com/KyberNetwork/reserve-stats/lib/utils"
-	"github.com/KyberNetwork/reserve-stats/users/cmc"
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 	"github.com/go-pg/pg"
@@ -13,7 +14,7 @@ import (
 
 //UserStats represent stats for an user
 type UserStats struct {
-	cmcEthUSDRate *cmc.EthUSDRate
+	cmcEthUSDRate ethrate.EthUSDRate
 	userStorage   *storage.UserDB
 }
 
@@ -32,7 +33,7 @@ func (us UserStats) GetTxCapByAddress(addr string) (*big.Int, bool, error) {
 			return nil, false, err
 		}
 	}
-	timepoint := utils.GetTimepoint()
+	timepoint := time.Now()
 	rate := us.cmcEthUSDRate.GetUSDRate(timepoint)
 	var txLimit *big.Int
 	if rate == 0 {
@@ -49,7 +50,7 @@ func (us UserStats) StoreUserInfo(email string, addresses []common.UserAddress) 
 }
 
 //NewUserStats return new user stats instance
-func NewUserStats(cmc *cmc.EthUSDRate, storage *storage.UserDB) *UserStats {
+func NewUserStats(cmc ethrate.EthUSDRate, storage *storage.UserDB) *UserStats {
 	return &UserStats{
 		cmc,
 		storage,

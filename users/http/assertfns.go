@@ -1,7 +1,8 @@
-package httputil
+package http
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -18,6 +19,7 @@ type userResponse struct {
 // ExpectSuccess asserts that given response is a success response.
 func ExpectSuccess(t *testing.T, resp *httptest.ResponseRecorder) {
 	t.Helper()
+	log.Printf("response: %+v", resp)
 	if resp.Code != http.StatusOK {
 		t.Fatalf("wrong return code, expected: %d, got: %d", http.StatusOK, resp.Code)
 	}

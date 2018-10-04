@@ -2,7 +2,7 @@ package blockchain
 
 import (
 	"context"
-	"math/big"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -16,54 +16,79 @@ import (
 // BlockTimeResolver is a helper to get transaction timestamp from block number.
 // It has a cache for one block.
 type BlockTimeResolver struct {
-	mu                *sync.RWMutex
-	cachedBlockNo     uint64            // cache 1 block number
-	cachedBlockHeader *types.Header     // cache 1 block header
-	ethClient         *ethclient.Client // eth client
-	sugar             *zap.SugaredLogger
+	mu        *sync.RWMutex
+	ethClient *ethclient.Client // eth client
+	sugar     *zap.SugaredLogger
+
+	cachedHeaders   map[uint64]*types.Header
+	cachedIndices   []uint64
+	maxCachedBlocks int
 }
 
-// NewTxTime returns TxTime instance given a ethereum client.
-func NewTxTime(sugar *zap.SugaredLogger, client *ethclient.Client) *BlockTimeResolver {
+// NewBlockTimeResolver returns BlockTimeResolver instance given a ethereum client.
+func NewBlockTimeResolver(sugar *zap.SugaredLogger, client *ethclient.Client) (*BlockTimeResolver, error) {
+	// maxCachedBlocks is the maximum number of block headers in cache, must > 1.
+	const maxCachedBlocks = 10
+
 	return &BlockTimeResolver{
 		mu:        &sync.RWMutex{},
 		ethClient: client,
 		sugar:     sugar,
-	}
+
+		cachedHeaders:   make(map[uint64]*types.Header, maxCachedBlocks),
+		maxCachedBlocks: maxCachedBlocks,
+	}, nil
+}
+
+func sortUint64s(a []uint64) {
+	sort.Slice(a, func(i, j int) bool { return a[i] < a[j] })
 }
 
 // Resolve returns timestamp from block number.
-// It cached block number and block header to reduces the number of request
+// It cachedHeaders block number and block header to reduces the number of request
 // to node.
-func (btr *BlockTimeResolver) Resolve(blockno uint64) (time.Time, error) {
-	btr.mu.Lock()
+func (btr *BlockTimeResolver) Resolve(blockNumber uint64) (time.Time, error) {
 	timeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer func() {
-		cancel()
-		btr.mu.Unlock()
-	}()
+	defer cancel()
 
-	var block *types.Header
-	var err error
-	if btr.cachedBlockNo == blockno {
-		block = btr.cachedBlockHeader
-	} else {
-		block, err = btr.ethClient.HeaderByNumber(timeout, big.NewInt(int64(blockno)))
+	// cache hit happy path
+	btr.mu.RLock()
+	header, ok := btr.cachedHeaders[blockNumber]
+	if ok {
+		btr.sugar.Debugw("block timestamp resolver cache hit", "block_number", blockNumber)
+		ts := time.Unix(header.Time.Int64(), 0).UTC()
+		btr.mu.RUnlock()
+		return ts, nil
+	}
+	btr.mu.RUnlock()
 
-		if err != nil {
-			if block == nil {
-				return time.Unix(0, 0), err
-			}
+	// cache miss
+	btr.sugar.Debugw("block timestamp resolver cache miss", "block_number", blockNumber)
+	btr.mu.Lock()
+	defer btr.mu.Unlock()
 
-		// error because parity and geth are not compatible in mix hash
-		// so we ignore it as we can still get time from block
-		if strings.Contains(err.Error(), "missing required field") {
-			btr.sugar.Infof("Ignore block header error: %s", "err", err)
-		}
-
-		btr.cachedBlockNo = blockno
-		btr.cachedBlockHeader = block
+	header, err := btr.ethClient.HeaderByNumber(timeout, big.NewInt(int64(blockNumber)))
+	if err != nil && header == nil {
+		return time.Unix(0, 0), err
 	}
 
-	return time.Unix(block.Time.Int64(), 0).UTC(), nil
+	// error because parity and geth are not compatible in mix hash
+	// so we ignore it as we can still get time from block
+	if err != nil && strings.Contains(err.Error(), "missing required field") {
+		btr.sugar.Infof("ignore block header error: %s", "err", err)
+	}
+
+	if len(btr.cachedHeaders) >= btr.maxCachedBlocks {
+		oldestBlockNumber := btr.cachedIndices[0]
+		btr.sugar.Debugw("purging oldest cached header",
+			"block_number", oldestBlockNumber,
+			"max_cached_blocks", btr.maxCachedBlocks)
+		btr.cachedIndices = btr.cachedIndices[1:]
+		delete(btr.cachedHeaders, oldestBlockNumber)
+	}
+	btr.cachedIndices = append(btr.cachedIndices, blockNumber)
+	sortUint64s(btr.cachedIndices)
+	btr.cachedHeaders[blockNumber] = header
+
+	return time.Unix(header.Time.Int64(), 0).UTC(), nil
 }

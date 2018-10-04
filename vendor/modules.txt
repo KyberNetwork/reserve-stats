@@ -34,8 +34,12 @@ github.com/ethereum/go-ethereum/ethdb
 github.com/ethereum/go-ethereum/metrics
 github.com/ethereum/go-ethereum/p2p/netutil
 <<<<<<< HEAD
+<<<<<<< HEAD
 github.com/ethereum/go-ethereum/accounts
 =======
+=======
+github.com/ethereum/go-ethereum/accounts
+>>>>>>> aa3867d... update vendor
 # github.com/gin-contrib/cors v0.0.0-20180926132136-4f98e8b8e930
 github.com/gin-contrib/cors
 >>>>>>> 4c22446... update vendor
@@ -46,12 +50,6 @@ github.com/gin-gonic/gin
 github.com/gin-gonic/gin/binding
 github.com/gin-gonic/gin/json
 github.com/gin-gonic/gin/render
-# github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
-github.com/go-ozzo/ozzo-validation
-github.com/go-ozzo/ozzo-validation/is
-# github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
-github.com/go-ozzo/ozzo-validation
-github.com/go-ozzo/ozzo-validation/is
 # github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
 github.com/go-ozzo/ozzo-validation
 github.com/go-ozzo/ozzo-validation/is
@@ -138,6 +136,7 @@ golang.org/x/net/websocket
 # golang.org/x/sys v0.0.0-20180927150500-dad3d9fb7b6e
 golang.org/x/sys/unix
 golang.org/x/sys/windows
+<<<<<<< HEAD
 # golang.org/x/tools v0.0.0-20180926203008-ef4a2a23bb35
 golang.org/x/tools/imports
 golang.org/x/tools/go/ast/astutil
@@ -148,6 +147,8 @@ gopkg.in/go-playground/validator.v8
 gopkg.in/natefinch/npipe.v2
 # golang.org/x/sys v0.0.0-20180925112736-b09afc3d579e
 golang.org/x/sys/unix
+=======
+>>>>>>> aa3867d... update vendor
 # golang.org/x/tools v0.0.0-20180927190235-1be7b45b4c83
 golang.org/x/tools/imports
 golang.org/x/tools/go/ast/astutil

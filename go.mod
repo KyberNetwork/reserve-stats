@@ -88,7 +88,6 @@ require (
 	golang.org/x/tools v0.0.0-20180927190235-1be7b45b4c83 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
-	gopkg.in/yaml.v2 v2.2.1 // indirect
 	rsc.io/quote v1.5.2 // indirect
 )
 

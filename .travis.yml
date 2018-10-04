@@ -14,8 +14,12 @@ before_install:
   - docker run -d -p "127.0.0.1:8086:8086" influxdb:1.6.3-alpine
 
 install:
-  - go get -u github.com/alecthomas/gometalinter
-  - gometalinter --install
+  - ./gomentalinter-install.sh
+  - export PATH=$PATH:${TRAVIS_HOME}/gometalinter/gometalinter-2.0.11-linux-amd64
+  
+cache: 
+  directories:
+  - ${TRAVIS_HOME}/gometalinter
 
 before_script:
   - psql -c "CREATE DATABASE reserve_stats;" -U postgres

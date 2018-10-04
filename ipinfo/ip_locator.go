@@ -85,7 +85,7 @@ func (il *Locator) IPToCountry(ip string) (string, error) {
 
 	country := record.Country.IsoCode //iso code of country
 	if country == "" {
-		il.sugar.Debug("could not find country code of given IP", "ip", ip)
+		il.sugar.Debugw("could not find country code of given IP", "ip", ip)
 	}
 	return country, nil
 }

@@ -24,16 +24,12 @@ type TxTime struct {
 }
 
 // NewTxTime returns TxTime instance given a ethereum client.
-func NewTxTime(sugar *zap.SugaredLogger, nodeURL string) (*TxTime, error) {
-	client, err := ethclient.Dial(nodeURL)
-	if err != nil {
-		return nil, err
-	}
+func NewTxTime(sugar *zap.SugaredLogger, client *ethclient.Client) *TxTime {
 	return &TxTime{
 		mu:        &sync.RWMutex{},
 		ethClient: client,
 		sugar:     sugar,
-	}, nil
+	}
 }
 
 // InterpretTimestamp returns timestamp from block number.
@@ -54,14 +50,16 @@ func (txTime *TxTime) InterpretTimestamp(blockno uint64) (time.Time, error) {
 	} else {
 		block, err = txTime.ethClient.HeaderByNumber(timeout, big.NewInt(int64(blockno)))
 
-		if err != nil && block == nil {
-			return time.Unix(0, 0), err
-		}
+		if err != nil {
+			if block == nil {
+				return time.Unix(0, 0), err
+			}
 
-		// error because parity and geth are not compatible in mix hash
-		// so we ignore it as we can still get time from block
-		if strings.Contains(err.Error(), "missing required field") {
-			txTime.sugar.Infof("Ignore block header error: %s", "err", err)
+			// error because parity and geth are not compatible in mix hash
+			// so we ignore it as we can still get time from block
+			if strings.Contains(err.Error(), "missing required field") {
+				txTime.sugar.Infof("Ignore block header error: %s", "err", err)
+			}
 		}
 
 		txTime.cachedBlockNo = blockno

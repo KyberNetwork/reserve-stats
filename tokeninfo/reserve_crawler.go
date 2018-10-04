@@ -3,11 +3,12 @@ package tokeninfo
 import (
 	"bytes"
 	"encoding/json"
+	"math/big"
+
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
-	"math/big"
 )
 
 const emptyErrMsg = "abi: unmarshalling empty output"

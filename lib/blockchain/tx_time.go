@@ -3,8 +3,11 @@ package blockchain
 import (
 	"context"
 	"math/big"
+	"strings"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -17,10 +20,11 @@ type TxTime struct {
 	cachedBlockNo     uint64            // cache 1 block number
 	cachedBlockHeader *types.Header     // cache 1 block header
 	ethClient         *ethclient.Client // eth client
+	sugar             *zap.SugaredLogger
 }
 
 // NewTxTime returns TxTime instance given a ethereum client.
-func NewTxTime(nodeURL string) (*TxTime, error) {
+func NewTxTime(sugar *zap.SugaredLogger, nodeURL string) (*TxTime, error) {
 	client, err := ethclient.Dial(nodeURL)
 	if err != nil {
 		return nil, err
@@ -28,6 +32,7 @@ func NewTxTime(nodeURL string) (*TxTime, error) {
 	return &TxTime{
 		mu:        &sync.RWMutex{},
 		ethClient: client,
+		sugar:     sugar,
 	}, nil
 }
 
@@ -55,6 +60,9 @@ func (txTime *TxTime) InterpretTimestamp(blockno uint64) (time.Time, error) {
 
 		// error because parity and geth are not compatible in mix hash
 		// so we ignore it as we can still get time from block
+		if strings.Contains(err.Error(), "missing required field") {
+			txTime.sugar.Infof("Ignore block header error: %s", "err", err)
+		}
 
 		txTime.cachedBlockNo = blockno
 		txTime.cachedBlockHeader = block

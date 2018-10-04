@@ -212,7 +212,7 @@ func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, ethRate ethrat
 	if err != nil {
 		return nil, err
 	}
-	txTime := blockchain.NewTxTime(sugar, client)
+	txTime, err := blockchain.NewBlockTimeResolver(sugar, client)
 	return &TradeLogCrawler{sugar, client, ethRate, txTime}, nil
 }
 

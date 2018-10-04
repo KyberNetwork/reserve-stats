@@ -51,7 +51,7 @@ type TradeLogCrawler struct {
 	sugar     *zap.SugaredLogger
 	ethClient *ethclient.Client
 	ethRate   ethrate.EthUSDRate
-	txTime    *blockchain.TxTime
+	txTime    *blockchain.BlockTimeResolver
 }
 
 func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
@@ -212,8 +212,8 @@ func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, ethRate ethrat
 	if err != nil {
 		return nil, err
 	}
-	txTime := blockchain.NewTxTime(sugar, client)
-	return &TradeLogCrawler{sugar, client, ethRate, txTime}, nil
+	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
+	return &TradeLogCrawler{sugar, client, ethRate, resolver}, nil
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.
@@ -256,7 +256,7 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 			continue // Removed due to chain reorg
 		}
 
-		ts, err := crawler.txTime.InterpretTimestamp(logItem.BlockNumber)
+		ts, err := crawler.txTime.Resolve(logItem.BlockNumber)
 
 		if err != nil {
 			return result, err

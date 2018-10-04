@@ -1,9 +1,9 @@
 package ipinfo
 
 import (
+	"fmt"
 	"net/http"
 
-	"github.com/KyberNetwork/reserve-stats/util"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -12,11 +12,12 @@ import (
 type HTTPServer struct {
 	r     *gin.Engine
 	l     *Locator
+	port  int
 	sugar *zap.SugaredLogger
 }
 
 // NewHTTPServer return an instance of HTTPServer
-func NewHTTPServer(sugar *zap.SugaredLogger, dataDir string) (*HTTPServer, error) {
+func NewHTTPServer(sugar *zap.SugaredLogger, dataDir string, port int) (*HTTPServer, error) {
 	l, err := NewLocator(sugar, dataDir)
 	if err != nil {
 		return nil, err
@@ -24,6 +25,7 @@ func NewHTTPServer(sugar *zap.SugaredLogger, dataDir string) (*HTTPServer, error
 	return &HTTPServer{
 		r:     gin.Default(),
 		l:     l,
+		port:  port,
 		sugar: sugar,
 	}, nil
 }
@@ -35,7 +37,8 @@ func (h *HTTPServer) register() {
 // Run start HTTPServer
 func (h *HTTPServer) Run() error {
 	h.register()
-	return h.r.Run(util.IPLocatorPort.GinPort())
+	port := fmt.Sprintf(":%d", h.port)
+	return h.r.Run(port)
 }
 
 func (h *HTTPServer) checkIPLocator(c *gin.Context) {

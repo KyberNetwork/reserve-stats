@@ -6,11 +6,16 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/ipinfo"
 	"github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	validation "github.com/go-ozzo/ozzo-validation"
+	is "github.com/go-ozzo/ozzo-validation/is"
 	"github.com/urfave/cli"
 )
 
 const (
+	prefix      = "IPINFO_"
 	dataDirFlag = "data-dir"
+	portFlag    = "port"
 )
 
 func main() {
@@ -19,7 +24,9 @@ func main() {
 	app.Usage = "get countery of given IP address"
 	app.Version = "0.0.1"
 
-	app.Action = iplocatorServer
+	app.Action = ipInfoServer
+
+	app.Flags = append(app.Flags, httputil.NewHTTPFlags(prefix, httputil.IPLocatorPort)...)
 
 	app.Flags = append(app.Flags,
 		cli.StringFlag{
@@ -35,15 +42,24 @@ func main() {
 	}
 }
 
-func iplocatorServer(c *cli.Context) error {
+func ipInfoServer(c *cli.Context) error {
 	logger, err := app.NewLogger(c)
 	if err != nil {
 		return err
 	}
 	defer logger.Sync()
-
 	sugar := logger.Sugar()
-	server, err := ipinfo.NewHTTPServer(sugar, c.String(dataDirFlag))
+
+	err = validation.Validate(
+		c.String(httputil.PortFlag),
+		is.Int,
+	)
+	if err != nil {
+		sugar.Errorw("Get error while validate --port flag", "err", err.Error())
+		return err
+	}
+
+	server, err := ipinfo.NewHTTPServer(sugar, c.String(dataDirFlag), c.Int(httputil.PortFlag))
 	if err != nil {
 		return err
 	}

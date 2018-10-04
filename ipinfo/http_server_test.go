@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-stats/util"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"go.uber.org/zap"
 )
 
@@ -17,7 +17,7 @@ func TestIPLocatorHTTPServer(t *testing.T) {
 	}
 	defer logger.Sync()
 	sugar := logger.Sugar()
-	s, err := NewHTTPServer(sugar, "testdata")
+	s, err := NewHTTPServer(sugar, "testdata", int(httputil.IPLocatorPort))
 	if err != nil {
 		t.Error("Could not create HTTP server", "error", err.Error())
 	}
@@ -29,7 +29,7 @@ func TestIPLocatorHTTPServer(t *testing.T) {
 		correctIP       = "81.2.69.142"
 		wrongIPFormat   = "22"
 	)
-	var tests = []util.HTTPTestCase{
+	var tests = []httputil.HTTPTestCase{
 		{
 			Msg:      "Test valid IP",
 			Endpoint: fmt.Sprintf("%s/%s", requestEndpoint, correctIP),
@@ -44,7 +44,7 @@ func TestIPLocatorHTTPServer(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
-		t.Run(tc.Msg, func(t *testing.T) { util.CallTestHTTPRequest(t, tc, s.r) })
+		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, s.r) })
 	}
 }
 

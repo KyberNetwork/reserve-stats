@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/users/cmc"
-	"github.com/KyberNetwork/reserve-stats/users/http/httputil"
+	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/users/stats"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 	"go.uber.org/zap"
@@ -45,7 +45,7 @@ func TestUserHTTPServer(t *testing.T) {
 	}
 	sugar := logger.Sugar()
 	userStorage := connectToTestDB(sugar)
-	cmc := cmc.NewCMCEthUSDRate(sugar)
+	cmc := ethrate.NewCMCRate(sugar)
 	// sleep so cmc fetcher can get rate from cmc
 	time.Sleep(1 * time.Second)
 
@@ -71,34 +71,34 @@ func TestUserHTTPServer(t *testing.T) {
 		nonKycAddress          = "0xb8df4cf4b7ad086cd5139a75033566164e41a0b4"
 	)
 
-	var tests = []testCase{
+	var tests = []httputil.HTTPTestCase{
 		{
-			msg:      "empty db",
-			endpoint: fmt.Sprintf("%s/%s", requestEndpoint, queryAddress),
-			method:   http.MethodGet,
-			assert:   httputil.ExpectSuccess,
+			Msg:      "empty db",
+			Endpoint: fmt.Sprintf("%s/%s", requestEndpoint, queryAddress),
+			Method:   http.MethodGet,
+			Assert:   ExpectSuccess,
 		},
 		{
-			msg:      "email is not valid",
-			endpoint: requestEndpoint,
-			method:   http.MethodPost,
-			data: map[string]string{
+			Msg:      "email is not valid",
+			Endpoint: requestEndpoint,
+			Method:   http.MethodPost,
+			Data: map[string]string{
 				"user":       wrongUserEmail,
 				"addresses":  userAddresses,
 				"timestamps": userTimeStamp,
 			},
-			assert: httputil.ExpectBadRequest,
+			Assert: ExpectBadRequest,
 		},
 		{
-			msg:      "update user addresses with wrong number of addresses",
-			endpoint: requestEndpoint,
-			method:   http.MethodPost,
-			data: map[string]string{
+			Msg:      "update user addresses with wrong number of addresses",
+			Endpoint: requestEndpoint,
+			Method:   http.MethodPost,
+			Data: map[string]string{
 				"user":       userEmail,
 				"addresses":  wrongNumberOfAddresses,
 				"timestamps": userTimeStamp,
 			},
-			assert: httputil.ExpectBadRequest,
+			Assert: ExpectBadRequest,
 		},
 		// { msg:      "wrong user addresses",
 		// 	endpoint: requestEndpoint,
@@ -111,37 +111,37 @@ func TestUserHTTPServer(t *testing.T) {
 		// 	assert: httputil.ExpectFailure,
 		// },
 		{
-			msg:      "request malformed",
-			endpoint: requestEndpoint,
-			method:   http.MethodPost,
-			assert:   httputil.ExpectBadRequest,
+			Msg:      "request malformed",
+			Endpoint: requestEndpoint,
+			Method:   http.MethodPost,
+			Assert:   ExpectBadRequest,
 		},
 		{
-			msg:      "update correct user addresses",
-			endpoint: requestEndpoint,
-			method:   http.MethodPost,
-			data: map[string]string{
+			Msg:      "update correct user addresses",
+			Endpoint: requestEndpoint,
+			Method:   http.MethodPost,
+			Data: map[string]string{
 				"user":       userEmail,
 				"addresses":  userAddresses,
 				"timestamps": userTimeStamp,
 			},
-			assert: httputil.ExpectSuccess,
+			Assert: ExpectSuccess,
 		},
 		{
-			msg:      "user is not kyced",
-			endpoint: fmt.Sprintf("%s/%s", requestEndpoint, nonKycAddress),
-			method:   http.MethodGet,
-			assert:   httputil.ExpectNonKYC,
+			Msg:      "user is not kyced",
+			Endpoint: fmt.Sprintf("%s/%s", requestEndpoint, nonKycAddress),
+			Method:   http.MethodGet,
+			Assert:   ExpectNonKYC,
 		},
 		{
-			msg:      "user is kyced",
-			endpoint: fmt.Sprintf("%s/%s", requestEndpoint, queryAddress),
-			method:   http.MethodGet,
-			assert:   httputil.ExpectKYC,
+			Msg:      "user is kyced",
+			Endpoint: fmt.Sprintf("%s/%s", requestEndpoint, queryAddress),
+			Method:   http.MethodGet,
+			Assert:   ExpectKYC,
 		},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.msg, func(t *testing.T) { testHTTPRequest(t, tc, s.r) })
+		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, s.r) })
 	}
 }

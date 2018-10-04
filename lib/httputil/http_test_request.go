@@ -32,7 +32,7 @@ func RunHTTPTestCase(t *testing.T, tc HTTPTestCase, handler http.Handler) {
 		for key, value := range tc.Data {
 			form.Add(key, value)
 		}
-		req.Form = form
+		req.PostForm = form
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	}
 

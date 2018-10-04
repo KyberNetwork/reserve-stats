@@ -1,12 +1,9 @@
-package util
+package httputil
 
 import (
-	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 )
 
@@ -21,29 +18,24 @@ type HTTPTestCase struct {
 	Assert   assertFn
 }
 
-// CallTestHTTPRequest run http request test case
-func CallTestHTTPRequest(t *testing.T, tc HTTPTestCase, handler http.Handler) {
+// RunHTTPTestCase run http request test case
+func RunHTTPTestCase(t *testing.T, tc HTTPTestCase, handler http.Handler) {
 	t.Helper()
 
-	req, tErr := http.NewRequest(tc.Method, tc.Endpoint, nil)
-	if tErr != nil {
-		t.Fatal(tErr)
+	req, err := http.NewRequest(tc.Method, tc.Endpoint, nil)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	if len(tc.Data) != 0 {
 		form := url.Values{}
-		// log.Printf("request data: %+v", tc.data)
 		for key, value := range tc.Data {
 			form.Add(key, value)
 		}
 		req.Form = form
-		req.PostForm = form
-		req.URL.RawQuery = form.Encode()
-		req.Body = ioutil.NopCloser(strings.NewReader(form.Encode()))
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	}
-	req.Close = true
-	log.Printf("request: %+v", req)
+
 	resp := httptest.NewRecorder()
 	handler.ServeHTTP(resp, req)
 	tc.Assert(t, resp)

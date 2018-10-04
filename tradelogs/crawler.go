@@ -212,8 +212,8 @@ func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, ethRate ethrat
 	if err != nil {
 		return nil, err
 	}
-	txTime, err := blockchain.NewBlockTimeResolver(sugar, client)
-	return &TradeLogCrawler{sugar, client, ethRate, txTime}, nil
+	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
+	return &TradeLogCrawler{sugar, client, ethRate, resolver}, nil
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.

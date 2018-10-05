@@ -4,6 +4,9 @@ package httputil
 type HTTPPort int
 
 const (
-	// IPLocatorPort port number of IpLocator service
+	// IPLocatorPort is port number of IpLocator service
 	IPLocatorPort HTTPPort = 8001
+
+	// UsersPort is the port number of Users service.
+	UsersPort HTTPPort = 8002
 )

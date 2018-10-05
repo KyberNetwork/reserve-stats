@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"log"
 	"os"
 
@@ -13,10 +13,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-const (
-	defaultDB = "users"
-	bindFlag  = "bind"
-)
+const defaultDB = "users"
 
 func main() {
 	app := libapp.NewApp()
@@ -26,6 +23,7 @@ func main() {
 	app.Version = "0.0.1"
 
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
+	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.UsersPort)...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -50,10 +48,7 @@ func run(c *cli.Context) error {
 	cmc := ethrate.NewCMCRate(sugar)
 	userStats := stats.NewUserStats(cmc, userDB)
 
-	// run http server
-	servePort := c.Int(bindFlag)
-	host := fmt.Sprintf(":%d", servePort)
-	server := http.NewServer(sugar, userStats, host)
+	server := http.NewServer(sugar, userStats, httputil.NewHTTPAddressFromContext(c))
 	server.Run()
 	return nil
 }

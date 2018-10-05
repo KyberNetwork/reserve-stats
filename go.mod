@@ -1,12 +1,13 @@
 module github.com/KyberNetwork/reserve-stats
 
 require (
-	github.com/KyberNetwork/reserve-data v0.1.0 // indirect
 	github.com/aristanetworks/goarista v0.0.0-20180907105523-ff33da284e76 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
 	github.com/btcsuite/btcd v0.0.0-20180924021209-2a560b2036be // indirect
+	github.com/cespare/cp v1.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect
+	github.com/edsrzf/mmap-go v0.0.0-20170320065105-0bce6a688712 // indirect
 	github.com/ethereum/go-ethereum v1.8.16
 	github.com/fjl/memsize v0.0.0-20180427083637-f6d5545993d6 // indirect
 	github.com/gin-contrib/cors v0.0.0-20180926132136-4f98e8b8e930
@@ -16,8 +17,13 @@ require (
 	github.com/go-pg/pg v6.15.0+incompatible
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
+	github.com/hashicorp/golang-lru v0.5.0 // indirect
+	github.com/huin/goupnp v0.0.0-20180415215157-1395d1447324 // indirect
+	github.com/jackpal/go-nat-pmp v1.0.1 // indirect
 	github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a // indirect
 	github.com/json-iterator/go v1.1.5 // indirect
+	github.com/karalabe/hid v0.0.0-20180420081245-2b4488a37358 // indirect
+	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
@@ -41,9 +47,11 @@ require (
 	golang.org/x/net v0.0.0-20180926154720-4dfa2610cdf3 // indirect
 	golang.org/x/sys v0.0.0-20180927150500-dad3d9fb7b6e // indirect
 	golang.org/x/tools v0.0.0-20180927190235-1be7b45b4c83 // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
-	rsc.io/quote v1.5.2 // indirect
+	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
+	mellium.im/sasl v0.2.1 // indirect
 )
 
 replace github.com/ethereum/go-ethereum => github.com/favadi/go-ethereum v1.8.16-fork

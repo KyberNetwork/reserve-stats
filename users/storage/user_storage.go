@@ -28,13 +28,7 @@ func createSchema(db *pg.DB) error {
 }
 
 //NewDB open a new database connection
-func NewDB(sugar *zap.SugaredLogger, address, user, password, database string) *UserDB {
-	db := pg.Connect(&pg.Options{
-		Addr:     address,
-		User:     user,
-		Password: password,
-		Database: database,
-	})
+func NewDB(sugar *zap.SugaredLogger, db *pg.DB) *UserDB {
 	// create schema
 	if err := createSchema(db); err != nil {
 		panic(err)

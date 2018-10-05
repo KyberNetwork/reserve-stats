@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/KyberNetwork/reserve-stats/lib/app"
+	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
 	"github.com/KyberNetwork/reserve-stats/users/http"
 	"github.com/KyberNetwork/reserve-stats/users/stats"
@@ -14,55 +14,25 @@ import (
 )
 
 const (
-	hostFlag     = "postgres_host"
-	userFlag     = "postgres_user"
-	passwordFlag = "postgres_password"
-	databaseFlag = "postgres_database"
-	bindFlag     = "bind"
+	defaultDB = "users"
+	bindFlag  = "bind"
 )
 
 func main() {
-	app := app.NewApp()
+	app := libapp.NewApp()
 	app.Name = "User stat module"
 	app.Usage = "Store and return user stat information"
 	app.Action = run
 	app.Version = "0.0.1"
 
-	app.Flags = append(app.Flags,
-		cli.StringFlag{
-			Name:   hostFlag,
-			Usage:  "Postgresql host to connect",
-			EnvVar: "USER_POSTGRES_HOST",
-			Value:  "127.0.0.1:5432",
-		},
-		cli.StringFlag{
-			Name:   userFlag,
-			Usage:  "Postgresql user to connect",
-			EnvVar: "USER_POSTGRES_USER",
-			Value:  "",
-		},
-		cli.StringFlag{
-			Name:   passwordFlag,
-			Usage:  "Postgresql password to connect",
-			EnvVar: "USER_POSTGRES_PASSWORD",
-			Value:  "",
-		},
-		cli.StringFlag{
-			Name:   databaseFlag,
-			Usage:  "Postgres database to connect",
-			EnvVar: "USER_POSTGRES_DATABASE",
-			Value:  "",
-		},
-	)
-
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 func run(c *cli.Context) error {
-	logger, err := app.NewLogger(c)
+	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
 	}
@@ -73,10 +43,7 @@ func run(c *cli.Context) error {
 	// init storage
 	userDB := storage.NewDB(
 		sugar,
-		c.String(hostFlag),
-		c.String(userFlag),
-		c.String(passwordFlag),
-		c.String(databaseFlag),
+		libapp.NewDBFromContext(c),
 	)
 
 	// init stats

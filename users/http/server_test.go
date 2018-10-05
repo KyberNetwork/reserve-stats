@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"github.com/go-pg/pg"
 	"log"
 	"net/http"
 	"testing"
@@ -25,10 +26,13 @@ const (
 func connectToTestDB(sugar *zap.SugaredLogger) *storage.UserDB {
 	return storage.NewDB(
 		sugar,
-		postgresHost,
-		postgresUser,
-		postgresPassword,
-		postgresDatabase,
+		pg.Connect(&pg.Options{
+			Addr:     postgresHost,
+			User:     postgresUser,
+			Password: postgresPassword,
+			Database: postgresDatabase,
+		},
+		),
 	)
 }
 

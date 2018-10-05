@@ -52,7 +52,7 @@ func (us UserStats) StoreUserInfo(email string, addresses []common.UserAddress) 
 //NewUserStats return new user stats instance
 func NewUserStats(cmc ethrate.EthUSDRate, storage *storage.UserDB) *UserStats {
 	return &UserStats{
-		cmc,
-		storage,
+		cmcEthUSDRate: cmc,
+		userStorage:   storage,
 	}
 }

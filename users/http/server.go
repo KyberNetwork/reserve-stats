@@ -30,7 +30,7 @@ func (s *Server) GetUserInfo(c *gin.Context) {
 	address := c.Param("address")
 	txLimit, kyced, err := s.userStats.GetTxCapByAddress(address)
 	if err != nil {
-		zap.S().Errorf("Cannot get user info: %+v", err)
+		s.sugar.Errorf("Cannot get user info: %+v", err)
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{
@@ -205,5 +205,5 @@ func NewServer(sugar *zap.SugaredLogger, userStats *stats.UserStats, host string
 	corsConfig.MaxAge = 5 * time.Minute
 	r.Use(cors.New(corsConfig))
 
-	return &Server{sugar, userStats, r, host}
+	return &Server{sugar: sugar, userStats: userStats, r: r, host: host}
 }

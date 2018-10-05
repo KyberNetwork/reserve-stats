@@ -76,17 +76,6 @@ require (
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
-	golang.org/x/crypto v0.0.0-20180910181607-0e37d006457b // indirect
-	golang.org/x/net v0.0.0-20180926154720-4dfa2610cdf3 // indirect
-	golang.org/x/tools v0.0.0-20180926203008-ef4a2a23bb35 // indirect
-	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
-	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
-	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
-	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
-	golang.org/x/net v0.0.0-20180925072008-f04abc6bdfa7 // indirect
-	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f // indirect
-	golang.org/x/sys v0.0.0-20180925112736-b09afc3d579e // indirect
-	golang.org/x/tools v0.0.0-20180926012507-d5fdb01c2f8f // indirect
 	golang.org/x/crypto v0.0.0-20180927165925-5295e8364332 // indirect
 	golang.org/x/net v0.0.0-20180926154720-4dfa2610cdf3 // indirect
 	golang.org/x/sys v0.0.0-20180927150500-dad3d9fb7b6e // indirect

@@ -80,7 +80,7 @@ func TestUserHTTPServer(t *testing.T) {
 			Msg:      "empty db",
 			Endpoint: fmt.Sprintf("%s/%s", requestEndpoint, queryAddress),
 			Method:   http.MethodGet,
-			Assert:   ExpectSuccess,
+			Assert:   expectSuccess,
 		},
 		{
 			Msg:      "email is not valid",
@@ -91,7 +91,7 @@ func TestUserHTTPServer(t *testing.T) {
 				"addresses":  userAddresses,
 				"timestamps": userTimeStamp,
 			},
-			Assert: ExpectBadRequest,
+			Assert: expectBadRequest,
 		},
 		{
 			Msg:      "update user addresses with wrong number of addresses",
@@ -102,7 +102,7 @@ func TestUserHTTPServer(t *testing.T) {
 				"addresses":  wrongNumberOfAddresses,
 				"timestamps": userTimeStamp,
 			},
-			Assert: ExpectBadRequest,
+			Assert: expectBadRequest,
 		},
 		// { msg:      "wrong user addresses",
 		// 	endpoint: requestEndpoint,
@@ -118,7 +118,7 @@ func TestUserHTTPServer(t *testing.T) {
 			Msg:      "request malformed",
 			Endpoint: requestEndpoint,
 			Method:   http.MethodPost,
-			Assert:   ExpectBadRequest,
+			Assert:   expectBadRequest,
 		},
 		{
 			Msg:      "update correct user addresses",
@@ -129,19 +129,19 @@ func TestUserHTTPServer(t *testing.T) {
 				"addresses":  userAddresses,
 				"timestamps": userTimeStamp,
 			},
-			Assert: ExpectSuccess,
+			Assert: expectSuccess,
 		},
 		{
 			Msg:      "user is not kyced",
 			Endpoint: fmt.Sprintf("%s/%s", requestEndpoint, nonKycAddress),
 			Method:   http.MethodGet,
-			Assert:   ExpectNonKYC,
+			Assert:   expectNonKYCed,
 		},
 		{
 			Msg:      "user is kyced",
 			Endpoint: fmt.Sprintf("%s/%s", requestEndpoint, queryAddress),
 			Method:   http.MethodGet,
-			Assert:   ExpectKYC,
+			Assert:   expectKYCed,
 		},
 	}
 

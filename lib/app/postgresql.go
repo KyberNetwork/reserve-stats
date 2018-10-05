@@ -6,9 +6,15 @@ import (
 )
 
 const (
-	postgresHostFlag     = "postgres_host"
-	postgresUserFlag     = "postgres_user"
-	postgresPasswordFlag = "postgres_password"
+	postgresHostFlag    = "postgres_host"
+	defaultPostgresHost = "127.0.0.1:5432"
+
+	postgresUserFlag    = "postgres_user"
+	defaultPostgresUser = "reserve_stats"
+
+	postgresPasswordFlag    = "postgres_password"
+	defaultPostgresPassword = "reserve_stats"
+
 	postgresDatabaseFlag = "postgres_database"
 )
 
@@ -18,25 +24,25 @@ func NewPostgreSQLFlags(defaultDB string) []cli.Flag {
 		cli.StringFlag{
 			Name:   postgresHostFlag,
 			Usage:  "PostgreSQL host to connect",
-			EnvVar: joinEnvVar(commonEnvPrefix, "POSTGRES_HOST"),
-			Value:  "127.0.0.1:5432",
+			EnvVar: JoinEnvVar("POSTGRES_HOST"),
+			Value:  defaultPostgresHost,
 		},
 		cli.StringFlag{
 			Name:   postgresUserFlag,
 			Usage:  "PostgreSQL user to connect",
-			EnvVar: joinEnvVar(commonEnvPrefix, "POSTGRES_USER"),
-			Value:  "",
+			EnvVar: JoinEnvVar("POSTGRES_USER"),
+			Value:  defaultPostgresUser,
 		},
 		cli.StringFlag{
 			Name:   postgresPasswordFlag,
 			Usage:  "PostgreSQL password to connect",
-			EnvVar: joinEnvVar(commonEnvPrefix, "POSTGRES_PASSWORD"),
-			Value:  "",
+			EnvVar: JoinEnvVar("POSTGRES_PASSWORD"),
+			Value:  defaultPostgresPassword,
 		},
 		cli.StringFlag{
 			Name:   postgresDatabaseFlag,
 			Usage:  "Postgres database to connect",
-			EnvVar: joinEnvVar(commonEnvPrefix, "POSTGRES_DATABASE"),
+			EnvVar: JoinEnvVar("POSTGRES_DATABASE"),
 			Value:  defaultDB,
 		},
 	}

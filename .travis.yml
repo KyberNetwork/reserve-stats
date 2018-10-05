@@ -14,18 +14,20 @@ before_install:
   - docker run -d -p "127.0.0.1:8086:8086" influxdb:1.6.3-alpine
 
 install:
-  - ./gomentalinter-install.sh
-  - export PATH=$PATH:${TRAVIS_HOME}/gometalinter/gometalinter-2.0.11-linux-amd64
+  - export GOMETALINTER_VERSION=2.0.11
+  - ./.travis/gometalinter-install.sh
+  - export PATH=$PATH:${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
+  - export GO111MODULE=on
   
 cache: 
   directories:
-  - ${TRAVIS_HOME}/gometalinter
+  - ${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
 
 before_script:
   - psql -c "CREATE DATABASE reserve_stats;" -U postgres
   - psql -c "CREATE USER reserve_stats WITH PASSWORD 'reserve_stats';" -U postgres
 
 script:
-  - env GO111MODULE=on gometalinter --config=gometalinter.json ./...
-  - env GO111MODULE=on go build -v -mod=vendor ./...
-  - env GO111MODULE=on go test -v -mod=vendor ./...
+  - gometalinter --config=gometalinter.json ./...
+  - go build -v -mod=vendor ./...
+  - go test -v -mod=vendor ./...

@@ -10,16 +10,16 @@ github.com/btcsuite/btcd/btcec
 # github.com/deckarep/golang-set v1.7.1
 github.com/deckarep/golang-set
 # github.com/ethereum/go-ethereum v1.8.16 => github.com/favadi/go-ethereum v1.8.16-fork
+github.com/ethereum/go-ethereum/common
 github.com/ethereum/go-ethereum/core/types
 github.com/ethereum/go-ethereum/ethclient
 github.com/ethereum/go-ethereum
 github.com/ethereum/go-ethereum/accounts/abi
 github.com/ethereum/go-ethereum/accounts/abi/bind
-github.com/ethereum/go-ethereum/common
 github.com/ethereum/go-ethereum/event
 github.com/ethereum/go-ethereum/common/hexutil
-github.com/ethereum/go-ethereum/crypto
 github.com/ethereum/go-ethereum/crypto/sha3
+github.com/ethereum/go-ethereum/crypto
 github.com/ethereum/go-ethereum/params
 github.com/ethereum/go-ethereum/rlp
 github.com/ethereum/go-ethereum/trie
@@ -52,6 +52,10 @@ github.com/golang/protobuf/proto
 github.com/golang/snappy
 # github.com/google/uuid v1.0.0
 github.com/google/uuid
+# github.com/influxdata/influxdb v1.6.3
+github.com/influxdata/influxdb/client/v2
+github.com/influxdata/influxdb/models
+github.com/influxdata/influxdb/pkg/escape
 # github.com/json-iterator/go v1.1.5
 github.com/json-iterator/go
 # github.com/mattn/go-isatty v0.0.4

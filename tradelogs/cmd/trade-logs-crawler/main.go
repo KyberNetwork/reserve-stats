@@ -14,13 +14,21 @@ import (
 	"github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/urfave/cli"
+
+	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
+	"github.com/KyberNetwork/reserve-stats/tradelogs"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
 
 const (
-	nodeURLFlag         = "node"
-	nodeURLDefaultValue = "https://mainnet.infura.io"
-	fromBlockFlag       = "from-block"
-	toBlockFlag         = "to-block"
+	nodeURLFlag          = "node"
+	nodeURLDefaultValue  = "https://mainnet.infura.io"
+	fromBlockFlag        = "from-block"
+	toBlockFlag          = "to-block"
+	influxdbEndpointFlag = "influxdb-endpoint"
+	influxdbUsernameFlag = "influxdb-username"
+	influxdbPasswordFlag = "influxdb-password"
 
 	envVarPrefix = "TRADE_LOGS_CRAWLER_"
 )
@@ -34,20 +42,35 @@ func main() {
 
 	app.Flags = append(app.Flags,
 		cli.StringFlag{
-			Name:   "node",
+			Name:   nodeURLFlag,
 			Usage:  "Ethereum node provider URL",
 			Value:  nodeURLDefaultValue,
 			EnvVar: envVarPrefix + "NODE",
 		},
 		cli.StringFlag{
-			Name:   "from-block",
+			Name:   fromBlockFlag,
 			Usage:  "Fetch trade logs from block",
 			EnvVar: envVarPrefix + "FROM_BLOCK",
 		},
 		cli.StringFlag{
-			Name:   "to-block",
+			Name:   toBlockFlag,
 			Usage:  "Fetch trade logs to block",
 			EnvVar: envVarPrefix + "TO_BLOCK",
+		},
+		cli.StringFlag{
+			Name:   influxdbEndpointFlag,
+			Usage:  "Endpoint to influxdb",
+			EnvVar: envVarPrefix + "INFLUXDB_ENDPOINT",
+		},
+		cli.StringFlag{
+			Name:   influxdbUsernameFlag,
+			Usage:  "Influxdb user",
+			EnvVar: envVarPrefix + "INFLUXDB_USERNAME",
+		},
+		cli.StringFlag{
+			Name:   influxdbPasswordFlag,
+			Usage:  "Influxdb password",
+			EnvVar: envVarPrefix + "INFLUXDB_PASSWORD",
 		},
 	)
 
@@ -93,6 +116,16 @@ func getTradeLogs(c *cli.Context) error {
 		return fmt.Errorf("invalid node url: %q, error: %s", nodeURL, err)
 	}
 
+	influxdbEndpoint := c.String(influxdbEndpointFlag)
+	influxdbUsername := c.String(influxdbUsernameFlag)
+	influxdbPassword := c.String(influxdbPasswordFlag)
+	influxStorage, err := storage.NewInfluxStorage(
+		"reserve_stats", influxdbEndpoint, influxdbUsername, influxdbPassword,
+	)
+	if err != nil {
+		return err
+	}
+
 	crawler, err := tradelogs.NewTradeLogCrawler(
 		sugar,
 		nodeURL,
@@ -103,6 +136,16 @@ func getTradeLogs(c *cli.Context) error {
 	}
 
 	tradeLogs, err := crawler.GetTradeLogs(fromBlock, toBlock, time.Second*5)
+	if err != nil {
+		return err
+	}
+
+	err = influxStorage.CreateDB()
+	if err != nil {
+		return err
+	}
+
+	err = influxStorage.SaveTradeLogs(tradeLogs)
 	if err != nil {
 		return err
 	}

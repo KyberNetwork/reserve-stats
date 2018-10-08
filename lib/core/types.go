@@ -34,6 +34,7 @@ func (t *Token) FormatAmount(amount *big.Int) float64 {
 	return result
 }
 
+// TokensReply is the struct to contain core's reply
 type TokensReply struct {
 	Data    []Token
 	Success bool

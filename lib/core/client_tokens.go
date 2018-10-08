@@ -118,6 +118,7 @@ func (c *Client) GetInternalTokens() ([]Token, error) {
 	return c.getTokens(endpoint)
 }
 
+// GetActiveTokens return list of active token from external reserve
 func (c *Client) GetActiveTokens() ([]Token, error) {
 	const endpoint = "setting/active-tokens"
 	return c.getTokens(endpoint)

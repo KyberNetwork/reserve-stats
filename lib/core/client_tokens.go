@@ -88,3 +88,37 @@ func (c *Client) Tokens() ([]Token, error) {
 
 	return settingsResponse.Data.Tokens.Tokens, nil
 }
+
+func (c *Client) getTokens(endpoint string) ([]Token, error) {
+	var params = make(map[string]string)
+	params["nonce"] = generateNonce()
+	req, err := c.newRequest(http.MethodGet, endpoint, params)
+	if err != nil {
+		return nil, err
+	}
+	rsp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer rsp.Body.Close()
+
+	if rsp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected return code: %d", rsp.StatusCode)
+	}
+	var tokenReply = &TokensReply{}
+	if err = json.NewDecoder(rsp.Body).Decode(&tokenReply); err != nil {
+		return nil, err
+	}
+	return tokenReply.Data, nil
+}
+
+// GetInternalTokens return list of internal token from Kyber reserve
+func (c *Client) GetInternalTokens() ([]Token, error) {
+	const endpoint = "setting/internal-tokens"
+	return c.getTokens(endpoint)
+}
+
+func (c *Client) GetActiveTokens() ([]Token, error) {
+	const endpoint = "setting/active-tokens"
+	return c.getTokens(endpoint)
+}

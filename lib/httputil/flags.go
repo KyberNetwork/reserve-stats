@@ -27,7 +27,7 @@ func NewHTTPFlags(prefix string, defaultPort HTTPPort) []cli.Flag {
 	}
 }
 
-// NewPostgreSQLFlags creates new cli flags for HTTP Server.
+// NewHTTPCliFlags creates new cli flags for HTTP Server.
 func NewHTTPCliFlags(defaultPort HTTPPort) []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{

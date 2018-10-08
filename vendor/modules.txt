@@ -10,7 +10,6 @@ github.com/btcsuite/btcd/btcec
 # github.com/deckarep/golang-set v1.7.1
 github.com/deckarep/golang-set
 # github.com/ethereum/go-ethereum v1.8.16 => github.com/favadi/go-ethereum v1.8.16-fork
-github.com/ethereum/go-ethereum/common
 github.com/ethereum/go-ethereum/ethclient
 github.com/ethereum/go-ethereum/core/types
 github.com/ethereum/go-ethereum
@@ -18,12 +17,16 @@ github.com/ethereum/go-ethereum/accounts/abi
 github.com/ethereum/go-ethereum/accounts/abi/bind
 github.com/ethereum/go-ethereum/event
 github.com/ethereum/go-ethereum/common/hexutil
-github.com/ethereum/go-ethereum/crypto/sha3
 github.com/ethereum/go-ethereum/rlp
 github.com/ethereum/go-ethereum/rpc
 github.com/ethereum/go-ethereum/crypto
+github.com/ethereum/go-ethereum/crypto/sha3
 github.com/ethereum/go-ethereum/params
 github.com/ethereum/go-ethereum/trie
+github.com/ethereum/go-ethereum/common/math
+github.com/ethereum/go-ethereum/accounts/keystore
+github.com/ethereum/go-ethereum/log
+github.com/ethereum/go-ethereum/common/mclock
 github.com/ethereum/go-ethereum/common/math
 github.com/ethereum/go-ethereum/accounts/keystore
 github.com/ethereum/go-ethereum/log
@@ -41,6 +44,7 @@ github.com/gin-gonic/gin
 github.com/gin-gonic/gin/binding
 github.com/gin-gonic/gin/json
 github.com/gin-gonic/gin/render
+github.com/ethereum/go-ethereum/accounts
 # github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
 github.com/go-ozzo/ozzo-validation
 github.com/go-ozzo/ozzo-validation/is

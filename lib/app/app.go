@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
@@ -24,21 +23,6 @@ func NewApp() *cli.App {
 		},
 	}
 	return app
-}
-
-// NewEthereumNodeFlags returns cli flag for ethereum node url input
-func NewEthereumNodeFlags(prefix string) cli.Flag {
-	return cli.StringFlag{
-		Name:   ethereumNodeFlag,
-		Usage:  "Ethereum Node URL",
-		EnvVar: prefix + "ETHEREUM_NODE",
-	}
-}
-
-// NewEthereumClientFromFlag returns Ethereum client from flag variable, or error if occurs
-func NewEthereumClientFromFlag(c *cli.Context) (*ethclient.Client, error) {
-	ethereumNodeURL := c.GlobalString(ethereumNodeFlag)
-	return ethclient.Dial(ethereumNodeURL)
 }
 
 // NewLogger creates a new logger instance.

@@ -80,7 +80,7 @@ func invalidResult(t *testing.T, resp *httptest.ResponseRecorder) {
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Error("Could not decode out put", "err", err)
 	}
-	if response.Error != ErrInvalidIP.Error() {
-		t.Error("Wrong response error message", "result", response.Error, "expected", ErrInvalidIP.Error())
+	if response.Error != ErrInvalidIP {
+		t.Error("Wrong response error message", "result", response.Error, "expected", ErrInvalidIP)
 	}
 }

@@ -15,7 +15,7 @@ const (
 )
 
 // NewCliFlags returns cli flags to configure a core client.
-func NewCliFlags() ([]cli.Flag) {
+func NewCliFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:   coreURLFlag,

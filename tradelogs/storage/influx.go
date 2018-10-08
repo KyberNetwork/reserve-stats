@@ -16,18 +16,13 @@ type InfluxStorage struct {
 }
 
 // NewInfluxStorage init an instance of InfluxStorage
-func NewInfluxStorage(dbName string, endpoint, username, password string) (*InfluxStorage, error) {
+func NewInfluxStorage(dbName, endpoint, username, password string, tokenUtil *blockchain.TokenUtil) (*InfluxStorage, error) {
 	// Create a new HTTPClient
 	c, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr:     endpoint,
 		Username: username,
 		Password: password,
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	tokenUtil, err := blockchain.NewTokenUtil()
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +97,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) (*client.Point, er
 		"country": log.Country,
 	}
 
-	ethAmount, err := is.tokenUtil.GetTokenAmount(blockchain.EthAddr, log.EtherReceivalAmount)
+	ethAmount, err := is.tokenUtil.GetTokenAmount(blockchain.ETHAddr, log.EtherReceivalAmount)
 	if err != nil {
 		return nil, err
 	}
@@ -117,12 +112,12 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) (*client.Point, er
 		return nil, err
 	}
 
-	walletFee, err := is.tokenUtil.GetTokenAmount(blockchain.KncAddr, log.WalletFee)
+	walletFee, err := is.tokenUtil.GetTokenAmount(blockchain.KNCAddr, log.WalletFee)
 	if err != nil {
 		return nil, err
 	}
 
-	burnFee, err := is.tokenUtil.GetTokenAmount(blockchain.KncAddr, log.BurnFee)
+	burnFee, err := is.tokenUtil.GetTokenAmount(blockchain.KNCAddr, log.BurnFee)
 	if err != nil {
 		return nil, err
 	}

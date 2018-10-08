@@ -1,6 +1,7 @@
 package ipinfo
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,14 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"go.uber.org/zap"
 )
+
+type responseNormal struct {
+	Country string `json:"country"`
+}
+
+type responseError struct {
+	Error string `json:"error"`
+}
 
 func TestIPLocatorHTTPServer(t *testing.T) {
 	logger, err := zap.NewDevelopment()
@@ -22,7 +31,6 @@ func TestIPLocatorHTTPServer(t *testing.T) {
 		t.Error("Could not create HTTP server", "error", err.Error())
 	}
 	s.register()
-
 	// test case
 	const (
 		requestEndpoint = "/ip"
@@ -53,11 +61,26 @@ func validResult(t *testing.T, resp *httptest.ResponseRecorder) {
 	if resp.Code != http.StatusOK {
 		t.Error("wrong return code", "return code", resp.Code, "expected", http.StatusOK)
 	}
+	var response responseNormal
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		t.Error("Could not decode out put", "err", err)
+	}
+	if response.Country != "GB" {
+		t.Error("Get location of ip was incorrect", "result", response.Country, "expected", "GB")
+	}
+
 }
 
 func invalidResult(t *testing.T, resp *httptest.ResponseRecorder) {
 	t.Helper()
 	if resp.Code != http.StatusBadRequest {
 		t.Error("wrong return code", "return code", resp.Code, "expected", http.StatusBadRequest)
+	}
+	var response responseError
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		t.Error("Could not decode out put", "err", err)
+	}
+	if response.Error != ErrInvalidIP.Error() {
+		t.Error("Wrong response error message", "result", response.Error, "expected", ErrInvalidIP.Error())
 	}
 }

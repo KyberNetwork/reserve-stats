@@ -2,7 +2,7 @@ package ipinfo
 
 import (
 	"compress/gzip"
-	"fmt"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -18,6 +18,9 @@ const (
 	geoDBFile = "GeoLite2-Country.mmdb"
 	url       = "https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz"
 )
+
+// ErrInvalidIP error for invalid ip input
+var ErrInvalidIP = errors.New("Invalid ip input")
 
 func getGeoDBFile(sugar *zap.SugaredLogger, dbPath string) error {
 	const timeout = time.Minute * 5
@@ -75,7 +78,8 @@ func NewLocator(sugar *zap.SugaredLogger, dataDir string) (*Locator, error) {
 func (il *Locator) IPToCountry(ip string) (string, error) {
 	ipParsed := net.ParseIP(ip)
 	if ipParsed == nil {
-		return "", fmt.Errorf("%s is invalid ip", ip)
+		il.sugar.Debugw("Invalid ip input", "ip", ip)
+		return "", ErrInvalidIP
 	}
 	record, err := il.r.Country(ipParsed)
 	if err != nil {

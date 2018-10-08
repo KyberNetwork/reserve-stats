@@ -31,7 +31,7 @@ func NewHTTPServer(sugar *zap.SugaredLogger, dataDir string, port int) (*HTTPSer
 }
 
 func (h *HTTPServer) register() {
-	h.r.GET("/ip/:ip", h.checkIPLocator)
+	h.r.GET("/ip/:ip", h.lookupIPCountry)
 }
 
 // Run start HTTPServer
@@ -41,12 +41,16 @@ func (h *HTTPServer) Run() error {
 	return h.r.Run(port)
 }
 
-func (h *HTTPServer) checkIPLocator(c *gin.Context) {
+func (h *HTTPServer) lookupIPCountry(c *gin.Context) {
 	ip := c.Param("ip")
 	location, err := h.l.IPToCountry(ip)
 	if err != nil {
+		responseCode := http.StatusBadRequest
+		if err != ErrInvalidIP {
+			responseCode = http.StatusInternalServerError
+		}
 		c.JSON(
-			http.StatusBadRequest,
+			responseCode,
 			gin.H{
 				"error": err.Error(),
 			},

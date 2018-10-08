@@ -1,7 +1,6 @@
 package ipinfo
 
 import (
-	"fmt"
 	"testing"
 
 	"go.uber.org/zap"
@@ -41,7 +40,7 @@ func TestInvalidIP(t *testing.T) {
 	}
 	ip := "22"
 	_, err = l.IPToCountry(ip)
-	if err.Error() != fmt.Sprintf("%s is invalid ip", ip) {
+	if err != ErrInvalidIP {
 		t.Error("Get unexpected error when call IPTOCountry", "error", err.Error())
 	}
 }

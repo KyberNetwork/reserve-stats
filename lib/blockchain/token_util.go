@@ -1,19 +1,19 @@
 package blockchain
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+
+	"github.com/KyberNetwork/reserve-stats/lib/core"
 )
 
-// EthAddr is ethereum address
-var EthAddr = common.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+// ETHAddr is ethereum address
+var ETHAddr = common.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
 
-// KncAddr is KNC token address
-var KncAddr = common.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200")
+// KNCAddr is KNC token address
+var KNCAddr = common.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200")
 
 type token struct {
 	Name     string
@@ -27,20 +27,17 @@ type TokenUtil struct {
 }
 
 // NewTokenUtil return new instance of TokenUtil
-func NewTokenUtil() (*TokenUtil, error) {
-	var tokens []*token
-
-	err := json.NewDecoder(bytes.NewReader([]byte(tokenData))).Decode(&tokens)
-	if err != nil {
-		return nil, err
-	}
-
+func NewTokenUtil(tokens []core.Token) *TokenUtil {
 	info := make(map[common.Address]*token)
 	for _, tk := range tokens {
-		info[tk.Address] = tk
+		tokenAddress := common.HexToAddress(tk.Address)
+		info[tokenAddress] = &token{
+			Name:     tk.Name,
+			Decimals: tk.Decimals,
+		}
 	}
 
-	return &TokenUtil{info: info}, nil
+	return &TokenUtil{info: info}
 }
 
 // GetTokenAmount return token amount given the token address & token wei

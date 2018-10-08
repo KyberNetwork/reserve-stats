@@ -2,6 +2,7 @@ package httputil
 
 import (
 	"fmt"
+
 	"github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/urfave/cli"
 )
@@ -10,7 +11,7 @@ import (
 // Example: 127.0.0.1:8000
 const httpAddressFlag = "listen"
 
-// NewPostgreSQLFlags creates new cli flags for HTTP Server.
+// NewHTTPCliFlags creates new cli flags for HTTP Server.
 func NewHTTPCliFlags(defaultPort HTTPPort) []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{

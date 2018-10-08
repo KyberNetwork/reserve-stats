@@ -2,11 +2,15 @@ package ipinfo
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
+
+// ErrInvalidIP error for invalid ip input
+const ErrInvalidIP = "Invalid ip input"
 
 // HTTPServer to serve endpoint
 type HTTPServer struct {
@@ -43,14 +47,20 @@ func (h *HTTPServer) Run() error {
 
 func (h *HTTPServer) lookupIPCountry(c *gin.Context) {
 	ip := c.Param("ip")
-	location, err := h.l.IPToCountry(ip)
-	if err != nil {
-		responseCode := http.StatusBadRequest
-		if err != ErrInvalidIP {
-			responseCode = http.StatusInternalServerError
-		}
+	ipParsed := net.ParseIP(ip)
+	if ipParsed == nil {
 		c.JSON(
-			responseCode,
+			http.StatusBadRequest,
+			gin.H{
+				"error": ErrInvalidIP,
+			},
+		)
+		return
+	}
+	location, err := h.l.IPToCountry(ipParsed)
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
 			gin.H{
 				"error": err.Error(),
 			},

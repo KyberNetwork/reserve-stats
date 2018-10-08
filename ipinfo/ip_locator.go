@@ -2,7 +2,6 @@ package ipinfo
 
 import (
 	"compress/gzip"
-	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -18,9 +17,6 @@ const (
 	geoDBFile = "GeoLite2-Country.mmdb"
 	url       = "https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.mmdb.gz"
 )
-
-// ErrInvalidIP error for invalid ip input
-var ErrInvalidIP = errors.New("Invalid ip input")
 
 func getGeoDBFile(sugar *zap.SugaredLogger, dbPath string) error {
 	const timeout = time.Minute * 5
@@ -75,12 +71,7 @@ func NewLocator(sugar *zap.SugaredLogger, dataDir string) (*Locator, error) {
 }
 
 // IPToCountry returns the country of given IP address.
-func (il *Locator) IPToCountry(ip string) (string, error) {
-	ipParsed := net.ParseIP(ip)
-	if ipParsed == nil {
-		il.sugar.Debugw("Invalid ip input", "ip", ip)
-		return "", ErrInvalidIP
-	}
+func (il *Locator) IPToCountry(ipParsed net.IP) (string, error) {
 	record, err := il.r.Country(ipParsed)
 	if err != nil {
 		il.sugar.Infow("failed to query data from geo-database!", "error", err)
@@ -89,7 +80,7 @@ func (il *Locator) IPToCountry(ip string) (string, error) {
 
 	country := record.Country.IsoCode //iso code of country
 	if country == "" {
-		il.sugar.Debugw("could not find country code of given IP", "ip", ip)
+		il.sugar.Debugw("could not find country code of given IP", "ip", ipParsed)
 	}
 	return country, nil
 }

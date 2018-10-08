@@ -79,10 +79,10 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block int64, rsvAddr ethereum
 		return fmt.Errorf("cannot get supported tokens for reserve %s. Error: %s", rsvAddr.Hex(), err)
 	}
 	var (
-		srcAddresses    	= []ethereum.Address{}
-		destAddresses  		= []ethereum.Address{}
-		rates          		= ReserveRates{}
-		rsvTokenRateEntry	= ReserveTokenRateEntry{}
+		srcAddresses      = []ethereum.Address{}
+		destAddresses     = []ethereum.Address{}
+		rates             = ReserveRates{}
+		rsvTokenRateEntry = ReserveTokenRateEntry{}
 	)
 	for _, token := range tokens {
 		srcAddresses = append(srcAddresses, ethereum.HexToAddress(token.Address), ethereum.HexToAddress(ethToken.Address))
@@ -114,10 +114,10 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block int64, rsvAddr ethereum
 // It will only return rates from the set of addresses within its definition.
 func (rrc *ResreveRatesCrawler) GetReserveRates(block int64) (map[string]ReserveRates, error) {
 	var (
-		result	= make(map[string]ReserveRates)
-		data 	= sync.Map{}
-		wg  	= sync.WaitGroup{}
-		errs	= make(chan error, len(rrc.Addresses))
+		result = make(map[string]ReserveRates)
+		data   = sync.Map{}
+		wg     = sync.WaitGroup{}
+		errs   = make(chan error, len(rrc.Addresses))
 	)
 
 	for _, rsvAddr := range rrc.Addresses {

@@ -16,6 +16,8 @@ import (
 	"github.com/urfave/cli"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
@@ -73,6 +75,7 @@ func main() {
 			EnvVar: envVarPrefix + "INFLUXDB_PASSWORD",
 		},
 	)
+	app.Flags = append(app.Flags, core.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -101,6 +104,18 @@ func getTradeLogs(c *cli.Context) error {
 
 	sugar := logger.Sugar()
 
+	coreClient, err := core.NewClientFromContext(sugar, c)
+	if err != nil {
+		return err
+	}
+
+	supportedTokens, err := coreClient.Tokens()
+	if err != nil {
+		return err
+	}
+
+	tokenUtil := blockchain.NewTokenUtil(supportedTokens)
+
 	fromBlock, err := parseBigIntFlag(c, fromBlockFlag)
 	if err != nil {
 		return fmt.Errorf("invalid from block: %q, error: %s", c.String(fromBlockFlag), err)
@@ -120,7 +135,7 @@ func getTradeLogs(c *cli.Context) error {
 	influxdbUsername := c.String(influxdbUsernameFlag)
 	influxdbPassword := c.String(influxdbPasswordFlag)
 	influxStorage, err := storage.NewInfluxStorage(
-		"reserve_stats", influxdbEndpoint, influxdbUsername, influxdbPassword,
+		"reserve_stats", influxdbEndpoint, influxdbUsername, influxdbPassword, tokenUtil,
 	)
 	if err != nil {
 		return err

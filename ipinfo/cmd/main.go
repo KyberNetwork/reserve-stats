@@ -5,26 +5,25 @@ import (
 	"os"
 
 	"github.com/KyberNetwork/reserve-stats/ipinfo"
-	"github.com/KyberNetwork/reserve-stats/lib/app"
+	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	validation "github.com/go-ozzo/ozzo-validation"
-	is "github.com/go-ozzo/ozzo-validation/is"
+	"github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/urfave/cli"
 )
 
 const (
 	prefix      = "IPINFO_"
 	dataDirFlag = "data-dir"
-	portFlag    = "port"
 )
 
 func main() {
-	app := app.NewApp()
+	app := libapp.NewApp()
 	app.Name = "ip locator checker"
 	app.Usage = "get countery of given IP address"
 	app.Version = "0.0.1"
 
-	app.Action = ipInfoServer
+	app.Action = runHTTPServer
 
 	app.Flags = append(app.Flags, httputil.NewHTTPFlags(prefix, httputil.IPLocatorPort)...)
 
@@ -33,7 +32,7 @@ func main() {
 			Name:   dataDirFlag,
 			Usage:  "directory to store the GeoLite2-Country.mmdb file",
 			Value:  ".",
-			EnvVar: "IP_INFO_DATA_DIR",
+			EnvVar: prefix + "DATA_DIR",
 		},
 	)
 
@@ -42,8 +41,8 @@ func main() {
 	}
 }
 
-func ipInfoServer(c *cli.Context) error {
-	logger, err := app.NewLogger(c)
+func runHTTPServer(c *cli.Context) error {
+	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
 	}

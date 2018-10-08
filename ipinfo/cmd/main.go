@@ -1,39 +1,38 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
 	"github.com/KyberNetwork/reserve-stats/ipinfo"
-	"github.com/KyberNetwork/reserve-stats/lib/app"
+	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/urfave/cli"
 )
 
 const (
-	ipFlag      = "ip"
+	prefix      = "IPINFO_"
 	dataDirFlag = "data-dir"
 )
 
 func main() {
-	app := app.NewApp()
+	app := libapp.NewApp()
 	app.Name = "ip locator checker"
 	app.Usage = "get countery of given IP address"
 	app.Version = "0.0.1"
 
-	app.Action = locateIP
+	app.Action = runHTTPServer
+
+	app.Flags = append(app.Flags, httputil.NewHTTPFlags(prefix, httputil.IPLocatorPort)...)
 
 	app.Flags = append(app.Flags,
-		cli.StringFlag{
-			Name:  ipFlag,
-			Usage: "IP want to check",
-		},
 		cli.StringFlag{
 			Name:   dataDirFlag,
 			Usage:  "directory to store the GeoLite2-Country.mmdb file",
 			Value:  ".",
-			EnvVar: "IP_INFO_DATA_DIR",
+			EnvVar: prefix + "DATA_DIR",
 		},
 	)
 
@@ -42,34 +41,26 @@ func main() {
 	}
 }
 
-func locateIP(c *cli.Context) error {
-	err := validation.Validate(
-		c.String(ipFlag),
-		validation.Required,
-	)
-	if err != nil {
-		return fmt.Errorf("--ip flags is required")
-	}
-
-	logger, err := app.NewLogger(c)
+func runHTTPServer(c *cli.Context) error {
+	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
 	}
 	defer logger.Sync()
-
 	sugar := logger.Sugar()
 
-	f, err := ipinfo.NewLocator(sugar, c.String(dataDirFlag))
+	err = validation.Validate(
+		c.String(httputil.PortFlag),
+		is.Int,
+	)
 	if err != nil {
+		sugar.Errorw("Get error while validate --port flag", "err", err.Error())
 		return err
 	}
 
-	result, err := f.IPToCountry(c.String(ipFlag))
+	server, err := ipinfo.NewHTTPServer(sugar, c.String(dataDirFlag), c.Int(httputil.PortFlag))
 	if err != nil {
 		return err
 	}
-
-	sugar.Infow(result)
-
-	return nil
+	return server.Run()
 }

@@ -43,14 +43,14 @@ func NewVersionedWrapper(client bind.ContractBackend) (*VersionedWrapper, error)
 
 // GetReserveRate call to the appropriate contract depends on block number
 // return reserveRate, SanityRate and error if occurs
-func (vw *VersionedWrapper) GetReserveRate(block uint64, rsvAddr ethereum.Address, srcs, dest []ethereum.Address) ([]*big.Int, []*big.Int, error) {
+func (vw *VersionedWrapper) GetReserveRate(block int64, rsvAddr ethereum.Address, srcs, dest []ethereum.Address) ([]*big.Int, []*big.Int, error) {
 	if block == 0 {
 		//Latest rate from latest block at V2 contract
-		return vw.WrapperContractV2.GetReserveRate(&bind.CallOpts{}, rsvAddr, srcs, dest)
-	} else if block > startingBlockV2 {
+		return vw.WrapperContractV2.GetReserveRate(nil, rsvAddr, srcs, dest)
+	} else if block >= startingBlockV2 {
 		//V2 contract, call at specific block
-		return vw.WrapperContractV2.GetReserveRate(&bind.CallOpts{BlockNumber: big.NewInt(int64(block))}, rsvAddr, srcs, dest)
+		return vw.WrapperContractV2.GetReserveRate(&bind.CallOpts{BlockNumber: big.NewInt(block)}, rsvAddr, srcs, dest)
 	}
 	//default case: V1 contract.
-	return vw.WrapperContractV1.GetReserveRate(&bind.CallOpts{BlockNumber: big.NewInt(int64(block))}, rsvAddr, srcs, dest)
+	return vw.WrapperContractV1.GetReserveRate(&bind.CallOpts{BlockNumber: big.NewInt(block)}, rsvAddr, srcs, dest)
 }

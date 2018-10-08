@@ -2,14 +2,7 @@ package common
 
 import (
 	"math/big"
-	"time"
 )
-
-// GetTimepoint return current Unix Timestamp in millisecond with uint64 format
-func GetTimepoint() uint64 {
-	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
-	return uint64(timestamp)
-}
 
 // BigToFloat converts a big int to float according to its number of decimal digits
 // Example:

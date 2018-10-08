@@ -19,6 +19,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
@@ -59,22 +60,8 @@ func main() {
 			Usage:  "Fetch trade logs to block",
 			EnvVar: envVarPrefix + "TO_BLOCK",
 		},
-		cli.StringFlag{
-			Name:   influxdbEndpointFlag,
-			Usage:  "Endpoint to influxdb",
-			EnvVar: envVarPrefix + "INFLUXDB_ENDPOINT",
-		},
-		cli.StringFlag{
-			Name:   influxdbUsernameFlag,
-			Usage:  "Influxdb user",
-			EnvVar: envVarPrefix + "INFLUXDB_USERNAME",
-		},
-		cli.StringFlag{
-			Name:   influxdbPasswordFlag,
-			Usage:  "Influxdb password",
-			EnvVar: envVarPrefix + "INFLUXDB_PASSWORD",
-		},
 	)
+	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
@@ -116,6 +103,7 @@ func getTradeLogs(c *cli.Context) error {
 
 	tokenUtil := blockchain.NewTokenUtil(supportedTokens)
 
+	// Crawl trade logs from blockchain
 	fromBlock, err := parseBigIntFlag(c, fromBlockFlag)
 	if err != nil {
 		return fmt.Errorf("invalid from block: %q, error: %s", c.String(fromBlockFlag), err)
@@ -129,16 +117,6 @@ func getTradeLogs(c *cli.Context) error {
 	nodeURL := c.String(nodeURLFlag)
 	if err = validation.Validate(nodeURL, validation.Required, is.URL); err != nil {
 		return fmt.Errorf("invalid node url: %q, error: %s", nodeURL, err)
-	}
-
-	influxdbEndpoint := c.String(influxdbEndpointFlag)
-	influxdbUsername := c.String(influxdbUsernameFlag)
-	influxdbPassword := c.String(influxdbPasswordFlag)
-	influxStorage, err := storage.NewInfluxStorage(
-		"reserve_stats", influxdbEndpoint, influxdbUsername, influxdbPassword, tokenUtil,
-	)
-	if err != nil {
-		return err
 	}
 
 	crawler, err := tradelogs.NewTradeLogCrawler(
@@ -155,7 +133,14 @@ func getTradeLogs(c *cli.Context) error {
 		return err
 	}
 
-	err = influxStorage.CreateDB()
+	// Store trade logs into influx DB
+	influxClient, err := influxdb.NewClientFromContext(c)
+	if err != nil {
+		return err
+	}
+	influxStorage, err := storage.NewInfluxStorage(
+		"trade_logs", influxClient, tokenUtil,
+	)
 	if err != nil {
 		return err
 	}

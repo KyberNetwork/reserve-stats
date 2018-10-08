@@ -16,18 +16,13 @@ type InfluxStorage struct {
 }
 
 // NewInfluxStorage init an instance of InfluxStorage
-func NewInfluxStorage(dbName, endpoint, username, password string, tokenUtil *blockchain.TokenUtil) (*InfluxStorage, error) {
-	// Create a new HTTPClient
-	c, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:     endpoint,
-		Username: username,
-		Password: password,
-	})
+func NewInfluxStorage(dbName string, c client.Client, tokenUtil *blockchain.TokenUtil) (*InfluxStorage, error) {
+	storage := &InfluxStorage{dbName: dbName, influxClient: c, tokenUtil: tokenUtil}
+	err := storage.CreateDB()
 	if err != nil {
 		return nil, err
 	}
-
-	return &InfluxStorage{dbName: dbName, influxClient: c, tokenUtil: tokenUtil}, nil
+	return storage, nil
 }
 
 // SaveTradeLogs persist trade logs to DB

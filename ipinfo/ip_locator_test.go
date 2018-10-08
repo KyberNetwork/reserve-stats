@@ -1,7 +1,7 @@
 package ipinfo
 
 import (
-	"fmt"
+	"net"
 	"testing"
 
 	"go.uber.org/zap"
@@ -23,7 +23,7 @@ func TestValidIP(t *testing.T) {
 	if err != nil {
 		t.Error("Could not create Locator", "error", err.Error())
 	}
-	ip := "81.2.69.142"
+	ip := net.ParseIP("81.2.69.142")
 	country, err := l.IPToCountry(ip)
 	if err != nil {
 		t.Error("Get unexpected error when call IPTOCountry", "error", err.Error())
@@ -33,26 +33,13 @@ func TestValidIP(t *testing.T) {
 	}
 }
 
-//TestValidIP test when input is an invalid IP
-func TestInvalidIP(t *testing.T) {
-	l, err := newTestLocator()
-	if err != nil {
-		t.Error("Could not create Locator", "error", err.Error())
-	}
-	ip := "22"
-	_, err = l.IPToCountry(ip)
-	if err.Error() != fmt.Sprintf("%s is invalid ip", ip) {
-		t.Error("Get unexpected error when call IPTOCountry", "error", err.Error())
-	}
-}
-
 //TestNotFoundIP test when input ip could not be locate
 func TestNotFoundIP(t *testing.T) {
 	l, err := newTestLocator()
 	if err != nil {
 		t.Error("Could not create Locator", "error", err.Error())
 	}
-	ip := "192.168.0.1"
+	ip := net.ParseIP("192.168.0.1")
 	country, err := l.IPToCountry(ip)
 	if err != nil {
 		t.Error("Get unexpected error when call IPTOCountry", "error", err.Error())

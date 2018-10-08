@@ -2,7 +2,6 @@ package ipinfo
 
 import (
 	"compress/gzip"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -72,11 +71,7 @@ func NewLocator(sugar *zap.SugaredLogger, dataDir string) (*Locator, error) {
 }
 
 // IPToCountry returns the country of given IP address.
-func (il *Locator) IPToCountry(ip string) (string, error) {
-	ipParsed := net.ParseIP(ip)
-	if ipParsed == nil {
-		return "", fmt.Errorf("%s is invalid ip", ip)
-	}
+func (il *Locator) IPToCountry(ipParsed net.IP) (string, error) {
 	record, err := il.r.Country(ipParsed)
 	if err != nil {
 		il.sugar.Infow("failed to query data from geo-database!", "error", err)
@@ -85,7 +80,7 @@ func (il *Locator) IPToCountry(ip string) (string, error) {
 
 	country := record.Country.IsoCode //iso code of country
 	if country == "" {
-		il.sugar.Debugw("could not find country code of given IP", "ip", ip)
+		il.sugar.Debugw("could not find country code of given IP", "ip", ipParsed)
 	}
 	return country, nil
 }

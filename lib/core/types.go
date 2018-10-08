@@ -12,6 +12,7 @@ type Token struct {
 	//LastActivationChange uint64 `json:"last_activation_change"`
 }
 
+// TokensReply is the struct to contain core's reply
 type TokensReply struct {
 	Data    []Token
 	Success bool

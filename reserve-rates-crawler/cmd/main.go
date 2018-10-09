@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/crawler"
+	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/storage/influx"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
@@ -16,7 +17,18 @@ import (
 const (
 	addressesFlag = "addresses"
 	blockFlag     = "block"
+	dbURLFlag     = "dbURL"
+	dbUNameFlag   = "dbUname"
+	dbPwdFlag     = "dbPwd"
+	defaultDBURL  = "http://localhost:8086/"
 )
+
+func newRateStorage(c *cli.Context) (*influx.InfluxRateStorage, error) {
+	url := c.GlobalString(dbURLFlag)
+	uname := c.GlobalString(dbUNameFlag)
+	pwd := c.GlobalString(dbPwdFlag)
+	return influx.NewRateInfluxDBStorage(url, uname, pwd)
+}
 
 func newReserveCrawlerCli() *cli.App {
 	app := libapp.NewApp()
@@ -36,6 +48,22 @@ func newReserveCrawlerCli() *cli.App {
 			Destination: &block,
 		},
 		libapp.NewEthereumNodeFlags(),
+		cli.StringFlag{
+			Name:  dbURLFlag,
+			Value: defaultDBURL,
+			Usage: "url to InfluxDB server",
+		},
+		cli.StringFlag{
+			Name:   dbUNameFlag,
+			Usage:  "userName for InfluxDB server",
+			EnvVar: "INFLUX_UNAME",
+			Value:  "",
+		}, cli.StringFlag{
+			Name:   dbPwdFlag,
+			Usage:  "url to InfluxDB server",
+			EnvVar: "INFLUX_PWD",
+			Value:  "",
+		},
 	)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
 	app.Action = func(c *cli.Context) error {
@@ -56,7 +84,11 @@ func newReserveCrawlerCli() *cli.App {
 		if err != nil {
 			return err
 		}
-		reserveRateCrawler, err := crawler.NewReserveRatesCrawler(addrs, client, coreClient, logger.Sugar(), blockTimeResolver)
+		rateStorage, err := newRateStorage(c)
+		if err != nil {
+			return err 
+		}
+		reserveRateCrawler, err := crawler.NewReserveRatesCrawler(addrs, client, coreClient, logger.Sugar(), blockTimeResolver, rateStorage)
 		if err != nil {
 			return err
 		}

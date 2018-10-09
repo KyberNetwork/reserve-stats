@@ -5,7 +5,6 @@ import (
 	"golang.org/x/sync/errgroup"
 	"sync"
 
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
@@ -23,17 +22,16 @@ var (
 // ResreveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
 // a set of addresses to crawl rates from and setting object to query for reserve's token settings
 type ResreveRatesCrawler struct {
-	sugar *zap.SugaredLogger
-
-	wrapperContract *contracts.VersionedWrapper
+	wrapperContract wrapperForReserveRate
 	Addresses       []ethereum.Address
-	tokenSetting    TokenSetting
-	blkTimeRsv      *blockchain.BlockTimeResolver
+	tokenSetting    tokenSetting
+	sugar          *zap.SugaredLogger
+	blkTimeRsv      blockTimeResolver
 	db              storage.ReserveRatesStorage
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
-func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett TokenSetting, sugar *zap.SugaredLogger, bl *blockchain.BlockTimeResolver, dbInstance storage.ReserveRatesStorage) (*ResreveRatesCrawler, error) {
+func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett tokenSetting, sugar *zap.SugaredLogger, bl blockTimeResolver, dbInstance storage.ReserveRatesStorage) (*ResreveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapper(client)
 	if err != nil {
 		return nil, err

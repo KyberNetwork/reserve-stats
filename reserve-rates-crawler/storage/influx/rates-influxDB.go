@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
+	utils "github.com/KyberNetwork/reserve-stats/lib/common"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	influxClient "github.com/influxdata/influxdb/client/v2"
@@ -23,10 +23,12 @@ const (
 
 var errCantConvert error = errors.New("cannot convert response from influxDB to pre-defined struct")
 
+// InfluxRateStorage is the implementation of influxclient to serve as ReserveRate storage
 type InfluxRateStorage struct {
 	client influxClient.Client
 }
 
+// NewRateInfluxDBStorage return an instance of influx client to store ReserveRate
 func NewRateInfluxDBStorage(url, uName, pwd string) (*InfluxRateStorage, error) {
 	httpConf := influxClient.HTTPConfig{
 		Addr:     url,
@@ -48,6 +50,8 @@ func NewRateInfluxDBStorage(url, uName, pwd string) (*InfluxRateStorage, error) 
 	return &InfluxRateStorage{client: client}, nil
 }
 
+// UpdateRatesRecords update all the rate records from different reserve to influxDB in one go.
+// It take a map[reserveAddress] ReserveRates and return error if occurs.
 func (rs *InfluxRateStorage) UpdateRatesRecords(rateRecords map[string]common.ReserveRates) error {
 	bp, err := influxClient.NewBatchPoints(
 		influxClient.BatchPointsConfig{
@@ -68,12 +72,11 @@ func (rs *InfluxRateStorage) UpdateRatesRecords(rateRecords map[string]common.Re
 				Pair.String():    pair,
 			}
 			fields := map[string]interface{}{
-				ReturnTime.String():     rateRecord.ReturnTime,
 				BuyRate.String():        rate.BuyReserveRate,
 				SellRate.String():       rate.SellReserveRate,
 				BuySanityRate.String():  rate.BuySanityRate,
 				SellSanityRate.String(): rate.SellSanityRate,
-				BlockNumber.String():    rateRecord.BlockNumber,
+				BlockNumber.String():    int64(rateRecord.BlockNumber),
 			}
 			pt, err := influxClient.NewPoint(RateTableName, tags, fields, rateRecord.Timestamp)
 			if err != nil {
@@ -85,7 +88,8 @@ func (rs *InfluxRateStorage) UpdateRatesRecords(rateRecords map[string]common.Re
 	return rs.client.Write(bp)
 }
 
-func (rs *InfluxRateStorage) GetRatesByTimePoint(rsvAddr ethereum.Address, fromTime, toTime int64) ([]common.ReserveRates, error) {
+// GetRatesByTimePoint returns all the rate record in a period of time of a reserve
+func (rs *InfluxRateStorage) GetRatesByTimePoint(rsvAddr ethereum.Address, fromTime, toTime uint64) ([]common.ReserveRates, error) {
 	result := []common.ReserveRates{}
 	command := fmt.Sprintf("SELECT * FROM %s WHERE time >= %d%s AND \"reserve\"='%s' AND time<= %d%s Order By time", RateTableName, fromTime, TimePrecision, rsvAddr.Hex(), toTime, TimePrecision)
 	q := influxClient.NewQuery(command, RateDBName, TimePrecision)
@@ -143,10 +147,12 @@ func convertQueryResultTorRate(row influxModel.Row) ([]common.ReserveRates, erro
 	nRate := 0
 	for _, v := range row.Values {
 		// Get Time
-		timeStamp, convertible := (v[idxs[Time]]).(time.Time)
-		if !convertible {
-			return nil, errCantConvert
+		intNumber, err := getint64FromInterface(v[idxs[Time]])
+		if err != nil {
+			return nil, err
 		}
+
+		timeStamp := utils.TimestampMsToTime(uint64(intNumber))
 		// New record with new Timestamp
 		if rate.Timestamp != timeStamp && firstRecordProcessed {
 			rates = append(rates, rate)
@@ -158,18 +164,12 @@ func convertQueryResultTorRate(row influxModel.Row) ([]common.ReserveRates, erro
 			rateEntry = rate.Data
 		}
 		rate.Timestamp = timeStamp
-		// get Return time
-		timeStamp, convertible = (v[idxs[ReturnTime]]).(time.Time)
-		if !convertible {
-			return nil, errCantConvert
-		}
-		rate.ReturnTime = timeStamp
 		// get Block number
-		intNumber, err := getint64FromInterface(v[idxs[BlockNumber]])
+		intNumber, err = getint64FromInterface(v[idxs[BlockNumber]])
 		if err != nil {
 			return nil, err
 		}
-		rate.BlockNumber = intNumber
+		rate.BlockNumber = uint64(intNumber)
 		// get pair
 		pairName, convertible := v[idxs[Pair]].(string)
 		if !convertible {

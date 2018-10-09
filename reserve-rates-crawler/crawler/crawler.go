@@ -78,6 +78,14 @@ func (rrc *ResreveRatesCrawler) getSupportedTokens(rsvAddr ethereum.Address) ([]
 
 func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereum.Address, data *sync.Map, wg *sync.WaitGroup) error {
 	defer wg.Done()
+	logger := rrc.logger.With(
+		"func", "reserve-rates-crawler/crawler/ResreveRatesCrawler.getEachReserveRate",
+		"block", block,
+		"reserve_address", rsvAddr.Hex(),
+	)
+
+	logger.Debug("fetching reserve rate")
+
 	tokens, err := rrc.getSupportedTokens(rsvAddr)
 	if err != nil {
 		return fmt.Errorf("cannot get supported tokens for reserve %s. Error: %s", rsvAddr.Hex(), err)

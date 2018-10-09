@@ -5,6 +5,8 @@ import (
 	"github.com/influxdata/influxdb/client/v2"
 	"strconv"
 
+	"go.uber.org/zap"
+
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
@@ -14,11 +16,17 @@ type InfluxStorage struct {
 	dbName       string
 	influxClient client.Client
 	tokenUtil    *blockchain.TokenUtil
+	sugar        *zap.SugaredLogger
 }
 
 // NewInfluxStorage init an instance of InfluxStorage
-func NewInfluxStorage(dbName string, c client.Client, tokenUtil *blockchain.TokenUtil) (*InfluxStorage, error) {
-	storage := &InfluxStorage{dbName: dbName, influxClient: c, tokenUtil: tokenUtil}
+func NewInfluxStorage(dbName string, c client.Client, tokenUtil *blockchain.TokenUtil, sugar *zap.SugaredLogger) (*InfluxStorage, error) {
+	storage := &InfluxStorage{
+		dbName:       dbName,
+		influxClient: c,
+		tokenUtil:    tokenUtil,
+		sugar:        sugar,
+	}
 	err := storage.CreateDB()
 	if err != nil {
 		return nil, err
@@ -48,6 +56,8 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 	if err := is.influxClient.Write(bp); err != nil {
 		return err
 	}
+
+	is.sugar.Debugw("saved trade logs into influxdb", "trade logs", logs)
 
 	return nil
 }

@@ -15,7 +15,7 @@ const (
 	influxdbUsernameFlag = "influxdb-username"
 	influxdbPasswordFlag = "influxdb-password"
 
-	influxdbEndpointDefaultValue = "127.0.0.1:8086"
+	influxdbEndpointDefaultValue = "http://127.0.0.1:8086"
 )
 
 // NewCliFlags returns cli flags to configure a core client.

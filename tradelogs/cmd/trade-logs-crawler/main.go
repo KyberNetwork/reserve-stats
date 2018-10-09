@@ -129,7 +129,10 @@ func getTradeLogs(c *cli.Context) error {
 	}
 
 	influxStorage, err := storage.NewInfluxStorage(
-		"trade_logs", influxClient, core.NewCachedClient(coreClient),sugar,
+		sugar,
+		"trade_logs",
+		influxClient,
+		core.NewCachedClient(coreClient),
 	)
 	if err != nil {
 		return err

@@ -15,16 +15,16 @@ import (
 type InfluxStorage struct {
 	dbName       string
 	influxClient client.Client
-	amountFmt    common.AmountFormatter
+	amountFmt    tokenAmountFormatter
 	sugar        *zap.SugaredLogger
 }
 
 // NewInfluxStorage init an instance of InfluxStorage
-func NewInfluxStorage(dbName string, influxClient client.Client, amountFmt common.AmountFormatter, sugar *zap.SugaredLogger) (*InfluxStorage, error) {
+func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient client.Client, amountFmt tokenAmountFormatter) (*InfluxStorage, error) {
 	storage := &InfluxStorage{
-		dbName: dbName,
+		dbName:       dbName,
 		influxClient: influxClient,
-		amountFmt: amountFmt,
+		amountFmt:    amountFmt,
 		sugar:        sugar,
 	}
 	err := storage.createDB()

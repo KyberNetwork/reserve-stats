@@ -51,6 +51,7 @@ type TradeLogCrawler struct {
 	ethClient    *ethclient.Client
 	rateProvider tokenrate.ETHUSDRateProvider
 	txTime       *blockchain.BlockTimeResolver
+	g            *geoInfo
 }
 
 func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
@@ -206,13 +207,17 @@ func calculateFiatAmount(tradeLog common.TradeLog, rate float64) common.TradeLog
 }
 
 // NewTradeLogCrawler create a new TradeLogCrawler instance.
-func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, rateProvider tokenrate.ETHUSDRateProvider) (*TradeLogCrawler, error) {
+func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, rateProvider tokenrate.ETHUSDRateProvider, geoURL string) (*TradeLogCrawler, error) {
 	client, err := ethclient.Dial(nodeURL)
 	if err != nil {
 		return nil, err
 	}
+	geoInfo, err := newGeoInfo(sugar, geoURL)
+	if err != nil {
+		return nil, err
+	}
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
-	return &TradeLogCrawler{sugar, client, rateProvider, resolver}, nil
+	return &TradeLogCrawler{sugar, client, rateProvider, resolver, geoInfo}, nil
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.
@@ -287,6 +292,23 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 			result[i] = calculateFiatAmount(tradeLog, ethRate)
 		}
 	}
+	for _, tradeLog := range result {
+		err := crawler.updateGeoInfo(&tradeLog)
+		if err != nil {
+			crawler.sugar.Errorw("Could not get geoInfo of tradeLog", "tradeLog", tradeLog, "err", err)
+			return result, err
+		}
+	}
 
 	return result, nil
+}
+
+func (crawler *TradeLogCrawler) updateGeoInfo(tradeLog *common.TradeLog) error {
+	ip, country, err := crawler.g.GetTxInfo(tradeLog.TransactionHash.Hex())
+	if err != nil {
+		return err
+	}
+	tradeLog.IP = ip
+	tradeLog.Country = country
+	return nil
 }

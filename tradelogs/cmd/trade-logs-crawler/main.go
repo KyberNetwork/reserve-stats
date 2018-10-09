@@ -25,6 +25,8 @@ const (
 	nodeURLDefaultValue = "https://mainnet.infura.io"
 	fromBlockFlag       = "from-block"
 	toBlockFlag         = "to-block"
+	geoURLFlag          = "geo-url"
+	geoURLDefaultValue  = "https://broadcast.kyber.network"
 
 	envVarPrefix = "TRADE_LOGS_CRAWLER_"
 )
@@ -52,6 +54,12 @@ func main() {
 			Name:   toBlockFlag,
 			Usage:  "Fetch trade logs to block",
 			EnvVar: envVarPrefix + "TO_BLOCK",
+		},
+		cli.StringFlag{
+			Name:   geoURLFlag,
+			Usage:  "Fetch trade logs to block",
+			Value:  geoURLDefaultValue,
+			EnvVar: envVarPrefix + "GEO_URL",
 		},
 	)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
@@ -105,10 +113,16 @@ func getTradeLogs(c *cli.Context) error {
 		return fmt.Errorf("invalid node url: %q, error: %s", nodeURL, err)
 	}
 
+	geoURL := c.String(geoURLFlag)
+	if err = validation.Validate(geoURL, validation.Required, is.URL); err != nil {
+		return fmt.Errorf("invalid geo url: %q, error: %s", geoURL, err)
+	}
+
 	crawler, err := tradelogs.NewTradeLogCrawler(
 		sugar,
 		nodeURL,
 		coingecko.New(),
+		geoURL,
 	)
 	if err != nil {
 		return err

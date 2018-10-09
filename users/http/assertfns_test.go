@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,7 +14,6 @@ type userResponse struct {
 // expectSuccess asserts that given response is a success response.
 func expectSuccess(t *testing.T, resp *httptest.ResponseRecorder) {
 	t.Helper()
-	log.Printf("response: %+v", resp)
 	if resp.Code != http.StatusOK {
 		t.Fatalf("wrong return code, expected: %d, got: %d", http.StatusOK, resp.Code)
 	}
@@ -53,7 +51,6 @@ func expectNonKYCed(t *testing.T, resp *httptest.ResponseRecorder) {
 //expectBadRequest assert that given response is bad request
 func expectBadRequest(t *testing.T, resp *httptest.ResponseRecorder) {
 	t.Helper()
-	log.Printf("response: %+v", resp)
 	if resp.Code != http.StatusBadRequest {
 		t.Fatalf("wrong return code, expected: %d, got %d", http.StatusBadRequest, resp.Code)
 	}

@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"os"
-
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/crawler"
@@ -21,14 +21,14 @@ func newReserveCrawlerCli() *cli.App {
 	app := libapp.NewApp()
 	app.Name = "reserve-rates-crawler"
 	app.Usage = "get the rates of all configured reserves at a certain block"
-	var block int64
+	var block uint64
 	app.Flags = append(app.Flags,
 		cli.StringSliceFlag{
 			Name:   addressesFlag,
 			EnvVar: "RESERVE_ADDRESSES",
 			Usage:  "list of reserve contract addresses. Example: --addresses={\"0x1111\",\"0x222\"}",
 		},
-		cli.Int64Flag{
+		cli.Uint64Flag{
 			Name:        blockFlag,
 			Value:       0,
 			Usage:       "block from which rate is queried. Default value is 0, in which case the latest rate is returned",
@@ -47,11 +47,15 @@ func newReserveCrawlerCli() *cli.App {
 		if err != nil {
 			return err
 		}
+		blockTimeResolver, err := blockchain.NewBlockTimeResolver(logger.Sugar(), client)
+		if err != nil {
+			return err
+		}
 		coreClient, err := core.NewClientFromContext(logger.Sugar(), c)
 		if err != nil {
 			return err
 		}
-		reserveRateCrawler, err := crawler.NewReserveRatesCrawler(addrs, client, coreClient, logger.Sugar())
+		reserveRateCrawler, err := crawler.NewReserveRatesCrawler(addrs, client, coreClient, logger.Sugar(), blockTimeResolver)
 		if err != nil {
 			return err
 		}

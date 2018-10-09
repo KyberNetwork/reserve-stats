@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/crawler"
+	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	influxClient "github.com/influxdata/influxdb/client/v2"
 	influxModel "github.com/influxdata/influxdb/models"
@@ -48,7 +48,7 @@ func NewRateInfluxDBStorage(url, uName, pwd string) (*InfluxRateStorage, error) 
 	return &InfluxRateStorage{client: client}, nil
 }
 
-func (rs *InfluxRateStorage) UpdateRatesRecords(rateRecords map[string]crawler.ReserveRates) error {
+func (rs *InfluxRateStorage) UpdateRatesRecords(rateRecords map[string]common.ReserveRates) error {
 	bp, err := influxClient.NewBatchPoints(
 		influxClient.BatchPointsConfig{
 			Database:  RateDBName,
@@ -85,8 +85,8 @@ func (rs *InfluxRateStorage) UpdateRatesRecords(rateRecords map[string]crawler.R
 	return rs.client.Write(bp)
 }
 
-func (rs *InfluxRateStorage) GetRatesByTimePoint(rsvAddr ethereum.Address, fromTime, toTime int64) ([]crawler.ReserveRates, error) {
-	result := []crawler.ReserveRates{}
+func (rs *InfluxRateStorage) GetRatesByTimePoint(rsvAddr ethereum.Address, fromTime, toTime int64) ([]common.ReserveRates, error) {
+	result := []common.ReserveRates{}
 	command := fmt.Sprintf("SELECT * FROM %s WHERE time >= %d%s AND \"reserve\"='%s' AND time<= %d%s Order By time", RateTableName, fromTime, TimePrecision, rsvAddr.Hex(), toTime, TimePrecision)
 	q := influxClient.NewQuery(command, RateDBName, TimePrecision)
 	response, err := rs.client.Query(q)
@@ -97,7 +97,7 @@ func (rs *InfluxRateStorage) GetRatesByTimePoint(rsvAddr ethereum.Address, fromT
 		return result, response.Error()
 	}
 	if len(response.Results) == 0 || len(response.Results[0].Series) == 0 {
-		return []crawler.ReserveRates{}, nil
+		return []common.ReserveRates{}, nil
 	}
 	return convertQueryResultTorRate(response.Results[0].Series[0])
 }
@@ -129,16 +129,16 @@ func getFloat64FromInterface(v interface{}) (float64, error) {
 	return number.Float64()
 }
 
-func convertQueryResultTorRate(row influxModel.Row) ([]crawler.ReserveRates, error) {
+func convertQueryResultTorRate(row influxModel.Row) ([]common.ReserveRates, error) {
 	if len(row.Values) == 0 {
-		return []crawler.ReserveRates{}, nil
+		return []common.ReserveRates{}, nil
 	}
 	idxs := getIndexOfFieldS(row.Columns)
-	rateEntry := make(crawler.ReserveTokenRateEntry)
-	rate := crawler.ReserveRates{
+	rateEntry := make(common.ReserveTokenRateEntry)
+	rate := common.ReserveRates{
 		Data: rateEntry,
 	}
-	rates := []crawler.ReserveRates{rate}
+	rates := []common.ReserveRates{rate}
 	firstRecordProcessed := false
 	nRate := 0
 	for _, v := range row.Values {
@@ -150,8 +150,8 @@ func convertQueryResultTorRate(row influxModel.Row) ([]crawler.ReserveRates, err
 		// New record with new Timestamp
 		if rate.Timestamp != timeStamp && firstRecordProcessed {
 			rates = append(rates, rate)
-			rate = crawler.ReserveRates{}
-			rateEntry = make(crawler.ReserveTokenRateEntry)
+			rate = common.ReserveRates{}
+			rateEntry = make(common.ReserveTokenRateEntry)
 			nRate++
 		} else {
 			rate = rates[nRate]
@@ -191,7 +191,7 @@ func convertQueryResultTorRate(row influxModel.Row) ([]crawler.ReserveRates, err
 		if !convertible {
 			return nil, errCantConvert
 		}
-		rateEntry[pairName] = crawler.ReserveRateEntry{
+		rateEntry[pairName] = common.ReserveRateEntry{
 			BuyReserveRate:  buyRate,
 			SellReserveRate: sellRate,
 			BuySanityRate:   buySanityRate,

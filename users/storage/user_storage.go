@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"time"
+
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/go-pg/pg"
 	"github.com/go-pg/pg/orm"
@@ -11,6 +13,15 @@ import (
 type UserDB struct {
 	sugar *zap.SugaredLogger
 	db    *pg.DB
+}
+
+//DeleteAllTables delete all table from schema using for test only
+func (udb *UserDB) DeleteAllTables() error {
+	userTable := &common.User{}
+	if err := udb.db.DropTable(userTable, &orm.DropTableOptions{}); err != nil {
+		return err
+	}
+	return nil
 }
 
 func createSchema(db *pg.DB) error {
@@ -45,19 +56,19 @@ func (udb *UserDB) CloseDBConnection() error {
 }
 
 //StoreUserInfo store user info to persist in database
-func (udb *UserDB) StoreUserInfo(email string, addresses []common.UserAddress) error {
+func (udb *UserDB) StoreUserInfo(userData common.UserData) error {
 	userModel := common.User{}
 	//remove all old user
-	if _, err := udb.db.Model(&userModel).Where("email = ?", email).Delete(); err != nil {
+	if _, err := udb.db.Model(&userModel).Where("email = ?", userData.Email).Delete(); err != nil {
 		return err
 	}
 
 	// insert updated address value
-	for _, address := range addresses {
+	for _, address := range userData.UserInfo {
 		userEntry := common.User{
-			Email:     email,
+			Email:     userData.Email,
 			Address:   address.Address,
-			Timestamp: address.Timestamp,
+			Timestamp: time.Unix(address.Timestamp/1000, 0),
 		}
 		if err := udb.db.Insert(&userEntry); err != nil {
 			return err

@@ -2,6 +2,8 @@ package storage
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"math/big"
 	"os"
 	"testing"
@@ -13,14 +15,16 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
+var testStorage *InfluxStorage
+
 type mockAmountFormatter struct {
 }
 
 func (fmt *mockAmountFormatter) FormatAmount(address ethereum.Address, amount *big.Int) (float64, error) {
-	return 0, nil
+	return 100, nil
 }
 
-func createStorage() (*InfluxStorage, error) {
+func newTestInfluxStorage() (*InfluxStorage, error) {
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		return nil, err
@@ -48,11 +52,19 @@ func createStorage() (*InfluxStorage, error) {
 	return storage, nil
 }
 
+// tearDown remove the database that storing trade logs measurements.
+func (is *InfluxStorage) tearDown() error {
+	_, err := is.queryDB(is.influxClient, fmt.Sprintf("DROP DATABASE %s", is.dbName))
+	return err
+}
+
 func getSampleTradeLogs(dataPath string) ([]common.TradeLog, error) {
 	var tradeLogs []common.TradeLog
-	byteValue, _ := os.Open(dataPath)
-	err := json.NewDecoder(byteValue).Decode(&tradeLogs)
+	byteValue, err := os.Open(dataPath)
 	if err != nil {
+		return nil, err
+	}
+	if err = json.NewDecoder(byteValue).Decode(&tradeLogs); err != nil {
 		return nil, err
 	}
 	return tradeLogs, nil
@@ -60,14 +72,28 @@ func getSampleTradeLogs(dataPath string) ([]common.TradeLog, error) {
 
 func TestSaveTradeLogs(t *testing.T) {
 	tradeLogs, err := getSampleTradeLogs("testdata/trade_logs.json")
-	storage, err := createStorage()
 	if err != nil {
-		t.Error("get unexpected error when create storage", "err", err.Error())
+		t.Fatal(err)
 	}
-	defer storage.RemoveDB()
-
-	err = storage.SaveTradeLogs(tradeLogs)
-	if err != nil {
+	if err = testStorage.SaveTradeLogs(tradeLogs); err != nil {
 		t.Error("get unexpected error when save trade logs", "err", err.Error())
 	}
+
+	// TODO: validate number of records inserted
+}
+
+func TestMain(m *testing.M) {
+	var err error
+	if testStorage, err = newTestInfluxStorage(); err != nil {
+		log.Fatal("get unexpected error when create storage", "err", err.Error())
+	}
+	defer testStorage.tearDown()
+
+	ret := m.Run()
+
+	if err = testStorage.tearDown(); err != nil {
+		log.Fatal(err)
+	}
+
+	os.Exit(ret)
 }

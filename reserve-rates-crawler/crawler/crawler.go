@@ -8,6 +8,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/common"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
+	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
@@ -81,8 +82,8 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block int64, rsvAddr ethereum
 	var (
 		srcAddresses      = []ethereum.Address{}
 		destAddresses     = []ethereum.Address{}
-		rates             = ReserveRates{}
-		rsvTokenRateEntry = ReserveTokenRateEntry{}
+		rates             = rsvRateCommon.ReserveRates{}
+		rsvTokenRateEntry = rsvRateCommon.ReserveTokenRateEntry{}
 	)
 	for _, token := range tokens {
 		srcAddresses = append(srcAddresses, ethereum.HexToAddress(token.Address), ethereum.HexToAddress(ethToken.Address))
@@ -98,7 +99,7 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block int64, rsvAddr ethereum
 	for index, token := range tokens {
 		// the logic to get ReserveRate from conversion contract can be viewed here
 		// https://developer.kyber.network/docs/ReservesGuide/#step-3-setting-token-conversion-rates-prices
-		rateEntry := ReserveRateEntry{}
+		rateEntry := rsvRateCommon.ReserveRateEntry{}
 		rateEntry.BuyReserveRate = common.BigToFloat(reserveRate[index*2+1], ethToken.Decimals)
 		rateEntry.BuySanityRate = common.BigToFloat(sanityRate[index*2+1], ethToken.Decimals)
 		rateEntry.SellReserveRate = common.BigToFloat(reserveRate[index*2], ethToken.Decimals)
@@ -112,9 +113,9 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block int64, rsvAddr ethereum
 
 // GetReserveRates returns the map[ReserveAddress]ReserveRates at the given block number.
 // It will only return rates from the set of addresses within its definition.
-func (rrc *ResreveRatesCrawler) GetReserveRates(block int64) (map[string]ReserveRates, error) {
+func (rrc *ResreveRatesCrawler) GetReserveRates(block int64) (map[string]rsvRateCommon.ReserveRates, error) {
 	var (
-		result = make(map[string]ReserveRates)
+		result = make(map[string]rsvRateCommon.ReserveRates)
 		data   = sync.Map{}
 		wg     = sync.WaitGroup{}
 		errs   = make(chan error, len(rrc.Addresses))
@@ -143,7 +144,7 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block int64) (map[string]Reserve
 			err = fmt.Errorf("key (%v) cannot be asserted to ethereum.Address", key)
 			return false
 		}
-		rates, ok := value.(ReserveRates)
+		rates, ok := value.(rsvRateCommon.ReserveRates)
 		if !ok {
 			err = fmt.Errorf("value (%v) cannot be asserted to reserveRates", value)
 			return true

@@ -30,16 +30,16 @@ var (
 // ResreveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
 // a set of addresses to crawl rates from and setting object to query for reserve's token settings
 type ResreveRatesCrawler struct {
-	wrapperContract *contracts.VersionedWrapper
+	wrapperContract wrapperForReserveRate
 	Addresses       []ethereum.Address
-	tokenSetting    TokenSetting
+	tokenSetting    tokenSetting
 	logger          *zap.SugaredLogger
-	blkTimeRsv      *blockchain.BlockTimeResolver
+	blkTimeRsv      blockTimeResolver
 	db              storage.ReserveRatesStorage
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
-func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett TokenSetting, lger *zap.SugaredLogger, bl *blockchain.BlockTimeResolver, dbInstance storage.ReserveRatesStorage) (*ResreveRatesCrawler, error) {
+func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett tokenSetting, lger *zap.SugaredLogger, bl *blockchain.BlockTimeResolver, dbInstance storage.ReserveRatesStorage) (*ResreveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapper(client)
 	if err != nil {
 		return nil, err

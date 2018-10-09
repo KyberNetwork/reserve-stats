@@ -1,7 +1,6 @@
 package ipinfo
 
 import (
-	"fmt"
 	"net"
 	"net/http"
 
@@ -16,12 +15,12 @@ const ErrInvalidIP = "Invalid ip input"
 type HTTPServer struct {
 	r     *gin.Engine
 	l     *Locator
-	port  int
+	host  string
 	sugar *zap.SugaredLogger
 }
 
 // NewHTTPServer return an instance of HTTPServer
-func NewHTTPServer(sugar *zap.SugaredLogger, dataDir string, port int) (*HTTPServer, error) {
+func NewHTTPServer(sugar *zap.SugaredLogger, dataDir string, host string) (*HTTPServer, error) {
 	l, err := NewLocator(sugar, dataDir)
 	if err != nil {
 		return nil, err
@@ -29,7 +28,7 @@ func NewHTTPServer(sugar *zap.SugaredLogger, dataDir string, port int) (*HTTPSer
 	return &HTTPServer{
 		r:     gin.Default(),
 		l:     l,
-		port:  port,
+		host:  host,
 		sugar: sugar,
 	}, nil
 }
@@ -41,8 +40,7 @@ func (h *HTTPServer) register() {
 // Run start HTTPServer
 func (h *HTTPServer) Run() error {
 	h.register()
-	port := fmt.Sprintf(":%d", h.port)
-	return h.r.Run(port)
+	return h.r.Run(h.host)
 }
 
 func (h *HTTPServer) lookupIPCountry(c *gin.Context) {

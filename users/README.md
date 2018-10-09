@@ -20,6 +20,7 @@
 **user**: postgresql db user, default is empty
 **password**: postgresql db password, default is empty
 **database**: postgresql db database to use, default is empty
+**listen**: host to run http server, default value is 127.0.0.1: 8002
 
 ## Available API
 

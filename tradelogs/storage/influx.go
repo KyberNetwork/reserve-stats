@@ -15,19 +15,19 @@ import (
 type InfluxStorage struct {
 	dbName       string
 	influxClient client.Client
-	tokenUtil    *blockchain.TokenUtil
+	amountFmt    common.AmountFormatter
 	sugar        *zap.SugaredLogger
 }
 
 // NewInfluxStorage init an instance of InfluxStorage
-func NewInfluxStorage(dbName string, c client.Client, tokenUtil *blockchain.TokenUtil, sugar *zap.SugaredLogger) (*InfluxStorage, error) {
+func NewInfluxStorage(dbName string, influxClient client.Client, amountFmt common.AmountFormatter, sugar *zap.SugaredLogger) (*InfluxStorage, error) {
 	storage := &InfluxStorage{
-		dbName:       dbName,
-		influxClient: c,
-		tokenUtil:    tokenUtil,
+		dbName: dbName,
+		influxClient: influxClient,
+		amountFmt: amountFmt,
 		sugar:        sugar,
 	}
-	err := storage.CreateDB()
+	err := storage.createDB()
 	if err != nil {
 		return nil, err
 	}
@@ -62,13 +62,10 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 	return nil
 }
 
-// CreateDB create database in influx db
-func (is *InfluxStorage) CreateDB() error {
+// createDB creates the database will be used for storing trade logs measurements.
+func (is *InfluxStorage) createDB() error {
 	_, err := is.queryDB(is.influxClient, fmt.Sprintf("CREATE DATABASE %s", is.dbName))
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // queryDB convenience function to query the database
@@ -107,27 +104,27 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) (*client.Point, er
 		"ip":      log.IP,
 	}
 
-	ethReceivalAmount, err := is.tokenUtil.GetTokenAmount(blockchain.ETHAddr, log.EtherReceivalAmount)
+	ethReceivalAmount, err := is.amountFmt.FormatAmount(blockchain.ETHAddr, log.EtherReceivalAmount)
 	if err != nil {
 		return nil, err
 	}
 
-	srcAmount, err := is.tokenUtil.GetTokenAmount(log.SrcAddress, log.SrcAmount)
+	srcAmount, err := is.amountFmt.FormatAmount(log.SrcAddress, log.SrcAmount)
 	if err != nil {
 		return nil, err
 	}
 
-	dstAmount, err := is.tokenUtil.GetTokenAmount(log.DestAddress, log.DestAmount)
+	dstAmount, err := is.amountFmt.FormatAmount(log.DestAddress, log.DestAmount)
 	if err != nil {
 		return nil, err
 	}
 
-	walletFee, err := is.tokenUtil.GetTokenAmount(blockchain.KNCAddr, log.WalletFee)
+	walletFee, err := is.amountFmt.FormatAmount(blockchain.KNCAddr, log.WalletFee)
 	if err != nil {
 		return nil, err
 	}
 
-	burnFee, err := is.tokenUtil.GetTokenAmount(blockchain.KNCAddr, log.BurnFee)
+	burnFee, err := is.amountFmt.FormatAmount(blockchain.KNCAddr, log.BurnFee)
 	if err != nil {
 		return nil, err
 	}

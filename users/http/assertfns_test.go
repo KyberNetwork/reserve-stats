@@ -53,7 +53,7 @@ func expectNonKYCed(t *testing.T, resp *httptest.ResponseRecorder) {
 //expectBadRequest assert that given response is bad request
 func expectBadRequest(t *testing.T, resp *httptest.ResponseRecorder) {
 	t.Helper()
-
+	log.Printf("response: %+v", resp)
 	if resp.Code != http.StatusBadRequest {
 		t.Fatalf("wrong return code, expected: %d, got %d", http.StatusBadRequest, resp.Code)
 	}

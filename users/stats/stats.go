@@ -45,8 +45,8 @@ func (us UserStats) GetTxCapByAddress(addr string) (*big.Int, bool, error) {
 }
 
 //StoreUserInfo store user info pushed from dashboard
-func (us UserStats) StoreUserInfo(email string, addresses []common.UserAddress) error {
-	return us.userStorage.StoreUserInfo(email, addresses)
+func (us UserStats) StoreUserInfo(userData common.UserData) error {
+	return us.userStorage.StoreUserInfo(userData)
 }
 
 //NewUserStats return new user stats instance

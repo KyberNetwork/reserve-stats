@@ -68,6 +68,12 @@ func (is *InfluxStorage) createDB() error {
 	return err
 }
 
+// RemoveDB remove the database that storing trade logs measurements.
+func (is *InfluxStorage) RemoveDB() error {
+	_, err := is.queryDB(is.influxClient, fmt.Sprintf("DROP DATABASE %s", is.dbName))
+	return err
+}
+
 // queryDB convenience function to query the database
 func (is *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.Result, err error) {
 	q := client.Query{

@@ -1,0 +1,19 @@
+language: go
+
+go:
+  - 1.11.x
+
+install:
+  - export GOMETALINTER_VERSION=2.0.11
+  - ./.travis/gometalinter-install.sh
+  - export PATH=$PATH:${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
+  - export GO111MODULE=on
+
+cache:
+  directories:
+  - ${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
+
+script:
+  - gometalinter --config=gometalinter.json ./...
+  - go build -v -mod=vendor ./...
+  - go test -v -mod=vendor ./...

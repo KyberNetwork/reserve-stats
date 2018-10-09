@@ -1,3 +1,6 @@
+# github.com/KyberNetwork/tokenrate v0.0.0-20181009041328-65b9b5da6c5d
+github.com/KyberNetwork/tokenrate
+github.com/KyberNetwork/tokenrate/coingecko
 # github.com/aristanetworks/goarista v0.0.0-20180907105523-ff33da284e76
 github.com/aristanetworks/goarista/monotime
 # github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf

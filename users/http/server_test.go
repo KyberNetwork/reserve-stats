@@ -65,6 +65,7 @@ func TestUserHTTPServer(t *testing.T) {
 	const (
 		requestEndpoint = "/users"
 		userEmail       = "test@gmail.com"
+		secondUser      = "second@gmail.com"
 		wrongUserEmail  = "test"
 		queryAddress    = "0xc9a658f87d7432ff897f31dce318f0856f66acb7"
 		nonKycAddress   = "0xb8df4cf4b7ad086cd5139a75033566164e41a0b4"
@@ -141,7 +142,7 @@ func TestUserHTTPServer(t *testing.T) {
 				Endpoint: requestEndpoint,
 				Method:   http.MethodPost,
 				Data: map[string]interface{}{
-					"user":      userEmail,
+					"email":     userEmail,
 					"user_info": timestampEmpty,
 				},
 				Assert: expectBadRequest,
@@ -164,6 +165,16 @@ func TestUserHTTPServer(t *testing.T) {
 					"user_info": correctUserInfo,
 				},
 				Assert: expectSuccess,
+			},
+			{
+				Msg:      "address is not unique",
+				Endpoint: requestEndpoint,
+				Method:   http.MethodPost,
+				Data: map[string]interface{}{
+					"email":     secondUser,
+					"user_info": correctUserInfo,
+				},
+				Assert: expectInternalServerError,
 			},
 			{
 				Msg:      "user is not kyced",

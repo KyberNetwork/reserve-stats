@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -53,5 +54,14 @@ func expectBadRequest(t *testing.T, resp *httptest.ResponseRecorder) {
 	t.Helper()
 	if resp.Code != http.StatusBadRequest {
 		t.Fatalf("wrong return code, expected: %d, got %d", http.StatusBadRequest, resp.Code)
+	}
+}
+
+//expectInternalServerError assert that given response is error from server
+func expectInternalServerError(t *testing.T, resp *httptest.ResponseRecorder) {
+	t.Helper()
+	log.Printf("response: %+v", resp)
+	if resp.Code != http.StatusInternalServerError {
+		t.Fatalf("wrong return code, expected: %d, got %d", http.StatusInternalServerError, resp.Code)
 	}
 }

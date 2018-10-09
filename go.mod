@@ -18,6 +18,7 @@ require (
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/hashicorp/golang-lru v0.5.0 // indirect
 	github.com/huin/goupnp v0.0.0-20180415215157-1395d1447324 // indirect
+	github.com/influxdata/influxdb v1.6.3
 	github.com/jackpal/go-nat-pmp v1.0.1 // indirect
 	github.com/json-iterator/go v1.1.5 // indirect
 	github.com/karalabe/hid v0.0.0-20180420081245-2b4488a37358 // indirect

@@ -16,11 +16,11 @@
 
 ### Available flags
 
-**host**: where to connect to postgresql db, default is localhost: *127.0.0.1:5432*
-**user**: postgresql db user, default is empty
-**password**: postgresql db password, default is empty
-**database**: postgresql db database to use, default is empty
-**listen**: host to run http server, default value is 127.0.0.1: 8002
+**host**: where to connect to postgresql db, default is localhost: *127.0.0.1:5432*.  
+**user**: postgresql db user, default is empty.  
+**password**: postgresql db password, default is empty.   
+**database**: postgresql db database to use, default is empty.  
+**listen**: host to run http server, default value is 127.0.0.1: 8002.  
 
 ## Available API
 

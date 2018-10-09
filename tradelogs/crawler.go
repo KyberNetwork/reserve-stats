@@ -8,15 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	"github.com/KyberNetwork/tokenrate"
 	ether "github.com/ethereum/go-ethereum"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
-
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 const (
@@ -48,10 +47,10 @@ const (
 // TradeLogCrawler gets trade logs on KyberNetwork on blockchain, adding the
 // information about USD equivalent on each trade.
 type TradeLogCrawler struct {
-	sugar     *zap.SugaredLogger
-	ethClient *ethclient.Client
-	ethRate   ethrate.EthUSDRate
-	txTime    *blockchain.BlockTimeResolver
+	sugar        *zap.SugaredLogger
+	ethClient    *ethclient.Client
+	rateProvider tokenrate.ETHUSDRateProvider
+	txTime       *blockchain.BlockTimeResolver
 }
 
 func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
@@ -207,13 +206,13 @@ func calculateFiatAmount(tradeLog common.TradeLog, rate float64) common.TradeLog
 }
 
 // NewTradeLogCrawler create a new TradeLogCrawler instance.
-func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, ethRate ethrate.EthUSDRate) (*TradeLogCrawler, error) {
+func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, rateProvider tokenrate.ETHUSDRateProvider) (*TradeLogCrawler, error) {
 	client, err := ethclient.Dial(nodeURL)
 	if err != nil {
 		return nil, err
 	}
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
-	return &TradeLogCrawler{sugar, client, ethRate, resolver}, nil
+	return &TradeLogCrawler{sugar, client, rateProvider, resolver}, nil
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.
@@ -275,7 +274,11 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 	}
 
 	for i, tradeLog := range result {
-		ethRate := crawler.ethRate.GetUSDRate(tradeLog.Timestamp)
+		var ethRate float64
+		ethRate, err = crawler.rateProvider.USDRate(tradeLog.Timestamp)
+		if err != nil {
+			return nil, err
+		}
 		if ethRate != 0 {
 			result[i] = calculateFiatAmount(tradeLog, ethRate)
 		}

@@ -44,6 +44,7 @@ require (
 	github.com/ethereum/go-ethereum v1.8.16
 	github.com/fjl/memsize v0.0.0-20180427083637-f6d5545993d6 // indirect
 	github.com/gin-contrib/cors v0.0.0-20180926132136-4f98e8b8e930
+	github.com/gin-contrib/cors v0.0.0-20180926132136-4f98e8b8e930 // indirect
 	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
 	github.com/gin-gonic/gin v1.3.0
 	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible

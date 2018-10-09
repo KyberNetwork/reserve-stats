@@ -22,7 +22,7 @@ const (
 	defaultDBURL  = "http://localhost:8086/"
 )
 
-func newRateStorage(c *cli.Context) (*influx.InfluxRateStorage, error) {
+func newRateStorage(c *cli.Context) (*influx.RateStorage, error) {
 	url := c.GlobalString(dbURLFlag)
 	uname := c.GlobalString(dbUNameFlag)
 	pwd := c.GlobalString(dbPwdFlag)
@@ -85,7 +85,7 @@ func newReserveCrawlerCli() *cli.App {
 		}
 		rateStorage, err := newRateStorage(c)
 		if err != nil {
-			return err 
+			return err
 		}
 		reserveRateCrawler, err := crawler.NewReserveRatesCrawler(addrs, client, coreClient, logger.Sugar(), blockTimeResolver, rateStorage)
 		if err != nil {

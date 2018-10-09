@@ -23,13 +23,13 @@ const (
 
 var errCantConvert error = errors.New("cannot convert response from influxDB to pre-defined struct")
 
-// InfluxRateStorage is the implementation of influxclient to serve as ReserveRate storage
-type InfluxRateStorage struct {
+// RateStorage is the implementation of influxclient to serve as ReserveRate storage
+type RateStorage struct {
 	client influxClient.Client
 }
 
 // NewRateInfluxDBStorage return an instance of influx client to store ReserveRate
-func NewRateInfluxDBStorage(url, uName, pwd string) (*InfluxRateStorage, error) {
+func NewRateInfluxDBStorage(url, uName, pwd string) (*RateStorage, error) {
 	httpConf := influxClient.HTTPConfig{
 		Addr:     url,
 		Username: uName,
@@ -47,12 +47,12 @@ func NewRateInfluxDBStorage(url, uName, pwd string) (*InfluxRateStorage, error) 
 	if response.Error() != nil {
 		return nil, response.Error()
 	}
-	return &InfluxRateStorage{client: client}, nil
+	return &RateStorage{client: client}, nil
 }
 
 // UpdateRatesRecords update all the rate records from different reserve to influxDB in one go.
 // It take a map[reserveAddress] ReserveRates and return error if occurs.
-func (rs *InfluxRateStorage) UpdateRatesRecords(rateRecords map[string]common.ReserveRates) error {
+func (rs *RateStorage) UpdateRatesRecords(rateRecords map[string]common.ReserveRates) error {
 	bp, err := influxClient.NewBatchPoints(
 		influxClient.BatchPointsConfig{
 			Database:  RateDBName,
@@ -89,7 +89,7 @@ func (rs *InfluxRateStorage) UpdateRatesRecords(rateRecords map[string]common.Re
 }
 
 // GetRatesByTimePoint returns all the rate record in a period of time of a reserve
-func (rs *InfluxRateStorage) GetRatesByTimePoint(rsvAddr ethereum.Address, fromTime, toTime uint64) ([]common.ReserveRates, error) {
+func (rs *RateStorage) GetRatesByTimePoint(rsvAddr ethereum.Address, fromTime, toTime uint64) ([]common.ReserveRates, error) {
 	result := []common.ReserveRates{}
 	command := fmt.Sprintf("SELECT * FROM %s WHERE time >= %d%s AND \"reserve\"='%s' AND time<= %d%s Order By time", RateTableName, fromTime, TimePrecision, rsvAddr.Hex(), toTime, TimePrecision)
 	q := influxClient.NewQuery(command, RateDBName, TimePrecision)

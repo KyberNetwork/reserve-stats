@@ -5,16 +5,25 @@ package influx
 type RateSchemaFieldName int
 
 const (
-	Time           RateSchemaFieldName = iota //time
-	Pair                                      //pair
-	BuyRate                                   //buy_rate
-	SellRate                                  //sell_rate
-	BuySanityRate                             //buy_sanity_rate
-	SellSanityRate                            //sell_sanity_rate
-	BlockNumber                               //block_number
-	Reserve                                   //reserve
+	//Time is enumerated field name for reserveRate.time
+	Time RateSchemaFieldName = iota //time
+	//Pair is enumerated field name for reserveRate.Pair
+	Pair //pair
+	//BuyRate is enumerated field name for reserveRate.BuyRate
+	BuyRate //buy_rate
+	//SellRate is enumerated field name for reserveRate.SellRate
+	SellRate //sell_rate
+	//BuySanityRate is enumerated field name for reserveRate.BuySanityRate
+	BuySanityRate //buy_sanity_rate
+	//SellSanityRate is enumerated field name for reserveRate.SellSanityRate
+	SellSanityRate //sell_sanity_rate
+	//BlockNumber is enumerated field name for reserveRate.BlockNumber
+	BlockNumber //block_number
+	//Reserve is enumerated field name for reserveRate.Reserve
+	Reserve //reserve
 )
 
+//RateSchemaFields translates the stringer of reserveRate fields into its enumerated form
 var RateSchemaFields = map[string]RateSchemaFieldName{
 	"time":             Time,
 	"pair":             Pair,

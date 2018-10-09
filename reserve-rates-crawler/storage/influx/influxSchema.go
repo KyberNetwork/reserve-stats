@@ -6,7 +6,6 @@ type RateSchemaFieldName int
 
 const (
 	Time           RateSchemaFieldName = iota //time
-	ReturnTime                                //return_time
 	Pair                                      //pair
 	BuyRate                                   //buy_rate
 	SellRate                                  //sell_rate
@@ -18,7 +17,6 @@ const (
 
 var RateSchemaFields = map[string]RateSchemaFieldName{
 	"time":             Time,
-	"return_time":      ReturnTime,
 	"pair":             Pair,
 	"buy_rate":         BuyRate,
 	"sell_rate":        SellRate,

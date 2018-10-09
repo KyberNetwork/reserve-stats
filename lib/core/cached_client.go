@@ -24,9 +24,11 @@ func NewCachedClient(client *Client) *CachedClient {
 	}
 }
 
+// Tokens purges the current cached tokens and fetching from Core server.
 func (cc *CachedClient) Tokens() ([]Token, error) {
 	cc.mu.Lock()
 	defer cc.mu.Unlock()
+	cc.cached = make(map[common.Address]Token)
 
 	tokens, err := cc.Client.Tokens()
 	if err != nil {
@@ -73,6 +75,8 @@ func (cc *CachedClient) Token(address common.Address) (Token, error) {
 	return Token{}, errors.New("token not found")
 }
 
+// FormatAmount formats the given amount in wei to human friendly
+// number with preconfigured token decimals.
 func (cc *CachedClient) FormatAmount(address common.Address, amount *big.Int) (float64, error) {
 	token, err := cc.Token(address)
 	if err != nil {

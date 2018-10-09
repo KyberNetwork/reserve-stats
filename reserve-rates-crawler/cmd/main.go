@@ -1,14 +1,14 @@
 package main
 
 import (
-	"log"
-	"os"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/crawler"
 	cli "github.com/urfave/cli"
 	"go.uber.org/zap"
+	"log"
+	"os"
 )
 
 const (

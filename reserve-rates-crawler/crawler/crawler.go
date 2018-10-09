@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/KyberNetwork/reserve-stats/lib/common"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/common"
 
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
@@ -33,7 +33,7 @@ type ResreveRatesCrawler struct {
 	Addresses       []ethereum.Address
 	tokenSetting    TokenSetting
 	logger          *zap.SugaredLogger
-	blkTimeRsv 	    *blockchain.BlockTimeResolver
+	blkTimeRsv      *blockchain.BlockTimeResolver
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
@@ -51,7 +51,7 @@ func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett Token
 		Addresses:       ethAddrs,
 		tokenSetting:    sett,
 		logger:          lger,
-		blkTimeRsv: bl,
+		blkTimeRsv:      bl,
 	}, nil
 }
 
@@ -93,7 +93,7 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 		destAddresses = append(destAddresses, ethereum.HexToAddress(ethToken.Address), ethereum.HexToAddress(token.Address))
 	}
 	rates.Timestamp, err = rrc.blkTimeRsv.Resolve(block)
-	if err !=nil {
+	if err != nil {
 		return err
 	}
 	reserveRate, sanityRate, callError := rrc.wrapperContract.GetReserveRate(block, rsvAddr, srcAddresses, destAddresses)

@@ -1,0 +1,10 @@
+{
+  "Vendor": true,
+  "DisableAll": true,
+  "Enable": [
+    "gofmt",
+    "golint",
+    "vet"
+  ],
+  "Deadline": "5m"
+}

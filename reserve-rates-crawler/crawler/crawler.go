@@ -25,7 +25,7 @@ type ResreveRatesCrawler struct {
 	wrapperContract wrapperForReserveRate
 	Addresses       []ethereum.Address
 	tokenSetting    tokenSetting
-	sugar          *zap.SugaredLogger
+	sugar           *zap.SugaredLogger
 	blkTimeRsv      blockTimeResolver
 	db              storage.ReserveRatesStorage
 }
@@ -118,12 +118,12 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 
 // GetReserveRates returns the map[ReserveAddress]ReserveRates at the given block number.
 // It will only return rates from the set of addresses within its definition.
-func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]*rsvRateCommon.ReserveRates, error) {
+func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]rsvRateCommon.ReserveRates, error) {
 	var (
 		err    error
 		g      errgroup.Group
 		data   = sync.Map{}
-		result = make(map[string]*rsvRateCommon.ReserveRates)
+		result = make(map[string]rsvRateCommon.ReserveRates)
 	)
 
 	logger := rrc.sugar.With(
@@ -141,7 +141,7 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]*rsvRa
 			if err != nil {
 				return err
 			}
-			data.Store(rsvAddr, rates)
+			data.Store(rsvAddr, *rates)
 			return nil
 		})
 	}
@@ -157,7 +157,7 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]*rsvRa
 			err = fmt.Errorf("key (%v) cannot be asserted to ethereum.Address", key)
 			return false
 		}
-		rates, ok := value.(*rsvRateCommon.ReserveRates)
+		rates, ok := value.(rsvRateCommon.ReserveRates)
 		if !ok {
 			err = fmt.Errorf("value (%v) cannot be asserted to reserveRates", value)
 			return false

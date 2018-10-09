@@ -52,7 +52,7 @@ func NewRateInfluxDBStorage(url, uName, pwd string) (*RateStorage, error) {
 
 // UpdateRatesRecords update all the rate records from different reserve to influxDB in one go.
 // It take a map[reserveAddress] ReserveRates and return error if occurs.
-func (rs *RateStorage) UpdateRatesRecords(rateRecords map[string]*common.ReserveRates) error {
+func (rs *RateStorage) UpdateRatesRecords(rateRecords map[string]common.ReserveRates) error {
 	bp, err := influxClient.NewBatchPoints(
 		influxClient.BatchPointsConfig{
 			Database:  RateDBName,

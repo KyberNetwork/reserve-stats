@@ -15,25 +15,13 @@ const (
 	httpAddressFlag = "listen"
 )
 
-// NewHTTPFlags returns cli flags to configure a http server.
-func NewHTTPFlags(prefix string, defaultPort HTTPPort) []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
-			Name:   PortFlag,
-			Usage:  "Define http server port",
-			Value:  fmt.Sprint(defaultPort),
-			EnvVar: prefix + "PORT",
-		},
-	}
-}
-
 // NewHTTPCliFlags creates new cli flags for HTTP Server.
 func NewHTTPCliFlags(defaultPort HTTPPort) []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:   httpAddressFlag,
 			Usage:  "HTTP server address",
-			EnvVar: app.JoinEnvVar(app.JoinEnvVar("HTTP_ADDRESS")),
+			EnvVar: app.JoinEnvVar(app.JoinEnvVar("HTTP_ADDRESS")), //
 			Value:  fmt.Sprintf("127.0.0.1:%d", defaultPort),
 		},
 	}

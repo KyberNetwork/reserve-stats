@@ -1,7 +1,7 @@
 package core
 
 import (
-	"github.com/pkg/errors"
+	"errors"
 	"math/big"
 	"sync"
 
@@ -70,7 +70,7 @@ func (cc *CachedClient) Token(address common.Address) (Token, error) {
 		return token, nil
 	}
 	logger.Debug("cache miss after refreshing")
-	return Token{}, errors.New("Token not found")
+	return Token{}, errors.New("token not found")
 }
 
 func (cc *CachedClient) FormatAmount(address common.Address, amount *big.Int) (float64, error) {

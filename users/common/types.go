@@ -1,23 +1,23 @@
 package common
 
-import "time"
+import (
+	"time"
+)
 
-//UserResponse response for /users query
-type UserResponse struct {
-	//KYC return if user is kyc or not
-	KYC bool `json:"kyc"`
-	//Cap return transaction cap for user by wei
-	Cap uint64 `json:"cap"`
-	//Rich return true if user is exceed his daily cap
-	Rich bool `json:"rich"`
+//Info an information of an user
+type Info struct {
+	//Address add of user
+	Address string `json:"address" binding:"required,isAddress"`
+	//Timestamp return timestamp of adding address
+	Timestamp int64 `json:"timestamp" binding:"required"`
 }
 
-//UserAddress an information of an user
-type UserAddress struct {
-	//Address add of user
-	Address string `json:"address"`
-	//Timestamp return timestamp of adding address
-	Timestamp time.Time `json:"timestamp"`
+//UserData user data post through post request to store in stats database
+type UserData struct {
+	//Email user email - unique
+	Email string `json:"email" binding:"required,isemail"`
+	//UserInfo user info include
+	UserInfo []Info `json:"user_info" binding:"required,dive,required"`
 }
 
 //User information for an user

@@ -275,11 +275,15 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 
 	for i, tradeLog := range result {
 		var ethRate float64
-		ethRate, err = crawler.rateProvider.USDRate(tradeLog.Timestamp)
-		if err != nil {
+		if ethRate, err = crawler.rateProvider.USDRate(tradeLog.Timestamp); err != nil {
+			crawler.sugar.Errorw("failed to get ETH/USD rate",
+				"timestamp", tradeLog.Timestamp.String())
 			return nil, err
 		}
 		if ethRate != 0 {
+			crawler.sugar.Debugw("got ETH/USD rate",
+				"rate", ethRate,
+				"timestamp", tradeLog.Timestamp.String())
 			result[i] = calculateFiatAmount(tradeLog, ethRate)
 		}
 	}

@@ -16,7 +16,6 @@ type ReserveRateEntry struct {
 // ReserveRates hold all the pairs's rate for a particular reserve and metadata
 type ReserveRates struct {
 	Timestamp   time.Time
-	ReturnTime  time.Time
-	BlockNumber int64
+	BlockNumber uint64
 	Data        ReserveTokenRateEntry
 }

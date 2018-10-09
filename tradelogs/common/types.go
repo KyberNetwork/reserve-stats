@@ -31,3 +31,9 @@ type TradeLog struct {
 	IP             string
 	Country        string
 }
+
+// AmountFormatter is the formatter used to format the amount from big number
+// to float using preconfigured decimals. The intended implementation is from Core API client.
+type AmountFormatter interface {
+	FormatAmount(address ethereum.Address, amount *big.Int) (float64, error)
+}

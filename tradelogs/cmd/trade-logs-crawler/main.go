@@ -16,7 +16,6 @@ import (
 	"github.com/urfave/cli"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
@@ -25,13 +24,10 @@ import (
 )
 
 const (
-	nodeURLFlag          = "node"
-	nodeURLDefaultValue  = "https://mainnet.infura.io"
-	fromBlockFlag        = "from-block"
-	toBlockFlag          = "to-block"
-	influxdbEndpointFlag = "influxdb-endpoint"
-	influxdbUsernameFlag = "influxdb-username"
-	influxdbPasswordFlag = "influxdb-password"
+	nodeURLFlag         = "node"
+	nodeURLDefaultValue = "https://mainnet.infura.io"
+	fromBlockFlag       = "from-block"
+	toBlockFlag         = "to-block"
 
 	envVarPrefix = "TRADE_LOGS_CRAWLER_"
 )
@@ -96,13 +92,6 @@ func getTradeLogs(c *cli.Context) error {
 		return err
 	}
 
-	supportedTokens, err := coreClient.Tokens()
-	if err != nil {
-		return err
-	}
-
-	tokenUtil := blockchain.NewTokenUtil(supportedTokens)
-
 	// Crawl trade logs from blockchain
 	fromBlock, err := parseBigIntFlag(c, fromBlockFlag)
 	if err != nil {
@@ -140,7 +129,7 @@ func getTradeLogs(c *cli.Context) error {
 	}
 
 	influxStorage, err := storage.NewInfluxStorage(
-		"trade_logs", influxClient, tokenUtil, sugar,
+		"trade_logs", influxClient, core.NewCachedClient(coreClient),sugar,
 	)
 	if err != nil {
 		return err

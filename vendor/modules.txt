@@ -21,11 +21,6 @@ github.com/ethereum/go-ethereum/crypto
 github.com/ethereum/go-ethereum/crypto/sha3
 github.com/ethereum/go-ethereum/params
 github.com/ethereum/go-ethereum/trie
-github.com/ethereum/go-ethereum/rpc
-github.com/ethereum/go-ethereum/common/math
-github.com/ethereum/go-ethereum/accounts/keystore
-github.com/ethereum/go-ethereum/log
-github.com/ethereum/go-ethereum/common/mclock
 github.com/ethereum/go-ethereum/common/math
 github.com/ethereum/go-ethereum/accounts/keystore
 github.com/ethereum/go-ethereum/log
@@ -35,7 +30,6 @@ github.com/ethereum/go-ethereum/crypto/secp256k1
 github.com/ethereum/go-ethereum/common/prque
 github.com/ethereum/go-ethereum/ethdb
 github.com/ethereum/go-ethereum/metrics
-github.com/ethereum/go-ethereum/p2p/netutil
 github.com/ethereum/go-ethereum/accounts
 # github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7
 github.com/gin-contrib/sse
@@ -44,7 +38,6 @@ github.com/gin-gonic/gin
 github.com/gin-gonic/gin/binding
 github.com/gin-gonic/gin/json
 github.com/gin-gonic/gin/render
-github.com/ethereum/go-ethereum/accounts
 # github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
 github.com/go-ozzo/ozzo-validation
 github.com/go-ozzo/ozzo-validation/is
@@ -56,6 +49,10 @@ github.com/golang/protobuf/proto
 github.com/golang/snappy
 # github.com/google/uuid v1.0.0
 github.com/google/uuid
+# github.com/influxdata/influxdb v1.6.3
+github.com/influxdata/influxdb/client/v2
+github.com/influxdata/influxdb/models
+github.com/influxdata/influxdb/pkg/escape
 # github.com/json-iterator/go v1.1.5
 github.com/json-iterator/go
 # github.com/mattn/go-isatty v0.0.4
@@ -120,7 +117,3 @@ gopkg.in/go-playground/validator.v8
 gopkg.in/natefinch/npipe.v2
 # gopkg.in/yaml.v2 v2.2.1
 gopkg.in/yaml.v2
-# golang.org/x/net v0.0.0-20180926154720-4dfa2610cdf3
-golang.org/x/net/websocket
-# gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce
-gopkg.in/natefinch/npipe.v2

@@ -3,9 +3,10 @@ package crawler
 import (
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/common"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
@@ -32,10 +33,11 @@ type ResreveRatesCrawler struct {
 	Addresses       []ethereum.Address
 	tokenSetting    TokenSetting
 	logger          *zap.SugaredLogger
+	blkTimeRsv 	    *blockchain.BlockTimeResolver
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
-func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett TokenSetting, lger *zap.SugaredLogger) (*ResreveRatesCrawler, error) {
+func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett TokenSetting, lger *zap.SugaredLogger, bl *blockchain.BlockTimeResolver) (*ResreveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapper(client)
 	if err != nil {
 		return nil, err
@@ -49,6 +51,7 @@ func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett Token
 		Addresses:       ethAddrs,
 		tokenSetting:    sett,
 		logger:          lger,
+		blkTimeRsv: bl,
 	}, nil
 }
 
@@ -73,7 +76,7 @@ func (rrc *ResreveRatesCrawler) getSupportedTokens(rsvAddr ethereum.Address) ([]
 	return tokens, nil
 }
 
-func (rrc *ResreveRatesCrawler) getEachReserveRate(block int64, rsvAddr ethereum.Address, data *sync.Map, wg *sync.WaitGroup) error {
+func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereum.Address, data *sync.Map, wg *sync.WaitGroup) error {
 	defer wg.Done()
 	tokens, err := rrc.getSupportedTokens(rsvAddr)
 	if err != nil {
@@ -89,13 +92,15 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block int64, rsvAddr ethereum
 		srcAddresses = append(srcAddresses, ethereum.HexToAddress(token.Address), ethereum.HexToAddress(ethToken.Address))
 		destAddresses = append(destAddresses, ethereum.HexToAddress(ethToken.Address), ethereum.HexToAddress(token.Address))
 	}
-	rates.Timestamp = time.Now()
+	rates.Timestamp, err = rrc.blkTimeRsv.Resolve(block)
+	if err !=nil {
+		return err
+	}
 	reserveRate, sanityRate, callError := rrc.wrapperContract.GetReserveRate(block, rsvAddr, srcAddresses, destAddresses)
 	if callError != nil {
 		return fmt.Errorf("cannot get rates for reserve %s. Error: %s", rsvAddr.Hex(), callError)
 	}
 	rates.BlockNumber = block
-	rates.ReturnTime = time.Now()
 	for index, token := range tokens {
 		// the logic to get ReserveRate from conversion contract can be viewed here
 		// https://developer.kyber.network/docs/ReservesGuide/#step-3-setting-token-conversion-rates-prices
@@ -113,7 +118,7 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block int64, rsvAddr ethereum
 
 // GetReserveRates returns the map[ReserveAddress]ReserveRates at the given block number.
 // It will only return rates from the set of addresses within its definition.
-func (rrc *ResreveRatesCrawler) GetReserveRates(block int64) (map[string]rsvRateCommon.ReserveRates, error) {
+func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]rsvRateCommon.ReserveRates, error) {
 	var (
 		result = make(map[string]rsvRateCommon.ReserveRates)
 		data   = sync.Map{}

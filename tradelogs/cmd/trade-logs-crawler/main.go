@@ -8,12 +8,16 @@ import (
 	"os"
 	"time"
 
-	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/tradelogs"
-	"github.com/KyberNetwork/tokenrate/coingecko"
 	"github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/urfave/cli"
+
+	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/tradelogs"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	"github.com/KyberNetwork/tokenrate/coingecko"
 )
 
 const (
@@ -34,22 +38,24 @@ func main() {
 
 	app.Flags = append(app.Flags,
 		cli.StringFlag{
-			Name:   "node",
+			Name:   nodeURLFlag,
 			Usage:  "Ethereum node provider URL",
 			Value:  nodeURLDefaultValue,
 			EnvVar: envVarPrefix + "NODE",
 		},
 		cli.StringFlag{
-			Name:   "from-block",
+			Name:   fromBlockFlag,
 			Usage:  "Fetch trade logs from block",
 			EnvVar: envVarPrefix + "FROM_BLOCK",
 		},
 		cli.StringFlag{
-			Name:   "to-block",
+			Name:   toBlockFlag,
 			Usage:  "Fetch trade logs to block",
 			EnvVar: envVarPrefix + "TO_BLOCK",
 		},
 	)
+	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
+	app.Flags = append(app.Flags, core.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -78,6 +84,12 @@ func getTradeLogs(c *cli.Context) error {
 
 	sugar := logger.Sugar()
 
+	coreClient, err := core.NewClientFromContext(sugar, c)
+	if err != nil {
+		return err
+	}
+
+	// Crawl trade logs from blockchain
 	fromBlock, err := parseBigIntFlag(c, fromBlockFlag)
 	if err != nil {
 		return fmt.Errorf("invalid from block: %q, error: %s", c.String(fromBlockFlag), err)
@@ -103,6 +115,27 @@ func getTradeLogs(c *cli.Context) error {
 	}
 
 	tradeLogs, err := crawler.GetTradeLogs(fromBlock, toBlock, time.Second*5)
+	if err != nil {
+		return err
+	}
+
+	// Store trade logs into influx DB
+	influxClient, err := influxdb.NewClientFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	influxStorage, err := storage.NewInfluxStorage(
+		sugar,
+		"trade_logs",
+		influxClient,
+		core.NewCachedClient(coreClient),
+	)
+	if err != nil {
+		return err
+	}
+
+	err = influxStorage.SaveTradeLogs(tradeLogs)
 	if err != nil {
 		return err
 	}

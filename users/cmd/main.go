@@ -2,11 +2,11 @@ package main
 
 import (
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/KyberNetwork/tokenrate/coingecko"
 	"log"
 	"os"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
 	"github.com/KyberNetwork/reserve-stats/users/http"
 	"github.com/KyberNetwork/reserve-stats/users/stats"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
@@ -45,9 +45,7 @@ func run(c *cli.Context) error {
 	)
 
 	// init stats
-	cmc := ethrate.NewCMCRate(sugar)
-	userStats := stats.NewUserStats(cmc, userDB)
-
+	userStats := stats.NewUserStats(coingecko.New(), userDB)
 	server := http.NewServer(sugar, userStats, httputil.NewHTTPAddressFromContext(c))
 	server.Run()
 	return nil

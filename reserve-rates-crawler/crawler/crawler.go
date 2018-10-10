@@ -2,11 +2,10 @@ package crawler
 
 import (
 	"fmt"
+	"golang.org/x/sync/errgroup"
 	"sync"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/common"
-
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
@@ -18,26 +17,21 @@ import (
 var (
 	//InternalReserveAddr is the Kyber's own reserve address
 	InternalReserveAddr = ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")
-	ethToken            = core.Token{
-		ID:       "ETH",
-		Name:     "Ethereum",
-		Address:  "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-		Decimals: 18,
-	}
 )
 
 // ResreveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
 // a set of addresses to crawl rates from and setting object to query for reserve's token settings
 type ResreveRatesCrawler struct {
+	sugar *zap.SugaredLogger
+
 	wrapperContract *contracts.VersionedWrapper
 	Addresses       []ethereum.Address
 	tokenSetting    TokenSetting
-	logger          *zap.SugaredLogger
 	blkTimeRsv      *blockchain.BlockTimeResolver
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
-func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett TokenSetting, lger *zap.SugaredLogger, bl *blockchain.BlockTimeResolver) (*ResreveRatesCrawler, error) {
+func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett TokenSetting, sugar *zap.SugaredLogger, bl *blockchain.BlockTimeResolver) (*ResreveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapper(client)
 	if err != nil {
 		return nil, err
@@ -50,7 +44,7 @@ func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett Token
 		wrapperContract: wrpContract,
 		Addresses:       ethAddrs,
 		tokenSetting:    sett,
-		logger:          lger,
+		sugar:           sugar,
 		blkTimeRsv:      bl,
 	}, nil
 }
@@ -63,7 +57,7 @@ func (rrc *ResreveRatesCrawler) callTokens(rsvAddr ethereum.Address) ([]core.Tok
 }
 
 func (rrc *ResreveRatesCrawler) getSupportedTokens(rsvAddr ethereum.Address) ([]core.Token, error) {
-	tokens := []core.Token{}
+	var tokens []core.Token
 	tokensFromCore, err := rrc.callTokens(rsvAddr)
 	if err != nil {
 		return tokens, err
@@ -76,72 +70,85 @@ func (rrc *ResreveRatesCrawler) getSupportedTokens(rsvAddr ethereum.Address) ([]
 	return tokens, nil
 }
 
-func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereum.Address, data *sync.Map, wg *sync.WaitGroup) error {
-	defer wg.Done()
+func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereum.Address) (*rsvRateCommon.ReserveRates, error) {
+	var (
+		err   error
+		rates = &rsvRateCommon.ReserveRates{
+			BlockNumber: block,
+			Data:        make(map[string]rsvRateCommon.ReserveRateEntry),
+		}
+		srcAddresses  []ethereum.Address
+		destAddresses []ethereum.Address
+	)
+
+	logger := rrc.sugar.With(
+		"func", "reserve-rates-crawler/crawler/ResreveRatesCrawler.getEachReserveRate",
+		"block", block,
+		"reserve_address", rsvAddr.Hex(),
+	)
+	logger.Debug("fetching reserve rates")
+
+	if rates.Timestamp, err = rrc.blkTimeRsv.Resolve(block); err != nil {
+		return nil, err
+	}
+
 	tokens, err := rrc.getSupportedTokens(rsvAddr)
 	if err != nil {
-		return fmt.Errorf("cannot get supported tokens for reserve %s. Error: %s", rsvAddr.Hex(), err)
+		return nil, fmt.Errorf("cannot get supported tokens for reserve %s. Error: %s", rsvAddr.Hex(), err)
 	}
-	var (
-		srcAddresses      = []ethereum.Address{}
-		destAddresses     = []ethereum.Address{}
-		rates             = rsvRateCommon.ReserveRates{}
-		rsvTokenRateEntry = rsvRateCommon.ReserveTokenRateEntry{}
-	)
+
 	for _, token := range tokens {
-		srcAddresses = append(srcAddresses, ethereum.HexToAddress(token.Address), ethereum.HexToAddress(ethToken.Address))
-		destAddresses = append(destAddresses, ethereum.HexToAddress(ethToken.Address), ethereum.HexToAddress(token.Address))
+		srcAddresses = append(srcAddresses, ethereum.HexToAddress(token.Address), ethereum.HexToAddress(core.ETHToken.Address))
+		destAddresses = append(destAddresses, ethereum.HexToAddress(core.ETHToken.Address), ethereum.HexToAddress(token.Address))
 	}
-	rates.Timestamp, err = rrc.blkTimeRsv.Resolve(block)
+
+	reserveRates, sanityRates, err := rrc.wrapperContract.GetReserveRate(block, rsvAddr, srcAddresses, destAddresses)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("cannot get rates for reserve %s. Error: %s", rsvAddr.Hex(), err)
 	}
-	reserveRate, sanityRate, callError := rrc.wrapperContract.GetReserveRate(block, rsvAddr, srcAddresses, destAddresses)
-	if callError != nil {
-		return fmt.Errorf("cannot get rates for reserve %s. Error: %s", rsvAddr.Hex(), callError)
-	}
-	rates.BlockNumber = block
+
 	for index, token := range tokens {
-		// the logic to get ReserveRate from conversion contract can be viewed here
-		// https://developer.kyber.network/docs/ReservesGuide/#step-3-setting-token-conversion-rates-prices
-		rateEntry := rsvRateCommon.ReserveRateEntry{}
-		rateEntry.BuyReserveRate = common.BigToFloat(reserveRate[index*2+1], ethToken.Decimals)
-		rateEntry.BuySanityRate = common.BigToFloat(sanityRate[index*2+1], ethToken.Decimals)
-		rateEntry.SellReserveRate = common.BigToFloat(reserveRate[index*2], ethToken.Decimals)
-		rateEntry.SellSanityRate = common.BigToFloat(sanityRate[index*2], ethToken.Decimals)
-		rsvTokenRateEntry[fmt.Sprintf("ETH-%s", token.ID)] = rateEntry
+		rates.Data[fmt.Sprintf("ETH-%s", token.ID)] = rsvRateCommon.NewReserveRateEntry(reserveRates, sanityRates, index)
 	}
-	rates.Data = rsvTokenRateEntry
-	data.Store(rsvAddr, rates)
-	return nil
+
+	logger.Debug("reserve rates fetched successfully")
+	return rates, err
 }
 
 // GetReserveRates returns the map[ReserveAddress]ReserveRates at the given block number.
 // It will only return rates from the set of addresses within its definition.
-func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]rsvRateCommon.ReserveRates, error) {
+func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]*rsvRateCommon.ReserveRates, error) {
 	var (
-		result = make(map[string]rsvRateCommon.ReserveRates)
+		err    error
+		g      errgroup.Group
 		data   = sync.Map{}
-		wg     = sync.WaitGroup{}
-		errs   = make(chan error, len(rrc.Addresses))
+		result = make(map[string]*rsvRateCommon.ReserveRates)
 	)
 
+	logger := rrc.sugar.With(
+		"func", "reserve-rates-crawler/crawler/ResreveRatesCrawler.GetReserveRates",
+		"block", block,
+		"reserves", len(rrc.Addresses),
+	)
+	logger.Debug("fetching rates for all reserves")
+
 	for _, rsvAddr := range rrc.Addresses {
-		wg.Add(1)
-		go func(addr ethereum.Address) {
-			err := rrc.getEachReserveRate(block, addr, &data, &wg)
-			errs <- err
-		}(rsvAddr)
+		// copy to local variables to avoid race condition
+		block, rsvAddr := block, rsvAddr
+		g.Go(func() error {
+			rates, err := rrc.getEachReserveRate(block, rsvAddr)
+			if err != nil {
+				return err
+			}
+			data.Store(rsvAddr, rates)
+			return nil
+		})
 	}
-	wg.Wait()
-	defer close(errs)
-	for i := 0; i < len(rrc.Addresses); i++ {
-		err := <-errs
-		if err != nil {
-			return result, err
-		}
+
+	if err = g.Wait(); err != nil {
+		return nil, err
 	}
-	var err error
+
 	data.Range(func(key, value interface{}) bool {
 		reserveAddr, ok := key.(ethereum.Address)
 		//if there is conversion error, continue to next key,val
@@ -149,10 +156,10 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]rsvRat
 			err = fmt.Errorf("key (%v) cannot be asserted to ethereum.Address", key)
 			return false
 		}
-		rates, ok := value.(rsvRateCommon.ReserveRates)
+		rates, ok := value.(*rsvRateCommon.ReserveRates)
 		if !ok {
 			err = fmt.Errorf("value (%v) cannot be asserted to reserveRates", value)
-			return true
+			return false
 		}
 		result[reserveAddr.Hex()] = rates
 		return true

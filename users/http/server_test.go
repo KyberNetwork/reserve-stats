@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
-	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/reserve-stats/users/stats"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 	"github.com/go-pg/pg"
@@ -34,7 +33,7 @@ func connectToTestDB(sugar *zap.SugaredLogger) *storage.UserDB {
 	)
 }
 
-func tearDownDB(t *testing.T, storage *storage.UserDB) {
+func tearDown(t *testing.T, storage *storage.UserDB) {
 	if err := storage.DeleteAllTables(); err != nil {
 		t.Fatal("Cannot clear db after test")
 	}
@@ -48,7 +47,7 @@ func TestUserHTTPServer(t *testing.T) {
 	sugar := logger.Sugar()
 	userStorage := connectToTestDB(sugar)
 	userStats := stats.NewUserStats(tokenrate.NewMock(), userStorage)
-	defer tearDownDB(t, userStorage)
+	defer tearDown(t, userStorage)
 
 	s := NewServer(sugar, userStats, host)
 	s.register()
@@ -58,52 +57,11 @@ func TestUserHTTPServer(t *testing.T) {
 	// test case
 	const (
 		requestEndpoint = "/users"
-		userEmail       = "test@gmail.com"
-		secondUser      = "second@gmail.com"
-		wrongUserEmail  = "test"
 		queryAddress    = "0xc9a658f87d7432ff897f31dce318f0856f66acb7"
 		nonKycAddress   = "0xb8df4cf4b7ad086cd5139a75033566164e41a0b4"
 	)
+
 	var (
-		correctUserInfo = []common.Info{
-			{
-				Address:   "0xc9a658f87d7432ff897f31dce318f0856f66acb7",
-				Timestamp: 1538380670000,
-			},
-			{
-				Address:   "0x2ea6200a999f4c6c982be525f8dc294f14f4cb08",
-				Timestamp: 1538380682000,
-			},
-		}
-		addressIsEmpty = []common.Info{
-			{
-				Address:   "",
-				Timestamp: 1538380670000,
-			},
-			{
-				Address:   "0x2ea6200a999f4c6c982be525f8dc294f14f4cb08",
-				Timestamp: 1538380682000,
-			},
-		}
-		timestampEmpty = []common.Info{
-			{
-				Address: "0xc9a658f87d7432ff897f31dce318f0856f66acb7",
-			},
-			{
-				Address:   "0x2ea6200a999f4c6c982be525f8dc294f14f4cb08",
-				Timestamp: 1538380682000,
-			},
-		}
-		// wrongAddress = []common.Info{
-		// 	common.Info{
-		// 		Address: "0xc9a658f87d7432ff897f31dce318f0856f66acb7",
-		// 		Timestamp:1538380670000,
-		// 	},
-		// 	common.Info{
-		// 		Address:"0x2ea6200a999f4c6c982be525f8dc294f14f4cb08",
-		// 		Timestamp:1538380682000,
-		// 	},
-		// }
 		tests = []httputil.HTTPTestCase{
 			{
 				Msg:      "empty db",
@@ -115,59 +73,120 @@ func TestUserHTTPServer(t *testing.T) {
 				Msg:      "email is not valid",
 				Endpoint: requestEndpoint,
 				Method:   http.MethodPost,
-				Data: map[string]interface{}{
-					"email":     wrongUserEmail,
-					"user_info": correctUserInfo,
-				},
+				Body: []byte(`
+{
+  "email": "test",
+  "user_info": [
+    {
+      "address": "0xc9a658f87d7432ff897f31dce318f0856f66acb7",
+      "timestamp": 1538380670000
+    },
+    {
+      "address": "0x2ea6200a999f4c6c982be525f8dc294f14f4cb08",
+      "timestamp": 1538380682000
+    }
+  ]
+}`),
 				Assert: expectBadRequest,
 			},
 			{
 				Msg:      "user address is empty",
 				Endpoint: requestEndpoint,
 				Method:   http.MethodPost,
-				Data: map[string]interface{}{
-					"email":     userEmail,
-					"user_info": addressIsEmpty,
-				},
+				Body: []byte(`
+{
+  "email": "test@gmail.com"",
+  "user_info": [
+    {
+      "address": "",
+      "timestamp": 1538380670000
+    },
+    {
+      "address": "0x2ea6200a999f4c6c982be525f8dc294f14f4cb08",
+      "timestamp": 1538380682000
+    }
+  ]
+}`),
 				Assert: expectBadRequest,
 			},
 			{
 				Msg:      "timestamp is empty",
 				Endpoint: requestEndpoint,
 				Method:   http.MethodPost,
-				Data: map[string]interface{}{
-					"email":     userEmail,
-					"user_info": timestampEmpty,
-				},
+				Body: []byte(`
+{
+  "email": "test@gmail.com",
+  "user_info": [
+    {
+      "address": "0xc9a658f87d7432ff897f31dce318f0856f66acb7",
+    },
+    {
+      "address": "0x2ea6200a999f4c6c982be525f8dc294f14f4cb08",
+      "timestamp": 1538380682000
+    }
+  ]
+}`),
 				Assert: expectBadRequest,
 			},
-			// { msg:      "wrong user addresses",
-			// 	endpoint: requestEndpoint,
-			// 	method:   http.MethodPost,
-			// 	data: map[string]string{
-			// 		"user":       userEmail,
-			// 		"addresses":  wrongUserAddresses,
-			// 	},
-			// 	assert: httputil.ExpectFailure,
-			// },
+			//			{
+			//				Msg:      "invalid user address",
+			//				Endpoint: requestEndpoint,
+			//				Method:   http.MethodPost,
+			//				Body: `
+			//{
+			//  "email": "test",
+			//  "user_info": [
+			//    {
+			//      "address": "0x001122",
+			//      "timestamp": 1538380670000
+			//    },
+			//    {
+			//      "address": "0x2ea6200a999f4c6c982be525f8dc294f14f4cb08",
+			//      "timestamp": 1538380682000
+			//    }
+			//  ]
+			//}`,
+			//				Assert: expectBadRequest,
+			//			},
 			{
 				Msg:      "update correct user addresses",
 				Endpoint: requestEndpoint,
 				Method:   http.MethodPost,
-				Data: map[string]interface{}{
-					"email":     userEmail,
-					"user_info": correctUserInfo,
-				},
+				Body: []byte(`
+{
+  "email": "test@gmail.com",
+  "user_info": [
+    {
+      "address": "0xc9a658f87d7432ff897f31dce318f0856f66acb7",
+      "timestamp": 1538380670000
+    },
+    {
+      "address": "0x2ea6200a999f4c6c982be525f8dc294f14f4cb08",
+      "timestamp": 1538380682000
+    }
+  ]
+}`),
 				Assert: expectSuccess,
 			},
 			{
 				Msg:      "address is not unique",
 				Endpoint: requestEndpoint,
 				Method:   http.MethodPost,
-				Data: map[string]interface{}{
-					"email":     secondUser,
-					"user_info": correctUserInfo,
-				},
+				Body: []byte(`
+{
+  "email": "test2@gmail.com",
+  "user_info": [
+    {
+      "address": "0xc9a658f87d7432ff897f31dce318f0856f66acb7",
+      "timestamp": 1538380670000
+    },
+    {
+      "address": "0x2ea6200a999f4c6c982be525f8dc294f14f4cb08",
+      "timestamp": 1538380682000
+    }
+  ]
+}`),
+				// TODO: should not return 500
 				Assert: expectInternalServerError,
 			},
 			{

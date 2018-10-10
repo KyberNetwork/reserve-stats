@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/common"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
@@ -77,41 +76,6 @@ func TestGetReserveRate(t *testing.T) {
 	}
 	if !reflect.DeepEqual(rateEntry, testRateEntry) {
 		crawler.sugar.Error("RateEntry ETH-KNC did not match the expected result")
-		t.Fail()
-	}
-}
-
-// TestQueryReserveRateFromDB test the write/ read DB ops from crawler.
-func TestQueryReserveRateFromDB(t *testing.T) {
-	crawler, err := getTestCrawler()
-	if err != nil {
-		t.Fatal(err)
-	}
-	rates, err := crawler.GetReserveRates(0)
-	if err != nil {
-		t.Error(err)
-	}
-	rate, ok := rates[testRsvAddress]
-	if !ok {
-		crawler.sugar.Errorf("result did not contain rate for reserve %s", testRsvAddress)
-		t.Fail()
-	}
-	crawler.sugar.Infof("rate crawled : %v", rate)
-	ratesQueried, err := crawler.QueryReserveRates(crawler.Addresses[0], common.TimeToTimestampMs(rate.Timestamp), common.TimeToTimestampMs(rate.Timestamp))
-	if err != nil {
-		t.Error(err)
-	}
-	rateQueried := ratesQueried[0]
-	// Since DB's precision is in ms, compare the two timestamp in ms. s
-	if (common.TimeToTimestampMs(rate.Timestamp)) != (common.TimeToTimestampMs(rateQueried.Timestamp)) {
-		crawler.sugar.Error("Rate queried from db is different from crawler's result")
-		t.Fail()
-	}
-	rateQueried.Timestamp = rate.Timestamp
-	crawler.sugar.Infof("rate queried : %v", rateQueried)
-
-	if !reflect.DeepEqual(rate, rateQueried) {
-		crawler.sugar.Error("Rate queried from db is different from crawler's result")
 		t.Fail()
 	}
 }

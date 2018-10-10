@@ -22,10 +22,11 @@ var (
 // ResreveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
 // a set of addresses to crawl rates from and setting object to query for reserve's token settings
 type ResreveRatesCrawler struct {
+	sugar *zap.SugaredLogger
+
 	wrapperContract *contracts.VersionedWrapper
 	Addresses       []ethereum.Address
 	tokenSetting    TokenSetting
-	sugar           *zap.SugaredLogger
 	blkTimeRsv      *blockchain.BlockTimeResolver
 }
 
@@ -56,7 +57,7 @@ func (rrc *ResreveRatesCrawler) callTokens(rsvAddr ethereum.Address) ([]core.Tok
 }
 
 func (rrc *ResreveRatesCrawler) getSupportedTokens(rsvAddr ethereum.Address) ([]core.Token, error) {
-	tokens := []core.Token{}
+	var tokens []core.Token
 	tokensFromCore, err := rrc.callTokens(rsvAddr)
 	if err != nil {
 		return tokens, err

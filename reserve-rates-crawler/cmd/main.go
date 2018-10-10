@@ -8,8 +8,9 @@ import (
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/crawler"
-	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/storage/influx"
+	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/storage/influx"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
@@ -17,18 +18,7 @@ import (
 const (
 	addressesFlag = "addresses"
 	blockFlag     = "block"
-	dbURLFlag     = "dbURL"
-	dbUNameFlag   = "dbUname"
-	dbPwdFlag     = "dbPwd"
-	defaultDBURL  = "http://localhost:8086/"
 )
-
-func newRateStorage(c *cli.Context) (*influx.RateStorage, error) {
-	url := c.GlobalString(dbURLFlag)
-	uname := c.GlobalString(dbUNameFlag)
-	pwd := c.GlobalString(dbPwdFlag)
-	return influx.NewRateInfluxDBStorage(url, uname, pwd)
-}
 
 func newReserveCrawlerCli() *cli.App {
 	app := libapp.NewApp()
@@ -48,24 +38,9 @@ func newReserveCrawlerCli() *cli.App {
 			Destination: &block,
 		},
 		libapp.NewEthereumNodeFlags(),
-		cli.StringFlag{
-			Name:  dbURLFlag,
-			Value: defaultDBURL,
-			Usage: "url to InfluxDB server",
-		},
-		cli.StringFlag{
-			Name:   dbUNameFlag,
-			Usage:  "userName for InfluxDB server",
-			EnvVar: "INFLUX_UNAME",
-			Value:  "",
-		}, cli.StringFlag{
-			Name:   dbPwdFlag,
-			Usage:  "url to InfluxDB server",
-			EnvVar: "INFLUX_PWD",
-			Value:  "",
-		},
 	)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
+	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Action = func(c *cli.Context) error {
 		addrs := c.StringSlice(addressesFlag)
 		client, err := libapp.NewEthereumClientFromFlag(c)
@@ -84,7 +59,11 @@ func newReserveCrawlerCli() *cli.App {
 		if err != nil {
 			return err
 		}
-		rateStorage, err := newRateStorage(c)
+		influxClient, err := influxdb.NewClientFromContext(c)
+		if err != nil {
+			return err
+		}
+		rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(influxClient)
 		if err != nil {
 			return err
 		}

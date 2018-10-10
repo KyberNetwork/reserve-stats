@@ -2,17 +2,15 @@ package http
 
 import (
 	"fmt"
-	"github.com/go-pg/pg"
-	"net/http"
-	"testing"
-	"time"
-
-	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/reserve-stats/users/stats"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
+	"github.com/go-pg/pg"
 	"go.uber.org/zap"
+	"net/http"
+	"testing"
 )
 
 const (
@@ -49,11 +47,7 @@ func TestUserHTTPServer(t *testing.T) {
 	}
 	sugar := logger.Sugar()
 	userStorage := connectToTestDB(sugar)
-	cmc := ethrate.NewCMCRate(sugar)
-	// sleep so cmc fetcher can get rate from cmc
-	time.Sleep(1 * time.Second)
-
-	userStats := stats.NewUserStats(cmc, userStorage)
+	userStats := stats.NewUserStats(tokenrate.NewMock(), userStorage)
 	defer tearDownDB(t, userStorage)
 
 	s := NewServer(sugar, userStats, host)

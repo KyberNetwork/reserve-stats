@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/geoinfo"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/tokenrate"
 	ether "github.com/ethereum/go-ethereum"
@@ -51,7 +52,7 @@ type TradeLogCrawler struct {
 	ethClient    *ethclient.Client
 	rateProvider tokenrate.ETHUSDRateProvider
 	txTime       *blockchain.BlockTimeResolver
-	g            *geoInfo
+	g            *geoinfo.Client
 }
 
 func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
@@ -212,7 +213,7 @@ func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, rateProvider t
 	if err != nil {
 		return nil, err
 	}
-	geoInfo, err := newGeoInfo(sugar, geoURL)
+	geoInfo, err := geoinfo.NewClient(sugar, geoURL)
 	if err != nil {
 		return nil, err
 	}

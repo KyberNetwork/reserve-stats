@@ -1,4 +1,4 @@
-package tradelogs
+package geoinfo
 
 import (
 	"encoding/json"
@@ -10,14 +10,14 @@ import (
 	"go.uber.org/zap"
 )
 
-func newTestGeoInfo(server *httptest.Server) (*geoInfo, error) {
+func newTestGeoInfo(server *httptest.Server) (*Client, error) {
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		return nil, err
 	}
 	defer logger.Sync()
 	sugar := logger.Sugar()
-	return newGeoInfo(sugar, server.URL)
+	return NewClient(sugar, server.URL)
 }
 
 func TestGetValidResponse(t *testing.T) {
@@ -45,7 +45,7 @@ func TestGetValidResponse(t *testing.T) {
 
 	g, err := newTestGeoInfo(server)
 	if err != nil {
-		t.Error("Could not create geoInfo object", "err", err.Error())
+		t.Error("Could not create Client object", "err", err.Error())
 	}
 	ip, country, err := g.GetTxInfo(tx)
 	if err != nil {
@@ -84,7 +84,7 @@ func TestInvalidResponse(t *testing.T) {
 
 	g, err := newTestGeoInfo(server)
 	if err != nil {
-		t.Error("Could not create geoInfo object", "err", err.Error())
+		t.Error("Could not create Client object", "err", err.Error())
 	}
 	_, _, err = g.GetTxInfo(tx)
 	if err != errResponseFalse {

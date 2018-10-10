@@ -1,4 +1,4 @@
-package tradelogs
+package geoinfo
 
 import (
 	"encoding/json"
@@ -13,7 +13,8 @@ import (
 
 var errResponseFalse = errors.New("Server return success false")
 
-type geoInfo struct {
+// Client is the the real implementation of geoinfo client interface
+type Client struct {
 	host   string
 	sugar  *zap.SugaredLogger
 	client *http.Client
@@ -30,8 +31,9 @@ type tradeLogGeoInfoResp struct {
 
 const timeout = time.Minute * 5
 
-func newGeoInfo(sugar *zap.SugaredLogger, host string) (*geoInfo, error) {
-	return &geoInfo{
+// NewClient creates a new geoinfo client instance.
+func NewClient(sugar *zap.SugaredLogger, host string) (*Client, error) {
+	return &Client{
 		host:   host,
 		sugar:  sugar,
 		client: &http.Client{Timeout: timeout},
@@ -39,7 +41,7 @@ func newGeoInfo(sugar *zap.SugaredLogger, host string) (*geoInfo, error) {
 }
 
 // GetTxInfo get ip, country info of a tx
-func (g geoInfo) GetTxInfo(tx string) (string, string, error) {
+func (g Client) GetTxInfo(tx string) (string, string, error) {
 	url := fmt.Sprintf("%s/get-tx-info/%s", g.host, tx)
 	resp, err := g.client.Get(url)
 	if err != nil {

@@ -11,6 +11,7 @@ import (
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/storage/influx"
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
 )
 
@@ -30,7 +31,10 @@ func getTestCrawler() (*ResreveRatesCrawler, error) {
 	if err != nil {
 		return nil, err
 	}
-	dbInstance, err := influx.NewRateInfluxDBStorage(testInfluxURL, "", "")
+	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
+		Addr: testInfluxURL,
+	})
+	dbInstance, err := influx.NewRateInfluxDBStorage(influxClient)
 	if err != nil {
 		return nil, err
 	}

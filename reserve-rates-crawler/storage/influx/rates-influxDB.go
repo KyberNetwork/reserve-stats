@@ -29,16 +29,7 @@ type RateStorage struct {
 }
 
 // NewRateInfluxDBStorage return an instance of influx client to store ReserveRate
-func NewRateInfluxDBStorage(url, uName, pwd string) (*RateStorage, error) {
-	httpConf := influxClient.HTTPConfig{
-		Addr:     url,
-		Username: uName,
-		Password: pwd,
-	}
-	client, err := influxClient.NewHTTPClient(httpConf)
-	if err != nil {
-		return nil, err
-	}
+func NewRateInfluxDBStorage(client influxClient.Client) (*RateStorage, error) {
 	q := influxClient.NewQuery("CREATE DATABASE "+RateDBName, "", TimePrecision)
 	response, err := client.Query(q)
 	if err != nil {

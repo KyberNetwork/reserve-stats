@@ -13,8 +13,11 @@ addons:
 before_install:
   - docker run -d -p "127.0.0.1:8086:8086" influxdb:1.6.3-alpine
 
+env:
+  global:
+    -GOMETALINTER_VERSION=2.0.11
+
 install:
-  - export GOMETALINTER_VERSION=2.0.11
   - ./.travis/gometalinter-install.sh
   - export PATH=$PATH:${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
   - export GO111MODULE=on

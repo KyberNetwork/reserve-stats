@@ -3,9 +3,11 @@ package core
 import (
 	"crypto/hmac"
 	"crypto/sha512"
+	"fmt"
 	"go.uber.org/zap"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -55,7 +57,12 @@ func (c *Client) newRequest(method, endpoint string, params map[string]string) (
 
 	logger.Debug("creating new Core API HTTP request")
 
-	req, err := http.NewRequest(method, c.url+endpoint, nil)
+	url := fmt.Sprintf("%s/%s",
+		strings.TrimRight(c.url, "/"),
+		strings.Trim(endpoint, "/"),
+	)
+
+	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return nil, err
 	}

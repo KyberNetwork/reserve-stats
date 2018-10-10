@@ -6,9 +6,10 @@ import (
 )
 
 const (
-	modeFlag        = "mode"
-	developmentMode = "development"
-	productionMode  = "production"
+	modeFlag         = "mode"
+	developmentMode  = "development"
+	productionMode   = "production"
+	ethereumNodeFlag = "ethereum-node"
 )
 
 // NewApp creates a new cli App instance with common flags pre-loaded.

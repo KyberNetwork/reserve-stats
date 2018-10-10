@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/reserve-stats/users/stats"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
+	"github.com/KyberNetwork/tokenrate/coingecko"
 	"go.uber.org/zap"
 )
 
@@ -49,7 +49,7 @@ func TestUserHTTPServer(t *testing.T) {
 	}
 	sugar := logger.Sugar()
 	userStorage := connectToTestDB(sugar)
-	cmc := ethrate.NewCMCRate(sugar)
+	cmc := coingecko.New()
 	// sleep so cmc fetcher can get rate from cmc
 	time.Sleep(1 * time.Second)
 

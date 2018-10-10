@@ -6,10 +6,10 @@ import (
 	"os"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
 	"github.com/KyberNetwork/reserve-stats/users/http"
 	"github.com/KyberNetwork/reserve-stats/users/stats"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
+	"github.com/KyberNetwork/tokenrate/coingecko"
 	"github.com/urfave/cli"
 )
 
@@ -45,7 +45,7 @@ func run(c *cli.Context) error {
 	)
 
 	// init stats
-	cmc := ethrate.NewCMCRate(sugar)
+	cmc := coingecko.New()
 	userStats := stats.NewUserStats(cmc, userDB)
 
 	server := http.NewServer(sugar, userStats, httputil.NewHTTPAddressFromContext(c))

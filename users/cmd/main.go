@@ -38,15 +38,18 @@ func run(c *cli.Context) error {
 
 	sugar := logger.Sugar()
 	sugar.Info("Run user module")
-	// init storage
-	userDB := storage.NewDB(
+
+	userDB, err := storage.NewDB(
 		sugar,
 		libapp.NewDBFromContext(c),
 	)
+	if err != nil {
+		return err
+	}
+	defer userDB.Close()
 
 	// init stats
 	userStats := stats.NewUserStats(coingecko.New(), userDB)
 	server := http.NewServer(sugar, userStats, httputil.NewHTTPAddressFromContext(c))
-	server.Run()
-	return nil
+	return server.Run()
 }

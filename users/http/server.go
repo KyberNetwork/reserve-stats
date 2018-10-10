@@ -47,8 +47,8 @@ func (s *Server) GetUserInfo(c *gin.Context) {
 	)
 }
 
-func isAddress(v *validator.Validate, topStruct reflect.Value, currentStructOrField reflect.Value,
-	field reflect.Value, fieldType reflect.Type, fieldKind reflect.Kind, param string) bool {
+func isAddress(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
+	field reflect.Value, _ reflect.Type, _ reflect.Kind, _ string) bool {
 	address := field.String()
 	if err := validation.Validate(address, validation.Required); err != nil {
 		return false
@@ -61,8 +61,8 @@ func isAddress(v *validator.Validate, topStruct reflect.Value, currentStructOrFi
 }
 
 //IsEmail validation function for email field
-func IsEmail(v *validator.Validate, topStruct reflect.Value, currentStructOrField reflect.Value,
-	field reflect.Value, fieldType reflect.Type, fieldKind reflect.Kind, param string) bool {
+func IsEmail(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
+	field reflect.Value, _ reflect.Type, _ reflect.Kind, _ string) bool {
 	if err := validation.Validate(field.String(), is.Email); err != nil {
 		return false
 	}
@@ -103,11 +103,9 @@ func (s *Server) register() {
 }
 
 //Run start server and serve
-func (s *Server) Run() {
+func (s *Server) Run() error {
 	s.register()
-	if err := s.r.Run(s.host); err != nil {
-		s.sugar.Panic(err)
-	}
+	return s.r.Run(s.host)
 }
 
 //NewServer return new server instance

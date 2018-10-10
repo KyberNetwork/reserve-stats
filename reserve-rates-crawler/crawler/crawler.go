@@ -69,10 +69,10 @@ func (rrc *ResreveRatesCrawler) getSupportedTokens(rsvAddr ethereum.Address) ([]
 	return tokens, nil
 }
 
-func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereum.Address, data *sync.Map) error {
+func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereum.Address) (*rsvRateCommon.ReserveRates, error) {
 	var (
 		err   error
-		rates = rsvRateCommon.ReserveRates{
+		rates = &rsvRateCommon.ReserveRates{
 			BlockNumber: block,
 			Data:        make(map[string]rsvRateCommon.ReserveRateEntry),
 		}
@@ -88,12 +88,12 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 	logger.Debug("fetching reserve rates")
 
 	if rates.Timestamp, err = rrc.blkTimeRsv.Resolve(block); err != nil {
-		return err
+		return nil, err
 	}
 
 	tokens, err := rrc.getSupportedTokens(rsvAddr)
 	if err != nil {
-		return fmt.Errorf("cannot get supported tokens for reserve %s. Error: %s", rsvAddr.Hex(), err)
+		return nil, fmt.Errorf("cannot get supported tokens for reserve %s. Error: %s", rsvAddr.Hex(), err)
 	}
 
 	for _, token := range tokens {
@@ -103,35 +103,47 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 
 	reserveRates, sanityRates, err := rrc.wrapperContract.GetReserveRate(block, rsvAddr, srcAddresses, destAddresses)
 	if err != nil {
-		return fmt.Errorf("cannot get rates for reserve %s. Error: %s", rsvAddr.Hex(), err)
+		return nil, fmt.Errorf("cannot get rates for reserve %s. Error: %s", rsvAddr.Hex(), err)
 	}
 
 	for index, token := range tokens {
 		rates.Data[fmt.Sprintf("ETH-%s", token.ID)] = rsvRateCommon.NewReserveRateEntry(reserveRates, sanityRates, index)
 	}
-	data.Store(rsvAddr, rates)
+
 	logger.Debug("reserve rates fetched successfully")
-	return nil
+	return rates, err
 }
 
 // GetReserveRates returns the map[ReserveAddress]ReserveRates at the given block number.
 // It will only return rates from the set of addresses within its definition.
-func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]rsvRateCommon.ReserveRates, error) {
+func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]*rsvRateCommon.ReserveRates, error) {
 	var (
-		result = make(map[string]rsvRateCommon.ReserveRates)
-		data   = sync.Map{}
+		err    error
 		g      errgroup.Group
+		data   = sync.Map{}
+		result = make(map[string]*rsvRateCommon.ReserveRates)
 	)
+
+	logger := rrc.sugar.With(
+		"func", "reserve-rates-crawler/crawler/ResreveRatesCrawler.GetReserveRates",
+		"block", block,
+		"reserves", len(rrc.Addresses),
+	)
+	logger.Debug("fetching rates for all reserves")
 
 	for _, rsvAddr := range rrc.Addresses {
 		// copy to local variables to avoid race condition
 		block, rsvAddr := block, rsvAddr
 		g.Go(func() error {
-			return rrc.getEachReserveRate(block, rsvAddr, &data)
+			rates, err := rrc.getEachReserveRate(block, rsvAddr)
+			if err != nil {
+				return err
+			}
+			data.Store(rsvAddr, rates)
+			return nil
 		})
 	}
 
-	var err error
 	if err = g.Wait(); err != nil {
 		return nil, err
 	}
@@ -143,10 +155,10 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]rsvRat
 			err = fmt.Errorf("key (%v) cannot be asserted to ethereum.Address", key)
 			return false
 		}
-		rates, ok := value.(rsvRateCommon.ReserveRates)
+		rates, ok := value.(*rsvRateCommon.ReserveRates)
 		if !ok {
 			err = fmt.Errorf("value (%v) cannot be asserted to reserveRates", value)
-			return true
+			return false
 		}
 		result[reserveAddr.Hex()] = rates
 		return true

@@ -2,10 +2,10 @@ package stats
 
 import (
 	"errors"
+	"github.com/KyberNetwork/tokenrate"
 	"math/big"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/ethrate"
 	"github.com/KyberNetwork/reserve-stats/lib/utils"
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
@@ -14,8 +14,8 @@ import (
 
 //UserStats represent stats for an user
 type UserStats struct {
-	cmcEthUSDRate ethrate.EthUSDRate
-	userStorage   *storage.UserDB
+	rateProvider tokenrate.ETHUSDRateProvider
+	userStorage  *storage.UserDB
 }
 
 //GetTxCapByAddress return user Tx limit by wei
@@ -34,7 +34,13 @@ func (us UserStats) GetTxCapByAddress(addr string) (*big.Int, bool, error) {
 		}
 	}
 	timepoint := time.Now()
-	rate := us.cmcEthUSDRate.GetUSDRate(timepoint)
+
+	// TODO: caching rate provider to avoid calling every request
+	rate, err := us.rateProvider.USDRate(timepoint)
+	if err != nil {
+		return nil, false, err
+	}
+
 	var txLimit *big.Int
 	if rate == 0 {
 		return txLimit, kyced, errors.New("cannot get eth usd rate from cmc")
@@ -50,9 +56,9 @@ func (us UserStats) StoreUserInfo(userData common.UserData) error {
 }
 
 //NewUserStats return new user stats instance
-func NewUserStats(cmc ethrate.EthUSDRate, storage *storage.UserDB) *UserStats {
+func NewUserStats(rateProvider tokenrate.ETHUSDRateProvider, storage *storage.UserDB) *UserStats {
 	return &UserStats{
-		cmcEthUSDRate: cmc,
-		userStorage:   storage,
+		rateProvider: rateProvider,
+		userStorage:  storage,
 	}
 }

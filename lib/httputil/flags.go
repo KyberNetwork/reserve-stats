@@ -31,3 +31,9 @@ func NewHTTPCliFlags(defaultPort HTTPPort) []cli.Flag {
 func NewHTTPAddressFromContext(c *cli.Context) string {
 	return c.String(httpAddressFlag)
 }
+
+// NewHostFromContext return a host string for http server to bind.
+func NewHostFromContext(c *cli.Context) string {
+	portStr := c.String(PortFlag)
+	return fmt.Sprintf(":%s", portStr)
+}

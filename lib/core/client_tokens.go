@@ -8,6 +8,13 @@ import (
 	"time"
 )
 
+// generateNonce returns nonce header required to use Core API,
+// which is current timestamp in milliseconds.
+func generateNonce() string {
+	now := time.Now().UnixNano() / int64(time.Millisecond)
+	return strconv.FormatInt(now, 10)
+}
+
 type allSettingsResponse struct {
 	commonResponse
 	Data tokensData `json:"data"`
@@ -19,13 +26,6 @@ type tokensData struct {
 
 type tokenList struct {
 	Tokens []Token `json:"tokens"`
-}
-
-// generateNonce returns nonce header required to use Core API,
-// which is current timestamp in milliseconds.
-func generateNonce() string {
-	now := time.Now().UnixNano() / int64(time.Millisecond)
-	return strconv.FormatInt(now, 10)
 }
 
 // Tokens returns all configured tokens.
@@ -77,7 +77,7 @@ func (c *Client) Tokens() ([]Token, error) {
 		return nil, fmt.Errorf("unexpected return code: %d", rsp.StatusCode)
 	}
 
-	var settingsResponse = &allSettingsResponse{}
+	var settingsResponse = allSettingsResponse{}
 	if err = json.NewDecoder(rsp.Body).Decode(&settingsResponse); err != nil {
 		return nil, err
 	}
@@ -87,4 +87,45 @@ func (c *Client) Tokens() ([]Token, error) {
 	}
 
 	return settingsResponse.Data.Tokens.Tokens, nil
+}
+
+// tokensReply is the struct to contain core's reply
+type tokensReply struct {
+	commonResponse
+	Data []Token `json:"data"`
+}
+
+func (c *Client) getTokens(endpoint string) ([]Token, error) {
+	var params = make(map[string]string)
+	params["nonce"] = generateNonce()
+	req, err := c.newRequest(http.MethodGet, endpoint, params)
+	if err != nil {
+		return nil, err
+	}
+	rsp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer rsp.Body.Close()
+
+	if rsp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected return code: %d", rsp.StatusCode)
+	}
+	var tokenReply = tokensReply{}
+	if err = json.NewDecoder(rsp.Body).Decode(&tokenReply); err != nil {
+		return nil, err
+	}
+	return tokenReply.Data, nil
+}
+
+// GetInternalTokens return list of internal token from Kyber reserve
+func (c *Client) GetInternalTokens() ([]Token, error) {
+	const endpoint = "setting/internal-tokens"
+	return c.getTokens(endpoint)
+}
+
+// GetActiveTokens return list of active token from external reserve
+func (c *Client) GetActiveTokens() ([]Token, error) {
+	const endpoint = "setting/active-tokens"
+	return c.getTokens(endpoint)
 }

@@ -8,6 +8,13 @@ import (
 	"time"
 )
 
+// generateNonce returns nonce header required to use Core API,
+// which is current timestamp in milliseconds.
+func generateNonce() string {
+	now := time.Now().UnixNano() / int64(time.Millisecond)
+	return strconv.FormatInt(now, 10)
+}
+
 type allSettingsResponse struct {
 	commonResponse
 	Data tokensData `json:"data"`
@@ -19,13 +26,6 @@ type tokensData struct {
 
 type tokenList struct {
 	Tokens []Token `json:"tokens"`
-}
-
-// generateNonce returns nonce header required to use Core API,
-// which is current timestamp in milliseconds.
-func generateNonce() string {
-	now := time.Now().UnixNano() / int64(time.Millisecond)
-	return strconv.FormatInt(now, 10)
 }
 
 // Tokens returns all configured tokens.
@@ -77,7 +77,7 @@ func (c *Client) Tokens() ([]Token, error) {
 		return nil, fmt.Errorf("unexpected return code: %d", rsp.StatusCode)
 	}
 
-	var settingsResponse = &allSettingsResponse{}
+	var settingsResponse = allSettingsResponse{}
 	if err = json.NewDecoder(rsp.Body).Decode(&settingsResponse); err != nil {
 		return nil, err
 	}
@@ -87,6 +87,12 @@ func (c *Client) Tokens() ([]Token, error) {
 	}
 
 	return settingsResponse.Data.Tokens.Tokens, nil
+}
+
+// tokensReply is the struct to contain core's reply
+type tokensReply struct {
+	commonResponse
+	Data []Token `json:"data"`
 }
 
 func (c *Client) getTokens(endpoint string) ([]Token, error) {
@@ -105,7 +111,7 @@ func (c *Client) getTokens(endpoint string) ([]Token, error) {
 	if rsp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected return code: %d", rsp.StatusCode)
 	}
-	var tokenReply = &TokensReply{}
+	var tokenReply = tokensReply{}
 	if err = json.NewDecoder(rsp.Body).Decode(&tokenReply); err != nil {
 		return nil, err
 	}

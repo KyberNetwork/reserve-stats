@@ -1,20 +1,21 @@
 package main
 
 import (
+	"context"
+	"log"
+	"os"
+
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/crawler"
-	cli "github.com/urfave/cli"
+	"github.com/urfave/cli"
 	"go.uber.org/zap"
-	"log"
-	"os"
 )
 
 const (
 	addressesFlag = "addresses"
 	blockFlag     = "block"
-	coreFlag      = "coreURL"
 )
 
 func newReserveCrawlerCli() *cli.App {
@@ -59,6 +60,15 @@ func newReserveCrawlerCli() *cli.App {
 		if err != nil {
 			return err
 		}
+
+		if block == 0 {
+			currentBlock, err := client.BlockByNumber(context.Background(), nil)
+			if err != nil {
+				return err
+			}
+			block = currentBlock.Number().Uint64()
+		}
+
 		result, err := reserveRateCrawler.GetReserveRates(block)
 		if err != nil {
 			return err

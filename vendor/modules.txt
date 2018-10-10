@@ -59,23 +59,12 @@ github.com/golang/protobuf/proto
 github.com/golang/snappy
 # github.com/google/uuid v1.0.0
 github.com/google/uuid
-<<<<<<< HEAD
-<<<<<<< HEAD
 # github.com/influxdata/influxdb v1.6.3
 github.com/influxdata/influxdb/client/v2
 github.com/influxdata/influxdb/models
 github.com/influxdata/influxdb/pkg/escape
-=======
-<<<<<<< HEAD
-=======
 # github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a
 github.com/jinzhu/inflection
->>>>>>> 4c22446... update vendor
->>>>>>> afbd0a9... update vendor
-=======
-# github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a
-github.com/jinzhu/inflection
->>>>>>> 7786155... update vendor
 # github.com/json-iterator/go v1.1.5
 github.com/json-iterator/go
 # github.com/mattn/go-isatty v0.0.4

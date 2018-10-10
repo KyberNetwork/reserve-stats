@@ -1,9 +1,8 @@
 module github.com/KyberNetwork/reserve-stats
 
 require (
-	github.com/KyberNetwork/tokenrate v0.0.0-20181009041328-65b9b5da6c5d
-	github.com/KyberNetwork/reserve-data v0.1.0
 	github.com/KyberNetwork/reserve-data v0.1.0 // indirect
+	github.com/KyberNetwork/tokenrate v0.0.0-20181009041328-65b9b5da6c5d
 	github.com/aristanetworks/goarista v0.0.0-20180907105523-ff33da284e76 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
 	github.com/btcsuite/btcd v0.0.0-20180924021209-2a560b2036be // indirect
@@ -13,37 +12,6 @@ require (
 	github.com/edsrzf/mmap-go v0.0.0-20170320065105-0bce6a688712 // indirect
 	github.com/ethereum/go-ethereum v1.8.16
 	github.com/fjl/memsize v0.0.0-20180929194037-2a09253e352a // indirect
-	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
-	github.com/gin-gonic/gin v1.3.0
-	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
-	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
-	github.com/hashicorp/golang-lru v0.5.0 // indirect
-	github.com/huin/goupnp v0.0.0-20180415215157-1395d1447324 // indirect
-	github.com/influxdata/influxdb v1.6.3
-	github.com/jackpal/go-nat-pmp v1.0.1 // indirect
-	github.com/json-iterator/go v1.1.5 // indirect
-	github.com/karalabe/hid v0.0.0-20180420081245-2b4488a37358 // indirect
-	github.com/mattn/go-colorable v0.0.9 // indirect
-	github.com/mattn/go-isatty v0.0.4 // indirect
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/onsi/gomega v1.4.2 // indirect
-	github.com/oschwald/geoip2-golang v1.2.1
-	github.com/oschwald/maxminddb-golang v1.3.0 // indirect
-	github.com/pborman/uuid v1.2.0 // indirect
-	github.com/pkg/errors v0.8.0 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rjeczalik/notify v0.9.2 // indirect
-	github.com/rs/cors v1.5.0 // indirect
-	github.com/stretchr/testify v1.2.2 // indirect
-	github.com/syndtr/goleveldb v0.0.0-20180815032940-ae2bd5eed72d // indirect
-	github.com/ugorji/go/codec v0.0.0-20180927125128-99ea80c8b19a // indirect
-	github.com/urfave/cli v1.20.0
-	github.com/deckarep/golang-set v1.7.1 // indirect
-	github.com/ethereum/go-ethereum v1.8.16
-	github.com/fjl/memsize v0.0.0-20180427083637-f6d5545993d6 // indirect
-	github.com/gin-contrib/cors v0.0.0-20180926132136-4f98e8b8e930
 	github.com/gin-contrib/cors v0.0.0-20180926132136-4f98e8b8e930 // indirect
 	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
 	github.com/gin-gonic/gin v1.3.0
@@ -53,6 +21,7 @@ require (
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/hashicorp/golang-lru v0.5.0 // indirect
 	github.com/huin/goupnp v0.0.0-20180415215157-1395d1447324 // indirect
+	github.com/influxdata/influxdb v1.6.3
 	github.com/jackpal/go-nat-pmp v1.0.1 // indirect
 	github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a // indirect
 	github.com/json-iterator/go v1.1.5 // indirect

@@ -8,13 +8,15 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // Server is the engine to serve reserve-rate API query
 type Server struct {
-	r    *gin.Engine
-	db   rateStorage
-	host string
+	r     *gin.Engine
+	db    rateStorage
+	host  string
+	sugar *zap.SugaredLogger
 }
 
 func (sv *Server) getReserveRate(c *gin.Context) {
@@ -43,11 +45,12 @@ func (sv *Server) Run() error {
 }
 
 // NewServer create an instance of Server to serve API query
-func NewServer(host string, db rateStorage) (*Server, error) {
+func NewServer(host string, db rateStorage, sugar *zap.SugaredLogger) (*Server, error) {
 	r := gin.Default()
 	return &Server{
-		r:    r,
-		db:   db,
-		host: host,
+		r:     r,
+		db:    db,
+		host:  host,
+		sugar: sugar,
 	}, nil
 }

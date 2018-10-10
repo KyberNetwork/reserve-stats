@@ -2,6 +2,14 @@ package core
 
 import "math/big"
 
+// ETHToken is the configuration of Ethereum, will never be changed.
+var ETHToken = Token{
+	ID:       "ETH",
+	Name:     "Ethereum",
+	Address:  "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+	Decimals: 18,
+}
+
 // Token is a ERC20 token allowed to trade in core.
 // Note: all fields below are valid, uncomment when needed.
 type Token struct {

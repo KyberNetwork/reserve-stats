@@ -20,7 +20,7 @@ const (
 	postgresDatabase = "reserve_stats"
 )
 
-func connectToTestDB(sugar *zap.SugaredLogger) *storage.UserDB {
+func newTestDB(sugar *zap.SugaredLogger) (*storage.UserDB, error) {
 	return storage.NewDB(
 		sugar,
 		pg.Connect(&pg.Options{
@@ -45,7 +45,10 @@ func TestUserHTTPServer(t *testing.T) {
 		t.Fatal(err)
 	}
 	sugar := logger.Sugar()
-	userStorage := connectToTestDB(sugar)
+	userStorage, err := newTestDB(sugar)
+	if err != nil {
+		t.Fatal(err)
+	}
 	userStats := stats.NewUserStats(tokenrate.NewMock(), userStorage)
 	defer tearDown(t, userStorage)
 

@@ -39,19 +39,19 @@ func createSchema(db *pg.DB) error {
 }
 
 //NewDB open a new database connection
-func NewDB(sugar *zap.SugaredLogger, db *pg.DB) *UserDB {
+func NewDB(sugar *zap.SugaredLogger, db *pg.DB) (*UserDB, error) {
 	// create schema
 	if err := createSchema(db); err != nil {
-		panic(err)
+		return nil, err
 	}
 	return &UserDB{
-		sugar,
-		db,
-	}
+		sugar: sugar,
+		db:    db,
+	}, nil
 }
 
-//CloseDBConnection close db connection and return error if any
-func (udb *UserDB) CloseDBConnection() error {
+//Close close db connection and return error if any
+func (udb *UserDB) Close() error {
 	return udb.db.Close()
 }
 

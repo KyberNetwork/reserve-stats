@@ -24,3 +24,7 @@ func BigToFloat(b *big.Int, decimal int64) float64 {
 func TimestampMsToTime(ms uint64) time.Time {
 	return time.Unix(0, int64(ms)*int64(time.Millisecond))
 }
+
+func TimeToTimestampMs(t time.Time) uint64 {
+	return uint64(t.UnixNano() / int64(time.Millisecond))
+}

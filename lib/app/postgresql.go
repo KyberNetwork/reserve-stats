@@ -1,21 +1,26 @@
 package app
 
 import (
-	"github.com/go-pg/pg"
+	"fmt"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"github.com/urfave/cli"
 )
 
 const (
-	postgresHostFlag    = "postgres_host"
-	defaultPostgresHost = "127.0.0.1:5432"
+	postgresHostFlag    = "postgres-host"
+	defaultPostgresHost = "127.0.0.1"
 
-	postgresUserFlag    = "postgres_user"
+	postgresPortFlag    = "postgres-port"
+	defaultPostgresPort = 5432
+
+	postgresUserFlag    = "postgres-user"
 	defaultPostgresUser = "reserve_stats"
 
-	postgresPasswordFlag    = "postgres_password"
+	postgresPasswordFlag    = "postgres-password"
 	defaultPostgresPassword = "reserve_stats"
 
-	postgresDatabaseFlag = "postgres_database"
+	postgresDatabaseFlag = "postgres-database"
 )
 
 // NewPostgreSQLFlags creates new cli flags for PostgreSQL client.
@@ -26,6 +31,12 @@ func NewPostgreSQLFlags(defaultDB string) []cli.Flag {
 			Usage:  "PostgreSQL host to connect",
 			EnvVar: JoinEnvVar("POSTGRES_HOST"),
 			Value:  defaultPostgresHost,
+		},
+		cli.IntFlag{
+			Name:   postgresPortFlag,
+			Usage:  "PostgreSQL port to connect",
+			EnvVar: JoinEnvVar("POSTGRES_PORT"),
+			Value:  defaultPostgresPort,
 		},
 		cli.StringFlag{
 			Name:   postgresUserFlag,
@@ -49,11 +60,14 @@ func NewPostgreSQLFlags(defaultDB string) []cli.Flag {
 }
 
 // NewDBFromContext creates a DB instance from cli flags configuration.
-func NewDBFromContext(c *cli.Context) *pg.DB {
-	return pg.Connect(&pg.Options{
-		Addr:     c.String(postgresHostFlag),
-		User:     c.String(postgresUserFlag),
-		Password: c.String(postgresPasswordFlag),
-		Database: c.String(postgresDatabaseFlag),
-	})
+func NewDBFromContext(c *cli.Context) (*sqlx.DB, error) {
+	const driverName = "postgres"
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		c.String(postgresHostFlag),
+		c.Int(postgresPortFlag),
+		c.String(postgresUserFlag),
+		c.String(postgresPasswordFlag),
+		c.String(postgresDatabaseFlag),
+	)
+	return sqlx.Connect(driverName, connStr)
 }

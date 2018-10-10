@@ -39,9 +39,14 @@ func run(c *cli.Context) error {
 	sugar := logger.Sugar()
 	sugar.Info("Run user module")
 
+	db, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return err
+	}
+
 	userDB, err := storage.NewDB(
 		sugar,
-		libapp.NewDBFromContext(c),
+		db,
 	)
 	if err != nil {
 		return err

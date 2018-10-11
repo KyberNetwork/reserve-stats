@@ -86,9 +86,7 @@ func isAddress(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
 	if err := validation.Validate(address, validation.Required); err != nil {
 		return false
 	}
-	// TODO:  check if address len is fixed
-	a := ethereum.HexToAddress(address)
-	if a.Big().Cmp(ethereum.Big0) == 0 {
+	if !ethereum.IsHexAddress(address) {
 		return false
 	}
 	return true

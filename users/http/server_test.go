@@ -132,26 +132,26 @@ func TestUserHTTPServer(t *testing.T) {
 }`),
 				Assert: expectBadRequest,
 			},
-			//			{
-			//				Msg:      "invalid user address",
-			//				Endpoint: requestEndpoint,
-			//				Method:   http.MethodPost,
-			//				Body: `
-			//{
-			//  "email": "test",
-			//  "user_info": [
-			//    {
-			//      "address": "0x001122",
-			//      "timestamp": 1538380670000
-			//    },
-			//    {
-			//      "address": "0x2ea6200a999f4c6c982be525f8dc294f14f4cb08",
-			//      "timestamp": 1538380682000
-			//    }
-			//  ]
-			//}`,
-			//				Assert: expectBadRequest,
-			//			},
+			{
+				Msg:      "invalid user address",
+				Endpoint: requestEndpoint,
+				Method:   http.MethodPost,
+				Body: []byte(`
+			{
+			 "email": "test@gmail.com",
+			 "user_info": [
+			   {
+			     "address": "0x1497340a82",
+			     "timestamp": 1538380670000
+			   },
+			   {
+			     "address": "not a valid address",
+			     "timestamp": 1538380682000
+			   }
+			 ]
+			}`),
+				Assert: expectBadRequest,
+			},
 			{
 				Msg:      "update correct user addresses",
 				Endpoint: requestEndpoint,
@@ -204,6 +204,28 @@ func TestUserHTTPServer(t *testing.T) {
 				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
 				Method:   http.MethodGet,
 				Assert:   expectKYCed,
+			},
+			{
+				Msg:      "user remove address",
+				Endpoint: requestEndpoint,
+				Method:   http.MethodPost,
+				Body: []byte(`
+					{
+						"email": "test@gmail.com",
+						"user_info": [
+							{
+								"address": "0x2ea6200a999f4c6c982be525f8dc294f14f4cb08",
+								"timestamp": 1538380682000
+							}
+						]
+					}`),
+				Assert: expectSuccess,
+			},
+			{
+				Msg:      "address is removed",
+				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
+				Method:   http.MethodGet,
+				Assert:   expectNonKYCed,
 			},
 		}
 	)

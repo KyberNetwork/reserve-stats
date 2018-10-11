@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/common"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	utils "github.com/KyberNetwork/reserve-stats/lib/utils"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -23,7 +23,7 @@ func (sv *Server) getReserveRate(c *gin.Context) {
 	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
 	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
 	if toTime == 0 {
-		toTime = common.TimeToTimestampMs(time.Now())
+		toTime = utils.TimeToTimestampMs(time.Now())
 	}
 	reserveAddr := ethereum.HexToAddress(c.Query("reserveAddr"))
 	if reserveAddr.Big().Cmp(ethereum.Big0) == 0 {
@@ -38,9 +38,13 @@ func (sv *Server) getReserveRate(c *gin.Context) {
 	httputil.ResponseSuccess(c, httputil.WithData(result))
 }
 
+func (sv *Server) register() {
+	sv.r.GET("/reserve-rate", sv.getReserveRate)
+}
+
 // Run starts HTTP server on preconfigure-host. Return error if occurs
 func (sv *Server) Run() error {
-	sv.r.GET("/reserve-rate", sv.getReserveRate)
+	sv.register()
 	return sv.r.Run(sv.host)
 }
 

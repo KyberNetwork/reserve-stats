@@ -17,10 +17,10 @@ env:
   global:
     - GOMETALINTER_VERSION=2.0.11
     - GO111MODULE=on
+    - PATH=$PATH:${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
 
 install:
   - ./.travis/gometalinter-install.sh
-  - export PATH=$PATH:${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
 
 cache: 
   directories:

@@ -2,6 +2,7 @@ package core
 
 import (
 	"errors"
+	"math"
 	"math/big"
 	"sync"
 
@@ -83,4 +84,20 @@ func (cc *CachedClient) FormatAmount(address common.Address, amount *big.Int) (f
 		return 0, err
 	}
 	return token.FormatAmount(amount), nil
+}
+
+// ToWei return the given human friendly number to wei unit.
+func (cc *CachedClient) ToWei(address common.Address, amount float64) (*big.Int, error) {
+	token, err := cc.Token(address)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	decimal := token.Decimals
+	// 6 is our smallest precision,
+	if decimal < 6 {
+		return big.NewInt(int64(amount * math.Pow10(int(decimal)))), nil
+	}
+	result := big.NewInt(int64(amount * math.Pow10(6)))
+	return result.Mul(result, big.NewInt(0).Exp(big.NewInt(10), big.NewInt(decimal-6), nil)), nil
 }

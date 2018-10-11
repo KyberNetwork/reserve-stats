@@ -29,7 +29,7 @@ func (fmt *mockAmountFormatter) ToWei(address ethereum.Address, amount float64) 
 	return big.NewInt(100), nil
 }
 
-func newTestInfluxStorage() (*InfluxStorage, error) {
+func newTestInfluxStorage(db string) (*InfluxStorage, error) {
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func newTestInfluxStorage() (*InfluxStorage, error) {
 	sugar := logger.Sugar()
 
 	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr: "http://localhost:8086",
+		Addr: "http://127.0.0.1:8086",
 	})
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func newTestInfluxStorage() (*InfluxStorage, error) {
 
 	storage, err := NewInfluxStorage(
 		sugar,
-		"test_db",
+		db,
 		influxClient,
 		&mockAmountFormatter{},
 	)
@@ -104,7 +104,7 @@ func TestSaveTradeLogs(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	var err error
-	if testStorage, err = newTestInfluxStorage(); err != nil {
+	if testStorage, err = newTestInfluxStorage("test_db"); err != nil {
 		log.Fatal("get unexpected error when create storage", "err", err.Error())
 	}
 	defer testStorage.tearDown()

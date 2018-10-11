@@ -24,7 +24,7 @@ func NewServer(sugar *zap.SugaredLogger, rateProvider tokenrate.ETHUSDRateProvid
 	r := gin.Default()
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("isAddress", isAddress)
-		v.RegisterValidation("isemail", IsEmail)
+		v.RegisterValidation("isEmail", IsEmail)
 	}
 	return &Server{
 		sugar:        sugar,
@@ -44,8 +44,7 @@ type Server struct {
 
 //IsKYCed return infomation of an user
 func (s *Server) getTransactionLimit(c *gin.Context) {
-	address := c.Param("address")
-
+	address := c.Query("address")
 	kyced, err := s.storage.IsKYCed(address)
 	if err != nil {
 		c.JSON(
@@ -87,6 +86,7 @@ func isAddress(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
 	if err := validation.Validate(address, validation.Required); err != nil {
 		return false
 	}
+	// TODO:  check if address len is fixed
 	a := ethereum.HexToAddress(address)
 	if a.Big().Cmp(ethereum.Big0) == 0 {
 		return false
@@ -133,7 +133,7 @@ func (s *Server) createOrUpdate(c *gin.Context) {
 }
 
 func (s *Server) register() {
-	s.r.GET("/users/:address", s.getTransactionLimit)
+	s.r.GET("/users", s.getTransactionLimit)
 	s.r.POST("/users", s.createOrUpdate)
 }
 

@@ -69,7 +69,7 @@ func TestUserHTTPServer(t *testing.T) {
 		tests = []httputil.HTTPTestCase{
 			{
 				Msg:      "empty db",
-				Endpoint: fmt.Sprintf("%s/%s", requestEndpoint, queryAddress),
+				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
 				Method:   http.MethodGet,
 				Assert:   expectSuccess,
 			},
@@ -195,13 +195,13 @@ func TestUserHTTPServer(t *testing.T) {
 			},
 			{
 				Msg:      "user is not kyced",
-				Endpoint: fmt.Sprintf("%s/%s", requestEndpoint, nonKycAddress),
+				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, nonKycAddress),
 				Method:   http.MethodGet,
 				Assert:   expectNonKYCed,
 			},
 			{
 				Msg:      "user is kyced",
-				Endpoint: fmt.Sprintf("%s/%s", requestEndpoint, queryAddress),
+				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
 				Method:   http.MethodGet,
 				Assert:   expectKYCed,
 			},

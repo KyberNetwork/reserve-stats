@@ -22,7 +22,7 @@ type Info struct {
 //UserData user data post through post request to store in stats database
 type UserData struct {
 	//Email user email - unique
-	Email string `json:"email" binding:"required,isemail" db:"email"`
+	Email string `json:"email" binding:"required,isEmail" db:"email"`
 	//UserInfo user info include
 	UserInfo []Info `json:"user_info" binding:"required,dive,required"`
 }

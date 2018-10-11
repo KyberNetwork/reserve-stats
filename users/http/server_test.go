@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
-	"github.com/KyberNetwork/reserve-stats/users/stats"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
-	"github.com/go-pg/pg"
+	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 	"net/http"
 	"testing"
@@ -14,23 +13,26 @@ import (
 
 const (
 	host             = ":9000"
-	postgresHost     = "127.0.0.1:5432"
+	postgresHost     = "127.0.0.1"
+	postgresPort     = 5432
 	postgresUser     = "reserve_stats"
 	postgresPassword = "reserve_stats"
 	postgresDatabase = "reserve_stats"
 )
 
 func newTestDB(sugar *zap.SugaredLogger) (*storage.UserDB, error) {
-	return storage.NewDB(
-		sugar,
-		pg.Connect(&pg.Options{
-			Addr:     postgresHost,
-			User:     postgresUser,
-			Password: postgresPassword,
-			Database: postgresDatabase,
-		},
-		),
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		postgresHost,
+		postgresPort,
+		postgresUser,
+		postgresPassword,
+		postgresDatabase,
 	)
+	db, err := sqlx.Connect("postgres", connStr)
+	if err != nil {
+		return nil, err
+	}
+	return storage.NewDB(sugar, db)
 }
 
 func tearDown(t *testing.T, storage *storage.UserDB) {
@@ -49,10 +51,9 @@ func TestUserHTTPServer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	userStats := stats.NewUserStats(tokenrate.NewMock(), userStorage)
 	defer tearDown(t, userStorage)
 
-	s := NewServer(sugar, userStats, host)
+	s := NewServer(sugar, tokenrate.NewMock(), userStorage, host)
 	s.register()
 
 	zap.S().Infof("Server instance: %+v", s)

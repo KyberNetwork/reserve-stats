@@ -14,7 +14,6 @@ require (
 	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
 	github.com/gin-gonic/gin v1.3.0
 	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
-	github.com/go-pg/pg v6.15.0+incompatible
 	github.com/go-sql-driver/mysql v1.4.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
@@ -22,7 +21,6 @@ require (
 	github.com/huin/goupnp v0.0.0-20180415215157-1395d1447324 // indirect
 	github.com/influxdata/influxdb v1.6.3
 	github.com/jackpal/go-nat-pmp v1.0.1 // indirect
-	github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a // indirect
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
 	github.com/json-iterator/go v1.1.5 // indirect
 	github.com/karalabe/hid v0.0.0-20180420081245-2b4488a37358 // indirect
@@ -45,7 +43,6 @@ require (
 	github.com/syndtr/goleveldb v0.0.0-20180815032940-ae2bd5eed72d // indirect
 	github.com/ugorji/go/codec v0.0.0-20180927125128-99ea80c8b19a // indirect
 	github.com/urfave/cli v1.20.0
-	github.com/vmihailenco/sasl v0.0.0-20180925064641-2f13c189728a // indirect
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
@@ -59,7 +56,6 @@ require (
 	gopkg.in/go-playground/validator.v8 v8.18.2
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
-	mellium.im/sasl v0.2.1 // indirect
 )
 
 replace github.com/ethereum/go-ethereum => github.com/favadi/go-ethereum v1.8.16-fork

@@ -1,7 +1,14 @@
 package common
 
-import (
-	"time"
+var (
+	nonKYCCap = &UserCap{
+		DailyLimit: 15000.0,
+		TxLimit:    3000.0,
+	}
+	kycCap = &UserCap{
+		DailyLimit: 200000.0,
+		TxLimit:    6000.0,
+	}
 )
 
 //Info an information of an user
@@ -15,27 +22,25 @@ type Info struct {
 //UserData user data post through post request to store in stats database
 type UserData struct {
 	//Email user email - unique
-	Email string `json:"email" binding:"required,isemail"`
+	Email string `json:"email" binding:"required,isemail" db:"email"`
 	//UserInfo user info include
 	UserInfo []Info `json:"user_info" binding:"required,dive,required"`
 }
 
-//User information for an user
-type User struct {
-	//ID of user in postgres db
-	ID int64 `json:"id"`
-	//Email user email
-	Email string `json:"email"`
-	//Address of user
-	Address string `json:"address" sql:",unique"`
-	//Timestamp of user adding
-	Timestamp time.Time `json:"timestamp"`
+//UserCap is users transaction cap.
+type UserCap struct {
+	// DailyLimit is the USD amount if the user is considered rich
+	// and will receive different rates.
+	DailyLimit float64 `json:"daily_limit"`
+	// TxLimit is the maximum value in USD of a transaction an user
+	// is allowed to make.
+	TxLimit float64 `json:"tx_limit"`
 }
 
-//UserCap cap for user
-type UserCap struct {
-	//DailyLimit for user
-	DailyLimit float64 `json:"daily-limit"`
-	//TxLimit cap for each transaction
-	TxLimit float64 `json:"tx-limit"`
+// NewUserCap returns user cap based on KYC status.
+func NewUserCap(kyced bool) *UserCap {
+	if kyced {
+		return kycCap
+	}
+	return nonKYCCap
 }

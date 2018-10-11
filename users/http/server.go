@@ -26,7 +26,11 @@ func NewServer(sugar *zap.SugaredLogger, rateProvider tokenrate.ETHUSDRateProvid
 		v.RegisterValidation("isAddress", isAddress)
 		v.RegisterValidation("isemail", IsEmail)
 	}
-	return &Server{sugar: sugar, rateProvider: rateProvider, storage: storage, r: r, host: host}
+	return &Server{
+		sugar:        sugar,
+		rateProvider: newCachedRateProvider(sugar, rateProvider),
+		storage:      storage,
+		r:            r, host: host}
 }
 
 //Server struct to represent a http server service
@@ -54,8 +58,6 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 	}
 
 	uc := common.NewUserCap(kyced)
-
-	// TODO: cache USD rate
 	rate, err := s.rateProvider.USDRate(time.Now())
 	if err != nil {
 		c.JSON(

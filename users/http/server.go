@@ -2,11 +2,14 @@ package http
 
 import (
 	"fmt"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/tokenrate"
 	"net/http"
 	"reflect"
+	"time"
 
 	"github.com/KyberNetwork/reserve-stats/users/common"
-	"github.com/KyberNetwork/reserve-stats/users/stats"
+	"github.com/KyberNetwork/reserve-stats/users/storage"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -16,28 +19,57 @@ import (
 	"gopkg.in/go-playground/validator.v8"
 )
 
-//Server struct to represent a http server service
-type Server struct {
-	sugar     *zap.SugaredLogger
-	userStats *stats.UserStats
-	r         *gin.Engine
-	host      string
+//NewServer return new server instance
+func NewServer(sugar *zap.SugaredLogger, rateProvider tokenrate.ETHUSDRateProvider, storage storage.Interface, host string) *Server {
+	r := gin.Default()
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("isAddress", isAddress)
+		v.RegisterValidation("isemail", IsEmail)
+	}
+	return &Server{sugar: sugar, rateProvider: rateProvider, storage: storage, r: r, host: host}
 }
 
-//GetUserInfo return infomation of an user
-func (s *Server) GetUserInfo(c *gin.Context) {
+//Server struct to represent a http server service
+type Server struct {
+	sugar        *zap.SugaredLogger
+	r            *gin.Engine
+	host         string
+	rateProvider tokenrate.ETHUSDRateProvider
+	storage      storage.Interface
+}
+
+//IsKYCed return infomation of an user
+func (s *Server) getTransactionLimit(c *gin.Context) {
 	address := c.Param("address")
-	txLimit, kyced, err := s.userStats.GetTxCapByAddress(address)
+
+	kyced, err := s.storage.IsKYCed(address)
 	if err != nil {
-		s.sugar.Errorf("Cannot get user info: %+v", err)
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{
-				"error": fmt.Sprintf("Cannot get user info: %s", err.Error()),
+				"error": fmt.Sprintf("failed to check KYC status: %s", err.Error()),
 			},
 		)
 		return
 	}
+
+	uc := common.NewUserCap(kyced)
+
+	// TODO: cache USD rate
+	rate, err := s.rateProvider.USDRate(time.Now())
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{
+				"error": fmt.Sprintf("failed to get usd rate: %s", err.Error()),
+			},
+		)
+		return
+	}
+
+	// maximum of ETH in wei
+	txLimit := blockchain.EthToWei(uc.TxLimit / rate)
+
 	c.JSON(
 		http.StatusOK,
 		gin.H{
@@ -69,8 +101,8 @@ func IsEmail(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
 	return true
 }
 
-//UpdateUserInfo update info of an user
-func (s *Server) UpdateUserInfo(c *gin.Context) {
+//createOrUpdate update info of an user
+func (s *Server) createOrUpdate(c *gin.Context) {
 	var userData common.UserData
 	if err := c.ShouldBindJSON(&userData); err != nil {
 		c.JSON(
@@ -81,8 +113,8 @@ func (s *Server) UpdateUserInfo(c *gin.Context) {
 		)
 		return
 	}
-	err := s.userStats.StoreUserInfo(userData)
-	if err != nil {
+
+	if err := s.storage.CreateOrUpdate(userData); err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{
@@ -91,6 +123,7 @@ func (s *Server) UpdateUserInfo(c *gin.Context) {
 		)
 		return
 	}
+
 	c.JSON(
 		http.StatusOK,
 		gin.H{},
@@ -98,22 +131,12 @@ func (s *Server) UpdateUserInfo(c *gin.Context) {
 }
 
 func (s *Server) register() {
-	s.r.GET("/users/:address", s.GetUserInfo)
-	s.r.POST("/users", s.UpdateUserInfo)
+	s.r.GET("/users/:address", s.getTransactionLimit)
+	s.r.POST("/users", s.createOrUpdate)
 }
 
 //Run start server and serve
 func (s *Server) Run() error {
 	s.register()
 	return s.r.Run(s.host)
-}
-
-//NewServer return new server instance
-func NewServer(sugar *zap.SugaredLogger, userStats *stats.UserStats, host string) *Server {
-	r := gin.Default()
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("isAddress", isAddress)
-		v.RegisterValidation("isemail", IsEmail)
-	}
-	return &Server{sugar, userStats, r, host}
 }

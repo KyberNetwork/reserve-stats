@@ -8,7 +8,6 @@ import (
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/users/http"
-	"github.com/KyberNetwork/reserve-stats/users/stats"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 	"github.com/urfave/cli"
 )
@@ -54,7 +53,7 @@ func run(c *cli.Context) error {
 	defer userDB.Close()
 
 	// init stats
-	userStats := stats.NewUserStats(coingecko.New(), userDB)
-	server := http.NewServer(sugar, userStats, httputil.NewHTTPAddressFromContext(c))
+	//userStats := stats.NewUserStats(coingecko.New(), userDB)
+	server := http.NewServer(sugar, coingecko.New(), userDB, httputil.NewHTTPAddressFromContext(c))
 	return server.Run()
 }

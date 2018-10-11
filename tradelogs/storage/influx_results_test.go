@@ -67,6 +67,7 @@ func TestLoadTradeLogs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// TODO: drop database after test
 
 	// following verification can be changed once the export.dat file is regen.
 	tradeLogs, err := is.LoadTradeLogs(time.Unix(1539247511, 0), time.Unix(1539248681, 0))

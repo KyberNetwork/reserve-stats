@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -10,30 +11,59 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
-// rowToTradeLog converts the result of InfluxDB query from to TradeLog event.
-// A trade event has is stored in database with following fields:
-// -  time
-// -  block_number burn_fee
-// -  dst_addr
-// -  dst_amount
-// -  eth_receival_amount
-// -  eth_receival_sender
-// -  fiat_amount
-// -  reserve_addr
-// -  src_addr
-// -  src_amount
-// -  tx_hash
-// -  user_addr
-// -  wallet_addr
-// -  wallet_fee
+// rowToTradeLog converts the row result of InfluxDB trade log query.
+// return fields:
+//- time
+//- block_number
+//- tx_hash
+//- eth_receival_sender
+//- eth_receival_amount
+//- user_addr,
+//- src_addr
+//- dst_addr
+//- src_amount
+//- dst_amount
+//- fiat_amount
+//- reserve_addr
+//- wallet_addr
+//- wallet_fee
+//- burn_fee
+//- ip
+//- country
 func (is *InfluxStorage) rowToTradeLog(row []interface{}) (common.TradeLog, error) {
+	// fieldsNum is number of fields returned by query, will be changed
+	const fieldsNum = 17
 	var tradeLog common.TradeLog
 
-	timestamp, err := time.Parse(time.RFC3339, row[0].(string))
+	if len(row) != fieldsNum {
+		return tradeLog, fmt.Errorf("expected %d fields, got: %d", fieldsNum, len(row))
+	}
+
+	// field: time
+	timeField, ok := row[0].(string)
+	if !ok {
+		return tradeLog, fmt.Errorf("time field is not string")
+	}
+	timestamp, err := time.Parse(time.RFC3339, timeField)
 	if err != nil {
 		return tradeLog, err
 	}
-	blockNumber, err := strconv.ParseUint(row[1].(string), 10, 64)
+
+	// field: block_number
+	blockNumberField, ok := row[1].(string)
+	if !ok {
+		return tradeLog, fmt.Errorf("block number field is not string")
+	}
+	blockNumber, err := strconv.ParseUint(blockNumberField, 10, 64)
+	if err != nil {
+		return tradeLog, err
+	}
+
+	// field: tx_hash
+	txHash, ok := row[2].(string)
+	if !ok {
+		return tradeLog, fmt.Errorf("")
+	}
 
 	ethReceivalAmount, err := row[4].(json.Number).Float64()
 	if err != nil {
@@ -100,7 +130,7 @@ func (is *InfluxStorage) rowToTradeLog(row []interface{}) (common.TradeLog, erro
 	tradeLog = common.TradeLog{
 		Timestamp:       timestamp,
 		BlockNumber:     blockNumber,
-		TransactionHash: ethereum.HexToHash(row[2].(string)),
+		TransactionHash: ethereum.HexToHash(txHash),
 
 		EtherReceivalSender: ethereum.HexToAddress(row[3].(string)),
 		EtherReceivalAmount: ethReceivalAmountInWei,

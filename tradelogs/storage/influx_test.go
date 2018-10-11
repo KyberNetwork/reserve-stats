@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"sort"
 	"testing"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -23,6 +24,10 @@ type mockAmountFormatter struct {
 
 func (fmt *mockAmountFormatter) FormatAmount(address ethereum.Address, amount *big.Int) (float64, error) {
 	return 100, nil
+}
+
+func (fmt *mockAmountFormatter) ToWei(address ethereum.Address, amount float64) (*big.Int, error) {
+	return big.NewInt(100), nil
 }
 
 func newTestInfluxStorage() (*InfluxStorage, error) {
@@ -84,6 +89,10 @@ func getSampleRates(tradeLogs []common.TradeLog) ([]tokenrate.ETHUSDRate, error)
 	return rates, nil
 }
 
+func sortTradeLogsByTime(tradeLogs []common.TradeLog) {
+	sort.Slice(tradeLogs, func(i, j int) bool { return tradeLogs[i].Timestamp.Before(tradeLogs[j].Timestamp) })
+}
+
 func TestSaveTradeLogs(t *testing.T) {
 	tradeLogs, err := getSampleTradeLogs("testdata/trade_logs.json")
 	rates, err := getSampleRates(tradeLogs)
@@ -94,7 +103,18 @@ func TestSaveTradeLogs(t *testing.T) {
 		t.Error("get unexpected error when save trade logs", "err", err.Error())
 	}
 
-	// TODO: validate number of records inserted
+	// validate number of records inserted
+	sortTradeLogsByTime(tradeLogs)
+	fromTime := tradeLogs[0].Timestamp
+	toTime := tradeLogs[len(tradeLogs)-1].Timestamp
+
+	savedTradeLogs, err := testStorage.LoadTradeLogs(fromTime, toTime)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tradeLogs) != len(savedTradeLogs) {
+		t.Errorf("Sum was incorrect, got: %d, want: %d.", len(savedTradeLogs), len(tradeLogs))
+	}
 }
 
 func TestMain(m *testing.M) {

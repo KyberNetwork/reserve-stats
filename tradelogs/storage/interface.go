@@ -11,11 +11,12 @@ import (
 // Interface represent a storage for TradeLogs data
 type Interface interface {
 	SaveTradeLogs([]common.TradeLog) error
-	LoadTradeLogs(from, to time.Time) []common.TradeLog
+	LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error)
 }
 
 // tokenAmountFormatter is the formatter used to format the amount from big number
 // to float using preconfigured decimals. The intended implementation is from Core API client.
 type tokenAmountFormatter interface {
 	FormatAmount(address ethereum.Address, amount *big.Int) (float64, error)
+	ToWei(address ethereum.Address, amount float64) (*big.Int, error)
 }

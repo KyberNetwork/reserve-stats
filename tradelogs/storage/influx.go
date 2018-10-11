@@ -1,10 +1,13 @@
 package storage
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/influxdata/influxdb/client/v2"
 	"strconv"
+	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
@@ -60,6 +63,48 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 	is.sugar.Debugw("saved trade logs into influxdb", "trade logs", logs)
 
 	return nil
+}
+
+// LoadTradeLogs return trade logs from DB
+func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
+	q := fmt.Sprintf(
+		"SELECT %s FROM %s WHERE time >= %d AND time <= %d",
+		`
+		time, block_number, tx_hash, 
+		eth_receival_sender, eth_receival_amount, 
+		user_addr, src_addr, dst_addr, src_amount, dst_amount, fiat_amount, 
+		reserve_addr, wallet_addr, wallet_fee, burn_fee,
+		ip, country
+		`,
+		"trade",
+		from.UnixNano(),
+		to.UnixNano(),
+	)
+
+	is.sugar.Debug(from.UnixNano())
+	is.sugar.Debug(to.UnixNano())
+
+	res, err := is.queryDB(is.influxClient, q)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []common.TradeLog
+
+	if len(res[0].Series) == 0 {
+		return nil, nil
+	}
+
+	for _, row := range res[0].Series[0].Values {
+		is.sugar.Debug(row)
+		tradeLog, err := is.rowToTradeLog(row)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, tradeLog)
+	}
+
+	return result, nil
 }
 
 // createDB creates the database will be used for storing trade logs measurements.
@@ -146,4 +191,102 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) (*client.Point, er
 	}
 
 	return pt, nil
+}
+
+func (is *InfluxStorage) rowToTradeLog(row []interface{}) (common.TradeLog, error) {
+	var tradeLog common.TradeLog
+
+	timestamp, err := time.Parse(time.RFC3339, row[0].(string))
+	if err != nil {
+		return tradeLog, err
+	}
+	blockNumber, err := strconv.ParseUint(row[1].(string), 10, 64)
+
+	ethReceivalAmount, err := row[4].(json.Number).Float64()
+	if err != nil {
+		return tradeLog, err
+	}
+	ethReceivalAmountInWei, err := is.amountFmt.ToWei(blockchain.ETHAddr, ethReceivalAmount)
+	if err != nil {
+		return tradeLog, err
+	}
+
+	srcAddress := ethereum.HexToAddress(row[6].(string))
+	srcAmount, err := row[8].(json.Number).Float64()
+	if err != nil {
+		return tradeLog, err
+	}
+	srcAmountInWei, err := is.amountFmt.ToWei(srcAddress, srcAmount)
+	if err != nil {
+		return tradeLog, err
+	}
+
+	dstAddress := ethereum.HexToAddress(row[7].(string))
+	dstAmount, err := row[9].(json.Number).Float64()
+	if err != nil {
+		return tradeLog, err
+	}
+	dstAmountInWei, err := is.amountFmt.ToWei(dstAddress, dstAmount)
+	if err != nil {
+		return tradeLog, err
+	}
+
+	fiatAmount, err := row[10].(json.Number).Float64()
+	if err != nil {
+		return tradeLog, err
+	}
+
+	walletFee, err := row[13].(json.Number).Float64()
+	if err != nil {
+		return tradeLog, err
+	}
+	walletFeeInWei, err := is.amountFmt.ToWei(blockchain.KNCAddr, walletFee)
+	if err != nil {
+		return tradeLog, err
+	}
+
+	burnFee, err := row[14].(json.Number).Float64()
+	if err != nil {
+		return tradeLog, err
+	}
+	burnFeeInWei, err := is.amountFmt.ToWei(blockchain.KNCAddr, burnFee)
+	if err != nil {
+		return tradeLog, err
+	}
+
+	ip, ok := row[15].(string)
+	if !ok {
+		ip = ""
+	}
+
+	country, ok := row[16].(string)
+	if err != nil {
+		country = ""
+	}
+
+	tradeLog = common.TradeLog{
+		Timestamp:       timestamp,
+		BlockNumber:     blockNumber,
+		TransactionHash: ethereum.HexToHash(row[2].(string)),
+
+		EtherReceivalSender: ethereum.HexToAddress(row[3].(string)),
+		EtherReceivalAmount: ethReceivalAmountInWei,
+
+		UserAddress: ethereum.HexToAddress(row[5].(string)),
+		SrcAddress:  srcAddress,
+		DestAddress: dstAddress,
+		SrcAmount:   srcAmountInWei,
+		DestAmount:  dstAmountInWei,
+		FiatAmount:  fiatAmount,
+
+		ReserveAddress: ethereum.HexToAddress(row[11].(string)),
+		WalletAddress:  ethereum.HexToAddress(row[12].(string)),
+		WalletFee:      walletFeeInWei,
+		BurnFee:        burnFeeInWei,
+
+		IP:      ip,
+		Country: country,
+	}
+
+	return tradeLog, nil
 }

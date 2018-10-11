@@ -15,7 +15,7 @@ before_install:
 
 env:
   global:
-    -GOMETALINTER_VERSION=2.0.11
+    - GOMETALINTER_VERSION=2.0.11
 
 install:
   - ./.travis/gometalinter-install.sh

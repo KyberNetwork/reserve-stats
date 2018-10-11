@@ -2,6 +2,7 @@ package storage
 
 import (
 	"database/sql"
+
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
@@ -62,7 +63,7 @@ func (udb *UserDB) Close() error {
 	return udb.db.Close()
 }
 
-//StoreUserInfo store user info to persist in database
+//CreateOrUpdate store user info to persist in database
 func (udb *UserDB) CreateOrUpdate(userData common.UserData) error {
 	var (
 		logger = udb.sugar.With(
@@ -93,6 +94,15 @@ func (udb *UserDB) CreateOrUpdate(userData common.UserData) error {
 		logger.Debug("user already exists")
 	}
 
+	// remove old addresses
+	_, err = tx.Exec(`
+	DELETE FROM "addresses" WHERE user_id = $1 
+	`, userID)
+	if err != nil {
+		return err
+	}
+
+	// update new addresses
 	for _, info := range userData.UserInfo {
 		logger.Debugw("updating user address",
 			"address", info.Address,

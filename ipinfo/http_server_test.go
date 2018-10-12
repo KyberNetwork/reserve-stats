@@ -26,7 +26,7 @@ func TestIPLocatorHTTPServer(t *testing.T) {
 	}
 	defer logger.Sync()
 	sugar := logger.Sugar()
-	s, err := NewHTTPServer(sugar, "testdata", int(httputil.IPLocatorPort))
+	s, err := NewHTTPServer(sugar, "testdata", string(fmt.Sprintf(":%d", httputil.IPLocatorPort)))
 	if err != nil {
 		t.Error("Could not create HTTP server", "error", err.Error())
 	}

@@ -5,7 +5,13 @@ github.com/KyberNetwork/tokenrate/coingecko
 github.com/aristanetworks/goarista/monotime
 # github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
 github.com/asaskevich/govalidator
+<<<<<<< HEAD
 # github.com/btcsuite/btcd v0.0.0-20181013004428-67e573d211ac
+=======
+# github.com/boltdb/bolt v1.3.1
+github.com/boltdb/bolt
+# github.com/btcsuite/btcd v0.0.0-20180924021209-2a560b2036be
+>>>>>>> 07febe3... update vendor
 github.com/btcsuite/btcd/btcec
 # github.com/deckarep/golang-set v1.7.1
 github.com/deckarep/golang-set

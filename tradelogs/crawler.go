@@ -142,16 +142,23 @@ func updateTradeLogs(allLogs []common.TradeLog, logItem types.Log, ts time.Time)
 		if err != nil {
 			return allLogs, err
 		}
-		tradeLog.ReserveAddress = reserveAddr
-		tradeLog.WalletAddress = walletAddr
-		tradeLog.WalletFee = walletFee.Big()
+
+		feeToWallet := common.FeeToWallet{
+			ReserveAddress: reserveAddr,
+			WalletAddress:  walletAddr,
+			Amount:         walletFee.Big(),
+		}
+		tradeLog.FeeToWallets = append(tradeLog.FeeToWallets, feeToWallet)
 	case burnFeeEvent:
-		reserveAddr, burnFees, err := logDataToBurnFeeParams(logItem.Data)
+		reserveAddr, fee, err := logDataToBurnFeeParams(logItem.Data)
 		if err != nil {
 			return allLogs, err
 		}
-		tradeLog.ReserveAddress = reserveAddr
-		tradeLog.BurnFee = burnFees.Big()
+		burnFee := common.BurnFee{
+			ReserveAddress: reserveAddr,
+			Amount:         fee.Big(),
+		}
+		tradeLog.BurnFees = append(tradeLog.BurnFees, burnFee)
 	case etherReceivalEvent:
 		amount, err := logDataToEtherReceivalParams(logItem.Data)
 		if err != nil {

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	utils "github.com/KyberNetwork/reserve-stats/lib/utils"
+	timeutils "github.com/KyberNetwork/reserve-stats/lib/timeutils"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
 	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/storage/influx"
 	"github.com/influxdata/influxdb/client/v2"
@@ -76,7 +76,7 @@ func TestHTTPRateServer(t *testing.T) {
 	if err = json.Unmarshal([]byte(testRsvRateJSON), &testReserveRate); err != nil {
 		t.Error(err)
 	}
-	fromTime := utils.TimeToTimestampMs(testReserveRate.Timestamp)
+	fromTime := timeutils.TimeToTimestampMs(testReserveRate.Timestamp)
 	var tests = []httputil.HTTPTestCase{
 		{Msg: "success query",
 			Endpoint: fmt.Sprintf("%s/%s?fromTime=%d&toTime=%d&reserveAddr=%s", host, requestEndpoint, fromTime, fromTime, testRsvAddress),

@@ -15,15 +15,14 @@ import (
 )
 
 const (
-	defaultPort   = 8002
-	portEnvPrefix = "RESERVE_RATE"
+	defaultPort = 8002
 )
 
 func newServerCli() *cli.App {
 	app := libapp.NewApp()
 	app.Name = "reserve-rates-server"
 	app.Usage = "server for query rate API"
-	app.Flags = append(app.Flags, httputil.NewHTTPFlags(portEnvPrefix, defaultPort)...)
+	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(defaultPort)...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Action = func(c *cli.Context) error {
 		logger, err := libapp.NewLogger(c)
@@ -38,7 +37,7 @@ func newServerCli() *cli.App {
 		if err != nil {
 			return err
 		}
-		hostStr := httputil.NewHostFromContext(c)
+		hostStr := httputil.NewHTTPAddressFromContext(c)
 		server, err := http.NewServer(hostStr, rateStorage, logger.Sugar())
 		return server.Run()
 	}

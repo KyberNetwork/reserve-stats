@@ -1,4 +1,4 @@
-package crawler
+package storage
 
 import (
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"

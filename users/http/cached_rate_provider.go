@@ -7,8 +7,7 @@ import (
 	"time"
 )
 
-func newCachedRateProvider(sugar *zap.SugaredLogger, provider tokenrate.ETHUSDRateProvider) *cachedRateProvider {
-	const timeout = time.Hour
+func newCachedRateProvider(sugar *zap.SugaredLogger, provider tokenrate.ETHUSDRateProvider, timeout time.Duration) *cachedRateProvider {
 	return &cachedRateProvider{
 		sugar:    sugar,
 		timeout:  timeout,

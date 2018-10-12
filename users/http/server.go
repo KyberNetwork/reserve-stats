@@ -28,7 +28,7 @@ func NewServer(sugar *zap.SugaredLogger, rateProvider tokenrate.ETHUSDRateProvid
 	}
 	return &Server{
 		sugar:        sugar,
-		rateProvider: newCachedRateProvider(sugar, rateProvider),
+		rateProvider: newCachedRateProvider(sugar, rateProvider, time.Hour),
 		storage:      storage,
 		r:            r, host: host}
 }
@@ -42,7 +42,7 @@ type Server struct {
 	storage      storage.Interface
 }
 
-//IsKYCed return infomation of an user
+//getTransactionLimit returns cap limit of a user.
 func (s *Server) getTransactionLimit(c *gin.Context) {
 	address := c.Query("address")
 	kyced, err := s.storage.IsKYCed(address)
@@ -56,7 +56,6 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 		return
 	}
 
-	uc := common.NewUserCap(kyced)
 	rate, err := s.rateProvider.USDRate(time.Now())
 	if err != nil {
 		c.JSON(
@@ -69,12 +68,15 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 	}
 
 	// maximum of ETH in wei
+	uc := common.NewUserCap(kyced)
 	txLimit := blockchain.EthToWei(uc.TxLimit / rate)
 
 	c.JSON(
 		http.StatusOK,
 		gin.H{
-			"data":  txLimit,
+			"cap": txLimit,
+			// TODO: fetch rich status from InfluxDB
+			"rich":  false,
 			"kyced": kyced,
 		},
 	)
@@ -124,10 +126,7 @@ func (s *Server) createOrUpdate(c *gin.Context) {
 		return
 	}
 
-	c.JSON(
-		http.StatusOK,
-		gin.H{},
-	)
+	c.JSON(http.StatusOK, gin.H{"email": userData.Email})
 }
 
 func (s *Server) register() {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/urfave/cli"
 )
 

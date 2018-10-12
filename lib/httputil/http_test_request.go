@@ -14,6 +14,7 @@ type HTTPTestCase struct {
 	Msg      string
 	Endpoint string
 	Method   string
+	Params   map[string]string
 	Body     []byte
 	Assert   assertFn
 }
@@ -27,6 +28,11 @@ func RunHTTPTestCase(t *testing.T, tc HTTPTestCase, handler http.Handler) {
 	}
 
 	req.Header.Add("Content-Type", "application/json")
+	q := req.URL.Query()
+	for k, v := range tc.Params {
+		q.Add(k, v)
+	}
+	req.URL.RawQuery = q.Encode()
 
 	resp := httptest.NewRecorder()
 	handler.ServeHTTP(resp, req)

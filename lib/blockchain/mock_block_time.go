@@ -7,6 +7,6 @@ type MockBlockTimeResolve struct {
 }
 
 // Resolve return current time as mock result for blocktime
-func (btr *MockBlockTimeResolve) Resolve(blockNumber uint64) (time.Time, error) {
+func (btr *MockBlockTimeResolve) Resolve(_ uint64) (time.Time, error) {
 	return time.Now(), nil
 }

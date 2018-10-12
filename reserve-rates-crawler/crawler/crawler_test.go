@@ -19,7 +19,7 @@ const (
 	testInfluxURL  = "http://127.0.0.1:8086"
 )
 
-func getTestCrawler() (*ResreveRatesCrawler, error) {
+func newTestCrawler() (*ResreveRatesCrawler, error) {
 	var (
 		addrs = []ethereum.Address{ethereum.HexToAddress(testRsvAddress)}
 	)
@@ -56,7 +56,7 @@ func TestGetReserveRate(t *testing.T) {
 		BuySanityRate:   3.0,
 		SellSanityRate:  4.0,
 	}
-	crawler, err := getTestCrawler()
+	crawler, err := newTestCrawler()
 	if err != nil {
 		t.Fatal(err)
 	}

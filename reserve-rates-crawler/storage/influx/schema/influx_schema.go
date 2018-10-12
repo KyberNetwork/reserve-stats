@@ -1,4 +1,4 @@
-package influx
+package schema
 
 // RateSchemaFieldName define a list of field names for a rate record in influxDB
 //go:generate stringer -type=RateSchemaFieldName -linecomment
@@ -23,8 +23,8 @@ const (
 	Reserve //reserve
 )
 
-//RateSchemaFields translates the stringer of reserveRate fields into its enumerated form
-var RateSchemaFields = map[string]RateSchemaFieldName{
+//rateSchemaFields translates the stringer of reserveRate fields into its enumerated form
+var rateSchemaFields = map[string]RateSchemaFieldName{
 	"time":             Time,
 	"pair":             Pair,
 	"buy_rate":         BuyRate,

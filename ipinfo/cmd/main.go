@@ -25,7 +25,7 @@ func main() {
 
 	app.Action = runHTTPServer
 
-	app.Flags = append(app.Flags, httputil.NewHTTPFlags(prefix, httputil.IPLocatorPort)...)
+	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.IPLocatorPort)...)
 
 	app.Flags = append(app.Flags,
 		cli.StringFlag{
@@ -58,7 +58,7 @@ func runHTTPServer(c *cli.Context) error {
 		return err
 	}
 
-	server, err := ipinfo.NewHTTPServer(sugar, c.String(dataDirFlag), c.Int(httputil.PortFlag))
+	server, err := ipinfo.NewHTTPServer(sugar, c.String(dataDirFlag), httputil.NewHTTPAddressFromContext(c))
 	if err != nil {
 		return err
 	}

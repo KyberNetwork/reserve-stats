@@ -2,18 +2,18 @@ package http
 
 import (
 	"fmt"
+	"net/http"
+	"testing"
+
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"go.uber.org/zap"
-	"net/http"
-	"testing"
 )
 
 const (
-	host             = ":9000"
 	postgresHost     = "127.0.0.1"
 	postgresPort     = 5432
 	postgresUser     = "reserve_stats"
@@ -54,10 +54,8 @@ func TestUserHTTPServer(t *testing.T) {
 	}
 	defer tearDown(t, userStorage)
 
-	s := NewServer(sugar, tokenrate.NewMock(), userStorage, host)
+	s := NewServer(sugar, tokenrate.NewMock(), userStorage, "")
 	s.register()
-
-	zap.S().Infof("Server instance: %+v", s)
 
 	// test case
 	const (

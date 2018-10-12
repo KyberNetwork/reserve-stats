@@ -2,10 +2,16 @@ package storage
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
+)
+
+const (
+	addressesTableName = "addresses"
+	usersTableName     = "users"
 )
 
 //UserDB is storage of user data
@@ -16,19 +22,19 @@ type UserDB struct {
 
 //DeleteAllTables delete all table from schema using for test only
 func (udb *UserDB) DeleteAllTables() error {
-	_, err := udb.db.Exec(`DROP TABLE "users", "addresses"`)
+	_, err := udb.db.Exec(fmt.Sprintf(`DROP TABLE "%s", "%s"`, addressesTableName, usersTableName))
 	return err
 }
 
 //NewDB open a new database connection
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*UserDB, error) {
-	const schema = `
-CREATE TABLE IF NOT EXISTS "users" (
+	const schemaFmt = `
+CREATE TABLE IF NOT EXISTS "%s" (
   id    SERIAL PRIMARY KEY,
   email text NOT NULL UNIQUE
 );
 
-CREATE TABLE IF NOT EXISTS "addresses" (
+CREATE TABLE IF NOT EXISTS "%s" (
   id        SERIAL PRIMARY KEY,
   address   text      NOT NULL UNIQUE,
   timestamp TIMESTAMP NOT NULL,
@@ -43,7 +49,7 @@ CREATE TABLE IF NOT EXISTS "addresses" (
 	}
 
 	logger.Debug("initializing database schema")
-	if _, err = tx.Exec(schema); err != nil {
+	if _, err = tx.Exec(fmt.Sprintf(schemaFmt, usersTableName, addressesTableName)); err != nil {
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
@@ -78,7 +84,7 @@ func (udb *UserDB) CreateOrUpdate(userData common.UserData) error {
 		return err
 	}
 
-	err = tx.Get(&userID, `SELECT id FROM "users" WHERE email = $1;`, userData.Email)
+	err = tx.Get(&userID, fmt.Sprintf(`SELECT id FROM "%s" WHERE email = $1;`, usersTableName), userData.Email)
 	if err == sql.ErrNoRows {
 		logger.Debug("user does not exist, creating")
 		row := tx.QueryRowx(`INSERT INTO users (email) VALUES ($1) RETURNING id;`, userData.Email)
@@ -94,24 +100,22 @@ func (udb *UserDB) CreateOrUpdate(userData common.UserData) error {
 		logger.Debug("user already exists")
 	}
 
-	// remove old addresses
-	_, err = tx.Exec(`
-	DELETE FROM "addresses" WHERE user_id = $1 
-	`, userID)
+	// client will submit all registered addresses every time
+	_, err = tx.Exec(fmt.Sprintf(`
+	DELETE FROM "%s" WHERE user_id = $1
+`, addressesTableName), userID)
 	if err != nil {
 		return err
 	}
-
-	// update new addresses
 	for _, info := range userData.UserInfo {
 		logger.Debugw("updating user address",
 			"address", info.Address,
 			"timestamp", info.Timestamp,
 		)
-		_, err = tx.Exec(`
-INSERT INTO "addresses" (address, timestamp, user_id)
+		_, err = tx.Exec(fmt.Sprintf(`
+INSERT INTO "%s" (address, timestamp, user_id)
 VALUES ($1, (TO_TIMESTAMP($2::double precision/1000)), $3);
-`,
+`, addressesTableName),
 			info.Address,
 			info.Timestamp,
 			userID)
@@ -127,7 +131,7 @@ VALUES ($1, (TO_TIMESTAMP($2::double precision/1000)), $3);
 // means that user is already KYCed.
 func (udb *UserDB) IsKYCed(address string) (bool, error) {
 	var count int
-	if err := udb.db.Get(&count, `SELECT COUNT(1) FROM "addresses" WHERE address = $1`, address); err != nil {
+	if err := udb.db.Get(&count, fmt.Sprintf(`SELECT COUNT(1) FROM "%s" WHERE address = $1`, addressesTableName), address); err != nil {
 		return false, err
 	}
 	return count > 0, nil

@@ -40,7 +40,7 @@ response: Return user info
     "data": {
         "kyc": false,
         "cap": 12313471038132,
-        "rich": false,
+        "rich": false
     }
 }
 ```

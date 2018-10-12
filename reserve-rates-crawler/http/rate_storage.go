@@ -6,5 +6,5 @@ import (
 )
 
 type rateStorage interface {
-	GetRatesByTimePoint(rsvAddr ethereum.Address, fromTime, toTime uint64) ([]common.ReserveRates, error)
+	GetRatesByTimePoint(rsvAddr ethereum.Address, fromTime, toTime uint64) (map[uint64]common.ReserveRates, error)
 }

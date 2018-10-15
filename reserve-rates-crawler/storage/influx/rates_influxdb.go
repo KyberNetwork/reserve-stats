@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	timeutils "github.com/KyberNetwork/reserve-stats/lib/timeutils"
+	timeutils "github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/storage/influx/schema"
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -178,7 +178,7 @@ func convertQueryResultToRate(row influxModel.Row) (map[uint64]common.ReserveRat
 		}
 		curRate, ok := rates[rate.BlockNumber]
 		if !ok {
-			rates[rate.BlockNumber] = (*rate)
+			rates[rate.BlockNumber] = *rate
 		} else {
 			//append this rate.Pair to the total record.
 			for pair, rateEntry := range rate.Data {

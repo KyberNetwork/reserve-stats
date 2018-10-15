@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
@@ -59,16 +60,15 @@ func (rs *RateStorage) UpdateRatesRecords(rateRecords map[string]common.ReserveR
 
 		for pair, rate := range rateRecord.Data {
 			tags := map[string]string{
-				schema.Reserve.String(): rsvAddr,
-				schema.Pair.String():    pair,
+				schema.Reserve.String():     rsvAddr,
+				schema.Pair.String():        pair,
+				schema.BlockNumber.String(): strconv.FormatUint(rateRecord.BlockNumber, 10),
 			}
 			fields := map[string]interface{}{
 				schema.BuyRate.String():        rate.BuyReserveRate,
 				schema.SellRate.String():       rate.SellReserveRate,
 				schema.BuySanityRate.String():  rate.BuySanityRate,
 				schema.SellSanityRate.String(): rate.SellSanityRate,
-				// InfluxDB get parsing error if the input is uint64. Must use int64
-				schema.BlockNumber.String(): int64(rateRecord.BlockNumber),
 			}
 			pt, err := influxClient.NewPoint(RateTableName, tags, fields, rateRecord.Timestamp)
 			if err != nil {
@@ -124,13 +124,18 @@ func convertRowValueToReserveRate(v []interface{}, idxs *schema.FieldsRegistrar)
 		return nil, err
 	}
 	timeStamp := timeutil.TimestampMsToTime(uint64(intNumber))
+	rate.Timestamp = timeStamp
+
 	// get Block number
-	intNumber, err = getInt64FromInterface(v[(*idxs)[schema.BlockNumber]])
+	blockNumberStr, ok := v[(*idxs)[schema.BlockNumber]].(string)
+	if !ok {
+		return nil, errCantConvert
+	}
+	blockNumber, err := strconv.ParseUint(blockNumberStr, 10, 64)
 	if err != nil {
 		return nil, err
 	}
-	rate.Timestamp = timeStamp
-	rate.BlockNumber = uint64(intNumber)
+	rate.BlockNumber = blockNumber
 	// get pair
 	pairName, convertible := v[(*idxs)[schema.Pair]].(string)
 	if !convertible {

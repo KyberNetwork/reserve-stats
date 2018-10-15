@@ -228,7 +228,7 @@ func (is InfluxStorage) tokenRateToPoint(rate common.ETHUSDRate) (*client.Point,
 		"provider": rate.Provider,
 		"rate":     rate.Rate,
 	}
-	pt, err = client.NewPoint("tokenrate", tags, fields, rate.Timestamp)
+	pt, err = client.NewPoint("token_rate", tags, fields, rate.Timestamp)
 	if err != nil {
 		return nil, err
 	}

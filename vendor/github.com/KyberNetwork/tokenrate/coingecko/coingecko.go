@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const providerName = "coingecko"
+
 // CoinGecko is the CoinGecko implementation of Provider. The
 // precision of CoinGecko provider is up to day.
 type CoinGecko struct {
@@ -78,4 +80,9 @@ func (cg *CoinGecko) USDRate(timestamp time.Time) (float64, error) {
 		usdID      = "usd"
 	)
 	return cg.Rate(ethereumID, usdID, timestamp)
+}
+
+//Name return name of CoinGecko provider name
+func (cg *CoinGecko) Name() string {
+	return providerName
 }

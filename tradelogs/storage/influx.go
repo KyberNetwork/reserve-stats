@@ -2,8 +2,9 @@ package storage
 
 import (
 	"fmt"
-	"github.com/influxdata/influxdb/client/v2"
 	"strconv"
+
+	"github.com/influxdata/influxdb/client/v2"
 
 	"go.uber.org/zap"
 
@@ -187,4 +188,49 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	}
 
 	return points, nil
+}
+
+//SaveTokenRate into influx
+func (is InfluxStorage) SaveTokenRate(rates []common.ETHUSDRate) error {
+	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
+		Database:  is.dbName,
+		Precision: "ms",
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, rate := range rates {
+		pt, err := is.tokenRateToPoint(rate)
+		if err != nil {
+			return err
+		}
+
+		bp.AddPoint(pt)
+	}
+
+	if err := is.influxClient.Write(bp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (is InfluxStorage) tokenRateToPoint(rate common.ETHUSDRate) (*client.Point, error) {
+	var (
+		pt  *client.Point
+		err error
+	)
+	tags := map[string]string{
+		"block_number": strconv.FormatUint(rate.BlockNumber, 10),
+	}
+	fields := map[string]interface{}{
+		"provider": rate.Provider,
+		"rate":     rate.Rate,
+	}
+	pt, err = client.NewPoint("tokenrate", tags, fields, rate.Timestamp)
+	if err != nil {
+		return nil, err
+	}
+	return pt, err
 }

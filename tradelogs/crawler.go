@@ -225,8 +225,11 @@ func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, rateProvider t
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.
-func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
-	var result []common.TradeLog
+func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, []common.ETHUSDRate, error) {
+	var (
+		result []common.TradeLog
+		rates []common.ETHUSDRate
+	)
 
 	addresses := []ethereum.Address{
 		ethereum.HexToAddress(pricingAddr),         // pricing
@@ -256,7 +259,7 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 
 	logs, err := crawler.ethClient.FilterLogs(ctx, query)
 	if err != nil {
-		return result, err
+		return result, rates,err
 	}
 
 	for _, logItem := range logs {
@@ -267,7 +270,7 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 		ts, err := crawler.txTime.Resolve(logItem.BlockNumber)
 
 		if err != nil {
-			return result, err
+			return result, rates, err
 		}
 
 		topic := logItem.Topics[0]
@@ -275,7 +278,7 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 		case feeToWalletEvent, burnFeeEvent, etherReceivalEvent, tradeEvent:
 			// add logItem to result
 			if result, err = updateTradeLogs(result, logItem, ts); err != nil {
-				return result, err
+				return result, rates, err
 			}
 		default:
 			crawler.sugar.Info("Unknown log topic.")
@@ -290,13 +293,19 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 		if ethRate, err = crawler.rateProvider.USDRate(tradeLog.Timestamp); err != nil {
 			crawler.sugar.Errorw("failed to get ETH/USD rate",
 				"timestamp", tradeLog.Timestamp.String())
-			return nil, err
+			return nil, rates, err
 		}
 		if ethRate != 0 {
 			crawler.sugar.Debugw("got ETH/USD rate",
 				"rate", ethRate,
 				"timestamp", tradeLog.Timestamp.String())
 			result[i] = calculateFiatAmount(tradeLog, ethRate)
+			rates[i] = common.ETHUSDRate{
+				Timestamp: tradeLog.Timestamp,
+				Rate: ethRate,
+				BlockNumber: tradeLog.BlockNumber,
+				Provider: crawler.rateProvider.Name(),
+			}
 		}
 
 		ip, country, err = crawler.broadcastClient.GetTxInfo(tradeLog.TransactionHash.Hex())
@@ -307,5 +316,5 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 		result[i].Country = country
 	}
 
-	return result, nil
+	return result, rates, nil
 }

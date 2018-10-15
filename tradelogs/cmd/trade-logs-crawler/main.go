@@ -122,7 +122,7 @@ func getTradeLogs(c *cli.Context) error {
 		return err
 	}
 
-	tradeLogs, err := crawler.GetTradeLogs(fromBlock, toBlock, time.Second*5)
+	tradeLogs, usdRates, err := crawler.GetTradeLogs(fromBlock, toBlock, time.Second*5)
 	if err != nil {
 		return err
 	}
@@ -145,6 +145,10 @@ func getTradeLogs(c *cli.Context) error {
 
 	err = influxStorage.SaveTradeLogs(tradeLogs)
 	if err != nil {
+		return err
+	}
+
+	if err = influxStorage.SaveTokenRate(usdRates); err != nil {
 		return err
 	}
 

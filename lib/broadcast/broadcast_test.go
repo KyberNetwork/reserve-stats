@@ -86,6 +86,6 @@ func TestInvalidResponse(t *testing.T) {
 	}
 	_, _, err = g.GetTxInfo(tx)
 	if err != nil {
-		t.Error("Get unexpected error", "result", err.Error(), "expected", errResponseFalse.Error())
+		t.Errorf("Get unexpected error: %s", err.Error())
 	}
 }

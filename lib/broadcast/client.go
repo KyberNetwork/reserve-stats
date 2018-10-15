@@ -62,6 +62,7 @@ func (c *Client) GetTxInfo(tx string) (ip string, country string, err error) {
 			return "", "", nil
 		}
 		c.sugar.Errorw("server returns unknown error")
+		return "", "", err
 	}
 	return response.Data.IP, response.Data.Country, nil
 }

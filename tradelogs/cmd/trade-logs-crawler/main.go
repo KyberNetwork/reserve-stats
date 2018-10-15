@@ -13,8 +13,8 @@ import (
 	"github.com/urfave/cli"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
+	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"

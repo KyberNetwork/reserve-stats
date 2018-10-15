@@ -162,7 +162,11 @@ func TestSignNonceBodyAndParams(t *testing.T) {
 	data := url.Values{}
 	data.Set("nonce", nonce)
 	data.Set("a", "a")
-	req, _ := http.NewRequest("POST", "/", bytes.NewBufferString(data.Encode()))
+
+	req, err := http.NewRequest("POST", "/", bytes.NewBufferString(data.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("signed", signed)
 	urlRawQuery := url.Values{}
@@ -170,7 +174,19 @@ func TestSignNonceBodyAndParams(t *testing.T) {
 	req.URL.RawQuery = urlRawQuery.Encode()
 
 	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
 
+	data = url.Values{}
+	data.Set("nonce", nonce)
+	data.Set("a", "I'm a hacker")
+	req, err = http.NewRequest("POST", "/", bytes.NewBufferString(data.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("signed", signed)
+	req.URL.RawQuery = urlRawQuery.Encode()
+	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 

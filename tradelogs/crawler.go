@@ -276,7 +276,10 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 	}
 
 	for i, tradeLog := range result {
-		var ethRate float64
+		var (
+			ethRate     float64
+			ip, country string
+		)
 		if ethRate, err = crawler.rateProvider.USDRate(tradeLog.Timestamp); err != nil {
 			crawler.sugar.Errorw("failed to get ETH/USD rate",
 				"timestamp", tradeLog.Timestamp.String())
@@ -288,24 +291,14 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 				"timestamp", tradeLog.Timestamp.String())
 			result[i] = calculateFiatAmount(tradeLog, ethRate)
 		}
-	}
-	for _, tradeLog := range result {
-		err := crawler.updateGeoInfo(&tradeLog)
+
+		ip, country, err = crawler.g.GetTxInfo(tradeLog.TransactionHash.Hex())
 		if err != nil {
-			crawler.sugar.Errorw("Could not get geoInfo of tradeLog", "tradeLog", tradeLog, "err", err)
-			return result, err
+			return nil, err
 		}
+		result[i].IP = ip
+		result[i].Country = country
 	}
 
 	return result, nil
-}
-
-func (crawler *TradeLogCrawler) updateGeoInfo(tradeLog *common.TradeLog) error {
-	ip, country, err := crawler.g.GetTxInfo(tradeLog.TransactionHash.Hex())
-	if err != nil {
-		return err
-	}
-	tradeLog.IP = ip
-	tradeLog.Country = country
-	return nil
 }

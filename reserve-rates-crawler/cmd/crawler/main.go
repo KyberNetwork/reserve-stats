@@ -8,7 +8,9 @@ import (
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/crawler"
+	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/storage/influx"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
@@ -38,6 +40,7 @@ func newReserveCrawlerCli() *cli.App {
 		libapp.NewEthereumNodeFlags(),
 	)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
+	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Action = func(c *cli.Context) error {
 		addrs := c.StringSlice(addressesFlag)
 		client, err := libapp.NewEthereumClientFromFlag(c)
@@ -56,7 +59,15 @@ func newReserveCrawlerCli() *cli.App {
 		if err != nil {
 			return err
 		}
-		reserveRateCrawler, err := crawler.NewReserveRatesCrawler(addrs, client, coreClient, logger.Sugar(), blockTimeResolver)
+		influxClient, err := influxdb.NewClientFromContext(c)
+		if err != nil {
+			return err
+		}
+		rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(influxClient)
+		if err != nil {
+			return err
+		}
+		reserveRateCrawler, err := crawler.NewReserveRatesCrawler(addrs, client, coreClient, logger.Sugar(), blockTimeResolver, rateStorage)
 		if err != nil {
 			return err
 		}

@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
+	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/storage"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
@@ -22,16 +23,16 @@ var (
 // ResreveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
 // a set of addresses to crawl rates from and setting object to query for reserve's token settings
 type ResreveRatesCrawler struct {
-	sugar *zap.SugaredLogger
-
-	wrapperContract *contracts.VersionedWrapper
+	wrapperContract reserveRateGetter
 	Addresses       []ethereum.Address
-	tokenSetting    TokenSetting
-	blkTimeRsv      *blockchain.BlockTimeResolver
+	tokenSetting    tokenSetting
+	sugar           *zap.SugaredLogger
+	blkTimeRsv      blockchain.BlockTimeResolverInterface
+	db              storage.ReserveRatesStorage
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
-func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett TokenSetting, sugar *zap.SugaredLogger, bl *blockchain.BlockTimeResolver) (*ResreveRatesCrawler, error) {
+func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett tokenSetting, sugar *zap.SugaredLogger, bl blockchain.BlockTimeResolverInterface, dbInstance storage.ReserveRatesStorage) (*ResreveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapper(client)
 	if err != nil {
 		return nil, err
@@ -46,6 +47,7 @@ func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett Token
 		tokenSetting:    sett,
 		sugar:           sugar,
 		blkTimeRsv:      bl,
+		db:              dbInstance,
 	}, nil
 }
 
@@ -117,12 +119,12 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 
 // GetReserveRates returns the map[ReserveAddress]ReserveRates at the given block number.
 // It will only return rates from the set of addresses within its definition.
-func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]*rsvRateCommon.ReserveRates, error) {
+func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]rsvRateCommon.ReserveRates, error) {
 	var (
 		err    error
 		g      errgroup.Group
 		data   = sync.Map{}
-		result = make(map[string]*rsvRateCommon.ReserveRates)
+		result = make(map[string]rsvRateCommon.ReserveRates)
 	)
 
 	logger := rrc.sugar.With(
@@ -140,7 +142,7 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]*rsvRa
 			if err != nil {
 				return err
 			}
-			data.Store(rsvAddr, rates)
+			data.Store(rsvAddr, *rates)
 			return nil
 		})
 	}
@@ -156,7 +158,7 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]*rsvRa
 			err = fmt.Errorf("key (%v) cannot be asserted to ethereum.Address", key)
 			return false
 		}
-		rates, ok := value.(*rsvRateCommon.ReserveRates)
+		rates, ok := value.(rsvRateCommon.ReserveRates)
 		if !ok {
 			err = fmt.Errorf("value (%v) cannot be asserted to reserveRates", value)
 			return false
@@ -164,5 +166,9 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]*rsvRa
 		result[reserveAddr.Hex()] = rates
 		return true
 	})
-	return result, err
+	if err != nil {
+		return nil, err
+	}
+	uErr := rrc.db.UpdateRatesRecords(result)
+	return result, uErr
 }

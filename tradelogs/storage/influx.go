@@ -45,12 +45,14 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 	}
 
 	for _, log := range logs {
-		pt, err := is.tradeLogToPoint(log)
+		points, err := is.tradeLogToPoint(log)
 		if err != nil {
 			return err
 		}
 
-		bp.AddPoint(pt)
+		for _, pt := range points {
+			bp.AddPoint(pt)
+		}
 	}
 
 	if err := is.influxClient.Write(bp); err != nil {
@@ -85,7 +87,9 @@ func (is *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.R
 	return res, nil
 }
 
-func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) (*client.Point, error) {
+func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error) {
+	var points []*client.Point
+
 	tags := map[string]string{
 		"block_number": strconv.FormatUint(log.BlockNumber, 10),
 		"tx_hash":      log.TransactionHash.String(),
@@ -96,9 +100,6 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) (*client.Point, er
 
 		"src_addr": log.SrcAddress.String(),
 		"dst_addr": log.DestAddress.String(),
-
-		"reserve_addr": log.ReserveAddress.String(),
-		"wallet_addr":  log.WalletAddress.String(),
 
 		"country": log.Country,
 		"ip":      log.IP,
@@ -119,31 +120,71 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) (*client.Point, er
 		return nil, err
 	}
 
-	walletFee, err := is.amountFmt.FormatAmount(blockchain.KNCAddr, log.WalletFee)
-	if err != nil {
-		return nil, err
-	}
-
-	burnFee, err := is.amountFmt.FormatAmount(blockchain.KNCAddr, log.BurnFee)
-	if err != nil {
-		return nil, err
-	}
-
 	fields := map[string]interface{}{
 		"eth_receival_amount": ethReceivalAmount,
 
 		"src_amount":  srcAmount,
 		"dst_amount":  dstAmount,
 		"fiat_amount": log.FiatAmount,
-
-		"wallet_fee": walletFee,
-		"burn_fee":   burnFee,
 	}
 
-	pt, err := client.NewPoint("trade", tags, fields, log.Timestamp)
+	tradePoint, err := client.NewPoint("trades", tags, fields, log.Timestamp)
 	if err != nil {
 		return nil, err
 	}
 
-	return pt, nil
+	points = append(points, tradePoint)
+
+	// build burnFeePoint
+	for idx, burn := range log.BurnFees {
+		tags := map[string]string{
+			"tx_hash":      log.TransactionHash.String(),
+			"reserve_addr": burn.ReserveAddress.String(),
+			"order":        strconv.Itoa(idx),
+		}
+
+		burnAmount, err := is.amountFmt.FormatAmount(blockchain.KNCAddr, burn.Amount)
+		if err != nil {
+			return nil, err
+		}
+
+		fields := map[string]interface{}{
+			"amount": burnAmount,
+		}
+
+		burnPoint, err := client.NewPoint("burn_fees", tags, fields, log.Timestamp)
+		if err != nil {
+			return nil, err
+		}
+
+		points = append(points, burnPoint)
+	}
+
+	// build walletFeePoint
+	for idx, walletFee := range log.WalletFees {
+		tags := map[string]string{
+			"tx_hash":      log.TransactionHash.String(),
+			"reserve_addr": walletFee.ReserveAddress.String(),
+			"wallet_addr":  walletFee.WalletAddress.String(),
+			"order":        strconv.Itoa(idx),
+		}
+
+		amount, err := is.amountFmt.FormatAmount(blockchain.KNCAddr, walletFee.Amount)
+		if err != nil {
+			return nil, err
+		}
+
+		fields := map[string]interface{}{
+			"amount": amount,
+		}
+
+		walletFeePoint, err := client.NewPoint("wallet_fees", tags, fields, log.Timestamp)
+		if err != nil {
+			return nil, err
+		}
+
+		points = append(points, walletFeePoint)
+	}
+
+	return points, nil
 }

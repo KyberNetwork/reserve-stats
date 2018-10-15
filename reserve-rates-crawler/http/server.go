@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	timeutils "github.com/KyberNetwork/reserve-stats/lib/timeutils"
+	timeutil "github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -23,7 +23,7 @@ func (sv *Server) getReserveRate(c *gin.Context) {
 	fromTime, _ := strconv.ParseUint(c.Query("fromTime"), 10, 64)
 	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
 	if toTime == 0 {
-		toTime = timeutils.TimeToTimestampMs(time.Now())
+		toTime = timeutil.TimeToTimestampMs(time.Now())
 	}
 	reserveAddr := ethereum.HexToAddress(c.Query("reserveAddr"))
 	if reserveAddr.Big().Cmp(ethereum.Big0) == 0 {

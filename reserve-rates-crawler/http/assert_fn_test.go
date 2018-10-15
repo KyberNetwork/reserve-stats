@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-stats/lib/timeutils"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
 )
 
@@ -36,7 +36,7 @@ func expectCorrectRate(t *testing.T, resp *httptest.ResponseRecorder) {
 	}
 
 	// Since DB's precision is in ms, compare the two timestamp in ms. s
-	if (timeutils.TimeToTimestampMs(testRsvRate.Timestamp)) != (timeutils.TimeToTimestampMs(rateQueried.Timestamp)) {
+	if (timeutil.TimeToTimestampMs(testRsvRate.Timestamp)) != (timeutil.TimeToTimestampMs(rateQueried.Timestamp)) {
 		t.Fatalf("Result from http server is different with dabatase")
 	}
 	rateQueried.Timestamp = testRsvRate.Timestamp

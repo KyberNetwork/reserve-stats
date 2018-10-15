@@ -310,7 +310,7 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 
 		ip, country, err = crawler.broadcastClient.GetTxInfo(tradeLog.TransactionHash.Hex())
 		if err != nil {
-			return nil, err
+			return result, rates, err
 		}
 		result[i].IP = ip
 		result[i].Country = country

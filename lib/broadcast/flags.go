@@ -1,4 +1,4 @@
-package geoinfo
+package broadcast
 
 import (
 	"fmt"
@@ -10,11 +10,11 @@ import (
 )
 
 const (
-	geoURLFlag         = "geo-url"
+	geoURLFlag         = "broadcast-url"
 	geoURLDefaultValue = "https://broadcast.kyber.network"
 )
 
-// NewCliFlags returns cli flags to configure a geoinfo client.
+// NewCliFlags returns cli flags to configure a broadcast client.
 func NewCliFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{

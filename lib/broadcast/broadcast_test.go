@@ -1,4 +1,4 @@
-package geoinfo
+package broadcast
 
 import (
 	"encoding/json"

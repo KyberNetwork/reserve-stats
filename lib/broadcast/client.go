@@ -1,8 +1,7 @@
-package geoinfo
+package broadcast
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -10,9 +9,11 @@ import (
 	"go.uber.org/zap"
 )
 
-var errResponseFalse = errors.New("Server return success false")
+// errNotFoundMsg is the error returned by broadcast API
+// if the given transaction address not found.
+var errNotFoundMsg = "Can not find the transaction. Check Tx again"
 
-// Client is the the real implementation of geoinfo client interface
+// Client is the the real implementation of broadcast client interface
 type Client struct {
 	host   string
 	sugar  *zap.SugaredLogger
@@ -30,7 +31,7 @@ type tradeLogGeoInfoResp struct {
 
 const timeout = time.Minute * 5
 
-// NewClient creates a new geoinfo client instance.
+// NewClient creates a new broadcast client instance.
 func NewClient(sugar *zap.SugaredLogger, host string) (*Client, error) {
 	return &Client{
 		host:   host,
@@ -40,15 +41,15 @@ func NewClient(sugar *zap.SugaredLogger, host string) (*Client, error) {
 }
 
 // GetTxInfo get ip, country info of a tx
-func (g Client) GetTxInfo(tx string) (ip string, country string, err error) {
-	url := fmt.Sprintf("%s/get-tx-info/%s", g.host, tx)
-	resp, err := g.client.Get(url)
+func (c *Client) GetTxInfo(tx string) (ip string, country string, err error) {
+	url := fmt.Sprintf("%s/get-tx-info/%s", c.host, tx)
+	resp, err := c.client.Get(url)
 	if err != nil {
 		return "", "", err
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			g.sugar.Debugw("Response body close error", "err", cErr.Error())
+			c.sugar.Errorw("failed to close body", "err", cErr.Error())
 		}
 	}()
 	response := tradeLogGeoInfoResp{}
@@ -56,8 +57,11 @@ func (g Client) GetTxInfo(tx string) (ip string, country string, err error) {
 		return "", "", err
 	}
 	if response.Success != true {
-		g.sugar.Debugw("Get error while get info of tx", "tx", tx, "err", response.Err)
-		return "", "", nil
+		if response.Err == errNotFoundMsg {
+			c.sugar.Debugw("transaction not found", "tx", tx, "err", response.Err)
+			return "", "", nil
+		}
+		c.sugar.Errorw("server returns unknown error")
 	}
 	return response.Data.IP, response.Data.Country, nil
 }

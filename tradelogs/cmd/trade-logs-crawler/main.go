@@ -14,7 +14,7 @@ import (
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
-	"github.com/KyberNetwork/reserve-stats/lib/geoinfo"
+	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
@@ -57,7 +57,7 @@ func main() {
 	)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
-	app.Flags = append(app.Flags, geoinfo.NewCliFlags()...)
+	app.Flags = append(app.Flags, broadcast.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -107,7 +107,7 @@ func getTradeLogs(c *cli.Context) error {
 		return fmt.Errorf("invalid node url: %q, error: %s", nodeURL, err)
 	}
 
-	geoClient, err := geoinfo.NewClientFromContext(sugar, c)
+	geoClient, err := broadcast.NewClientFromContext(sugar, c)
 	if err != nil {
 		return err
 	}

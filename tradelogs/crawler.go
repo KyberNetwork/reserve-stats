@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/geoinfo"
+	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/tokenrate"
 	ether "github.com/ethereum/go-ethereum"
@@ -48,11 +48,11 @@ const (
 // TradeLogCrawler gets trade logs on KyberNetwork on blockchain, adding the
 // information about USD equivalent on each trade.
 type TradeLogCrawler struct {
-	sugar        *zap.SugaredLogger
-	ethClient    *ethclient.Client
-	rateProvider tokenrate.ETHUSDRateProvider
-	txTime       *blockchain.BlockTimeResolver
-	g            *geoinfo.Client
+	sugar           *zap.SugaredLogger
+	ethClient       *ethclient.Client
+	rateProvider    tokenrate.ETHUSDRateProvider
+	txTime          *blockchain.BlockTimeResolver
+	broadcastClient broadcast.Interface
 }
 
 func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
@@ -208,13 +208,13 @@ func calculateFiatAmount(tradeLog common.TradeLog, rate float64) common.TradeLog
 }
 
 // NewTradeLogCrawler create a new TradeLogCrawler instance.
-func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, rateProvider tokenrate.ETHUSDRateProvider, geoInfo *geoinfo.Client) (*TradeLogCrawler, error) {
+func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, rateProvider tokenrate.ETHUSDRateProvider, broadcastClient broadcast.Interface) (*TradeLogCrawler, error) {
 	client, err := ethclient.Dial(nodeURL)
 	if err != nil {
 		return nil, err
 	}
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
-	return &TradeLogCrawler{sugar, client, rateProvider, resolver, geoInfo}, nil
+	return &TradeLogCrawler{sugar, client, rateProvider, resolver, broadcastClient}, nil
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.
@@ -292,7 +292,7 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 			result[i] = calculateFiatAmount(tradeLog, ethRate)
 		}
 
-		ip, country, err = crawler.g.GetTxInfo(tradeLog.TransactionHash.Hex())
+		ip, country, err = crawler.broadcastClient.GetTxInfo(tradeLog.TransactionHash.Hex())
 		if err != nil {
 			return nil, err
 		}

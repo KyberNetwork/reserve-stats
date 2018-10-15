@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -41,29 +40,24 @@ func NewClient(sugar *zap.SugaredLogger, host string) (*Client, error) {
 }
 
 // GetTxInfo get ip, country info of a tx
-func (g Client) GetTxInfo(tx string) (string, string, error) {
+func (g Client) GetTxInfo(tx string) (ip string, country string, err error) {
 	url := fmt.Sprintf("%s/get-tx-info/%s", g.host, tx)
 	resp, err := g.client.Get(url)
 	if err != nil {
 		return "", "", err
 	}
-	response := tradeLogGeoInfoResp{}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
 			g.sugar.Debugw("Response body close error", "err", cErr.Error())
 		}
 	}()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", "", err
-	}
-	err = json.Unmarshal(body, &response)
-	if err != nil {
+	response := tradeLogGeoInfoResp{}
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return "", "", err
 	}
 	if response.Success != true {
 		g.sugar.Debugw("Get error while get info of tx", "tx", tx, "err", response.Err)
-		return "", "", errResponseFalse
+		return "", "", nil
 	}
 	return response.Data.IP, response.Data.Country, nil
 }

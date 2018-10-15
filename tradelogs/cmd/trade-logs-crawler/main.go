@@ -14,6 +14,7 @@ import (
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/geoinfo"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
@@ -25,8 +26,6 @@ const (
 	nodeURLDefaultValue = "https://mainnet.infura.io"
 	fromBlockFlag       = "from-block"
 	toBlockFlag         = "to-block"
-	geoURLFlag          = "geo-url"
-	geoURLDefaultValue  = "https://broadcast.kyber.network"
 
 	envVarPrefix = "TRADE_LOGS_CRAWLER_"
 )
@@ -55,15 +54,10 @@ func main() {
 			Usage:  "Fetch trade logs to block",
 			EnvVar: envVarPrefix + "TO_BLOCK",
 		},
-		cli.StringFlag{
-			Name:   geoURLFlag,
-			Usage:  "Fetch trade logs to block",
-			Value:  geoURLDefaultValue,
-			EnvVar: envVarPrefix + "GEO_URL",
-		},
 	)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
+	app.Flags = append(app.Flags, geoinfo.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -113,16 +107,16 @@ func getTradeLogs(c *cli.Context) error {
 		return fmt.Errorf("invalid node url: %q, error: %s", nodeURL, err)
 	}
 
-	geoURL := c.String(geoURLFlag)
-	if err = validation.Validate(geoURL, validation.Required, is.URL); err != nil {
-		return fmt.Errorf("invalid geo url: %q, error: %s", geoURL, err)
+	geoClient, err := geoinfo.NewClientFromContext(sugar, c)
+	if err != nil {
+		return err
 	}
 
 	crawler, err := tradelogs.NewTradeLogCrawler(
 		sugar,
 		nodeURL,
 		coingecko.New(),
-		geoURL,
+		geoClient,
 	)
 	if err != nil {
 		return err

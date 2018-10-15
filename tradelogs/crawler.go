@@ -208,12 +208,8 @@ func calculateFiatAmount(tradeLog common.TradeLog, rate float64) common.TradeLog
 }
 
 // NewTradeLogCrawler create a new TradeLogCrawler instance.
-func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, rateProvider tokenrate.ETHUSDRateProvider, geoURL string) (*TradeLogCrawler, error) {
+func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, rateProvider tokenrate.ETHUSDRateProvider, geoInfo *geoinfo.Client) (*TradeLogCrawler, error) {
 	client, err := ethclient.Dial(nodeURL)
-	if err != nil {
-		return nil, err
-	}
-	geoInfo, err := geoinfo.NewClient(sugar, geoURL)
 	if err != nil {
 		return nil, err
 	}

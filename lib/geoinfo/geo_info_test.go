@@ -57,8 +57,6 @@ func TestGetValidResponse(t *testing.T) {
 	if country != countryResponse {
 		t.Error("Get invalid country", "result", country, "expected", countryResponse)
 	}
-	// Close the server when test finishes
-	defer server.Close()
 }
 
 func TestInvalidResponse(t *testing.T) {
@@ -87,8 +85,7 @@ func TestInvalidResponse(t *testing.T) {
 		t.Error("Could not create Client object", "err", err.Error())
 	}
 	_, _, err = g.GetTxInfo(tx)
-	if err != errResponseFalse {
+	if err != nil {
 		t.Error("Get unexpected error", "result", err.Error(), "expected", errResponseFalse.Error())
 	}
-	defer server.Close()
 }

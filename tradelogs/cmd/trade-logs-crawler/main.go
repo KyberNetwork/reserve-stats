@@ -13,6 +13,7 @@ import (
 	"github.com/urfave/cli"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
@@ -56,6 +57,7 @@ func main() {
 	)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
+	app.Flags = append(app.Flags, broadcast.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -105,10 +107,16 @@ func getTradeLogs(c *cli.Context) error {
 		return fmt.Errorf("invalid node url: %q, error: %s", nodeURL, err)
 	}
 
+	geoClient, err := broadcast.NewClientFromContext(sugar, c)
+	if err != nil {
+		return err
+	}
+
 	crawler, err := tradelogs.NewTradeLogCrawler(
 		sugar,
 		nodeURL,
 		coingecko.New(),
+		geoClient,
 	)
 	if err != nil {
 		return err

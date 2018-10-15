@@ -138,17 +138,17 @@ func updateTradeLogs(allLogs []common.TradeLog, logItem types.Log, ts time.Time)
 
 	switch logItem.Topics[0].Hex() {
 	case feeToWalletEvent:
-		reserveAddr, walletAddr, walletFee, err := logDataToFeeWalletParams(logItem.Data)
+		reserveAddr, walletAddr, fee, err := logDataToFeeWalletParams(logItem.Data)
 		if err != nil {
 			return allLogs, err
 		}
 
-		feeToWallet := common.FeeToWallet{
+		walletFee := common.WalletFee{
 			ReserveAddress: reserveAddr,
 			WalletAddress:  walletAddr,
-			Amount:         walletFee.Big(),
+			Amount:         fee.Big(),
 		}
-		tradeLog.FeeToWallets = append(tradeLog.FeeToWallets, feeToWallet)
+		tradeLog.WalletFees = append(tradeLog.WalletFees, walletFee)
 	case burnFeeEvent:
 		reserveAddr, fee, err := logDataToBurnFeeParams(logItem.Data)
 		if err != nil {

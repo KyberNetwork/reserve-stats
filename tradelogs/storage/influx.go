@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/influxdata/influxdb/client/v2"
 	"strconv"
-	"time"
 
 	"go.uber.org/zap"
 
@@ -141,6 +140,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		tags := map[string]string{
 			"tx_hash":      log.TransactionHash.String(),
 			"reserve_addr": burn.ReserveAddress.String(),
+			"order":        strconv.Itoa(idx),
 		}
 
 		burnAmount, err := is.amountFmt.FormatAmount(blockchain.KNCAddr, burn.Amount)
@@ -152,9 +152,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			"amount": burnAmount,
 		}
 
-		// add offset made burnFees point has unique timestamp
-		offset := time.Millisecond * time.Duration(idx)
-		burnPoint, err := client.NewPoint("burnFees", tags, fields, log.Timestamp.Add(offset))
+		burnPoint, err := client.NewPoint("burn_fees", tags, fields, log.Timestamp)
 		if err != nil {
 			return nil, err
 		}
@@ -162,12 +160,13 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		points = append(points, burnPoint)
 	}
 
-	// build feeToWalletPoint
-	for idx, walletFee := range log.FeeToWallets {
+	// build walletFeePoint
+	for idx, walletFee := range log.WalletFees {
 		tags := map[string]string{
 			"tx_hash":      log.TransactionHash.String(),
 			"reserve_addr": walletFee.ReserveAddress.String(),
 			"wallet_addr":  walletFee.WalletAddress.String(),
+			"order":        strconv.Itoa(idx),
 		}
 
 		amount, err := is.amountFmt.FormatAmount(blockchain.KNCAddr, walletFee.Amount)
@@ -179,14 +178,12 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			"amount": amount,
 		}
 
-		// add offset made feeToWallets point has unique timestamp
-		offset := time.Millisecond * time.Duration(idx)
-		feeToWalletPoint, err := client.NewPoint("feeToWallets", tags, fields, log.Timestamp.Add(offset))
+		walletFeePoint, err := client.NewPoint("wallet_fees", tags, fields, log.Timestamp)
 		if err != nil {
 			return nil, err
 		}
 
-		points = append(points, feeToWalletPoint)
+		points = append(points, walletFeePoint)
 	}
 
 	return points, nil

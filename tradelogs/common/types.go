@@ -7,14 +7,14 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
-// BurnFee represent burn event on KyberNetwork
+// BurnFee represent burnFee event on KyberNetwork
 type BurnFee struct {
 	ReserveAddress ethereum.Address
 	Amount         *big.Int
 }
 
-// FeeToWallet represent feeToWallet on KyberNetwork
-type FeeToWallet struct {
+// WalletFee represent feeToWallet event on KyberNetwork
+type WalletFee struct {
 	ReserveAddress ethereum.Address
 	WalletAddress  ethereum.Address
 	Amount         *big.Int
@@ -37,8 +37,8 @@ type TradeLog struct {
 	DestAmount  *big.Int
 	FiatAmount  float64
 
-	BurnFees     []BurnFee
-	FeeToWallets []FeeToWallet
+	BurnFees   []BurnFee
+	WalletFees []WalletFee
 
 	IP      string
 	Country string

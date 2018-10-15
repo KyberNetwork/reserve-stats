@@ -300,12 +300,12 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 				"rate", ethRate,
 				"timestamp", tradeLog.Timestamp.String())
 			result[i] = calculateFiatAmount(tradeLog, ethRate)
-			rates[i] = common.ETHUSDRate{
+			rates = append(rates, common.ETHUSDRate{
 				Timestamp:   tradeLog.Timestamp,
 				Rate:        ethRate,
 				BlockNumber: tradeLog.BlockNumber,
 				Provider:    crawler.rateProvider.Name(),
-			}
+			})
 		}
 
 		ip, country, err = crawler.broadcastClient.GetTxInfo(tradeLog.TransactionHash.Hex())

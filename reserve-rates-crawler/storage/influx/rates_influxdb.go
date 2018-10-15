@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	timeutils "github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
 	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/storage/influx/schema"
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -98,7 +98,7 @@ func (rs *RateStorage) GetRatesByTimePoint(rsvAddr ethereum.Address, fromTime, t
 	return convertQueryResultToRate(response.Results[0].Series[0])
 }
 
-func getint64FromInterface(v interface{}) (int64, error) {
+func getInt64FromInterface(v interface{}) (int64, error) {
 	number, convertible := v.(json.Number)
 	if !convertible {
 		return 0, errCantConvert
@@ -119,13 +119,13 @@ func convertRowValueToReserveRate(v []interface{}, idxs *schema.FieldsRegistrar)
 		Data: make(map[string]common.ReserveRateEntry),
 	}
 	// Get Time
-	intNumber, err := getint64FromInterface(v[(*idxs)[schema.Time]])
+	intNumber, err := getInt64FromInterface(v[(*idxs)[schema.Time]])
 	if err != nil {
 		return nil, err
 	}
-	timeStamp := timeutils.TimestampMsToTime(uint64(intNumber))
+	timeStamp := timeutil.TimestampMsToTime(uint64(intNumber))
 	// get Block number
-	intNumber, err = getint64FromInterface(v[(*idxs)[schema.BlockNumber]])
+	intNumber, err = getInt64FromInterface(v[(*idxs)[schema.BlockNumber]])
 	if err != nil {
 		return nil, err
 	}

@@ -175,19 +175,34 @@ func TestSignNonceBodyAndParams(t *testing.T) {
 
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
+}
 
-	data = url.Values{}
+func TestSignInvalidNonceBodyAndParams(t *testing.T) {
+	r, err := setupRouter(onePermission, oneSecretKey, ValidateNonceTrue{})
+	if err != nil {
+		t.Error("Error while setup router", err.Error())
+		return
+	}
+	w := httptest.NewRecorder()
+	const (
+		nonce = "1234"
+		// a=a&b=b&nonce=1234
+		signed = "8ab47f69ef58474de7e5b66c6e8e205ea628283874793c08be32e9577a3d67ce2f26d4eb30e2895f5b93d61c7f3f27ae1dc2f6562bb1a5cd48eee39b25df0147"
+	)
+	data := url.Values{}
 	data.Set("nonce", nonce)
 	data.Set("a", "I'm a hacker")
-	req, err = http.NewRequest("POST", "/", bytes.NewBufferString(data.Encode()))
+	req, err := http.NewRequest("POST", "/", bytes.NewBufferString(data.Encode()))
 	if err != nil {
 		t.Fatal(err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("signed", signed)
+	urlRawQuery := url.Values{}
+	urlRawQuery.Add("b", "b")
 	req.URL.RawQuery = urlRawQuery.Encode()
 	r.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
 func testGET(c *gin.Context) {

@@ -228,7 +228,7 @@ func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, rateProvider t
 func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, []common.ETHUSDRate, error) {
 	var (
 		result []common.TradeLog
-		rates []common.ETHUSDRate
+		rates  []common.ETHUSDRate
 	)
 
 	addresses := []ethereum.Address{
@@ -259,7 +259,7 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 
 	logs, err := crawler.ethClient.FilterLogs(ctx, query)
 	if err != nil {
-		return result, rates,err
+		return result, rates, err
 	}
 
 	for _, logItem := range logs {
@@ -301,10 +301,10 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 				"timestamp", tradeLog.Timestamp.String())
 			result[i] = calculateFiatAmount(tradeLog, ethRate)
 			rates[i] = common.ETHUSDRate{
-				Timestamp: tradeLog.Timestamp,
-				Rate: ethRate,
+				Timestamp:   tradeLog.Timestamp,
+				Rate:        ethRate,
 				BlockNumber: tradeLog.BlockNumber,
-				Provider: crawler.rateProvider.Name(),
+				Provider:    crawler.rateProvider.Name(),
 			}
 		}
 

@@ -34,9 +34,12 @@ require (
 	golang.org/x/crypto v0.0.0-20181015023909-0c41d7ab0a0e // indirect
 	golang.org/x/net v0.0.0-20181011144130-49bb7cea24b1 // indirect
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f
+	golang.org/x/tools v0.0.0-20181013182035-5e66757b835f // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
 	rsc.io/quote v1.5.2 // indirect
 	gopkg.in/yaml.v2 v2.2.1 // indirect
 )
+
+replace github.com/ethereum/go-ethereum => github.com/favadi/go-ethereum v1.8.16-fork

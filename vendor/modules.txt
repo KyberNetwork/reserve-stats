@@ -9,7 +9,7 @@ github.com/asaskevich/govalidator
 github.com/btcsuite/btcd/btcec
 # github.com/deckarep/golang-set v1.7.1
 github.com/deckarep/golang-set
-# github.com/ethereum/go-ethereum v1.8.17
+# github.com/ethereum/go-ethereum v1.8.17 => github.com/favadi/go-ethereum v1.8.16-fork
 github.com/ethereum/go-ethereum/ethclient
 github.com/ethereum/go-ethereum/common
 github.com/ethereum/go-ethereum/core/types
@@ -119,6 +119,11 @@ golang.org/x/sync/errgroup
 # golang.org/x/sys v0.0.0-20180926160741-c2ed4eda69e7
 golang.org/x/sys/unix
 golang.org/x/sys/windows
+# golang.org/x/tools v0.0.0-20181013182035-5e66757b835f
+golang.org/x/tools/imports
+golang.org/x/tools/go/ast/astutil
+golang.org/x/tools/internal/gopathwalk
+golang.org/x/tools/internal/fastwalk
 # gopkg.in/go-playground/validator.v8 v8.18.2
 gopkg.in/go-playground/validator.v8
 # gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce

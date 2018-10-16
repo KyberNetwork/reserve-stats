@@ -4,6 +4,7 @@ import "time"
 
 const maxTimeGapMillis = 30000 // 30 secs
 
+// UnixMillis return current Unix timestamp in milliseconds
 func UnixMillis() uint64 {
 	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 	return uint64(timestamp)

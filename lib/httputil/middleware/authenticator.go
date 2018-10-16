@@ -5,71 +5,84 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"errors"
-	"log"
-	"net/http"
-	"time"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
-var errInvalidNonce = errors.New("Invalid nonce")
-var errInvalidSign = errors.New("Invalid signed token")
-var errAuthenticatedPermission = errors.New("secerts does not have key for permission")
+var (
+	errInvalidNonce            = errors.New("invalid nonce")
+	errInvalidSign             = errors.New("invalid signed token")
+	errAuthenticatedPermission = errors.New("server error, unknown permission")
+)
 
-// Permission define permission type
+// Permission defines the permission type.
 type Permission uint32
 
-const (
-	// ReadOnly permission only
-	ReadOnly Permission = 1 + iota
-	// ReadAndWrite permission readandwrite
-	ReadAndWrite
-)
-
-// SecrectKeys map of secret key with permission
-type SecrectKeys map[Permission]string
 type requiredFields struct {
 	Nonce int64 `form:"nonce" binding:"required"`
 }
 
-// Authenticated return middleware func for gin
-func Authenticated(permissions []Permission, secrets SecrectKeys, v ValidateNonce) (gin.HandlerFunc, error) {
-	for _, p := range permissions {
-		if _, ok := secrets[p]; !ok {
-			return nil, errAuthenticatedPermission
-		}
-	}
+// HMACAuthenticator is the gin authenticator middleware
+// that uses HMAC with SHA512.
+type HMACAuthenticator struct {
+	secrets map[Permission]string
+	v       NonceValidator
+}
+
+// NewHMACAuthenticator creates a new HMACAuthenticator instance with
+// given allowed permissions and secret keys.
+func NewHMACAuthenticator(secretKeys map[Permission]string, v NonceValidator) *HMACAuthenticator {
+	return &HMACAuthenticator{secrets: secretKeys, v: v}
+}
+
+// Authenticated returns a gin middleware which permits given permissions in parameter.
+func (ha *HMACAuthenticator) Authenticated(permissions []Permission) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		err := c.Request.ParseForm()
-		if err != nil {
+		var r requiredFields
+
+		for _, p := range permissions {
+			if _, ok := ha.secrets[p]; !ok {
+				c.AbortWithError(http.StatusInternalServerError, errAuthenticatedPermission)
+				return
+			}
+		}
+
+		if err := c.Request.ParseForm(); err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
-		var r requiredFields
-		err = c.ShouldBind(&r)
-		if err != nil {
+
+		if err := c.ShouldBind(&r); err != nil {
 			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
-		if !v.IsValid(r.Nonce) {
+
+		if !ha.v.IsValid(r.Nonce) {
 			c.AbortWithError(http.StatusBadRequest, errInvalidNonce)
 			return
 		}
+
 		signed := c.GetHeader("signed")
 		message := c.Request.Form.Encode()
-		auth := checkAuth(signed, message, permissions, secrets)
+		auth := ha.checkAuth(signed, message, permissions)
 		if !auth {
 			c.AbortWithError(http.StatusUnauthorized, errInvalidSign)
 			return
 		}
 		c.Next()
-	}, nil
+	}
 }
 
-func checkAuth(signed string, message string, permissions []Permission, secrets SecrectKeys) bool {
+func (ha *HMACAuthenticator) checkAuth(signed string, message string, permissions []Permission) bool {
 	for _, p := range permissions {
-		secret, _ := secrets[p]
-		serverSigned := serverSign(message, secret)
+		secret, ok := ha.secrets[p]
+		if !ok {
+			return false
+		}
+		serverSigned, err := serverSign(message, secret)
+		if err != nil {
+			return false
+		}
 		if serverSigned == signed {
 			return true
 		}
@@ -77,15 +90,10 @@ func checkAuth(signed string, message string, permissions []Permission, secrets 
 	return false
 }
 
-func serverSign(msg string, secret string) string {
+func serverSign(msg string, secret string) (string, error) {
 	mac := hmac.New(sha512.New, []byte(secret))
 	if _, err := mac.Write([]byte(msg)); err != nil {
-		log.Printf("Encode message error: %s", err.Error())
+		return "", err
 	}
-	return hex.EncodeToString(mac.Sum(nil))
-}
-
-func getTimepoint() uint64 {
-	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
-	return uint64(timestamp)
+	return hex.EncodeToString(mac.Sum(nil)), nil
 }

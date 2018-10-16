@@ -12,15 +12,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var onePermission = []Permission{ReadOnly}
-var twoPermission = []Permission{ReadOnly, ReadAndWrite}
-var oneSecretKey = SecrectKeys{
-	ReadOnly: "123",
-}
-var twoSecretKey = SecrectKeys{
-	ReadOnly:     "123",
-	ReadAndWrite: "345",
-}
+const (
+	ReadOnly Permission = iota
+	ReadAndWrite
+)
+
+var (
+	onePermission = []Permission{ReadOnly}
+	twoPermission = []Permission{ReadOnly, ReadAndWrite}
+	oneSecretKey  = map[Permission]string{
+		ReadOnly: "123",
+	}
+	//twoSecretKey = SecretKeys{
+	//	ReadOnly:     "123",
+	//	ReadAndWrite: "345",
+	//}
+)
 
 // ValidateNonceTrue interfaces always return True
 type ValidateNonceTrue struct{}
@@ -30,26 +37,29 @@ func (v ValidateNonceTrue) IsValid(nonce int64) bool {
 	return true
 }
 
-func setupRouter(permissions []Permission, secrets SecrectKeys, v ValidateNonce) (*gin.Engine, error) {
+func setupRouter(permissions []Permission, secrets map[Permission]string, v NonceValidator) (*gin.Engine, error) {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
-	m, err := Authenticated(permissions, secrets, v)
-	if err != nil {
-		return nil, err
-	}
-	r.Use(m)
+	auth := NewHMACAuthenticator(secrets, v)
+	r.Use(auth.Authenticated(permissions))
 	r.GET("/", testGET)
 	r.POST("/", testPOST)
 	return r, nil
 }
 
 func TestErrorSetupRouter(t *testing.T) {
-	_, err := setupRouter(twoPermission, oneSecretKey, NewValidateNonceByTime())
-	assert.Equal(t, err, errAuthenticatedPermission)
+	r, err := setupRouter(twoPermission, oneSecretKey, newValidateNonceByTime())
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest(http.MethodGet, "/", nil)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
 
 func TestNoNonce(t *testing.T) {
-	r, err := setupRouter(onePermission, oneSecretKey, NewValidateNonceByTime())
+	r, err := setupRouter(onePermission, oneSecretKey, newValidateNonceByTime())
 	if err != nil {
 		t.Error("Error while setup router", err.Error())
 		return
@@ -62,7 +72,7 @@ func TestNoNonce(t *testing.T) {
 }
 
 func TestNonceNotInt(t *testing.T) {
-	r, err := setupRouter(onePermission, oneSecretKey, NewValidateNonceByTime())
+	r, err := setupRouter(onePermission, oneSecretKey, newValidateNonceByTime())
 	if err != nil {
 		t.Error("Error while setup router", err.Error())
 		return
@@ -74,7 +84,7 @@ func TestNonceNotInt(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 func TestNonceNotInRange(t *testing.T) {
-	r, err := setupRouter(onePermission, oneSecretKey, NewValidateNonceByTime())
+	r, err := setupRouter(onePermission, oneSecretKey, newValidateNonceByTime())
 	if err != nil {
 		t.Error("Error while setup router", err.Error())
 		return
@@ -87,13 +97,13 @@ func TestNonceNotInRange(t *testing.T) {
 }
 
 func TestNoSignTokenInHeader(t *testing.T) {
-	r, err := setupRouter(onePermission, oneSecretKey, NewValidateNonceByTime())
+	r, err := setupRouter(onePermission, oneSecretKey, newValidateNonceByTime())
 	if err != nil {
 		t.Error("Error while setup router", err.Error())
 		return
 	}
 	w := httptest.NewRecorder()
-	nonce := strconv.FormatUint(getTimepoint(), 10)
+	nonce := strconv.FormatUint(UnixMillis(), 10)
 	req, _ := http.NewRequest("GET", "/", nil)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	form, _ := url.ParseQuery(req.URL.RawQuery)

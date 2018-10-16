@@ -19,6 +19,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	"github.com/KyberNetwork/tokenrate/coingecko"
+	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 )
 
 const (
@@ -115,14 +116,13 @@ func getTradeLogs(c *cli.Context) error {
 	crawler, err := tradelogs.NewTradeLogCrawler(
 		sugar,
 		nodeURL,
-		coingecko.New(),
 		geoClient,
 	)
 	if err != nil {
 		return err
 	}
 
-	tradeLogs, usdRates, err := crawler.GetTradeLogs(fromBlock, toBlock, time.Second*5)
+	tradeLogs, err := crawler.GetTradeLogs(fromBlock, toBlock, time.Second*5)
 	if err != nil {
 		return err
 	}
@@ -148,9 +148,17 @@ func getTradeLogs(c *cli.Context) error {
 		return err
 	}
 
-	if err = influxStorage.SaveTokenRate(usdRates); err != nil {
+	// fetch eth usd rate
+	ethUSDRateFetcher, err := tokenrate.NewETHUSDRateFetcher(sugar, "token_rates", influxClient, coingecko.New())
+	if err != nil {
 		return err
 	}
+	for _, tradelog := range tradeLogs {
+		if _, err:=ethUSDRateFetcher.FetchRates(tradelog.BlockNumber, tradelog.Timestamp); err != nil {
+			return err
+		}
+	}
+
 
 	return json.NewEncoder(os.Stdout).Encode(tradeLogs)
 }

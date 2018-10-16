@@ -82,31 +82,6 @@ func TestSaveTradeLogs(t *testing.T) {
 	// TODO: validate number of records inserted
 }
 
-func getTestRates(t *testing.T) []common.ETHUSDRate {
-	tradelogs, err := getSampleTradeLogs("testdata/trade_logs.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	rates := []common.ETHUSDRate{}
-	for _, tradelog := range tradelogs {
-		rate := common.ETHUSDRate{
-			BlockNumber: tradelog.BlockNumber,
-			Timestamp:   tradelog.Timestamp,
-			Provider:    "testProvider",
-			Rate:        123.123, //mock rate
-		}
-		rates = append(rates, rate)
-	}
-	return rates
-}
-
-func TestSaveTokenRate(t *testing.T) {
-	rates := getTestRates(t)
-	if err := testStorage.SaveTokenRate(rates); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestMain(m *testing.M) {
 	var err error
 	if testStorage, err = newTestInfluxStorage(); err != nil {

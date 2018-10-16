@@ -11,11 +11,14 @@
         "DestAddress": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
         "SrcAmount": 4213718147791179364415,
         "DestAmount": 999995137653743773,
-        "FiatAmount": 405.78102694254915,
-        "ReserveAddress": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
-        "WalletAddress": "0x0000000000000000000000000000000000000000",
-        "WalletFee": null,
-        "BurnFee": 1427493059000719235,
+        "FiatAmount": 409.16294590301715,
+        "BurnFees": [
+            {
+                "ReserveAddress": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
+                "Amount": 1427493059000719235
+            }
+        ],
+        "WalletFees": null,
         "IP": "",
         "Country": ""
     },
@@ -31,11 +34,14 @@
         "DestAddress": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
         "SrcAmount": 50456046160204440436380,
         "DestAmount": 1497511199841889307,
-        "FiatAmount": 607.6645872054414,
-        "ReserveAddress": "0x21433dec9cb634a23c6a4bbcce08c83f5ac2ec18",
-        "WalletAddress": "0x0000000000000000000000000000000000000000",
-        "WalletFee": null,
-        "BurnFee": 1026094674131662553,
+        "FiatAmount": 612.7290733509851,
+        "BurnFees": [
+            {
+                "ReserveAddress": "0x21433dec9cb634a23c6a4bbcce08c83f5ac2ec18",
+                "Amount": 1026094674131662553
+            }
+        ],
+        "WalletFees": null,
         "IP": "",
         "Country": ""
     },
@@ -51,13 +57,22 @@
         "DestAddress": "0xfe5f141bf94fe84bc28ded0ab966c16b17490657",
         "SrcAmount": 73285000000000000,
         "DestAmount": 323811815748530889850,
-        "FiatAmount": 29.737807155000002,
-        "ReserveAddress": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
-        "WalletAddress": "0xf1aa99c69715f423086008eb9d06dc1e35cc504d",
-        "WalletFee": 52307168750000000,
-        "BurnFee": 52307168750000000,
-        "IP": "",
-        "Country": ""
+        "FiatAmount": 29.98565229112677,
+        "BurnFees": [
+            {
+                "ReserveAddress": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
+                "Amount": 52307168750000000
+            }
+        ],
+        "WalletFees": [
+            {
+                "ReserveAddress": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
+                "WalletAddress": "0xf1aa99c69715f423086008eb9d06dc1e35cc504d",
+                "Amount": 52307168750000000
+            }
+        ],
+        "IP": "2601:282:4101:6e1c:c13:da49:3b7e:522f",
+        "Country": "US"
     },
     {
         "Timestamp": "2018-08-06T18:19:25Z",
@@ -71,11 +86,14 @@
         "DestAddress": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
         "SrcAmount": 2246656224724,
         "DestAmount": 744599085462189214,
-        "FiatAmount": 302.14565069610353,
-        "ReserveAddress": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
-        "WalletAddress": "0x0000000000000000000000000000000000000000",
-        "WalletFee": null,
-        "BurnFee": 1062915194497275102,
+        "FiatAmount": 304.6638367054676,
+        "BurnFees": [
+            {
+                "ReserveAddress": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
+                "Amount": 1062915194497275102
+            }
+        ],
+        "WalletFees": null,
         "IP": "",
         "Country": ""
     },
@@ -91,11 +109,14 @@
         "DestAddress": "0xf433089366899d83a9f26a773d59ec7ecf30355e",
         "SrcAmount": 745425298615886242,
         "DestAmount": 31113247286,
-        "FiatAmount": 302.4809139482502,
-        "ReserveAddress": "0x21433dec9cb634a23c6a4bbcce08c83f5ac2ec18",
-        "WalletAddress": "0x0000000000000000000000000000000000000000",
-        "WalletFee": null,
-        "BurnFee": 510765414611605253,
+        "FiatAmount": 305.00189415713044,
+        "BurnFees": [
+            {
+                "ReserveAddress": "0x21433dec9cb634a23c6a4bbcce08c83f5ac2ec18",
+                "Amount": 510765414611605253
+            }
+        ],
+        "WalletFees": null,
         "IP": "",
         "Country": ""
     }

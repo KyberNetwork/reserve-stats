@@ -5,13 +5,9 @@ github.com/KyberNetwork/tokenrate/coingecko
 github.com/aristanetworks/goarista/monotime
 # github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
 github.com/asaskevich/govalidator
-<<<<<<< HEAD
-# github.com/btcsuite/btcd v0.0.0-20181013004428-67e573d211ac
-=======
 # github.com/boltdb/bolt v1.3.1
 github.com/boltdb/bolt
-# github.com/btcsuite/btcd v0.0.0-20180924021209-2a560b2036be
->>>>>>> 07febe3... update vendor
+# github.com/btcsuite/btcd v0.0.0-20181013004428-67e573d211ac
 github.com/btcsuite/btcd/btcec
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
@@ -90,13 +86,9 @@ github.com/pmezard/go-difflib/difflib
 github.com/rjeczalik/notify
 # github.com/rs/cors v1.6.0
 github.com/rs/cors
-<<<<<<< HEAD
-# github.com/syndtr/goleveldb v0.0.0-20181012014443-6b91fda63f2e
-=======
 # github.com/stretchr/testify v1.2.2
 github.com/stretchr/testify/assert
-# github.com/syndtr/goleveldb v0.0.0-20180815032940-ae2bd5eed72d
->>>>>>> cd8f5b7... update vendor
+# github.com/syndtr/goleveldb v0.0.0-20181012014443-6b91fda63f2e
 github.com/syndtr/goleveldb/leveldb
 github.com/syndtr/goleveldb/leveldb/errors
 github.com/syndtr/goleveldb/leveldb/filter

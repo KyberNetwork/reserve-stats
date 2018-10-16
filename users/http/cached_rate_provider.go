@@ -1,10 +1,11 @@
 package http
 
 import (
-	"github.com/KyberNetwork/tokenrate"
-	"go.uber.org/zap"
 	"sync"
 	"time"
+
+	"github.com/KyberNetwork/tokenrate"
+	"go.uber.org/zap"
 )
 
 func newCachedRateProvider(sugar *zap.SugaredLogger, provider tokenrate.ETHUSDRateProvider, timeout time.Duration) *cachedRateProvider {
@@ -67,4 +68,8 @@ func (crp *cachedRateProvider) USDRate(timestamp time.Time) (float64, error) {
 	logger.Debugw("cache hit",
 		"rate", crp.cachedRate)
 	return crp.cachedRate, nil
+}
+
+func (crp *cachedRateProvider) Name() string {
+	return crp.provider.Name()
 }

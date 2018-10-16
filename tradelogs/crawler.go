@@ -3,15 +3,12 @@ package tradelogs
 import (
 	"context"
 	"errors"
-	"math"
 	"math/big"
-	"strings"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	"github.com/KyberNetwork/tokenrate"
 	ether "github.com/ethereum/go-ethereum"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -41,8 +38,8 @@ const (
 	// address of internal network contract
 	internalNetworkAddr = "0x91a502C678605fbCe581eae053319747482276b9"
 
-	ethDecimals int64  = 18
-	ethAddress  string = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+	//ethDecimals int64  = 18
+	//ethAddress  string = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 )
 
 // TradeLogCrawler gets trade logs on KyberNetwork on blockchain, adding the
@@ -50,7 +47,6 @@ const (
 type TradeLogCrawler struct {
 	sugar           *zap.SugaredLogger
 	ethClient       *ethclient.Client
-	rateProvider    tokenrate.ETHUSDRateProvider
 	txTime          *blockchain.BlockTimeResolver
 	broadcastClient broadcast.Interface
 }
@@ -189,44 +185,47 @@ func updateTradeLogs(allLogs []common.TradeLog, logItem types.Log, ts time.Time)
 	return allLogs, nil
 }
 
-// calculateFiatAmount returns new TradeLog with fiat amount calculated.
-// * For ETH-Token or Token-ETH conversions, the ETH amount is taken from ExecuteTrade event.
-// * For Token-Token, the ETH amount is reading from EtherReceival event.
-func calculateFiatAmount(tradeLog common.TradeLog, rate float64) common.TradeLog {
-	ethAmount := new(big.Float)
-
-	if strings.ToLower(ethAddress) == strings.ToLower(tradeLog.SrcAddress.String()) {
-		// ETH-Token
-		ethAmount.SetInt(tradeLog.SrcAmount)
-	} else if strings.ToLower(ethAddress) == strings.ToLower(tradeLog.DestAddress.String()) {
-		// Token-ETH
-		ethAmount.SetInt(tradeLog.DestAmount)
-	} else if tradeLog.EtherReceivalAmount != nil {
-		// Token-Token
-		ethAmount.SetInt(tradeLog.EtherReceivalAmount)
-	}
-
-	// fiat amount = ETH amount * rate
-	ethAmount = ethAmount.Mul(ethAmount, new(big.Float).SetFloat64(rate))
-	ethAmount.Quo(ethAmount, new(big.Float).SetFloat64(math.Pow10(int(ethDecimals))))
-	tradeLog.FiatAmount, _ = ethAmount.Float64()
-
-	return tradeLog
-}
+// TODO: this function now belongs to reporting API
+//// calculateFiatAmount returns new TradeLog with fiat amount calculated.
+//// * For ETH-Token or Token-ETH conversions, the ETH amount is taken from ExecuteTrade event.
+//// * For Token-Token, the ETH amount is reading from EtherReceival event.
+//func calculateFiatAmount(tradeLog common.TradeLog, rate float64) common.TradeLog {
+//	ethAmount := new(big.Float)
+//
+//	if strings.ToLower(ethAddress) == strings.ToLower(tradeLog.SrcAddress.String()) {
+//		// ETH-Token
+//		ethAmount.SetInt(tradeLog.SrcAmount)
+//	} else if strings.ToLower(ethAddress) == strings.ToLower(tradeLog.DestAddress.String()) {
+//		// Token-ETH
+//		ethAmount.SetInt(tradeLog.DestAmount)
+//	} else if tradeLog.EtherReceivalAmount != nil {
+//		// Token-Token
+//		ethAmount.SetInt(tradeLog.EtherReceivalAmount)
+//	}
+//
+//	// fiat amount = ETH amount * rate
+//	ethAmount = ethAmount.Mul(ethAmount, new(big.Float).SetFloat64(rate))
+//	ethAmount.Quo(ethAmount, new(big.Float).SetFloat64(math.Pow10(int(ethDecimals))))
+//	tradeLog.FiatAmount, _ = ethAmount.Float64()
+//
+//	return tradeLog
+//}
 
 // NewTradeLogCrawler create a new TradeLogCrawler instance.
-func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, rateProvider tokenrate.ETHUSDRateProvider, broadcastClient broadcast.Interface) (*TradeLogCrawler, error) {
+func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, broadcastClient broadcast.Interface) (*TradeLogCrawler, error) {
 	client, err := ethclient.Dial(nodeURL)
 	if err != nil {
 		return nil, err
 	}
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
-	return &TradeLogCrawler{sugar, client, rateProvider, resolver, broadcastClient}, nil
+	return &TradeLogCrawler{sugar, client, resolver, broadcastClient}, nil
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.
 func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
-	var result []common.TradeLog
+	var (
+		result []common.TradeLog
+	)
 
 	addresses := []ethereum.Address{
 		ethereum.HexToAddress(pricingAddr),         // pricing
@@ -284,24 +283,12 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 
 	for i, tradeLog := range result {
 		var (
-			ethRate     float64
 			ip, country string
 		)
-		if ethRate, err = crawler.rateProvider.USDRate(tradeLog.Timestamp); err != nil {
-			crawler.sugar.Errorw("failed to get ETH/USD rate",
-				"timestamp", tradeLog.Timestamp.String())
-			return nil, err
-		}
-		if ethRate != 0 {
-			crawler.sugar.Debugw("got ETH/USD rate",
-				"rate", ethRate,
-				"timestamp", tradeLog.Timestamp.String())
-			result[i] = calculateFiatAmount(tradeLog, ethRate)
-		}
 
 		ip, country, err = crawler.broadcastClient.GetTxInfo(tradeLog.TransactionHash.Hex())
 		if err != nil {
-			return nil, err
+			return result, err
 		}
 		result[i].IP = ip
 		result[i].Country = country

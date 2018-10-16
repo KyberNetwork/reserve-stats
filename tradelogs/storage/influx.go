@@ -2,8 +2,9 @@ package storage
 
 import (
 	"fmt"
-	"github.com/influxdata/influxdb/client/v2"
 	"strconv"
+
+	"github.com/influxdata/influxdb/client/v2"
 
 	"go.uber.org/zap"
 

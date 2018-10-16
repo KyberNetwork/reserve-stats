@@ -19,3 +19,8 @@ func (m *Mock) Rate(_, _ string, _ time.Time) (float64, error) {
 func (m *Mock) USDRate(_ time.Time) (float64, error) {
 	return m.Rate("", "", time.Time{})
 }
+
+// Name is a mock method to satisfy the tokenrate.USDRatePrivder interface.
+func (m *Mock) Name() string {
+	return "tokenRateMock"
+}

@@ -16,6 +16,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	"github.com/KyberNetwork/tokenrate/coingecko"
@@ -78,6 +79,7 @@ func parseBigIntFlag(c *cli.Context, flag string) (*big.Int, error) {
 }
 
 func getTradeLogs(c *cli.Context) error {
+	const dbName = "trade_logs"
 	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
@@ -115,7 +117,6 @@ func getTradeLogs(c *cli.Context) error {
 	crawler, err := tradelogs.NewTradeLogCrawler(
 		sugar,
 		nodeURL,
-		coingecko.New(),
 		geoClient,
 	)
 	if err != nil {
@@ -135,7 +136,7 @@ func getTradeLogs(c *cli.Context) error {
 
 	influxStorage, err := storage.NewInfluxStorage(
 		sugar,
-		"trade_logs",
+		dbName,
 		influxClient,
 		core.NewCachedClient(coreClient),
 	)
@@ -146,6 +147,18 @@ func getTradeLogs(c *cli.Context) error {
 	err = influxStorage.SaveTradeLogs(tradeLogs)
 	if err != nil {
 		return err
+	}
+
+	// fetch eth usd rate
+	ethUSDRateFetcher, err := tokenrate.NewETHUSDRateFetcher(sugar, dbName, influxClient, coingecko.New())
+	if err != nil {
+		return err
+	}
+
+	for _, tradelog := range tradeLogs {
+		if _, err := ethUSDRateFetcher.FetchRates(tradelog.BlockNumber, tradelog.Timestamp); err != nil {
+			return err
+		}
 	}
 
 	return json.NewEncoder(os.Stdout).Encode(tradeLogs)

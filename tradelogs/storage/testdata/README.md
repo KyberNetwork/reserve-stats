@@ -23,4 +23,9 @@ exit
 
 # exit to host shell
 cp data/influxdb/data/export.dat ./tradelogs/storage/testdata/
+
+# remove this comment section in export.dat
+# INFLUXDB EXPORT:
+# ...
+# writing wal data
 ```

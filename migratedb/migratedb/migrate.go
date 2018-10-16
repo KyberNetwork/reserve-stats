@@ -23,6 +23,12 @@ type DBMigration struct {
 	postgresdb *sqlx.DB
 }
 
+//DeleteAllTables delete all table from schema using for test only
+func (dbm *DBMigration) DeleteAllTables() error {
+	_, err := dbm.postgresdb.Exec(fmt.Sprintf(`DROP TABLE "%s", "%s"`, addressesTableName, usersTableName))
+	return err
+}
+
 //NewMigrateStorage connect to bolt db
 func NewMigrateStorage(dbPath string, postgres *sqlx.DB) (*DBMigration, error) {
 	var err error
@@ -122,6 +128,7 @@ INSERT INTO "%s" (address, timestamp, user_id)
 VALUES ($1, (TO_TIMESTAMP($2::double precision/1000)), $3);
 `, addressesTableName),
 		address,
+		timestamp,
 		userID)
 	if err != nil {
 		return err

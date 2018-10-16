@@ -41,6 +41,12 @@ require (
 	github.com/stretchr/testify v1.2.2 // indirect
 	github.com/syndtr/goleveldb v0.0.0-20181012014443-6b91fda63f2e // indirect
 	github.com/ugorji/go/codec v0.0.0-20181012064053-8333dd449516 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rjeczalik/notify v0.9.2 // indirect; indirectG
+	github.com/rs/cors v1.5.0 // indirect
+	github.com/stretchr/testify v1.2.2
+	github.com/syndtr/goleveldb v0.0.0-20180815032940-ae2bd5eed72d // indirect
+	github.com/ugorji/go/codec v0.0.0-20180927125128-99ea80c8b19a // indirect
 	github.com/urfave/cli v1.20.0
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect

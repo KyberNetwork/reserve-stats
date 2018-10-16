@@ -98,7 +98,7 @@ func TestSaveTradeLogs(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(tradeLogs) != len(savedTradeLogs) {
-		t.Errorf("Sum was incorrect, got: %d, want: %d.", len(savedTradeLogs), len(tradeLogs))
+		t.Errorf("wrong number of trade log returned, got: %d, want: %d.", len(savedTradeLogs), len(tradeLogs))
 	}
 }
 

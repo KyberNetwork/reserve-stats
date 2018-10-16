@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
 
@@ -68,36 +69,71 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 // LoadTradeLogs return trade logs from DB
 func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
 	q := fmt.Sprintf(
-		"SELECT %s FROM %s WHERE time >= %d AND time <= %d",
+		`
+		SELECT %[1]s FROM burn_fees WHERE time >= '%[4]s' AND time <= '%[5]s';
+		SELECT %[2]s FROM wallet_fees WHERE time >= '%[4]s' AND time <= '%[5]s';
+		SELECT %[3]s FROM trades WHERE time >= '%[4]s' AND time <= '%[5]s';
+		`,
+		"time, tx_hash, reserve_addr, amount",
+		"time, tx_hash, reserve_addr, wallet_addr, amount",
 		`
 		time, block_number, tx_hash, 
 		eth_receival_sender, eth_receival_amount, 
-		user_addr, src_addr, dst_addr, src_amount, dst_amount, fiat_amount, 
-		reserve_addr, wallet_addr, wallet_fee, burn_fee,
+		user_addr, src_addr, dst_addr, src_amount, dst_amount, fiat_amount, 		
 		ip, country
 		`,
-		"trade",
-		from.UnixNano(),
-		to.UnixNano(),
+		from.Format(time.RFC3339),
+		to.Format(time.RFC3339),
 	)
 
-	is.sugar.Debug(from.UnixNano())
-	is.sugar.Debug(to.UnixNano())
+	is.sugar.Debug(q)
 
 	res, err := is.queryDB(is.influxClient, q)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []common.TradeLog
+	// Get BurnFees
+	burnFeesByTxHash := make(map[ethereum.Hash][]common.BurnFee)
 
 	if len(res[0].Series) == 0 {
+		is.sugar.Debug("empty burn fee in query result")
 		return nil, nil
 	}
 
 	for _, row := range res[0].Series[0].Values {
-		is.sugar.Debug(row)
-		tradeLog, err := is.rowToTradeLog(row)
+		txHash, burnFee, err := is.rowToBurnFee(row)
+		if err != nil {
+			return nil, err
+		}
+		burnFeesByTxHash[txHash] = append(burnFeesByTxHash[txHash], burnFee)
+	}
+
+	// Get WalletFees
+	walletFeesByTxHash := make(map[ethereum.Hash][]common.WalletFee)
+
+	if len(res[1].Series) == 0 {
+		is.sugar.Debug("empty wallet fee in query result")
+	} else {
+		for _, row := range res[1].Series[0].Values {
+			txHash, walletFee, err := is.rowToWalletFee(row)
+			if err != nil {
+				return nil, err
+			}
+			walletFeesByTxHash[txHash] = append(walletFeesByTxHash[txHash], walletFee)
+		}
+	}
+
+	// Get TradeLogs
+	var result []common.TradeLog
+
+	if len(res[2].Series) == 0 {
+		is.sugar.Debug("empty trades in query result")
+		return nil, nil
+	}
+
+	for _, row := range res[2].Series[0].Values {
+		tradeLog, err := is.rowToTradeLog(row, burnFeesByTxHash, walletFeesByTxHash)
 		if err != nil {
 			return nil, err
 		}
@@ -183,7 +219,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		tags := map[string]string{
 			"tx_hash":      log.TransactionHash.String(),
 			"reserve_addr": burn.ReserveAddress.String(),
-			"order":        strconv.Itoa(idx),
+			"ordinal":      strconv.Itoa(idx), // prevent overwrite by other event belong to same trade log
 		}
 
 		burnAmount, err := is.amountFmt.FormatAmount(blockchain.KNCAddr, burn.Amount)
@@ -209,7 +245,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			"tx_hash":      log.TransactionHash.String(),
 			"reserve_addr": walletFee.ReserveAddress.String(),
 			"wallet_addr":  walletFee.WalletAddress.String(),
-			"order":        strconv.Itoa(idx),
+			"ordinal":      strconv.Itoa(idx), // prevent overwrite by other event belong to same trade log
 		}
 
 		amount, err := is.amountFmt.FormatAmount(blockchain.KNCAddr, walletFee.Amount)

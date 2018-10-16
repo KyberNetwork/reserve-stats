@@ -16,10 +16,10 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	"github.com/KyberNetwork/tokenrate/coingecko"
-	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 )
 
 const (
@@ -154,11 +154,10 @@ func getTradeLogs(c *cli.Context) error {
 		return err
 	}
 	for _, tradelog := range tradeLogs {
-		if _, err:=ethUSDRateFetcher.FetchRates(tradelog.BlockNumber, tradelog.Timestamp); err != nil {
+		if _, err := ethUSDRateFetcher.FetchRates(tradelog.BlockNumber, tradelog.Timestamp); err != nil {
 			return err
 		}
 	}
-
 
 	return json.NewEncoder(os.Stdout).Encode(tradeLogs)
 }

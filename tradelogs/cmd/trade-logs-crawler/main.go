@@ -79,6 +79,7 @@ func parseBigIntFlag(c *cli.Context, flag string) (*big.Int, error) {
 }
 
 func getTradeLogs(c *cli.Context) error {
+	const dbName = "trade_logs"
 	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
@@ -135,7 +136,7 @@ func getTradeLogs(c *cli.Context) error {
 
 	influxStorage, err := storage.NewInfluxStorage(
 		sugar,
-		"trade_logs",
+		dbName,
 		influxClient,
 		core.NewCachedClient(coreClient),
 	)
@@ -149,10 +150,11 @@ func getTradeLogs(c *cli.Context) error {
 	}
 
 	// fetch eth usd rate
-	ethUSDRateFetcher, err := tokenrate.NewETHUSDRateFetcher(sugar, "token_rates", influxClient, coingecko.New())
+	ethUSDRateFetcher, err := tokenrate.NewETHUSDRateFetcher(sugar, dbName, influxClient, coingecko.New())
 	if err != nil {
 		return err
 	}
+
 	for _, tradelog := range tradeLogs {
 		if _, err := ethUSDRateFetcher.FetchRates(tradelog.BlockNumber, tradelog.Timestamp); err != nil {
 			return err

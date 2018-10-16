@@ -27,8 +27,8 @@ func NewETHUSDRateFetcher(sugar *zap.SugaredLogger, dbName string, client client
 		influxClient: client,
 		rateProvider: rateProvider,
 	}
-	err := fetcher.createDB()
-	if err != nil {
+
+	if err := fetcher.createDB(); err != nil {
 		return nil, err
 	}
 	return fetcher, nil
@@ -117,16 +117,19 @@ func (ef *ETHUSDRateFetcher) tokenRateToPoint(rate ETHUSDRate) (*client.Point, e
 		pt  *client.Point
 		err error
 	)
+
 	tags := map[string]string{
 		"block_number": strconv.FormatUint(rate.BlockNumber, 10),
+		"provider":     rate.Provider,
 	}
+
 	fields := map[string]interface{}{
-		"provider": rate.Provider,
-		"rate":     rate.Rate,
+		"rate": rate.Rate,
 	}
+
 	pt, err = client.NewPoint("token_rate", tags, fields, rate.Timestamp)
 	if err != nil {
 		return nil, err
 	}
-	return pt, err
+	return pt, nil
 }

@@ -1,12 +1,15 @@
 package http
 
 import (
-	"net/http"
-
+	"fmt"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"net/http"
+	"time"
 )
 
 // Server is the engine to serve reserve-rate API query
@@ -18,13 +21,16 @@ type Server struct {
 }
 
 type reserveRatesQuery struct {
-	From         uint64   `form:"from" binding:"required"`
-	To           uint64   `form:"to" binding:"required"`
+	From         uint64   `form:"from" `
+	To           uint64   `form:"to"`
 	ReserveAddrs []string `form:"reserve" binding:"dive,isAddress"`
 }
 
 func (sv *Server) reserveRates(c *gin.Context) {
-	var query reserveRatesQuery
+	var (
+		query  reserveRatesQuery
+		logger = sv.sugar.With("func", "reserverates/http/Server.reserveRates")
+	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
 		c.JSON(
@@ -34,6 +40,28 @@ func (sv *Server) reserveRates(c *gin.Context) {
 		return
 	}
 
+	now := time.Now().UTC()
+	if query.To == 0 {
+		query.To = timeutil.TimeToTimestampMs(now)
+		logger.Debug("using default to query time", "to", query.To)
+
+		if query.From == 0 {
+			query.From = timeutil.TimeToTimestampMs(now.Add(-time.Hour))
+			logger = logger.With("from", query.From)
+			logger.Debug("using default from query time", "from", query.From)
+		}
+	}
+
+	if query.To == 0 && query.From == 0 {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("invalid time frame query, from: %d, to: %d", query.From, query.To)},
+		)
+		return
+	}
+
+	logger = logger.With("to", query.To, "from", query.From)
+	logger.Debug("querying reserve rates from database")
 	result, err := sv.db.GetRatesByTimePoint(query.ReserveAddrs, query.From, query.To)
 	if err != nil {
 		c.JSON(
@@ -42,6 +70,11 @@ func (sv *Server) reserveRates(c *gin.Context) {
 		)
 		return
 	}
+
+	if result == nil {
+		result = make(map[string]map[uint64]common.ReserveRates)
+	}
+
 	c.JSON(http.StatusOK, result)
 }
 

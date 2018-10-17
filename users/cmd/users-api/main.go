@@ -10,9 +10,13 @@ import (
 	"github.com/KyberNetwork/reserve-stats/users/http"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 	"github.com/urfave/cli"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 )
 
-const defaultDB = "users"
+const (
+	defaultDB = "users"
+	dbName = "trade_logs"
+)
 
 func main() {
 	app := libapp.NewApp()
@@ -23,6 +27,7 @@ func main() {
 
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.UsersPort)...)
+	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -52,6 +57,24 @@ func run(c *cli.Context) error {
 	}
 	defer userDB.Close()
 
-	server := http.NewServer(sugar, coingecko.New(), userDB, httputil.NewHTTPAddressFromContext(c))
+	// Store trade logs into influx DB
+	influxClient, err := influxdb.NewClientFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	influxStorage, err := storage.NewInfluxStorage(
+		sugar,
+		dbName,
+		influxClient,
+	)
+	if err != nil {
+		return err
+	}
+
+	// init stats
+	//userStats := stats.NewUserStats(coingecko.New(), userDB)
+	server := http.NewServer(sugar, coingecko.New(), userDB, 
+	httputil.NewHTTPAddressFromContext(c), influxStorage)
 	return server.Run()
 }

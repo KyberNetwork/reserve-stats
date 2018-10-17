@@ -15,13 +15,18 @@ import (
 )
 
 //NewServer return new server instance
-func NewServer(sugar *zap.SugaredLogger, rateProvider tokenrate.ETHUSDRateProvider, storage storage.Interface, host string) *Server {
+func NewServer(sugar *zap.SugaredLogger, rateProvider tokenrate.ETHUSDRateProvider, 
+	storage storage.Interface, host string,
+	influxStorage *storage.InfluxStorage) *Server {
 	r := gin.Default()
 	return &Server{
 		sugar:        sugar,
 		rateProvider: newCachedRateProvider(sugar, rateProvider, time.Hour),
 		storage:      storage,
-		r:            r, host: host}
+		r:            r,
+		host:         host,
+		influxStorage: influxStorage,
+	}
 }
 
 //Server struct to represent a http server service
@@ -31,6 +36,7 @@ type Server struct {
 	host         string
 	rateProvider tokenrate.ETHUSDRateProvider
 	storage      storage.Interface
+	influxStorage       *storage.InfluxStorage
 }
 
 //getTransactionLimit returns cap limit of a user.
@@ -61,13 +67,22 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 	// maximum of ETH in wei
 	uc := common.NewUserCap(kyced)
 	txLimit := blockchain.EthToWei(uc.TxLimit / rate)
+	rich, err := s.influxStorage.IsExceedDailyLimit(address)
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{
+				"error": err.Error(),
+			},
+		)	
+		return
+	}
 
 	c.JSON(
 		http.StatusOK,
 		gin.H{
 			"cap": txLimit,
-			// TODO: fetch rich status from InfluxDB
-			"rich":  false,
+			"rich":  rich,
 			"kyced": kyced,
 		},
 	)

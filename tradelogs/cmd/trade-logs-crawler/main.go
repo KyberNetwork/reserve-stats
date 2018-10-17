@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -144,21 +145,27 @@ func getTradeLogs(c *cli.Context) error {
 		return err
 	}
 
-	err = influxStorage.SaveTradeLogs(tradeLogs)
-	if err != nil {
-		return err
-	}
-
 	// fetch eth usd rate
 	ethUSDRateFetcher, err := tokenrate.NewETHUSDRateFetcher(sugar, dbName, influxClient, coingecko.New())
 	if err != nil {
 		return err
 	}
-
+	rates := []tokenrate.ETHUSDRate{}
 	for _, tradelog := range tradeLogs {
-		if _, err := ethUSDRateFetcher.FetchRates(tradelog.BlockNumber, tradelog.Timestamp); err != nil {
+		rate, err := ethUSDRateFetcher.FetchRates(tradelog.BlockNumber, tradelog.Timestamp)
+		if err != nil {
 			return err
 		}
+		if rate.Rate > 0 {
+			rates = append(rates, rate)
+		} else {
+			return errors.New("eth usd is zero")
+		}
+	}
+
+	err = influxStorage.SaveTradeLogs(tradeLogs, rates)
+	if err != nil {
+		return err
 	}
 
 	return json.NewEncoder(os.Stdout).Encode(tradeLogs)

@@ -24,7 +24,7 @@ type UserData struct {
 	//Email user email - unique
 	Email string `json:"email" binding:"required,isEmail" db:"email"`
 	//UserInfo user info include
-	UserInfo []Info `json:"user_info" binding:"required,dive,required"`
+	UserInfo []Info `json:"user_info" binding:"required,dive"`
 }
 
 //UserCap is users transaction cap.

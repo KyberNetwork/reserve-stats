@@ -9,4 +9,7 @@ const (
 
 	// UsersPort is the port number of Users service.
 	UsersPort HTTPPort = 8002
+
+	// ReserveRatesPort is the port number of Reserve Rates API.
+	ReserveRatesPort HTTPPort = 8003
 )

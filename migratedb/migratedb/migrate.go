@@ -29,6 +29,12 @@ func (dbm *DBMigration) DeleteAllTables() error {
 	return err
 }
 
+//DeleteTable delete a table from  schema
+func (dbm *DBMigration) DeleteTable(tableName string) error {
+	_, err := dbm.postgresdb.Exec(fmt.Sprintf(`DROP TABLE "%s"`, tableName))
+	return err
+}
+
 //NewMigrateStorage connect to bolt db
 func NewMigrateStorage(dbPath string, postgres *sqlx.DB) (*DBMigration, error) {
 	var err error

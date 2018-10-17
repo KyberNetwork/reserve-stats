@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/boltdb/bolt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
@@ -26,18 +27,48 @@ func newTestMigrateDB() (*DBMigration, error) {
 		postgresPassword,
 		postgresDatabase,
 	)
-	db, err := sqlx.Connect("postgres", connStr)
+	postgres, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
 		return nil, err
 	}
-	return NewMigrateStorage(dbPath, db)
+	// open bolt db for migration
+	boltDB, err := bolt.Open(dbPath, 0600, nil)
+	if boltDB == nil {
+		return nil, err
+	}
+
+	// initiate postgres for migration
+	const schema = `
+	CREATE TABLE IF NOT EXISTS "migrate_users_test" (
+	  id    SERIAL PRIMARY KEY,
+	  email text NOT NULL UNIQUE
+	);
+	CREATE TABLE IF NOT EXISTS "migrate_addresses_test" (
+	  id        SERIAL PRIMARY KEY,
+	  address   text      NOT NULL UNIQUE,
+	  timestamp TIMESTAMP NOT NULL DEFAULT now(),
+	  user_id   SERIAL    NOT NULL REFERENCES migrate_users_test (id)
+	);
+	`
+
+	tx, err := postgres.Beginx()
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err = tx.Exec(schema); err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+	return &DBMigration{boltDB, postgres}, nil
 }
 
 func tearDown(t *testing.T, dbMigration *DBMigration) {
-	if err := dbMigration.DeleteAllTables(); err != nil {
-		t.Fatal(err)
-	}
-	// assert.Nil(t, dbMigration.DeleteAllTables(), "test db should be tear down succesfully.")
+	assert.Nil(t, dbMigration.DeleteTable("migrate_addresses_test"), "test table should be tear down succesfully.")
+	assert.Nil(t, dbMigration.DeleteTable("migrate_users_test"), "test table should be tear down succesfully.")
 }
 
 func TestMigrateDB(t *testing.T) {
@@ -47,7 +78,7 @@ func TestMigrateDB(t *testing.T) {
 	}
 	assert.Nil(t, err, "db should be created successfully.")
 
-	// defer tearDown(t, dbMigration)
+	defer tearDown(t, dbMigration)
 
 	assert.Nil(t, dbMigration.MigrateDB(), "db should be migrate successfully")
 }

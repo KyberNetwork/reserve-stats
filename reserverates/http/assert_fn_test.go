@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 )
 
@@ -37,7 +36,7 @@ func expectCorrectRate(t *testing.T, resp *httptest.ResponseRecorder) {
 	}
 
 	// Since DB's precision is in ms, compare the two timestamp in ms. s
-	if (timeutil.TimeToTimestampMs(testRsvRate.Timestamp)) != (timeutil.TimeToTimestampMs(rate.Timestamp)) {
+	if !testRsvRate.Timestamp.Equal(rate.Timestamp) {
 		t.Fatalf("wrong timestamp, expected: %s, got: %s", testRsvRate.Timestamp, rate.Timestamp)
 	}
 }

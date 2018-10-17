@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
@@ -60,6 +61,8 @@ func getTestServer(sugar *zap.SugaredLogger) (*Server, error) {
 }
 
 func TestHTTPRateServer(t *testing.T) {
+	const requestEndpoint = "reserve-rates"
+
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		t.Fatal(err)
@@ -69,18 +72,17 @@ func TestHTTPRateServer(t *testing.T) {
 		t.Fatal(err)
 	}
 	server.register()
-	const (
-		requestEndpoint = "reserve-rates"
-	)
+
 	var testReserveRate common.ReserveRates
 	if err = json.Unmarshal([]byte(testRsvRateJSON), &testReserveRate); err != nil {
 		t.Error(err)
 	}
 	fromTime := timeutil.TimeToTimestampMs(testReserveRate.Timestamp)
 	var tests = []httputil.HTTPTestCase{
-		{Msg: "success query",
+		{
+			Msg:      "success query",
 			Endpoint: fmt.Sprintf("%s/%s?from=%d&to=%d&reserve=%s", host, requestEndpoint, fromTime, fromTime, testRsvAddress),
-			Method:   "GET",
+			Method:   http.MethodGet,
 			Assert:   expectCorrectRate,
 		},
 	}

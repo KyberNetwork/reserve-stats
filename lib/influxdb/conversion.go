@@ -3,11 +3,12 @@ package influxdb
 import (
 	"encoding/json"
 	"errors"
-	"github.com/ethereum/go-ethereum/common"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
-// GetAddressFromInterface convert given value to ethereum address
+// GetAddressFromInterface converts given value to ethereum address.
 func GetAddressFromInterface(value interface{}) (common.Address, error) {
 	var address common.Address
 	s, ok := value.(string)
@@ -17,7 +18,7 @@ func GetAddressFromInterface(value interface{}) (common.Address, error) {
 	return common.HexToAddress(s), nil
 }
 
-// GetTxHashFromInterface convert given value to ethereum tx hash
+// GetTxHashFromInterface converts given value to ethereum tx hash.
 func GetTxHashFromInterface(value interface{}) (common.Hash, error) {
 	var txHash common.Hash
 	s, ok := value.(string)
@@ -27,7 +28,7 @@ func GetTxHashFromInterface(value interface{}) (common.Hash, error) {
 	return common.HexToHash(s), nil
 }
 
-// GetFloat64FromInterface convert given value to float64
+// GetFloat64FromInterface converts given value to float64.
 func GetFloat64FromInterface(value interface{}) (float64, error) {
 	number, ok := value.(json.Number)
 	if !ok {
@@ -36,7 +37,7 @@ func GetFloat64FromInterface(value interface{}) (float64, error) {
 	return number.Float64()
 }
 
-// GetTimeFromInterface convert given value to time
+// GetTimeFromInterface converts given value to time.
 func GetTimeFromInterface(value interface{}) (time.Time, error) {
 	var result time.Time
 

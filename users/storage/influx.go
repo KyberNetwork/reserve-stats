@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
@@ -54,15 +53,16 @@ func (inf *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.
 
 //IsExceedDailyLimit return if add address trade over daily limit or not
 func (inf *InfluxStorage) IsExceedDailyLimit(address string) (bool, error) {
-	now := time.Now()
-	yesterday := now.Truncate(24 * time.Hour)
-	query := fmt.Sprintf(`SELECT SUM(eth_receival_amount) as eth_amount
-	user_addr ON trade_logs FROM trades WHERE trades.user_addr=%s AND trades.time <= %s AND trades.time >=  %s GROUP BY user_addr`,
-		address, now, yesterday)
+	// 	query := fmt.Sprintf(`SELECT SUM(eth_receival_amount) as daily_fiat_amount
+	// FROM trades WHERE user_addr='%s' AND time <= now() AND time >= (now()-24h)`,
+	// 		address)
+	query := fmt.Sprintf(`SELECT SUM(eth_receival_amount) as daily_fiat_amount 
+FROM trades WHERE user_addr='%s'`,
+		address)
 	res, err := inf.queryDB(inf.influxClient, query)
+	inf.sugar.Debugw("result from query", "result", res)
 	if err != nil {
 		return false, err
 	}
-	inf.sugar.Debugw("result from query", "result", res)
 	return false, err
 }

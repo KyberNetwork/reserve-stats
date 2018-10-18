@@ -130,7 +130,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, rate tokenrate.ETH
 		"src_amount":  srcAmount,
 		"dst_amount":  dstAmount,
 		"fiat_amount": log.FiatAmount,
-		"rate":        rate.Rate,
+		"ethusd_rate":        rate.Rate,
 	}
 
 	tradePoint, err := client.NewPoint("trades", tags, fields, log.Timestamp)

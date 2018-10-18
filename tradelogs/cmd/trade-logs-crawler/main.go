@@ -163,8 +163,7 @@ func getTradeLogs(c *cli.Context) error {
 		}
 	}
 
-	err = influxStorage.SaveTradeLogs(tradeLogs, rates)
-	if err != nil {
+	if err = influxStorage.SaveTradeLogs(tradeLogs, rates); err != nil {
 		return err
 	}
 

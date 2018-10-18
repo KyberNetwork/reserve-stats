@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
@@ -36,7 +37,7 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 }
 
 // SaveTradeLogs persist trade logs to DB
-func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
+func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog, rates []tokenrate.ETHUSDRate) error {
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  is.dbName,
 		Precision: "ms",
@@ -44,9 +45,8 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 	if err != nil {
 		return err
 	}
-
-	for _, log := range logs {
-		points, err := is.tradeLogToPoint(log)
+	for index, log := range logs {
+		points, err := is.tradeLogToPoint(log, rates[index])
 		if err != nil {
 			return err
 		}
@@ -88,7 +88,7 @@ func (is *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.R
 	return res, nil
 }
 
-func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error) {
+func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, rate tokenrate.ETHUSDRate) ([]*client.Point, error) {
 	var points []*client.Point
 
 	tags := map[string]string{
@@ -104,6 +104,8 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 
 		"country": log.Country,
 		"ip":      log.IP,
+
+		"provider": rate.Provider,
 	}
 
 	ethReceivalAmount, err := is.amountFmt.FormatAmount(blockchain.ETHAddr, log.EtherReceivalAmount)
@@ -124,9 +126,10 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	fields := map[string]interface{}{
 		"eth_receival_amount": ethReceivalAmount,
 
-		"src_amount":  srcAmount,
-		"dst_amount":  dstAmount,
-		"fiat_amount": log.FiatAmount,
+		"src_amount":   srcAmount,
+		"dst_amount":   dstAmount,
+		"fiat_amount":  log.FiatAmount,
+		"eth_usd_rate": rate.Rate,
 	}
 
 	tradePoint, err := client.NewPoint("trades", tags, fields, log.Timestamp)

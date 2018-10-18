@@ -35,7 +35,7 @@ func NewETHUSDRateFetcher(sugar *zap.SugaredLogger, dbName string, client client
 }
 
 //FetchRates fetch ETH-USD rate and save to db
-func (ef *ETHUSDRateFetcher) FetchRates(blockNumber uint64, timestamp time.Time) (float64, error) {
+func (ef *ETHUSDRateFetcher) FetchRates(blockNumber uint64, timestamp time.Time) (ETHUSDRate, error) {
 	var (
 		ethRate float64
 		rate    ETHUSDRate
@@ -43,7 +43,7 @@ func (ef *ETHUSDRateFetcher) FetchRates(blockNumber uint64, timestamp time.Time)
 	)
 	if ethRate, err = ef.rateProvider.USDRate(timestamp); err != nil {
 		ef.sugar.Errorw("failed to get ETH/USD rate", "timestamp", timestamp.String())
-		return 0, err
+		return rate, err
 	}
 	if ethRate != 0 {
 		ef.sugar.Debugw("got ETH/USD rate",
@@ -59,10 +59,10 @@ func (ef *ETHUSDRateFetcher) FetchRates(blockNumber uint64, timestamp time.Time)
 		}
 
 		if err := ef.SaveTokenRate(rate); err != nil {
-			return ethRate, err
+			return rate, err
 		}
 	}
-	return ethRate, nil
+	return rate, nil
 }
 
 // createDB creates the database will be used for storing trade logs measurements.

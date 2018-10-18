@@ -11,14 +11,14 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
 
-// HTTPApi serve trade logs through http endpoint
-type HTTPApi struct {
+// Server serve trade logs through http endpoint
+type Server struct {
 	storage storage.Interface
 	router  *gin.Engine
 	addr    string
 }
 
-func (ha *HTTPApi) getTradeLogs(c *gin.Context) {
+func (ha *Server) getTradeLogs(c *gin.Context) {
 	from, err := strconv.ParseInt(c.Query("from"), 10, 64)
 	if err != nil {
 		c.JSON(
@@ -54,13 +54,13 @@ func (ha *HTTPApi) getTradeLogs(c *gin.Context) {
 }
 
 // Start running http server to serve trade logs data
-func (ha *HTTPApi) Start() {
+func (ha *Server) Start() {
 	ha.router.GET("/trade-logs", ha.getTradeLogs)
 	ha.router.Run(ha.addr)
 }
 
-// NewHTTPApi returns an instance of HttpApi to serve trade logs
-func NewHTTPApi(storage storage.Interface, addr string) *HTTPApi {
+// NewServer returns an instance of HttpApi to serve trade logs
+func NewServer(storage storage.Interface, addr string) *Server {
 	r := gin.Default()
-	return &HTTPApi{storage: storage, router: r, addr: addr}
+	return &Server{storage: storage, router: r, addr: addr}
 }

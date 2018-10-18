@@ -2,30 +2,21 @@ package http
 
 import (
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/tokenrate"
 	"net/http"
-	"reflect"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
-	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/KyberNetwork/tokenrate"
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
-	"github.com/go-ozzo/ozzo-validation"
-	"github.com/go-ozzo/ozzo-validation/is"
 	"go.uber.org/zap"
-	"gopkg.in/go-playground/validator.v8"
 )
 
 //NewServer return new server instance
 func NewServer(sugar *zap.SugaredLogger, rateProvider tokenrate.ETHUSDRateProvider, storage storage.Interface, host string) *Server {
 	r := gin.Default()
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("isAddress", isAddress)
-		v.RegisterValidation("isEmail", IsEmail)
-	}
 	return &Server{
 		sugar:        sugar,
 		rateProvider: newCachedRateProvider(sugar, rateProvider, time.Hour),
@@ -80,27 +71,6 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 			"kyced": kyced,
 		},
 	)
-}
-
-func isAddress(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
-	field reflect.Value, _ reflect.Type, _ reflect.Kind, _ string) bool {
-	address := field.String()
-	if err := validation.Validate(address, validation.Required); err != nil {
-		return false
-	}
-	if !ethereum.IsHexAddress(address) {
-		return false
-	}
-	return true
-}
-
-//IsEmail validation function for email field
-func IsEmail(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
-	field reflect.Value, _ reflect.Type, _ reflect.Kind, _ string) bool {
-	if err := validation.Validate(field.String(), is.Email); err != nil {
-		return false
-	}
-	return true
 }
 
 //createOrUpdate update info of an user

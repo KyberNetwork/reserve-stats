@@ -9,8 +9,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/crawler"
-	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/storage/influx"
+	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
+	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserverates/storage/influx"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
@@ -21,8 +21,9 @@ const (
 )
 
 func newReserveCrawlerCli() *cli.App {
+	const dbName = "resever_rates"
 	app := libapp.NewApp()
-	app.Name = "reserve-rates-crawler"
+	app.Name = "reserverates"
 	app.Usage = "get the rates of all configured reserves at a certain block"
 	var block uint64
 	app.Flags = append(app.Flags,
@@ -51,6 +52,8 @@ func newReserveCrawlerCli() *cli.App {
 		if err != nil {
 			return err
 		}
+		defer logger.Sync()
+
 		blockTimeResolver, err := blockchain.NewBlockTimeResolver(logger.Sugar(), client)
 		if err != nil {
 			return err
@@ -63,7 +66,7 @@ func newReserveCrawlerCli() *cli.App {
 		if err != nil {
 			return err
 		}
-		rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(influxClient)
+		rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(logger.Sugar(), influxClient, dbName)
 		if err != nil {
 			return err
 		}
@@ -90,7 +93,7 @@ func newReserveCrawlerCli() *cli.App {
 	return app
 }
 
-//reserve-rates-crawler --addresses=0xABCDEF,0xDEFGHI --block 100
+//reserverates --addresses=0xABCDEF,0xDEFGHI --block 100
 func main() {
 	app := newReserveCrawlerCli()
 	if err := app.Run(os.Args); err != nil {

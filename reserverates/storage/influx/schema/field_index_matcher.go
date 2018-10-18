@@ -6,7 +6,7 @@ import "errors"
 type FieldsRegistrar map[RateSchemaFieldName]int
 
 // NewFieldsRegistrar returns a FieldsRegistrar from a list of collumn name and error if occurs
-func NewFieldsRegistrar(colums []string) (*FieldsRegistrar, error) {
+func NewFieldsRegistrar(colums []string) (FieldsRegistrar, error) {
 	result := make(FieldsRegistrar)
 	numFields := 0
 	for idx, fieldNameStr := range colums {
@@ -21,5 +21,5 @@ func NewFieldsRegistrar(colums []string) (*FieldsRegistrar, error) {
 	if numFields < len(rateSchemaFields) {
 		return nil, errors.New("Not enough columns compared to field name")
 	}
-	return &result, nil
+	return result, nil
 }

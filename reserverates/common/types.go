@@ -8,10 +8,10 @@ import (
 
 // ReserveRateEntry hold 4 float number represent necessary data for a rate entry
 type ReserveRateEntry struct {
-	BuyReserveRate  float64
-	BuySanityRate   float64
-	SellReserveRate float64
-	SellSanityRate  float64
+	BuyReserveRate  float64 `json:"buy_reserve_rate"`
+	BuySanityRate   float64 `json:"buy_sanity_rate"`
+	SellReserveRate float64 `json:"sell_reserve_rate"`
+	SellSanityRate  float64 `json:"sell_sanity_rate"`
 }
 
 // NewReserveRateEntry returns new ReserveRateEntry from results of GetReserveRate method.
@@ -29,7 +29,8 @@ func NewReserveRateEntry(reserveRates, sanityRates []*big.Int, index int) Reserv
 
 // ReserveRates hold all the pairs's rate for a particular reserve and metadata
 type ReserveRates struct {
-	Timestamp   time.Time
-	BlockNumber uint64
-	Data        map[string]ReserveRateEntry
+	Timestamp   time.Time                   `json:"timestamp"`
+	BlockNumber uint64                      `json:"-"`
+	Data        map[string]ReserveRateEntry `json:"data"`
+	Reserve     string                      `json:"-"`
 }

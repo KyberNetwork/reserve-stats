@@ -1,22 +1,23 @@
 package influx
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.uber.org/zap"
 	"strconv"
+	"text/template"
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
-	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/storage/influx/schema"
+	"github.com/KyberNetwork/reserve-stats/reserverates/common"
+	"github.com/KyberNetwork/reserve-stats/reserverates/storage/influx/schema"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	influxClient "github.com/influxdata/influxdb/client/v2"
 	influxModel "github.com/influxdata/influxdb/models"
 )
 
 const (
-	//RateDBName is the name of influx database storing reserveRate
-	RateDBName = "ReserveRate"
 	//RateTableName is the name of influx table storing reserveRate
 	RateTableName = "reserve_rate"
 	//timePrecision is the precision configured for influxDB
@@ -27,12 +28,14 @@ var errCantConvert = errors.New("cannot convert response from influxDB to pre-de
 
 // RateStorage is the implementation of influxclient to serve as ReserveRate storage
 type RateStorage struct {
+	sugar  *zap.SugaredLogger
 	client influxClient.Client
+	dbName string
 }
 
 // NewRateInfluxDBStorage return an instance of influx client to store ReserveRate
-func NewRateInfluxDBStorage(client influxClient.Client) (*RateStorage, error) {
-	q := influxClient.NewQuery("CREATE DATABASE "+RateDBName, "", timePrecision)
+func NewRateInfluxDBStorage(sugar *zap.SugaredLogger, client influxClient.Client, dbName string) (*RateStorage, error) {
+	q := influxClient.NewQuery("CREATE DATABASE "+dbName, "", timePrecision)
 	response, err := client.Query(q)
 	if err != nil {
 		return nil, err
@@ -40,7 +43,7 @@ func NewRateInfluxDBStorage(client influxClient.Client) (*RateStorage, error) {
 	if response.Error() != nil {
 		return nil, response.Error()
 	}
-	return &RateStorage{client: client}, nil
+	return &RateStorage{sugar: sugar, client: client, dbName: dbName}, nil
 }
 
 // UpdateRatesRecords update all the rate records from different reserve to influxDB in one go.
@@ -48,7 +51,7 @@ func NewRateInfluxDBStorage(client influxClient.Client) (*RateStorage, error) {
 func (rs *RateStorage) UpdateRatesRecords(rateRecords map[string]common.ReserveRates) error {
 	bp, err := influxClient.NewBatchPoints(
 		influxClient.BatchPointsConfig{
-			Database:  RateDBName,
+			Database:  rs.dbName,
 			Precision: timePrecision,
 		},
 	)
@@ -57,7 +60,6 @@ func (rs *RateStorage) UpdateRatesRecords(rateRecords map[string]common.ReserveR
 	}
 
 	for rsvAddr, rateRecord := range rateRecords {
-
 		for pair, rate := range rateRecord.Data {
 			tags := map[string]string{
 				schema.Reserve.String():     rsvAddr,
@@ -81,20 +83,60 @@ func (rs *RateStorage) UpdateRatesRecords(rateRecords map[string]common.ReserveR
 }
 
 // GetRatesByTimePoint returns all the rate record in a period of time of a reserve
-func (rs *RateStorage) GetRatesByTimePoint(rsvAddr ethereum.Address, fromTime, toTime uint64) (map[uint64]common.ReserveRates, error) {
-	result := make(map[uint64]common.ReserveRates)
-	command := fmt.Sprintf("SELECT * FROM %s WHERE time >= %d%s AND \"reserve\"='%s' AND time<= %d%s Order By time", RateTableName, fromTime, timePrecision, rsvAddr.Hex(), toTime, timePrecision)
-	q := influxClient.NewQuery(command, RateDBName, timePrecision)
+func (rs *RateStorage) GetRatesByTimePoint(addrs []ethereum.Address, fromTime, toTime uint64) (map[string]map[uint64]common.ReserveRates, error) {
+	const queryTmpl = `SELECT * FROM "{{.TableName}}" WHERE {{.FromTime }}{{.TimePrecision}} <= time AND time <= {{.ToTime}}{{.TimePrecision}} ` +
+		`{{if len .Addrs}}AND ({{range $index, $element := .Addrs}}"reserve" = '{{$element}}'{{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
+	var (
+		logger = rs.sugar.With("reserves", len(addrs),
+			"from", fromTime,
+			"to", toTime,
+		)
+		addrsStrs []string
+	)
+
+	logger.Debugw("before rendering query statement from template", "query_tempalte", queryTmpl)
+	tmpl, err := template.New("queryStmt").Parse(queryTmpl)
+	if err != nil {
+		return nil, err
+	}
+
+	var queryStmtBuf bytes.Buffer
+	for _, rsvAddr := range addrs {
+		addrsStrs = append(addrsStrs, rsvAddr.Hex())
+	}
+	if err = tmpl.Execute(&queryStmtBuf, struct {
+		TableName      string
+		FromTime       uint64
+		ToTime         uint64
+		TimePrecision  string
+		Addrs          []string
+		AddrsLastIndex int
+	}{
+		TableName:      RateTableName,
+		FromTime:       fromTime,
+		ToTime:         toTime,
+		TimePrecision:  timePrecision,
+		Addrs:          addrsStrs,
+		AddrsLastIndex: len(addrs) - 1,
+	}); err != nil {
+		return nil, err
+	}
+
+	logger.Debugw("rendered query statement", "rendered_tempalte", queryStmtBuf.String())
+	q := influxClient.NewQuery(queryStmtBuf.String(), rs.dbName, timePrecision)
 	response, err := rs.client.Query(q)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
+
 	if response.Error() != nil {
-		return result, response.Error()
+		return nil, response.Error()
 	}
+
 	if len(response.Results) == 0 || len(response.Results[0].Series) == 0 {
-		return result, nil
+		return nil, nil
 	}
+
 	return convertQueryResultToRate(response.Results[0].Series[0])
 }
 
@@ -114,12 +156,12 @@ func getFloat64FromInterface(v interface{}) (float64, error) {
 	return number.Float64()
 }
 
-func convertRowValueToReserveRate(v []interface{}, idxs *schema.FieldsRegistrar) (*common.ReserveRates, error) {
+func convertRowValueToReserveRate(v []interface{}, idxs schema.FieldsRegistrar) (*common.ReserveRates, error) {
 	rate := common.ReserveRates{
 		Data: make(map[string]common.ReserveRateEntry),
 	}
 	// Get Time
-	intNumber, err := getInt64FromInterface(v[(*idxs)[schema.Time]])
+	intNumber, err := getInt64FromInterface(v[idxs[schema.Time]])
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +169,7 @@ func convertRowValueToReserveRate(v []interface{}, idxs *schema.FieldsRegistrar)
 	rate.Timestamp = timeStamp
 
 	// get Block number
-	blockNumberStr, ok := v[(*idxs)[schema.BlockNumber]].(string)
+	blockNumberStr, ok := v[idxs[schema.BlockNumber]].(string)
 	if !ok {
 		return nil, errCantConvert
 	}
@@ -137,26 +179,31 @@ func convertRowValueToReserveRate(v []interface{}, idxs *schema.FieldsRegistrar)
 	}
 	rate.BlockNumber = blockNumber
 	// get pair
-	pairName, convertible := v[(*idxs)[schema.Pair]].(string)
+	pairName, convertible := v[idxs[schema.Pair]].(string)
 	if !convertible {
 		return nil, errCantConvert
 	}
-	buyRate, err := getFloat64FromInterface(v[(*idxs)[schema.BuyRate]])
+	buyRate, err := getFloat64FromInterface(v[idxs[schema.BuyRate]])
 	if err != nil {
 		return nil, err
 	}
-	sellRate, err := getFloat64FromInterface(v[(*idxs)[schema.SellRate]])
+	sellRate, err := getFloat64FromInterface(v[idxs[schema.SellRate]])
 	if err != nil {
 		return nil, err
 	}
-	buySanityRate, err := getFloat64FromInterface(v[(*idxs)[schema.BuySanityRate]])
+	buySanityRate, err := getFloat64FromInterface(v[(idxs)[schema.BuySanityRate]])
 	if err != nil {
 		return nil, err
 	}
-	sellSanityRate, err := getFloat64FromInterface(v[(*idxs)[schema.SellSanityRate]])
+	sellSanityRate, err := getFloat64FromInterface(v[idxs[schema.SellSanityRate]])
 	if !convertible {
 		return nil, errCantConvert
 	}
+	reserve, ok := v[idxs[schema.Reserve]].(string)
+	if !ok {
+		return nil, errCantConvert
+	}
+	rate.Reserve = reserve
 
 	rate.Data[pairName] = common.ReserveRateEntry{
 		BuyReserveRate:  buyRate,
@@ -167,7 +214,10 @@ func convertRowValueToReserveRate(v []interface{}, idxs *schema.FieldsRegistrar)
 	return &rate, nil
 }
 
-func convertQueryResultToRate(row influxModel.Row) (map[uint64]common.ReserveRates, error) {
+func convertQueryResultToRate(row influxModel.Row) (map[string]map[uint64]common.ReserveRates, error) {
+	var (
+		result = make(map[string]map[uint64]common.ReserveRates)
+	)
 	if len(row.Values) == 0 {
 		return nil, nil
 	}
@@ -175,22 +225,44 @@ func convertQueryResultToRate(row influxModel.Row) (map[uint64]common.ReserveRat
 	if err != nil {
 		return nil, err
 	}
-	rates := make(map[uint64]common.ReserveRates)
+	//rates := make(map[uint64]common.ReserveRates)
 	for _, v := range row.Values {
 		rate, err := convertRowValueToReserveRate(v, idxs)
 		if err != nil {
-			return rates, err
+			return nil, err
 		}
-		curRate, ok := rates[rate.BlockNumber]
+
+		rates, ok := result[rate.Reserve]
 		if !ok {
-			rates[rate.BlockNumber] = *rate
-		} else {
-			//append this rate.Pair to the total record.
-			for pair, rateEntry := range rate.Data {
-				curRate.Data[pair] = rateEntry
-			}
-			rates[rate.BlockNumber] = curRate
+			result[rate.Reserve] = map[uint64]common.ReserveRates{rate.BlockNumber: *rate}
+			continue
 		}
+
+		if _, ok = rates[rate.BlockNumber]; !ok {
+			result[rate.Reserve][rate.BlockNumber] = *rate
+			continue
+		}
+
+		//append this rate.Pair to the total record.
+		for pair, rateEntry := range rate.Data {
+			result[rate.Reserve][rate.BlockNumber].Data[pair] = rateEntry
+		}
+
 	}
-	return rates, nil
+	return result, nil
+}
+
+// TearDown will remove the db. Only use for testing purpose
+func (rs *RateStorage) TearDown() error {
+	cmd := fmt.Sprintf("DROP DATABASE %s", rs.dbName)
+	q := influxClient.NewQuery(cmd, rs.dbName, timePrecision)
+	response, err := rs.client.Query(q)
+	if err != nil {
+		return err
+	}
+
+	if response.Error() != nil {
+		return response.Error()
+	}
+	return nil
 }

@@ -19,3 +19,6 @@ data/
 tokeninfo/cmd/output.json
 .DS_Store
 tradelogs/cmd/trade-logs-crawler/trade-logs-crawler
+reserverates/cmd/trade-rates-api/trade-rates-api
+reserverates/cmd/trade-rates-crawler/trade-rates-crawler
+

@@ -8,8 +8,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
-	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/common"
-	"github.com/KyberNetwork/reserve-stats/reserve-rates-crawler/storage"
+	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
+	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
@@ -84,7 +84,7 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 	)
 
 	logger := rrc.sugar.With(
-		"func", "reserve-rates-crawler/crawler/ResreveRatesCrawler.getEachReserveRate",
+		"func", "reserverates/reserve-rates-crawler/ResreveRatesCrawler.getEachReserveRate",
 		"block", block,
 		"reserve_address", rsvAddr.Hex(),
 	)
@@ -128,7 +128,7 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]rsvRat
 	)
 
 	logger := rrc.sugar.With(
-		"func", "reserve-rates-crawler/crawler/ResreveRatesCrawler.GetReserveRates",
+		"func", "reserverates/reserve-rates-crawler/ResreveRatesCrawler.GetReserveRates",
 		"block", block,
 		"reserves", len(rrc.Addresses),
 	)
@@ -169,6 +169,7 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]rsvRat
 	if err != nil {
 		return nil, err
 	}
-	uErr := rrc.db.UpdateRatesRecords(result)
-	return result, uErr
+
+	err = rrc.db.UpdateRatesRecords(result)
+	return result, err
 }

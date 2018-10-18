@@ -9,7 +9,7 @@ import (
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/api"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/http"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
 
@@ -43,7 +43,7 @@ func main() {
 
 		serverAddr := c.String(addrFlag)
 
-		storage, err := storage.NewInfluxStorage(
+		influxStorage, err := storage.NewInfluxStorage(
 			sugar,
 			"trade_logs",
 			influxClient,
@@ -53,7 +53,7 @@ func main() {
 			return err
 		}
 
-		api := api.NewHTTPApi(storage, serverAddr)
+		api := http.NewHTTPApi(influxStorage, serverAddr)
 		api.Start()
 
 		return nil

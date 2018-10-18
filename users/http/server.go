@@ -69,6 +69,7 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 	txLimit := blockchain.EthToWei(uc.TxLimit / rate)
 	rich, err := s.influxStorage.IsExceedDailyLimit(address)
 	if err != nil {
+		s.sugar.Debugw("influx query error", "error", err.Error())
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{

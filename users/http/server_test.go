@@ -11,6 +11,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"go.uber.org/zap"
+	"github.com/stretchr/testify/assert"
+	"github.com/influxdata/influxdb/client/v2"
 )
 
 const (
@@ -37,24 +39,32 @@ func newTestDB(sugar *zap.SugaredLogger) (*storage.UserDB, error) {
 }
 
 func tearDown(t *testing.T, storage *storage.UserDB) {
-	if err := storage.DeleteAllTables(); err != nil {
-		t.Fatal("Cannot clear db after test")
-	}
+	assert.Nil(t, storage.DeleteAllTables(), "database should be deleted completely")
 }
 
 func TestUserHTTPServer(t *testing.T) {
 	logger, err := zap.NewDevelopment()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err, "logger should be initiated successfully")
+
 	sugar := logger.Sugar()
 	userStorage, err := newTestDB(sugar)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err, "user database should be initiated successfully")
+
 	defer tearDown(t, userStorage)
 
-	s := NewServer(sugar, tokenrate.NewMock(), userStorage, "")
+	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
+		Addr: "http://localhost:8086",
+	})
+	assert.Nil(t, err, "influx client should be created successfully")
+
+	influxStorage, err := storage.NewInfluxStorage(
+		sugar,
+		"test_db",
+		influxClient,
+	)
+	assert.Nil(t, err, "influx storage should be created successfully")
+
+	s := NewServer(sugar, tokenrate.NewMock(), userStorage, "", influxStorage)
 	s.register()
 
 	// test case

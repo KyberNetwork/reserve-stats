@@ -53,7 +53,7 @@ func main() {
 			return err
 		}
 
-		api := http.NewHTTPApi(influxStorage, serverAddr)
+		api := http.NewServer(influxStorage, serverAddr)
 		api.Start()
 
 		return nil

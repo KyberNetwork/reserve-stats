@@ -52,8 +52,6 @@ func run(c *cli.Context) error {
 	}
 	defer userDB.Close()
 
-	// init stats
-	//userStats := stats.NewUserStats(coingecko.New(), userDB)
 	server := http.NewServer(sugar, coingecko.New(), userDB, httputil.NewHTTPAddressFromContext(c))
 	return server.Run()
 }

@@ -5,7 +5,7 @@ import (
 	"os"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/users/cmd/migration/migratedb"
+	"github.com/KyberNetwork/reserve-stats/users/migration"
 	"github.com/urfave/cli"
 )
 
@@ -40,7 +40,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	dbMigrate, err := migratedb.NewMigrateStorage(c.String(boltDataSourceFlag), db)
+	dbMigrate, err := migration.NewMigrateStorage(c.String(boltDataSourceFlag), db)
 	if err != nil {
 		return err
 	}

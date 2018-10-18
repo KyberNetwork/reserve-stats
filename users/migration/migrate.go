@@ -1,11 +1,11 @@
-package migratedb
+package migration
 
 import (
 	"database/sql"
 	"errors"
 	"fmt"
 
-	"github.com/KyberNetwork/reserve-stats/lib/boltutils"
+	"github.com/KyberNetwork/reserve-stats/lib/boltutil"
 	"github.com/boltdb/bolt"
 	"github.com/jmoiron/sqlx"
 )
@@ -83,7 +83,7 @@ func (dbm *DBMigration) MigrateDB() error {
 				return err
 			}
 			timestampByte := timeBucket.Get(k)
-			timestamp := boltutils.BytesToUint64(timestampByte)
+			timestamp := boltutil.BytesToUint64(timestampByte)
 			if err := dbm.InsertAddress(address, timestamp, userID); err != nil {
 				return err
 			}

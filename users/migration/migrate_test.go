@@ -1,4 +1,4 @@
-package migratedb
+package migration
 
 import (
 	"fmt"

@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	timeutil "github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
+	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
 	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserverates/storage/influx"
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
@@ -36,28 +37,29 @@ const (
 		  }
 		}
 	  }`
+	dbName = "test_reserve_rate"
 )
 
-func getTestServer(sugar *zap.SugaredLogger) (*Server, error) {
+func newTestServer(sugar *zap.SugaredLogger, dbInstance storage.ReserveRatesStorage) (*Server, error) {
+	var testReserveRate common.ReserveRates
+	if err := json.Unmarshal([]byte(testRsvRateJSON), &testReserveRate); err != nil {
+		return nil, err
+	}
+	testRecords := map[string]common.ReserveRates{testRsvAddress: testReserveRate}
+	if err := dbInstance.UpdateRatesRecords(testRecords); err != nil {
+		return nil, err
+	}
+	return NewServer(host, dbInstance, sugar)
+}
+
+func newTestDB(sugar *zap.SugaredLogger) (*influxRateStorage.RateStorage, error) {
 	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr: testInfluxURL,
 	})
 	if err != nil {
 		return nil, err
 	}
-	rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(sugar, influxClient)
-	if err != nil {
-		return nil, err
-	}
-	var testReserveRate common.ReserveRates
-	if err = json.Unmarshal([]byte(testRsvRateJSON), &testReserveRate); err != nil {
-		return nil, err
-	}
-	testRecords := map[string]common.ReserveRates{testRsvAddress: testReserveRate}
-	if err = rateStorage.UpdateRatesRecords(testRecords); err != nil {
-		return nil, err
-	}
-	return NewServer(host, rateStorage, sugar)
+	return influxRateStorage.NewRateInfluxDBStorage(sugar, influxClient, dbName)
 }
 
 func TestHTTPRateServer(t *testing.T) {
@@ -67,7 +69,20 @@ func TestHTTPRateServer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	server, err := getTestServer(logger.Sugar())
+	defer logger.Sync()
+	sugar := logger.Sugar()
+
+	dbInstance, err := newTestDB(sugar)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		tErr := dbInstance.TearDown()
+		if tErr != nil {
+			t.Fatal(tErr)
+		}
+	}()
+	server, err := newTestServer(sugar, dbInstance)
 	if err != nil {
 		t.Fatal(err)
 	}

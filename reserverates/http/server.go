@@ -6,6 +6,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
@@ -28,8 +29,9 @@ type reserveRatesQuery struct {
 
 func (sv *Server) reserveRates(c *gin.Context) {
 	var (
-		query  reserveRatesQuery
-		logger = sv.sugar.With("func", "reserverates/http/Server.reserveRates")
+		query    reserveRatesQuery
+		logger   = sv.sugar.With("func", "reserverates/http/Server.reserveRates")
+		rsvAddrs []ethereum.Address
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -62,7 +64,10 @@ func (sv *Server) reserveRates(c *gin.Context) {
 
 	logger = logger.With("to", query.To, "from", query.From)
 	logger.Debug("querying reserve rates from database")
-	result, err := sv.db.GetRatesByTimePoint(query.ReserveAddrs, query.From, query.To)
+	for _, rsvAddr := range query.ReserveAddrs {
+		rsvAddrs = append(rsvAddrs, ethereum.HexToAddress(rsvAddr))
+	}
+	result, err := sv.db.GetRatesByTimePoint(rsvAddrs, query.From, query.To)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,

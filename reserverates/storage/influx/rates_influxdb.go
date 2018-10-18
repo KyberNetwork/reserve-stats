@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"go.uber.org/zap"
 	"strconv"
 	"text/template"
@@ -11,13 +12,12 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage/influx/schema"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	influxClient "github.com/influxdata/influxdb/client/v2"
 	influxModel "github.com/influxdata/influxdb/models"
 )
 
 const (
-	//RateDBName is the name of influx database storing reserveRate
-	RateDBName = "ReserveRate"
 	//RateTableName is the name of influx table storing reserveRate
 	RateTableName = "reserve_rate"
 	//timePrecision is the precision configured for influxDB
@@ -30,11 +30,12 @@ var errCantConvert = errors.New("cannot convert response from influxDB to pre-de
 type RateStorage struct {
 	sugar  *zap.SugaredLogger
 	client influxClient.Client
+	dbName string
 }
 
 // NewRateInfluxDBStorage return an instance of influx client to store ReserveRate
-func NewRateInfluxDBStorage(sugar *zap.SugaredLogger, client influxClient.Client) (*RateStorage, error) {
-	q := influxClient.NewQuery("CREATE DATABASE "+RateDBName, "", timePrecision)
+func NewRateInfluxDBStorage(sugar *zap.SugaredLogger, client influxClient.Client, dbName string) (*RateStorage, error) {
+	q := influxClient.NewQuery("CREATE DATABASE "+dbName, "", timePrecision)
 	response, err := client.Query(q)
 	if err != nil {
 		return nil, err
@@ -42,7 +43,7 @@ func NewRateInfluxDBStorage(sugar *zap.SugaredLogger, client influxClient.Client
 	if response.Error() != nil {
 		return nil, response.Error()
 	}
-	return &RateStorage{sugar: sugar, client: client}, nil
+	return &RateStorage{sugar: sugar, client: client, dbName: dbName}, nil
 }
 
 // UpdateRatesRecords update all the rate records from different reserve to influxDB in one go.
@@ -50,7 +51,7 @@ func NewRateInfluxDBStorage(sugar *zap.SugaredLogger, client influxClient.Client
 func (rs *RateStorage) UpdateRatesRecords(rateRecords map[string]common.ReserveRates) error {
 	bp, err := influxClient.NewBatchPoints(
 		influxClient.BatchPointsConfig{
-			Database:  RateDBName,
+			Database:  rs.dbName,
 			Precision: timePrecision,
 		},
 	)
@@ -82,7 +83,7 @@ func (rs *RateStorage) UpdateRatesRecords(rateRecords map[string]common.ReserveR
 }
 
 // GetRatesByTimePoint returns all the rate record in a period of time of a reserve
-func (rs *RateStorage) GetRatesByTimePoint(addrs []string, fromTime, toTime uint64) (map[string]map[uint64]common.ReserveRates, error) {
+func (rs *RateStorage) GetRatesByTimePoint(addrs []ethereum.Address, fromTime, toTime uint64) (map[string]map[uint64]common.ReserveRates, error) {
 	const queryTmpl = `SELECT * FROM "{{.TableName}}" WHERE {{.FromTime }}{{.TimePrecision}} <= time AND time <= {{.ToTime}}{{.TimePrecision}} ` +
 		`{{if len .Addrs}}AND ({{range $index, $element := .Addrs}}"reserve" = '{{$element}}'{{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
 	var (
@@ -90,6 +91,7 @@ func (rs *RateStorage) GetRatesByTimePoint(addrs []string, fromTime, toTime uint
 			"from", fromTime,
 			"to", toTime,
 		)
+		addrsStrs []string
 	)
 
 	logger.Debugw("before rendering query statement from template", "query_tempalte", queryTmpl)
@@ -99,6 +101,9 @@ func (rs *RateStorage) GetRatesByTimePoint(addrs []string, fromTime, toTime uint
 	}
 
 	var queryStmtBuf bytes.Buffer
+	for _, rsvAddr := range addrs {
+		addrsStrs = append(addrsStrs, rsvAddr.Hex())
+	}
 	if err = tmpl.Execute(&queryStmtBuf, struct {
 		TableName      string
 		FromTime       uint64
@@ -111,14 +116,14 @@ func (rs *RateStorage) GetRatesByTimePoint(addrs []string, fromTime, toTime uint
 		FromTime:       fromTime,
 		ToTime:         toTime,
 		TimePrecision:  timePrecision,
-		Addrs:          addrs,
+		Addrs:          addrsStrs,
 		AddrsLastIndex: len(addrs) - 1,
 	}); err != nil {
 		return nil, err
 	}
 
 	logger.Debugw("rendered query statement", "rendered_tempalte", queryStmtBuf.String())
-	q := influxClient.NewQuery(queryStmtBuf.String(), RateDBName, timePrecision)
+	q := influxClient.NewQuery(queryStmtBuf.String(), rs.dbName, timePrecision)
 	response, err := rs.client.Query(q)
 	if err != nil {
 		return nil, err
@@ -245,4 +250,19 @@ func convertQueryResultToRate(row influxModel.Row) (map[string]map[uint64]common
 
 	}
 	return result, nil
+}
+
+// TearDown will remove the db. Only use for testing purpose
+func (rs *RateStorage) TearDown() error {
+	cmd := fmt.Sprintf("DROP DATABASE %s", rs.dbName)
+	q := influxClient.NewQuery(cmd, rs.dbName, timePrecision)
+	response, err := rs.client.Query(q)
+	if err != nil {
+		return err
+	}
+
+	if response.Error() != nil {
+		return response.Error()
+	}
+	return nil
 }

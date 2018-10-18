@@ -21,6 +21,7 @@ const (
 )
 
 func newReserveCrawlerCli() *cli.App {
+	const dbName = "resever_rates"
 	app := libapp.NewApp()
 	app.Name = "reserverates"
 	app.Usage = "get the rates of all configured reserves at a certain block"
@@ -65,7 +66,7 @@ func newReserveCrawlerCli() *cli.App {
 		if err != nil {
 			return err
 		}
-		rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(logger.Sugar(), influxClient)
+		rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(logger.Sugar(), influxClient, dbName)
 		if err != nil {
 			return err
 		}

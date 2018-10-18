@@ -15,6 +15,7 @@ import (
 )
 
 func newServerCli() *cli.App {
+	const dbName = "resever_rates"
 	app := libapp.NewApp()
 	app.Name = "reserverates-server"
 	app.Usage = "server for query rate API"
@@ -32,7 +33,7 @@ func newServerCli() *cli.App {
 			return err
 		}
 
-		rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(logger.Sugar(), influxClient)
+		rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(logger.Sugar(), influxClient, dbName)
 		if err != nil {
 			return err
 		}

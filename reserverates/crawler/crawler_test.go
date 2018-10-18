@@ -8,6 +8,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
+	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage/influx"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/influxdata/influxdb/client/v2"
@@ -17,36 +18,35 @@ import (
 const (
 	testRsvAddress = "0x63825c174ab367968EC60f061753D3bbD36A0D8F"
 	testInfluxURL  = "http://127.0.0.1:8086"
+	dbName         = "test_rate"
 )
 
-func newTestCrawler() (*ResreveRatesCrawler, error) {
+func newTestCrawler(sugar *zap.SugaredLogger, dbInstance storage.ReserveRatesStorage) (*ResreveRatesCrawler, error) {
 	var (
 		addrs       = []ethereum.Address{ethereum.HexToAddress(testRsvAddress)}
 		sett        = core.MockClient{}
 		wrpContract = contracts.MockVersionedWrapper{}
 		bltimeRsver = blockchain.MockBlockTimeResolve{}
 	)
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		return nil, err
-	}
-	defer logger.Sync()
 
-	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr: testInfluxURL,
-	})
-	dbInstance, err := influx.NewRateInfluxDBStorage(logger.Sugar(), influxClient)
-	if err != nil {
-		return nil, err
-	}
 	return &ResreveRatesCrawler{
 		wrapperContract: &wrpContract,
 		Addresses:       addrs,
 		tokenSetting:    &sett,
-		sugar:           logger.Sugar(),
+		sugar:           sugar,
 		blkTimeRsv:      &bltimeRsver,
 		db:              dbInstance,
 	}, nil
+}
+
+func newTestDB(sugar *zap.SugaredLogger) (*influx.RateStorage, error) {
+	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
+		Addr: testInfluxURL,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return influx.NewRateInfluxDBStorage(sugar, influxClient, dbName)
 }
 
 // TestGetReserveRate query the mock blockchain for reserve rate result
@@ -58,7 +58,24 @@ func TestGetReserveRate(t *testing.T) {
 		BuySanityRate:   3.0,
 		SellSanityRate:  4.0,
 	}
-	crawler, err := newTestCrawler()
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer logger.Sync()
+	sugar := logger.Sugar()
+
+	dbInstance, err := newTestDB(sugar)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		tErr := dbInstance.TearDown()
+		if tErr != nil {
+			t.Fatal(tErr)
+		}
+	}()
+	crawler, err := newTestCrawler(sugar, dbInstance)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,16 +85,16 @@ func TestGetReserveRate(t *testing.T) {
 	}
 	rate, ok := rates[testRsvAddress]
 	if !ok {
-		crawler.sugar.Errorf("result did not contain rate for reserve %s", testRsvAddress)
+		sugar.Errorf("result did not contain rate for reserve %s", testRsvAddress)
 		t.Fail()
 	}
 	rateEntry, ok := rate.Data["ETH-KNC"]
 	if !ok {
-		crawler.sugar.Error("result did not contain rate for ETH-KNC pair")
+		sugar.Error("result did not contain rate for ETH-KNC pair")
 		t.Fail()
 	}
 	if !reflect.DeepEqual(rateEntry, testRateEntry) {
-		crawler.sugar.Error("RateEntry ETH-KNC did not match the expected result")
+		sugar.Error("RateEntry ETH-KNC did not match the expected result")
 		t.Fail()
 	}
 }

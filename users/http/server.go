@@ -68,9 +68,7 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 	uc := common.NewUserCap(kyced)
 	txLimit := blockchain.EthToWei(uc.TxLimit / rate)
 	rich, err := s.influxStorage.IsExceedDailyLimit(address, uc.DailyLimit)
-	s.sugar.Debugw("what are you", "rich", rich)
 	if err != nil {
-		s.sugar.Debugw("influx query error", "error", err.Error())
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{

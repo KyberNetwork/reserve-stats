@@ -2,11 +2,7 @@ package storage
 
 import (
 	"fmt"
-	"math"
-	"math/big"
-	"strings"
 
-	tradecommon "github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
 )
@@ -60,32 +56,8 @@ func (inf *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.
 	return res, nil
 }
 
-// calculateFiatAmount returns new TradeLog with fiat amount calculated.
-// * For ETH-Token or Token-ETH conversions, the ETH amount is taken from ExecuteTrade event.
-// * For Token-Token, the ETH amount is reading from EtherReceival event.
-func calculateFiatAmount(tradeLog tradecommon.TradeLog, rate float64) tradecommon.TradeLog {
-	ethAmount := new(big.Float)
-
-	if strings.ToLower(ethAddress) == strings.ToLower(tradeLog.SrcAddress.String()) {
-		// ETH-Token
-		ethAmount.SetInt(tradeLog.SrcAmount)
-	} else if strings.ToLower(ethAddress) == strings.ToLower(tradeLog.DestAddress.String()) {
-		// Token-ETH
-		ethAmount.SetInt(tradeLog.DestAmount)
-	} else if tradeLog.EtherReceivalAmount != nil {
-		// Token-Token
-		ethAmount.SetInt(tradeLog.EtherReceivalAmount)
-	}
-
-	// fiat amount = ETH amount * rate
-	ethAmount = ethAmount.Mul(ethAmount, new(big.Float).SetFloat64(rate))
-	ethAmount.Quo(ethAmount, new(big.Float).SetFloat64(math.Pow10(int(ethDecimals))))
-	tradeLog.FiatAmount, _ = ethAmount.Float64()
-
-	return tradeLog
-}
-
 //IsExceedDailyLimit return if add address trade over daily limit or not
+//TODO: change eth_receival_amount to eth_amount when it is added
 func (inf *InfluxStorage) IsExceedDailyLimit(address string, dailyLimit float64) (bool, error) {
 	query := fmt.Sprintf(`SELECT SUM(amount) as daily_fiat_amount FROM (SELECT eth_receival_amount*eth_usd_rate as amount 
 FROM trades WHERE user_addr='%s' AND time <= now() AND time >= (now()-24h))`,

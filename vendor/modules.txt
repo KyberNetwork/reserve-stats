@@ -5,8 +5,12 @@ github.com/KyberNetwork/tokenrate/coingecko
 github.com/aristanetworks/goarista/monotime
 # github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
 github.com/asaskevich/govalidator
+# github.com/boltdb/bolt v1.3.1
+github.com/boltdb/bolt
 # github.com/btcsuite/btcd v0.0.0-20181013004428-67e573d211ac
 github.com/btcsuite/btcd/btcec
+# github.com/davecgh/go-spew v1.1.1
+github.com/davecgh/go-spew/spew
 # github.com/deckarep/golang-set v1.7.1
 github.com/deckarep/golang-set
 # github.com/ethereum/go-ethereum v1.8.17 => github.com/favadi/go-ethereum v1.8.16-fork
@@ -76,10 +80,14 @@ github.com/oschwald/geoip2-golang
 github.com/oschwald/maxminddb-golang
 # github.com/pborman/uuid v1.2.0
 github.com/pborman/uuid
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
 # github.com/rjeczalik/notify v0.9.2
 github.com/rjeczalik/notify
 # github.com/rs/cors v1.6.0
 github.com/rs/cors
+# github.com/stretchr/testify v1.2.2
+github.com/stretchr/testify/assert
 # github.com/syndtr/goleveldb v0.0.0-20181012014443-6b91fda63f2e
 github.com/syndtr/goleveldb/leveldb
 github.com/syndtr/goleveldb/leveldb/errors

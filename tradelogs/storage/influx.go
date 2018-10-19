@@ -121,12 +121,24 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		return nil, err
 	}
 
+	var ethAmount float64
+
+	if log.SrcAddress == blockchain.ETHAddr {
+		ethAmount = srcAmount
+	} else if log.DestAddress == blockchain.ETHAddr {
+		ethAmount = dstAmount
+	} else {
+		ethAmount = ethReceivalAmount
+	}
+
 	fields := map[string]interface{}{
 		"eth_receival_amount": ethReceivalAmount,
 
 		"src_amount":  srcAmount,
 		"dst_amount":  dstAmount,
 		"fiat_amount": log.FiatAmount,
+
+		"eth_amount": ethAmount,
 	}
 
 	tradePoint, err := client.NewPoint("trades", tags, fields, log.Timestamp)

@@ -105,7 +105,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, rate tokenrate.ETH
 		"country": log.Country,
 		"ip":      log.IP,
 
-		"provider": rate.Provider,
+		"eth_rate_provider": rate.Provider,
 	}
 
 	ethReceivalAmount, err := is.amountFmt.FormatAmount(blockchain.ETHAddr, log.EtherReceivalAmount)
@@ -128,7 +128,6 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, rate tokenrate.ETH
 
 		"src_amount":   srcAmount,
 		"dst_amount":   dstAmount,
-		"fiat_amount":  log.FiatAmount,
 		"eth_usd_rate": rate.Rate,
 	}
 

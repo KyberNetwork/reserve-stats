@@ -8,11 +8,11 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
+	"github.com/influxdata/influxdb/client/v2"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
-	"go.uber.org/zap"
 	"github.com/stretchr/testify/assert"
-	"github.com/influxdata/influxdb/client/v2"
+	"go.uber.org/zap"
 )
 
 const (

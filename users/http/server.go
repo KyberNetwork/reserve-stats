@@ -15,28 +15,28 @@ import (
 )
 
 //NewServer return new server instance
-func NewServer(sugar *zap.SugaredLogger, rateProvider tokenrate.ETHUSDRateProvider, 
+func NewServer(sugar *zap.SugaredLogger, rateProvider tokenrate.ETHUSDRateProvider,
 	storage storage.Interface, host string,
 	influxStorage *storage.InfluxStorage) *Server {
 	r := gin.Default()
 	return &Server{
-		sugar:        sugar,
-		rateProvider: newCachedRateProvider(sugar, rateProvider, time.Hour),
-		storage:      storage,
-		r:            r,
-		host:         host,
+		sugar:         sugar,
+		rateProvider:  newCachedRateProvider(sugar, rateProvider, time.Hour),
+		storage:       storage,
+		r:             r,
+		host:          host,
 		influxStorage: influxStorage,
 	}
 }
 
 //Server struct to represent a http server service
 type Server struct {
-	sugar        *zap.SugaredLogger
-	r            *gin.Engine
-	host         string
-	rateProvider tokenrate.ETHUSDRateProvider
-	storage      storage.Interface
-	influxStorage       *storage.InfluxStorage
+	sugar         *zap.SugaredLogger
+	r             *gin.Engine
+	host          string
+	rateProvider  tokenrate.ETHUSDRateProvider
+	storage       storage.Interface
+	influxStorage *storage.InfluxStorage
 }
 
 //getTransactionLimit returns cap limit of a user.
@@ -68,7 +68,7 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 	uc := common.NewUserCap(kyced)
 	txLimit := blockchain.EthToWei(uc.TxLimit / rate)
 	rich, err := s.influxStorage.IsExceedDailyLimit(address, uc.DailyLimit)
-	s.sugar.Debugw("what are you", "rich", rich)	
+	s.sugar.Debugw("what are you", "rich", rich)
 	if err != nil {
 		s.sugar.Debugw("influx query error", "error", err.Error())
 		c.JSON(
@@ -76,14 +76,14 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 			gin.H{
 				"error": err.Error(),
 			},
-		)	
+		)
 		return
 	}
 
 	c.JSON(
 		http.StatusOK,
 		gin.H{
-			"cap": txLimit,
+			"cap":   txLimit,
 			"rich":  rich,
 			"kyced": kyced,
 		},

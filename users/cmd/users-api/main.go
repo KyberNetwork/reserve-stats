@@ -7,15 +7,15 @@ import (
 	"os"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/users/http"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 	"github.com/urfave/cli"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 )
 
 const (
 	defaultDB = "users"
-	dbName = "trade_logs"
+	dbName    = "trade_logs"
 )
 
 func main() {
@@ -74,7 +74,7 @@ func run(c *cli.Context) error {
 
 	// init stats
 	//userStats := stats.NewUserStats(coingecko.New(), userDB)
-	server := http.NewServer(sugar, coingecko.New(), userDB, 
-	httputil.NewHTTPAddressFromContext(c), influxStorage)
+	server := http.NewServer(sugar, coingecko.New(), userDB,
+		httputil.NewHTTPAddressFromContext(c), influxStorage)
 	return server.Run()
 }

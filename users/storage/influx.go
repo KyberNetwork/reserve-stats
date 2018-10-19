@@ -87,12 +87,9 @@ func calculateFiatAmount(tradeLog tradecommon.TradeLog, rate float64) tradecommo
 
 //IsExceedDailyLimit return if add address trade over daily limit or not
 func (inf *InfluxStorage) IsExceedDailyLimit(address string, dailyLimit float64) (bool, error) {
-	query := fmt.Sprintf(`SELECT SUM(eth_receival_amount*eth_usd_rate) as daily_fiat_amount
-	FROM trades WHERE user_addr='%s' AND time <= now() AND time >= (now()-24h)`,
+	query := fmt.Sprintf(`SELECT SUM(amount) as daily_fiat_amount FROM (SELECT eth_receival_amount*eth_usd_rate as amount 
+FROM trades WHERE user_addr='%s' AND time <= now() AND time >= (now()-24h))`,
 		address)
-	// 	query := fmt.Sprintf(`SELECT SUM(eth_receival_amount) as daily_fiat_amount
-	// FROM trades WHERE user_addr='%s'`,
-	// 		address)
 	res, err := inf.queryDB(inf.influxClient, query)
 
 	inf.sugar.Debugw("result from query", "result", res)
@@ -100,6 +97,9 @@ func (inf *InfluxStorage) IsExceedDailyLimit(address string, dailyLimit float64)
 	if err != nil {
 		return false, err
 	}
-	userTradeAmount := (res[0].Series[0].Values[0][1]).(float64)
+	var userTradeAmount float64
+	if len(res[0].Series) > 0 {
+		userTradeAmount = (res[0].Series[0].Values[0][1]).(float64)
+	}
 	return userTradeAmount >= dailyLimit, nil
 }

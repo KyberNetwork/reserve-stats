@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	boltDataSourceFlag = "database"
+	boltDataSourceFlag = "legacy-database"
 	defaultDB          = "users"
 )
 
@@ -22,13 +22,14 @@ func main() {
 	app.Version = "0.0.1"
 
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
-	app.Flags = append(app.Flags, []cli.Flag{
+	app.Flags = append(app.Flags,
 		cli.StringFlag{
 			Name:  boltDataSourceFlag,
 			Usage: "bolt db file",
 			Value: "users.db",
 		},
-	}...)
+	)
+
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -36,13 +37,31 @@ func main() {
 }
 
 func run(c *cli.Context) error {
+	logger, err := libapp.NewLogger(c)
+	if err != nil {
+		return err
+	}
+	defer logger.Sync()
+
+	sugar := logger.Sugar()
+
+	var legacyDBPath = c.String(boltDataSourceFlag)
+
+	f, err := os.Open(legacyDBPath)
+	if err != nil {
+		return err
+	}
+	if err := f.Close(); err != nil {
+		return err
+	}
+
 	db, err := libapp.NewDBFromContext(c)
 	if err != nil {
 		return err
 	}
-	dbMigrate, err := migration.NewMigrateStorage(c.String(boltDataSourceFlag), db)
+	dbMigration, err := migration.NewDBMigration(sugar, legacyDBPath, db)
 	if err != nil {
 		return err
 	}
-	return dbMigrate.MigrateDB()
+	return dbMigration.Migrate()
 }

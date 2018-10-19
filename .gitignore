@@ -21,4 +21,5 @@ tokeninfo/cmd/output.json
 tradelogs/cmd/trade-logs-crawler/trade-logs-crawler
 reserverates/cmd/trade-rates-api/trade-rates-api
 reserverates/cmd/trade-rates-crawler/trade-rates-crawler
-
+users/cmd/users-api/users-api
+users/cmd/users-migration/users-migration

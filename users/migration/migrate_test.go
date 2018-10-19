@@ -2,6 +2,7 @@ package migration
 
 import (
 	"fmt"
+	"go.uber.org/zap"
 	"testing"
 
 	"github.com/boltdb/bolt"
@@ -26,6 +27,13 @@ func (dbm *DBMigration) deleteTable(tableName string) error {
 }
 
 func newTestMigrateDB() (*DBMigration, error) {
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		return nil, err
+	}
+	defer logger.Sync()
+	sugar := logger.Sugar()
+
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		postgresHost,
 		postgresPort,
@@ -69,7 +77,7 @@ func newTestMigrateDB() (*DBMigration, error) {
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
-	return &DBMigration{boltDB, postgres}, nil
+	return &DBMigration{sugar, boltDB, postgres}, nil
 }
 
 func tearDown(t *testing.T, dbMigration *DBMigration) {
@@ -86,5 +94,5 @@ func TestMigrateDB(t *testing.T) {
 
 	defer tearDown(t, dbMigration)
 
-	assert.Nil(t, dbMigration.MigrateDB(), "db should be migrate successfully")
+	assert.Nil(t, dbMigration.Migrate(), "db should be migrate successfully")
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"log"
 	"os"
 
@@ -11,10 +12,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/http"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
-)
-
-const (
-	addrFlag = "addr"
 )
 
 func main() {
@@ -41,8 +38,6 @@ func main() {
 			return err
 		}
 
-		serverAddr := c.String(addrFlag)
-
 		influxStorage, err := storage.NewInfluxStorage(
 			sugar,
 			"trade_logs",
@@ -53,19 +48,16 @@ func main() {
 			return err
 		}
 
-		api := http.NewServer(influxStorage, serverAddr)
-		api.Start()
+		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c))
+		err = api.Start()
+		if err != nil {
+			return err
+		}
 
 		return nil
 	}
 
-	app.Flags = append(app.Flags,
-		cli.StringFlag{
-			Name:   addrFlag,
-			Usage:  "Trade logs server address",
-			EnvVar: "TRADE_LOGS_SERVER_ADDR",
-		},
-	)
+	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.TradeLogsPort)...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
 

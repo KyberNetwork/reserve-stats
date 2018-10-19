@@ -12,4 +12,7 @@ const (
 
 	// ReserveRatesPort is the port number of Reserve Rates API.
 	ReserveRatesPort HTTPPort = 8003
+
+	// TradeLogsPort is the port number of TradeLogs service.
+	TradeLogsPort HTTPPort = 8004
 )

@@ -11,14 +11,12 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+.DS_Store
+
 .idea/
 
 data/
 
 */cmd/cmd
+*/cmd/*/*
 tokeninfo/cmd/output.json
-.DS_Store
-tradelogs/cmd/trade-logs-crawler/trade-logs-crawler
-reserverates/cmd/trade-rates-api/trade-rates-api
-reserverates/cmd/trade-rates-crawler/trade-rates-crawler
-

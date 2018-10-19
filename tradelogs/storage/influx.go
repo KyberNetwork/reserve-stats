@@ -86,7 +86,8 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 		to.Format(time.RFC3339),
 	)
 
-	is.sugar.Debug(q)
+	logger := is.sugar.With("from", from, "to", to)
+	logger.Debug("prepared query statement", "query", q)
 
 	res, err := is.queryDB(is.influxClient, q)
 	if err != nil {

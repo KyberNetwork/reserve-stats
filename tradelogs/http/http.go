@@ -15,7 +15,6 @@ const limitedTimeRange = 24 * time.Hour
 // Server serve trade logs through http endpoint
 type Server struct {
 	storage storage.Interface
-	router  *gin.Engine
 	addr    string
 }
 
@@ -66,15 +65,19 @@ func (ha *Server) getTradeLogs(c *gin.Context) {
 	)
 }
 
+func (ha *Server) setupRouter() *gin.Engine {
+	r := gin.Default()
+	r.GET("/trade-logs", ha.getTradeLogs)
+	return r
+}
+
 // Start running http server to serve trade logs data
 func (ha *Server) Start() error {
-	ha.router.GET("/trade-logs", ha.getTradeLogs)
-
-	return ha.router.Run(ha.addr)
+	r := ha.setupRouter()
+	return r.Run(ha.addr)
 }
 
 // NewServer returns an instance of HttpApi to serve trade logs
 func NewServer(storage storage.Interface, addr string) *Server {
-	r := gin.Default()
-	return &Server{storage: storage, router: r, addr: addr}
+	return &Server{storage: storage, addr: addr}
 }

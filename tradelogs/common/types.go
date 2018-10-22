@@ -42,3 +42,10 @@ type TradeLog struct {
 	IP      string `json:"ip"`
 	Country string `json:"country"`
 }
+
+// VolumeStats struct holds all the volume fields of volume in a specfic time
+type VolumeStats struct {
+	ETHAmount float64 `json:"eth_amount"`
+	USDAmount float64 `json:"usd_amount"`
+	Volume    float64 `json:"volume"`
+}

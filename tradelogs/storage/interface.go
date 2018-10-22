@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"math/big"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 
 // Interface represent a storage for TradeLogs data
 type Interface interface {
-	SaveTradeLogs([]common.TradeLog) error
+	SaveTradeLogs(logs []common.TradeLog, rates []tokenrate.ETHUSDRate) error
 	LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error)
 }
 

@@ -3,20 +3,22 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 type mockStorage struct {
 }
 
-func (s *mockStorage) SaveTradeLogs([]common.TradeLog) error {
+func (s *mockStorage) SaveTradeLogs(logs []common.TradeLog, rates []tokenrate.ETHUSDRate) error {
 	return nil
 }
 

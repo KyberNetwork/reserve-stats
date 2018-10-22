@@ -11,6 +11,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
+
 	influxModel "github.com/influxdata/influxdb/models"
 )
 

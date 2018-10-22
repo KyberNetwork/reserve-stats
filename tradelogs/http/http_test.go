@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"fmt"
+	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -26,12 +27,22 @@ func (s *mockStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, erro
 	return nil, nil
 }
 
-func newTestServer() *Server {
-	return &Server{storage: &mockStorage{}}
+func newTestServer() (*Server, error) {
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		return nil, err
+	}
+	defer logger.Sync()
+	sugar := logger.Sugar()
+
+	return &Server{storage: &mockStorage{}, sugar: sugar}, nil
 }
 
 func TestTradeLogsRoute(t *testing.T) {
-	s := newTestServer()
+	s, err := newTestServer()
+	if err != nil {
+		t.Fatal(err)
+	}
 	router := s.setupRouter()
 
 	var tests = []httputil.HTTPTestCase{

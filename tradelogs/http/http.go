@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"go.uber.org/zap"
 	"net/http"
 	"time"
 
@@ -16,6 +17,7 @@ const limitedTimeRange = 24 * time.Hour
 type Server struct {
 	storage storage.Interface
 	addr    string
+	sugar   *zap.SugaredLogger
 }
 
 type tradeLogsQuery struct {
@@ -52,6 +54,7 @@ func (ha *Server) getTradeLogs(c *gin.Context) {
 
 	tradeLogs, err := ha.storage.LoadTradeLogs(fromTime, toTime)
 	if err != nil {
+		ha.sugar.Errorw(err.Error(), "fromTime", fromTime, "toTime", toTime)
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{"error": err.Error()},
@@ -78,6 +81,6 @@ func (ha *Server) Start() error {
 }
 
 // NewServer returns an instance of HttpApi to serve trade logs
-func NewServer(storage storage.Interface, addr string) *Server {
-	return &Server{storage: storage, addr: addr}
+func NewServer(storage storage.Interface, addr string, sugar *zap.SugaredLogger) *Server {
+	return &Server{storage: storage, addr: addr, sugar: sugar}
 }

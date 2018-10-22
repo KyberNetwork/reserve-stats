@@ -48,7 +48,7 @@ func main() {
 			return err
 		}
 
-		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c))
+		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c), sugar)
 		err = api.Start()
 		if err != nil {
 			return err

@@ -57,9 +57,8 @@ func (inf *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.
 }
 
 //IsExceedDailyLimit return if add address trade over daily limit or not
-//TODO: change eth_receival_amount to eth_amount when it is added
 func (inf *InfluxStorage) IsExceedDailyLimit(address string, dailyLimit float64) (bool, error) {
-	query := fmt.Sprintf(`SELECT SUM(amount) as daily_fiat_amount FROM (SELECT eth_receival_amount*eth_usd_rate as amount 
+	query := fmt.Sprintf(`SELECT SUM(amount) as daily_fiat_amount FROM (SELECT eth_amount*eth_usd_rate as amount 
 FROM trades WHERE user_addr='%s' AND time <= now() AND time >= (now()-24h))`,
 		address)
 	res, err := inf.queryDB(inf.influxClient, query)

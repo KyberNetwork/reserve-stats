@@ -79,7 +79,7 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 		`
 		time, block_number, tx_hash, 
 		eth_receival_sender, eth_receival_amount, 
-		user_addr, src_addr, dst_addr, src_amount, dst_amount, fiat_amount, 		
+		user_addr, src_addr, dst_addr, src_amount, dst_amount, (eth_amount * eth_usd_rate) as fiat_amount, 		
 		ip, country
 		`,
 		from.Format(time.RFC3339),

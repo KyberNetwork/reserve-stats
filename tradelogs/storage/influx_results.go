@@ -95,7 +95,7 @@ func (is *InfluxStorage) rowToWalletFee(row []interface{}) (ethereum.Hash, commo
 // The query is:
 // SELECT time, block_number, tx_hash,
 // eth_receival_sender, eth_receival_amount,
-// user_addr, src_addr, dst_addr, src_amount, dst_amount, fiat_amount,
+// user_addr, src_addr, dst_addr, src_amount, dst_amount, (eth_amount * eth_usd_rate) as fiat_amount,
 // ip, country FROM trades WHERE_clause
 func (is *InfluxStorage) rowToTradeLog(row []interface{},
 	burnFeesByTxHash map[ethereum.Hash][]common.BurnFee,
@@ -165,11 +165,10 @@ func (is *InfluxStorage) rowToTradeLog(row []interface{},
 		return tradeLog, fmt.Errorf("failed to convert dst_amount: %s", err)
 	}
 
-	// TODO need to update query, get (eth_usd_rate * eth_amount) as fiat_amount
-	// fiatAmount, err := influxdb.GetFloat64FromInterface(row[10])
-	// if err != nil {
-	// 	return tradeLog, fmt.Errorf("failed to get fiat_amount: %s", err)
-	// }
+	fiatAmount, err := influxdb.GetFloat64FromInterface(row[10])
+	if err != nil {
+		return tradeLog, fmt.Errorf("failed to get fiat_amount: %s", err)
+	}
 
 	ip, ok := row[11].(string)
 	if !ok {
@@ -194,7 +193,7 @@ func (is *InfluxStorage) rowToTradeLog(row []interface{},
 		DestAddress: dstAddress,
 		SrcAmount:   srcAmountInWei,
 		DestAmount:  dstAmountInWei,
-		// FiatAmount:  fiatAmount,
+		FiatAmount:  fiatAmount,
 
 		BurnFees:   burnFeesByTxHash[txHash],
 		WalletFees: walletFeesByTxHash[txHash],

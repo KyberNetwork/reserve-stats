@@ -6,7 +6,6 @@ import (
 	"log"
 	"math/big"
 	"os"
-	"sort"
 	"testing"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -89,10 +88,6 @@ func getSampleRates(tradeLogs []common.TradeLog) ([]tokenrate.ETHUSDRate, error)
 	return rates, nil
 }
 
-func sortTradeLogsByTime(tradeLogs []common.TradeLog) {
-	sort.Slice(tradeLogs, func(i, j int) bool { return tradeLogs[i].Timestamp.Before(tradeLogs[j].Timestamp) })
-}
-
 func TestSaveTradeLogs(t *testing.T) {
 	tradeLogs, err := getSampleTradeLogs("testdata/trade_logs.json")
 	rates, err := getSampleRates(tradeLogs)
@@ -101,19 +96,6 @@ func TestSaveTradeLogs(t *testing.T) {
 	}
 	if err = testStorage.SaveTradeLogs(tradeLogs, rates); err != nil {
 		t.Error("get unexpected error when save trade logs", "err", err.Error())
-	}
-
-	// validate number of records inserted
-	sortTradeLogsByTime(tradeLogs)
-	fromTime := tradeLogs[0].Timestamp
-	toTime := tradeLogs[len(tradeLogs)-1].Timestamp
-
-	savedTradeLogs, err := testStorage.LoadTradeLogs(fromTime, toTime)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(tradeLogs) != len(savedTradeLogs) {
-		t.Errorf("wrong number of trade log returned, got: %d, want: %d.", len(savedTradeLogs), len(tradeLogs))
 	}
 }
 

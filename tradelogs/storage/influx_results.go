@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"strconv"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -104,70 +105,71 @@ func (is *InfluxStorage) rowToTradeLog(row []interface{},
 
 	timestamp, err := influxdb.GetTimeFromInterface(row[0])
 	if err != nil {
-		return tradeLog, err
+		return tradeLog, fmt.Errorf("failed to get timestamp: %s", err)
 	}
 
 	blockNumber, err := strconv.ParseUint(row[1].(string), 10, 64)
 
 	txHash, err := influxdb.GetTxHashFromInterface(row[2])
 	if err != nil {
-		return tradeLog, err
+		return tradeLog, fmt.Errorf("failed to get tx_hash: %s", err)
 	}
 
 	ethReceivalAddr, err := influxdb.GetAddressFromInterface(row[3])
 	if err != nil {
-		return tradeLog, err
+		return tradeLog, fmt.Errorf("failed to get eth_receival_addr: %s", err)
 	}
 
 	humanizedEthReceival, err := influxdb.GetFloat64FromInterface(row[4])
 	if err != nil {
-		return tradeLog, err
+		return tradeLog, fmt.Errorf("failed to get eth_receival_amount: %s", err)
 	}
 
 	ethReceivalAmountInWei, err := is.amountFmt.ToWei(blockchain.ETHAddr, humanizedEthReceival)
 	if err != nil {
-		return tradeLog, err
+		return tradeLog, fmt.Errorf("failed to convert eth_receival_amount: %s", err)
 	}
 
 	userAddr, err := influxdb.GetAddressFromInterface(row[5])
 	if err != nil {
-		return tradeLog, err
+		return tradeLog, fmt.Errorf("failed to get user_addr: %s", err)
 	}
 
 	srcAddress, err := influxdb.GetAddressFromInterface(row[6])
 	if err != nil {
-		return tradeLog, err
+		return tradeLog, fmt.Errorf("failed to get src_addr: %s", err)
 	}
 
 	humanizedSrcAmount, err := influxdb.GetFloat64FromInterface(row[8])
 	if err != nil {
-		return tradeLog, err
+		return tradeLog, fmt.Errorf("failed to get src_amount: %s", err)
 	}
 
 	srcAmountInWei, err := is.amountFmt.ToWei(srcAddress, humanizedSrcAmount)
 	if err != nil {
-		return tradeLog, err
+		return tradeLog, fmt.Errorf("failed to convert src_amount: %s", err)
 	}
 
 	dstAddress, err := influxdb.GetAddressFromInterface(row[7])
 	if err != nil {
-		return tradeLog, err
+		return tradeLog, fmt.Errorf("failed to get dst_addr: %s", err)
 	}
 
 	humanizedDstAmount, err := influxdb.GetFloat64FromInterface(row[9])
 	if err != nil {
-		return tradeLog, err
+		return tradeLog, fmt.Errorf("failed to get dst_amount: %s", err)
 	}
 
 	dstAmountInWei, err := is.amountFmt.ToWei(dstAddress, humanizedDstAmount)
 	if err != nil {
-		return tradeLog, err
+		return tradeLog, fmt.Errorf("failed to convert dst_amount: %s", err)
 	}
 
-	fiatAmount, err := influxdb.GetFloat64FromInterface(row[10])
-	if err != nil {
-		return tradeLog, err
-	}
+	// TODO need to update query, get (eth_usd_rate * eth_amount) as fiat_amount
+	// fiatAmount, err := influxdb.GetFloat64FromInterface(row[10])
+	// if err != nil {
+	// 	return tradeLog, fmt.Errorf("failed to get fiat_amount: %s", err)
+	// }
 
 	ip, ok := row[11].(string)
 	if !ok {
@@ -192,7 +194,7 @@ func (is *InfluxStorage) rowToTradeLog(row []interface{},
 		DestAddress: dstAddress,
 		SrcAmount:   srcAmountInWei,
 		DestAmount:  dstAmountInWei,
-		FiatAmount:  fiatAmount,
+		// FiatAmount:  fiatAmount,
 
 		BurnFees:   burnFeesByTxHash[txHash],
 		WalletFees: walletFeesByTxHash[txHash],

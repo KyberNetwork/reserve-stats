@@ -9,18 +9,8 @@ github.com/asaskevich/govalidator
 github.com/boltdb/bolt
 # github.com/btcsuite/btcd v0.0.0-20181013004428-67e573d211ac
 github.com/btcsuite/btcd/btcec
-<<<<<<< HEAD
-<<<<<<< HEAD
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-=======
-# github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd
-github.com/codahale/hdrhistogram
->>>>>>> 7db7141... add influx storage and check rich guy
-=======
-# github.com/davecgh/go-spew v1.1.1
-github.com/davecgh/go-spew/spew
->>>>>>> 808f52c... update vendor and add calculate fiat amount
 # github.com/deckarep/golang-set v1.7.1
 github.com/deckarep/golang-set
 # github.com/ethereum/go-ethereum v1.8.17 => github.com/favadi/go-ethereum v1.8.16-fork
@@ -90,18 +80,8 @@ github.com/oschwald/geoip2-golang
 github.com/oschwald/maxminddb-golang
 # github.com/pborman/uuid v1.2.0
 github.com/pborman/uuid
-<<<<<<< HEAD
-<<<<<<< HEAD
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
-=======
-# github.com/pkg/errors v0.8.0
-github.com/pkg/errors
->>>>>>> 7db7141... add influx storage and check rich guy
-=======
-# github.com/pmezard/go-difflib v1.0.0
-github.com/pmezard/go-difflib/difflib
->>>>>>> 808f52c... update vendor and add calculate fiat amount
 # github.com/rjeczalik/notify v0.9.2
 github.com/rjeczalik/notify
 # github.com/rs/cors v1.6.0

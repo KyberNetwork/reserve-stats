@@ -57,6 +57,12 @@ func TestUserHTTPServer(t *testing.T) {
 	})
 	assert.Nil(t, err, "influx client should be created successfully")
 
+	// create test db
+	_, err = influxClient.Query(client.Query{
+		Command: "CREATE DATABASE test_db",
+	})
+	assert.Nil(t, err, "influx should create database successfully")
+
 	influxStorage, err := storage.NewInfluxStorage(
 		sugar,
 		"test_db",

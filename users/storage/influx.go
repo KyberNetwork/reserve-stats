@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/influxdata/influxdb/client/v2"
@@ -21,17 +22,7 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 		influxClient: influxClient,
 		sugar:        sugar,
 	}
-	err := storage.createDB()
-	if err != nil {
-		return nil, err
-	}
 	return storage, nil
-}
-
-// createDB creates the database will be used for storing trade logs measurements.
-func (inf *InfluxStorage) createDB() error {
-	_, err := inf.queryDB(inf.influxClient, fmt.Sprintf("CREATE DATABASE %s", inf.dbName))
-	return err
 }
 
 // queryDB convenience function to query the database
@@ -58,14 +49,29 @@ FROM trades WHERE user_addr='%s' AND time <= now() AND time >= (now()-24h))`,
 		address)
 	res, err := inf.queryDB(inf.influxClient, query)
 
-	inf.sugar.Debugw("result from query", "result", res)
-
 	if err != nil {
+		inf.sugar.Debugw("error from query", "error", err)
 		return false, err
 	}
+	inf.sugar.Debugw("result from query", "result", res)
+
 	var userTradeAmount float64
+	var ok bool
 	if len(res[0].Series) > 0 {
-		userTradeAmount = (res[0].Series[0].Values[0][1]).(float64)
+		if len(res[0].Series[0].Values) > 0 {
+			userTradeAmount, ok = (res[0].Series[0].Values[0][1]).(float64)
+			if !ok {
+				inf.sugar.Debugw("values second should be float", "value", res[0].Series[0].Values[0][1])
+				return false, errors.New("trade amount values is not a float")
+			}
+		} else {
+			inf.sugar.Debugw("return values from influx", "values", res[0].Series[0].Values)
+			return false, nil
+		}
+	} else {
+		inf.sugar.Debugw("user address was not found from trade db", "user address", address)
+		return false, nil
 	}
+	inf.sugar.Debugw("user rich is", "address", address, "user trade amount", userTradeAmount, "daily limit", dailyLimit)
 	return userTradeAmount >= dailyLimit, nil
 }

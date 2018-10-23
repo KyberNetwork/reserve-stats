@@ -41,10 +41,10 @@ func (cc *CachedClient) Tokens() ([]Token, error) {
 	return tokens, nil
 }
 
-// Token returns the configured Token from core API.
+// token returns the configured Token from core API.
 // If token not found, trying to purging the cache and
 // retry before returning an error.
-func (cc *CachedClient) Token(address common.Address) (Token, error) {
+func (cc *CachedClient) token(address common.Address) (Token, error) {
 	logger := cc.sugar.With(
 		"func", "lib/core/CachedClient.Token",
 		"address", address.Hex(),
@@ -75,12 +75,22 @@ func (cc *CachedClient) Token(address common.Address) (Token, error) {
 	return Token{}, errors.New("token not found")
 }
 
-// FormatAmount formats the given amount in wei to human friendly
+// FromWei formats the given amount in wei to human friendly
 // number with preconfigured token decimals.
-func (cc *CachedClient) FormatAmount(address common.Address, amount *big.Int) (float64, error) {
-	token, err := cc.Token(address)
+func (cc *CachedClient) FromWei(address common.Address, amount *big.Int) (float64, error) {
+	token, err := cc.token(address)
 	if err != nil {
 		return 0, err
 	}
-	return token.FormatAmount(amount), nil
+	return token.FromWei(amount), nil
+}
+
+// ToWei return the given human friendly number to wei unit.
+func (cc *CachedClient) ToWei(address common.Address, amount float64) (*big.Int, error) {
+	token, err := cc.token(address)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	return token.ToWei(amount), nil
 }

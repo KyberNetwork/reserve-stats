@@ -24,7 +24,7 @@ const (
 func newTestCrawler(sugar *zap.SugaredLogger, dbInstance storage.ReserveRatesStorage) (*ResreveRatesCrawler, error) {
 	var (
 		addrs       = []ethereum.Address{ethereum.HexToAddress(testRsvAddress)}
-		sett        = core.MockClient{}
+		sett        = core.NewMockClient()
 		wrpContract = contracts.MockVersionedWrapper{}
 		bltimeRsver = blockchain.MockBlockTimeResolve{}
 	)
@@ -32,7 +32,7 @@ func newTestCrawler(sugar *zap.SugaredLogger, dbInstance storage.ReserveRatesSto
 	return &ResreveRatesCrawler{
 		wrapperContract: &wrpContract,
 		Addresses:       addrs,
-		tokenSetting:    &sett,
+		tokenSetting:    sett,
 		sugar:           sugar,
 		blkTimeRsv:      &bltimeRsver,
 		db:              dbInstance,

@@ -129,7 +129,6 @@ func updateTradeLogs(allLogs []common.TradeLog, logItem types.Log, ts time.Time)
 		tradeLog = common.TradeLog{
 			BlockNumber:     logItem.BlockNumber,
 			TransactionHash: logItem.TxHash,
-			Index:           logItem.Index,
 			Timestamp:       ts,
 		}
 	}

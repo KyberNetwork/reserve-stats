@@ -1,6 +1,9 @@
 package core
 
-import "math/big"
+import (
+	"math"
+	"math/big"
+)
 
 // ETHToken is the configuration of Ethereum, will never be changed.
 var ETHToken = Token{
@@ -22,14 +25,14 @@ type Token struct {
 	//LastActivationChange uint64 `json:"last_activation_change"`
 }
 
-// FormatAmount converts the given amount in Wei with following formatting rule.
+// FromWei converts the given amount in Wei with following formatting rule.
 // - Decimals: 3
-//   FormatAmount(1100) = 1.1
+//   FromWei(1100) = 1.1
 // - Decimals: 2
-//   FormatAmount(1100) = 11
+//   FromWei(1100) = 11
 // - Decimals: 5
-//   FormatAmount(1100) = 0.11
-func (t *Token) FormatAmount(amount *big.Int) float64 {
+//   FromWei(1100) = 0.11
+func (t *Token) FromWei(amount *big.Int) float64 {
 	if amount == nil {
 		return 0
 	}
@@ -40,4 +43,16 @@ func (t *Token) FormatAmount(amount *big.Int) float64 {
 	res := new(big.Float).Quo(f, power)
 	result, _ := res.Float64()
 	return result
+}
+
+// ToWei return the given human friendly number to wei unit.
+func (t *Token) ToWei(amount float64) *big.Int {
+	decimals := t.Decimals
+	// 6 is our smallest precision,
+	if decimals < 6 {
+		return big.NewInt(int64(amount * math.Pow10(int(decimals))))
+	}
+
+	result := big.NewInt(int64(amount * math.Pow10(6)))
+	return result.Mul(result, big.NewInt(0).Exp(big.NewInt(10), big.NewInt(decimals-6), nil))
 }

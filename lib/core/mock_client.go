@@ -21,6 +21,7 @@ type MockClient struct {
 	tokens []Token
 }
 
+// Tokens returns all tokens of MockClient.
 func (mc *MockClient) Tokens() ([]Token, error) {
 	return mc.tokens, nil
 }
@@ -35,10 +36,13 @@ func (mc *MockClient) GetInternalTokens() ([]Token, error) {
 	return mc.tokens, nil
 }
 
+// ToWei return the given human friendly number to wei unit.
 func (mc *MockClient) ToWei(_ common.Address, _ float64) (*big.Int, error) {
 	return big.NewInt(100), nil
 }
 
+// FromWei formats the given amount in wei to human friendly
+// number with preconfigured token decimals.
 func (mc *MockClient) FromWei(_ common.Address, _ *big.Int) (float64, error) {
 	return 9.99, nil
 }

@@ -45,6 +45,7 @@ func (t *Token) FromWei(amount *big.Int) float64 {
 	return result
 }
 
+// ToWei return the given human friendly number to wei unit.
 func (t *Token) ToWei(amount float64) *big.Int {
 	decimals := t.Decimals
 	// 6 is our smallest precision,

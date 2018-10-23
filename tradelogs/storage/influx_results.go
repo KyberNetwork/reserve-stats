@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 
@@ -10,6 +11,25 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
+
+func (is *InfluxStorage) rowToAggregatedBurnFee(row []interface{}) (time.Time, float64, error) {
+	var (
+		ts      time.Time
+		burnFee float64
+	)
+
+	ts, err := influxdb.GetTimeFromInterface(row[0])
+	if err != nil {
+		return ts, burnFee, err
+	}
+
+	burnFee, err = influxdb.GetFloat64FromInterface(row[1])
+	if err != nil {
+		return ts, burnFee, err
+	}
+
+	return ts, burnFee, nil
+}
 
 // rowToBurnFee converts the result of InfluxDB query to BurnFee event
 // The query is:

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"strconv"
+	"strings"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -65,6 +66,57 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog, rates []tokenrate
 	is.sugar.Debugw("saved trade logs into influxdb", "trade logs", logs)
 
 	return nil
+}
+
+// GetAggregatedBurnFee get aggregated burn fee in a time range given the reserve address
+func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddr ethereum.Address) (map[string]float64, error) {
+	var (
+		measurement string
+	)
+	logger := is.sugar.With("from", from, "to", to, "freq", freq, "reserveAddr", reserveAddr)
+
+	switch strings.ToLower(freq) {
+	case "h":
+		measurement = "hourly_burn_fees"
+	case "d":
+		measurement = "daily_burn_fees"
+	default:
+		return nil, fmt.Errorf("invalid burn fee frequency %s", freq)
+	}
+
+	q := fmt.Sprintf(
+		`SELECT sum_amount FROM %s
+		WHERE reserve_addr = '%s' AND time >= '%s' AND time <= '%s' 
+		`,
+		measurement,
+		reserveAddr.Hex(),
+		from.Format(time.RFC3339),
+		to.Format(time.RFC3339),
+	)
+	logger.Debug("prepared query for aggregated burn fee", q)
+
+	res, err := is.queryDB(is.influxClient, q)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(res[0].Series) == 0 {
+		logger.Debug("empty aggregated burn fee result")
+		return nil, nil
+	}
+
+	result := make(map[string]float64)
+	for _, row := range res[0].Series[0].Values {
+		ts, amount, err := is.rowToAggregatedBurnFee(row)
+		if err != nil {
+			return nil, err
+		}
+
+		key := strconv.FormatInt(ts.UnixNano()/int64(time.Millisecond), 10)
+		result[key] = amount
+	}
+
+	return result, nil
 }
 
 // LoadTradeLogs return trade logs from DB

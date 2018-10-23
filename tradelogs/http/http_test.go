@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
@@ -24,6 +25,10 @@ func (s *mockStorage) SaveTradeLogs(logs []common.TradeLog, rates []tokenrate.ET
 }
 
 func (s *mockStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
+	return nil, nil
+}
+
+func (s *mockStorage) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddr ethereum.Address) (map[string]float64, error) {
 	return nil, nil
 }
 
@@ -74,6 +79,84 @@ func TestTradeLogsRoute(t *testing.T) {
 				}
 
 				assert.Contains(t, result.Error, "time range is too broad")
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, router) })
+	}
+}
+
+func TestBurnFeeRoute(t *testing.T) {
+	s, err := newTestServer()
+	if err != nil {
+		t.Fatal(err)
+	}
+	router := s.setupRouter()
+
+	var tests = []httputil.HTTPTestCase{
+		{
+			Msg:      "Test valid request",
+			Endpoint: "/burn-fee?freq=h&reserveAddr=0x63825c174ab367968EC60f061753D3bbD36A0D8F",
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusOK, resp.Code)
+
+				var result map[string]float64
+				if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+					t.Error("Could not decode result", "err", err)
+				}
+			},
+		},
+		{
+			Msg:      "Test invalid reserve address",
+			Endpoint: "/burn-fee?freq=h",
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusBadRequest, resp.Code)
+
+				var result struct {
+					Error string `json:"error"`
+				}
+				if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+					t.Error("Could not decode result", "err", err)
+				}
+
+				assert.Equal(t, "invalid reserve address", result.Error)
+			},
+		},
+		{
+			Msg:      "Test invalid frequency",
+			Endpoint: "/burn-fee?freq=invalid&reserveAddr=0x63825c174ab367968EC60f061753D3bbD36A0D8F",
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusBadRequest, resp.Code)
+
+				var result struct {
+					Error string `json:"error"`
+				}
+				if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+					t.Error("Could not decode result", "err", err)
+				}
+
+				assert.Equal(t, "invalid frequency", result.Error)
+			},
+		},
+		{
+			Msg:      "Test time range too broad",
+			Endpoint: fmt.Sprintf("/burn-fee?from=0&to=%d&freq=h&reserveAddr=0x63825c174ab367968EC60f061753D3bbD36A0D8F", time.Hour*24*180/time.Millisecond+1),
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusBadRequest, resp.Code)
+
+				var result struct {
+					Error string `json:"error"`
+				}
+				if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+					t.Error("Could not decode result", "err", err)
+				}
+
+				assert.Equal(t, "hourly frequency limit is 180 days", result.Error)
 			},
 		},
 	}

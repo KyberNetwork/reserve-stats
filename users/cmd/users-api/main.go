@@ -1,22 +1,20 @@
 package main
 
 import (
-	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/KyberNetwork/tokenrate/coingecko"
 	"log"
 	"os"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/users/http"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
+	"github.com/KyberNetwork/tokenrate/coingecko"
 	"github.com/urfave/cli"
 )
 
-const (
-	defaultDB = "users"
-	dbName    = "trade_logs"
-)
+const defaultDB = "users"
 
 func main() {
 	app := libapp.NewApp()
@@ -65,15 +63,13 @@ func run(c *cli.Context) error {
 
 	influxStorage, err := storage.NewInfluxStorage(
 		sugar,
-		dbName,
+		common.DatabaseName,
 		influxClient,
 	)
 	if err != nil {
 		return err
 	}
 
-	// init stats
-	//userStats := stats.NewUserStats(coingecko.New(), userDB)
 	server := http.NewServer(sugar, coingecko.New(), userDB,
 		httputil.NewHTTPAddressFromContext(c), influxStorage)
 	return server.Run()

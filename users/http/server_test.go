@@ -38,8 +38,12 @@ func newTestDB(sugar *zap.SugaredLogger) (*storage.UserDB, error) {
 	return storage.NewDB(sugar, db)
 }
 
-func tearDown(t *testing.T, storage *storage.UserDB) {
+func tearDown(t *testing.T, storage *storage.UserDB, influxClient client.Client) {
 	assert.Nil(t, storage.DeleteAllTables(), "database should be deleted completely")
+	_, err := influxClient.Query(client.Query{
+		Command: fmt.Sprintf("DROP DATABASE %s", "test_db"),
+	})
+	assert.Nil(t, err, "influx test db should be tear down successfully")
 }
 
 func TestUserHTTPServer(t *testing.T) {
@@ -50,12 +54,12 @@ func TestUserHTTPServer(t *testing.T) {
 	userStorage, err := newTestDB(sugar)
 	assert.Nil(t, err, "user database should be initiated successfully")
 
-	defer tearDown(t, userStorage)
-
 	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr: "http://localhost:8086",
 	})
 	assert.Nil(t, err, "influx client should be created successfully")
+
+	defer tearDown(t, userStorage, influxClient)
 
 	// create test db
 	_, err = influxClient.Query(client.Query{
@@ -241,6 +245,12 @@ func TestUserHTTPServer(t *testing.T) {
 				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
 				Method:   http.MethodGet,
 				Assert:   expectNonKYCed,
+			},
+			{
+				Msg:      "address have not trade, rich is false",
+				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
+				Method:   http.MethodGet,
+				Assert:   expectRichStatus,
 			},
 		}
 	)

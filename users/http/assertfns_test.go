@@ -9,7 +9,8 @@ import (
 )
 
 type userResponse struct {
-	KYC bool `json:"kyced"`
+	KYC  bool `json:"kyced"`
+	Rich bool `json:"rich"`
 }
 
 // expectSuccess asserts that given response is a success response.
@@ -32,6 +33,20 @@ func expectKYCStatus(t *testing.T, resp *httptest.ResponseRecorder, kyc bool) {
 	}
 	if decoded.KYC != kyc {
 		t.Errorf("wrong kyc status, expected: %t, got: %t", kyc, decoded.KYC)
+	}
+}
+
+func expectRichStatus(t *testing.T, resp *httptest.ResponseRecorder) {
+	t.Helper()
+	if resp.Code != http.StatusOK {
+		t.Fatalf("wrong return code, expected: %d, got: %d", http.StatusOK, resp.Code)
+	}
+	decoded := &userResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(decoded); err != nil {
+		t.Fatal(err)
+	}
+	if decoded.Rich {
+		t.Errorf("wrong kyc statuc, expected %t, got: %t", false, decoded.Rich)
 	}
 }
 

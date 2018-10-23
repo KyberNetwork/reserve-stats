@@ -3,6 +3,8 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 	"net/http"
 	"strconv"
 	"time"
@@ -116,6 +118,39 @@ func (c *Client) getTokens(endpoint string) ([]Token, error) {
 		return nil, err
 	}
 	return tokenReply.Data, nil
+}
+
+// FromWei formats the given amount in wei to human friendly
+// number with preconfigured token decimals.
+func (c *Client) FromWei(address common.Address, amount *big.Int) (float64, error) {
+	tokens, err := c.Tokens()
+	if err != nil {
+		return 0, err
+	}
+
+	for _, token := range tokens {
+		if common.HexToAddress(token.Address) == address {
+			return token.FromWei(amount), nil
+		}
+	}
+
+	return 0, fmt.Errorf("token not found: %s", address)
+}
+
+// ToWei return the given human friendly number to wei unit.
+func (c *Client) ToWei(address common.Address, amount float64) (*big.Int, error) {
+	tokens, err := c.Tokens()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, token := range tokens {
+		if common.HexToAddress(token.Address) == address {
+			return token.ToWei(amount), nil
+		}
+	}
+
+	return nil, fmt.Errorf("token not found: %s", address)
 }
 
 // GetInternalTokens return list of internal token from Kyber reserve

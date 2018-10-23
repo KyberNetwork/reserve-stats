@@ -20,10 +20,10 @@ type ReserveRateEntry struct {
 // - sanityRate: [sellSanityRate(index: 0)]-[buySanityRate)(index: 0)]-[sellSanityRate(index: 1)]-[buySanityRate)(index: 1)]...
 func NewReserveRateEntry(reserveRates, sanityRates []*big.Int, index int) ReserveRateEntry {
 	return ReserveRateEntry{
-		BuyReserveRate:  core.ETHToken.FormatAmount(reserveRates[index*2+1]),
-		BuySanityRate:   core.ETHToken.FormatAmount(sanityRates[index*2+1]),
-		SellReserveRate: core.ETHToken.FormatAmount(reserveRates[index*2]),
-		SellSanityRate:  core.ETHToken.FormatAmount(sanityRates[index*2]),
+		BuyReserveRate:  core.ETHToken.FromWei(reserveRates[index*2+1]),
+		BuySanityRate:   core.ETHToken.FromWei(sanityRates[index*2+1]),
+		SellReserveRate: core.ETHToken.FromWei(reserveRates[index*2]),
+		SellSanityRate:  core.ETHToken.FromWei(sanityRates[index*2]),
 	}
 }
 

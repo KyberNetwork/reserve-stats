@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"strconv"
 	"time"
 
@@ -18,16 +19,16 @@ import (
 type InfluxStorage struct {
 	dbName       string
 	influxClient client.Client
-	amountFmt    tokenAmountFormatter
+	coreClient   core.Interface
 	sugar        *zap.SugaredLogger
 }
 
 // NewInfluxStorage init an instance of InfluxStorage
-func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient client.Client, amountFmt tokenAmountFormatter) (*InfluxStorage, error) {
+func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient client.Client, coreClient core.Interface) (*InfluxStorage, error) {
 	storage := &InfluxStorage{
 		dbName:       dbName,
 		influxClient: influxClient,
-		amountFmt:    amountFmt,
+		coreClient:   coreClient,
 		sugar:        sugar,
 	}
 	err := storage.createDB()
@@ -187,17 +188,17 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, rate tokenrate.ETH
 		"eth_rate_provider": rate.Provider,
 	}
 
-	ethReceivalAmount, err := is.amountFmt.FormatAmount(blockchain.ETHAddr, log.EtherReceivalAmount)
+	ethReceivalAmount, err := is.coreClient.FromWei(blockchain.ETHAddr, log.EtherReceivalAmount)
 	if err != nil {
 		return nil, err
 	}
 
-	srcAmount, err := is.amountFmt.FormatAmount(log.SrcAddress, log.SrcAmount)
+	srcAmount, err := is.coreClient.FromWei(log.SrcAddress, log.SrcAmount)
 	if err != nil {
 		return nil, err
 	}
 
-	dstAmount, err := is.amountFmt.FormatAmount(log.DestAddress, log.DestAmount)
+	dstAmount, err := is.coreClient.FromWei(log.DestAddress, log.DestAmount)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +238,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, rate tokenrate.ETH
 			"ordinal":      strconv.Itoa(idx), // prevent overwrite by other event belong to same trade log
 		}
 
-		burnAmount, err := is.amountFmt.FormatAmount(blockchain.KNCAddr, burn.Amount)
+		burnAmount, err := is.coreClient.FromWei(blockchain.KNCAddr, burn.Amount)
 		if err != nil {
 			return nil, err
 		}
@@ -263,7 +264,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, rate tokenrate.ETH
 			"ordinal":      strconv.Itoa(idx), // prevent overwrite by other event belong to same trade log
 		}
 
-		amount, err := is.amountFmt.FormatAmount(blockchain.KNCAddr, walletFee.Amount)
+		amount, err := is.coreClient.FromWei(blockchain.KNCAddr, walletFee.Amount)
 		if err != nil {
 			return nil, err
 		}

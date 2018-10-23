@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"log"
 	"math/big"
 	"os"
@@ -80,7 +81,6 @@ func parseBigIntFlag(c *cli.Context, flag string) (*big.Int, error) {
 }
 
 func getTradeLogs(c *cli.Context) error {
-	const dbName = "trade_logs"
 	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
@@ -137,7 +137,7 @@ func getTradeLogs(c *cli.Context) error {
 
 	influxStorage, err := storage.NewInfluxStorage(
 		sugar,
-		dbName,
+		common.DatabaseName,
 		influxClient,
 		core.NewCachedClient(coreClient),
 	)
@@ -146,7 +146,7 @@ func getTradeLogs(c *cli.Context) error {
 	}
 
 	// fetch eth usd rate
-	ethUSDRateFetcher, err := tokenrate.NewETHUSDRateFetcher(sugar, dbName, influxClient, coingecko.New())
+	ethUSDRateFetcher, err := tokenrate.NewETHUSDRateFetcher(sugar, common.DatabaseName, influxClient, coingecko.New())
 	if err != nil {
 		return err
 	}

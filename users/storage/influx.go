@@ -7,11 +7,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	ethDecimals int64  = 18
-	ethAddress  string = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-)
-
 // InfluxStorage represent a client to store trade data to influx DB
 type InfluxStorage struct {
 	dbName       string

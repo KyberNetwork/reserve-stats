@@ -9,6 +9,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	influxModel "github.com/influxdata/influxdb/models"
 )
 
@@ -32,7 +33,8 @@ func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime uint6
 	if !ok {
 		return nil, fmt.Errorf("frequency %s is not supported", frequency)
 	}
-	cmd := fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, sum(usd_volume) as %s FROM %s WHERE time >=%d%s AND time <= %d%s AND (dst_addr='%s' OR src_addr='%s') GROUP BY time(1%s)", tokenVolumeField, ethVolumeField, fiatVolumeField, mName, fromTime, timePrecision, toTime, timePrecision, token.Address, token.Address, frequency)
+	addr := ethereum.HexToAddress(token.Address).Hex()
+	cmd := fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, sum(usd_volume) as %s FROM %s WHERE time >=%d%s AND time <= %d%s AND (dst_addr='%s' OR src_addr='%s') GROUP BY time(1%s)", tokenVolumeField, ethVolumeField, fiatVolumeField, mName, fromTime, timePrecision, toTime, timePrecision, addr, addr, frequency)
 	var (
 		logger = is.sugar.With("asset Volume", token.Address, "from", fromTime, "to", toTime)
 	)

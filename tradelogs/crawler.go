@@ -39,7 +39,8 @@ const (
 	internalNetworkAddr = "0x91a502C678605fbCe581eae053319747482276b9"
 
 	//ethDecimals int64  = 18
-	//ethAddress  string = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+	ethAddress string = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+	nilAddress string = "0x0000000000000000000000000000000000000000"
 )
 
 // TradeLogCrawler gets trade logs on KyberNetwork on blockchain, adding the
@@ -156,6 +157,12 @@ func updateTradeLogs(allLogs []common.TradeLog, logItem types.Log, ts time.Time)
 			Amount:         fee.Big(),
 		}
 		tradeLog.BurnFees = append(tradeLog.BurnFees, burnFee)
+		// if the log already got srcRsvAddress, that meant this burnFee is of dstRsvAddress.
+		if tradeLog.SrcRsvAddress.Hex() != nilAddress {
+			tradeLog.DstRsvAddress = reserveAddr
+		} else {
+			tradeLog.SrcRsvAddress = reserveAddr
+		}
 	case etherReceivalEvent:
 		amount, err := logDataToEtherReceivalParams(logItem.Data)
 		if err != nil {
@@ -170,6 +177,10 @@ func updateTradeLogs(allLogs []common.TradeLog, logItem types.Log, ts time.Time)
 		}
 		tradeLog.SrcAddress = srcAddr
 		tradeLog.DestAddress = destAddr
+		// if destination is ethereum, the rsvAddr is dstRsvAddress
+		if tradeLog.DestAddress.Hex() == ethAddress {
+			tradeLog.DstRsvAddress, tradeLog.SrcRsvAddress = tradeLog.SrcRsvAddress, tradeLog.DstRsvAddress
+		}
 		tradeLog.SrcAmount = srcAmount.Big()
 		tradeLog.DestAmount = destAmount.Big()
 		tradeLog.UserAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())

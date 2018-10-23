@@ -19,7 +19,9 @@
         ],
         "wallet_fees": null,
         "ip": "",
-        "country": ""
+        "country": "",
+        "dst_rsv_addr" : "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
+        "src_rsv_adrr" : "0x0000000000000000000000000000000000000000"
     },
     {
         "timestamp": "2018-08-06T18:16:26Z",
@@ -41,7 +43,9 @@
         ],
         "wallet_fees": null,
         "ip": "",
-        "country": ""
+        "country": "",
+        "dst_rsv_addr" : "0x21433dec9cb634a23c6a4bbcce08c83f5ac2ec18",
+        "src_rsv_adrr" : "0x0000000000000000000000000000000000000000"
     },
     {
         "timestamp": "2018-08-06T18:18:34Z",
@@ -69,7 +73,9 @@
             }
         ],
         "ip": "2601:282:4101:6e1c:c13:da49:3b7e:522f",
-        "country": "US"
+        "country": "US",
+        "dst_rsv_addr" : "0x0000000000000000000000000000000000000000",
+        "src_rsv_adrr" : "0x63825c174ab367968ec60f061753d3bbd36a0d8f"
     },
     {
         "timestamp": "2018-08-06T18:19:25Z",
@@ -91,7 +97,9 @@
         ],
         "wallet_fees": null,
         "ip": "",
-        "country": ""
+        "country": "",
+        "dst_rsv_addr" : "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
+        "src_rsv_adrr" : "0x0000000000000000000000000000000000000000"
     },
     {
         "timestamp": "2018-08-06T18:21:26Z",
@@ -113,6 +121,8 @@
         ],
         "wallet_fees": null,
         "ip": "",
-        "country": ""
+        "country": "",
+        "dst_rsv_addr" : "0x0000000000000000000000000000000000000000",
+        "src_rsv_adrr" : "0x63825c174ab367968ec60f061753d3bbd36a0d8f"
     }
 ]

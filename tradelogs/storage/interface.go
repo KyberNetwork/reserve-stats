@@ -16,8 +16,3 @@ type Interface interface {
 	GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[ethereum.Address]map[string]float64, error)
 	GetAssetVolume(token core.Token, fromTime, toTime uint64, frequency string) (map[uint64]*common.VolumeStats, error)
 }
-
-// VolumeStorage define the functions require to get volume data from db
-type VolumeStorage interface {
-	GetAssetVolume(token core.Token, fromTime, toTime uint64, frequency string) (map[time.Time]common.VolumeStats, error)
-}

@@ -1,11 +1,11 @@
 package http
 
 import (
-	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"net/http"
+
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 type assetVolumeQuery struct {
@@ -33,8 +33,7 @@ func (sv *Server) getAssetVolume(c *gin.Context) {
 		)
 		return
 	}
-
-	token, err := core.LookupToken(sv.coreSetting, query.Asset)
+	token, err := sv.lookupToken(query.Asset)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,

@@ -13,6 +13,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )

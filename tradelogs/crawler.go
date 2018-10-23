@@ -39,8 +39,7 @@ const (
 	internalNetworkAddr = "0x91a502C678605fbCe581eae053319747482276b9"
 
 	//ethDecimals int64  = 18
-	ethAddress string = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
-	nilAddress string = "0x0000000000000000000000000000000000000000"
+	// ethAddress string = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 )
 
 // TradeLogCrawler gets trade logs on KyberNetwork on blockchain, adding the

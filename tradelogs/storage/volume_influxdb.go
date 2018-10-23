@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/core"
@@ -17,9 +18,21 @@ const (
 	fiatVolumeField  = "usd_volume"
 )
 
+var (
+	errCantConvert  = errors.New("cannot convert response from influxDB to pre-defined struct")
+	measurementName = map[string]string{
+		"h": "volume_hour",
+		"d": "volume_day",
+	}
+)
+
 // GetAssetVolume returns the volume of a specific assset(token) between a period and with desired frequency
 func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime uint64, frequency string) (map[time.Time]common.VolumeStats, error) {
-	cmd := fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, sum(fiat_volume) as %s FROM test_volume WHERE time >=%d%s AND time <= %d%s AND (dst_addr='%s' OR src_addr='%s') GROUP BY time(1%s)", tokenVolumeField, ethVolumeField, fiatVolumeField, fromTime, timePrecision, toTime, timePrecision, token.Address, token.Address, frequency)
+	mName, ok := measurementName[strings.ToLower(frequency)]
+	if !ok {
+		return nil, fmt.Errorf("frequency %s is not supported", frequency)
+	}
+	cmd := fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, sum(usd_volume) as %s FROM %s WHERE time >=%d%s AND time <= %d%s AND (dst_addr='%s' OR src_addr='%s') GROUP BY time(1%s)", tokenVolumeField, ethVolumeField, fiatVolumeField, mName, fromTime, timePrecision, toTime, timePrecision, token.Address, token.Address, frequency)
 	var (
 		logger = is.sugar.With("asset Volume", token.Address, "from", fromTime, "to", toTime)
 	)
@@ -48,8 +61,6 @@ func convertQueryResultToVolume(row influxModel.Row) (map[time.Time]common.Volum
 	}
 	return result, nil
 }
-
-var errCantConvert = errors.New("cannot convert response from influxDB to pre-defined struct")
 
 func convertRowValueToVolume(v []interface{}) (*time.Time, *common.VolumeStats, error) {
 	timestampString, ok := v[0].(string)

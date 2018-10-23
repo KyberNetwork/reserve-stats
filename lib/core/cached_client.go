@@ -53,7 +53,7 @@ func (cc *CachedClient) token(address common.Address) (Token, error) {
 	token, ok := cc.cached[address]
 	if ok {
 		cc.mu.RUnlock()
-		logger.Debug("cache hit")
+		//logger.Debug("cache hit")
 		return token, nil
 	}
 	cc.mu.RUnlock()

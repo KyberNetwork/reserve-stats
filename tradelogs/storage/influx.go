@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"strconv"
 	"strings"
 	"text/template"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
@@ -45,15 +45,16 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 		coreClient:   coreClient,
 		sugar:        sugar,
 	}
-	err := storage.createDB()
-	if err != nil {
+	if err := storage.createDB(); err != nil {
 		return nil, err
 	}
 	return storage, nil
 }
 
 // SaveTradeLogs persist trade logs to DB
-func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog, rates []tokenrate.ETHUSDRate) error {
+func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
+	defer is.influxClient.Close()
+
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  is.dbName,
 		Precision: timePrecision,
@@ -61,8 +62,8 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog, rates []tokenrate
 	if err != nil {
 		return err
 	}
-	for index, log := range logs {
-		points, err := is.tradeLogToPoint(log, rates[index])
+	for _, log := range logs {
+		points, err := is.tradeLogToPoint(log)
 		if err != nil {
 			return err
 		}
@@ -76,9 +77,33 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog, rates []tokenrate
 		return err
 	}
 
-	is.sugar.Debugw("saved trade logs into influxdb", "trade logs", logs)
+	if len(logs) > 0 {
+		is.sugar.Debugw("saved trade logs into influxdb",
+			"first_block", logs[0].BlockNumber,
+			"last_block", logs[len(logs)-1].BlockNumber,
+			"trade_logs", len(logs))
+	} else {
+		is.sugar.Debugw("no trade log to store")
+	}
 
-	return nil
+	return is.influxClient.Close()
+}
+
+// LastBlock returns last stored trade log block number from database.
+func (is InfluxStorage) LastBlock() (int64, error) {
+	q := fmt.Sprintf(`SELECT "block_number","eth_amount" from "trades" ORDER BY time DESC limit 1`)
+
+	res, err := is.queryDB(is.influxClient, q)
+	if err != nil {
+		return 0, err
+	}
+
+	if len(res) != 1 || len(res[0].Series) != 1 || len(res[0].Series[0].Values[0]) != 3 {
+		is.sugar.Info("no result returned for last block query")
+		return 0, nil
+	}
+
+	return influxdb.GetInt64FromInterface(res[0].Series[0].Values[0][1])
 }
 
 // GetAggregatedBurnFee get aggregated burn fee in a time range given the reserve address
@@ -256,7 +281,7 @@ func (is *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.R
 	return res, nil
 }
 
-func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, rate tokenrate.ETHUSDRate) ([]*client.Point, error) {
+func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error) {
 	var points []*client.Point
 
 	tags := map[string]string{
@@ -273,7 +298,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, rate tokenrate.ETH
 		"country": log.Country,
 		"ip":      log.IP,
 
-		"eth_rate_provider": rate.Provider,
+		"eth_rate_provider": log.ETHUSDProvider,
 	}
 
 	logger := is.sugar.With(
@@ -334,7 +359,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, rate tokenrate.ETH
 
 		"src_amount":   srcAmount,
 		"dst_amount":   dstAmount,
-		"eth_usd_rate": rate.Rate,
+		"eth_usd_rate": log.ETHUSDRate,
 
 		"eth_amount": ethAmount,
 	}

@@ -180,14 +180,6 @@ func (is *InfluxStorage) rowToTradeLog(row []interface{},
 		country = ""
 	}
 
-	srcRsvAddr, err := influxdb.GetAddressFromInterface(row[13])
-	if err != nil {
-		return tradeLog, fmt.Errorf("failed to get src_rsv_addr: %s", err)
-	}
-	dstRsvAddr, err := influxdb.GetAddressFromInterface(row[14])
-	if err != nil {
-		return tradeLog, fmt.Errorf("failed to get dst_rsv_addr: %s", err)
-	}
 	tradeLog = common.TradeLog{
 		Timestamp:       timestamp,
 		BlockNumber:     blockNumber,
@@ -206,10 +198,8 @@ func (is *InfluxStorage) rowToTradeLog(row []interface{},
 		BurnFees:   burnFeesByTxHash[txHash],
 		WalletFees: walletFeesByTxHash[txHash],
 
-		IP:            ip,
-		Country:       country,
-		SrcRsvAddress: srcRsvAddr,
-		DstRsvAddress: dstRsvAddr,
+		IP:      ip,
+		Country: country,
 	}
 
 	return tradeLog, nil

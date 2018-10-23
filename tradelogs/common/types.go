@@ -29,14 +29,12 @@ type TradeLog struct {
 	EtherReceivalSender ethereum.Address `json:"eth_receival_sender"`
 	EtherReceivalAmount *big.Int         `json:"eth_receival_amount"`
 
-	UserAddress   ethereum.Address `json:"user_addr"`
-	SrcAddress    ethereum.Address `json:"src_addr"`
-	SrcRsvAddress ethereum.Address `json:"src_rsv_addr"`
-	DstRsvAddress ethereum.Address `json:"dst_rsv_addr"`
-	DestAddress   ethereum.Address `json:"dst_addr"`
-	SrcAmount     *big.Int         `json:"src_amount"`
-	DestAmount    *big.Int         `json:"dst_amount"`
-	FiatAmount    float64          `json:"fiat_amount"`
+	UserAddress ethereum.Address `json:"user_addr"`
+	SrcAddress  ethereum.Address `json:"src_addr"`
+	DestAddress ethereum.Address `json:"dst_addr"`
+	SrcAmount   *big.Int         `json:"src_amount"`
+	DestAmount  *big.Int         `json:"dst_amount"`
+	FiatAmount  float64          `json:"fiat_amount"`
 
 	BurnFees   []BurnFee   `json:"burn_fees"`
 	WalletFees []WalletFee `json:"wallet_fees"`

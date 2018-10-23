@@ -15,6 +15,10 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
+const (
+	ethAddress string = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+)
+
 // InfluxStorage represent a client to store trade data to influx DB
 type InfluxStorage struct {
 	dbName       string
@@ -81,7 +85,7 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 		time, block_number, tx_hash, 
 		eth_receival_sender, eth_receival_amount, 
 		user_addr, src_addr, dst_addr, src_amount, dst_amount, (eth_amount * eth_usd_rate) as fiat_amount, 		
-		ip, country, src_rsv_addr, dst_rsv_addr
+		ip, country
 		`,
 		from.Format(time.RFC3339),
 		to.Format(time.RFC3339),
@@ -186,8 +190,14 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, rate tokenrate.ETH
 		"ip":      log.IP,
 
 		"eth_rate_provider": rate.Provider,
-		"src_rsv_addr":      log.SrcRsvAddress.String(),
-		"dst_rsv_addr":      log.DstRsvAddress.String(),
+	}
+	if log.SrcAddress.String() == ethAddress {
+		tags["src_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
+	} else if log.DestAddress.String() == ethAddress {
+		tags["dst_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
+	} else {
+		tags["src_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
+		tags["dst_rsv_addr"] = log.BurnFees[1].ReserveAddress.String()
 	}
 
 	ethReceivalAmount, err := is.coreClient.FromWei(blockchain.ETHAddr, log.EtherReceivalAmount)

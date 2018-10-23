@@ -35,7 +35,7 @@ func (is *InfluxStorage) rowToBurnFee(row []interface{}) (ethereum.Hash, common.
 		return txHash, burnFee, err
 	}
 
-	weiAmount, err := is.amountFmt.ToWei(blockchain.KNCAddr, humanizedAmount)
+	weiAmount, err := is.coreClient.ToWei(blockchain.KNCAddr, humanizedAmount)
 	if err != nil {
 		return txHash, burnFee, err
 	}
@@ -77,7 +77,7 @@ func (is *InfluxStorage) rowToWalletFee(row []interface{}) (ethereum.Hash, commo
 		return txHash, walletFee, err
 	}
 
-	weiAmount, err := is.amountFmt.ToWei(blockchain.KNCAddr, humanizedAmount)
+	weiAmount, err := is.coreClient.ToWei(blockchain.KNCAddr, humanizedAmount)
 	if err != nil {
 		return txHash, walletFee, err
 	}
@@ -125,7 +125,7 @@ func (is *InfluxStorage) rowToTradeLog(row []interface{},
 		return tradeLog, fmt.Errorf("failed to get eth_receival_amount: %s", err)
 	}
 
-	ethReceivalAmountInWei, err := is.amountFmt.ToWei(blockchain.ETHAddr, humanizedEthReceival)
+	ethReceivalAmountInWei, err := is.coreClient.ToWei(blockchain.ETHAddr, humanizedEthReceival)
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to convert eth_receival_amount: %s", err)
 	}
@@ -145,7 +145,7 @@ func (is *InfluxStorage) rowToTradeLog(row []interface{},
 		return tradeLog, fmt.Errorf("failed to get src_amount: %s", err)
 	}
 
-	srcAmountInWei, err := is.amountFmt.ToWei(srcAddress, humanizedSrcAmount)
+	srcAmountInWei, err := is.coreClient.ToWei(srcAddress, humanizedSrcAmount)
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to convert src_amount: %s", err)
 	}
@@ -160,7 +160,7 @@ func (is *InfluxStorage) rowToTradeLog(row []interface{},
 		return tradeLog, fmt.Errorf("failed to get dst_amount: %s", err)
 	}
 
-	dstAmountInWei, err := is.amountFmt.ToWei(dstAddress, humanizedDstAmount)
+	dstAmountInWei, err := is.coreClient.ToWei(dstAddress, humanizedDstAmount)
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to convert dst_amount: %s", err)
 	}

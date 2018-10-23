@@ -3,12 +3,11 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"log"
-	"math/big"
 	"os"
 	"testing"
 
-	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
 
@@ -17,17 +16,6 @@ import (
 )
 
 var testStorage *InfluxStorage
-
-type mockAmountFormatter struct {
-}
-
-func (fmt *mockAmountFormatter) FormatAmount(address ethereum.Address, amount *big.Int) (float64, error) {
-	return 100, nil
-}
-
-func (fmt *mockAmountFormatter) ToWei(address ethereum.Address, amount float64) (*big.Int, error) {
-	return big.NewInt(100), nil
-}
 
 func newTestInfluxStorage(db string) (*InfluxStorage, error) {
 	logger, err := zap.NewDevelopment()
@@ -48,7 +36,7 @@ func newTestInfluxStorage(db string) (*InfluxStorage, error) {
 		sugar,
 		db,
 		influxClient,
-		&mockAmountFormatter{},
+		core.NewMockClient(),
 	)
 	if err != nil {
 		return nil, err
@@ -77,10 +65,10 @@ func getSampleTradeLogs(dataPath string) ([]common.TradeLog, error) {
 
 func getSampleRates(tradeLogs []common.TradeLog) ([]tokenrate.ETHUSDRate, error) {
 	var rates []tokenrate.ETHUSDRate
-	for _, log := range tradeLogs {
+	for _, logItem := range tradeLogs {
 		rates = append(rates, tokenrate.ETHUSDRate{
-			BlockNumber: log.BlockNumber,
-			Timestamp:   log.Timestamp,
+			BlockNumber: logItem.BlockNumber,
+			Timestamp:   logItem.Timestamp,
 			Rate:        123131.12131,
 			Provider:    "testProvider",
 		})

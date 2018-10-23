@@ -179,6 +179,7 @@ func (is *InfluxStorage) rowToTradeLog(row []interface{},
 	if !ok {
 		country = ""
 	}
+
 	srcRsvAddr, err := influxdb.GetAddressFromInterface(row[13])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get src_rsv_addr: %s", err)

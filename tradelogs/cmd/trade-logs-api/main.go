@@ -32,7 +32,7 @@ func main() {
 		if err != nil {
 			return err
 		}
-
+		coreCachedClient := core.NewCachedClient(coreClient)
 		influxClient, err := influxdb.NewClientFromContext(c)
 		if err != nil {
 			return err
@@ -42,13 +42,13 @@ func main() {
 			sugar,
 			"trade_logs",
 			influxClient,
-			core.NewCachedClient(coreClient),
+			coreCachedClient,
 		)
 		if err != nil {
 			return err
 		}
 
-		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c), sugar)
+		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c), sugar, coreCachedClient)
 		err = api.Start()
 		if err != nil {
 			return err

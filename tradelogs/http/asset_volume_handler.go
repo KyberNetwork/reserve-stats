@@ -8,7 +8,6 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,27 +16,6 @@ type assetVolumeQuery struct {
 	To    uint64 `form:"to"`
 	Asset string `form:"asset"`
 	Freq  string `form:"freq"`
-}
-
-//Server struct to represent a http server service
-type Server struct {
-	sugar   *zap.SugaredLogger
-	r       *gin.Engine
-	host    string
-	storage storage.VolumeStorage
-	setting coreSetting
-}
-
-//NewServer return new server instance
-func NewServer(sugar *zap.SugaredLogger, storage storage.VolumeStorage, host string, sett coreSetting) *Server {
-	r := gin.Default()
-	return &Server{
-		sugar:   sugar,
-		storage: storage,
-		r:       r,
-		host:    host,
-		setting: sett,
-	}
 }
 
 func (sv *Server) getAssetVolume(c *gin.Context) {
@@ -75,16 +53,6 @@ func (sv *Server) getAssetVolume(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (sv *Server) register() {
-	sv.r.GET("/asset-volume", sv.getAssetVolume)
-}
-
-//Run start server and serve
-func (sv *Server) Run() error {
-	sv.register()
-	return sv.r.Run(sv.host)
-}
-
 func timeValidation(fromTime, toTime *uint64, c *gin.Context, logger *zap.SugaredLogger) bool {
 	if *fromTime == 0 && *toTime == 0 {
 		c.JSON(
@@ -108,7 +76,7 @@ func timeValidation(fromTime, toTime *uint64, c *gin.Context, logger *zap.Sugare
 }
 
 func (sv *Server) lookupToken(ID string) (core.Token, error) {
-	tokens, err := sv.setting.GetActiveTokens()
+	tokens, err := sv.setting.Tokens()
 	if err != nil {
 		return core.Token{}, err
 	}

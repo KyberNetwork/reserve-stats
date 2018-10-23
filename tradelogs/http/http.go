@@ -26,8 +26,9 @@ const (
 // Server serve trade logs through http endpoint
 type Server struct {
 	storage storage.Interface
-	addr    string
+	host    string
 	sugar   *zap.SugaredLogger
+	setting coreSetting
 }
 
 type tradeLogsQuery struct {
@@ -58,7 +59,7 @@ func validateTimeWindow(fromTime, toTime time.Time, freq string) error {
 	return nil
 }
 
-func (ha *Server) getTradeLogs(c *gin.Context) {
+func (sv *Server) getTradeLogs(c *gin.Context) {
 	var query tradeLogsQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
 		c.JSON(
@@ -85,9 +86,9 @@ func (ha *Server) getTradeLogs(c *gin.Context) {
 		fromTime = toTime.Add(-time.Hour)
 	}
 
-	tradeLogs, err := ha.storage.LoadTradeLogs(fromTime, toTime)
+	tradeLogs, err := sv.storage.LoadTradeLogs(fromTime, toTime)
 	if err != nil {
-		ha.sugar.Errorw(err.Error(), "fromTime", fromTime, "toTime", toTime)
+		sv.sugar.Errorw(err.Error(), "fromTime", fromTime, "toTime", toTime)
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{"error": err.Error()},
@@ -101,7 +102,7 @@ func (ha *Server) getTradeLogs(c *gin.Context) {
 	)
 }
 
-func (ha *Server) getBurnFee(c *gin.Context) {
+func (sv *Server) getBurnFee(c *gin.Context) {
 	var (
 		query    burnFeeQuery
 		rsvAddrs []ethereum.Address
@@ -153,20 +154,21 @@ func (ha *Server) getBurnFee(c *gin.Context) {
 	)
 }
 
-func (ha *Server) setupRouter() *gin.Engine {
+func (sv *Server) setupRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/trade-logs", ha.getTradeLogs)
 	r.GET("/burn-fee", ha.getBurnFee)
+	r.GET("/asset-volume", sv.getAssetVolume)
 	return r
 }
 
 // Start running http server to serve trade logs data
-func (ha *Server) Start() error {
-	r := ha.setupRouter()
-	return r.Run(ha.addr)
+func (sv *Server) Start() error {
+	r := sv.setupRouter()
+	return r.Run(sv.host)
 }
 
 // NewServer returns an instance of HttpApi to serve trade logs
-func NewServer(storage storage.Interface, addr string, sugar *zap.SugaredLogger) *Server {
-	return &Server{storage: storage, addr: addr, sugar: sugar}
+func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett coreSetting) *Server {
+	return &Server{storage: storage, host: host, sugar: sugar, setting: sett}
 }

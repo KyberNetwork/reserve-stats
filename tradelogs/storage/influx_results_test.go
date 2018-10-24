@@ -77,4 +77,8 @@ func TestLoadTradeLogs(t *testing.T) {
 	if len(tradeLogs) != 11 {
 		t.Errorf("wrong number of trade log returned, expected: %d, got: %d", 11, len(tradeLogs))
 	}
+
+	if err = is.tearDown(); err != nil {
+		t.Fatal(err)
+	}
 }

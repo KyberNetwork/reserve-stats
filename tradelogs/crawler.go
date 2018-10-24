@@ -37,9 +37,6 @@ const (
 	burnerAddr = "0xed4f53268bfdFF39B36E8786247bA3A02Cf34B04"
 	// address of internal network contract
 	internalNetworkAddr = "0x91a502C678605fbCe581eae053319747482276b9"
-
-	//ethDecimals int64  = 18
-	// ethAddress string = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 )
 
 // TradeLogCrawler gets trade logs on KyberNetwork on blockchain, adding the

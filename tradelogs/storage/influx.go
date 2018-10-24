@@ -15,10 +15,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
-const (
-	ethAddress string = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
-)
-
 // InfluxStorage represent a client to store trade data to influx DB
 type InfluxStorage struct {
 	dbName       string
@@ -191,9 +187,9 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, rate tokenrate.ETH
 
 		"eth_rate_provider": rate.Provider,
 	}
-	if log.SrcAddress.String() == ethAddress {
+	if log.SrcAddress == blockchain.ETHAddr {
 		tags["src_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
-	} else if log.DestAddress.String() == ethAddress {
+	} else if log.DestAddress == blockchain.ETHAddr {
 		tags["dst_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
 	} else {
 		tags["src_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()

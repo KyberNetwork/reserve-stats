@@ -8,8 +8,10 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
+	"github.com/influxdata/influxdb/client/v2"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
 
@@ -36,25 +38,43 @@ func newTestDB(sugar *zap.SugaredLogger) (*storage.UserDB, error) {
 	return storage.NewDB(sugar, db)
 }
 
-func tearDown(t *testing.T, storage *storage.UserDB) {
-	if err := storage.DeleteAllTables(); err != nil {
-		t.Fatal("Cannot clear db after test")
-	}
+func tearDown(t *testing.T, storage *storage.UserDB, influxClient client.Client) {
+	assert.Nil(t, storage.DeleteAllTables(), "database should be deleted completely")
+	_, err := influxClient.Query(client.Query{
+		Command: fmt.Sprintf("DROP DATABASE %s", "test_db"),
+	})
+	assert.Nil(t, err, "influx test db should be tear down successfully")
 }
 
 func TestUserHTTPServer(t *testing.T) {
 	logger, err := zap.NewDevelopment()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err, "logger should be initiated successfully")
+
 	sugar := logger.Sugar()
 	userStorage, err := newTestDB(sugar)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer tearDown(t, userStorage)
+	assert.Nil(t, err, "user database should be initiated successfully")
 
-	s := NewServer(sugar, tokenrate.NewMock(), userStorage, "")
+	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
+		Addr: "http://localhost:8086",
+	})
+	assert.Nil(t, err, "influx client should be created successfully")
+
+	defer tearDown(t, userStorage, influxClient)
+
+	// create test db
+	_, err = influxClient.Query(client.Query{
+		Command: "CREATE DATABASE test_db",
+	})
+	assert.Nil(t, err, "influx should create database successfully")
+
+	influxStorage, err := storage.NewInfluxStorage(
+		sugar,
+		"test_db",
+		influxClient,
+	)
+	assert.Nil(t, err, "influx storage should be created successfully")
+
+	s := NewServer(sugar, tokenrate.NewMock(), userStorage, "", influxStorage)
 	s.register()
 
 	// test case
@@ -225,6 +245,12 @@ func TestUserHTTPServer(t *testing.T) {
 				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
 				Method:   http.MethodGet,
 				Assert:   expectNonKYCed,
+			},
+			{
+				Msg:      "address have not trade, rich is false",
+				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
+				Method:   http.MethodGet,
+				Assert:   expectRichStatus,
 			},
 		}
 	)

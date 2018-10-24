@@ -1,7 +1,9 @@
 package http
 
 import (
-	"fmt"
+	"net/http"
+	"time"
+
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
@@ -9,8 +11,6 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"net/http"
-	"time"
 )
 
 // Server is the engine to serve reserve-rate API query
@@ -52,14 +52,6 @@ func (sv *Server) reserveRates(c *gin.Context) {
 			logger = logger.With("from", query.From)
 			logger.Debug("using default from query time", "from", query.From)
 		}
-	}
-
-	if query.To == 0 && query.From == 0 {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{"error": fmt.Sprintf("invalid time frame query, from: %d, to: %d", query.From, query.To)},
-		)
-		return
 	}
 
 	logger = logger.With("to", query.To, "from", query.From)

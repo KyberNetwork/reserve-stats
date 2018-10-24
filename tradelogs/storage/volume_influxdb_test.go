@@ -76,9 +76,6 @@ func TestGetAssetVolume(t *testing.T) {
 	// 2018-10-11T16:00:00+07:00
 	// These number is expected to be change when export.dat changes.
 	volume, err := is.GetAssetVolume(core.ETHToken, 1539248043000, 1539248666000, "h")
-	for k, _ := range volume {
-		log.Printf("%s", k.Format(time.RFC3339))
-	}
 	log.Printf("%v", volume)
 	if err != nil {
 		t.Fatal(err)

@@ -46,6 +46,7 @@ func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime uint6
 	if len(response) == 0 || len(response[0].Series) == 0 {
 		return nil, nil
 	}
+	logger.Debugf("response is %v", response[0].Series[0])
 	return convertQueryResultToVolume(response[0].Series[0])
 }
 

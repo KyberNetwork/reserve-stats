@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage/influx"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/influxdata/influxdb/client/v2"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
 
@@ -39,14 +41,12 @@ func newTestCrawler(sugar *zap.SugaredLogger, dbInstance storage.ReserveRatesSto
 	}, nil
 }
 
-func newTestDB(sugar *zap.SugaredLogger) (*influx.RateStorage, error) {
-	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr: testInfluxURL,
+func tearDownTestDB(t *testing.T, influxClient client.Client) {
+	cmd := fmt.Sprintf("DROP DATABASE %s", dbName)
+	_, err := influxClient.Query(client.Query{
+		Command: cmd,
 	})
-	if err != nil {
-		return nil, err
-	}
-	return influx.NewRateInfluxDBStorage(sugar, influxClient, dbName)
+	assert.Nil(t, err, "rate storage test db should be teardown")
 }
 
 // TestGetReserveRate query the mock blockchain for reserve rate result
@@ -59,30 +59,27 @@ func TestGetReserveRate(t *testing.T) {
 		SellSanityRate:  4.0,
 	}
 	logger, err := zap.NewDevelopment()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err, "logger should be created")
+
 	defer logger.Sync()
 	sugar := logger.Sugar()
 
-	dbInstance, err := newTestDB(sugar)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		tErr := dbInstance.TearDown()
-		if tErr != nil {
-			t.Fatal(tErr)
-		}
-	}()
+	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
+		Addr: testInfluxURL,
+	})
+	assert.Nil(t, err, "influx client should be initiated")
+
+	dbInstance, err := influx.NewRateInfluxDBStorage(sugar, influxClient, dbName)
+	assert.Nil(t, err, "db instance should be created")
+
+	defer tearDownTestDB(t, influxClient)
+
 	crawler, err := newTestCrawler(sugar, dbInstance)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err, "test crawler should be created")
+
 	rates, err := crawler.GetReserveRates(0)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.Nil(t, err, "reserve rate should be generate")
+
 	rate, ok := rates[testRsvAddress]
 	if !ok {
 		sugar.Errorf("result did not contain rate for reserve %s", testRsvAddress)

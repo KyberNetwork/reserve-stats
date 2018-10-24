@@ -187,6 +187,14 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, rate tokenrate.ETH
 
 		"eth_rate_provider": rate.Provider,
 	}
+	if log.SrcAddress == blockchain.ETHAddr {
+		tags["src_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
+	} else if log.DestAddress == blockchain.ETHAddr {
+		tags["dst_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
+	} else {
+		tags["src_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
+		tags["dst_rsv_addr"] = log.BurnFees[1].ReserveAddress.String()
+	}
 
 	ethReceivalAmount, err := is.coreClient.FromWei(blockchain.ETHAddr, log.EtherReceivalAmount)
 	if err != nil {

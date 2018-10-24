@@ -54,14 +54,6 @@ func (sv *Server) reserveRates(c *gin.Context) {
 		}
 	}
 
-	if query.To == 0 && query.From == 0 {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{"error": fmt.Sprintf("invalid time frame query, from: %d, to: %d", query.From, query.To)},
-		)
-		return
-	}
-
 	logger = logger.With("to", query.To, "from", query.From)
 	logger.Debug("querying reserve rates from database")
 	for _, rsvAddr := range query.ReserveAddrs {

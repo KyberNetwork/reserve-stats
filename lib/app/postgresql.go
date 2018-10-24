@@ -30,31 +30,31 @@ func NewPostgreSQLFlags(defaultDB string) []cli.Flag {
 		cli.StringFlag{
 			Name:   postgresHostFlag,
 			Usage:  "PostgreSQL host to connect",
-			EnvVar: JoinEnvVar("POSTGRES_HOST"),
+			EnvVar: "POSTGRES_HOST",
 			Value:  defaultPostgresHost,
 		},
 		cli.IntFlag{
 			Name:   postgresPortFlag,
 			Usage:  "PostgreSQL port to connect",
-			EnvVar: JoinEnvVar("POSTGRES_PORT"),
+			EnvVar: "POSTGRES_PORT",
 			Value:  defaultPostgresPort,
 		},
 		cli.StringFlag{
 			Name:   postgresUserFlag,
 			Usage:  "PostgreSQL user to connect",
-			EnvVar: JoinEnvVar("POSTGRES_USER"),
+			EnvVar: "POSTGRES_USER",
 			Value:  defaultPostgresUser,
 		},
 		cli.StringFlag{
 			Name:   postgresPasswordFlag,
 			Usage:  "PostgreSQL password to connect",
-			EnvVar: JoinEnvVar("POSTGRES_PASSWORD"),
+			EnvVar: "POSTGRES_PASSWORD",
 			Value:  defaultPostgresPassword,
 		},
 		cli.StringFlag{
 			Name:   postgresDatabaseFlag,
 			Usage:  "Postgres database to connect",
-			EnvVar: JoinEnvVar("POSTGRES_DATABASE"),
+			EnvVar: "POSTGRES_DATABASE",
 			Value:  defaultDB,
 		},
 	}

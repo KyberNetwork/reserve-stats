@@ -1,19 +1,18 @@
 version: '3.1'
-
 services:
   influxdb:
-    image: influxdb:1.6.3-alpine
+    image: 'influxdb:1.6.3-alpine'
     volumes:
-      - ./data/influxdb:/var/lib/influxdb/
+      - './data/influxdb:/var/lib/influxdb/'
     ports:
-      - "127.0.0.1:8086:8086"
+      - '127.0.0.1:8086:8086'
   postgres:
-    image: postgres:9.5.14-alpine
+    image: 'postgres:9.5.14-alpine'
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - './data/postgres:/var/lib/postgresql/data'
     environment:
       POSTGRES_DB: reserve_stats
       POSTGRES_USER: reserve_stats
       POSTGRES_PASSWORD: reserve_stats
     ports:
-      - "127.0.0.1:5432:5432"
+      - '127.0.0.1:5432:5432'

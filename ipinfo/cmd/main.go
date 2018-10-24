@@ -12,10 +12,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-const (
-	prefix      = "IPINFO_"
-	dataDirFlag = "data-dir"
-)
+const dataDirFlag = "data-dir"
 
 func main() {
 	app := libapp.NewApp()
@@ -32,7 +29,7 @@ func main() {
 			Name:   dataDirFlag,
 			Usage:  "directory to store the GeoLite2-Country.mmdb file",
 			Value:  ".",
-			EnvVar: prefix + "DATA_DIR",
+			EnvVar: "DATA_DIR",
 		},
 	)
 

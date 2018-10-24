@@ -12,6 +12,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
 	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserverates/storage/influx"
 	"github.com/influxdata/influxdb/client/v2"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
 
@@ -52,40 +53,36 @@ func newTestServer(sugar *zap.SugaredLogger, dbInstance storage.ReserveRatesStor
 	return NewServer(host, dbInstance, sugar)
 }
 
-func newTestDB(sugar *zap.SugaredLogger) (*influxRateStorage.RateStorage, error) {
-	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr: testInfluxURL,
+func tearDownTestDB(t *testing.T, influxClient client.Client) {
+	cmd := fmt.Sprintf("DROP DATABASE %s", dbName)
+	_, err := influxClient.Query(client.Query{
+		Command: cmd,
 	})
-	if err != nil {
-		return nil, err
-	}
-	return influxRateStorage.NewRateInfluxDBStorage(sugar, influxClient, dbName)
+	assert.Nil(t, err, "rate storage test db should be teardown")
 }
 
 func TestHTTPRateServer(t *testing.T) {
 	const requestEndpoint = "reserve-rates"
 
 	logger, err := zap.NewDevelopment()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err, "logger should be created")
+
 	defer logger.Sync()
 	sugar := logger.Sugar()
 
-	dbInstance, err := newTestDB(sugar)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		tErr := dbInstance.TearDown()
-		if tErr != nil {
-			t.Fatal(tErr)
-		}
-	}()
+	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
+		Addr: testInfluxURL,
+	})
+	assert.Nil(t, err, "influx client should be created successfully")
+
+	dbInstance, err := influxRateStorage.NewRateInfluxDBStorage(sugar, influxClient, dbName)
+	assert.Nil(t, err, "Rate storage should be created successfully")
+
+	defer tearDownTestDB(t, influxClient)
+
 	server, err := newTestServer(sugar, dbInstance)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err, "test server should be created succesfully")
+
 	server.register()
 
 	var testReserveRate common.ReserveRates

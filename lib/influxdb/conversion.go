@@ -2,6 +2,7 @@ package influxdb
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -52,4 +53,13 @@ func GetTimeFromInterface(value interface{}) (time.Time, error) {
 	}
 
 	return result, nil
+}
+
+//GetInt64FromInterface converts given value to int64
+func GetInt64FromInterface(value interface{}) (int64, error) {
+	number, convertible := value.(json.Number)
+	if !convertible {
+		return 0, errors.New("cannot convert value to int64")
+	}
+	return number.Int64()
 }

@@ -2,13 +2,13 @@ package influx
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"go.uber.org/zap"
 	"strconv"
 	"text/template"
 
+	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage/influx/schema"
@@ -23,8 +23,6 @@ const (
 	//timePrecision is the precision configured for influxDB
 	timePrecision = "ms"
 )
-
-var errCantConvert = errors.New("cannot convert response from influxDB to pre-defined struct")
 
 // RateStorage is the implementation of influxclient to serve as ReserveRate storage
 type RateStorage struct {
@@ -140,28 +138,12 @@ func (rs *RateStorage) GetRatesByTimePoint(addrs []ethereum.Address, fromTime, t
 	return convertQueryResultToRate(response.Results[0].Series[0])
 }
 
-func getInt64FromInterface(v interface{}) (int64, error) {
-	number, convertible := v.(json.Number)
-	if !convertible {
-		return 0, errCantConvert
-	}
-	return number.Int64()
-}
-
-func getFloat64FromInterface(v interface{}) (float64, error) {
-	number, convertible := v.(json.Number)
-	if !convertible {
-		return 0, errCantConvert
-	}
-	return number.Float64()
-}
-
 func convertRowValueToReserveRate(v []interface{}, idxs schema.FieldsRegistrar) (*common.ReserveRates, error) {
 	rate := common.ReserveRates{
 		Data: make(map[string]common.ReserveRateEntry),
 	}
 	// Get Time
-	intNumber, err := getInt64FromInterface(v[idxs[schema.Time]])
+	intNumber, err := influxdb.GetInt64FromInterface(v[idxs[schema.Time]])
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +153,7 @@ func convertRowValueToReserveRate(v []interface{}, idxs schema.FieldsRegistrar) 
 	// get Block number
 	blockNumberStr, ok := v[idxs[schema.BlockNumber]].(string)
 	if !ok {
-		return nil, errCantConvert
+		return nil, errors.New("cannot convert influx interface to string")
 	}
 	blockNumber, err := strconv.ParseUint(blockNumberStr, 10, 64)
 	if err != nil {
@@ -181,27 +163,27 @@ func convertRowValueToReserveRate(v []interface{}, idxs schema.FieldsRegistrar) 
 	// get pair
 	pairName, convertible := v[idxs[schema.Pair]].(string)
 	if !convertible {
-		return nil, errCantConvert
+		return nil, errors.New("cannot convert influx interface to string")
 	}
-	buyRate, err := getFloat64FromInterface(v[idxs[schema.BuyRate]])
+	buyRate, err := influxdb.GetFloat64FromInterface(v[idxs[schema.BuyRate]])
 	if err != nil {
 		return nil, err
 	}
-	sellRate, err := getFloat64FromInterface(v[idxs[schema.SellRate]])
+	sellRate, err := influxdb.GetFloat64FromInterface(v[idxs[schema.SellRate]])
 	if err != nil {
 		return nil, err
 	}
-	buySanityRate, err := getFloat64FromInterface(v[(idxs)[schema.BuySanityRate]])
+	buySanityRate, err := influxdb.GetFloat64FromInterface(v[(idxs)[schema.BuySanityRate]])
 	if err != nil {
 		return nil, err
 	}
-	sellSanityRate, err := getFloat64FromInterface(v[idxs[schema.SellSanityRate]])
-	if !convertible {
-		return nil, errCantConvert
+	sellSanityRate, err := influxdb.GetFloat64FromInterface(v[idxs[schema.SellSanityRate]])
+	if err != nil {
+		return nil, err
 	}
 	reserve, ok := v[idxs[schema.Reserve]].(string)
 	if !ok {
-		return nil, errCantConvert
+		return nil, errors.New("cannot conver influx interface to string")
 	}
 	rate.Reserve = reserve
 
@@ -250,19 +232,4 @@ func convertQueryResultToRate(row influxModel.Row) (map[string]map[uint64]common
 
 	}
 	return result, nil
-}
-
-// TearDown will remove the db. Only use for testing purpose
-func (rs *RateStorage) TearDown() error {
-	cmd := fmt.Sprintf("DROP DATABASE %s", rs.dbName)
-	q := influxClient.NewQuery(cmd, rs.dbName, timePrecision)
-	response, err := rs.client.Query(q)
-	if err != nil {
-		return err
-	}
-
-	if response.Error() != nil {
-		return response.Error()
-	}
-	return nil
 }

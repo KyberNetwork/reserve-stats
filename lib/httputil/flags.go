@@ -3,7 +3,6 @@ package httputil
 import (
 	"fmt"
 
-	"github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/urfave/cli"
 )
 
@@ -21,7 +20,7 @@ func NewHTTPCliFlags(defaultPort HTTPPort) []cli.Flag {
 		cli.StringFlag{
 			Name:   httpAddressFlag,
 			Usage:  "HTTP server address",
-			EnvVar: app.JoinEnvVar(app.JoinEnvVar("HTTP_ADDRESS")), //
+			EnvVar: "HTTP_ADDRESS",
 			Value:  fmt.Sprintf("127.0.0.1:%d", defaultPort),
 		},
 	}

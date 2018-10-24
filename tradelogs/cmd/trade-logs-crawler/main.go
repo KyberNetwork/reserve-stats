@@ -29,8 +29,6 @@ const (
 	nodeURLDefaultValue = "https://mainnet.infura.io"
 	fromBlockFlag       = "from-block"
 	toBlockFlag         = "to-block"
-
-	envVarPrefix = "TRADE_LOGS_CRAWLER_"
 )
 
 func main() {
@@ -45,17 +43,17 @@ func main() {
 			Name:   nodeURLFlag,
 			Usage:  "Ethereum node provider URL",
 			Value:  nodeURLDefaultValue,
-			EnvVar: envVarPrefix + "NODE",
+			EnvVar: "NODE",
 		},
 		cli.StringFlag{
 			Name:   fromBlockFlag,
 			Usage:  "Fetch trade logs from block",
-			EnvVar: envVarPrefix + "FROM_BLOCK",
+			EnvVar: "FROM_BLOCK",
 		},
 		cli.StringFlag{
 			Name:   toBlockFlag,
 			Usage:  "Fetch trade logs to block",
-			EnvVar: envVarPrefix + "TO_BLOCK",
+			EnvVar: "TO_BLOCK",
 		},
 	)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)

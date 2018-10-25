@@ -1,4 +1,4 @@
-```SQL
+```SQL 
 -- CONTINOUS QUERY for volume aggregation
 -- We don't aggregate for the trade from ETH-WETH or WETH-ETH
 -- WETH address is: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2. ETH address is: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE

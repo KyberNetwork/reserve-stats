@@ -177,8 +177,10 @@ func run(c *cli.Context) error {
 			sugar.Infow("fetching trade logs up to latest known block number", "to_block", toBlock.String())
 		}
 
-		// TODO: if jobs < maxWorkers, jobs = n, only start n workers
 		jobs := int(math.Ceil(float64(toBlock.Int64()-fromBlock.Int64()) / float64(maxBlock)))
+		if jobs < maxWorker {
+			maxWorker = jobs // if jobs < maxWorkers, jobs = n, only start n workers
+		}
 		p := workers.NewPool(sugar, maxWorker)
 		sugar.Debugw("number of fetcher jobs", "jobs", jobs, "max_blocks", maxBlock)
 

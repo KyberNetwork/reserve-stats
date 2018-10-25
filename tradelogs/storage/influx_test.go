@@ -11,7 +11,6 @@ import (
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
 
-	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
@@ -63,26 +62,9 @@ func getSampleTradeLogs(dataPath string) ([]common.TradeLog, error) {
 	return tradeLogs, nil
 }
 
-func getSampleRates(tradeLogs []common.TradeLog) ([]tokenrate.ETHUSDRate, error) {
-	var rates []tokenrate.ETHUSDRate
-	for _, logItem := range tradeLogs {
-		rates = append(rates, tokenrate.ETHUSDRate{
-			BlockNumber: logItem.BlockNumber,
-			Timestamp:   logItem.Timestamp,
-			Rate:        123131.12131,
-			Provider:    "testProvider",
-		})
-	}
-	return rates, nil
-}
-
 func TestSaveTradeLogs(t *testing.T) {
 	tradeLogs, err := getSampleTradeLogs("testdata/trade_logs.json")
-	rates, err := getSampleRates(tradeLogs)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err = testStorage.SaveTradeLogs(tradeLogs, rates); err != nil {
+	if err = testStorage.SaveTradeLogs(tradeLogs); err != nil {
 		t.Error("get unexpected error when save trade logs", "err", err.Error())
 	}
 }

@@ -82,7 +82,7 @@ func (fj *fetcherJob) execute(sugar *zap.SugaredLogger) ([]common.TradeLog, erro
 		return nil, err
 	}
 
-	crawler, err := tradelogs.NewTradeLogCrawler(sugar, client, bc, is, coingecko.New())
+	crawler, err := tradelogs.NewCrawler(sugar, client, bc, is, coingecko.New())
 	if err != nil {
 		return nil, err
 	}

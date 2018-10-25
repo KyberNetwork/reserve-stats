@@ -17,10 +17,11 @@ import (
 
 const dbName = "trade_logs"
 
+type executeJob func(*zap.SugaredLogger) ([]common.TradeLog, error)
+
 type job interface {
-	// TODO: wrap execute in a retry function with following signature.
 	// retry the given fn function for attempts time with sleep duration between before returns an error.
-	// retry(fn function(*zap.SugaredLogger), attempts int)([]common.TradeLog, error)
+	retry(fn executeJob, attempts int, logger *zap.SugaredLogger) ([]common.TradeLog, error)
 	execute(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 	info() (order int, from, to *big.Int)
 }
@@ -41,6 +42,25 @@ type FetcherJob struct {
 	order int
 	from  *big.Int
 	to    *big.Int
+}
+
+func (fj *FetcherJob) retry(fn executeJob, attempts int, logger *zap.SugaredLogger) ([]common.TradeLog, error) {
+	var (
+		result []common.TradeLog
+		err    error
+	)
+
+	for i := 0; i < attempts; i++ {
+		result, err = fn(logger)
+		if err == nil {
+			return result, nil
+		}
+
+		logger.Debugw("failed to execute job", "attempt", i)
+		time.Sleep(time.Second)
+	}
+
+	return result, err
 }
 
 func (fj *FetcherJob) execute(sugar *zap.SugaredLogger) ([]common.TradeLog, error) {
@@ -92,7 +112,7 @@ type Pool struct {
 }
 
 // NewPool returns a pool of workers to handle jobs concurrently
-func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface) *Pool {
+func NewPool(sugar *zap.SugaredLogger, maxWorkers int, attemps int, storage storage.Interface) *Pool {
 	var p = &Pool{
 		sugar:                 sugar,
 		jobCh:                 make(chan job),
@@ -116,7 +136,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 					"from", from.String(),
 					"to", to.String())
 
-				tradeLogs, err := j.execute(logger)
+				tradeLogs, err := j.retry(j.execute, attemps, logger)
 				if err != nil {
 					logger.Errorw("fetcher job execution failed",
 						"from", from.String(),

@@ -32,6 +32,9 @@ const (
 	maxBlockFlag    = "max-blocks"
 	defaultMaxBlock = 100
 
+	attemptsFlag    = "attempts"
+	defaultAttempts = 5
+
 	envVarPrefix = "TRADE_LOGS_CRAWLER_"
 
 	dbName = "trade_logs"
@@ -66,6 +69,12 @@ func main() {
 			Usage:  "The maximum number of block on each query",
 			EnvVar: envVarPrefix + "MAX_BLOCK",
 			Value:  defaultMaxBlock,
+		},
+		cli.IntFlag{
+			Name:   attemptsFlag,
+			Usage:  "The number of attempt to query trade log from blockchain",
+			EnvVar: envVarPrefix + "ATTEMPTS",
+			Value:  defaultAttempts,
 		},
 	)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
@@ -148,8 +157,8 @@ func run(c *cli.Context) error {
 
 	maxWorker := c.Int(maxWorkerFlag)
 	maxBlock := c.Int(maxBlockFlag)
+	attempts := c.Int(attemptsFlag) // exit if failed to fetch logs after attempts times
 
-	// TODO: consider exit if successive failed to fetch logs for 5 times
 	for {
 		var doneCh = make(chan struct{})
 
@@ -181,7 +190,7 @@ func run(c *cli.Context) error {
 		if jobs < maxWorker {
 			maxWorker = jobs // if jobs < maxWorkers, jobs = n, only start n workers
 		}
-		p := workers.NewPool(sugar, maxWorker, influxStorage)
+		p := workers.NewPool(sugar, maxWorker, attempts, influxStorage)
 		sugar.Debugw("number of fetcher jobs", "jobs", jobs, "max_blocks", maxBlock)
 
 		go func(fromBlock, toBlock, maxBlocks int64) {

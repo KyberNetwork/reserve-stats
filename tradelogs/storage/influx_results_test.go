@@ -57,28 +57,35 @@ func loadTestData(db string) error {
 }
 
 func TestLoadTradeLogs(t *testing.T) {
-	const dbName = "test_results"
-	err := loadTestData(dbName)
-	if err != nil {
-		t.Fatal(err)
-	}
+	const (
+		dbName = "test_results"
+		// These params must be change when export.dat changes.
+		fromTime    = 1539247511
+		toTime      = 1539248681
+		expectedLen = 11
+	)
 
 	is, err := newTestInfluxStorage(dbName)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer func() {
+		if err = is.tearDown(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	if err = loadTestData(dbName); err != nil {
+		t.Fatal(err)
+	}
 
 	// following verification can be changed once the export.dat file is regen.
-	tradeLogs, err := is.LoadTradeLogs(time.Unix(1539247511, 0), time.Unix(1539248681, 0))
+	tradeLogs, err := is.LoadTradeLogs(time.Unix(fromTime, 0), time.Unix(toTime, 0))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(tradeLogs) != 11 {
-		t.Errorf("wrong number of trade log returned, expected: %d, got: %d", 11, len(tradeLogs))
+	if len(tradeLogs) != expectedLen {
+		t.Errorf("wrong number of trade log returned, expected: %d, got: %d", expectedLen, len(tradeLogs))
 	}
 
-	if err = is.tearDown(); err != nil {
-		t.Fatal(err)
-	}
 }

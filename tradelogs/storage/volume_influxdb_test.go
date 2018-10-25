@@ -56,11 +56,11 @@ func TestGetAssetVolume(t *testing.T) {
 	const (
 		dbName = "test_volume"
 		// These params are expected to be change when export.dat changes.
-		fromTime   = 1539248043000
-		toTime     = 1539248666000
-		eth_amount = 238.33849929550047
-		freq       = "h"
-		timeStamp  = "2018-10-11T09:00:00Z"
+		fromTime  = 1539248043000
+		toTime    = 1539248666000
+		ethAmount = 238.33849929550047
+		freq      = "h"
+		timeStamp = "2018-10-11T09:00:00Z"
 	)
 
 	is, err := newTestInfluxStorage(dbName)
@@ -92,7 +92,7 @@ func TestGetAssetVolume(t *testing.T) {
 		t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))
 	}
 
-	if result.USDAmount != eth_amount {
-		t.Fatal(fmt.Errorf("Expect USD amount to be %.18f, got %.18f", eth_amount, result.USDAmount))
+	if result.USDAmount != ethAmount {
+		t.Fatal(fmt.Errorf("Expect USD amount to be %.18f, got %.18f", ethAmount, result.USDAmount))
 	}
 }

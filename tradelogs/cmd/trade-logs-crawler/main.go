@@ -25,6 +25,12 @@ const (
 	defaultFromblock = 5069586
 	toBlockFlag      = "to-block"
 
+	maxWorkerFlag    = "max-workers"
+	defaultMaxWorker = 5
+
+	maxBlockFlag    = "max-blocks"
+	defaultMaxBlock = 100
+
 	envVarPrefix = "TRADE_LOGS_CRAWLER_"
 )
 
@@ -45,6 +51,18 @@ func main() {
 			Name:   toBlockFlag,
 			Usage:  "Fetch trade logs to block",
 			EnvVar: "TO_BLOCK",
+		},
+		cli.IntFlag{
+			Name:   maxWorkerFlag,
+			Usage:  "The maximum number of worker to fetch trade logs",
+			EnvVar: envVarPrefix + "MAX_WORKER",
+			Value:  defaultMaxWorker,
+		},
+		cli.IntFlag{
+			Name:   maxBlockFlag,
+			Usage:  "The maximum number of block on each query",
+			EnvVar: envVarPrefix + "MAX_BLOCK",
+			Value:  defaultMaxBlock,
 		},
 	)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
@@ -71,12 +89,6 @@ func parseBigIntFlag(c *cli.Context, flag string) (*big.Int, error) {
 }
 
 func run(c *cli.Context) error {
-	const (
-		// TODO: make this a configuration flag with default value: 5
-		maxWorker = 20
-		// TODO: make this a configuration flag with default value: 100
-		maxBlocks = 1000
-	)
 	var (
 		err       error
 		fromBlock *big.Int
@@ -131,6 +143,9 @@ func run(c *cli.Context) error {
 		}
 	}
 
+	maxWorker := c.Int(maxWorkerFlag)
+	maxBlock := c.Int(maxBlockFlag)
+
 	// TODO: consider exit if successive failed to fetch logs for 5 times
 	for {
 		var doneCh = make(chan struct{})
@@ -160,9 +175,9 @@ func run(c *cli.Context) error {
 		}
 
 		// TODO: if jobs < maxWorkers, jobs = n, only start n workers
-		jobs := int(math.Ceil(float64(toBlock.Int64()-fromBlock.Int64()) / maxBlocks))
+		jobs := int(math.Ceil(float64(toBlock.Int64()-fromBlock.Int64()) / float64(maxBlock)))
 		p := newPool(sugar, maxWorker)
-		sugar.Debugw("number of fetcher jobs", "jobs", jobs, "max_blocks", maxBlocks)
+		sugar.Debugw("number of fetcher jobs", "jobs", jobs, "max_blocks", maxBlock)
 
 		go func(fromBlock, toBlock, maxBlocks int64) {
 			var order = 0
@@ -171,7 +186,7 @@ func run(c *cli.Context) error {
 				order++
 			}
 			doneCh <- struct{}{}
-		}(fromBlock.Int64(), toBlock.Int64(), maxBlocks)
+		}(fromBlock.Int64(), toBlock.Int64(), int64(maxBlock))
 
 		for {
 			var toBreak = false

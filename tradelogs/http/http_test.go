@@ -16,6 +16,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 type mockStorage struct {
@@ -33,6 +34,10 @@ func (s *mockStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, erro
 }
 
 func (s *mockStorage) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[ethereum.Address]map[string]float64, error) {
+	return nil, nil
+}
+
+func (s *mockStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.Token, fromTime, toTime uint64, frequency string) (map[time.Time]common.VolumeStats, error) {
 	return nil, nil
 }
 

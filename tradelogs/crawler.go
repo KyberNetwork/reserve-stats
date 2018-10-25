@@ -3,7 +3,6 @@ package tradelogs
 import (
 	"context"
 	"errors"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	"github.com/KyberNetwork/tokenrate"
 	"math/big"
 	"time"
@@ -59,7 +58,7 @@ var (
 )
 
 // NewCrawler create a new Crawler instance.
-func NewCrawler(sugar *zap.SugaredLogger, client *ethclient.Client, broadcastClient broadcast.Interface, storage storage.Interface, rateProvider tokenrate.ETHUSDRateProvider) (*Crawler, error) {
+func NewCrawler(sugar *zap.SugaredLogger, client *ethclient.Client, broadcastClient broadcast.Interface, rateProvider tokenrate.ETHUSDRateProvider) (*Crawler, error) {
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
 	if err != nil {
 		return nil, err
@@ -70,7 +69,6 @@ func NewCrawler(sugar *zap.SugaredLogger, client *ethclient.Client, broadcastCli
 		ethClient:       client,
 		txTime:          resolver,
 		broadcastClient: broadcastClient,
-		storage:         storage,
 		rateProvider:    rateProvider,
 	}, nil
 }
@@ -82,7 +80,6 @@ type Crawler struct {
 	ethClient       *ethclient.Client
 	txTime          *blockchain.BlockTimeResolver
 	broadcastClient broadcast.Interface
-	storage         storage.Interface
 	rateProvider    tokenrate.ETHUSDRateProvider
 }
 
@@ -302,11 +299,6 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 		result[i].ETHUSDProvider = crawler.rateProvider.Name()
 		result[i].ETHUSDRate = rate
 
-	}
-
-	// TODO: remove this and only save to database in workers
-	if err := crawler.storage.SaveTradeLogs(result); err != nil {
-		return nil, err
 	}
 
 	return result, nil

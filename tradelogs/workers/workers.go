@@ -1,9 +1,7 @@
 package workers
 
 import (
-	"errors"
 	"github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/tokenrate/coingecko"
 	"math/big"
@@ -11,7 +9,6 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	"github.com/urfave/cli"
@@ -57,32 +54,12 @@ func (fj *FetcherJob) execute(sugar *zap.SugaredLogger) ([]common.TradeLog, erro
 		return nil, err
 	}
 
-	coreClient, err := core.NewClientFromContext(sugar, fj.c)
-	if err != nil {
-		return nil, err
-	}
-
-	influxClient, err := influxdb.NewClientFromContext(fj.c)
-	if err != nil {
-		return nil, err
-	}
-
-	is, err := storage.NewInfluxStorage(
-		sugar,
-		dbName,
-		influxClient,
-		core.NewCachedClient(coreClient),
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	client, err := app.NewEthereumClientFromFlag(fj.c)
 	if err != nil {
 		return nil, err
 	}
 
-	crawler, err := tradelogs.NewCrawler(sugar, client, bc, is, coingecko.New())
+	crawler, err := tradelogs.NewCrawler(sugar, client, bc, coingecko.New())
 	if err != nil {
 		return nil, err
 	}
@@ -91,8 +68,6 @@ func (fj *FetcherJob) execute(sugar *zap.SugaredLogger) ([]common.TradeLog, erro
 	if err != nil {
 		return nil, err
 	}
-
-	return nil, errors.New("I always return an error")
 
 	return tradeLogs, nil
 }
@@ -110,18 +85,21 @@ type Pool struct {
 	jobCh chan job
 	ErrCh chan error
 
-	// TODO: add a lastCompletedJob field and only inserted to database if the job order = lastCompleted + 1
-	// that means only the fetching job are running concurrently, the database writing is still consecutively
-	// this should be protected with a sync mutex or using atomic.StoreInt.
-	//lastCompleted int
+	mutex                 *sync.Mutex
+	LastCompletedJobOrder int // Keep the order of the last completed job
+
+	storage storage.Interface
 }
 
 // NewPool returns a pool of workers to handle jobs concurrently
-func NewPool(sugar *zap.SugaredLogger, maxWorkers int) *Pool {
+func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface) *Pool {
 	var p = &Pool{
-		sugar: sugar,
-		jobCh: make(chan job),
-		ErrCh: make(chan error, maxWorkers),
+		sugar:                 sugar,
+		jobCh:                 make(chan job),
+		ErrCh:                 make(chan error, maxWorkers),
+		mutex:                 &sync.Mutex{},
+		storage:               storage,
+		LastCompletedJobOrder: 0,
 	}
 
 	p.wg.Add(maxWorkers)
@@ -133,14 +111,13 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int) *Pool {
 				"max_workers", maxWorkers,
 			)
 			for j := range p.jobCh {
-				_, from, to := j.info()
+				order, from, to := j.info()
 				logger.Infow("executing fetcher job",
 					"from", from.String(),
 					"to", to.String())
 
-				// TODO: compare the job id to lastCompleted and save to database if job order = lastCompleted + 1,
-				// otherwise blocks worker
-				if _, err := j.execute(logger); err != nil {
+				tradeLogs, err := j.execute(logger)
+				if err != nil {
 					logger.Errorw("fetcher job execution failed",
 						"from", from.String(),
 						"to", to.String(),
@@ -152,6 +129,40 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int) *Pool {
 					"from", from.String(),
 					"to", to.String())
 
+				// Compare the job order to lastCompletedOrder and save to database if job order = lastCompletedOrder + 1,
+				// otherwise blocks worker
+				saveSuccess := false
+				for {
+					var err error
+
+					p.mutex.Lock()
+					if order == p.LastCompletedJobOrder+1 {
+						err = p.storage.SaveTradeLogs(tradeLogs)
+						if err == nil {
+							saveSuccess = true
+							p.LastCompletedJobOrder++
+						}
+					}
+					p.mutex.Unlock()
+
+					if err != nil {
+						logger.Errorw("save trade logs into db failed",
+							"from", from.String(),
+							"to", to.String(),
+							"err", err)
+						p.ErrCh <- err
+						break
+					} else {
+						if saveSuccess {
+							logger.Infow("save trade logs into db success",
+								"from", from.String(),
+								"to", to.String())
+							break
+						} else {
+							time.Sleep(time.Second)
+						}
+					}
+				}
 			}
 			logger.Infow("worker stopped",
 				"func", "tradelogs/workers/NewPool",

@@ -18,6 +18,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
 )
 
 const (
@@ -32,6 +33,8 @@ const (
 	defaultMaxBlock = 100
 
 	envVarPrefix = "TRADE_LOGS_CRAWLER_"
+
+	dbName = "trade_logs"
 )
 
 func main() {
@@ -176,13 +179,13 @@ func run(c *cli.Context) error {
 
 		// TODO: if jobs < maxWorkers, jobs = n, only start n workers
 		jobs := int(math.Ceil(float64(toBlock.Int64()-fromBlock.Int64()) / float64(maxBlock)))
-		p := newPool(sugar, maxWorker)
+		p := workers.NewPool(sugar, maxWorker)
 		sugar.Debugw("number of fetcher jobs", "jobs", jobs, "max_blocks", maxBlock)
 
 		go func(fromBlock, toBlock, maxBlocks int64) {
 			var order = 0
 			for i := int64(fromBlock); i < toBlock; i = i + maxBlocks {
-				p.run(newFetcherJob(c, order, big.NewInt(i), big.NewInt(i+maxBlocks)))
+				p.Run(workers.NewFetcherJob(c, order, big.NewInt(i), big.NewInt(i+maxBlocks)))
 				order++
 			}
 			doneCh <- struct{}{}
@@ -193,8 +196,8 @@ func run(c *cli.Context) error {
 			select {
 			case <-doneCh:
 				sugar.Info("all jobs are queued, waiting for completion")
-				p.shutdown()
-			case fErr := <-p.errCh:
+				p.Shutdown()
+			case fErr := <-p.ErrCh:
 				if fErr != nil {
 					sugar.Errorw("job failed to execute", "error", fErr)
 				} else {

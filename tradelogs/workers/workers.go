@@ -1,4 +1,4 @@
-package main
+package workers
 
 import (
 	"errors"
@@ -18,8 +18,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// TODO: refactor all below to a packages in tradeslogs/
-
 const dbName = "trade_logs"
 
 type job interface {
@@ -30,8 +28,9 @@ type job interface {
 	info() (order int, from, to *big.Int)
 }
 
-func newFetcherJob(c *cli.Context, order int, from, to *big.Int) *fetcherJob {
-	return &fetcherJob{
+// NewFetcherJob return an instance of fetcherJob
+func NewFetcherJob(c *cli.Context, order int, from, to *big.Int) *FetcherJob {
+	return &FetcherJob{
 		c:     c,
 		order: order,
 		from:  from,
@@ -39,14 +38,15 @@ func newFetcherJob(c *cli.Context, order int, from, to *big.Int) *fetcherJob {
 	}
 }
 
-type fetcherJob struct {
+// FetcherJob represent a job to crawl trade logs from block to block
+type FetcherJob struct {
 	c     *cli.Context
 	order int
 	from  *big.Int
 	to    *big.Int
 }
 
-func (fj *fetcherJob) execute(sugar *zap.SugaredLogger) ([]common.TradeLog, error) {
+func (fj *FetcherJob) execute(sugar *zap.SugaredLogger) ([]common.TradeLog, error) {
 	logger := sugar.With(
 		"from", fj.from.String(),
 		"to", fj.to.String())
@@ -97,16 +97,18 @@ func (fj *fetcherJob) execute(sugar *zap.SugaredLogger) ([]common.TradeLog, erro
 	return tradeLogs, nil
 }
 
-func (fj *fetcherJob) info() (int, *big.Int, *big.Int) {
+func (fj *FetcherJob) info() (int, *big.Int, *big.Int) {
 	return fj.order, fj.from, fj.to
 }
 
-type pool struct {
+// Pool represents a group of workers which is capable of handle many jobs
+// at a time
+type Pool struct {
 	sugar *zap.SugaredLogger
 	wg    sync.WaitGroup
 
 	jobCh chan job
-	errCh chan error
+	ErrCh chan error
 
 	// TODO: add a lastCompletedJob field and only inserted to database if the job order = lastCompleted + 1
 	// that means only the fetching job are running concurrently, the database writing is still consecutively
@@ -114,11 +116,12 @@ type pool struct {
 	//lastCompleted int
 }
 
-func newPool(sugar *zap.SugaredLogger, maxWorkers int) *pool {
-	var p = &pool{
+// NewPool returns a pool of workers to handle jobs concurrently
+func NewPool(sugar *zap.SugaredLogger, maxWorkers int) *Pool {
+	var p = &Pool{
 		sugar: sugar,
 		jobCh: make(chan job),
-		errCh: make(chan error, maxWorkers),
+		ErrCh: make(chan error, maxWorkers),
 	}
 
 	p.wg.Add(maxWorkers)
@@ -126,7 +129,7 @@ func newPool(sugar *zap.SugaredLogger, maxWorkers int) *pool {
 		go func(sugar *zap.SugaredLogger, workerID int) {
 			logger := sugar.With("worker_id", workerID)
 			logger.Infow("starting worker",
-				"func", "tradelogs/cmd/trade-logs-crawler/newPool",
+				"func", "tradelogs/workers/NewPool",
 				"max_workers", maxWorkers,
 			)
 			for j := range p.jobCh {
@@ -142,7 +145,7 @@ func newPool(sugar *zap.SugaredLogger, maxWorkers int) *pool {
 						"from", from.String(),
 						"to", to.String(),
 						"err", err)
-					p.errCh <- err
+					p.ErrCh <- err
 					break
 				}
 				logger.Infow("fetcher job executed successfully",
@@ -151,7 +154,7 @@ func newPool(sugar *zap.SugaredLogger, maxWorkers int) *pool {
 
 			}
 			logger.Infow("worker stopped",
-				"func", "tradelogs/cmd/trade-logs-crawler/newPool",
+				"func", "tradelogs/workers/NewPool",
 				"max_workers", maxWorkers,
 			)
 			p.wg.Done()
@@ -161,19 +164,21 @@ func newPool(sugar *zap.SugaredLogger, maxWorkers int) *pool {
 	return p
 }
 
-func (p *pool) run(j job) {
+// Run puts new job to queue
+func (p *Pool) Run(j job) {
 	_, from, to := j.info()
 	p.sugar.Infow("putting new job to queue",
-		"func", "tradelogs/cmd/trade-logs-crawler/run",
+		"func", "tradelogs/workers/Run",
 		"from", from.String(),
 		"to", to.String())
 	p.jobCh <- j
 }
 
-func (p *pool) shutdown() {
+// Shutdown stops the workers pool
+func (p *Pool) Shutdown() {
 	p.sugar.Infow("workers pool shutting down",
-		"func", "tradelogs/cmd/trade-logs-crawler/shutdown")
+		"func", "tradelogs/workers/Shutdown")
 	close(p.jobCh)
 	p.wg.Wait()
-	close(p.errCh)
+	close(p.ErrCh)
 }

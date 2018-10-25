@@ -1,6 +1,8 @@
 package validators
 
 import (
+	"strings"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-ozzo/ozzo-validation"
@@ -34,9 +36,21 @@ func isEmail(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
 	return true
 }
 
+// isFreq is a validator.Func that returns true if given field is a valid request frequency
+// m = minute, h = hour, d = day
+func isFreq(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
+	field reflect.Value, _ reflect.Type, _ reflect.Kind, _ string) bool {
+	freq := strings.ToLower(field.String())
+	if freq == "m" || freq == "h" || freq == "d" {
+		return true
+	}
+	return false
+}
+
 func init() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("isAddress", isEthereumAddress)
 		v.RegisterValidation("isEmail", isEmail)
+		v.RegisterValidation("isFreq", isFreq)
 	}
 }

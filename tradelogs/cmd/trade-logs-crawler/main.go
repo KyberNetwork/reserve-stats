@@ -35,6 +35,9 @@ const (
 	attemptsFlag    = "attempts"
 	defaultAttempts = 5
 
+	delayFlag        = "delay"
+	defaultDelayTime = time.Minute
+
 	envVarPrefix = "TRADE_LOGS_CRAWLER_"
 
 	dbName = "trade_logs"
@@ -75,6 +78,12 @@ func main() {
 			Usage:  "The number of attempt to query trade log from blockchain",
 			EnvVar: envVarPrefix + "ATTEMPTS",
 			Value:  defaultAttempts,
+		},
+		cli.DurationFlag{
+			Name:   delayFlag,
+			Usage:  "The duration to put worker pools into sleep after each batch requets",
+			EnvVar: envVarPrefix + "DELAY",
+			Value:  defaultDelayTime,
 		},
 	)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
@@ -158,6 +167,7 @@ func run(c *cli.Context) error {
 	maxWorker := c.Int(maxWorkerFlag)
 	maxBlock := c.Int(maxBlockFlag)
 	attempts := c.Int(attemptsFlag) // exit if failed to fetch logs after attempts times
+	delayTime := c.Duration(delayFlag)
 
 	for {
 		var doneCh = make(chan struct{})
@@ -223,14 +233,12 @@ func run(c *cli.Context) error {
 		}
 
 		if daemon {
-			// TODO: make this a flag
-			sleep := time.Minute
 			sugar.Infow("waiting before fetching new trade logs",
 				"last_from_block", fromBlock.String(),
 				"last_to_block", toBlock.String(),
-				"sleep", sleep.String())
+				"sleep", delayTime.String())
 			fromBlock, toBlock = nil, nil
-			time.Sleep(sleep)
+			time.Sleep(delayTime)
 		} else {
 			break
 		}

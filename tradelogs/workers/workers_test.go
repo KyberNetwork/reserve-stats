@@ -38,6 +38,10 @@ func (s *mockStorage) GetAssetVolume(token core.Token, fromTime, toTime uint64, 
 	return nil, nil
 }
 
+func (s *mockStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.Token, fromTime, toTime uint64, frequency string) (map[uint64]*common.VolumeStats, error) {
+	return nil, nil
+}
+
 type mockJob struct {
 	order   int
 	failure bool

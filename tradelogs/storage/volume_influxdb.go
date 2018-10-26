@@ -34,7 +34,7 @@ var (
 
 // GetReserveVolume returns the volume of a specific asset(token) from a reserve
 // between a period and with desired frequency
-func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.Token, fromTime, toTime uint64, frequency string) (map[time.Time]*common.VolumeStats, error) {
+func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.Token, fromTime, toTime uint64, frequency string) (map[uint64]*common.VolumeStats, error) {
 	var (
 		rsvAddrHex   = rsvAddr.Hex()
 		tokenAddrHex = ethereum.HexToAddress(token.Address).Hex()
@@ -47,7 +47,7 @@ func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.T
 
 	addrFilter := fmt.Sprintf("((dst_addr='%s' OR src_addr='%s') AND (dst_rsv_addr='%s' OR src_rsv_addr='%s'))", tokenAddrHex, tokenAddrHex, rsvAddrHex, rsvAddrHex)
 	timeFilter := fmt.Sprintf("(time >=%d%s AND time <= %d%s)", fromTime, timePrecision, toTime, timePrecision)
-	cmd := fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, SUM(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s)", tokenVolumeField, ethVolumeField, fiatVolumeField, mName, timeFilter, addrFilter, frequency)
+	cmd := fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, SUM(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s) FILL(0)", tokenVolumeField, ethVolumeField, fiatVolumeField, mName, timeFilter, addrFilter, frequency)
 
 	logger.Debugf("the query is %s", cmd)
 

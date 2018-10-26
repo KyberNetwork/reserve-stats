@@ -146,7 +146,7 @@ func TestGetReserveVolume(t *testing.T) {
 	}
 
 	volume, err := is.GetReserveVolume(ethereum.HexToAddress(rsvAddrStr), core.ETHToken, fromTime, toTime, freq)
-	t.Logf("%v", volume)
+	t.Logf("Volume result %v", volume)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +154,7 @@ func TestGetReserveVolume(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, ok := volume[timeUnix]
+	result, ok := volume[timeutil.TimeToTimestampMs(timeUnix)]
 	if !ok {
 		t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))
 	}

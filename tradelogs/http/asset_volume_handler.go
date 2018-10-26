@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/core"
+	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/gin-gonic/gin"
 )
@@ -14,8 +15,8 @@ import (
 type assetVolumeQuery struct {
 	From  uint64 `form:"from" `
 	To    uint64 `form:"to"`
-	Asset string `form:"asset"`
-	Freq  string `form:"freq"`
+	Asset string `form:"asset" `
+	Freq  string `form:"freq" binding:"isAddress"`
 }
 
 func (sv *Server) getAssetVolume(c *gin.Context) {

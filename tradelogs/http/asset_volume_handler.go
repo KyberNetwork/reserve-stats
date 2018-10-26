@@ -76,7 +76,7 @@ func timeValidation(fromTime, toTime *uint64, c *gin.Context, logger *zap.Sugare
 }
 
 func (sv *Server) lookupToken(ID string) (core.Token, error) {
-	tokens, err := sv.setting.Tokens()
+	tokens, err := sv.coreSetting.Tokens()
 	if err != nil {
 		return core.Token{}, err
 	}

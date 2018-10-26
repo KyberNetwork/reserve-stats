@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"testing"
 	"time"
@@ -79,7 +78,7 @@ func TestGetAssetVolume(t *testing.T) {
 		t.Fatal(err)
 	}
 	volume, err := is.GetAssetVolume(core.ETHToken, fromTime, toTime, freq)
-	log.Printf("%v", volume)
+	t.Logf("Voume result %v", volume)
 	if err != nil {
 		t.Fatal(err)
 	}

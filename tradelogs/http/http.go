@@ -10,6 +10,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 
+	"github.com/KyberNetwork/reserve-stats/lib/core"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
@@ -25,10 +26,10 @@ const (
 
 // Server serve trade logs through http endpoint
 type Server struct {
-	storage storage.Interface
-	host    string
-	sugar   *zap.SugaredLogger
-	setting coreSetting
+	storage     storage.Interface
+	host        string
+	sugar       *zap.SugaredLogger
+	coreSetting core.Interface
 }
 
 type tradeLogsQuery struct {
@@ -169,6 +170,6 @@ func (sv *Server) Start() error {
 }
 
 // NewServer returns an instance of HttpApi to serve trade logs
-func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett coreSetting) *Server {
-	return &Server{storage: storage, host: host, sugar: sugar, setting: sett}
+func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett core.Interface) *Server {
+	return &Server{storage: storage, host: host, sugar: sugar, coreSetting: sett}
 }

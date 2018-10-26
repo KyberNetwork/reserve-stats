@@ -30,7 +30,12 @@ var (
 // GetAssetVolume returns the volume of a specific assset(token) between a period and with desired frequency
 func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime uint64, frequency string) (map[time.Time]*common.VolumeStats, error) {
 	var (
-		logger = is.sugar.With("asset Volume", token.Address, "from", fromTime, "to", toTime)
+		logger = is.sugar.With(
+			"func", "tradelogs/storage/InfluxStorage.GetAssetVolume",
+			"token", token.Address,
+			"from", fromTime,
+			"to", toTime,
+		)
 	)
 	mName, ok := measurementName[strings.ToLower(frequency)]
 	if !ok {
@@ -43,13 +48,15 @@ func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime uint6
 		cmd        = fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, sum(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s) fill(0)", tokenVolumeField, ethVolumeField, fiatVolumeField, mName, timeFilter, addrFilter, frequency)
 	)
 
-	logger.Debugw("query CMD rendered is:", "query", cmd)
+	logger.Debugw("get asset volume query rendered", "query", cmd)
 	response, err := is.queryDB(is.influxClient, cmd)
-	logger.Debugw("response is :", "response", response)
 
 	if err != nil {
 		return nil, err
 	}
+
+	logger.Debugw("got result for asset volume query", "response", response)
+
 	if len(response) == 0 || len(response[0].Series) == 0 {
 		return nil, nil
 	}
@@ -72,9 +79,15 @@ func convertQueryResultToVolume(row influxModel.Row) (map[time.Time]*common.Volu
 }
 
 func convertRowValueToVolume(v []interface{}) (time.Time, *common.VolumeStats, error) {
-	if len(v) == 0 {
+	// number of fields in record result
+	// - time
+	// - token_volume
+	// - eth_volume
+	// - usd_volume
+	if len(v) != 4 {
 		return time.Time{}, nil, errors.New("value fields is empty")
 	}
+
 	timestampString, ok := v[0].(string)
 	if !ok {
 		return time.Time{}, nil, errCantConvert

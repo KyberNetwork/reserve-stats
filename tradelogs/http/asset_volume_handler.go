@@ -21,7 +21,7 @@ type assetVolumeQuery struct {
 func (sv *Server) getAssetVolume(c *gin.Context) {
 	var (
 		query  assetVolumeQuery
-		logger = sv.sugar.With("func", "tradelogs/volumehttp.getAssetVolume")
+		logger = sv.sugar.With("func", "tradelogs/http/Server.getAssetVolume")
 	)
 	if err := c.ShouldBindQuery(&query); err != nil {
 		c.JSON(
@@ -34,7 +34,7 @@ func (sv *Server) getAssetVolume(c *gin.Context) {
 		logger.Info("time validation returned invalid")
 		return
 	}
-	token, err := sv.lookupToken(query.Asset)
+	token, err := core.LookupToken(sv.coreSetting, query.Asset)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
@@ -73,17 +73,4 @@ func timeValidation(fromTime, toTime *uint64, c *gin.Context, logger *zap.Sugare
 		}
 	}
 	return true
-}
-
-func (sv *Server) lookupToken(ID string) (core.Token, error) {
-	tokens, err := sv.coreSetting.Tokens()
-	if err != nil {
-		return core.Token{}, err
-	}
-	for _, token := range tokens {
-		if token.ID == ID {
-			return token, nil
-		}
-	}
-	return core.Token{}, fmt.Errorf("cannot find token %s in current core setting", ID)
 }

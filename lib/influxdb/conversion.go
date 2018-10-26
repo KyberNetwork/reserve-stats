@@ -3,7 +3,6 @@ package influxdb
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -40,12 +39,12 @@ func GetFloat64FromInterface(value interface{}) (float64, error) {
 
 // GetInt64FromInterface converts given value to float64.
 func GetInt64FromInterface(value interface{}) (int64, error) {
-	number, ok := value.(string)
+	number, ok := value.(json.Number)
 	if !ok {
 		return 0, fmt.Errorf("invalid int64 value %v", value)
 	}
 
-	return strconv.ParseInt(number, 10, 64)
+	return number.Int64()
 }
 
 // GetTimeFromInterface converts given value to time.

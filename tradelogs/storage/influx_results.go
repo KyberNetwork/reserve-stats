@@ -34,6 +34,23 @@ func (is *InfluxStorage) rowToAggregatedBurnFee(row []interface{}) (time.Time, f
 	return ts, burnFee, reserve, nil
 }
 
+//this function can also work for burnFee and walletFee
+func (is *InfluxStorage) rowToAggregatedFee(row []interface{}) (time.Time, float64, error) {
+	var (
+		ts  time.Time
+		fee float64
+	)
+	ts, err := influxdb.GetTimeFromInterface(row[0])
+	if err != nil {
+		return ts, fee, err
+	}
+	fee, err = influxdb.GetFloat64FromInterface(row[1])
+	if err != nil {
+		return ts, fee, err
+	}
+	return ts, fee, nil
+}
+
 // rowToBurnFee converts the result of InfluxDB query to BurnFee event
 // The query is:
 // SELECT time, tx_hash, reserve_addr, amount FROM burn_fees WHERE_clause

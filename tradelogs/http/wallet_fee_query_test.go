@@ -18,6 +18,7 @@ const (
 	toTime          = 1527897599000                                // june 1st 23:59:59
 	freq            = "D"                                          // Day freqency
 	timezone        = 0                                            // UTC
+	invalidAddress  = "dah1oshfsaoh"                               // address is not valid
 	invalidFreq     = "q"                                          // not exist frequency
 	invalidTimezone = 15                                           // not supported timezone
 )
@@ -34,6 +35,33 @@ func TestWalletFeeQuery(t *testing.T) {
 			Msg:      "Test invalid request, lack of params",
 			Endpoint: endpoint,
 			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusBadRequest, resp.Code)
+			},
+		},
+		{
+			Msg: "Test address is not valid",
+			Endpoint: fmt.Sprintf("%s?walletAddr=%s&reserveAddr=%s&from=%d&to=%d&freq=%s&timezone=%d", endpoint,
+				invalidAddress, reserveAddr, fromTime, toTime, freq, timezone),
+			Method: http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusBadRequest, resp.Code)
+			},
+		},
+		{
+			Msg: "Test freq is not valid",
+			Endpoint: fmt.Sprintf("%s?walletAddr=%s&reserveAddr=%s&from=%d&to=%d&freq=%s&timezone=%d", endpoint,
+				walletAddr, reserveAddr, fromTime, toTime, invalidFreq, timezone),
+			Method: http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusBadRequest, resp.Code)
+			},
+		},
+		{
+			Msg: "Test timezone is not supported",
+			Endpoint: fmt.Sprintf("%s?walletAddr=%s&reserveAddr=%s&from=%d&to=%d&freq=%s&timezone=%d", endpoint,
+				walletAddr, reserveAddr, fromTime, toTime, freq, invalidTimezone),
+			Method: http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusBadRequest, resp.Code)
 			},

@@ -41,8 +41,9 @@ docker exec "$container_name" influx_inspect export -datadir /var/lib/influxdb/d
     -waldir /var/lib/influxdb/wal -out /var/lib/influxdb/data/export.dat \
     -database trade_logs -retention autogen
 
+docker exec "$container_name" sed -i -e '/^#\|^CREATE DATABASE/d' /var/lib/influxdb/data/export.dat 
+
 cp "$data_dir/data/export.dat" export.dat
-sed -i -e '/^#/d' export.dat
 
 docker kill "$container_name"
 sudo rm -rf "$data_dir"

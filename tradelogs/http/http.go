@@ -1,7 +1,6 @@
 package http
 
 import (
-	"errors"
 	"fmt"
 	"go.uber.org/zap"
 	"net/http"
@@ -11,10 +10,18 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 
+	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
 
-const limitedTimeRange = 24 * time.Hour
+const (
+	limitedTimeRange         = 24 * time.Hour
+	hourlyBurnFeeMaxDuration = time.Hour * 24 * 180 // 180 days
+	hourlyFreq               = "h"
+	dailyBurnFeeMaxDuration  = time.Hour * 24 * 365 * 3 // ~ 3 years
+	dailyFreq                = "d"
+)
 
 // Server serve trade logs through http endpoint
 type Server struct {
@@ -29,24 +36,24 @@ type tradeLogsQuery struct {
 }
 
 type burnFeeQuery struct {
-	From        uint64 `form:"from"`
-	To          uint64 `form:"to"`
-	Freq        string `form:"freq"`
-	ReserveAddr string `form:"reserveAddr"`
+	From         uint64   `form:"from"`
+	To           uint64   `form:"to"`
+	Freq         string   `form:"freq"`
+	ReserveAddrs []string `form:"reserve" binding:"required,dive,isAddress"`
 }
 
 func validateTimeWindow(fromTime, toTime time.Time, freq string) error {
 	switch strings.ToLower(freq) {
-	case "h":
-		if toTime.After(fromTime.Add(time.Hour * 24 * 180)) {
-			return errors.New("hourly frequency limit is 180 days")
+	case hourlyFreq:
+		if toTime.After(fromTime.Add(hourlyBurnFeeMaxDuration)) {
+			return fmt.Errorf("your query time range exceeds the duration limit %s", hourlyBurnFeeMaxDuration)
 		}
-	case "d":
-		if toTime.After(fromTime.Add(time.Hour * 24 * 365 * 3)) {
-			return errors.New("daily frequency limit is 3 years")
+	case dailyFreq:
+		if toTime.After(fromTime.Add(dailyBurnFeeMaxDuration)) {
+			return fmt.Errorf("your query time range exceeds the duration limit %s", dailyBurnFeeMaxDuration)
 		}
 	default:
-		return errors.New("invalid frequency")
+		return fmt.Errorf("your query frequency is not supported, use %s or %s", hourlyFreq, dailyFreq)
 	}
 	return nil
 }
@@ -95,7 +102,10 @@ func (ha *Server) getTradeLogs(c *gin.Context) {
 }
 
 func (ha *Server) getBurnFee(c *gin.Context) {
-	var query burnFeeQuery
+	var (
+		query    burnFeeQuery
+		rsvAddrs []ethereum.Address
+	)
 	if err := c.ShouldBindQuery(&query); err != nil {
 		c.JSON(
 			http.StatusBadRequest,
@@ -104,17 +114,8 @@ func (ha *Server) getBurnFee(c *gin.Context) {
 		return
 	}
 
-	if !ethereum.IsHexAddress(query.ReserveAddr) {
-		ha.sugar.Debug("invalid reserve address")
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{"error": "invalid reserve address"},
-		)
-		return
-	}
-
-	fromTime := time.Unix(0, int64(query.From)*int64(time.Millisecond))
-	toTime := time.Unix(0, int64(query.To)*int64(time.Millisecond))
+	fromTime := timeutil.TimestampMsToTime(query.From)
+	toTime := timeutil.TimestampMsToTime(query.To)
 
 	if err := validateTimeWindow(fromTime, toTime, query.Freq); err != nil {
 		c.JSON(
@@ -124,14 +125,19 @@ func (ha *Server) getBurnFee(c *gin.Context) {
 		return
 	}
 
-	if toTime.Equal(time.Unix(0, 0)) {
+	if toTime.IsZero() {
 		toTime = time.Now()
+	}
+
+	if fromTime.IsZero() {
 		fromTime = toTime.Add(-time.Hour)
 	}
 
-	reserveAddr := ethereum.HexToAddress(query.ReserveAddr)
+	for _, rsvAddr := range query.ReserveAddrs {
+		rsvAddrs = append(rsvAddrs, ethereum.HexToAddress(rsvAddr))
+	}
 
-	burnFee, err := ha.storage.GetAggregatedBurnFee(fromTime, toTime, query.Freq, reserveAddr)
+	burnFee, err := ha.storage.GetAggregatedBurnFee(fromTime, toTime, query.Freq, rsvAddrs)
 	if err != nil {
 		ha.sugar.Errorw(err.Error(), "parameter", query)
 		c.JSON(

@@ -28,7 +28,7 @@ func (s *mockStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, erro
 	return nil, nil
 }
 
-func (s *mockStorage) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddr ethereum.Address) (map[string]float64, error) {
+func (s *mockStorage) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[string]float64, error) {
 	return nil, nil
 }
 
@@ -97,7 +97,7 @@ func TestBurnFeeRoute(t *testing.T) {
 	var tests = []httputil.HTTPTestCase{
 		{
 			Msg:      "Test valid request",
-			Endpoint: "/burn-fee?freq=h&reserveAddr=0x63825c174ab367968EC60f061753D3bbD36A0D8F",
+			Endpoint: "/burn-fee?freq=h&reserve=0x63825c174ab367968EC60f061753D3bbD36A0D8F",
 			Method:   http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, resp.Code)
@@ -109,7 +109,7 @@ func TestBurnFeeRoute(t *testing.T) {
 			},
 		},
 		{
-			Msg:      "Test invalid reserve address",
+			Msg:      "Test missing reserve address",
 			Endpoint: "/burn-fee?freq=h",
 			Method:   http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -122,12 +122,29 @@ func TestBurnFeeRoute(t *testing.T) {
 					t.Error("Could not decode result", "err", err)
 				}
 
-				assert.Equal(t, "invalid reserve address", result.Error)
+				assert.Contains(t, result.Error, "Field validation for 'ReserveAddrs' failed on the 'required' tag")
+			},
+		},
+		{
+			Msg:      "Test invalid reserve address",
+			Endpoint: "/burn-fee?freq=h&reserve=invalidAddress",
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusBadRequest, resp.Code)
+
+				var result struct {
+					Error string `json:"error"`
+				}
+				if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+					t.Error("Could not decode result", "err", err)
+				}
+
+				assert.Contains(t, result.Error, "Field validation for 'ReserveAddrs[0]' failed on the 'isAddress' tag")
 			},
 		},
 		{
 			Msg:      "Test invalid frequency",
-			Endpoint: "/burn-fee?freq=invalid&reserveAddr=0x63825c174ab367968EC60f061753D3bbD36A0D8F",
+			Endpoint: "/burn-fee?freq=invalid&reserve=0x63825c174ab367968EC60f061753D3bbD36A0D8F",
 			Method:   http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusBadRequest, resp.Code)
@@ -139,12 +156,12 @@ func TestBurnFeeRoute(t *testing.T) {
 					t.Error("Could not decode result", "err", err)
 				}
 
-				assert.Equal(t, "invalid frequency", result.Error)
+				assert.Contains(t, result.Error, "your query frequency is not supported")
 			},
 		},
 		{
 			Msg:      "Test time range too broad",
-			Endpoint: fmt.Sprintf("/burn-fee?from=0&to=%d&freq=h&reserveAddr=0x63825c174ab367968EC60f061753D3bbD36A0D8F", time.Hour*24*180/time.Millisecond+1),
+			Endpoint: fmt.Sprintf("/burn-fee?from=0&to=%d&freq=h&reserve=0x63825c174ab367968EC60f061753D3bbD36A0D8F", hourlyBurnFeeMaxDuration/time.Millisecond+1),
 			Method:   http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusBadRequest, resp.Code)
@@ -156,7 +173,8 @@ func TestBurnFeeRoute(t *testing.T) {
 					t.Error("Could not decode result", "err", err)
 				}
 
-				assert.Equal(t, "hourly frequency limit is 180 days", result.Error)
+				expectedErrMsg := fmt.Sprintf("your query time range exceeds the duration limit %s", hourlyBurnFeeMaxDuration)
+				assert.Equal(t, expectedErrMsg, result.Error)
 			},
 		},
 	}

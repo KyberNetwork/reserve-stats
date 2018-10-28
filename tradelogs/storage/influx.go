@@ -1,10 +1,12 @@
 package storage
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -15,6 +17,11 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
+
+var freqToMeasurement = map[string]string{
+	"h": "hourly_burn_fees",
+	"d": "daily_burn_fees",
+}
 
 // InfluxStorage represent a client to store trade data to influx DB
 type InfluxStorage struct {
@@ -69,33 +76,50 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog, rates []tokenrate
 }
 
 // GetAggregatedBurnFee get aggregated burn fee in a time range given the reserve address
-func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddr ethereum.Address) (map[string]float64, error) {
+func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[string]float64, error) {
 	var (
 		measurement string
+		addrsStrs   []string
 	)
-	logger := is.sugar.With("from", from, "to", to, "freq", freq, "reserveAddr", reserveAddr)
+	logger := is.sugar.With("from", from, "to", to, "freq", freq, "reserveAddrs", reserveAddrs)
 
-	switch strings.ToLower(freq) {
-	case "h":
-		measurement = "hourly_burn_fees"
-	case "d":
-		measurement = "daily_burn_fees"
-	default:
+	measurement, ok := freqToMeasurement[strings.ToLower(freq)]
+	if !ok {
 		return nil, fmt.Errorf("invalid burn fee frequency %s", freq)
 	}
 
-	q := fmt.Sprintf(
-		`SELECT sum_amount FROM %s
-		WHERE reserve_addr = '%s' AND time >= '%s' AND time <= '%s' 
-		`,
-		measurement,
-		reserveAddr.Hex(),
-		from.Format(time.RFC3339),
-		to.Format(time.RFC3339),
-	)
-	logger.Debug("prepared query for aggregated burn fee", q)
+	const queryTmpl = `SELECT * FROM "{{.Measurement}}" WHERE '{{.From }}' <= time AND time <= '{{.To}}' ` +
+		`{{if len .Addrs}}AND ({{range $index, $element := .Addrs}}"reserve" = '{{$element}}'{{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
 
-	res, err := is.queryDB(is.influxClient, q)
+	logger.Debugw("before rendering query statement from template", "query_tempalte", queryTmpl)
+	tmpl, err := template.New("queryStmt").Parse(queryTmpl)
+	if err != nil {
+		return nil, err
+	}
+
+	var queryStmtBuf bytes.Buffer
+	for _, rsvAddr := range reserveAddrs {
+		addrsStrs = append(addrsStrs, rsvAddr.Hex())
+	}
+	if err = tmpl.Execute(&queryStmtBuf, struct {
+		Measurement    string
+		From           string
+		To             string
+		Addrs          []string
+		AddrsLastIndex int
+	}{
+		Measurement:    measurement,
+		From:           from.Format(time.RFC3339),
+		To:             to.Format(time.RFC3339),
+		Addrs:          addrsStrs,
+		AddrsLastIndex: len(reserveAddrs) - 1,
+	}); err != nil {
+		return nil, err
+	}
+
+	logger.Debugw("rendered query statement", "rendered_template", queryStmtBuf.String())
+
+	res, err := is.queryDB(is.influxClient, queryStmtBuf.String())
 	if err != nil {
 		return nil, err
 	}

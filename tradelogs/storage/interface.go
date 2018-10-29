@@ -13,5 +13,5 @@ type Interface interface {
 	SaveTradeLogs(logs []common.TradeLog, rates []tokenrate.ETHUSDRate) error
 	LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error)
 
-	GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[string]float64, error)
+	GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[ethereum.Address]map[string]float64, error)
 }

@@ -28,7 +28,7 @@ func (s *mockStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, erro
 	return nil, nil
 }
 
-func (s *mockStorage) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[string]float64, error) {
+func (s *mockStorage) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[ethereum.Address]map[string]float64, error) {
 	return nil, nil
 }
 
@@ -102,7 +102,7 @@ func TestBurnFeeRoute(t *testing.T) {
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, resp.Code)
 
-				var result map[string]float64
+				var result map[ethereum.Address]map[string]float64
 				if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 					t.Error("Could not decode result", "err", err)
 				}

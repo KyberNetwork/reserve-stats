@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
@@ -76,7 +77,7 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog, rates []tokenrate
 }
 
 // GetAggregatedBurnFee get aggregated burn fee in a time range given the reserve address
-func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[string]float64, error) {
+func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[ethereum.Address]map[string]float64, error) {
 	var (
 		measurement string
 		addrsStrs   []string
@@ -88,8 +89,8 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 		return nil, fmt.Errorf("invalid burn fee frequency %s", freq)
 	}
 
-	const queryTmpl = `SELECT * FROM "{{.Measurement}}" WHERE '{{.From }}' <= time AND time <= '{{.To}}' ` +
-		`{{if len .Addrs}}AND ({{range $index, $element := .Addrs}}"reserve" = '{{$element}}'{{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
+	const queryTmpl = `SELECT sum_amount, reserve_addr FROM "{{.Measurement}}" WHERE '{{.From }}' <= time AND time <= '{{.To}}' ` +
+		`{{if len .Addrs}}AND ({{range $index, $element := .Addrs}}"reserve_addr" = '{{$element}}'{{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
 
 	logger.Debugw("before rendering query statement from template", "query_tempalte", queryTmpl)
 	tmpl, err := template.New("queryStmt").Parse(queryTmpl)
@@ -129,15 +130,21 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 		return nil, nil
 	}
 
-	result := make(map[string]float64)
+	result := make(map[ethereum.Address]map[string]float64)
+
 	for _, row := range res[0].Series[0].Values {
-		ts, amount, err := is.rowToAggregatedBurnFee(row)
+		ts, amount, reserve, err := is.rowToAggregatedBurnFee(row)
 		if err != nil {
 			return nil, err
 		}
 
-		key := strconv.FormatInt(ts.UnixNano()/int64(time.Millisecond), 10)
-		result[key] = amount
+		key := strconv.FormatUint(timeutil.TimeToTimestampMs(ts), 10)
+
+		_, ok := result[reserve]
+		if !ok {
+			result[reserve] = make(map[string]float64)
+		}
+		result[reserve][key] = amount
 	}
 
 	return result, nil

@@ -35,12 +35,13 @@ func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq st
 		measurement = "hourly_wallet_fee"
 	}
 
+	// in cq we will add timezone as time offset interval
 	q := fmt.Sprintf(`
 		SELECT sum_amount from %s
 		WHERE reserve_addr = '%s' AND wallet_addr = %s
-		AND time >= '%s' AND time <= '%s'
+		AND time >= '%s' AND time <= '%s' AND time_offset_interval = '%d'
 	`, measurement, reserveAddr, walletAddr,
-		fromTime.Format(time.RFC3339), toTime.Format(time.RFC3339))
+		fromTime.Format(time.RFC3339), toTime.Format(time.RFC3339), timezone)
 
 	res, err := is.queryDB(is.influxClient, q)
 	if err != nil {

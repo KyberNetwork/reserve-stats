@@ -41,7 +41,7 @@ func isEmail(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
 func isFreq(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
 	field reflect.Value, _ reflect.Type, _ reflect.Kind, _ string) bool {
 	freq := strings.ToLower(field.String())
-	if freq == "m" || freq == "h" || freq == "d" {
+	if freq == "h" || freq == "d" {
 		return true
 	}
 	return false

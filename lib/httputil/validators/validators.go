@@ -58,11 +58,23 @@ func isSupportedTimezone(_ *validator.Validate, _ reflect.Value, _ reflect.Value
 	return true
 }
 
+// isValidCountryCode is  a validator.Func that returns true if given field
+// is a valid country code
+func isValidCountryCode(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
+	field reflect.Value, _ reflect.Type, _ reflect.Kind, _ string) bool {
+	country := field.String()
+	if err := validation.Validate(country, is.CountryCode2); err != nil {
+		return false
+	}
+	return true
+}
+
 func init() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("isAddress", isEthereumAddress)
 		v.RegisterValidation("isEmail", isEmail)
 		v.RegisterValidation("isFreq", isFreq)
 		v.RegisterValidation("isSupportedTimezone", isSupportedTimezone)
+		v.RegisterValidation("isValidCountryCode", isValidCountryCode)
 	}
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 const (
@@ -120,6 +119,7 @@ func (sv *Server) setupRouter() *gin.Engine {
 	r.GET("/user-volume", sv.getUserVolume)
 	r.GET("/user-list", sv.getUserList)
 	r.GET("/wallet-stats", sv.getWalletStats)
+	r.GET("/country-stats", sv.getCountryStats)
 	return r
 }
 

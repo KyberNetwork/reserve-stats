@@ -35,7 +35,7 @@ func (s *mockStorage) GetAggregatedBurnFee(from, to time.Time, freq string, rese
 	return nil, nil
 }
 
-func (s *mockStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq string, fromTime, toTime time.Time, timezone int64) (map[string]float64, error) {
+func (s *mockStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq string, fromTime, toTime time.Time, timezone int64) (map[uint64]float64, error) {
 	return nil, nil
 }
 

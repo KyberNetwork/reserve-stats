@@ -40,6 +40,9 @@ func (is *InfluxStorage) rowToAggregatedFee(row []interface{}) (time.Time, float
 		ts  time.Time
 		fee float64
 	)
+	if len(row) != 2 {
+		return ts, fee, fmt.Errorf("query row len should be 2 but got %d", len(row))
+	}
 	ts, err := influxdb.GetTimeFromInterface(row[0])
 	if err != nil {
 		return ts, fee, err

@@ -2,8 +2,9 @@ package storage
 
 import (
 	"fmt"
-	"strconv"
 	"time"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
@@ -17,9 +18,9 @@ const (
 //daily_wallet_fee and hourly_wallet_fee measurement is calculate by CQ
 //specify here: https://gist.github.com/halink0803/b4e9f51a0d7bb6fa361d1e058b227e6a
 func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq string,
-	fromTime, toTime time.Time, timezone int64) (map[string]float64, error) {
+	fromTime, toTime time.Time, timezone int64) (map[uint64]float64, error) {
 	var (
-		result      map[string]float64
+		result      map[uint64]float64
 		err         error
 		measurement string
 	)
@@ -57,7 +58,7 @@ func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq st
 		if err != nil {
 			return nil, err
 		}
-		key := strconv.FormatInt(ts.UnixNano()/int64(time.Millisecond), 10)
+		key := timeutil.TimeToTimestampMs(ts)
 		result[key] = amount
 	}
 

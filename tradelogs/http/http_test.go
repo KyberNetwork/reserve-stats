@@ -40,7 +40,10 @@ func newTestServer() (*Server, error) {
 	defer logger.Sync()
 	sugar := logger.Sugar()
 
-	return &Server{storage: &mockStorage{}, sugar: sugar}, nil
+	return &Server{
+		storage:     &mockStorage{},
+		sugar:       sugar,
+		coreSetting: &mockCore{}}, nil
 }
 
 func TestTradeLogsRoute(t *testing.T) {

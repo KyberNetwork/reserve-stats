@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
@@ -15,14 +14,15 @@ import (
 type assetVolumeQuery struct {
 	From  uint64 `form:"from" `
 	To    uint64 `form:"to"`
-	Asset string `form:"asset" `
-	Freq  string `form:"freq" binding:"isAddress"`
+	Asset string `form:"asset" binding:"required"`
+	Freq  string `form:"freq"`
 }
 
 func (sv *Server) getAssetVolume(c *gin.Context) {
 	var (
-		query  assetVolumeQuery
-		logger = sv.sugar.With("func", "tradelogs/http/Server.getAssetVolume")
+		query       assetVolumeQuery
+		logger      = sv.sugar.With("func", "tradelogs/http/Server.getAssetVolume")
+		defaultFreq = "h"
 	)
 	if err := c.ShouldBindQuery(&query); err != nil {
 		c.JSON(
@@ -35,6 +35,7 @@ func (sv *Server) getAssetVolume(c *gin.Context) {
 		logger.Info("time validation returned invalid")
 		return
 	}
+
 	token, err := core.LookupToken(sv.coreSetting, query.Asset)
 	if err != nil {
 		c.JSON(
@@ -42,6 +43,10 @@ func (sv *Server) getAssetVolume(c *gin.Context) {
 			gin.H{"error": err.Error()},
 		)
 		return
+	}
+	if query.Freq == "" {
+		sv.sugar.Debug("using default frequency", "freq", defaultFreq)
+		query.Freq = defaultFreq
 	}
 	result, err := sv.storage.GetAssetVolume(token, query.From, query.To, query.Freq)
 	if err != nil {
@@ -55,13 +60,6 @@ func (sv *Server) getAssetVolume(c *gin.Context) {
 }
 
 func timeValidation(fromTime, toTime *uint64, c *gin.Context, logger *zap.SugaredLogger) bool {
-	if *fromTime == 0 && *toTime == 0 {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{"error": fmt.Sprintf("invalid time frame query, from: %d, to: %d", *fromTime, *toTime)},
-		)
-		return false
-	}
 	now := time.Now().UTC()
 	if *toTime == 0 {
 		*toTime = timeutil.TimeToTimestampMs(now)

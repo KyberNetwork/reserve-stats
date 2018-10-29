@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 )
 
@@ -63,29 +65,21 @@ func TestGetAssetVolume(t *testing.T) {
 	)
 
 	is, err := newTestInfluxStorage(dbName)
+	assert.NoError(t, err)
+
 	defer func() {
-		if err := is.tearDown(); err != nil {
-			t.Fatal(err)
-		}
+		assert.NoError(t, is.tearDown())
 	}()
-	if err := loadTestData(dbName); err != nil {
-		t.Fatal(err)
-	}
-	if err := aggregationTestData(is); err != nil {
-		t.Fatal(err)
-	}
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, loadTestData(dbName))
+	assert.NoError(t, aggregationTestData(is))
 	volume, err := is.GetAssetVolume(core.ETHToken, fromTime, toTime, freq)
+	assert.NoError(t, err)
+
 	t.Logf("Voume result %v", volume)
-	if err != nil {
-		t.Fatal(err)
-	}
+
 	timeUnix, err := time.Parse(time.RFC3339, timeStamp)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
+
 	result, ok := volume[timeUnix]
 	if !ok {
 		t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))

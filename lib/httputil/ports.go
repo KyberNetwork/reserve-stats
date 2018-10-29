@@ -15,4 +15,7 @@ const (
 
 	// TradeLogsPort is the port number of TradeLogs service.
 	TradeLogsPort HTTPPort = 8004
+
+	// GatewayPort is the port number of API gateway service.
+	GatewayPort HTTPPort = 8005
 )

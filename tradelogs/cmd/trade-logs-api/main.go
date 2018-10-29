@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/KyberNetwork/reserve-stats/lib/core"
-	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"log"
 	"os"
 
 	"github.com/urfave/cli"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/http"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"

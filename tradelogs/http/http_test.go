@@ -59,6 +59,10 @@ func (s *mockStorage) GetCountryStats(countryCode string, timezone int64, fromTi
 	return nil, nil
 }
 
+func (s *mockStorage) GetCountryStats(countryCode string, timezone int64, fromTime, toTime time.Time) (map[uint64]common.CountryStats, error) {
+	return nil, nil
+}
+
 func newTestServer() (*Server, error) {
 	logger, err := zap.NewDevelopment()
 	if err != nil {

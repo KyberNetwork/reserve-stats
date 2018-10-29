@@ -23,5 +23,5 @@ type Interface interface {
 	GetUserVolume(userAddr ethereum.Address, from, to time.Time, freq string) (map[uint64]common.UserVolume, error)
 	GetUserList(from, to time.Time) ([]common.UserInfo, error)
 	GetWalletStats(fromTime, toTime time.Time, walletAddr string) (map[uint64]common.WalletStats, error)
-	GetCountryStats(countryCode string, timezone int64, fromTime, toTime time.Time) (map[string]float64, error)
+	GetCountryStats(countryCode string, timezone int64, fromTime, toTime time.Time) (map[uint64]common.CountryStats, error)
 }

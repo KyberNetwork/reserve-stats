@@ -84,6 +84,19 @@ type TradeSummary struct {
 	ETHPerTrade        float64 `json:"eth_per_trade"`
 }
 
+//CountryStats stats for a country a day
+type CountryStats struct {
+	TotalETHVolume     float64 `json:"total_eth_volume"`
+	TotalUSDVolume     float64 `json:"total_usd_volume"`
+	TotalBurnFee       float64 `json:"total_burn_fee"`
+	TotalTrade         uint64  `json:"total_trade"`
+	UniqueAddresses    uint64  `json:"unique_addresses"`
+	KYCEDAddresses     uint64  `json:"kyced_addresses"`
+	NewUniqueAddresses uint64  `json:"new_unique_addresses"`
+	USDPerTrade        float64 `json:"usd_per_trade"`
+	ETHPerTrade        float64 `json:"eth_per_trade"`
+}
+
 //UserVolume represent volume of an user from time to time
 type UserVolume struct {
 	ETHAmount float64 `json:"eth_amount"`

@@ -2,7 +2,6 @@ package http
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -73,7 +72,6 @@ func TestWalletFeeQuery(t *testing.T) {
 				walletAddr, reserveAddr, fromTime, toTime, freq, timezone),
 			Method: http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-				log.Print(resp)
 				assert.Equal(t, http.StatusOK, resp.Code)
 			},
 		},

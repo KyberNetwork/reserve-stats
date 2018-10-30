@@ -270,13 +270,18 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, rate tokenrate.ETH
 
 		"eth_rate_provider": rate.Provider,
 	}
-	if log.SrcAddress == blockchain.ETHAddr {
-		tags["src_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
-	} else if log.DestAddress == blockchain.ETHAddr {
-		tags["dst_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
-	} else {
-		tags["src_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
-		tags["dst_rsv_addr"] = log.BurnFees[1].ReserveAddress.String()
+
+	for _, burn := range log.BurnFees {
+		reserveAddr := burn.ReserveAddress.String()
+
+		_, ok := tags["src_rsv_addr"]
+		if !ok && blockchain.IsBurnable(log.SrcAddress) {
+			// source reserve address was not set, and the source token
+			// has burn event
+			tags["src_rsv_addr"] = reserveAddr
+		} else {
+			tags["dst_rsv_addr"] = reserveAddr
+		}
 	}
 
 	ethReceivalAmount, err := is.coreClient.FromWei(blockchain.ETHAddr, log.EtherReceivalAmount)

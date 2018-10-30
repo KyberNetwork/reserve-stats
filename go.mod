@@ -58,3 +58,5 @@ require (
 )
 
 replace github.com/ethereum/go-ethereum => github.com/favadi/go-ethereum v1.8.16-fork
+
+replace github.com/gin-gonic/contrib => github.com/KyberNetwork/gin-gonic/contrib v1.0.1-fork

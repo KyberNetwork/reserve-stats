@@ -7,7 +7,11 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
-var notBurnTokens = []ethereum.Address{ETHAddr, WETHAddr, KCCAddr}
+var notBurnTokens = map[ethereum.Address]struct{}{
+	ETHAddr:  {},
+	WETHAddr: {},
+	KCCAddr:  {},
+}
 
 // floatToBigInt converts a float to a big int with specific decimal
 // Example:
@@ -29,11 +33,7 @@ func EthToWei(n float64) *big.Int {
 
 // IsBurnable indicate if the burn fee event was emitted when
 // the given token was trade on KyberNetwork
-func IsBurnable(t ethereum.Address) bool {
-	for _, token := range notBurnTokens {
-		if token == t {
-			return false
-		}
-	}
-	return true
+func IsBurnable(token ethereum.Address) bool {
+	_, notBurn := notBurnTokens[token]
+	return !notBurn
 }

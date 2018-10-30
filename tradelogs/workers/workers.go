@@ -106,7 +106,7 @@ type Pool struct {
 	ErrCh chan error
 
 	mutex                 *sync.Mutex
-	LastCompletedJobOrder int // Keep the order of the last completed job
+	lastCompletedJobOrder int // Keep the order of the last completed job
 
 	storage storage.Interface
 }
@@ -119,7 +119,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, attemps int, storage stor
 		ErrCh:                 make(chan error, maxWorkers),
 		mutex:                 &sync.Mutex{},
 		storage:               storage,
-		LastCompletedJobOrder: 0,
+		lastCompletedJobOrder: 0,
 	}
 
 	p.wg.Add(maxWorkers)
@@ -156,11 +156,11 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, attemps int, storage stor
 					var err error
 
 					p.mutex.Lock()
-					if order == p.LastCompletedJobOrder+1 {
+					if order == p.lastCompletedJobOrder+1 {
 						err = p.storage.SaveTradeLogs(tradeLogs)
 						if err == nil {
 							saveSuccess = true
-							p.LastCompletedJobOrder++
+							p.lastCompletedJobOrder++
 						}
 					}
 					p.mutex.Unlock()
@@ -193,6 +193,15 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, attemps int, storage stor
 	}
 
 	return p
+}
+
+// GetLastCompleteJobOrder return the order of the latest completed job
+func (p *Pool) GetLastCompleteJobOrder() int {
+	p.mutex.Lock()
+	result := p.lastCompletedJobOrder
+	p.mutex.Unlock()
+
+	return result
 }
 
 // Run puts new job to queue

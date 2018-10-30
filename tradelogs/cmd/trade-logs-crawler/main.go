@@ -204,12 +204,18 @@ func run(c *cli.Context) error {
 		sugar.Debugw("number of fetcher jobs", "jobs", jobs, "max_blocks", maxBlock)
 
 		go func(fromBlock, toBlock, maxBlocks int64) {
-			var jobOrder = p.LastCompletedJobOrder
+			var jobOrder = p.GetLastCompleteJobOrder()
 			for i := int64(fromBlock); i < toBlock; i = i + maxBlocks {
 				jobOrder++
 				p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(i+maxBlocks)))
 			}
-			doneCh <- struct{}{}
+			for {
+				if p.GetLastCompleteJobOrder() == jobOrder {
+					doneCh <- struct{}{}
+				} else {
+					time.Sleep(time.Second)
+				}
+			}
 		}(fromBlock.Int64(), toBlock.Int64(), int64(maxBlock))
 
 		for {

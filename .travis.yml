@@ -18,6 +18,12 @@ env:
     - GOMETALINTER_VERSION=2.0.11
     - GO111MODULE=on
     - PATH=$PATH:${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
+  # TODO: configure build matrix for below modules
+  # env:
+  #   - MODULE=tradelogs
+  #   - MODULE=reserverates
+  #   - MODULE=users
+  #   - MOUDLES=others
 
 install:
   - ./.travis/gometalinter-install.sh

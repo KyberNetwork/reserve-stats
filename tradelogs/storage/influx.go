@@ -275,13 +275,25 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, rate tokenrate.ETH
 
 		"eth_rate_provider": rate.Provider,
 	}
-	if log.SrcAddress == blockchain.ETHAddr {
-		tags["src_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
-	} else if log.DestAddress == blockchain.ETHAddr {
+
+	if blockchain.IsBurnable(log.SrcAddress) {
+		if blockchain.IsBurnable(log.DestAddress) {
+			if len(log.BurnFees) != 2 {
+				return nil, fmt.Errorf("unexpected burn fees %v", log.BurnFees)
+			}
+			tags["src_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
+			tags["dst_rsv_addr"] = log.BurnFees[1].ReserveAddress.String()
+		} else {
+			if len(log.BurnFees) != 1 {
+				return nil, fmt.Errorf("unexpected burn fees %v", log.BurnFees)
+			}
+			tags["src_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
+		}
+	} else if blockchain.IsBurnable(log.DestAddress) {
+		if len(log.BurnFees) != 1 {
+			return nil, fmt.Errorf("unexpected burn fees %v", log.BurnFees)
+		}
 		tags["dst_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
-	} else {
-		tags["src_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
-		tags["dst_rsv_addr"] = log.BurnFees[1].ReserveAddress.String()
 	}
 
 	ethReceivalAmount, err := is.coreClient.FromWei(blockchain.ETHAddr, log.EtherReceivalAmount)

@@ -4,6 +4,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 
+	"github.com/gin-gonic/contrib/httpsignatures"
+	"github.com/gin-gonic/contrib/httpsignatures/crypto"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,10 +28,19 @@ func newReverseProxyMW(target string) (gin.HandlerFunc, error) {
 }
 
 // NewServer creates new instance of gateway HTTP server.
-func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL string) (*Server, error) {
+func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, secretKey string) (*Server, error) {
 	r := gin.Default()
 
-	// TODO: use httpsignatures middleware here
+	// signature middleware for signing message
+	hmacsha512 := &crypto.HmacSha512{}
+	signKeyID := httpsignatures.KeyID("sign")
+	secrets := httpsignatures.Secrets{
+		signKeyID: &httpsignatures.Secret{
+			Key:       secretKey,
+			Algorithm: hmacsha512,
+		},
+	}
+	auth := httpsignatures.NewAuthenticator(secrets)
 
 	if tradeLogsURL != "" {
 		tradeLogsProxyMW, err := newReverseProxyMW(tradeLogsURL)
@@ -57,7 +68,7 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL string) (*Server, er
 		}
 
 		r.GET("/users", userProxyMW)
-		r.POST("/users", userProxyMW)
+		r.POST("/users", auth.Authenticated(), userProxyMW)
 	}
 
 	return &Server{

@@ -1,3 +1,5 @@
+github.com/KyberNetwork/contrib v1.0.1-fork h1:u4g+X/EljkJyBvli2mhG113SV35g4l8NWWzSTUK9tMg=
+github.com/KyberNetwork/contrib v1.0.1-fork/go.mod h1:MvEZeZ2VeuOzyFNpkjAx1BMAbv5h/SqcxcsHF9OeO3A=
 github.com/KyberNetwork/tokenrate v0.0.0-20181015045844-27abfb84ae1c h1:9+tFR7G+AVDeflRcG/lUWFiu1dkZzHjrUwZ13y6JQv8=
 github.com/KyberNetwork/tokenrate v0.0.0-20181015045844-27abfb84ae1c/go.mod h1:zvMeMoRv7rJjd/q7FkNygUM47UsNjt/fXcbuwpuifKA=
 github.com/aristanetworks/goarista v0.0.0-20181002214814-33151c4543a7 h1:6TQIK3K21/HnYLp+TAI6fjQ1YeH+KgLZbrFJwUjVrnQ=

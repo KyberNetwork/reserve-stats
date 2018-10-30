@@ -53,6 +53,7 @@ func main() {
 		},
 	)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.GatewayPort)...)
+	app.Flags = append(app.Flags, httputil.NewHTTPKeyFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -67,10 +68,15 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("invalid trades log API URL: %s", c.String(tradeLogsAPIURLFlag))
 	}
 
+	if err := validation.Validate(c.String(httputil.HTTPKeyFlag), validation.Required); err != nil {
+		return fmt.Errorf("secret key error: %s", err.Error())
+	}
+
 	svr, err := http.NewServer(httputil.NewHTTPAddressFromContext(c),
 		c.String(tradeLogsAPIURLFlag),
 		c.String(reserveRatesAPIURLFlag),
-		c.String(userAPIURLFlag))
+		c.String(userAPIURLFlag),
+		c.String(httputil.HTTPKeyFlag))
 	if err != nil {
 		return err
 	}

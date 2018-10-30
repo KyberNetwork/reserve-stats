@@ -12,6 +12,9 @@ const (
 	// httpAddressFlag tells which network address the HTTP server will listen to.
 	// Example: 127.0.0.1:8000
 	httpAddressFlag = "listen"
+
+	//HTTPKeyFlag is secret key for signing a request
+	HTTPKeyFlag = "secret-key"
 )
 
 // NewHTTPCliFlags creates new cli flags for HTTP Server.
@@ -22,6 +25,17 @@ func NewHTTPCliFlags(defaultPort HTTPPort) []cli.Flag {
 			Usage:  "HTTP server address",
 			EnvVar: "HTTP_ADDRESS",
 			Value:  fmt.Sprintf("127.0.0.1:%d", defaultPort),
+		},
+	}
+}
+
+// NewHTTPKeyFlags create new cli flags for HTTP Server key signing
+func NewHTTPKeyFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:   HTTPKeyFlag,
+			Usage:  "HTTP secret key for signing request",
+			EnvVar: "HTTP_KEY",
 		},
 	}
 }

@@ -40,7 +40,7 @@ func TestReverseProxy(t *testing.T) {
 	go mockServer()
 	// assert.Nil(t, err, "mockserver should be start ok")
 	tradeLogsAddr := fmt.Sprintf("http://%s", tradeLogsURL)
-	testServer, err := NewServer(testAddr, tradeLogsAddr, "", "")
+	testServer, err := NewServer(testAddr, tradeLogsAddr, "", "", "123108")
 	assert.Nil(t, err, "reverse proxy server should initiate successfully")
 	log.Printf("%+v", testServer)
 

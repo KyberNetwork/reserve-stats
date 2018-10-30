@@ -40,7 +40,7 @@ github.com/ethereum/go-ethereum/metrics
 github.com/ethereum/go-ethereum/accounts
 # github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7
 github.com/gin-contrib/sse
-# github.com/gin-gonic/contrib v0.0.0-20180614032058-39cfb9727134 => github.com/KyberNetwork/contrib v1.0.1-fork
+# github.com/gin-gonic/contrib v0.0.0-20180614032058-39cfb9727134 => github.com/KyberNetwork/contrib v1.0.2-fork
 github.com/gin-gonic/contrib/httpsignatures
 github.com/gin-gonic/contrib/httpsignatures/crypto
 github.com/gin-gonic/contrib/httpsignatures/validator

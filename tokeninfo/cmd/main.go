@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/KyberNetwork/reserve-stats/lib/app"
+	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/tokeninfo"
 	"github.com/urfave/cli"
 )
@@ -17,7 +17,7 @@ const (
 )
 
 func main() {
-	app := app.NewApp()
+	app := libapp.NewApp()
 	app.Name = "token reserve fetcher"
 	app.Usage = "fetching token reserve mapping information"
 	app.Version = "0.0.1"
@@ -50,7 +50,11 @@ func main() {
 }
 
 func reserve(c *cli.Context) error {
-	logger, err := app.NewLogger(c)
+	if err := libapp.Validate(c); err != nil {
+		return err
+	}
+
+	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ import (
 )
 
 const (
+	ethereumNodeFlag = "ethereum-node"
 	//InfuraEndpoint is url for infura node
 	InfuraEndpoint = "https://mainnet.infura.io"
 )

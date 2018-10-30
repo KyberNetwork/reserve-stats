@@ -20,6 +20,10 @@ func main() {
 	app.Usage = "Serve trade logs data"
 	app.Version = "0.0.1"
 	app.Action = func(c *cli.Context) error {
+		if err := libapp.Validate(c); err != nil {
+			return err
+		}
+
 		logger, err := libapp.NewLogger(c)
 		if err != nil {
 			return err

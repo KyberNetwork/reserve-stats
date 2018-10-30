@@ -103,7 +103,7 @@ func (is InfluxStorage) LastBlock() (int64, error) {
 		return 0, nil
 	}
 
-	return influxdb.GetInt64FromInterface(res[0].Series[0].Values[0][1])
+	return influxdb.GetInt64FromTagValue(res[0].Series[0].Values[0][1])
 }
 
 // GetAggregatedBurnFee get aggregated burn fee in a time range given the reserve address

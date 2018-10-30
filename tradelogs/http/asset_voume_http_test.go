@@ -8,13 +8,11 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
@@ -42,18 +40,16 @@ func (c *mockCore) ToWei(ethereum.Address, float64) (*big.Int, error) {
 	return nil, nil
 }
 
-func (s *mockStorage) GetAssetVolume(token core.Token, fromTime, toTime uint64, frequency string) (map[time.Time]*common.VolumeStats, error) {
+func (s *mockStorage) GetAssetVolume(token core.Token, fromTime, toTime uint64, frequency string) (map[uint64]*common.VolumeStats, error) {
 	var (
-		from           = timeutil.TimestampMsToTime(fromTime)
-		to             = timeutil.TimestampMsToTime(fromTime)
 		mockVolumeStat = common.VolumeStats{
 			ETHAmount: testETHAmount,
 			USDAmount: testUSDAmount,
 			Volume:    testVolAmount,
 		}
-		mockResult = map[time.Time]*common.VolumeStats{
-			from: &mockVolumeStat,
-			to:   &mockVolumeStat,
+		mockResult = map[uint64]*common.VolumeStats{
+			fromTime: &mockVolumeStat,
+			toTime:   &mockVolumeStat,
 		}
 	)
 
@@ -111,7 +107,7 @@ func expectInvalidInput(t *testing.T, resp *httptest.ResponseRecorder) {
 
 func expectCorrectVolume(t *testing.T, resp *httptest.ResponseRecorder) {
 	assert.Equal(t, http.StatusOK, resp.Code)
-	var result map[time.Time]common.VolumeStats
+	var result map[uint64]common.VolumeStats
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		t.Error("Could not decode result", "err", err)
 	}

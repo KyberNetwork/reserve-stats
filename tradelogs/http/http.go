@@ -139,9 +139,9 @@ func (sv *Server) getBurnFee(c *gin.Context) {
 		rsvAddrs = append(rsvAddrs, ethereum.HexToAddress(rsvAddr))
 	}
 
-	burnFee, err := ha.storage.GetAggregatedBurnFee(fromTime, toTime, query.Freq, rsvAddrs)
+	burnFee, err := sv.storage.GetAggregatedBurnFee(fromTime, toTime, query.Freq, rsvAddrs)
 	if err != nil {
-		ha.sugar.Errorw(err.Error(), "parameter", query)
+		sv.sugar.Errorw(err.Error(), "parameter", query)
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{"error": err.Error()},
@@ -157,8 +157,8 @@ func (sv *Server) getBurnFee(c *gin.Context) {
 
 func (sv *Server) setupRouter() *gin.Engine {
 	r := gin.Default()
-	r.GET("/trade-logs", ha.getTradeLogs)
-	r.GET("/burn-fee", ha.getBurnFee)
+	r.GET("/trade-logs", sv.getTradeLogs)
+	r.GET("/burn-fee", sv.getBurnFee)
 	r.GET("/asset-volume", sv.getAssetVolume)
 	return r
 }

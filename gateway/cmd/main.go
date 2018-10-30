@@ -2,24 +2,27 @@ package main
 
 import (
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/gateway/http"
-	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/go-ozzo/ozzo-validation"
-	"github.com/go-ozzo/ozzo-validation/is"
 	"log"
 	"os"
 
-	"github.com/urfave/cli"
-
+	"github.com/KyberNetwork/reserve-stats/gateway/http"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
+	"github.com/urfave/cli"
 )
 
 const (
-	tradeLogsAPIURLFlag = "trade-logs-url"
+	tradeLogsAPIURLFlag    = "trade-logs-url"
+	reserveRatesAPIURLFlag = "reserve-rate-url"
+	userAPIURLFlag         = "user-url"
 )
 
 var (
 	defaultTradeLogsAPIURLValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.TradeLogsPort)
+	defaultReserveRatesAPIValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.ReserveRatesPort)
+	defaultUserAPIValue         = fmt.Sprintf("http://127.0.0.1:%d", httputil.ReserveRatesPort)
 )
 
 func main() {
@@ -36,8 +39,18 @@ func main() {
 			Value:  defaultTradeLogsAPIURLValue,
 			EnvVar: "TRADE_LOGS_API_URL",
 		},
-		// TODO: add flag for reserve-rates-api
-		// TODO: add flag for users
+		cli.StringFlag{
+			Name:   reserveRatesAPIURLFlag,
+			Usage:  "Reserve Rates API URL",
+			Value:  defaultReserveRatesAPIValue,
+			EnvVar: "RESERVE_RATES_API_URL",
+		},
+		cli.StringFlag{
+			Name:   userAPIURLFlag,
+			Usage:  "User API URL",
+			Value:  defaultUserAPIValue,
+			EnvVar: "USER_API_URL",
+		},
 	)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.GatewayPort)...)
 
@@ -54,7 +67,10 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("invalid trades log API URL: %s", c.String(tradeLogsAPIURLFlag))
 	}
 
-	svr, err := http.NewServer(httputil.NewHTTPAddressFromContext(c), c.String(tradeLogsAPIURLFlag))
+	svr, err := http.NewServer(httputil.NewHTTPAddressFromContext(c),
+		c.String(tradeLogsAPIURLFlag),
+		c.String(reserveRatesAPIURLFlag),
+		c.String(userAPIURLFlag))
 	if err != nil {
 		return err
 	}

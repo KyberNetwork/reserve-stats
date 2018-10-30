@@ -26,22 +26,39 @@ func newReverseProxyMW(target string) (gin.HandlerFunc, error) {
 }
 
 // NewServer creates new instance of gateway HTTP server.
-func NewServer(addr, tradeLogsURL string) (*Server, error) {
+func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL string) (*Server, error) {
 	r := gin.Default()
 
 	// TODO: use httpsignatures middleware here
 
-	tradeLogsProxyMW, err := newReverseProxyMW(tradeLogsURL)
-	if err != nil {
-		return nil, err
+	if tradeLogsURL != "" {
+		tradeLogsProxyMW, err := newReverseProxyMW(tradeLogsURL)
+		if err != nil {
+			return nil, err
+		}
+		r.GET("/trade-logs", tradeLogsProxyMW)
+		//
+		// r.GET("/burn-fee", tradeLogsProxyMW)
+		// r.GET("/wallet-fee", tradeLogsProxyMW)
+		// r.GET("/country-stats", tradeLogsProxyMW)
+	}
+	if reserveRatesURL != "" {
+		reserveRateProxyMW, err := newReverseProxyMW(reserveRatesURL)
+		if err != nil {
+			return nil, err
+		}
+		r.GET("/reserve-rates", reserveRateProxyMW)
 	}
 
-	//TODO: maps /trade-logs URLs
-	r.GET("/trade-logs", tradeLogsProxyMW)
+	if userURL != "" {
+		userProxyMW, err := newReverseProxyMW(userURL)
+		if err != nil {
+			return nil, err
+		}
 
-	// TODO: creates reserve-rates API and map URLs
-
-	// TODO: creates users and map URLs
+		r.GET("/users", userProxyMW)
+		r.POST("/users", userProxyMW)
+	}
 
 	return &Server{
 		addr: addr,

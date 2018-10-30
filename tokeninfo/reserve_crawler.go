@@ -7,7 +7,6 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
 )
 
@@ -30,19 +29,15 @@ type ReserveInfo struct {
 
 // ReserveCrawler gets the tokeninfo reserve mapping information from blockchain.
 type ReserveCrawler struct {
-	sugar  *zap.SugaredLogger
-	client *ethclient.Client
+	sugar                 *zap.SugaredLogger
+	internalNetworkClient *contracts.InternalNetwork
 }
 
 // NewReserveCrawler creates a new ReserveCrawler instance.
-func NewReserveCrawler(sugar *zap.SugaredLogger, nodeURL string) (*ReserveCrawler, error) {
-	client, err := ethclient.Dial(nodeURL)
-	if err != nil {
-		return nil, err
-	}
+func NewReserveCrawler(sugar *zap.SugaredLogger, internalNetworkClient *contracts.InternalNetwork) (*ReserveCrawler, error) {
 	return &ReserveCrawler{
-		sugar:  sugar,
-		client: client,
+		sugar:                 sugar,
+		internalNetworkClient: internalNetworkClient,
 	}, nil
 }
 
@@ -58,13 +53,6 @@ func (f *ReserveCrawler) Fetch() (map[string][]*ReserveInfo, error) {
 		return nil, err
 	}
 
-	internalNetworkClient, err := contracts.NewInternalNetwork(
-		common.HexToAddress(contracts.InternalNetworkContractAddress),
-		f.client)
-	if err != nil {
-		return nil, err
-	}
-
 	for _, token := range tokens {
 		var reserveAddrs = make(map[common.Address]bool)
 		result[token.Name] = []*ReserveInfo{}
@@ -74,7 +62,7 @@ func (f *ReserveCrawler) Fetch() (map[string][]*ReserveInfo, error) {
 
 		for i := 0; ; i++ {
 			var reserveAddr common.Address
-			reserveAddr, err = internalNetworkClient.ReservesPerTokenSrc(
+			reserveAddr, err = f.internalNetworkClient.ReservesPerTokenSrc(
 				nil,
 				token.Address,
 				big.NewInt(int64(i)))

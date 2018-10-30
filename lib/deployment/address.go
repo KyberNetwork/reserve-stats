@@ -2,32 +2,41 @@ package deployment
 
 import (
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/urfave/cli"
 )
 
+// TODO: consider merging this to lib/app
+
+// Flag is the cli flag of deployment.
+const Flag = "deployment"
+
 // Address is a wrapper of ethereum common Address that supports multiple deployments.
-type Address map[Deployment]common.Address
+type Address map[string]common.Address
 
 //  Address returns an Address instance. Address of all deployments should be present.
 func NewAddress(prodAddr, stagingAddr common.Address) Address {
-	return map[Deployment]common.Address{
-		ProdDeployment:    prodAddr,
-		StagingDeployment: stagingAddr,
+	return map[string]common.Address{
+		Production: prodAddr,
+		Staging:    stagingAddr,
 	}
 }
 
-// NewDuplicatedAddress returns an Address with given common address for all deployments.
-func NewDuplicatedAddress(addr common.Address) Address {
-	return map[Deployment]common.Address{
-		ProdDeployment:    addr,
-		StagingDeployment: addr,
+// NewCrossDeploymentAddress returns an Address with given same address for all deployments.
+func NewCrossDeploymentAddress(addr common.Address) Address {
+	return map[string]common.Address{
+		Production: addr,
+		Staging:    addr,
 	}
 }
 
-func (a Address) MustGet() common.Address {
+// MustGetFromContext returns the common address for given deployment from context.
+func (a Address) MustGetFromContext(c *cli.Context) common.Address {
+	dpl := c.GlobalString(Flag)
 	addr, ok := a[dpl]
 	if !ok {
-		panic(fmt.Errorf("address is not available for deployment: %s", dpl.String()))
+		panic(fmt.Errorf("address is not available for deployment: %s", dpl))
 	}
 	return addr
 }

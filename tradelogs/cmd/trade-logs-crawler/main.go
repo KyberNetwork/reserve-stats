@@ -13,11 +13,20 @@ import (
 	"os"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
+	"github.com/urfave/cli"
+
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
+	"github.com/KyberNetwork/reserve-stats/tradelogs"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
@@ -146,6 +155,22 @@ func run(c *cli.Context) error {
 	defer logger.Sync()
 
 	sugar := logger.Sugar()
+	addresses := []ethereum.Address{
+		contracts.PricingContractAddress().MustGetFromContext(c),
+		contracts.NetworkContractAddress().MustGetFromContext(c),
+		contracts.BurnerContractAddress().MustGetFromContext(c),
+		contracts.InternalNetworkContractAddress().MustGetFromContext(c),
+	}
+
+	crawler, err := tradelogs.NewTradeLogCrawler(
+		sugar,
+		nodeURL,
+		geoClient,
+		addresses,
+	)
+	if err != nil {
+		return err
+	}
 
 	coreClient, err := core.NewClientFromContext(sugar, c)
 	if err != nil {

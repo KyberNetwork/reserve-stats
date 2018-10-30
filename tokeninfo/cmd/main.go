@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"log"
 	"os"
 
@@ -33,16 +34,12 @@ func main() {
 
 	app.Flags = append(app.Flags,
 		cli.StringFlag{
-			Name:  nodeURLFlag,
-			Usage: "Ethereum node provider URL",
-			Value: nodeURLDefaultValue,
-		},
-		cli.StringFlag{
 			Name:  outputFlag,
 			Usage: "output file location",
 			Value: "./output.json",
 		},
 	)
+	app.Flags = append(app.Flags, libapp.NewEthereumNodeFlags())
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -60,11 +57,23 @@ func reserve(c *cli.Context) error {
 	}
 	defer logger.Sync()
 
-	sugar := logger.Sugar()
+	client, err := libapp.NewEthereumClientFromFlag(c)
+	if err != nil {
+		return err
+	}
+
+	internalNetworkClient, err := contracts.NewInternalNetwork(
+		contracts.InternalNetworkContractAddress().MustGetFromContext(c),
+		client,
+	)
+	if err != nil {
+		return err
+	}
 
 	f, err := tokeninfo.NewReserveCrawler(
-		sugar,
-		c.GlobalString(nodeURLFlag))
+		logger.Sugar(),
+		internalNetworkClient,
+	)
 	if err != nil {
 		return err
 	}

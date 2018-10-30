@@ -11,9 +11,9 @@ import (
 func NewLogger(c *cli.Context) (*zap.Logger, error) {
 	mode := c.GlobalString(modeFlag)
 	switch mode {
-	case prodMode.String():
+	case productionMode:
 		return zap.NewProduction()
-	case devMode.String():
+	case developmentMode:
 		return zap.NewDevelopment()
 	default:
 		return nil, fmt.Errorf("invalid running mode: %q", mode)

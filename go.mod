@@ -14,6 +14,7 @@ require (
 	github.com/ethereum/go-ethereum v1.8.17
 	github.com/fjl/memsize v0.0.0-20180929194037-2a09253e352a // indirect
 	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
+	github.com/gin-gonic/contrib v0.0.0-20180614032058-39cfb9727134
 	github.com/gin-gonic/gin v1.3.0
 	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
 	github.com/go-sql-driver/mysql v1.4.0 // indirect
@@ -57,6 +58,7 @@ require (
 	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
 )
 
-replace github.com/ethereum/go-ethereum => github.com/favadi/go-ethereum v1.8.16-fork
-
-replace github.com/gin-gonic/contrib => github.com/KyberNetwork/gin-gonic/contrib v1.0.1-fork
+replace (
+	github.com/ethereum/go-ethereum => github.com/favadi/go-ethereum v1.8.16-fork
+	github.com/gin-gonic/contrib => github.com/KyberNetwork/contrib v1.0.1-fork
+)

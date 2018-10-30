@@ -209,13 +209,10 @@ func run(c *cli.Context) error {
 				jobOrder++
 				p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(i+maxBlocks)))
 			}
-			for {
-				if p.GetLastCompleteJobOrder() == jobOrder {
-					doneCh <- struct{}{}
-				} else {
-					time.Sleep(time.Second)
-				}
+			for p.GetLastCompleteJobOrder() < jobOrder {
+				time.Sleep(time.Second)
 			}
+			doneCh <- struct{}{}
 		}(fromBlock.Int64(), toBlock.Int64(), int64(maxBlock))
 
 		for {

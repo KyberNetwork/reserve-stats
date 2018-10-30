@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 func doInfluxHTTPReq(client http.Client, cmd, endpoint, db string) error {
@@ -79,8 +80,8 @@ func TestGetAssetVolume(t *testing.T) {
 
 	timeUnix, err := time.Parse(time.RFC3339, timeStamp)
 	assert.NoError(t, err)
-
-	result, ok := volume[timeUnix]
+	timeUint := timeutil.TimeToTimestampMs(timeUnix)
+	result, ok := volume[timeUint]
 	if !ok {
 		t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))
 	}

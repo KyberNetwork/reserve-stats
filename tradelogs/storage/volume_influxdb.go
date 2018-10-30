@@ -8,6 +8,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	influxModel "github.com/influxdata/influxdb/models"
@@ -28,7 +29,7 @@ var (
 )
 
 // GetAssetVolume returns the volume of a specific assset(token) between a period and with desired frequency
-func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime uint64, frequency string) (map[time.Time]*common.VolumeStats, error) {
+func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime uint64, frequency string) (map[uint64]*common.VolumeStats, error) {
 	var (
 		logger = is.sugar.With(
 			"func", "tradelogs/storage/InfluxStorage.GetAssetVolume",
@@ -63,8 +64,8 @@ func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime uint6
 	return convertQueryResultToVolume(response[0].Series[0])
 }
 
-func convertQueryResultToVolume(row influxModel.Row) (map[time.Time]*common.VolumeStats, error) {
-	result := make(map[time.Time]*common.VolumeStats)
+func convertQueryResultToVolume(row influxModel.Row) (map[uint64]*common.VolumeStats, error) {
+	result := make(map[uint64]*common.VolumeStats)
 	if len(row.Values) == 0 {
 		return nil, nil
 	}
@@ -78,37 +79,38 @@ func convertQueryResultToVolume(row influxModel.Row) (map[time.Time]*common.Volu
 	return result, nil
 }
 
-func convertRowValueToVolume(v []interface{}) (time.Time, *common.VolumeStats, error) {
+func convertRowValueToVolume(v []interface{}) (uint64, *common.VolumeStats, error) {
 	// number of fields in record result
 	// - time
 	// - token_volume
 	// - eth_volume
 	// - usd_volume
 	if len(v) != 4 {
-		return time.Time{}, nil, errors.New("value fields is empty")
+		return 0, nil, errors.New("value fields is empty")
 	}
 
 	timestampString, ok := v[0].(string)
 	if !ok {
-		return time.Time{}, nil, errCantConvert
+		return 0, nil, errCantConvert
 	}
 	ts, err := time.Parse(time.RFC3339, timestampString)
 	if err != nil {
-		return time.Time{}, nil, err
+		return 0, nil, err
 	}
+	tsUint64 := timeutil.TimeToTimestampMs(ts)
 	volume, err := influxdb.GetFloat64FromInterface(v[1])
 	if err != nil {
-		return time.Time{}, nil, err
+		return 0, nil, err
 	}
 	ethVolume, err := influxdb.GetFloat64FromInterface(v[2])
 	if err != nil {
-		return time.Time{}, nil, err
+		return 0, nil, err
 	}
 	usdVolume, err := influxdb.GetFloat64FromInterface(v[3])
 	if err != nil {
-		return time.Time{}, nil, err
+		return 0, nil, err
 	}
-	return ts, &common.VolumeStats{
+	return tsUint64, &common.VolumeStats{
 		Volume:    volume,
 		ETHAmount: ethVolume,
 		USDAmount: usdVolume,

@@ -14,6 +14,6 @@ var (
 	// WETHAddr is wrapped ETH address
 	WETHAddr = common.HexToAddress("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2")
 
-	// KCCAddr is Kyber
+	// KCCAddr is Kyber Community Coupon token address
 	KCCAddr = common.HexToAddress("0x09677D0175DEC51E2215426Cddd055a71bf4228d")
 )

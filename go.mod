@@ -60,5 +60,5 @@ require (
 
 replace (
 	github.com/ethereum/go-ethereum => github.com/favadi/go-ethereum v1.8.16-fork
-	github.com/gin-gonic/contrib => github.com/KyberNetwork/contrib v1.0.2-fork
+	github.com/gin-gonic/contrib => github.com/KyberNetwork/contrib v0.0.0-20181030090100-18418501469f
 )

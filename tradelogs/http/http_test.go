@@ -113,16 +113,12 @@ func TestBurnFeeRoute(t *testing.T) {
 			Endpoint: "/burn-fee?freq=h",
 			Method:   http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusBadRequest, resp.Code)
+				assert.Equal(t, http.StatusOK, resp.Code)
 
-				var result struct {
-					Error string `json:"error"`
-				}
+				var result map[ethereum.Address]map[string]float64
 				if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 					t.Error("Could not decode result", "err", err)
 				}
-
-				assert.Contains(t, result.Error, "Field validation for 'ReserveAddrs' failed on the 'required' tag")
 			},
 		},
 		{

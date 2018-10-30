@@ -39,7 +39,7 @@ type burnFeeQuery struct {
 	From         uint64   `form:"from"`
 	To           uint64   `form:"to"`
 	Freq         string   `form:"freq"`
-	ReserveAddrs []string `form:"reserve" binding:"required,dive,isAddress"`
+	ReserveAddrs []string `form:"reserve" binding:"dive,isAddress"`
 }
 
 func validateTimeWindow(fromTime, toTime time.Time, freq string) error {

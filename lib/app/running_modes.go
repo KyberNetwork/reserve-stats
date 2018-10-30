@@ -2,12 +2,17 @@ package app
 
 const (
 	modeFlag = "mode"
+)
 
-	developmentMode = "dev"
-	productionMode  = "prod"
+//go:generate stringer -type=runningMode -linecomment
+type runningMode int
+
+const (
+	devMode  runningMode = iota // dev
+	prodMode                    // prod
 )
 
 var validRunningModes = map[string]struct{}{
-	developmentMode: {},
-	productionMode:  {},
+	devMode.String(): {},
+	prodMode.String():  {},
 }

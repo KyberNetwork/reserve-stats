@@ -12,7 +12,7 @@ func NewApp() *cli.App {
 		cli.StringFlag{
 			Name:  modeFlag,
 			Usage: "app running mode",
-			Value: developmentMode,
+			Value: devMode.String(),
 		},
 	}
 	return app
@@ -20,9 +20,11 @@ func NewApp() *cli.App {
 
 // Validate validates common application configuration flags.
 func Validate(c *cli.Context) error {
-	_, ok := validRunningModes[c.GlobalString(modeFlag)]
+	mode := c.GlobalString(modeFlag)
+	_, ok := validRunningModes[mode]
 	if !ok {
 		return fmt.Errorf("invalid running mode: %q", c.GlobalString(modeFlag))
 	}
+
 	return nil
 }

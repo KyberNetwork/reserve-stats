@@ -18,12 +18,17 @@ env:
     - GOMETALINTER_VERSION=2.0.11
     - GO111MODULE=on
     - PATH=$PATH:${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
-  # TODO: configure build matrix for below modules
-  # env:
-  #   - MODULE=tradelogs
-  #   - MODULE=reserverates
-  #   - MODULE=users
-  #   - MOUDLES=others
+
+matrix:
+  include:
+    - env:
+      - MODULE=reserverates
+    - env:
+      - MODULE=tradelogs
+    - env:
+      - MODULE=users
+    - env:
+      - MODULE=others
 
 install:
   - ./.travis/gometalinter-install.sh
@@ -40,3 +45,10 @@ script:
   - gometalinter --config=gometalinter.json ./...
   - go build -v -mod=vendor ./...
   - go test -v -mod=vendor ./...
+  - bash .travis/docker_build.sh
+
+deploy:
+  - provider: script
+    script: bash .travis/docker_push.sh
+    on:
+      all_branches: true

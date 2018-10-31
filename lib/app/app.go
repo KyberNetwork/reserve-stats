@@ -20,7 +20,7 @@ var (
 		productionMode:  {},
 	}
 
-	validDeployments = map[string]struct{}{
+	validDeployments = map[deployment.Mode]struct{}{
 		deployment.Production: {},
 		deployment.Staging:    {},
 	}
@@ -35,10 +35,10 @@ func NewApp() *cli.App {
 			Usage: "app running mode",
 			Value: developmentMode,
 		},
-		cli.StringFlag{
-			Name:  deployment.Flag,
+		cli.IntFlag{
+			Name:  Flag,
 			Usage: "Kyber Network deployment name",
-			Value: deployment.Production,
+			Value: int(deployment.Production),
 		},
 	}
 	return app
@@ -52,9 +52,9 @@ func Validate(c *cli.Context) error {
 		return fmt.Errorf("invalid running mode: %q", c.GlobalString(modeFlag))
 	}
 
-	dpl := c.GlobalString(deployment.Flag)
-	if _, ok = validDeployments[dpl]; !ok {
-		return fmt.Errorf("invalid dpl: %q", c.GlobalString(deployment.Flag))
+	dpl := c.GlobalInt(Flag)
+	if _, ok = validDeployments[deployment.Mode(dpl)]; !ok {
+		return fmt.Errorf("invalid dpl: %q", c.GlobalString(Flag))
 	}
 
 	return nil

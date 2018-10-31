@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/gin-gonic/gin"
@@ -84,6 +85,8 @@ func mockServer() error {
 
 func TestReverseProxy(t *testing.T) {
 	go mockServer()
+
+	time.Sleep(5 * time.Second)
 
 	// assert.Nil(t, err, "mockserver should be start ok")
 	tradeLogsAddr := fmt.Sprintf("http://%s", tradeLogsURL)

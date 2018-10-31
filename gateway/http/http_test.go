@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
-	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/gin-gonic/gin"
@@ -60,9 +59,17 @@ func runHTTPTestCase(t *testing.T, tc httputil.HTTPTestCase, handler http.Handle
 func getTradeLogs(c *gin.Context) {
 	// check getting correct params
 	fromTime := c.Query("fromTime")
+	time, err := strconv.ParseUint(fromTime, 10, 64)
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": err.Error()},
+		)
+		return
+	}
 	c.JSON(
 		http.StatusOK,
-		fromTime,
+		gin.H{"from": time},
 	)
 }
 
@@ -75,14 +82,10 @@ func mockServer() error {
 func TestReverseProxy(t *testing.T) {
 	go mockServer()
 
-	// TODO: call the mock server with small timeout until it response
-	time.Sleep(time.Second)
-
 	// assert.Nil(t, err, "mockserver should be start ok")
 	tradeLogsAddr := fmt.Sprintf("http://%s", tradeLogsURL)
 	testServer, err := NewServer(testAddr, tradeLogsAddr, "", "", "123108")
 	assert.Nil(t, err, "reverse proxy server should initiate successfully")
-	log.Printf("%+v", testServer)
 
 	var tests = []httputil.HTTPTestCase{
 		{
@@ -96,9 +99,8 @@ func TestReverseProxy(t *testing.T) {
 					FromTime uint64 `json:"from"`
 				}
 				if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-					t.Error("Reverse proxy not working")
+					t.Errorf("Reverse proxy not working, %s", err.Error())
 				}
-
 				assert.Equal(t, result.FromTime, fromParams, "Reverse proxy should receive correct params")
 			},
 		},

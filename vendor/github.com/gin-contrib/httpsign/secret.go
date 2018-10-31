@@ -1,6 +1,6 @@
-package httpsignatures
+package httpsign
 
-import "github.com/gin-gonic/contrib/httpsignatures/crypto"
+import "github.com/gin-contrib/httpsign/crypto"
 
 // KeyID define type
 type KeyID string

@@ -4,8 +4,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 
-	"github.com/gin-gonic/contrib/httpsignatures"
-	"github.com/gin-gonic/contrib/httpsignatures/crypto"
+	"github.com/gin-contrib/httpsign"
+	"github.com/gin-contrib/httpsign/crypto"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,14 +33,14 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, secretKey string) (
 
 	// signature middleware for signing message
 	hmacsha512 := &crypto.HmacSha512{}
-	signKeyID := httpsignatures.KeyID("sign")
-	secrets := httpsignatures.Secrets{
-		signKeyID: &httpsignatures.Secret{
+	signKeyID := httpsign.KeyID("sign")
+	secrets := httpsign.Secrets{
+		signKeyID: &httpsign.Secret{
 			Key:       secretKey,
 			Algorithm: hmacsha512,
 		},
 	}
-	auth := httpsignatures.NewAuthenticator(secrets)
+	auth := httpsign.NewAuthenticator(secrets)
 
 	if tradeLogsURL != "" {
 		tradeLogsProxyMW, err := newReverseProxyMW(tradeLogsURL)

@@ -1,4 +1,4 @@
-package httpsignatures
+package httpsign
 
 import (
 	"bytes"

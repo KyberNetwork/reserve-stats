@@ -1,14 +1,14 @@
-#  httpsignatures
-
-Gin middleware base on [HTTP Signatures](https://tools.ietf.org/html/draft-cavage-http-signatures).
+# httpsign
+Signing HTTP Messages Middleware base on [HTTP Signatures](https://tools.ietf.org/html/draft-cavage-http-signatures).
 
 ## Example
 ``` go
+
 package main
 
 import (
-	"github.com/gin-gonic/contrib/httpsignatures"
-	"github.com/gin-gonic/contrib/httpsignatures/crypto"
+	"github.com/gin-contrib/httpsign"
+	"github.com/gin-contrib/httpsign/crypto"
 	"github.com/gin-gonic/gin"
 )
 
@@ -43,5 +43,5 @@ func main() {
 
 	r.Run(":8080")
 }
- 
+
 ```

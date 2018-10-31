@@ -38,7 +38,7 @@ github.com/ethereum/go-ethereum/common/prque
 github.com/ethereum/go-ethereum/ethdb
 github.com/ethereum/go-ethereum/metrics
 github.com/ethereum/go-ethereum/accounts
-# github.com/gin-contrib/httpsign v0.0.0-20181031042219-74d7149a9d6a
+# github.com/gin-contrib/httpsign v0.0.0-20181031075104-480dfa352b1f
 github.com/gin-contrib/httpsign
 github.com/gin-contrib/httpsign/crypto
 github.com/gin-contrib/httpsign/validator

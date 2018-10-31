@@ -1,11 +1,12 @@
 package validator
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -40,12 +41,14 @@ func calculateDigest(r *http.Request) (string, error) {
 	if r.ContentLength == 0 {
 		return "", nil
 	}
-	body, err := r.GetBody()
+	//TODO: Read body using buffer to prevent using too much memory
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return "", err
 	}
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 	h := sha256.New()
-	_, err = io.Copy(h, body)
+	h.Write(body)
 	if err != nil {
 		return "", err
 	}

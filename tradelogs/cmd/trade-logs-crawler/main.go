@@ -225,13 +225,13 @@ func run(c *cli.Context) error {
 			var toBreak = false
 			select {
 			case <-doneCh:
-				sugar.Info("all jobs are queued, waiting for completion")
+				sugar.Info("all jobs are successfully executed, waiting for the workers pool to shut down")
 				p.Shutdown()
 			case fErr := <-p.ErrCh:
 				if fErr != nil {
 					sugar.Errorw("job failed to execute", "error", fErr)
 				} else {
-					sugar.Info("all jobs are successfully executed")
+					sugar.Info("workers pool is successfully shut down")
 				}
 				toBreak = true
 			}

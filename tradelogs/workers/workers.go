@@ -112,7 +112,7 @@ type Pool struct {
 }
 
 // NewPool returns a pool of workers to handle jobs concurrently
-func NewPool(sugar *zap.SugaredLogger, maxWorkers int, attemps int, storage storage.Interface) *Pool {
+func NewPool(sugar *zap.SugaredLogger, maxWorkers, attemps int, storage storage.Interface) *Pool {
 	var p = &Pool{
 		sugar:                 sugar,
 		jobCh:                 make(chan job),

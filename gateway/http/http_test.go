@@ -20,19 +20,22 @@ const (
 	testAddr            = "127.0.0.1:7001"
 )
 
-type wrappedRecorded struct {
+//WrappedRecorded wrap the gin response from proxy server
+//added closed chan to fulfilled assert function
+//This type is exported to fulfilled golint requirement
+type WrappedRecorded struct {
 	*httptest.ResponseRecorder
 	closed chan bool
 }
 
-func NewWrappedRecorder() *wrappedRecorded {
-	return &wrappedRecorded{
+func NewWrappedRecorder() *WrappedRecorded {
+	return &WrappedRecorded{
 		ResponseRecorder: httptest.NewRecorder(),
 		closed:           make(chan bool, 1),
 	}
 }
 
-func (c *wrappedRecorded) CloseNotify() <-chan bool {
+func (c *WrappedRecorded) CloseNotify() <-chan bool {
 	return c.closed
 }
 

@@ -2,13 +2,17 @@ package workers
 
 import (
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 	"log"
 	"math/big"
 	"testing"
 	"time"
+
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 type mockStorage struct {
@@ -23,6 +27,14 @@ func (s *mockStorage) SaveTradeLogs(logs []common.TradeLog) error {
 }
 
 func (s *mockStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
+	return nil, nil
+}
+
+func (s *mockStorage) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[ethereum.Address]map[string]float64, error) {
+	return nil, nil
+}
+
+func (s *mockStorage) GetAssetVolume(token core.Token, fromTime, toTime uint64, frequency string) (map[uint64]*common.VolumeStats, error) {
 	return nil, nil
 }
 

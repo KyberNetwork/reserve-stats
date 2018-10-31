@@ -1,11 +1,13 @@
 package cq
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestNewContinuousQuery(t *testing.T) {
@@ -114,6 +116,10 @@ func TestNewContinuousQuery(t *testing.T) {
 func TestContinuousQuery_Deploy(t *testing.T) {
 	// TODO: init test eth client, create database, insert sample data if needed
 	var c client.Client
+	logger, err := zap.NewDevelopment()
+	assert.Nil(t, err, "logger should be created")
+	defer logger.Sync()
+	sugar := logger.Sugar()
 
 	cq, err := NewContinuousQuery(
 		"test_cq",
@@ -127,9 +133,9 @@ func TestContinuousQuery_Deploy(t *testing.T) {
 	require.NoError(t, err)
 
 	// TODO: check existing CQs
-	assert.NoError(t, cq.Deploy(c))
+	assert.NoError(t, cq.Deploy(c, sugar))
 	// TODO: makes sure that number of CQs are increases and correctly created
-	assert.NoError(t, cq.Deploy(c))
+	assert.NoError(t, cq.Deploy(c, sugar))
 	// TODO: make sure that deploy can be successfully called second time
 
 	cq, err = NewContinuousQuery(
@@ -208,5 +214,52 @@ func TestContinuousQuery_Deploy(t *testing.T) {
 }
 
 func TestContinuousQuery_Execute(t *testing.T) {
-	// TODO: write tests for Execute method
+	influxClient, err := setupTestInfluxClient()
+	require.NoError(t, err)
+	logger, err := zap.NewDevelopment()
+	assert.Nil(t, err, "logger should be created")
+	defer logger.Sync()
+	sugar := logger.Sugar()
+	defer func() {
+		if _, err := queryDB(*influxClient, fmt.Sprintf("DROP DATABASE %s", testDBName)); err != nil {
+			t.Error(err)
+		}
+	}()
+	cq, err := NewContinuousQuery(
+		"first_test",
+		testDBName,
+		"1h",
+		"2h",
+		`SELECT SUM(amount) AS volume INTO test_aggregate FROM test_measurement GROUP BY "nameTag"`,
+		"1m",
+		[]string{"10s", "15s"},
+	)
+
+	err = cq.Execute(*influxClient, sugar)
+	require.NoError(t, err)
+
+	resp, err := queryDB(*influxClient, "SHOW measurements")
+	require.NoError(t, err)
+	if len(resp[0].Series) == 0 {
+		t.Error("expect valid result, got empty result")
+	}
+
+	var (
+		expectedMsms = map[string]bool{
+			"test_aggregate_10s": false,
+			"test_aggregate_15s": false,
+		}
+	)
+	for _, v := range resp[0].Series[0].Values {
+		x, ok := v[0].(string)
+		if !ok {
+			t.Errorf("invalid value from result %v", v[0])
+		}
+		expectedMsms[x] = true
+	}
+	for k, v := range expectedMsms {
+		if !v {
+			t.Errorf("result doesn't contain measurement %s", k)
+		}
+	}
 }

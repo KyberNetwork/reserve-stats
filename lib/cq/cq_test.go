@@ -80,7 +80,7 @@ func TestNewContinuousQuery(t *testing.T) {
 			query:                 `SELECT * FROM super_database GROUP BY "email"`,
 			timeInterval:          "1h",
 			offsetIntervals:       []string{"30m"},
-			queries:               []string{`CREATE CONTINUOUS QUERY "test_cq" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,30m) END`},
+			queries:               []string{`CREATE CONTINUOUS QUERY "test_cq_30m" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,30m) END`},
 		},
 		{
 			testName:              "continuous query with multiple offset intervals",
@@ -92,8 +92,8 @@ func TestNewContinuousQuery(t *testing.T) {
 			timeInterval:          "1h",
 			offsetIntervals:       []string{"10m", "20m"},
 			queries: []string{
-				`CREATE CONTINUOUS QUERY "test_cq" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,10m) END`,
-				`CREATE CONTINUOUS QUERY "test_cq" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,20m) END`,
+				`CREATE CONTINUOUS QUERY "test_cq_10m" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,10m) END`,
+				`CREATE CONTINUOUS QUERY "test_cq_20m" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,20m) END`,
 			},
 		},
 	}
@@ -113,29 +113,59 @@ func TestNewContinuousQuery(t *testing.T) {
 	}
 }
 
-func TestContinuousQuery_Deploy(t *testing.T) {
-	// TODO: init test eth client, create database, insert sample data if needed
-	var c client.Client
+func setupTest() (client.Client, *zap.SugaredLogger, error) {
+	c, err := setupTestInfluxClient()
+	if err != nil {
+		return nil, nil, err
+	}
 	logger, err := zap.NewDevelopment()
-	assert.Nil(t, err, "logger should be created")
+	if err != nil {
+		return nil, nil, err
+	}
 	defer logger.Sync()
 	sugar := logger.Sugar()
+	return c, sugar, nil
+}
+
+func TestContinuousQuery_Deploy(t *testing.T) {
+	// TODO: init test eth client, create database, insert sample data if needed
+	c, sugar, err := setupTest()
+	//tear down
+	defer func() {
+		if _, err := queryDB(c, fmt.Sprintf("DROP DATABASE %s", testDBName), testDBName); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	cq, err := NewContinuousQuery(
 		"test_cq",
-		"test_db",
+		testDBName,
 		"1h",
 		"2h",
-		`SELECT * FROM super_database GROUP BY "email"`,
+		`SELECT * INTO test_queries FROM super_database GROUP BY "email"`,
 		"1h",
 		[]string{"10m", "20m"},
 	)
 	require.NoError(t, err)
 
-	// TODO: check existing CQs
+	//deploy and test cqs
 	assert.NoError(t, cq.Deploy(c, sugar))
-	// TODO: makes sure that number of CQs are increases and correctly created
-	assert.NoError(t, cq.Deploy(c, sugar))
+	cqs, err := cq.GetCurrentCQs(c, sugar)
+	require.NoError(t, err)
+	var (
+		expectedCqs = map[string]string{
+			"test_cq_10m": "CREATE CONTINUOUS QUERY test_cq_10m ON test_db RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * INTO test_db.autogen.test_queries_10m FROM test_db.autogen.super_database GROUP BY email, time(1h, 10m) END",
+			"test_cq_20m": "CREATE CONTINUOUS QUERY test_cq_20m ON test_db RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * INTO test_db.autogen.test_queries_20m FROM test_db.autogen.super_database GROUP BY email, time(1h, 20m) END",
+		}
+	)
+	for cqName, cq := range expectedCqs {
+		resCq, ok := cqs[cqName]
+		if !ok {
+			t.Errorf("Result doesn't contain cq %s", cqName)
+		}
+		assert.Equal(t, cq, resCq)
+	}
+
 	// TODO: make sure that deploy can be successfully called second time
 
 	cq, err = NewContinuousQuery(
@@ -214,14 +244,10 @@ func TestContinuousQuery_Deploy(t *testing.T) {
 }
 
 func TestContinuousQuery_Execute(t *testing.T) {
-	influxClient, err := setupTestInfluxClient()
-	require.NoError(t, err)
-	logger, err := zap.NewDevelopment()
-	assert.Nil(t, err, "logger should be created")
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	c, sugar, err := setupTest()
+	//tear down
 	defer func() {
-		if _, err := queryDB(*influxClient, fmt.Sprintf("DROP DATABASE %s", testDBName)); err != nil {
+		if _, err := queryDB(c, fmt.Sprintf("DROP DATABASE %s", testDBName), testDBName); err != nil {
 			t.Error(err)
 		}
 	}()
@@ -235,10 +261,10 @@ func TestContinuousQuery_Execute(t *testing.T) {
 		[]string{"10s", "15s"},
 	)
 
-	err = cq.Execute(*influxClient, sugar)
+	err = cq.Execute(c, sugar)
 	require.NoError(t, err)
 
-	resp, err := queryDB(*influxClient, "SHOW measurements")
+	resp, err := cq.queryDB(c, "SHOW measurements")
 	require.NoError(t, err)
 	if len(resp[0].Series) == 0 {
 		t.Error("expect valid result, got empty result")

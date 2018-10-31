@@ -2,6 +2,7 @@ package cq
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"text/template"
 
@@ -34,6 +35,7 @@ func NewContinuousQuery(
 	if err != nil {
 		return nil, err
 	}
+	cq.queries = queries
 	queries, err = cq.prepareQueries(hqTemplate)
 	if err != nil {
 		return nil, err
@@ -103,7 +105,9 @@ func (cq *ContinuousQuery) prepareQueries(tmp string) ([]string, error) {
 		//create a forkedCq to alter the name, otherwise the cqs will failed when their names duplicated.
 		forkedCq := ContinuousQuery{}
 		forkedCq = *cq
-		forkedCq.Name = offsetInterval + forkedCq.Name
+		if offsetInterval != "" {
+			forkedCq.Name = forkedCq.Name + "_" + offsetInterval
+		}
 		forkedCq.Query = modifyINTOclause(forkedCq.Query, offsetInterval)
 		err = tmpl.Execute(&query, struct {
 			*ContinuousQuery
@@ -124,11 +128,50 @@ func (cq *ContinuousQuery) prepareQueries(tmp string) ([]string, error) {
 	return queries, nil
 }
 
+// GetCurrentCQs return a map[cqName]query of current CQs in the database
+func (cq *ContinuousQuery) GetCurrentCQs(c client.Client, sugar *zap.SugaredLogger) (map[string]string, error) {
+	var (
+		qr     = "SHOW CONTINUOUS QUERIES"
+		result = make(map[string]string)
+	)
+	resp, err := queryDB(c, qr, cq.Database)
+	if err != nil {
+		return result, err
+	}
+	if len(resp[0].Series) == 0 {
+		sugar.Debugw("current cqs request: empty result")
+		return result, nil
+	}
+	for _, row := range resp[0].Series {
+		if row.Name == cq.Database {
+			for _, v := range row.Values {
+				cqName, ok := v[0].(string)
+				if !ok {
+					return result, fmt.Errorf("can not decode cqName value %v to string", v[0])
+				}
+				cq, ok := v[1].(string)
+				if !ok {
+					return result, fmt.Errorf("can not decode cq value %v to string", v[1])
+				}
+				result[cqName] = cq
+			}
+		}
+	}
+	return result, nil
+}
+
 // Deploy ensures that all configured cqs are deployed in given InfluxDB server. This method is safe to run multiple
 // times without changes as it will checks if the CQ exists and updated first.
 // TODO: should we move client to constructor?
 func (cq *ContinuousQuery) Deploy(c client.Client, sugar *zap.SugaredLogger) error {
-	// TODO: implement this
+	for _, query := range cq.queries {
+		sugar.Debugw("Executing Query", "query", query)
+
+		_, err := queryDB(c, query, cq.Database)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -137,17 +180,27 @@ func (cq *ContinuousQuery) Deploy(c client.Client, sugar *zap.SugaredLogger) err
 func (cq *ContinuousQuery) Execute(c client.Client, sugar *zap.SugaredLogger) error {
 	for _, query := range cq.historicalQueries {
 		sugar.Debugw("Executing Query", "query", query)
-		q := client.Query{
-			Command:  query,
-			Database: cq.Database,
-		}
-		response, err := c.Query(q)
+		_, err := queryDB(c, query, cq.Database)
 		if err != nil {
 			return err
 		}
-		if response.Error() != nil {
-			return response.Error()
-		}
 	}
 	return nil
+}
+
+// queryDB convenience function to query the database
+func (cq *ContinuousQuery) queryDB(c client.Client, cmd string) (res []client.Result, err error) {
+	q := client.Query{
+		Command:  cmd,
+		Database: cq.Database,
+	}
+	if response, err := c.Query(q); err == nil {
+		if response.Error() != nil {
+			return res, response.Error()
+		}
+		res = response.Results
+	} else {
+		return res, err
+	}
+	return res, nil
 }

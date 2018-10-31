@@ -9,7 +9,7 @@ import (
 
 const (
 	testInfluxAddress = "http://127.0.0.1:8086"
-	testDBName        = "test_cq"
+	testDBName        = "test_db"
 	testMSName        = "test_measurement"
 	nTestRecord       = 100
 	recordInterval    = 1000
@@ -18,20 +18,20 @@ const (
 )
 
 //setupTestInfluxClient return a http influxClient and create test Database
-func setupTestInfluxClient() (*client.Client, error) {
+func setupTestInfluxClient() (client.Client, error) {
 	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr: testInfluxAddress,
 	})
 	if err != nil {
 		return nil, err
 	}
-	if _, err := queryDB(influxClient, fmt.Sprintf("CREATE DATABASE %s", testDBName)); err != nil {
+	if _, err := queryDB(influxClient, fmt.Sprintf("CREATE DATABASE %s", testDBName), testDBName); err != nil {
 		return nil, err
 	}
 	if err := addTestData(influxClient); err != nil {
 		return nil, err
 	}
-	return &influxClient, nil
+	return influxClient, nil
 }
 
 // addTestData will systematically add test Data to fulfill how many records are needed and interval between them
@@ -65,10 +65,10 @@ func addTestData(c client.Client) error {
 }
 
 // queryDB convenience function to query the database
-func queryDB(clnt client.Client, cmd string) (res []client.Result, err error) {
+func queryDB(clnt client.Client, cmd, dbName string) (res []client.Result, err error) {
 	q := client.Query{
 		Command:  cmd,
-		Database: testDBName,
+		Database: dbName,
 	}
 	if response, err := clnt.Query(q); err == nil {
 		if response.Error() != nil {

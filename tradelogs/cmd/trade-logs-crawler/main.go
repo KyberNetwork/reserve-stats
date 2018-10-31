@@ -109,6 +109,12 @@ func parseBigIntFlag(c *cli.Context, flag string) (*big.Int, error) {
 	return result, nil
 }
 
+func min(a, b int64) int64 {
+	if a < b {
+		return a
+	}
+	return b
+}
 func run(c *cli.Context) error {
 	var (
 		err       error
@@ -207,7 +213,7 @@ func run(c *cli.Context) error {
 			var jobOrder = p.GetLastCompleteJobOrder()
 			for i := int64(fromBlock); i < toBlock; i = i + maxBlocks {
 				jobOrder++
-				p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(i+maxBlocks)))
+				p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(min(i+maxBlocks, toBlock))))
 			}
 			for p.GetLastCompleteJobOrder() < jobOrder {
 				time.Sleep(time.Second)

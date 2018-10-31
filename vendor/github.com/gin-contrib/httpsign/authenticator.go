@@ -1,4 +1,4 @@
-package httpsignatures
+package httpsign
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/contrib/httpsignatures/validator"
+	"github.com/gin-contrib/httpsign/validator"
 	"github.com/gin-gonic/gin"
 )
 

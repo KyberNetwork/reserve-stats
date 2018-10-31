@@ -39,6 +39,23 @@ const (
 	internalNetworkAddr = "0x91a502C678605fbCe581eae053319747482276b9"
 )
 
+var (
+	// oldContractAddrs is list of old contracts that still need to listen for trade events.
+	oldContractAddrs = []string{
+		// old burner contracts
+		"0x4E89bc8484B2c454f2F7B25b612b648c45e14A8e",
+		"0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706",
+		// old network contracts
+		"0x964F35fAe36d75B1e72770e244F6595B68508CF5",
+	}
+
+	// TODO: enable old contract addrs for staging
+	//oldContractAddrs = []string{
+	//	"0xB2cB365D803Ad914e63EA49c95eC663715c2F673",
+	//	"0xD2D21FdeF0D054D2864ce328cc56D1238d6b239e",
+	//}
+)
+
 // TradeLogCrawler gets trade logs on KyberNetwork on blockchain, adding the
 // information about USD equivalent on each trade.
 type TradeLogCrawler struct {
@@ -228,6 +245,10 @@ func (crawler *TradeLogCrawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeou
 		ethereum.HexToAddress(networkAddr),         // network
 		ethereum.HexToAddress(burnerAddr),          // burner
 		ethereum.HexToAddress(internalNetworkAddr), // internal network
+	}
+
+	for _, addr := range oldContractAddrs {
+		addresses = append(addresses, ethereum.HexToAddress(addr))
 	}
 
 	topics := [][]ethereum.Hash{

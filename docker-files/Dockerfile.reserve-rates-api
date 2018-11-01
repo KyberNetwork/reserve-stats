@@ -1,0 +1,15 @@
+FROM golang:1.11-stretch AS build-env
+
+COPY . /reserve-stats
+WORKDIR /reserve-stats/reserverates/cmd/reserve-rates-api
+RUN go build -v -mod=vendor -o /reserve-rates-api
+
+FROM debian:stretch
+COPY --from=build-env /reserve-rates-api /
+
+RUN apt-get update && \
+    apt-get install -y ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+EXPOSE 8003
+ENTRYPOINT ["/reserve-rates-api"]

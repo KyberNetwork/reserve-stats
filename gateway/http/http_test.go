@@ -57,8 +57,9 @@ func runHTTPTestCase(t *testing.T, tc httputil.HTTPTestCase, handler http.Handle
 	req.URL.RawQuery = q.Encode()
 
 	if tc.Method == http.MethodPost {
+		log.Printf("req before: %+v\n", req)
 		req, err = httputil.Sign(req, "sign", signingKey)
-		log.Print(req)
+		log.Printf("req after: %+v\n", req)
 		assert.Nil(t, err, "sign request should be success")
 	}
 
@@ -130,9 +131,18 @@ func TestReverseProxy(t *testing.T) {
 			},
 		},
 		{
-			Msg:      "test sign request",
+			Msg:      "test sign request body is empty",
 			Endpoint: fmt.Sprintf("/users"),
 			Method:   http.MethodPost,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusOK, resp.Code)
+			},
+		},
+		{
+			Msg:      "test sign request body is not empty",
+			Endpoint: fmt.Sprintf("/users"),
+			Method:   http.MethodPost,
+			Body:     []byte(`{"user":"something"}`),
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, resp.Code)
 			},

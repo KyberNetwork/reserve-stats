@@ -27,9 +27,10 @@ func Sign(r *http.Request, keyID, secret string) (*http.Request, error) {
 	var signBuffer bytes.Buffer
 	for i, h := range headers {
 		var value string
+		var err error
 		switch h {
 		case digest:
-			value, err := calculateDigest(r)
+			value, err = calculateDigest(r)
 			if err != nil {
 				return nil, err
 			}

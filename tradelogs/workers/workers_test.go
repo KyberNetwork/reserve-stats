@@ -43,14 +43,10 @@ type mockJob struct {
 	failure bool
 }
 
-func (j *mockJob) retry(fn executeJob, attempts int, logger *zap.SugaredLogger) ([]common.TradeLog, error) {
+func (j *mockJob) execute(sugar *zap.SugaredLogger) ([]common.TradeLog, error) {
 	if j.failure {
 		return nil, fmt.Errorf("failed to execute job %d", j.order)
 	}
-	return nil, nil
-}
-
-func (j *mockJob) execute(sugar *zap.SugaredLogger) ([]common.TradeLog, error) {
 	return nil, nil
 }
 
@@ -58,7 +54,7 @@ func (j *mockJob) info() (order int, from, to *big.Int) {
 	return j.order, big.NewInt(0), big.NewInt(0)
 }
 
-func newTestWorkerPool(maxWorkers, attemps int) *Pool {
+func newTestWorkerPool(maxWorkers int) *Pool {
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		log.Fatal(err)
@@ -66,7 +62,7 @@ func newTestWorkerPool(maxWorkers, attemps int) *Pool {
 	defer logger.Sync()
 	sugar := logger.Sugar()
 
-	return NewPool(sugar, maxWorkers, attemps, &mockStorage{})
+	return NewPool(sugar, maxWorkers, &mockStorage{})
 }
 
 func sendJobsToWorkerPool(pool *Pool, jobs []job, doneCh chan<- struct{}) {
@@ -107,8 +103,7 @@ func checkWorkerPoolError(t *testing.T, pool *Pool, doneCh <-chan struct{}, fn a
 
 func TestWorkersPoolHandleAllJobSuccessful(t *testing.T) {
 	maxWorkers := 2
-	attemps := 2
-	pool := newTestWorkerPool(maxWorkers, attemps)
+	pool := newTestWorkerPool(maxWorkers)
 
 	lastCompleteJobOrder := pool.GetLastCompleteJobOrder()
 	numberOfJobs := 3
@@ -128,8 +123,7 @@ func TestWorkersPoolHandleAllJobSuccessful(t *testing.T) {
 
 func TestWorkerPoolEncounterErr(t *testing.T) {
 	maxWorkers := 2
-	attemps := 2
-	pool := newTestWorkerPool(maxWorkers, attemps)
+	pool := newTestWorkerPool(maxWorkers)
 
 	lastCompleteJobOrder := pool.GetLastCompleteJobOrder()
 

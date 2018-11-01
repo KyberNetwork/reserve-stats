@@ -202,14 +202,14 @@ func run(c *cli.Context) error {
 		if jobs < maxWorker {
 			maxWorker = jobs // if jobs < maxWorkers, jobs = n, only start n workers
 		}
-		p := workers.NewPool(sugar, maxWorker, attempts, influxStorage)
+		p := workers.NewPool(sugar, maxWorker, influxStorage)
 		sugar.Debugw("number of fetcher jobs", "jobs", jobs, "max_blocks", maxBlock)
 
 		go func(fromBlock, toBlock, maxBlocks int64) {
 			var jobOrder = p.GetLastCompleteJobOrder()
 			for i := int64(fromBlock); i < toBlock; i = i + maxBlocks {
 				jobOrder++
-				p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(min(i+maxBlocks, toBlock))))
+				p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(min(i+maxBlocks, toBlock)), attempts))
 			}
 			for p.GetLastCompleteJobOrder() < jobOrder {
 				time.Sleep(time.Second)

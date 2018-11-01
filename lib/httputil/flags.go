@@ -29,17 +29,6 @@ func NewHTTPCliFlags(defaultPort HTTPPort) []cli.Flag {
 	}
 }
 
-// NewHTTPKeyFlags create new cli flags for HTTP Server key signing
-func NewHTTPKeyFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
-			Name:   HTTPKeyFlag,
-			Usage:  "HTTP secret key for signing request",
-			EnvVar: "HTTP_KEY",
-		},
-	}
-}
-
 // NewHTTPAddressFromContext returns the configured address to listen to from cli flags configuration.
 func NewHTTPAddressFromContext(c *cli.Context) string {
 	return c.String(httpAddressFlag)

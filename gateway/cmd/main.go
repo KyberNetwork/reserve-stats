@@ -17,6 +17,8 @@ const (
 	tradeLogsAPIURLFlag    = "trade-logs-url"
 	reserveRatesAPIURLFlag = "reserve-rate-url"
 	userAPIURLFlag         = "user-url"
+	writeAccessKeyFlag     = "write-access-key"
+	writeSecretKeyFlag     = "write-secret-key"
 )
 
 var (
@@ -33,6 +35,16 @@ func main() {
 	app.Action = run
 
 	app.Flags = append(app.Flags,
+		cli.StringFlag{
+			Name:   writeAccessKeyFlag,
+			Usage:  "key for access api",
+			EnvVar: "WRITE_ACCESS_KEY",
+		},
+		cli.StringFlag{
+			Name:   writeSecretKeyFlag,
+			Usage:  "seceret key for write api",
+			EnvVar: "WRITE_SECRET_KEY",
+		},
 		cli.StringFlag{
 			Name:   tradeLogsAPIURLFlag,
 			Usage:  "Trade Logs API URL",
@@ -53,7 +65,6 @@ func main() {
 		},
 	)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.GatewayPort)...)
-	app.Flags = append(app.Flags, httputil.NewHTTPKeyFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -66,6 +77,20 @@ func run(c *cli.Context) error {
 		is.URL)
 	if err != nil {
 		return fmt.Errorf("invalid trades log API URL: %s", c.String(tradeLogsAPIURLFlag))
+	}
+
+	err = validation.Validate(c.String(reserveRatesAPIURLFlag),
+		validation.Required,
+		is.URL)
+	if err != nil {
+		return fmt.Errorf("invalid reserve rates API URL: %s", c.String(reserveRatesAPIURLFlag))
+	}
+
+	err = validation.Validate(c.String(userAPIURLFlag),
+		validation.Required,
+		is.URL)
+	if err != nil {
+		return fmt.Errorf("invalid user API URL: %s", c.String(userAPIURLFlag))
 	}
 
 	if err := validation.Validate(c.String(httputil.HTTPKeyFlag), validation.Required); err != nil {

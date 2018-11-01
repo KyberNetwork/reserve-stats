@@ -59,7 +59,7 @@ func Sign(r *http.Request, keyID, secret string) (*http.Request, error) {
 }
 
 func calculateDigest(r *http.Request) (string, error) {
-	if r.Body == nil {
+	if r.Body == nil || r.ContentLength == 0 {
 		return "", nil
 	}
 	body, err := r.GetBody()
@@ -87,8 +87,8 @@ func sign(msg, secret string) (string, error) {
 func constructHeader(headers []string, keyID, signature string) string {
 	var signBuffer bytes.Buffer
 	signBuffer.WriteString(fmt.Sprintf(`keyId="%s",`, keyID))
-	signBuffer.WriteString(`algorithm="hmac-sha512"`)
-	signBuffer.WriteString(fmt.Sprintf(`header="%s"`, strings.Join(headers, " ")))
+	signBuffer.WriteString(`algorithm="hmac-sha512",`)
+	signBuffer.WriteString(fmt.Sprintf(`headers="%s",`, strings.Join(headers, " ")))
 	signBuffer.WriteString(fmt.Sprintf(`signature="%s"`, signature))
 	return signBuffer.String()
 }

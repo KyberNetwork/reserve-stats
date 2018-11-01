@@ -20,7 +20,6 @@ type ETHUSDRateFetcher struct {
 
 //NewETHUSDRateFetcher return new instance of ETHUSDFetcher
 func NewETHUSDRateFetcher(sugar *zap.SugaredLogger, dbName string, client client.Client, rateProvider tokenrate.ETHUSDRateProvider) (*ETHUSDRateFetcher, error) {
-
 	fetcher := &ETHUSDRateFetcher{
 		sugar:        sugar,
 		dbName:       dbName,

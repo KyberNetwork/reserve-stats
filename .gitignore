@@ -19,4 +19,5 @@ data/
 
 */cmd/cmd
 */cmd/*/*
+!*/cmd/*/*.go
 tokeninfo/cmd/output.json

@@ -61,6 +61,7 @@ func (sv *Server) reserveRates(c *gin.Context) {
 	}
 	result, err := sv.db.GetRatesByTimePoint(rsvAddrs, query.From, query.To)
 	if err != nil {
+		sv.sugar.Errorw(err.Error(), "query", query)
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{"error": err.Error()},

@@ -13,14 +13,16 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 type mockStorage struct {
 }
 
-func (s *mockStorage) SaveTradeLogs(logs []common.TradeLog, rates []tokenrate.ETHUSDRate) error {
+func (s *mockStorage) LastBlock() (int64, error) {
+	return 0, nil
+}
+func (s *mockStorage) SaveTradeLogs(logs []common.TradeLog) error {
 	return nil
 }
 

@@ -56,7 +56,7 @@ func (btr *BlockTimeResolver) Resolve(blockNumber uint64) (time.Time, error) {
 	btr.mu.RLock()
 	header, ok := btr.cachedHeaders[blockNumber]
 	if ok {
-		btr.sugar.Debugw("block timestamp resolver cache hit", "block_number", blockNumber)
+		//btr.sugar.Debugw("block timestamp resolver cache hit", "block_number", blockNumber)
 		ts := time.Unix(header.Time.Int64(), 0).UTC()
 		btr.mu.RUnlock()
 		return ts, nil
@@ -64,7 +64,7 @@ func (btr *BlockTimeResolver) Resolve(blockNumber uint64) (time.Time, error) {
 	btr.mu.RUnlock()
 
 	// cache miss
-	btr.sugar.Debugw("block timestamp resolver cache miss", "block_number", blockNumber)
+	//btr.sugar.Debugw("block timestamp resolver cache miss", "block_number", blockNumber)
 	btr.mu.Lock()
 	defer btr.mu.Unlock()
 
@@ -81,9 +81,9 @@ func (btr *BlockTimeResolver) Resolve(blockNumber uint64) (time.Time, error) {
 
 	if len(btr.cachedHeaders) >= btr.maxCachedBlocks {
 		oldestBlockNumber := btr.cachedIndices[0]
-		btr.sugar.Debugw("purging oldest cached header",
-			"block_number", oldestBlockNumber,
-			"max_cached_blocks", btr.maxCachedBlocks)
+		//btr.sugar.Debugw("purging oldest cached header",
+		//	"block_number", oldestBlockNumber,
+		//	"max_cached_blocks", btr.maxCachedBlocks)
 		btr.cachedIndices = btr.cachedIndices[1:]
 		delete(btr.cachedHeaders, oldestBlockNumber)
 	}

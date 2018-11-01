@@ -29,18 +29,14 @@ const (
 	maxWorkerFlag    = "max-workers"
 	defaultMaxWorker = 5
 
-	maxBlockFlag    = "max-blocks"
-	defaultMaxBlock = 100
+	maxBlocksFlag    = "max-blocks"
+	defaultMaxBlocks = 100
 
 	attemptsFlag    = "attempts"
 	defaultAttempts = 5
 
 	delayFlag        = "delay"
 	defaultDelayTime = time.Minute
-
-	envVarPrefix = "TRADE_LOGS_CRAWLER_"
-
-	dbName = "trade_logs"
 )
 
 func main() {
@@ -64,25 +60,25 @@ func main() {
 		cli.IntFlag{
 			Name:   maxWorkerFlag,
 			Usage:  "The maximum number of worker to fetch trade logs",
-			EnvVar: envVarPrefix + "MAX_WORKER",
+			EnvVar: "MAX_WORKER",
 			Value:  defaultMaxWorker,
 		},
 		cli.IntFlag{
-			Name:   maxBlockFlag,
+			Name:   maxBlocksFlag,
 			Usage:  "The maximum number of block on each query",
-			EnvVar: envVarPrefix + "MAX_BLOCK",
-			Value:  defaultMaxBlock,
+			EnvVar: "MAX_BLOCKS",
+			Value:  defaultMaxBlocks,
 		},
 		cli.IntFlag{
 			Name:   attemptsFlag,
 			Usage:  "The number of attempt to query trade log from blockchain",
-			EnvVar: envVarPrefix + "ATTEMPTS",
+			EnvVar: "ATTEMPTS",
 			Value:  defaultAttempts,
 		},
 		cli.DurationFlag{
 			Name:   delayFlag,
 			Usage:  "The duration to put worker pools into sleep after each batch requets",
-			EnvVar: envVarPrefix + "DELAY",
+			EnvVar: "DELAY",
 			Value:  defaultDelayTime,
 		},
 	)
@@ -171,7 +167,7 @@ func run(c *cli.Context) error {
 	}
 
 	maxWorker := c.Int(maxWorkerFlag)
-	maxBlock := c.Int(maxBlockFlag)
+	maxBlock := c.Int(maxBlocksFlag)
 	attempts := c.Int(attemptsFlag) // exit if failed to fetch logs after attempts times
 	delayTime := c.Duration(delayFlag)
 

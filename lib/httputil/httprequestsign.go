@@ -17,15 +17,13 @@ const (
 	requestTarget = "(request-target)"
 	date          = "date"
 	digest        = "digest"
-	host          = "host"
 )
+
+var headers = []string{requestTarget, date, digest}
 
 //Sign sign a http request with selected header and return a signed request
 //Use with http client only
-func Sign(r *http.Request, headers []string, keyID, secret string) (*http.Request, error) {
-	if len(headers) == 0 {
-		headers = []string{date}
-	}
+func Sign(r *http.Request, keyID, secret string) (*http.Request, error) {
 	var signBuffer bytes.Buffer
 	for i, h := range headers {
 		var value string
@@ -41,8 +39,6 @@ func Sign(r *http.Request, headers []string, keyID, secret string) (*http.Reques
 			r.Header.Set(h, value)
 		case requestTarget:
 			value = fmt.Sprintf("%s %s", strings.ToLower(r.Method), r.URL.RequestURI())
-		case host:
-			value = r.Host
 		default:
 			value = r.Header.Get(h)
 		}

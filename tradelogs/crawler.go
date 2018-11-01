@@ -29,6 +29,15 @@ const (
 	tradeEvent = "0x1849bd6a030a1bca28b83437fd3de96f3d27a5d172fa7e9c78e7b61468928a39"
 	// etherReceivalEvent is the topic of event EtherReceival(address indexed sender, uint amount).
 	etherReceivalEvent = "0x75f33ed68675112c77094e7c5b073890598be1d23e27cd7f6907b4a7d98ac619"
+
+	// address of pricing contract
+	pricingAddr = "0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B"
+	// address of network contract
+	networkAddr = "0x818E6FECD516Ecc3849DAf6845e3EC868087B755"
+	// address of bunner contract
+	burnerAddr = "0xed4f53268bfdFF39B36E8786247bA3A02Cf34B04"
+	// address of internal network contract
+	internalNetworkAddr = "0x91a502C678605fbCe581eae053319747482276b9"
 )
 
 var (

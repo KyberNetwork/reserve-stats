@@ -7,14 +7,12 @@ readonly module=${MODULE:-}
 declare -a services_list=()
 
 gometalinter --config=gometalinter.json ./...
-go build -v -mod=vendor ./...
-go test -v -mod=vendor ./...
 
 if [[ "$module" =~ (reserverates|tradelogs|users) ]]; then
     echo "Testing $module module"
-    (cd $module; go build -v ./...; go test -v ./...)
+    (cd $module; go build -v -mod=vendor ./...; go test -v -mod=vendor ./...)
 elif [[ "$module" == "others" ]]; then
-    go build -v $(go list ./... | grep -v "github.com/KyberNetwork/reserve-stats/\(reserverates\|tradelogs\|users\)")
+    go build -v -mod=vendor $(go list ./... | grep -v "github.com/KyberNetwork/reserve-stats/\(reserverates\|tradelogs\|users\)")
     exit 0
 else
     echo "Module $module is not an valid module"

@@ -152,15 +152,11 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
-
-	sugar := logger.Sugar()
-	addresses := []ethereum.Address{
-		contracts.PricingContractAddress().MustGetFromContext(c),
-		contracts.NetworkContractAddress().MustGetFromContext(c),
-		contracts.BurnerContractAddress().MustGetFromContext(c),
-		contracts.InternalNetworkContractAddress().MustGetFromContext(c),
-	}
+	var addresses []ethereum.Address
+	addresses = append(addresses, contracts.PricingContractAddress().MustGetFromContext(c)...)
+	addresses = append(addresses, contracts.NetworkContractAddress().MustGetFromContext(c)...)
+	addresses = append(addresses, contracts.BurnerContractAddress().MustGetFromContext(c)...)
+	addresses = append(addresses, contracts.InternalNetworkContractAddress().MustGetFromContext(c)...)
 
 	crawler, err := tradelogs.NewTradeLogCrawler(
 		sugar,

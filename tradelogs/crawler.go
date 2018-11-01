@@ -30,6 +30,9 @@ const (
 	// etherReceivalEvent is the topic of event EtherReceival(address indexed sender, uint amount).
 	etherReceivalEvent = "0x75f33ed68675112c77094e7c5b073890598be1d23e27cd7f6907b4a7d98ac619"
 
+)
+
+var (
 	// address of pricing contract
 	pricingAddr = "0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B"
 	// address of network contract
@@ -38,9 +41,6 @@ const (
 	burnerAddr = "0xed4f53268bfdFF39B36E8786247bA3A02Cf34B04"
 	// address of internal network contract
 	internalNetworkAddr = "0x91a502C678605fbCe581eae053319747482276b9"
-)
-
-var (
 	// oldContractAddrs is list of old contracts that still need to listen for trade events.
 	oldContractAddrs = []string{
 		// old burner contracts

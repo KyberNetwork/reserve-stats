@@ -11,11 +11,10 @@ import (
 )
 
 const (
-	cqTemplate = `CREATE CONTINUOUS QUERY "{{.Name}}" on "{{.Database}}" ` +
+	cqTemplate = `{{if .IsCQ}}CREATE CONTINUOUS QUERY "{{.ActualName}}" on "{{.Database}}" ` +
 		`{{if or .ResampleEveryInterval .ResampleForInterval}}RESAMPLE {{if .ResampleEveryInterval}}EVERY {{.ResampleEveryInterval}} {{end}}{{if .ResampleForInterval}}FOR {{.ResampleForInterval}} {{end}}{{end}}` +
-		`BEGIN {{.Query}}` +
-		`{{if not .GroupByQuery}} GROUP BY {{else}}, {{end}}time({{.TimeInterval}}{{if .OffsetInterval}},{{.OffsetInterval}}{{end}}) END`
-	hqTemplate = `{{.Query}}` + `{{if not .GroupByQuery}} GROUP BY {{else}}, {{end}}time({{.TimeInterval}}{{if .OffsetInterval}},{{.OffsetInterval}}{{end}})`
+		`BEGIN {{end}}{{.ActualQuery}}` +
+		`{{if not .GroupByQuery}} GROUP BY {{else}}, {{end}}time({{.TimeInterval}}{{if .OffsetInterval}},{{.OffsetInterval}}{{end}}) {{if .IsCQ}}END{{end}}`
 )
 
 // NewContinuousQuery creates new ContinuousQuery instance.
@@ -31,12 +30,12 @@ func NewContinuousQuery(
 		TimeInterval:          timeInterval,
 		OffsetIntervals:       offsetIntervals,
 	}
-	queries, err := cq.prepareQueries(cqTemplate)
+	queries, err := cq.prepareQueries(true)
 	if err != nil {
 		return nil, err
 	}
 	cq.queries = queries
-	queries, err = cq.prepareQueries(hqTemplate)
+	queries, err = cq.prepareQueries(false)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +86,7 @@ func modifyINTOclause(query string, suffix string) string {
 	return strings.TrimSuffix(s, " ")
 }
 
-func (cq *ContinuousQuery) prepareQueries(tmp string) ([]string, error) {
+func (cq *ContinuousQuery) prepareQueries(isCQ bool) ([]string, error) {
 	var queries []string
 
 	if len(cq.OffsetIntervals) == 0 {
@@ -97,25 +96,29 @@ func (cq *ContinuousQuery) prepareQueries(tmp string) ([]string, error) {
 	for _, offsetInterval := range cq.OffsetIntervals {
 		var query bytes.Buffer
 
-		tmpl, err := template.New("cq.prepareQueries").Parse(tmp)
+		tmpl, err := template.New("cq.prepareQueries").Parse(cqTemplate)
 		if err != nil {
 			return nil, err
 		}
-
-		//create a forkedCq to alter the name, otherwise the cqs will failed when their names duplicated.
-		forkedCq := ContinuousQuery{}
-		forkedCq = *cq
+		// Modify name and query so that mutiple queries are allowed
+		actualName := cq.Name
 		if offsetInterval != "" {
-			forkedCq.Name = forkedCq.Name + "_" + offsetInterval
+			actualName = actualName + "_" + offsetInterval
 		}
-		forkedCq.Query = modifyINTOclause(forkedCq.Query, offsetInterval)
+		actualQuery := modifyINTOclause(cq.Query, offsetInterval)
 		err = tmpl.Execute(&query, struct {
 			*ContinuousQuery
+			ActualName     string
+			ActualQuery    string
 			GroupByQuery   bool // whether the query included GROUP BY statement
+			IsCQ           bool // wether the query is a continous query or not
 			OffsetInterval string
 		}{
-			ContinuousQuery: &forkedCq,
+			ContinuousQuery: cq,
+			ActualName:      actualName,
+			ActualQuery:     actualQuery,
 			GroupByQuery:    strings.Contains(cq.Query, "GROUP BY"),
+			IsCQ:            isCQ,
 			OffsetInterval:  offsetInterval,
 		})
 		if err != nil {
@@ -162,7 +165,7 @@ func (cq *ContinuousQuery) GetCurrentCQs(c client.Client, sugar *zap.SugaredLogg
 
 // Deploy ensures that all configured cqs are deployed in given InfluxDB server. This method is safe to run multiple
 // times without changes as it will checks if the CQ exists and updated first.
-// TODO: should we move client to constructor?
+// client and logger will be need to inject from higher level call
 func (cq *ContinuousQuery) Deploy(c client.Client, sugar *zap.SugaredLogger) error {
 	for _, query := range cq.queries {
 		sugar.Debugw("Executing Query", "query", query)

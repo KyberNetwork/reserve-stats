@@ -128,7 +128,6 @@ func setupTest() (client.Client, *zap.SugaredLogger, error) {
 }
 
 func TestContinuousQuery_Deploy(t *testing.T) {
-	// TODO: init test eth client, create database, insert sample data if needed
 	c, sugar, err := setupTest()
 	//tear down
 	defer func() {
@@ -170,7 +169,7 @@ func TestContinuousQuery_Deploy(t *testing.T) {
 	assert.NoError(t, cq.Drop(c, sugar))
 	cqs, err = cq.GetCurrentCQs(c, sugar)
 	require.NoError(t, err)
-	for cqName, _ := range expectedCqs {
+	for cqName := range expectedCqs {
 		if _, ok := cqs[cqName]; ok {
 			t.Errorf("expect cq %s to be dropped, yet it is still there", cqName)
 		}
@@ -278,7 +277,6 @@ func TestContinuousQuery_Execute(t *testing.T) {
 	if len(resp[0].Series) == 0 {
 		t.Error("expect valid result, got empty result")
 	}
-
 	var (
 		expectedMsms = map[string]bool{
 			"test_aggregate_10s": false,

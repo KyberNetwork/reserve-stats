@@ -188,6 +188,25 @@ func (cq *ContinuousQuery) Execute(c client.Client, sugar *zap.SugaredLogger) er
 	return nil
 }
 
+// Drop drop the cq from its database. Since influxDB doesn't raise error if cq doesn't exist,
+// This won't check if the cq is already there.
+func (cq *ContinuousQuery) Drop(c client.Client, sugar *zap.SugaredLogger) error {
+	if len(cq.OffsetIntervals) == 0 {
+		cq.OffsetIntervals = []string{""}
+	}
+	for _, offset := range cq.OffsetIntervals {
+		name := cq.Name
+		if offset != "" {
+			name = cq.Name + "_" + offset
+		}
+		sugar.Debugw("Drop cq", "cq name", name)
+		if _, err := cq.queryDB(c, fmt.Sprintf("DROP CONTINUOUS QUERY %s ON %s", name, cq.Database)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // queryDB convenience function to query the database
 func (cq *ContinuousQuery) queryDB(c client.Client, cmd string) (res []client.Result, err error) {
 	q := client.Query{

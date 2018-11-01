@@ -166,6 +166,15 @@ func TestContinuousQuery_Deploy(t *testing.T) {
 		assert.Equal(t, cq, resCq)
 	}
 
+	//test drop CQ
+	assert.NoError(t, cq.Drop(c, sugar))
+	cqs, err = cq.GetCurrentCQs(c, sugar)
+	require.NoError(t, err)
+	for cqName, _ := range expectedCqs {
+		if _, ok := cqs[cqName]; ok {
+			t.Errorf("expect cq %s to be dropped, yet it is still there", cqName)
+		}
+	}
 	// TODO: make sure that deploy can be successfully called second time
 
 	cq, err = NewContinuousQuery(

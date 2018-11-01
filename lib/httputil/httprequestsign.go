@@ -20,13 +20,11 @@ const (
 	host          = "host"
 )
 
-//TODO: add signing algorithm
-
 //Sign sign a http request with selected header and return a signed request
 //Use with http client only
-func Sign(r *http.Request, headers []string, keyID string, secret string) (*http.Request, error) {
+func Sign(r *http.Request, headers []string, keyID, secret string) (*http.Request, error) {
 	if len(headers) == 0 {
-		headers = []string{"date"}
+		headers = []string{date}
 	}
 	var signBuffer bytes.Buffer
 	for i, h := range headers {
@@ -81,7 +79,7 @@ func calculateDigest(r *http.Request) (string, error) {
 	return digest, nil
 }
 
-func sign(msg string, secret string) (string, error) {
+func sign(msg, secret string) (string, error) {
 	mac := hmac.New(sha512.New, []byte(secret))
 	if _, err := mac.Write([]byte(msg)); err != nil {
 		return "", err
@@ -90,7 +88,7 @@ func sign(msg string, secret string) (string, error) {
 	return signature, nil
 }
 
-func constructHeader(headers []string, keyID string, signature string) string {
+func constructHeader(headers []string, keyID, signature string) string {
 	var signBuffer bytes.Buffer
 	signBuffer.WriteString(fmt.Sprintf(`keyId="%s",`, keyID))
 	signBuffer.WriteString(`algorithm="hmac-sha512"`)

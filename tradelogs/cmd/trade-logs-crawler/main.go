@@ -16,8 +16,10 @@ import (
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
 )
 
@@ -86,6 +88,7 @@ func main() {
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
 	app.Flags = append(app.Flags, broadcast.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewEthereumNodeFlags())
+	app.Flags = append(app.Flags, cq.NewCQFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -111,6 +114,7 @@ func min(a, b int64) int64 {
 	}
 	return b
 }
+
 func run(c *cli.Context) error {
 	var (
 		err       error
@@ -248,6 +252,28 @@ func run(c *cli.Context) error {
 			break
 		}
 	}
-
+	//Deploy CQ	after get/ store tradelog
+	deploy := c.Bool(cq.CqsDeployFlag)
+	execute := c.Bool(cq.CqsExecuteFlag)
+	if deploy || execute {
+		cqs, err := tradelogcq.CreateVolumeCqs()
+		if err != nil {
+			return err
+		}
+		if deploy {
+			for _, cq := range cqs {
+				if dErr := cq.Deploy(influxClient, sugar); dErr != nil {
+					return dErr
+				}
+			}
+		}
+		if execute {
+			for _, cq := range cqs {
+				if dErr := cq.Execute(influxClient, sugar); dErr != nil {
+					return dErr
+				}
+			}
+		}
+	}
 	return nil
 }

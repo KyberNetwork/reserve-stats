@@ -3,21 +3,21 @@ package cq
 import "github.com/urfave/cli"
 
 const (
-	cqsDeployFlag  = "--cqs-deploy"
-	cqsExecuteFlag = "--cqs-execute"
+	CqsDeployFlag  = "cqs-deploy"
+	CqsExecuteFlag = "cqs-execute"
 )
 
 // NewCQFlags creates new cli flags for CQs manager.
-// TODO: integrates this to trade-logs-crawler and reserve-rates-crawler
+// Default these flags will be false
 func NewCQFlags() []cli.Flag {
 	return []cli.Flag{
-		cli.BoolTFlag{
-			Name:   cqsDeployFlag,
+		cli.BoolFlag{
+			Name:   CqsDeployFlag,
 			Usage:  "deploy Continuous Queries on startup",
 			EnvVar: "CQS_DEPLOY",
 		},
 		cli.BoolFlag{
-			Name:   cqsExecuteFlag,
+			Name:   CqsExecuteFlag,
 			Usage:  "execute all Continuous Queries and exit",
 			EnvVar: "CQS_EXECUTE",
 		},

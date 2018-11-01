@@ -13,8 +13,11 @@ elif [[ "$module" == "tradelogs" ]]; then
     docker_repositories_list=("kyber-stats-trade-logs-api" "kyber-stats-trade-logs-crawler")
 elif [[ "$module" == "users" ]]; then
     docker_repositories_list=("kyber-stats-users-api")
-else
+elif [[ "$module" == "others" ]]; then
     exit 0
+else
+    echo "Module $module is not an valid module"
+    exit 1
 fi
 
 if [[ -z "$docker_password" ]]; then

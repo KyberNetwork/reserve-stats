@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
@@ -103,7 +102,6 @@ func (a *Authenticator) Authenticated() gin.HandlerFunc {
 		}
 		signatureBase64 := base64.StdEncoding.EncodeToString(signature)
 		if signatureBase64 != sigHeader.signature {
-			log.Printf("sign: %s\n client sign: %s\n sign string: %s\n", signatureBase64, sigHeader.signature, signString)
 			c.AbortWithError(http.StatusUnauthorized, ErrInvalidSign)
 			return
 		}

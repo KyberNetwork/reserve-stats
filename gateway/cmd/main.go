@@ -93,7 +93,11 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("invalid user API URL: %s", c.String(userAPIURLFlag))
 	}
 
-	if err := validation.Validate(c.String(httputil.HTTPKeyFlag), validation.Required); err != nil {
+	if err := validation.Validate(c.String(writeAccessKeyFlag), validation.Required); err != nil {
+		return fmt.Errorf("access key error: %s", err.Error())
+	}
+
+	if err := validation.Validate(c.String(writeSecretKeyFlag), validation.Required); err != nil {
 		return fmt.Errorf("secret key error: %s", err.Error())
 	}
 
@@ -101,7 +105,8 @@ func run(c *cli.Context) error {
 		c.String(tradeLogsAPIURLFlag),
 		c.String(reserveRatesAPIURLFlag),
 		c.String(userAPIURLFlag),
-		c.String(httputil.HTTPKeyFlag))
+		c.String(writeAccessKeyFlag),
+		c.String(writeSecretKeyFlag))
 	if err != nil {
 		return err
 	}

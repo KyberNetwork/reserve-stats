@@ -2,18 +2,22 @@ package http
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
 	"strings"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
+<<<<<<< HEAD
 	"github.com/KyberNetwork/reserve-stats/lib/core"
+=======
+	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
+>>>>>>> d25b94d... update cors, test and middleware handler
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -63,9 +67,9 @@ func validateTimeWindow(fromTime, toTime time.Time, freq string) error {
 func (sv *Server) getTradeLogs(c *gin.Context) {
 	var query tradeLogsQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(
+		c.AbortWithError(
 			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
@@ -75,9 +79,9 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 
 	if toTime.After(fromTime.Add(limitedTimeRange)) {
 		err := fmt.Errorf("time range is too broad, must be smaller or equal to %d milliseconds", limitedTimeRange/time.Millisecond)
-		c.JSON(
+		c.AbortWithError(
 			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
@@ -89,10 +93,15 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 
 	tradeLogs, err := sv.storage.LoadTradeLogs(fromTime, toTime)
 	if err != nil {
+<<<<<<< HEAD
 		sv.sugar.Errorw(err.Error(), "fromTime", fromTime, "toTime", toTime)
 		c.JSON(
+=======
+		ha.sugar.Errorw(err.Error(), "fromTime", fromTime, "toTime", toTime)
+		c.AbortWithError(
+>>>>>>> d25b94d... update cors, test and middleware handler
 			http.StatusInternalServerError,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
@@ -109,9 +118,9 @@ func (sv *Server) getBurnFee(c *gin.Context) {
 		rsvAddrs []ethereum.Address
 	)
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(
+		c.AbortWithError(
 			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
@@ -120,9 +129,9 @@ func (sv *Server) getBurnFee(c *gin.Context) {
 	toTime := timeutil.TimestampMsToTime(query.To)
 
 	if err := validateTimeWindow(fromTime, toTime, query.Freq); err != nil {
-		c.JSON(
+		c.AbortWithError(
 			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
@@ -142,9 +151,9 @@ func (sv *Server) getBurnFee(c *gin.Context) {
 	burnFee, err := sv.storage.GetAggregatedBurnFee(fromTime, toTime, query.Freq, rsvAddrs)
 	if err != nil {
 		sv.sugar.Errorw(err.Error(), "parameter", query)
-		c.JSON(
+		c.AbortWithError(
 			http.StatusInternalServerError,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
@@ -157,6 +166,7 @@ func (sv *Server) getBurnFee(c *gin.Context) {
 
 func (sv *Server) setupRouter() *gin.Engine {
 	r := gin.Default()
+	r.Use(libhttputil.MiddlewareHandler)
 	r.GET("/trade-logs", sv.getTradeLogs)
 	r.GET("/burn-fee", sv.getBurnFee)
 	r.GET("/asset-volume", sv.getAssetVolume)

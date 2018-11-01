@@ -4,6 +4,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 
+	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/httpsign"
 	"github.com/gin-contrib/httpsign/crypto"
 	"github.com/gin-gonic/gin"
@@ -28,12 +30,16 @@ func newReverseProxyMW(target string) (gin.HandlerFunc, error) {
 }
 
 // NewServer creates new instance of gateway HTTP server.
-func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, secretKey string) (*Server, error) {
+func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, keyID, secretKey string) (*Server, error) {
 	r := gin.Default()
-
+	r.Use(libhttputil.MiddlewareHandler)
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AddAllowHeaders("Digest", "Authorization", "Signature", "Date")
+	r.Use(cors.New(corsConfig))
 	// signature middleware for signing message
 	hmacsha512 := &crypto.HmacSha512{}
-	signKeyID := httpsign.KeyID("sign")
+	signKeyID := httpsign.KeyID(keyID)
 	secrets := httpsign.Secrets{
 		signKeyID: &httpsign.Secret{
 			Key:       secretKey,
@@ -67,7 +73,7 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, secretKey string) (
 			return nil, err
 		}
 
-		r.GET("/users", userProxyMW)
+		r.GET("/users", auth.Authenticated(), userProxyMW)
 		r.POST("/users", auth.Authenticated(), userProxyMW)
 	}
 

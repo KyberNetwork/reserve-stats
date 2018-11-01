@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -20,6 +19,7 @@ const (
 	fromParams      uint64 = 12342082
 	tradeLogsURL           = "127.0.0.1:7000"
 	testAddr               = "127.0.0.1:7001"
+	keyID                  = "keyID"
 	constSigningKey        = "fdsr122541"
 )
 
@@ -57,9 +57,7 @@ func runHTTPTestCase(t *testing.T, tc httputil.HTTPTestCase, handler http.Handle
 	req.URL.RawQuery = q.Encode()
 
 	if tc.Method == http.MethodPost {
-		log.Printf("req before: %+v\n", req)
-		req, err = httputil.Sign(req, "sign", signingKey)
-		log.Printf("req after: %+v\n", req)
+		req, err = httputil.Sign(req, keyID, signingKey)
 		assert.Nil(t, err, "sign request should be success")
 	}
 
@@ -106,11 +104,27 @@ func mockServer() error {
 func TestReverseProxy(t *testing.T) {
 	go mockServer()
 
-	time.Sleep(5 * time.Second)
+	// ping until mock server response
+	ok := make(chan bool)
+	go func() {
+		for {
+			_, err := http.Get("http://127.0.0.1:7000/trade-logs")
+			if err == nil {
+				ok <- true
+			}
+		}
+	}()
+
+	select {
+	case <-ok:
+		break
+	case <-time.After(5 * time.Second):
+		t.Fatal("mock server not running after 5 second")
+	}
 
 	// assert.Nil(t, err, "mockserver should be start ok")
 	tradeLogsAddr := fmt.Sprintf("http://%s", tradeLogsURL)
-	testServer, err := NewServer(testAddr, tradeLogsAddr, tradeLogsAddr, tradeLogsAddr, constSigningKey)
+	testServer, err := NewServer(testAddr, tradeLogsAddr, tradeLogsAddr, tradeLogsAddr, keyID, constSigningKey)
 	assert.Nil(t, err, "reverse proxy server should initiate successfully")
 
 	var testsTrue = []httputil.HTTPTestCase{

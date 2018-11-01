@@ -44,22 +44,18 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 	address := c.Query("address")
 	kyced, err := s.storage.IsKYCed(address)
 	if err != nil {
-		c.JSON(
+		c.AbortWithError(
 			http.StatusInternalServerError,
-			gin.H{
-				"error": fmt.Sprintf("failed to check KYC status: %s", err.Error()),
-			},
+			fmt.Errorf("failed to check kyc status: %s", err.Error()),
 		)
 		return
 	}
 
 	rate, err := s.rateProvider.USDRate(time.Now())
 	if err != nil {
-		c.JSON(
+		c.AbortWithError(
 			http.StatusInternalServerError,
-			gin.H{
-				"error": fmt.Sprintf("failed to get usd rate: %s", err.Error()),
-			},
+			fmt.Errorf("failed to get usd rate: %s", err.Error()),
 		)
 		return
 	}
@@ -69,11 +65,9 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 	txLimit := blockchain.EthToWei(uc.TxLimit / rate)
 	rich, err := s.influxStorage.IsExceedDailyLimit(address, uc.DailyLimit)
 	if err != nil {
-		c.JSON(
+		c.AbortWithError(
 			http.StatusInternalServerError,
-			gin.H{
-				"error": err.Error(),
-			},
+			err,
 		)
 		return
 	}
@@ -92,21 +86,17 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 func (s *Server) createOrUpdate(c *gin.Context) {
 	var userData common.UserData
 	if err := c.ShouldBindJSON(&userData); err != nil {
-		c.JSON(
+		c.AbortWithError(
 			http.StatusBadRequest,
-			gin.H{
-				"error": err.Error(),
-			},
+			err,
 		)
 		return
 	}
 
 	if err := s.storage.CreateOrUpdate(userData); err != nil {
-		c.JSON(
+		c.AbortWithError(
 			http.StatusInternalServerError,
-			gin.H{
-				"error": err.Error(),
-			},
+			err,
 		)
 		return
 	}

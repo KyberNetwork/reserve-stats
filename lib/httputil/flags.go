@@ -12,9 +12,6 @@ const (
 	// httpAddressFlag tells which network address the HTTP server will listen to.
 	// Example: 127.0.0.1:8000
 	httpAddressFlag = "listen"
-
-	//HTTPKeyFlag is secret key for signing a request
-	HTTPKeyFlag = "secret-key"
 )
 
 // NewHTTPCliFlags creates new cli flags for HTTP Server.

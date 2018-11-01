@@ -62,7 +62,7 @@ func retry(fn executeJob, attempts int, logger *zap.SugaredLogger) ([]common.Tra
 	return result, err
 }
 
-func (fj *FetcherJob) execute_(sugar *zap.SugaredLogger) ([]common.TradeLog, error) {
+func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error) {
 	logger := sugar.With(
 		"from", fj.from.String(),
 		"to", fj.to.String())
@@ -92,7 +92,7 @@ func (fj *FetcherJob) execute_(sugar *zap.SugaredLogger) ([]common.TradeLog, err
 }
 
 func (fj *FetcherJob) execute(sugar *zap.SugaredLogger) ([]common.TradeLog, error) {
-	return retry(fj.execute_, fj.attempts, sugar)
+	return retry(fj.fetch, fj.attempts, sugar)
 }
 
 func (fj *FetcherJob) info() (int, *big.Int, *big.Int) {

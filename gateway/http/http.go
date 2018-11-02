@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/gin-contrib/httpsign/validator"
 	"net/http/httputil"
 	"net/url"
 
@@ -46,7 +47,16 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, keyID, secretKey st
 			Algorithm: hmacsha512,
 		},
 	}
-	auth := httpsign.NewAuthenticator(secrets)
+	auth := httpsign.NewAuthenticator(
+		secrets,
+		httpsign.WithValidator(
+			NewNonceValidator(),
+			validator.NewDigestValidator(),
+		),
+		httpsign.WithRequiredHeaders(
+			[]string{"(request-target)", "nonce", "digest"},
+		),
+	)
 
 	if tradeLogsURL != "" {
 		tradeLogsProxyMW, err := newReverseProxyMW(tradeLogsURL)

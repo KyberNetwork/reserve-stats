@@ -11,3 +11,8 @@ func TimestampMsToTime(ms uint64) time.Time {
 func TimeToTimestampMs(t time.Time) uint64 {
 	return uint64(t.UnixNano() / int64(time.Millisecond))
 }
+
+// UnixMilliSecond return current timestamp in millisecond
+func UnixMilliSecond() uint64 {
+	return TimeToTimestampMs(time.Now())
+}

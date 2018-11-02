@@ -7,37 +7,37 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"fmt"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"io"
 	"net/http"
 	"strings"
-	"time"
 )
 
 const (
 	requestTarget = "(request-target)"
-	date          = "date"
+	nonce         = "nonce"
 	digest        = "digest"
 )
 
-var headers = []string{requestTarget, date, digest}
+var headers = []string{requestTarget, nonce, digest}
 
 //Sign sign a http request with selected header and return a signed request
 //Use with http client only
 func Sign(r *http.Request, keyID, secret string) (*http.Request, error) {
+	// Set digest to body
+	digestBody, err := calculateDigest(r)
+	if err != nil {
+		return nil, err
+	}
+	r.Header.Set(digest, digestBody)
+	// Set nonce
+	currentNonce := timeutil.UnixMilliSecond()
+	r.Header.Set(nonce, fmt.Sprintf("%d", currentNonce))
+	// Create sign string
 	var signBuffer bytes.Buffer
 	for i, h := range headers {
 		var value string
-		var err error
 		switch h {
-		case digest:
-			value, err = calculateDigest(r)
-			if err != nil {
-				return nil, err
-			}
-			r.Header.Set(h, value)
-		case date:
-			value = time.Now().UTC().Format(http.TimeFormat)
-			r.Header.Set(h, value)
 		case requestTarget:
 			value = fmt.Sprintf("%s %s", strings.ToLower(r.Method), r.URL.RequestURI())
 		default:
@@ -50,6 +50,7 @@ func Sign(r *http.Request, keyID, secret string) (*http.Request, error) {
 		}
 	}
 	signString := signBuffer.String()
+	// Create signature header
 	signature, err := sign(signString, secret)
 	if err != nil {
 		return nil, err

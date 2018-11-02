@@ -13,7 +13,7 @@ require (
 	github.com/ethereum/go-ethereum v1.8.17
 	github.com/fjl/memsize v0.0.0-20180929194037-2a09253e352a // indirect
 	github.com/gin-contrib/cors v0.0.0-20181008113111-488de3ec974f
-	github.com/gin-contrib/httpsign v0.0.0-20181031075104-480dfa352b1f
+	github.com/gin-contrib/httpsign v0.0.0-20181102021455-787f0a566bf9
 	github.com/gin-gonic/contrib v0.0.0-20180614032058-39cfb9727134 // indirect
 	github.com/gin-gonic/gin v1.3.0
 	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible

@@ -102,10 +102,12 @@ func (cq *ContinuousQuery) prepareQueries(isCQ bool) ([]string, error) {
 		}
 		// Modify name and query so that mutiple queries are allowed
 		actualName := cq.Name
+		actualQuery := cq.Query
 		if offsetInterval != "" {
+			// return nil, fmt.Errorf("fuck this shis |%s|", offsetInterval)
 			actualName = actualName + "_" + offsetInterval
+			actualQuery = modifyINTOclause(cq.Query, offsetInterval)
 		}
-		actualQuery := modifyINTOclause(cq.Query, offsetInterval)
 		err = tmpl.Execute(&query, struct {
 			*ContinuousQuery
 			ActualName     string

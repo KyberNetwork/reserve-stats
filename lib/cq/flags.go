@@ -1,17 +1,23 @@
 package cq
 
-import "github.com/urfave/cli"
+import (
+	"github.com/influxdata/influxdb/client/v2"
+	"github.com/urfave/cli"
+	"go.uber.org/zap"
+)
 
 const (
-	cqsDeployFlag  = "--cqs-deploy"
-	cqsExecuteFlag = "--cqs-execute"
+	// cqsDeployFlag is set to true to deploy cqs at start to aggregate in comming data.
+	cqsDeployFlag = "cqs-deploy"
+	// cqsExecuteFlag is set to true to execute cqs at start to aggregate historical data.
+	cqsExecuteFlag = "cqs-execute"
 )
 
 // NewCQFlags creates new cli flags for CQs manager.
-// TODO: integrates this to trade-logs-crawler and reserve-rates-crawler
+// Default these flags will be false
 func NewCQFlags() []cli.Flag {
 	return []cli.Flag{
-		cli.BoolTFlag{
+		cli.BoolFlag{
 			Name:   cqsDeployFlag,
 			Usage:  "deploy Continuous Queries on startup",
 			EnvVar: "CQS_DEPLOY",
@@ -25,10 +31,22 @@ func NewCQFlags() []cli.Flag {
 }
 
 // ManageCQs manages the given Continous Queries.
-func ManageCQs(c *cli.Context, cqs []ContinuousQuery) error {
-	// TODO: check if cqsDeploy == true --> deploy CQs
-
-	// TODO: check if cqsExecute == true --> run all queries and exit
-
+func ManageCQs(c *cli.Context, cqs []*ContinuousQuery, influxClient client.Client, sugar *zap.SugaredLogger) error {
+	deploy := c.Bool(cqsDeployFlag)
+	execute := c.Bool(cqsExecuteFlag)
+	if deploy {
+		for _, cQuery := range cqs {
+			if err := cQuery.Deploy(influxClient, sugar); err != nil {
+				return err
+			}
+		}
+	}
+	if execute {
+		for _, cQuery := range cqs {
+			if err := cQuery.Execute(influxClient, sugar); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }

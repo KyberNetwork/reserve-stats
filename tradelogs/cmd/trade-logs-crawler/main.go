@@ -16,9 +16,13 @@ import (
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
+	"github.com/influxdata/influxdb/client/v2"
+	"go.uber.org/zap"
 )
 
 const (
@@ -86,6 +90,7 @@ func main() {
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
 	app.Flags = append(app.Flags, broadcast.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewEthereumNodeFlags())
+	app.Flags = append(app.Flags, cq.NewCQFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -111,6 +116,16 @@ func min(a, b int64) int64 {
 	}
 	return b
 }
+
+func manageCQFromContext(c *cli.Context, influxClient client.Client, sugar *zap.SugaredLogger) error {
+	//Deploy CQ	before get/ store tradelog
+	cqs, err := tradelogcq.CreateAssetVolumeCqs(common.DatabaseName)
+	if err != nil {
+		return err
+	}
+	return cq.ManageCQs(c, cqs, influxClient, sugar)
+}
+
 func run(c *cli.Context) error {
 	var (
 		err       error
@@ -146,7 +161,9 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
+	if err = manageCQFromContext(c, influxClient, sugar); err != nil {
+		return err
+	}
 	if c.String(fromBlockFlag) == "" {
 		sugar.Info("no from block flag provided, checking last stored block")
 	} else {
@@ -248,6 +265,5 @@ func run(c *cli.Context) error {
 			break
 		}
 	}
-
 	return nil
 }

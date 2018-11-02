@@ -3,7 +3,9 @@ package cq
 import "github.com/urfave/cli"
 
 const (
-	CqsDeployFlag  = "cqs-deploy"
+	// CqsDeployFlag is set to true to deploy cqs at start to aggregate in comming data.
+	CqsDeployFlag = "cqs-deploy"
+	// CqsExecuteFlag is set to true to execute cqs at start to aggregate historical data.
 	CqsExecuteFlag = "cqs-execute"
 )
 

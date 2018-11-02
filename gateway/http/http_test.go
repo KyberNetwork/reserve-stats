@@ -69,8 +69,8 @@ func runHTTPTestCase(t *testing.T, tc httputil.HTTPTestCase, handler http.Handle
 // dummy response to check proxy
 func getTradeLogs(c *gin.Context) {
 	// check getting correct params
-	fromTime := c.Query("fromTime")
-	time, err := strconv.ParseUint(fromTime, 10, 64)
+	fromTimeParam := c.Query("fromTimeParam")
+	fromTime, err := strconv.ParseUint(fromTimeParam, 10, 64)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
@@ -80,7 +80,7 @@ func getTradeLogs(c *gin.Context) {
 	}
 	c.JSON(
 		http.StatusOK,
-		gin.H{"from": time},
+		gin.H{"from": fromTime},
 	)
 }
 

@@ -7,7 +7,9 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
+	"github.com/KyberNetwork/reserve-stats/lib/httputil" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/users/common"
+	ethereum"github.com/ethereum/go-ethereum/common"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 	"github.com/KyberNetwork/tokenrate"
 	"github.com/gin-gonic/gin"
@@ -42,6 +44,13 @@ type Server struct {
 //getTransactionLimit returns cap limit of a user.
 func (s *Server) getTransactionLimit(c *gin.Context) {
 	address := c.Query("address")
+	if !ethereum.IsHexAddress(address) {
+		c.AbortWithError(
+			http.StatusBadRequest,
+			fmt.Errorf("provided address is not valid: %s", address),
+		)
+		return
+	}
 	kyced, err := s.storage.IsKYCed(address)
 	if err != nil {
 		c.AbortWithError(
@@ -105,6 +114,7 @@ func (s *Server) createOrUpdate(c *gin.Context) {
 }
 
 func (s *Server) register() {
+	s.r.Use(httputil.MiddlewareHandler)
 	s.r.GET("/users", s.getTransactionLimit)
 	s.r.POST("/users", s.createOrUpdate)
 }

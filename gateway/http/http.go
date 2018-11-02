@@ -36,7 +36,8 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, keyID, secretKey st
 	r.Use(libhttputil.MiddlewareHandler)
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
-	corsConfig.AddAllowHeaders("Digest", "Authorization", "Signature", "Date")
+	corsConfig.AddAllowHeaders("Digest", "Authorization", "Signature", "Nonce")
+	corsConfig.AddAllowMethods("OPTIONS")
 	r.Use(cors.New(corsConfig))
 	// signature middleware for signing message
 	hmacsha512 := &crypto.HmacSha512{}

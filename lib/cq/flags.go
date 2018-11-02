@@ -36,15 +36,15 @@ func ManageCQs(c *cli.Context, cqs []*ContinuousQuery, influxClient client.Clien
 	execute := c.Bool(cqsExecuteFlag)
 	if deploy {
 		for _, cQuery := range cqs {
-			if dErr := cQuery.Deploy(influxClient, sugar); dErr != nil {
-				return dErr
+			if err := cQuery.Deploy(influxClient, sugar); err != nil {
+				return err
 			}
 		}
 	}
 	if execute {
 		for _, cQuery := range cqs {
-			if dErr := cQuery.Execute(influxClient, sugar); dErr != nil {
-				return dErr
+			if err := cQuery.Execute(influxClient, sugar); err != nil {
+				return err
 			}
 		}
 	}

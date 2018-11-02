@@ -3,34 +3,25 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	"github.com/go-ozzo/ozzo-validation"
-	"github.com/go-ozzo/ozzo-validation/is"
-	"github.com/urfave/cli"
 	"log"
 	"math"
 	"math/big"
 	"os"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/go-ozzo/ozzo-validation"
-	"github.com/go-ozzo/ozzo-validation/is"
-	"github.com/urfave/cli"
-
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
-	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
-	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
+	"github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/influxdata/influxdb/client/v2"
+	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
 
@@ -152,21 +143,10 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	var addresses []ethereum.Address
-	addresses = append(addresses, contracts.PricingContractAddress().MustGetFromContext(c)...)
-	addresses = append(addresses, contracts.NetworkContractAddress().MustGetFromContext(c)...)
-	addresses = append(addresses, contracts.BurnerContractAddress().MustGetFromContext(c)...)
-	addresses = append(addresses, contracts.InternalNetworkContractAddress().MustGetFromContext(c)...)
 
-	crawler, err := tradelogs.NewTradeLogCrawler(
-		sugar,
-		nodeURL,
-		geoClient,
-		addresses,
-	)
-	if err != nil {
-		return err
-	}
+	defer logger.Sync()
+
+	sugar := logger.Sugar()
 
 	coreClient, err := core.NewClientFromContext(sugar, c)
 	if err != nil {

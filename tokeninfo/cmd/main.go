@@ -2,9 +2,10 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"log"
 	"os"
+
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/tokeninfo"
@@ -63,7 +64,7 @@ func reserve(c *cli.Context) error {
 	}
 
 	internalNetworkClient, err := contracts.NewInternalNetwork(
-		contracts.InternalNetworkContractAddress().MustGetFromContext(c),
+		contracts.InternalNetworkContractAddress().MustGetFromContext(c)[0],
 		client,
 	)
 	if err != nil {

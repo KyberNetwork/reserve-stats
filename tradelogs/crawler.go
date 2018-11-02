@@ -29,7 +29,6 @@ const (
 	tradeEvent = "0x1849bd6a030a1bca28b83437fd3de96f3d27a5d172fa7e9c78e7b61468928a39"
 	// etherReceivalEvent is the topic of event EtherReceival(address indexed sender, uint amount).
 	etherReceivalEvent = "0x75f33ed68675112c77094e7c5b073890598be1d23e27cd7f6907b4a7d98ac619"
-
 )
 
 var (
@@ -215,21 +214,6 @@ func updateTradeLogs(allLogs []common.TradeLog, logItem types.Log, ts time.Time)
 	}
 
 	return allLogs, nil
-}
-
-// NewTradeLogCrawler create a new TradeLogCrawler instance.
-func NewTradeLogCrawler(sugar *zap.SugaredLogger, nodeURL string, broadcastClient broadcast.Interface, addresses []ethereum.Address) (*TradeLogCrawler, error) {
-	client, err := ethclient.Dial(nodeURL)
-	if err != nil {
-		return nil, err
-	}
-	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
-	return &TradeLogCrawler{
-		sugar: sugar, ethClient: client,
-		txTime:          resolver,
-		broadcastClient: broadcastClient,
-		addresses:       addresses,
-	}, nil
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.

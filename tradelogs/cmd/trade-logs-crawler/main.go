@@ -256,7 +256,7 @@ func run(c *cli.Context) error {
 	deploy := c.Bool(cq.CqsDeployFlag)
 	execute := c.Bool(cq.CqsExecuteFlag)
 	if deploy || execute {
-		cqs, err := tradelogcq.CreateVolumeCqs()
+		cqs, err := tradelogcq.CreateVolumeCqs(common.DatabaseName)
 		if err != nil {
 			return err
 		}

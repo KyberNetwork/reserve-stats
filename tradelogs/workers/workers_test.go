@@ -42,6 +42,10 @@ func (s *mockStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.Toke
 	return nil, nil
 }
 
+func (s *mockStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq string, fromTime, toTime time.Time, timezone int64) (map[uint64]float64, error) {
+	return nil, nil
+}
+
 type mockJob struct {
 	order   int
 	failure bool

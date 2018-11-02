@@ -21,6 +21,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
+	"github.com/influxdata/influxdb/client/v2"
+	"go.uber.org/zap"
 )
 
 const (
@@ -115,6 +117,15 @@ func min(a, b int64) int64 {
 	return b
 }
 
+func manageCQFromContext(c *cli.Context, influxClient client.Client, sugar *zap.SugaredLogger) error {
+	//Deploy CQ	before get/ store tradelog
+	cqs, err := tradelogcq.CreateAssetVolumeCqs(common.DatabaseName)
+	if err != nil {
+		return err
+	}
+	return cq.ManageCQs(c, cqs, influxClient, sugar)
+}
+
 func run(c *cli.Context) error {
 	var (
 		err       error
@@ -150,7 +161,9 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
+	if err = manageCQFromContext(c, influxClient, sugar); err != nil {
+		return err
+	}
 	if c.String(fromBlockFlag) == "" {
 		sugar.Info("no from block flag provided, checking last stored block")
 	} else {
@@ -250,29 +263,6 @@ func run(c *cli.Context) error {
 			time.Sleep(delayTime)
 		} else {
 			break
-		}
-	}
-	//Deploy CQ	after get/ store tradelog
-	deploy := c.Bool(cq.CqsDeployFlag)
-	execute := c.Bool(cq.CqsExecuteFlag)
-	if deploy || execute {
-		cqs, err := tradelogcq.CreateAssetVolumeCqs(common.DatabaseName)
-		if err != nil {
-			return err
-		}
-		if deploy {
-			for _, cq := range cqs {
-				if dErr := cq.Deploy(influxClient, sugar); dErr != nil {
-					return dErr
-				}
-			}
-		}
-		if execute {
-			for _, cq := range cqs {
-				if dErr := cq.Execute(influxClient, sugar); dErr != nil {
-					return dErr
-				}
-			}
 		}
 	}
 	return nil

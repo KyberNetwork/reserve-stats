@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"              // import custom validator functions
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
-	"github.com/KyberNetwork/reserve-stats/lib/httputil" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/users/common"
-	ethereum"github.com/ethereum/go-ethereum/common"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 	"github.com/KyberNetwork/tokenrate"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

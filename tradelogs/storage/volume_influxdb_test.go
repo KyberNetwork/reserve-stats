@@ -36,7 +36,7 @@ func aggregationTestData(is *InfluxStorage) error {
 	const (
 		endpoint = "http://127.0.0.1:8086/"
 	)
-	cqs, err := tradelogcq.CreateVolumeCqs(is.dbName)
+	cqs, err := tradelogcq.CreateAssetVolumeCqs(is.dbName)
 	if err != nil {
 		return err
 	}

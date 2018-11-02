@@ -4,7 +4,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 )
 
-func CreateVolumeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
+// CreateAssetVolumeCqs return a set of cqs required for asset volume aggregation
+func CreateAssetVolumeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	var (
 		result []*cq.ContinuousQuery
 	)

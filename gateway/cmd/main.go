@@ -24,7 +24,7 @@ const (
 var (
 	defaultTradeLogsAPIURLValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.TradeLogsPort)
 	defaultReserveRatesAPIValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.ReserveRatesPort)
-	defaultUserAPIValue         = fmt.Sprintf("http://127.0.0.1:%d", httputil.ReserveRatesPort)
+	defaultUserAPIValue         = fmt.Sprintf("http://127.0.0.1:%d", httputil.UsersPort)
 )
 
 func main() {

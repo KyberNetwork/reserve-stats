@@ -8,11 +8,8 @@ import (
 
 	"go.uber.org/zap"
 
-<<<<<<< HEAD
 	"github.com/KyberNetwork/reserve-stats/lib/core"
-=======
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
->>>>>>> d25b94d... update cors, test and middleware handler
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
@@ -93,13 +90,8 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 
 	tradeLogs, err := sv.storage.LoadTradeLogs(fromTime, toTime)
 	if err != nil {
-<<<<<<< HEAD
 		sv.sugar.Errorw(err.Error(), "fromTime", fromTime, "toTime", toTime)
-		c.JSON(
-=======
-		ha.sugar.Errorw(err.Error(), "fromTime", fromTime, "toTime", toTime)
 		c.AbortWithError(
->>>>>>> d25b94d... update cors, test and middleware handler
 			http.StatusInternalServerError,
 			err,
 		)

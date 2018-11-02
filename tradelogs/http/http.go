@@ -64,7 +64,8 @@ func validateTimeWindow(fromTime, toTime time.Time, freq string) error {
 func (sv *Server) getTradeLogs(c *gin.Context) {
 	var query tradeLogsQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.AbortWithError(
+		libhttputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
 			err,
 		)
@@ -76,7 +77,8 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 
 	if toTime.After(fromTime.Add(limitedTimeRange)) {
 		err := fmt.Errorf("time range is too broad, must be smaller or equal to %d milliseconds", limitedTimeRange/time.Millisecond)
-		c.AbortWithError(
+		libhttputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
 			err,
 		)
@@ -91,7 +93,8 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 	tradeLogs, err := sv.storage.LoadTradeLogs(fromTime, toTime)
 	if err != nil {
 		sv.sugar.Errorw(err.Error(), "fromTime", fromTime, "toTime", toTime)
-		c.AbortWithError(
+		libhttputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
 			err,
 		)
@@ -110,7 +113,8 @@ func (sv *Server) getBurnFee(c *gin.Context) {
 		rsvAddrs []ethereum.Address
 	)
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.AbortWithError(
+		libhttputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
 			err,
 		)
@@ -121,7 +125,8 @@ func (sv *Server) getBurnFee(c *gin.Context) {
 	toTime := timeutil.TimestampMsToTime(query.To)
 
 	if err := validateTimeWindow(fromTime, toTime, query.Freq); err != nil {
-		c.AbortWithError(
+		libhttputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
 			err,
 		)
@@ -143,7 +148,8 @@ func (sv *Server) getBurnFee(c *gin.Context) {
 	burnFee, err := sv.storage.GetAggregatedBurnFee(fromTime, toTime, query.Freq, rsvAddrs)
 	if err != nil {
 		sv.sugar.Errorw(err.Error(), "parameter", query)
-		c.AbortWithError(
+		libhttputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
 			err,
 		)
@@ -158,7 +164,6 @@ func (sv *Server) getBurnFee(c *gin.Context) {
 
 func (sv *Server) setupRouter() *gin.Engine {
 	r := gin.Default()
-	r.Use(libhttputil.MiddlewareHandler)
 	r.GET("/trade-logs", sv.getTradeLogs)
 	r.GET("/burn-fee", sv.getBurnFee)
 	r.GET("/asset-volume", sv.getAssetVolume)

@@ -16,3 +16,11 @@ func MiddlewareHandler(c *gin.Context) {
 		}
 	}(c)
 }
+
+//ResponseFailure response error
+func ResponseFailure(c *gin.Context, HTTPCode int, err error) {
+	c.JSON(
+		HTTPCode,
+		gin.H{"error": err.Error()},
+	)
+}

@@ -45,7 +45,8 @@ type Server struct {
 func (s *Server) getTransactionLimit(c *gin.Context) {
 	address := c.Query("address")
 	if !ethereum.IsHexAddress(address) {
-		c.AbortWithError(
+		httputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
 			fmt.Errorf("provided address is not valid: %s", address),
 		)
@@ -53,7 +54,8 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 	}
 	kyced, err := s.storage.IsKYCed(address)
 	if err != nil {
-		c.AbortWithError(
+		httputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
 			fmt.Errorf("failed to check kyc status: %s", err.Error()),
 		)
@@ -62,7 +64,8 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 
 	rate, err := s.rateProvider.USDRate(time.Now())
 	if err != nil {
-		c.AbortWithError(
+		httputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
 			fmt.Errorf("failed to get usd rate: %s", err.Error()),
 		)
@@ -74,7 +77,8 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 	txLimit := blockchain.EthToWei(uc.TxLimit / rate)
 	rich, err := s.influxStorage.IsExceedDailyLimit(address, uc.DailyLimit)
 	if err != nil {
-		c.AbortWithError(
+		httputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
 			err,
 		)
@@ -95,7 +99,8 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 func (s *Server) createOrUpdate(c *gin.Context) {
 	var userData common.UserData
 	if err := c.ShouldBindJSON(&userData); err != nil {
-		c.AbortWithError(
+		httputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
 			err,
 		)
@@ -103,7 +108,8 @@ func (s *Server) createOrUpdate(c *gin.Context) {
 	}
 
 	if err := s.storage.CreateOrUpdate(userData); err != nil {
-		c.AbortWithError(
+		httputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
 			err,
 		)

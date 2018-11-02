@@ -1,14 +1,15 @@
 package http
 
 import (
-	"github.com/gin-contrib/httpsign/validator"
 	"net/http/httputil"
 	"net/url"
+	"time"
 
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/httpsign"
 	"github.com/gin-contrib/httpsign/crypto"
+	"github.com/gin-contrib/httpsign/validator"
 	"github.com/gin-gonic/gin"
 )
 
@@ -37,8 +38,9 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, keyID, secretKey st
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AddAllowHeaders("Digest", "Authorization", "Signature", "Nonce")
-	corsConfig.AddAllowMethods("OPTIONS")
+	corsConfig.MaxAge = 5 * time.Minute
 	r.Use(cors.New(corsConfig))
+
 	// signature middleware for signing message
 	hmacsha512 := &crypto.HmacSha512{}
 	signKeyID := httpsign.KeyID(keyID)

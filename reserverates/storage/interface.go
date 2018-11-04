@@ -9,4 +9,5 @@ import (
 type ReserveRatesStorage interface {
 	UpdateRatesRecords(rateRecords map[string]common.ReserveRates) error
 	GetRatesByTimePoint(addrs []ethereum.Address, fromTime, toTime uint64) (map[string]map[uint64]common.ReserveRates, error)
+	LastBlock() (int64, error)
 }

@@ -211,8 +211,8 @@ func run(c *cli.Context) error {
 		}
 
 		if toBlock == nil {
-			client, fErr := libapp.NewEthereumClientFromFlag(c)
-			currentHeader, fErr := client.HeaderByNumber(context.Background(), nil)
+			ethClient, fErr := libapp.NewEthereumClientFromFlag(c)
+			currentHeader, fErr := ethClient.HeaderByNumber(context.Background(), nil)
 			if fErr != nil {
 				return fErr
 			}

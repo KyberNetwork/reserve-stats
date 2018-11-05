@@ -30,6 +30,16 @@ func BurnerContractAddress() app.Address {
 	return burnerContractAddress
 }
 
+// OldNetworkContractAddress returns old network address of all deployments.
+func OldNetworkContractAddress() app.Address {
+	return oldNetworkContractAddress
+}
+
+// OldBurnerContractAddress returns old burner address of all deployments.
+func OldBurnerContractAddress() app.Address {
+	return oldBurnerContractAddress
+}
+
 var (
 	internalNetworkContractAddress = app.NewAddress(
 		[]common.Address{common.HexToAddress("0x91a502C678605fbCe581eae053319747482276b9")},
@@ -50,5 +60,15 @@ var (
 	burnerContractAddress = app.NewAddress(
 		[]common.Address{common.HexToAddress("0xed4f53268bfdFF39B36E8786247bA3A02Cf34B04")},
 		[]common.Address{common.HexToAddress("0xd6703974Dc30155d768c058189A2936Cf7C62Da6")},
+	)
+
+	oldNetworkContractAddress = app.NewAddress(
+		[]common.Address{common.HexToAddress("0x964F35fAe36d75B1e72770e244F6595B68508CF5")},
+		[]common.Address{common.HexToAddress("0xD2D21FdeF0D054D2864ce328cc56D1238d6b239e")},
+	)
+
+	oldBurnerContractAddress = app.NewAddress(
+		[]common.Address{common.HexToAddress("0x4E89bc8484B2c454f2F7B25b612b648c45e14A8e"), common.HexToAddress("0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706")},
+		[]common.Address{common.HexToAddress("0xB2cB365D803Ad914e63EA49c95eC663715c2F673")},
 	)
 )

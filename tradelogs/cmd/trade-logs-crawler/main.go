@@ -211,8 +211,8 @@ func run(c *cli.Context) error {
 		}
 
 		if toBlock == nil {
-			client, fErr := libapp.NewEthereumClientFromFlag(c)
-			currentHeader, fErr := client.HeaderByNumber(context.Background(), nil)
+			ethClient, fErr := libapp.NewEthereumClientFromFlag(c)
+			currentHeader, fErr := ethClient.HeaderByNumber(context.Background(), nil)
 			if fErr != nil {
 				return fErr
 			}
@@ -247,7 +247,7 @@ func run(c *cli.Context) error {
 				p.Shutdown()
 			case fErr := <-p.ErrCh:
 				if fErr != nil {
-					sugar.Errorw("job failed to execute", "error", fErr)
+					sugar.Fatalw("job failed to execute", "error", fErr)
 				} else {
 					sugar.Info("workers pool is successfully shut down")
 				}

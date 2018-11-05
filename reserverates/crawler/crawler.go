@@ -9,7 +9,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
-	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
@@ -28,11 +27,10 @@ type ResreveRatesCrawler struct {
 	tokenSetting    tokenSetting
 	sugar           *zap.SugaredLogger
 	blkTimeRsv      blockchain.BlockTimeResolverInterface
-	db              storage.ReserveRatesStorage
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
-func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett tokenSetting, sugar *zap.SugaredLogger, bl blockchain.BlockTimeResolverInterface, dbInstance storage.ReserveRatesStorage) (*ResreveRatesCrawler, error) {
+func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett tokenSetting, sugar *zap.SugaredLogger, bl blockchain.BlockTimeResolverInterface) (*ResreveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapper(client)
 	if err != nil {
 		return nil, err
@@ -47,7 +45,6 @@ func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett token
 		tokenSetting:    sett,
 		sugar:           sugar,
 		blkTimeRsv:      bl,
-		db:              dbInstance,
 	}, nil
 }
 
@@ -170,6 +167,5 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]rsvRat
 		return nil, err
 	}
 
-	err = rrc.db.UpdateRatesRecords(result)
 	return result, err
 }

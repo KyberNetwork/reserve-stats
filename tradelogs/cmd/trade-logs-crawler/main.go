@@ -245,7 +245,7 @@ func run(c *cli.Context) error {
 			case <-doneCh:
 				sugar.Info("all jobs are successfully executed, waiting for the workers pool to shut down")
 				p.Shutdown()
-			case fErr := <-p.ErrCh:
+			case fErr := <-p.ErrCh():
 				if fErr != nil {
 					sugar.Fatalw("job failed to execute", "error", fErr)
 				} else {

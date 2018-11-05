@@ -44,6 +44,27 @@ func NewRateInfluxDBStorage(sugar *zap.SugaredLogger, client influxClient.Client
 	return &RateStorage{sugar: sugar, client: client, dbName: dbName}, nil
 }
 
+// LastBlock returns last stored rate block number from database.
+func (rs *RateStorage) LastBlock() (int64, error) {
+	q := influxClient.NewQuery("SELECT block_number, buy_rate from reserve_rate ORDER BY time DESC limit 1", rs.dbName, timePrecision)
+
+	res, err := rs.client.Query(q)
+	if err != nil {
+		return 0, err
+	}
+
+	if res.Error() != nil {
+		return 0, res.Error()
+	}
+
+	if len(res.Results) != 1 || len(res.Results[0].Series) != 1 || len(res.Results[0].Series[0].Values[0]) != 3 {
+		rs.sugar.Infow("no result returned for last block query", "res", res)
+		return 0, nil
+	}
+
+	return influxdb.GetInt64FromTagValue(res.Results[0].Series[0].Values[0][1])
+}
+
 // UpdateRatesRecords update all the rate records from different reserve to influxDB in one go.
 // It take a map[reserveAddress] ReserveRates and return error if occurs.
 func (rs *RateStorage) UpdateRatesRecords(rateRecords map[string]common.ReserveRates) error {

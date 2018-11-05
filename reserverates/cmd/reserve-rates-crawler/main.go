@@ -3,100 +3,216 @@ package main
 import (
 	"context"
 	"log"
+	"math/big"
 	"os"
+	"time"
+
+	"github.com/urfave/cli"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
+	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserverates/storage/influx"
-	"github.com/urfave/cli"
-	"go.uber.org/zap"
+	"github.com/KyberNetwork/reserve-stats/reserverates/workers"
 )
 
 const (
 	addressesFlag = "addresses"
-	blockFlag     = "block"
+
+	fromBlockFlag    = "from-block"
+	defaultFromblock = 6526056 // TODO: depend on ethereum node, this value might not work as node return empty result on too old node
+	toBlockFlag      = "to-block"
+
+	maxWorkerFlag    = "max-workers"
+	defaultMaxWorker = 4
+
+	attemptsFlag    = "attempts"
+	defaultAttempts = 3
+
+	delayFlag        = "delay"
+	defaultDelayTime = time.Minute
 )
 
-func newReserveCrawlerCli() *cli.App {
-	const dbName = "resever_rates"
+//reserverates --addresses=0xABCDEF,0xDEFGHI
+func main() {
 	app := libapp.NewApp()
 	app.Name = "reserverates"
 	app.Usage = "get the rates of all configured reserves at a certain block"
-	var block uint64
+	app.Action = run
+
 	app.Flags = append(app.Flags,
 		cli.StringSliceFlag{
 			Name:   addressesFlag,
 			EnvVar: "RESERVE_ADDRESSES",
 			Usage:  "list of reserve contract addresses. Example: --addresses={\"0x1111\",\"0x222\"}",
 		},
-		cli.Uint64Flag{
-			Name:        blockFlag,
-			Value:       0,
-			Usage:       "block from which rate is queried. Default value is 0, in which case the latest rate is returned",
-			Destination: &block,
+		cli.StringFlag{
+			Name:   fromBlockFlag,
+			Usage:  "Fetch rates from block",
+			EnvVar: "FROM_BLOCK",
+		},
+		cli.StringFlag{
+			Name:   toBlockFlag,
+			Usage:  "Fetch rates to block",
+			EnvVar: "TO_BLOCK",
+		},
+		cli.IntFlag{
+			Name:   maxWorkerFlag,
+			Usage:  "The maximum number of worker to fetch rates",
+			EnvVar: "MAX_WORKER",
+			Value:  defaultMaxWorker,
+		},
+		cli.IntFlag{
+			Name:   attemptsFlag,
+			Usage:  "The number of attempt to query rates from blockchain",
+			EnvVar: "ATTEMPTS",
+			Value:  defaultAttempts,
+		},
+		cli.DurationFlag{
+			Name:   delayFlag,
+			Usage:  "The duration to put worker pools into sleep after each batch requets",
+			EnvVar: "DELAY",
+			Value:  defaultDelayTime,
 		},
 		libapp.NewEthereumNodeFlags(),
 	)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
-	app.Action = func(c *cli.Context) error {
-		addrs := c.StringSlice(addressesFlag)
-		client, err := libapp.NewEthereumClientFromFlag(c)
-		if err != nil {
-			return err
-		}
-		logger, err := libapp.NewLogger(c)
-		if err != nil {
-			return err
-		}
-		defer logger.Sync()
 
-		blockTimeResolver, err := blockchain.NewBlockTimeResolver(logger.Sugar(), client)
-		if err != nil {
-			return err
-		}
-		coreClient, err := core.NewClientFromContext(logger.Sugar(), c)
-		if err != nil {
-			return err
-		}
-		influxClient, err := influxdb.NewClientFromContext(c)
-		if err != nil {
-			return err
-		}
-		rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(logger.Sugar(), influxClient, dbName)
-		if err != nil {
-			return err
-		}
-		reserveRateCrawler, err := crawler.NewReserveRatesCrawler(addrs, client, coreClient, logger.Sugar(), blockTimeResolver, rateStorage)
-		if err != nil {
-			return err
-		}
-
-		if block == 0 {
-			currentBlock, err := client.BlockByNumber(context.Background(), nil)
-			if err != nil {
-				return err
-			}
-			block = currentBlock.Number().Uint64()
-		}
-
-		result, err := reserveRateCrawler.GetReserveRates(block)
-		if err != nil {
-			return err
-		}
-		logger.Info("rate result is", zap.Reflect("rates", result))
-		return nil
-	}
-	return app
-}
-
-//reserverates --addresses=0xABCDEF,0xDEFGHI --block 100
-func main() {
-	app := newReserveCrawlerCli()
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func run(c *cli.Context) error {
+	var (
+		err                error
+		fromBlock, toBlock *big.Int
+		daemon             bool
+	)
+
+	logger, err := libapp.NewLogger(c)
+	if err != nil {
+		return err
+	}
+	defer logger.Sync()
+	sugar := logger.Sugar()
+
+	influxClient, err := influxdb.NewClientFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(
+		sugar, influxClient, common.DatabaseName)
+	if err != nil {
+		return err
+	}
+
+	if c.String(fromBlockFlag) == "" {
+		sugar.Info("no from block flag provided, checking last stored block")
+	} else {
+		fromBlock, err = libapp.ParseBigIntFlag(c, fromBlockFlag)
+		if err != nil {
+			return err
+		}
+	}
+
+	if c.String(toBlockFlag) == "" {
+		daemon = true
+		sugar.Info("running in daemon mode")
+	} else {
+		toBlock, err = libapp.ParseBigIntFlag(c, toBlockFlag)
+		if err != nil {
+			return err
+		}
+	}
+
+	maxWorkers := c.Int(maxWorkerFlag)
+	attempts := c.Int(attemptsFlag)
+	delayTime := c.Duration(delayFlag)
+
+	addrs := c.StringSlice(addressesFlag)
+
+	for {
+		if fromBlock == nil {
+			lastBlock, fErr := rateStorage.LastBlock()
+			if fErr != nil {
+				return fErr
+			}
+
+			if lastBlock != 0 {
+				fromBlock = big.NewInt(0).SetInt64(lastBlock)
+				sugar.Infow("using last stored block number", "from_block", fromBlock)
+			} else {
+				sugar.Infow("using default from block number", "from_block", defaultFromblock)
+				fromBlock = big.NewInt(0).SetInt64(defaultFromblock)
+			}
+		}
+
+		if toBlock == nil {
+			client, fErr := libapp.NewEthereumClientFromFlag(c)
+			currentHeader, fErr := client.HeaderByNumber(context.Background(), nil)
+			if fErr != nil {
+				return fErr
+			}
+			toBlock = currentHeader.Number
+			sugar.Infow("fetching trade logs up to latest known block number", "to_block", toBlock.String())
+		}
+
+		pool := workers.NewPool(sugar, maxWorkers, rateStorage)
+		doneCh := make(chan struct{})
+
+		go func(fromBlock, toBlock int64) {
+			var jobOrder = pool.GetLastCompleteJobOrder()
+
+			for block := fromBlock; block < toBlock; block++ {
+				jobOrder++
+				pool.Run(workers.NewFetcherJob(c, jobOrder, uint64(block), addrs, attempts))
+			}
+
+			for pool.GetLastCompleteJobOrder() < jobOrder {
+				time.Sleep(time.Second)
+			}
+
+			doneCh <- struct{}{}
+		}(fromBlock.Int64(), toBlock.Int64())
+
+		for {
+			var toBreak = false
+
+			select {
+			case <-doneCh:
+				sugar.Info("all jobs are successfully executed, waiting for the workers pool to shut down")
+				pool.Shutdown()
+			case fErr := <-pool.ErrCh():
+				if fErr != nil {
+					sugar.Errorw("job failed to execute", "error", fErr)
+					log.Fatal(fErr)
+				} else {
+					sugar.Info("workers pool is successfully shut down")
+					toBreak = true
+				}
+			}
+
+			if toBreak {
+				break
+			}
+
+		}
+
+		if daemon {
+			sugar.Infow("waiting before fetching new rates",
+				"last_from_block", fromBlock.String(),
+				"last_to_block", toBlock.String(),
+				"sleep", delayTime.String())
+			fromBlock, toBlock = nil, nil
+			time.Sleep(delayTime)
+		} else {
+			break
+		}
+	}
+
+	return nil
 }

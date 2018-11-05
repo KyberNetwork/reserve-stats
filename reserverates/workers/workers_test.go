@@ -2,40 +2,28 @@ package workers
 
 import (
 	"fmt"
+	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"log"
-	"math/big"
 	"testing"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
-
-	"github.com/KyberNetwork/reserve-stats/lib/core"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 type mockStorage struct {
 }
 
-func (s *mockStorage) LastBlock() (int64, error) {
-	return 0, nil
-}
-
-func (s *mockStorage) SaveTradeLogs(logs []common.TradeLog) error {
+func (s *mockStorage) UpdateRatesRecords(rateRecords map[string]common.ReserveRates) error {
 	return nil
 }
-
-func (s *mockStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
+func (s *mockStorage) GetRatesByTimePoint(addrs []ethereum.Address, fromTime, toTime uint64) (map[string]map[uint64]common.ReserveRates, error) {
 	return nil, nil
 }
 
-func (s *mockStorage) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[ethereum.Address]map[string]float64, error) {
-	return nil, nil
-}
-
-func (s *mockStorage) GetAssetVolume(token core.Token, fromTime, toTime uint64, frequency string) (map[uint64]*common.VolumeStats, error) {
-	return nil, nil
+func (s *mockStorage) LastBlock() (int64, error) {
+	return 0, nil
 }
 
 type mockJob struct {
@@ -43,15 +31,15 @@ type mockJob struct {
 	failure bool
 }
 
-func (j *mockJob) execute(sugar *zap.SugaredLogger) ([]common.TradeLog, error) {
+func (j *mockJob) execute(sugar *zap.SugaredLogger) (map[string]common.ReserveRates, error) {
 	if j.failure {
 		return nil, fmt.Errorf("failed to execute job %d", j.order)
 	}
 	return nil, nil
 }
 
-func (j *mockJob) info() (order int, from, to *big.Int) {
-	return j.order, big.NewInt(0), big.NewInt(0)
+func (j *mockJob) info() (order int, block uint64) {
+	return j.order, uint64(0)
 }
 
 func newTestWorkerPool(maxWorkers int) *Pool {
@@ -70,7 +58,7 @@ func sendJobsToWorkerPool(pool *Pool, jobs []job, doneCh chan<- struct{}) {
 		var lastOrder int
 		for _, j := range jobs {
 			pool.Run(j)
-			lastOrder, _, _ = j.info()
+			lastOrder, _ = j.info()
 		}
 
 		for pool.GetLastCompleteJobOrder() < lastOrder {

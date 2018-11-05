@@ -131,7 +131,6 @@ func manageCQFromContext(c *cli.Context, influxClient client.Client, sugar *zap.
 	return cq.ManageCQs(c, cqs, influxClient, sugar)
 }
 
-
 func run(c *cli.Context) error {
 	var (
 		err       error

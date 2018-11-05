@@ -54,13 +54,6 @@ github.com/gin-gonic/gin/render
 # github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
 github.com/go-ozzo/ozzo-validation
 github.com/go-ozzo/ozzo-validation/is
-# github.com/go-pg/pg v6.15.0+incompatible
-github.com/go-pg/pg
-github.com/go-pg/pg/internal
-github.com/go-pg/pg/internal/pool
-github.com/go-pg/pg/orm
-github.com/go-pg/pg/types
-github.com/go-pg/pg/internal/parser
 # github.com/go-stack/stack v1.8.0
 github.com/go-stack/stack
 # github.com/golang/protobuf v1.2.0
@@ -73,8 +66,6 @@ github.com/google/uuid
 github.com/influxdata/influxdb/client/v2
 github.com/influxdata/influxdb/models
 github.com/influxdata/influxdb/pkg/escape
-# github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a
-github.com/jinzhu/inflection
 # github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
 github.com/jmoiron/sqlx
 github.com/jmoiron/sqlx/reflectx
@@ -121,8 +112,6 @@ github.com/syndtr/goleveldb/leveldb/table
 github.com/ugorji/go/codec
 # github.com/urfave/cli v1.20.0
 github.com/urfave/cli
-# github.com/vmihailenco/sasl v0.0.0-20180925064641-2f13c189728a
-github.com/vmihailenco/sasl
 # go.uber.org/atomic v1.3.2
 go.uber.org/atomic
 # go.uber.org/multierr v1.1.0

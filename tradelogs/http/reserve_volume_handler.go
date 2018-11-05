@@ -11,15 +11,16 @@ import (
 type reserveVolumeQuery struct {
 	From    uint64 `form:"from" `
 	To      uint64 `form:"to"`
-	Asset   string `form:"asset"`
+	Asset   string `form:"asset" binding:"required"`
 	Freq    string `form:"freq"`
 	Reserve string `form:"reserve" binding:"isAddress"`
 }
 
 func (sv *Server) getReserveVolume(c *gin.Context) {
 	var (
-		query  reserveVolumeQuery
-		logger = sv.sugar.With("func", "tradelogs/volumehttp.getAssetVolume")
+		query       reserveVolumeQuery
+		logger      = sv.sugar.With("func", "tradelogs/http/Serve.getReserveVolume")
+		defaultFreq = "h"
 	)
 	if err := c.ShouldBindQuery(&query); err != nil {
 		c.JSON(
@@ -39,6 +40,10 @@ func (sv *Server) getReserveVolume(c *gin.Context) {
 			gin.H{"error": err.Error()},
 		)
 		return
+	}
+	if query.Freq == "" {
+		sv.sugar.Debug("using default frequency", "freq", defaultFreq)
+		query.Freq = defaultFreq
 	}
 	result, err := sv.storage.GetReserveVolume(ethereum.HexToAddress(query.Reserve), token, query.From, query.To, query.Freq)
 	if err != nil {

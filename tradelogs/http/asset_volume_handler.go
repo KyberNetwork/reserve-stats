@@ -33,7 +33,7 @@ func (sv *Server) getAssetVolume(c *gin.Context) {
 		)
 		return
 	}
-	token, err := sv.lookupToken(query.Asset)
+	token, err := core.LookupToken(sv.coreSetting, query.Asset)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,

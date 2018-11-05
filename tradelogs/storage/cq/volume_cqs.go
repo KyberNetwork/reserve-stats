@@ -101,19 +101,19 @@ func CreateReserveVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	var (
 		result     []*libcq.ContinuousQuery
 		cqsGroupBY = map[string]RsvFieldsType{
-			"rsv_volume_src_src": RsvFieldsType{
+			"rsv_volume_src_src": {
 				AmountType:     "src_amount",
 				RsvAddressType: "src_rsv_addr",
 				AddressType:    "src_addr"},
-			"rsv_volume_src_dst": RsvFieldsType{
+			"rsv_volume_src_dst": {
 				AmountType:     "src_amount",
 				RsvAddressType: "dst_rsv_addr",
 				AddressType:    "src_addr"},
-			"rsv_volume_dst_src": RsvFieldsType{
+			"rsv_volume_dst_src": {
 				AmountType:     "dst_amount",
 				RsvAddressType: "src_rsv_addr",
 				AddressType:    "dst_addr"},
-			"rsv_volume_dst_dst": RsvFieldsType{
+			"rsv_volume_dst_dst": {
 				AmountType:     "dst_amount",
 				RsvAddressType: "dst_rsv_addr",
 				AddressType:    "dst_addr"},

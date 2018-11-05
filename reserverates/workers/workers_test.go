@@ -78,7 +78,7 @@ func checkWorkerPoolError(t *testing.T, pool *Pool, doneCh <-chan struct{}, fn a
 		case <-doneCh:
 			// all job success, shut down the pool
 			pool.Shutdown()
-		case err := <-pool.ErrCh:
+		case err := <-pool.errCh:
 			fn(t, pool, err)
 			toBreak = true
 		}

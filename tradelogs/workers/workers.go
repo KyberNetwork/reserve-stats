@@ -106,7 +106,7 @@ type Pool struct {
 	wg    sync.WaitGroup
 
 	jobCh chan job
-	ErrCh chan error
+	errCh chan error
 
 	mutex                 *sync.Mutex
 	lastCompletedJobOrder int // Keep the order of the last completed job
@@ -119,7 +119,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 	var p = &Pool{
 		sugar:                 sugar,
 		jobCh:                 make(chan job),
-		ErrCh:                 make(chan error, maxWorkers),
+		errCh:                 make(chan error, maxWorkers),
 		mutex:                 &sync.Mutex{},
 		storage:               storage,
 		lastCompletedJobOrder: 0,
@@ -145,7 +145,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 						"from", from.String(),
 						"to", to.String(),
 						"err", err)
-					p.ErrCh <- err
+					p.errCh <- err
 					break
 				}
 				logger.Infow("fetcher job executed successfully",
@@ -173,7 +173,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 							"from", from.String(),
 							"to", to.String(),
 							"err", err)
-						p.ErrCh <- err
+						p.errCh <- err
 						break
 					} else {
 						if saveSuccess {
@@ -223,5 +223,10 @@ func (p *Pool) Shutdown() {
 		"func", "tradelogs/workers/Shutdown")
 	close(p.jobCh)
 	p.wg.Wait()
-	close(p.ErrCh)
+	close(p.errCh)
+}
+
+// ErrCh returns error reporting channel of workers pool.
+func (p *Pool) ErrCh() chan error {
+	return p.errCh
 }

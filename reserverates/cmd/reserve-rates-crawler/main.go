@@ -19,7 +19,6 @@ import (
 
 const (
 	addressesFlag = "addresses"
-	blockFlag     = "block"
 
 	fromBlockFlag    = "from-block"
 	defaultFromblock = 6526056 // TODO: depend on ethereum node, this value might not work as node return empty result on too old node
@@ -187,7 +186,7 @@ func run(c *cli.Context) error {
 			case <-doneCh:
 				sugar.Info("all jobs are successfully executed, waiting for the workers pool to shut down")
 				pool.Shutdown()
-			case fErr := <-pool.ErrCh:
+			case fErr := <-pool.ErrCh():
 				if fErr != nil {
 					sugar.Errorw("job failed to execute", "error", fErr)
 					log.Fatal(fErr)

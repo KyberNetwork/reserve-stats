@@ -76,12 +76,12 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (map[string]common.Reserve
 		return nil, err
 	}
 
-	crawler, err := crawler.NewReserveRatesCrawler(fj.addrs, client, coreClient, sugar, blockTimeResolver)
+	ratesCrawler, err := crawler.NewReserveRatesCrawler(fj.addrs, client, coreClient, sugar, blockTimeResolver)
 	if err != nil {
 		return nil, err
 	}
 
-	rates, err := crawler.GetReserveRates(fj.block)
+	rates, err := ratesCrawler.GetReserveRates(fj.block)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ type Pool struct {
 	wg sync.WaitGroup
 
 	jobCh chan job
-	ErrCh chan error
+	errCh chan error
 
 	mutex                 *sync.Mutex
 	lastCompletedJobOrder int // Keep the order of the last completed job
@@ -117,7 +117,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, rateStorage storage.Reser
 	var pool = &Pool{
 		sugar:                 sugar,
 		jobCh:                 make(chan job),
-		ErrCh:                 make(chan error, maxWorkers),
+		errCh:                 make(chan error, maxWorkers),
 		mutex:                 &sync.Mutex{},
 		lastCompletedJobOrder: 0,
 		rateStorage:           rateStorage,
@@ -137,7 +137,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, rateStorage storage.Reser
 
 				if err != nil {
 					logger.Errorw("fetcher job execution failed", "block", block, "err", err)
-					pool.ErrCh <- err
+					pool.errCh <- err
 					break
 				}
 
@@ -161,7 +161,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, rateStorage storage.Reser
 						logger.Errorw("save rates into db failed",
 							"block", block,
 							"err", err)
-						pool.ErrCh <- err
+						pool.errCh <- err
 						break
 					}
 				}
@@ -203,5 +203,10 @@ func (p *Pool) Shutdown() {
 		"func", "reserverates/workers/Shutdown")
 	close(p.jobCh)
 	p.wg.Wait()
-	close(p.ErrCh)
+	close(p.errCh)
+}
+
+// ErrCh returns error reporting channel of workers pool.
+func (p *Pool) ErrCh() chan error {
+	return p.errCh
 }

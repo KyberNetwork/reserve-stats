@@ -248,6 +248,7 @@ func run(c *cli.Context) error {
 			case fErr := <-p.ErrCh:
 				if fErr != nil {
 					sugar.Errorw("job failed to execute", "error", fErr)
+					log.Fatal(fErr)
 				} else {
 					sugar.Info("workers pool is successfully shut down")
 				}

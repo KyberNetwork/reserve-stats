@@ -120,7 +120,6 @@ func (s *Server) createOrUpdate(c *gin.Context) {
 }
 
 func (s *Server) register() {
-	s.r.Use(httputil.MiddlewareHandler)
 	s.r.GET("/users", s.getTransactionLimit)
 	s.r.POST("/users", s.createOrUpdate)
 }

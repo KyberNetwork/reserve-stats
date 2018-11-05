@@ -8,11 +8,11 @@ declare -a services_list=()
 
 gometalinter --config=gometalinter.json ./...
 
-if [[ "$module" =~ (reserverates|tradelogs|users) ]]; then
+if [[ "$module" =~ (reserverates|tradelogs|users|gateway) ]]; then
     echo "Testing $module module"
     (cd $module; go build -v -mod=vendor ./...; go test -v -mod=vendor ./...)
 elif [[ "$module" == "others" ]]; then
-    go build -v -mod=vendor $(go list ./... | grep -v "github.com/KyberNetwork/reserve-stats/\(reserverates\|tradelogs\|users\)")
+    go build -v -mod=vendor $(go list ./... | grep -v "github.com/KyberNetwork/reserve-stats/\(reserverates\|tradelogs\|users\|gateway\)")
     exit 0
 else
     echo "Module $module is not an valid module"
@@ -25,6 +25,8 @@ elif [[ "$module" == "tradelogs" ]]; then
     services_list=("trade-logs-api" "trade-logs-crawler")
 elif [[ "$module" == "users" ]]; then
     services_list=("users-api")
+elif [[ "$module" == "gateway" ]]; then
+    services_list=("gateway")
 elif [[ "$module" == "others" ]]; then
     exit 0
 else

@@ -28,6 +28,8 @@ matrix:
     - env:
       - MODULE=users
     - env:
+      - MODULE=gateway
+    - env:
       - MODULE=others
 
 install:

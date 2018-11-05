@@ -13,6 +13,8 @@ elif [[ "$module" == "tradelogs" ]]; then
     docker_repositories_list=("kyber-stats-trade-logs-api" "kyber-stats-trade-logs-crawler")
 elif [[ "$module" == "users" ]]; then
     docker_repositories_list=("kyber-stats-users-api")
+elif [[ "$module" == "gateway" ]]; then
+    docker_repositories_list=("kyber-stats-gateway")
 elif [[ "$module" == "others" ]]; then
     exit 0
 else

@@ -4,7 +4,7 @@ package deployment
 
 import "strconv"
 
-const _Deployment_name = "ProductionStaging"
+const _Deployment_name = "productionstaging"
 
 var _Deployment_index = [...]uint8{0, 10, 17}
 

@@ -19,11 +19,6 @@ var (
 		developmentMode: {},
 		productionMode:  {},
 	}
-
-	validDeployments = map[deployment.Deployment]struct{}{
-		deployment.Production: {},
-		deployment.Staging:    {},
-	}
 )
 
 // NewApp creates a new cli App instance with common flags pre-loaded.
@@ -44,14 +39,14 @@ func NewApp() *cli.App {
 	return app
 }
 
-func stringToDeploymentMode(mode string) deployment.Deployment {
+func stringToDeploymentMode(mode string) (deployment.Deployment, error) {
 	switch mode {
 	case deployment.Staging.String():
-		return deployment.Staging
+		return deployment.Staging, nil
 	case deployment.Production.String():
-		return deployment.Production
+		return deployment.Production, nil
 	}
-	return deployment.Production
+	return 0, fmt.Errorf("deployment mode is not valid: %s", mode)
 }
 
 // Validate validates common application configuration flags.
@@ -63,10 +58,9 @@ func Validate(c *cli.Context) error {
 	}
 
 	dpl := c.GlobalString(Flag)
-	deploymentMode := stringToDeploymentMode(dpl)
-	if _, ok = validDeployments[deploymentMode]; !ok {
-		return fmt.Errorf("invalid dpl: %q", c.GlobalString(Flag))
+	_, err := stringToDeploymentMode(dpl)
+	if err != nil {
+		return err
 	}
-
 	return nil
 }

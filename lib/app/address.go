@@ -33,7 +33,10 @@ func NewCrossDeploymentAddress(addr []common.Address) Address {
 // MustGetFromContext returns the common address for given deployment from context.
 func (a Address) MustGetFromContext(c *cli.Context) []common.Address {
 	dpl := c.GlobalString(Flag)
-	deploymentMode := stringToDeploymentMode(dpl)
+	deploymentMode, err := stringToDeploymentMode(dpl)
+	if err != nil {
+		panic(err)
+	}
 	addr, ok := a[deploymentMode]
 	if !ok {
 		panic(fmt.Errorf("address is not available for deployment: %s", dpl))
@@ -44,7 +47,10 @@ func (a Address) MustGetFromContext(c *cli.Context) []common.Address {
 // MustGetOneFromContext returns one common address for given deployment from context
 func (a Address) MustGetOneFromContext(c *cli.Context) common.Address {
 	dpl := c.GlobalString(Flag)
-	deploymentMode := stringToDeploymentMode(dpl)
+	deploymentMode, err := stringToDeploymentMode(dpl)
+	if err != nil {
+		panic(err)
+	}
 	addr, ok := a[deploymentMode]
 	if !ok {
 		panic(fmt.Errorf("address is not available for deployment: %s", dpl))

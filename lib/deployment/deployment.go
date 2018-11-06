@@ -12,7 +12,7 @@ type Deployment int
 
 const (
 	//Production is production mode for deployment
-	Production Deployment = iota
+	Production Deployment = iota //production
 	//Staging is staging mode for deployment
-	Staging
+	Staging //staging
 )

@@ -32,7 +32,8 @@ func newReverseProxyMW(target string) (gin.HandlerFunc, error) {
 }
 
 // NewServer creates new instance of gateway HTTP server.
-func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, keyID, secretKey string) (*Server, error) {
+func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL,
+	keyID, secretKey string) (*Server, error) {
 	r := gin.Default()
 	r.Use(libhttputil.MiddlewareHandler)
 	corsConfig := cors.DefaultConfig()
@@ -88,6 +89,15 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, keyID, secretKey st
 
 		r.GET("/users", auth.Authenticated(), userProxyMW)
 		r.POST("/users", auth.Authenticated(), userProxyMW)
+	}
+
+	if priceAnalyticURL != "" {
+		priceProxyMW, err := newReverseProxyMW(priceAnalyticURL)
+		if err != nil {
+			return nil, err
+		}
+		r.GET("/price-analytic-data", auth.Authenticated(), priceProxyMW)
+		r.POST("/price-analytic-data", auth.Authenticated(), priceProxyMW)
 	}
 
 	return &Server{

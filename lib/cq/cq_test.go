@@ -296,3 +296,27 @@ func TestContinuousQuery_Execute(t *testing.T) {
 		}
 	}
 }
+
+func TestHasGroupBy(t *testing.T) {
+	var tests = []struct {
+		query      string
+		hasGroupBy bool
+	}{
+		{
+			query:      "SELECT * FROM super_database",
+			hasGroupBy: false,
+		},
+		{
+			query:      "SELECT * FROM super_database GROUP BY time(1h)",
+			hasGroupBy: true,
+		},
+		{
+			query:      "SELECT COUNT(record) AS unique_addresses INTO trade_summary FROM (SELECT SUM(eth_amount) AS record FROM trades GROUP BY user_addr)",
+			hasGroupBy: false,
+		},
+	}
+
+	for _, tc := range tests {
+		assert.True(t, hasGroupBy(tc.query) == tc.hasGroupBy)
+	}
+}

@@ -20,7 +20,7 @@ var (
 		productionMode:  {},
 	}
 
-	validDeployments = map[deployment.Mode]struct{}{
+	validDeployments = map[deployment.Deployment]struct{}{
 		deployment.Production: {},
 		deployment.Staging:    {},
 	}
@@ -35,13 +35,23 @@ func NewApp() *cli.App {
 			Usage: "app running mode",
 			Value: developmentMode,
 		},
-		cli.IntFlag{
+		cli.StringFlag{
 			Name:  Flag,
 			Usage: "Kyber Network deployment name",
-			Value: int(deployment.Production),
+			Value: productionMode,
 		},
 	}
 	return app
+}
+
+func stringToDeploymentMode(mode string) deployment.Deployment {
+	switch mode {
+	case deployment.Staging.String():
+		return deployment.Staging
+	case deployment.Production.String():
+		return deployment.Production
+	}
+	return deployment.Production
 }
 
 // Validate validates common application configuration flags.
@@ -52,8 +62,9 @@ func Validate(c *cli.Context) error {
 		return fmt.Errorf("invalid running mode: %q", c.GlobalString(modeFlag))
 	}
 
-	dpl := c.GlobalInt(Flag)
-	if _, ok = validDeployments[deployment.Mode(dpl)]; !ok {
+	dpl := c.GlobalString(Flag)
+	deploymentMode := stringToDeploymentMode(dpl)
+	if _, ok = validDeployments[deploymentMode]; !ok {
 		return fmt.Errorf("invalid dpl: %q", c.GlobalString(Flag))
 	}
 

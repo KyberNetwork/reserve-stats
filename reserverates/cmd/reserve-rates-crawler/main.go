@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"log"
 	"math/big"
 	"os"

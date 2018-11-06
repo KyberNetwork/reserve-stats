@@ -80,12 +80,12 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 		return nil, err
 	}
 
-	addresses := []ethereum.Address{contracts.PricingContractAddress().MustGetFromContext(fj.c)[0]}
-	addresses = append(addresses, contracts.InternalNetworkContractAddress().MustGetFromContext(fj.c)...)
-	addresses = append(addresses, contracts.BurnerContractAddress().MustGetFromContext(fj.c)...)
-	addresses = append(addresses, contracts.NetworkContractAddress().MustGetFromContext(fj.c)...)
+	addresses := []ethereum.Address{contracts.PricingContractAddress().MustGetOneFromContext(fj.c)}
+	addresses = append(addresses, contracts.InternalNetworkContractAddress().MustGetOneFromContext(fj.c))
+	addresses = append(addresses, contracts.BurnerContractAddress().MustGetOneFromContext(fj.c))
+	addresses = append(addresses, contracts.NetworkContractAddress().MustGetOneFromContext(fj.c))
 	addresses = append(addresses, contracts.OldBurnerContractAddress().MustGetFromContext(fj.c)...)
-	addresses = append(addresses, contracts.OldNetworkContractAddress().MustGetFromContext(fj.c)...)
+	addresses = append(addresses, contracts.OldNetworkContractAddress().MustGetOneFromContext(fj.c))
 
 	crawler, err := tradelogs.NewCrawler(sugar, client, bc, coingecko.New(), addresses)
 	if err != nil {

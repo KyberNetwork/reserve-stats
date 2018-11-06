@@ -6,12 +6,12 @@ There might be multiple deployments in same network used for different purpose.
 Deployment is a separated concept from running mode to allow developers to run any deployment in debug mode.
 */
 
-//Mode is a enum type for checking valid DeploymentMode
-type Mode int
+//Deployment is a enum type for checking valid DeploymentMode
+type Deployment int
 
 const (
 	//Production is production mode for deployment
-	Production Mode = iota
+	Production Deployment = iota
 	//Staging is staging mode for deployment
 	Staging
 )

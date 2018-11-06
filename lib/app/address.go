@@ -12,11 +12,11 @@ import (
 const Flag = "deployment"
 
 // Address is a wrapper of ethereum common Address that supports multiple deployments.
-type Address map[deployment.Mode][]common.Address
+type Address map[deployment.Deployment][]common.Address
 
 // NewAddress returns an Address instance. Address of all deployments should be present.
 func NewAddress(prodAddr, stagingAddr []common.Address) Address {
-	return map[deployment.Mode][]common.Address{
+	return map[deployment.Deployment][]common.Address{
 		deployment.Production: prodAddr,
 		deployment.Staging:    stagingAddr,
 	}
@@ -24,7 +24,7 @@ func NewAddress(prodAddr, stagingAddr []common.Address) Address {
 
 // NewCrossDeploymentAddress returns an Address with given same address for all deployments.
 func NewCrossDeploymentAddress(addr []common.Address) Address {
-	return map[deployment.Mode][]common.Address{
+	return map[deployment.Deployment][]common.Address{
 		deployment.Production: addr,
 		deployment.Staging:    addr,
 	}
@@ -32,10 +32,25 @@ func NewCrossDeploymentAddress(addr []common.Address) Address {
 
 // MustGetFromContext returns the common address for given deployment from context.
 func (a Address) MustGetFromContext(c *cli.Context) []common.Address {
-	dpl := c.GlobalInt(Flag)
-	addr, ok := a[deployment.Mode(dpl)]
+	dpl := c.GlobalString(Flag)
+	deploymentMode := stringToDeploymentMode(dpl)
+	addr, ok := a[deploymentMode]
 	if !ok {
-		panic(fmt.Errorf("address is not available for deployment: %d", dpl))
+		panic(fmt.Errorf("address is not available for deployment: %s", dpl))
 	}
 	return addr
+}
+
+// MustGetOneFromContext returns one common address for given deployment from context
+func (a Address) MustGetOneFromContext(c *cli.Context) common.Address {
+	dpl := c.GlobalString(Flag)
+	deploymentMode := stringToDeploymentMode(dpl)
+	addr, ok := a[deploymentMode]
+	if !ok {
+		panic(fmt.Errorf("address is not available for deployment: %s", dpl))
+	}
+	if len(addr) != 1 {
+		panic(fmt.Errorf("address should return only one address for this mode: %s", dpl))
+	}
+	return addr[0]
 }

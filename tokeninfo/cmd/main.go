@@ -63,7 +63,7 @@ func reserve(c *cli.Context) error {
 	}
 
 	internalNetworkClient, err := contracts.NewInternalNetwork(
-		contracts.InternalNetworkContractAddress().MustGetFromContext(c)[0],
+		contracts.InternalNetworkContractAddress().MustGetOneFromContext(c),
 		client,
 	)
 	if err != nil {

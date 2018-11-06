@@ -56,7 +56,7 @@ func TestHTTPPriceAnalyticServer(t *testing.T) {
 	s.register()
 
 	const (
-		requestEnpoint = "/price-analytic-data"
+		requestEnpoint = "/price-analytics"
 		queryTimestamp = 1541478232000
 	)
 
@@ -130,7 +130,7 @@ func TestHTTPPriceAnalyticServer(t *testing.T) {
 		},
 		{
 			Msg:      "success get",
-			Endpoint: fmt.Sprintf("%s?fromTime=%d", requestEnpoint, queryTimestamp),
+			Endpoint: fmt.Sprintf("%s?from=%d", requestEnpoint, queryTimestamp),
 			Method:   http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, resp.Code)

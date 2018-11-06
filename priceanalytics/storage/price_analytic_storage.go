@@ -124,7 +124,7 @@ func (pad *PriceAnalyticDB) GetPriceAnalytic(fromTime, toTime time.Time) ([]comm
 		"toTime", toTime)
 
 	logger.Debug("get price analytic data")
-	result := []common.PriceAnalytic{}
+	var result []common.PriceAnalytic
 	if err := pad.db.Select(&result, fmt.Sprintf(`SELECT id, cast (extract(epoch from timestamp)*1000 as bigint) as timestamp 
 	FROM %s WHERE timestamp >= $1 AND timestamp <= $2`, priceAnalyticTableName), fromTime.UTC(), toTime.UTC()); err != nil {
 		logger.Debug("error get price analytics")
@@ -135,7 +135,7 @@ func (pad *PriceAnalyticDB) GetPriceAnalytic(fromTime, toTime time.Time) ([]comm
 
 	if len(result) > 0 {
 		for index, data := range result {
-			priceAnalyticData := []common.PriceAnalyticData{}
+			var priceAnalyticData []common.PriceAnalyticData
 			if err := pad.db.Select(&priceAnalyticData, fmt.Sprintf(`SELECT * from "%s" WHERE price_analytic_id = $1`, priceAnalyticDataTableName), data.ID); err != nil {
 				pad.sugar.Debug("error getting detail data")
 				return result, err

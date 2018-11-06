@@ -3,7 +3,6 @@ package http
 import (
 	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
@@ -59,20 +58,34 @@ func (s *Server) updatePriceAnalytic(c *gin.Context) {
 
 func (s *Server) validateTimeInput(c *gin.Context) (time.Time, time.Time, bool) {
 	var (
-		from, to time.Time
+		from  time.Time
+		to    time.Time
+		query getPriceAnalyticQuery
 	)
-	fromTime, ok := strconv.ParseUint(c.Query("fromTime"), 10, 64)
-	if ok != nil {
+
+	if err := c.ShouldBindQuery(&query); err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusBadRequest,
+			err,
+		)
 		return from, to, false
 	}
-	from = timeutil.TimestampMsToTime(fromTime)
-	toTime, _ := strconv.ParseUint(c.Query("toTime"), 10, 64)
-	if toTime == 0 {
+
+	from, to = timeutil.TimestampMsToTime(query.From), timeutil.TimestampMsToTime(query.To)
+
+	if to.Equal(time.Unix(0, 0)) {
 		to = time.Now()
-	} else {
-		to = timeutil.TimestampMsToTime(toTime)
+		if from.Equal(time.Unix(0, 0)) {
+			from = to.Add(-time.Hour)
+		}
 	}
 	return from, to, true
+}
+
+type getPriceAnalyticQuery struct {
+	From uint64 `form:"from"`
+	To   uint64 `form:"to"`
 }
 
 func (s *Server) getPriceAnalytic(c *gin.Context) {
@@ -101,8 +114,8 @@ func (s *Server) getPriceAnalytic(c *gin.Context) {
 }
 
 func (s *Server) register() {
-	s.r.POST("/price-analytic-data", s.updatePriceAnalytic)
-	s.r.GET("/price-analytic-data", s.getPriceAnalytic)
+	s.r.POST("/price-analytics", s.updatePriceAnalytic)
+	s.r.GET("/price-analytics", s.getPriceAnalytic)
 }
 
 // Run server

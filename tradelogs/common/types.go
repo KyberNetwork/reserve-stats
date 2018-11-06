@@ -67,11 +67,12 @@ type VolumeStats struct {
 	Volume    float64 `json:"volume"`
 }
 
+// TradeSummary struct holds all the fields required for trade summary
 type TradeSummary struct {
 	ETHVolume     float64 `json:"total_eth_volume"`
 	USDAmount     float64 `json:"total_usd_amount"`
 	TotalBurnFee  float64 `json:"burn_fee"`
-	TotalTrade    float64 `json:"total_trade"`
+	TotalTrade    uint64  `json:"total_trade"`
 	UniqueAddress uint64  `json:"unique_addresses"`
 	NewUquAddress uint64  `json:"new_unique_addresses"`
 	USDPerTrade   float64 `json:"usd_per_trade"`

@@ -72,8 +72,8 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 		return
 	}
 
-	fromTime := time.Unix(0, int64(query.From)*int64(time.Millisecond))
-	toTime := time.Unix(0, int64(query.To)*int64(time.Millisecond))
+	fromTime := timeutil.TimestampMsToTime(query.From)
+	toTime := timeutil.TimestampMsToTime(query.To)
 
 	if toTime.After(fromTime.Add(limitedTimeRange)) {
 		err := fmt.Errorf("time range is too broad, must be smaller or equal to %d milliseconds", limitedTimeRange/time.Millisecond)

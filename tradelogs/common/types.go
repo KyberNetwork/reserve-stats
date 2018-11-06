@@ -1,9 +1,11 @@
 package common
 
 import (
+	"encoding/json"
 	"math/big"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
@@ -44,6 +46,18 @@ type TradeLog struct {
 
 	ETHUSDRate     float64 `json:"-"`
 	ETHUSDProvider string  `json:"-"`
+}
+
+// MarshalJSON implements custom JSON marshaler for TradeLog to format timestamp in unix millis instead of RFC3339.
+func (tl *TradeLog) MarshalJSON() ([]byte, error) {
+	type AliasTradeLog TradeLog
+	return json.Marshal(struct {
+		Timestamp uint64 `json:"timestamp"`
+		*AliasTradeLog
+	}{
+		AliasTradeLog: (*AliasTradeLog)(tl),
+		Timestamp:     timeutil.TimeToTimestampMs(tl.Timestamp),
+	})
 }
 
 // VolumeStats struct holds all the volume fields of volume in a specfic time

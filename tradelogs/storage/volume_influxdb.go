@@ -38,7 +38,7 @@ func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.T
 	var (
 		rsvAddrHex   = rsvAddr.Hex()
 		tokenAddrHex = ethereum.HexToAddress(token.Address).Hex()
-		logger       = is.sugar.With("reserve Address", rsvAddr.Hex(), "token Address", token.Address, "from", fromTime, "to", toTime)
+		logger       = is.sugar.With("reserve Address", rsvAddr.Hex(), "func", "tradelogs/storage/InfluxStorage.GetReserveVolume", "token Address", token.Address, "from", fromTime, "to", toTime)
 	)
 	mName, ok := rsvMeasurementName[strings.ToLower(frequency)]
 	if !ok {
@@ -49,7 +49,7 @@ func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.T
 	timeFilter := fmt.Sprintf("(time >=%d%s AND time <= %d%s)", fromTime, timePrecision, toTime, timePrecision)
 	cmd := fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, SUM(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s) FILL(0)", tokenVolumeField, ethVolumeField, fiatVolumeField, mName, timeFilter, addrFilter, frequency)
 
-	logger.Debugf("the query is %s", cmd)
+	logger.Debugw("query rendered", "query", cmd)
 
 	response, err := is.queryDB(is.influxClient, cmd)
 	if err != nil {

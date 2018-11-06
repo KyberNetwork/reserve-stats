@@ -3,6 +3,9 @@ package http
 import (
 	"net/http"
 
+	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
@@ -23,22 +26,16 @@ func (sv *Server) getReserveVolume(c *gin.Context) {
 		defaultFreq = "h"
 	)
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
 	if !timeValidation(&query.From, &query.To, c, logger) {
 		logger.Info("time validation returned invalid")
 		return
 	}
-	token, err := sv.lookupToken(query.Asset)
+	token, err := core.LookupToken(sv.coreSetting, query.Asset)
 	if err != nil {
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return
 	}
 	if query.Freq == "" {
@@ -47,10 +44,7 @@ func (sv *Server) getReserveVolume(c *gin.Context) {
 	}
 	result, err := sv.storage.GetReserveVolume(ethereum.HexToAddress(query.Reserve), token, query.From, query.To, query.Freq)
 	if err != nil {
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.JSON(http.StatusOK, result)

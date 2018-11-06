@@ -68,8 +68,8 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL,
 			return nil, err
 		}
 		r.GET("/trade-logs", tradeLogsProxyMW)
-		//
-		// r.GET("/burn-fee", tradeLogsProxyMW)
+		r.GET("/burn-fee", tradeLogsProxyMW)
+		r.GET("/asset-volume", tradeLogsProxyMW)
 		// r.GET("/wallet-fee", tradeLogsProxyMW)
 		// r.GET("/country-stats", tradeLogsProxyMW)
 	}

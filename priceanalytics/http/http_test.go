@@ -39,7 +39,6 @@ func newTestDB(sugar *zap.SugaredLogger) (*storage.PriceAnalyticDB, error) {
 
 func tearDown(t *testing.T, storage *storage.PriceAnalyticDB) {
 	assert.Nil(t, storage.DeleteAllTables(), "database should be deleted completely")
-
 }
 
 func TestHTTPPriceAnalyticServer(t *testing.T) {

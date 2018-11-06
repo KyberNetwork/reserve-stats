@@ -17,14 +17,16 @@ const (
 	tradeLogsAPIURLFlag    = "trade-logs-url"
 	reserveRatesAPIURLFlag = "reserve-rate-url"
 	userAPIURLFlag         = "user-url"
+	priceAnalyticURLFlag   = "price-analytic-url"
 	writeAccessKeyFlag     = "write-access-key"
 	writeSecretKeyFlag     = "write-secret-key"
 )
 
 var (
-	defaultTradeLogsAPIURLValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.TradeLogsPort)
-	defaultReserveRatesAPIValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.ReserveRatesPort)
-	defaultUserAPIValue         = fmt.Sprintf("http://127.0.0.1:%d", httputil.UsersPort)
+	defaultTradeLogsAPIURLValue  = fmt.Sprintf("http://127.0.0.1:%d", httputil.TradeLogsPort)
+	defaultReserveRatesAPIValue  = fmt.Sprintf("http://127.0.0.1:%d", httputil.ReserveRatesPort)
+	defaultUserAPIValue          = fmt.Sprintf("http://127.0.0.1:%d", httputil.UsersPort)
+	defaultPriceAnalyticAPIValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.PriceAnalytic)
 )
 
 func main() {
@@ -63,6 +65,12 @@ func main() {
 			Value:  defaultUserAPIValue,
 			EnvVar: "USER_API_URL",
 		},
+		cli.StringFlag{
+			Name:   priceAnalyticURLFlag,
+			Usage:  "Price analytic API URL",
+			Value:  defaultPriceAnalyticAPIValue,
+			EnvVar: "PRICE_ANALYTIC_API_URL",
+		},
 	)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.GatewayPort)...)
 
@@ -93,6 +101,13 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("invalid user API URL: %s", c.String(userAPIURLFlag))
 	}
 
+	err = validation.Validate(c.String(priceAnalyticURLFlag),
+		validation.Required,
+		is.URL)
+	if err != nil {
+		return fmt.Errorf("invalid price analytic API URL: %s", c.String(priceAnalyticURLFlag))
+	}
+
 	if err := validation.Validate(c.String(writeAccessKeyFlag), validation.Required); err != nil {
 		return fmt.Errorf("access key error: %s", err.Error())
 	}
@@ -105,6 +120,7 @@ func run(c *cli.Context) error {
 		c.String(tradeLogsAPIURLFlag),
 		c.String(reserveRatesAPIURLFlag),
 		c.String(userAPIURLFlag),
+		c.String(priceAnalyticURLFlag),
 		c.String(writeAccessKeyFlag),
 		c.String(writeSecretKeyFlag))
 	if err != nil {

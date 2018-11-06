@@ -93,11 +93,11 @@ func convertRowValueToSummary(v []interface{}) (uint64, *common.TradeSummary, er
 		return 0, nil, err
 	}
 	return tsUint64, &common.TradeSummary{
-		ETHVolume:     ethVolume,
-		USDAmount:     usdVolume,
-		TotalTrade:    totalTrade,
-		UniqueAddress: uniqueAddr,
-		USDPerTrade:   usdPerTrade,
-		ETHPerTrade:   ethPerTrade,
+		ETHVolume:       ethVolume,
+		USDAmount:       usdVolume,
+		TotalTrade:      totalTrade,
+		UniqueAddresses: uniqueAddr,
+		USDPerTrade:     usdPerTrade,
+		ETHPerTrade:     ethPerTrade,
 	}, nil
 }

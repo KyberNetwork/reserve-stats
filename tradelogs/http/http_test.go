@@ -3,11 +3,12 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"go.uber.org/zap"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"

@@ -15,6 +15,7 @@ require (
 	github.com/gin-contrib/httpsign v0.0.0-20181102021455-787f0a566bf9
 	github.com/gin-gonic/gin v1.3.0
 	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
+	github.com/go-pg/pg v6.15.0+incompatible // indirect
 	github.com/go-sql-driver/mysql v1.4.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
@@ -22,6 +23,7 @@ require (
 	github.com/huin/goupnp v1.0.0 // indirect
 	github.com/influxdata/influxdb v1.6.3
 	github.com/jackpal/go-nat-pmp v1.0.1 // indirect
+	github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a // indirect
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
 	github.com/karalabe/hid v0.0.0-20180420081245-2b4488a37358 // indirect
 	github.com/lib/pq v1.0.0
@@ -37,6 +39,7 @@ require (
 	github.com/stretchr/testify v1.2.2
 	github.com/syndtr/goleveldb v0.0.0-20181012014443-6b91fda63f2e // indirect
 	github.com/urfave/cli v1.20.0
+	github.com/vmihailenco/sasl v0.0.0-20180925064641-2f13c189728a // indirect
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1

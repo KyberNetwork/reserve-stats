@@ -18,4 +18,7 @@ const (
 
 	// GatewayPort is the port number of API gateway service.
 	GatewayPort HTTPPort = 8005
+
+	// PriceAnalytic is the port number of Price Analytics API
+	PriceAnalytic HTTPPort = 8006
 )

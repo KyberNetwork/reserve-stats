@@ -3,7 +3,7 @@ package storage
 import (
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/price-analytics/common"
+	"github.com/KyberNetwork/reserve-stats/priceanalytics/common"
 )
 
 // Interface is the interface for price analytic storage

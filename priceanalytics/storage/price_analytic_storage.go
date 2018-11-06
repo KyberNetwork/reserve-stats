@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/price-analytics/common"
+	"github.com/KyberNetwork/reserve-stats/priceanalytics/common"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS "%s" (
 	price_analytic_id SERIAL NOT NULL REFERENCES %s (id)
 );
 `
-	var logger = sugar.With("func", "price-analytics/storage.NewPriceStorage")
+	var logger = sugar.With("func", "priceanalytics/storage.NewPriceStorage")
 
 	tx, err := db.Beginx()
 	if err != nil {
@@ -75,7 +75,7 @@ func (pad *PriceAnalyticDB) Close() error {
 func (pad *PriceAnalyticDB) UpdatePriceAnalytic(data common.PriceAnalytic) error {
 	var (
 		logger = pad.sugar.With(
-			"func", "price-analytics/storage.UpdatePriceAnalytic",
+			"func", "priceanalytics/storage.UpdatePriceAnalytic",
 		)
 		priceAnalyticID int
 	)
@@ -119,7 +119,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 
 // GetPriceAnalytic get price analytic data to return to api
 func (pad *PriceAnalyticDB) GetPriceAnalytic(fromTime, toTime time.Time) ([]common.PriceAnalytic, error) {
-	logger := pad.sugar.With("func", "price-analytics/storage.GetPriceAnalytic",
+	logger := pad.sugar.With("func", "priceanalytics/storage.GetPriceAnalytic",
 		"fromTime", fromTime,
 		"toTime", toTime)
 
@@ -147,4 +147,10 @@ func (pad *PriceAnalyticDB) GetPriceAnalytic(fromTime, toTime time.Time) ([]comm
 	}
 
 	return result, nil
+}
+
+//DeleteAllTables delete all table from schema using for test only
+func (pad *PriceAnalyticDB) DeleteAllTables() error {
+	_, err := pad.db.Exec(fmt.Sprintf(`DROP TABLE "%s", "%s"`, priceAnalyticTableName, priceAnalyticDataTableName))
+	return err
 }

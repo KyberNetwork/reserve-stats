@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/KyberNetwork/reserve-stats/price-analytics/storage"
+	"github.com/KyberNetwork/reserve-stats/priceanalytics/storage"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
@@ -38,6 +38,8 @@ func newTestDB(sugar *zap.SugaredLogger) (*storage.PriceAnalyticDB, error) {
 }
 
 func tearDown(t *testing.T, storage *storage.PriceAnalyticDB) {
+	assert.Nil(t, storage.DeleteAllTables(), "database should be deleted completely")
+
 }
 
 func TestHTTPPriceAnalyticServer(t *testing.T) {

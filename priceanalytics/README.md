@@ -50,7 +50,7 @@ on failure:
 ```json
 {
     "success":false,
-    "reason": <error>
+    "reason": "<error>"
 }
 ```
 

@@ -8,8 +8,8 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/KyberNetwork/reserve-stats/price-analytics/common"
-	"github.com/KyberNetwork/reserve-stats/price-analytics/storage"
+	"github.com/KyberNetwork/reserve-stats/priceanalytics/common"
+	"github.com/KyberNetwork/reserve-stats/priceanalytics/storage"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

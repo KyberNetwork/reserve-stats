@@ -48,13 +48,13 @@ CREATE TABLE IF NOT EXISTS "%s" (
 		return nil, err
 	}
 
-	logger.Debug("initilizing database schema")
+	logger.Debug("initializing database schema")
 
 	if _, err = tx.Exec(fmt.Sprintf(schemaFmt,
 		priceAnalyticTableName, priceAnalyticDataTableName, priceAnalyticTableName)); err != nil {
 		return nil, err
 	}
-	logger.Debug("database schema initilized successfully")
+	logger.Debug("database schema initialized successfully")
 
 	if err = tx.Commit(); err != nil {
 		return nil, err
@@ -125,7 +125,8 @@ func (pad *PriceAnalyticDB) GetPriceAnalytic(fromTime, toTime time.Time) ([]comm
 
 	logger.Debug("get price analytic data")
 	result := []common.PriceAnalytic{}
-	if err := pad.db.Select(&result, fmt.Sprintf(`SELECT id, cast (extract(epoch from timestamp)*1000 as bigint) as timestamp FROM %s WHERE timestamp >= $1 AND timestamp <= $2`, priceAnalyticTableName), fromTime, toTime); err != nil {
+	if err := pad.db.Select(&result, fmt.Sprintf(`SELECT id, cast (extract(epoch from timestamp)*1000 as bigint) as timestamp 
+	FROM %s WHERE timestamp >= $1 AND timestamp <= $2`, priceAnalyticTableName), fromTime.UTC(), toTime.UTC()); err != nil {
 		logger.Debug("error get price analytics")
 		return result, err
 	}

@@ -3,14 +3,12 @@ package core
 import (
 	"crypto/hmac"
 	"crypto/sha512"
+	"encoding/hex"
 	"fmt"
 	"go.uber.org/zap"
 	"net/http"
-	"sort"
 	"strings"
 	"time"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 // Client is the the real implementation of core client interface.
@@ -26,27 +24,12 @@ type commonResponse struct {
 	Success bool   `json:"success"`
 }
 
-// sortByKey sort all the params by key in string order
-// This is required for the request to be signed correctly
-func sortByKey(params map[string]string) map[string]string {
-	newParams := make(map[string]string, len(params))
-	keys := make([]string, 0, len(params))
-	for key := range params {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	for _, key := range keys {
-		newParams[key] = params[key]
-	}
-	return newParams
-}
-
 func (c *Client) sign(msg string) (string, error) {
 	mac := hmac.New(sha512.New, []byte(c.signingKey))
 	if _, err := mac.Write([]byte(msg)); err != nil {
 		return "", err
 	}
-	return common.Bytes2Hex(mac.Sum(nil)), nil
+	return hex.EncodeToString(mac.Sum(nil)), nil
 }
 
 func (c *Client) newRequest(method, endpoint string, params map[string]string) (*http.Request, error) {
@@ -69,7 +52,6 @@ func (c *Client) newRequest(method, endpoint string, params map[string]string) (
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-	params = sortByKey(params)
 	q := req.URL.Query()
 	for k, v := range params {
 		q.Add(k, v)

@@ -4,8 +4,10 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"errors"
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/price-analytics/common"
 	"github.com/KyberNetwork/reserve-stats/price-analytics/storage"
 	"github.com/gin-gonic/gin"
@@ -34,16 +36,18 @@ func NewHTTPServer(sugar *zap.SugaredLogger, host string, storage storage.Interf
 func (s *Server) updatePriceAnalytic(c *gin.Context) {
 	var priceAnalytic common.PriceAnalytic
 	if err := c.ShouldBindJSON(&priceAnalytic); err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
-			gin.H{},
+			err,
 		)
 		return
 	}
 	if err := s.storage.UpdatePriceAnalytic(priceAnalytic); err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
-			gin.H{},
+			err,
 		)
 		return
 	}
@@ -74,19 +78,19 @@ func (s *Server) validateTimeInput(c *gin.Context) (time.Time, time.Time, bool) 
 func (s *Server) getPriceAnalytic(c *gin.Context) {
 	fromTime, toTime, ok := s.validateTimeInput(c)
 	if !ok {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
-			gin.H{
-				"error": "time input is not valid",
-			},
+			errors.New("time input is not valid"),
 		)
 		return
 	}
 	priceAnalytic, err := s.storage.GetPriceAnalytic(fromTime, toTime)
 	if err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
-			gin.H{},
+			err,
 		)
 		return
 	}

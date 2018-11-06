@@ -4,13 +4,13 @@ import (
 	"net/http"
 	"time"
 
-	"go.uber.org/zap"
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/gin-gonic/gin"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 const (

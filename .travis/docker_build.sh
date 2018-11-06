@@ -1,39 +1,35 @@
 #!/bin/bash
+# -*- firestarter: "shfmt -i 4 -ci -w %p" -*-
 
-set -euo pipefail
+set -euxo pipefail
 
-readonly module=${MODULE:-}
+readonly build_part=${BUILD_PART:-}
+readonly gometalinter_path=$(readlink -f ./gometalinter.json)
 
-declare -a services_list=()
+build() {
+    local build_dir="$1"
+    pushd "$build_dir"
+    gometalinter --config="$gometalinter_path" ./...
+    go test -v -mod=vendor ./...
+    popd
 
-gometalinter --config=gometalinter.json ./...
+    for service in "${@:2}"; do
+        docker build -f "docker-files/Dockerfile.$service" -t "kybernetwork/kyber-stats-$service:$TRAVIS_COMMIT" .
+    done
 
-if [[ "$module" =~ (reserverates|tradelogs|users|gateway) ]]; then
-    echo "Testing $module module"
-    (cd $module; go build -v -mod=vendor ./...; go test -v -mod=vendor ./...)
-elif [[ "$module" == "others" ]]; then
-    go build -v -mod=vendor $(go list ./... | grep -v "github.com/KyberNetwork/reserve-stats/\(reserverates\|tradelogs\|users\|gateway\)")
-    exit 0
-else
-    echo "Module $module is not an valid module"
-    exit 1
-fi
+}
 
-if [[ "$module" == "reserverates" ]]; then
-    services_list=("reserve-rates-api" "reserve-rates-crawler")
-elif [[ "$module" == "tradelogs" ]]; then
-    services_list=("trade-logs-api" "trade-logs-crawler")
-elif [[ "$module" == "users" ]]; then
-    services_list=("users-api")
-elif [[ "$module" == "gateway" ]]; then
-    services_list=("gateway")
-elif [[ "$module" == "others" ]]; then
-    exit 0
-else
-    echo "Module $module is not an valid module"
-    exit 1
-fi
-
-for service in ${services_list[@]}; do
-    docker build -f docker-files/Dockerfile.$service -t kybernetwork/kyber-stats-$service:$TRAVIS_COMMIT .
-done
+case "$build_part" in
+    1)
+        build reserverates reserve-rates-api reserve-rates-crawler
+        build users users-api
+        build gateway gateway
+        ;;
+    2)
+        build tradelogs trade-logs-api trade-logs-crawler
+        build priceanalytics price-analytics-api
+        ;;
+    *)
+        go test -v -mod=vendor "$(go list ./... | grep -v "github.com/KyberNetwork/reserve-stats/\(reserverates\|tradelogs\|users\|gateway\|priceanalytics\)")"
+        ;;
+esac

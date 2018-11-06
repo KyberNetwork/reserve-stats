@@ -22,15 +22,11 @@ env:
 matrix:
   include:
     - env:
-      - MODULE=reserverates
+      - BUILD_PART: 1
     - env:
-      - MODULE=tradelogs
+      - BUILD_PART: 2
     - env:
-      - MODULE=users
-    - env:
-      - MODULE=gateway
-    - env:
-      - MODULE=others
+      - BUILD_PART: 3
 
 install:
   - ./.travis/gometalinter-install.sh

@@ -30,6 +30,6 @@ case "$build_part" in
         build priceanalytics price-analytics-api
         ;;
     *)
-        go test -v -mod=vendor "$(go list ./... | grep -v "github.com/KyberNetwork/reserve-stats/\(reserverates\|tradelogs\|users\|gateway\|priceanalytics\)")"
+        go test -v -mod=vendor $(go list -mod=vendor ./... | grep -v "github.com/KyberNetwork/reserve-stats/\(reserverates\|tradelogs\|users\|gateway\|priceanalytics\)")
         ;;
 esac

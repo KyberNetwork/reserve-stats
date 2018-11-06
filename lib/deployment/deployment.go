@@ -7,6 +7,7 @@ Deployment is a separated concept from running mode to allow developers to run a
 */
 
 //Deployment is a enum type for checking valid DeploymentMode
+//go:generate stringer -type=Deployment -linecomment
 type Deployment int
 
 const (

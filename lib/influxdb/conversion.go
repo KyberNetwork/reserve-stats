@@ -73,3 +73,12 @@ func GetTimeFromInterface(value interface{}) (time.Time, error) {
 
 	return result, nil
 }
+
+// GetUint64FromInterface converts given value to int64.
+func GetUint64FromInterface(value interface{}) (uint64, error) {
+	number, err := GetInt64FromInterface(value)
+	if err != nil {
+		return 0, err
+	}
+	return uint64(number), nil
+}

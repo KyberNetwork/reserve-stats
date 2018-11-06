@@ -66,3 +66,14 @@ type VolumeStats struct {
 	USDAmount float64 `json:"usd_amount"`
 	Volume    float64 `json:"volume"`
 }
+
+type TradeSummary struct {
+	ETHVolume     float64 `json:"total_eth_volume"`
+	USDAmount     float64 `json:"total_usd_amount"`
+	TotalBurnFee  float64 `json:"burn_fee"`
+	TotalTrade    float64 `json:"total_trade"`
+	UniqueAddress uint64  `json:"unique_addresses"`
+	NewUquAddress uint64  `json:"new_unique_addresses"`
+	USDPerTrade   float64 `json:"usd_per_trade"`
+	ETHPerTrade   float64 `json:"eth_per_trade"`
+}

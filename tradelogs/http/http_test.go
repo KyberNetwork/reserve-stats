@@ -84,7 +84,7 @@ func TestTradeLogsRoute(t *testing.T) {
 					t.Error("Could not decode result", "err", err)
 				}
 
-				assert.Contains(t, result.Error, "time range is too broad")
+				assert.Contains(t, result.Error, "max time frame exceed")
 			},
 		},
 	}
@@ -158,7 +158,7 @@ func TestBurnFeeRoute(t *testing.T) {
 					t.Error("Could not decode result", "err", err)
 				}
 
-				assert.Contains(t, result.Error, "your query frequency is not supported")
+				assert.Contains(t, result.Error, "invalid frequency")
 			},
 		},
 		{
@@ -175,8 +175,7 @@ func TestBurnFeeRoute(t *testing.T) {
 					t.Error("Could not decode result", "err", err)
 				}
 
-				expectedErrMsg := fmt.Sprintf("your query time range exceeds the duration limit %s", hourlyBurnFeeMaxDuration)
-				assert.Equal(t, expectedErrMsg, result.Error)
+				assert.Contains(t, result.Error, "max time frame exceed")
 			},
 		},
 	}

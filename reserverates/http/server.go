@@ -2,10 +2,9 @@ package http
 
 import (
 	"net/http"
-	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -22,8 +21,7 @@ type Server struct {
 }
 
 type reserveRatesQuery struct {
-	From         uint64   `form:"from" `
-	To           uint64   `form:"to"`
+	httputil.TimeRangeQuery
 	ReserveAddrs []string `form:"reserve" binding:"dive,isAddress"`
 }
 
@@ -42,16 +40,13 @@ func (sv *Server) reserveRates(c *gin.Context) {
 		return
 	}
 
-	now := time.Now().UTC()
-	if query.To == 0 {
-		query.To = timeutil.TimeToTimestampMs(now)
-		logger.Debug("using default to query time", "to", query.To)
-
-		if query.From == 0 {
-			query.From = timeutil.TimeToTimestampMs(now.Add(-time.Hour))
-			logger = logger.With("from", query.From)
-			logger.Debug("using default from query time", "from", query.From)
-		}
+	_, _, err := query.Validate()
+	if err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": err.Error()},
+		)
+		return
 	}
 
 	logger = logger.With("to", query.To, "from", query.From)

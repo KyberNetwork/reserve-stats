@@ -30,6 +30,8 @@ case "$build_part" in
         build priceanalytics price-analytics-api
         ;;
     *)
-        go test -v -mod=vendor $(go list -mod=vendor ./... | grep -v "github.com/KyberNetwork/reserve-stats/\(reserverates\|tradelogs\|users\|gateway\|priceanalytics\)")
+        exclude_pattern="github.com/KyberNetwork/reserve-stats/\(reserverates\|tradelogs\|users\|gateway\|priceanalytics\)"
+        gometalinter --config="$gometalinter_path" --exclude "$exclude_pattern" ./...
+        go test -v -mod=vendor $(go list -mod=vendor ./... | grep -v "$exclude_pattern")
         ;;
 esac

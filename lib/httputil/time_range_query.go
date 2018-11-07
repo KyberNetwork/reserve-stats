@@ -2,8 +2,9 @@ package httputil
 
 import (
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"time"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
@@ -89,7 +90,7 @@ type TimeRangeQueryFreq struct {
 	freqs map[string]time.Duration
 }
 
-// TimeRangeQueryFreq is the option to configure validation behaviour.
+// TimeRangeQueryFreqValidationOption is the option to configure validation behaviour.
 type TimeRangeQueryFreqValidationOption func(q *TimeRangeQueryFreq)
 
 // TimeRangeQueryFreqWithValidFreqs configures the validation to use custom valid

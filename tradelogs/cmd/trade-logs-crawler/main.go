@@ -133,6 +133,11 @@ func manageCQFromContext(c *cli.Context, influxClient client.Client, sugar *zap.
 		return err
 	}
 	cqs = append(cqs, walletFeeCqs...)
+	summaryCqs, err := tradelogcq.CreateSummaryCqs(common.DatabaseName)
+	if err != nil {
+		return err
+	}
+	cqs = append(cqs, summaryCqs...)
 	return cq.ManageCQs(c, cqs, influxClient, sugar)
 }
 

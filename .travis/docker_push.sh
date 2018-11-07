@@ -1,38 +1,29 @@
 #!/bin/bash
+# -*- firestarter: "shfmt -i 4 -ci -w %p" -*-
 
 set -euo pipefail
 
 readonly docker_password=${DOCKER_PASSWORD:-}
-readonly module=${MODULE:-}
+readonly build_part=${BUILD_PART:-}
 
-declare -a docker_repositories_list=()
-
-if [[ "$module" == "reserverates" ]]; then
-    docker_repositories_list=("kyber-stats-reserve-rates-api" "kyber-stats-reserve-rates-crawler")
-elif [[ "$module" == "tradelogs" ]]; then
-    docker_repositories_list=("kyber-stats-trade-logs-api" "kyber-stats-trade-logs-crawler")
-elif [[ "$module" == "users" ]]; then
-    docker_repositories_list=("kyber-stats-users-api")
-elif [[ "$module" == "gateway" ]]; then
-    docker_repositories_list=("kyber-stats-gateway")
-elif [[ "$module" == "others" ]]; then
-    exit 0
-else
-    echo "Module $module is not an valid module"
-    exit 1
-fi
-
-if [[ -z "$docker_password" ]]; then
-    echo 'DOCKER_PASSWORD is not available, aborting.'
-    exit 1
-fi
+push() {
+    for service in "${@}"; do
+        local docker_repository="kybernetwork/kyber-stats-$service"
+        docker tag "$docker_repository:$TRAVIS_COMMIT" "$docker_repository:$TRAVIS_BRANCH"
+        if [[ -n "$TRAVIS_TAG" ]]; then
+            docker tag "$docker_repository:$TRAVIS_COMMIT" "$docker_repository:$TRAVIS_TAG"
+        fi
+        docker push "$docker_repository"
+    done
+}
 
 echo "$docker_password" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
-for docker_repository in ${docker_repositories_list[@]}; do
-    docker tag "kybernetwork/$docker_repository:$TRAVIS_COMMIT" "kybernetwork/$docker_repository:$TRAVIS_BRANCH"
-    if [[ -n "$TRAVIS_TAG" ]]; then
-        docker tag "kybernetwork/$docker_repository:$TRAVIS_COMMIT" "kybernetwork/$docker_repository:$TRAVIS_TAG"
-    fi
-    docker push "kybernetwork/$docker_repository"
-done
+case "$build_part" in
+    1)
+        push reserve-rates-api reserve-rates-crawler users-api gateway
+        ;;
+    2)
+        push trade-logs-api trade-logs-crawler price-analytics-api
+        ;;
+esac

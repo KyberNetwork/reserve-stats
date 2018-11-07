@@ -45,7 +45,8 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 // SaveTradeLogs persist trade logs to DB
 func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 	defer is.influxClient.Close()
-
+	// this map will keep track on the current batch to ensure there is no duplication
+	var cacheTraded = make(map[ethereum.Address]bool)
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  is.dbName,
 		Precision: timePrecision,
@@ -54,7 +55,7 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 		return err
 	}
 	for _, log := range logs {
-		points, err := is.tradeLogToPoint(log)
+		points, err := is.tradeLogToPoint(log, cacheTraded)
 		if err != nil {
 			return err
 		}
@@ -198,7 +199,7 @@ func (is *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.R
 	return res, nil
 }
 
-func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error) {
+func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, cacheTradeds map[ethereum.Address]bool) ([]*client.Point, error) {
 	var points []*client.Point
 
 	tags := map[string]string{
@@ -339,25 +340,28 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		points = append(points, walletFeePoint)
 	}
 
-	traded, err := is.userTraded(log.UserAddress)
-	if err != nil {
-		return nil, err
-	}
-	if !traded {
-		logger.Debugw("user first trade", "user_addr", log.UserAddress.String())
-		tags := map[string]string{
-			"user_addr": log.UserAddress.String(),
-		}
-		fields := map[string]interface{}{
-			"traded": true,
-		}
-		firstTradePt, err := client.NewPoint("first_trades", tags, fields, log.Timestamp)
+	_, cacheTraded := cacheTradeds[log.UserAddress]
+	if !cacheTraded {
+		traded, err := is.userTraded(log.UserAddress)
 		if err != nil {
 			return nil, err
 		}
-		points = append(points, firstTradePt)
+		if !traded {
+			cacheTradeds[log.UserAddress] = true
+			logger.Debugw("user first trade", "user_addr", log.UserAddress.String())
+			tags := map[string]string{
+				"user_addr": log.UserAddress.String(),
+			}
+			fields := map[string]interface{}{
+				"traded": true,
+			}
+			firstTradePt, err := client.NewPoint("first_trades", tags, fields, log.Timestamp)
+			if err != nil {
+				return nil, err
+			}
+			points = append(points, firstTradePt)
+		}
 	}
-
 	return points, nil
 }
 

@@ -339,5 +339,37 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		points = append(points, walletFeePoint)
 	}
 
+	traded, err := is.userTraded(log.UserAddress)
+	if err != nil {
+		return nil, err
+	}
+	if !traded {
+		logger.Debugw("user first trade", "user_addr", log.UserAddress.String())
+		tags := map[string]string{
+			"user_addr": log.UserAddress.String(),
+		}
+		fields := map[string]interface{}{
+			"traded": true,
+		}
+		firstTradePt, err := client.NewPoint("first_trades", tags, fields, log.Timestamp)
+		if err != nil {
+			return nil, err
+		}
+		points = append(points, firstTradePt)
+	}
+
 	return points, nil
+}
+
+func (is InfluxStorage) userTraded(addr ethereum.Address) (bool, error) {
+	q := fmt.Sprintf("SELECT traded FROM first_trades WHERE user_addr='%s'", addr.String())
+	response, err := is.queryDB(is.influxClient, q)
+	if err != nil {
+		return false, err
+	}
+	// if there is no record, this mean the address has not traded yet
+	if (len(response) == 0) || (len(response[0].Series) == 0) || (len(response[0].Series[0].Values) == 0) {
+		return false, nil
+	}
+	return true, nil
 }

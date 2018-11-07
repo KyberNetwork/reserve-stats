@@ -14,9 +14,8 @@ const (
 
 //GetAggregatedWalletFee return wallet fee follow by
 //provided reserve address, wallet address, from time, to time
-//frequency (minute, hour, day) and timezone
+//frequency (hour, day) and timezone
 //daily_wallet_fee and hourly_wallet_fee measurement is calculate by CQ
-//specify here: https://gist.github.com/halink0803/b4e9f51a0d7bb6fa361d1e058b227e6a
 func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq string,
 	fromTime, toTime time.Time, timezone int64) (map[uint64]float64, error) {
 	var (
@@ -30,18 +29,18 @@ func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq st
 
 	switch freq {
 	case day:
-		measurement = "daily_wallet_fee"
+		measurement = "wallet_fee_day"
 	case hour:
-		measurement = "hourly_wallet_fee"
+		measurement = "wallet_fee_hour"
 	}
 
 	// in cq we will add timezone as time offset interval
 	q := fmt.Sprintf(`
 		SELECT sum_amount from %s
 		WHERE reserve_addr = '%s' AND wallet_addr = %s
-		AND time >= '%s' AND time <= '%s' AND time_offset_interval = '%d'
+		AND time >= '%s' AND time <= '%s' 
 	`, measurement, reserveAddr, walletAddr,
-		fromTime.Format(time.RFC3339), toTime.Format(time.RFC3339), timezone)
+		fromTime.Format(time.RFC3339), toTime.Format(time.RFC3339))
 
 	res, err := is.queryDB(is.influxClient, q)
 	if err != nil {

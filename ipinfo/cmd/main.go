@@ -39,6 +39,10 @@ func main() {
 }
 
 func runHTTPServer(c *cli.Context) error {
+	if err := libapp.Validate(c); err != nil {
+		return err
+	}
+
 	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err

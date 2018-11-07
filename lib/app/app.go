@@ -1,15 +1,24 @@
 package app
 
 import (
+	"fmt"
+
+	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/urfave/cli"
-	"go.uber.org/zap"
 )
 
 const (
-	modeFlag         = "mode"
-	developmentMode  = "development"
-	productionMode   = "production"
-	ethereumNodeFlag = "ethereum-node"
+	modeFlag = "mode"
+
+	developmentMode = "develop"
+	productionMode  = "production"
+)
+
+var (
+	validRunningModes = map[string]struct{}{
+		developmentMode: {},
+		productionMode:  {},
+	}
 )
 
 // NewApp creates a new cli App instance with common flags pre-loaded.
@@ -21,18 +30,37 @@ func NewApp() *cli.App {
 			Usage: "app running mode",
 			Value: developmentMode,
 		},
+		cli.StringFlag{
+			Name:  Flag,
+			Usage: "Kyber Network deployment name",
+			Value: productionMode,
+		},
 	}
 	return app
 }
 
-// NewLogger creates a new logger instance.
-// The type of logger instance will be different with different application running modes.
-func NewLogger(c *cli.Context) (*zap.Logger, error) {
-	mode := c.GlobalString(modeFlag)
+func stringToDeploymentMode(mode string) (deployment.Deployment, error) {
 	switch mode {
-	case productionMode:
-		return zap.NewProduction()
-	default:
-		return zap.NewDevelopment()
+	case deployment.Staging.String():
+		return deployment.Staging, nil
+	case deployment.Production.String():
+		return deployment.Production, nil
 	}
+	return 0, fmt.Errorf("deployment mode is not valid: %s", mode)
+}
+
+// Validate validates common application configuration flags.
+func Validate(c *cli.Context) error {
+	mode := c.GlobalString(modeFlag)
+	_, ok := validRunningModes[mode]
+	if !ok {
+		return fmt.Errorf("invalid running mode: %q", c.GlobalString(modeFlag))
+	}
+
+	dpl := c.GlobalString(Flag)
+	_, err := stringToDeploymentMode(dpl)
+	if err != nil {
+		return err
+	}
+	return nil
 }

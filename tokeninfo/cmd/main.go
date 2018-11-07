@@ -5,7 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/KyberNetwork/reserve-stats/lib/app"
+	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/tokeninfo"
 	"github.com/urfave/cli"
 )
@@ -17,7 +18,7 @@ const (
 )
 
 func main() {
-	app := app.NewApp()
+	app := libapp.NewApp()
 	app.Name = "token reserve fetcher"
 	app.Usage = "fetching token reserve mapping information"
 	app.Version = "0.0.1"
@@ -33,16 +34,12 @@ func main() {
 
 	app.Flags = append(app.Flags,
 		cli.StringFlag{
-			Name:  nodeURLFlag,
-			Usage: "Ethereum node provider URL",
-			Value: nodeURLDefaultValue,
-		},
-		cli.StringFlag{
 			Name:  outputFlag,
 			Usage: "output file location",
 			Value: "./output.json",
 		},
 	)
+	app.Flags = append(app.Flags, libapp.NewEthereumNodeFlags())
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -50,17 +47,33 @@ func main() {
 }
 
 func reserve(c *cli.Context) error {
-	logger, err := app.NewLogger(c)
+	if err := libapp.Validate(c); err != nil {
+		return err
+	}
+
+	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
 	}
 	defer logger.Sync()
 
-	sugar := logger.Sugar()
+	client, err := libapp.NewEthereumClientFromFlag(c)
+	if err != nil {
+		return err
+	}
+
+	internalNetworkClient, err := contracts.NewInternalNetwork(
+		contracts.InternalNetworkContractAddress().MustGetOneFromContext(c),
+		client,
+	)
+	if err != nil {
+		return err
+	}
 
 	f, err := tokeninfo.NewReserveCrawler(
-		sugar,
-		c.GlobalString(nodeURLFlag))
+		logger.Sugar(),
+		internalNetworkClient,
+	)
 	if err != nil {
 		return err
 	}

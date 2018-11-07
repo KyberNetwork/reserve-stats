@@ -22,6 +22,10 @@ func newServerCli() *cli.App {
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.ReserveRatesPort)...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Action = func(c *cli.Context) error {
+		if err := libapp.Validate(c); err != nil {
+			return err
+		}
+
 		logger, err := libapp.NewLogger(c)
 		if err != nil {
 			return err

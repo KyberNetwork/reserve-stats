@@ -1,16 +1,18 @@
 package workers
 
 import (
-	"github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	"github.com/KyberNetwork/tokenrate/coingecko"
 	"math/big"
 	"sync"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	"github.com/KyberNetwork/tokenrate/coingecko"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
@@ -78,7 +80,14 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 		return nil, err
 	}
 
-	crawler, err := tradelogs.NewCrawler(sugar, client, bc, coingecko.New())
+	addresses := []ethereum.Address{contracts.PricingContractAddress().MustGetOneFromContext(fj.c)}
+	addresses = append(addresses, contracts.InternalNetworkContractAddress().MustGetOneFromContext(fj.c))
+	addresses = append(addresses, contracts.BurnerContractAddress().MustGetOneFromContext(fj.c))
+	addresses = append(addresses, contracts.NetworkContractAddress().MustGetOneFromContext(fj.c))
+	addresses = append(addresses, contracts.OldBurnerContractAddress().MustGetFromContext(fj.c)...)
+	addresses = append(addresses, contracts.OldNetworkContractAddress().MustGetOneFromContext(fj.c))
+
+	crawler, err := tradelogs.NewCrawler(sugar, client, bc, coingecko.New(), addresses)
 	if err != nil {
 		return nil, err
 	}

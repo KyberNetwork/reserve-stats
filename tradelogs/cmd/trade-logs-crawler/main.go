@@ -3,10 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	"github.com/go-ozzo/ozzo-validation"
-	"github.com/go-ozzo/ozzo-validation/is"
-	"github.com/urfave/cli"
 	"log"
 	"math"
 	"math/big"
@@ -18,10 +14,14 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
+	"github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/influxdata/influxdb/client/v2"
+	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
 
@@ -143,6 +143,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
 	defer logger.Sync()
 
 	sugar := logger.Sugar()

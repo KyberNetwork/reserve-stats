@@ -3,6 +3,7 @@ package workers
 import (
 	"github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
@@ -76,7 +77,9 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (map[string]common.Reserve
 		return nil, err
 	}
 
-	ratesCrawler, err := crawler.NewReserveRatesCrawler(fj.addrs, client, coreClient, sugar, blockTimeResolver)
+	internalReserveAddress := contracts.InternalReserveAddress().MustGetOneFromContext(fj.c)
+
+	ratesCrawler, err := crawler.NewReserveRatesCrawler(fj.addrs, client, coreClient, internalReserveAddress, sugar, blockTimeResolver)
 	if err != nil {
 		return nil, err
 	}

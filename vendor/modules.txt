@@ -14,17 +14,17 @@ github.com/davecgh/go-spew/spew
 # github.com/deckarep/golang-set v1.7.1
 github.com/deckarep/golang-set
 # github.com/ethereum/go-ethereum v1.8.17 => github.com/favadi/go-ethereum v1.8.16-fork
-github.com/ethereum/go-ethereum/ethclient
 github.com/ethereum/go-ethereum/common
+github.com/ethereum/go-ethereum/ethclient
 github.com/ethereum/go-ethereum/core/types
 github.com/ethereum/go-ethereum
 github.com/ethereum/go-ethereum/accounts/abi
 github.com/ethereum/go-ethereum/accounts/abi/bind
 github.com/ethereum/go-ethereum/event
 github.com/ethereum/go-ethereum/common/hexutil
+github.com/ethereum/go-ethereum/crypto/sha3
 github.com/ethereum/go-ethereum/rlp
 github.com/ethereum/go-ethereum/rpc
-github.com/ethereum/go-ethereum/crypto/sha3
 github.com/ethereum/go-ethereum/crypto
 github.com/ethereum/go-ethereum/params
 github.com/ethereum/go-ethereum/trie
@@ -134,7 +134,7 @@ golang.org/x/sync/errgroup
 # golang.org/x/sys v0.0.0-20181030150119-7e31e0c00fa0
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/tools v0.0.0-20181013182035-5e66757b835f
+# golang.org/x/tools v0.0.0-20181105230042-78dc5bac0cac
 golang.org/x/tools/imports
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/internal/gopathwalk

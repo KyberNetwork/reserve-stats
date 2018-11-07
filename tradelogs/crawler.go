@@ -29,36 +29,10 @@ const (
 	tradeEvent = "0x1849bd6a030a1bca28b83437fd3de96f3d27a5d172fa7e9c78e7b61468928a39"
 	// etherReceivalEvent is the topic of event EtherReceival(address indexed sender, uint amount).
 	etherReceivalEvent = "0x75f33ed68675112c77094e7c5b073890598be1d23e27cd7f6907b4a7d98ac619"
-
-	// address of pricing contract
-	pricingAddr = "0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B"
-	// address of network contract
-	networkAddr = "0x818E6FECD516Ecc3849DAf6845e3EC868087B755"
-	// address of bunner contract
-	burnerAddr = "0xed4f53268bfdFF39B36E8786247bA3A02Cf34B04"
-	// address of internal network contract
-	internalNetworkAddr = "0x91a502C678605fbCe581eae053319747482276b9"
-)
-
-var (
-	// oldContractAddrs is list of old contracts that still need to listen for trade events.
-	oldContractAddrs = []string{
-		// old burner contracts
-		"0x4E89bc8484B2c454f2F7B25b612b648c45e14A8e",
-		"0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706",
-		// old network contracts
-		"0x964F35fAe36d75B1e72770e244F6595B68508CF5",
-	}
-
-	// TODO: enable old contract addrs for staging
-	//oldContractAddrs = []string{
-	//	"0xB2cB365D803Ad914e63EA49c95eC663715c2F673",
-	//	"0xD2D21FdeF0D054D2864ce328cc56D1238d6b239e",
-	//}
 )
 
 // NewCrawler create a new Crawler instance.
-func NewCrawler(sugar *zap.SugaredLogger, client *ethclient.Client, broadcastClient broadcast.Interface, rateProvider tokenrate.ETHUSDRateProvider) (*Crawler, error) {
+func NewCrawler(sugar *zap.SugaredLogger, client *ethclient.Client, broadcastClient broadcast.Interface, rateProvider tokenrate.ETHUSDRateProvider, addresses []ethereum.Address) (*Crawler, error) {
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
 	if err != nil {
 		return nil, err
@@ -70,6 +44,7 @@ func NewCrawler(sugar *zap.SugaredLogger, client *ethclient.Client, broadcastCli
 		txTime:          resolver,
 		broadcastClient: broadcastClient,
 		rateProvider:    rateProvider,
+		addresses:       addresses,
 	}, nil
 }
 
@@ -81,6 +56,7 @@ type Crawler struct {
 	txTime          *blockchain.BlockTimeResolver
 	broadcastClient broadcast.Interface
 	rateProvider    tokenrate.ETHUSDRateProvider
+	addresses       []ethereum.Address
 }
 
 func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
@@ -222,16 +198,16 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 		result []common.TradeLog
 	)
 
-	addresses := []ethereum.Address{
-		ethereum.HexToAddress(pricingAddr),         // pricing
-		ethereum.HexToAddress(networkAddr),         // network
-		ethereum.HexToAddress(burnerAddr),          // burner
-		ethereum.HexToAddress(internalNetworkAddr), // internal network
-	}
+	// addresses := []ethereum.Address{
+	// 	ethereum.HexToAddress(pricingAddr),         // pricing
+	// 	ethereum.HexToAddress(networkAddr),         // network
+	// 	ethereum.HexToAddress(burnerAddr),          // burner
+	// 	ethereum.HexToAddress(internalNetworkAddr), // internal network
+	// }
 
-	for _, addr := range oldContractAddrs {
-		addresses = append(addresses, ethereum.HexToAddress(addr))
-	}
+	// for _, addr := range oldContractAddrs {
+	// 	addresses = append(addresses, ethereum.HexToAddress(addr))
+	// }
 
 	topics := [][]ethereum.Hash{
 		{
@@ -245,7 +221,7 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 	query := ether.FilterQuery{
 		FromBlock: fromBlock,
 		ToBlock:   toBlock,
-		Addresses: addresses,
+		Addresses: crawler.addresses,
 		Topics:    topics,
 	}
 

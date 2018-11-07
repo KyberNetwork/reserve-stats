@@ -36,5 +36,19 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, volCqs)
 
+	newUnqAddressCq, err := libcq.NewContinuousQuery(
+		"summary_volume",
+		dbName,
+		dayResampleInterval,
+		dayResampleFor,
+		"SELECT COUNT(traded) as new_unique_addresses INTO trade_summary FROM first_trades",
+		"1d",
+		[]string{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, newUnqAddressCq)
+
 	return result, nil
 }

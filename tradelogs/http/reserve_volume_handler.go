@@ -12,36 +12,31 @@ import (
 )
 
 type reserveVolumeQuery struct {
-	From    uint64 `form:"from" `
-	To      uint64 `form:"to"`
+	httputil.TimeRangeQueryFreq
 	Asset   string `form:"asset" binding:"required"`
-	Freq    string `form:"freq"`
 	Reserve string `form:"reserve" binding:"isAddress"`
 }
 
 func (sv *Server) getReserveVolume(c *gin.Context) {
-	var (
-		query       reserveVolumeQuery
-		logger      = sv.sugar.With("func", "tradelogs/http/Serve.getReserveVolume")
-		defaultFreq = "h"
-	)
+	var query reserveVolumeQuery
+
 	if err := c.ShouldBindQuery(&query); err != nil {
 		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
-	if !timeValidation(&query.From, &query.To, c, logger) {
-		logger.Info("time validation returned invalid")
+
+	_, _, err := query.Validate()
+	if err != nil {
+		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
+
 	token, err := core.LookupToken(sv.coreSetting, query.Asset)
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return
 	}
-	if query.Freq == "" {
-		sv.sugar.Debug("using default frequency", "freq", defaultFreq)
-		query.Freq = defaultFreq
-	}
+
 	result, err := sv.storage.GetReserveVolume(ethereum.HexToAddress(query.Reserve), token, query.From, query.To, query.Freq)
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusInternalServerError, err)

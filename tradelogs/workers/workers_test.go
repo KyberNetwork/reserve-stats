@@ -46,6 +46,10 @@ func (s *mockStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq strin
 	return nil, nil
 }
 
+func (s *mockStorage) GetTradeSummary(fromTime, toTime uint64) (map[uint64]*common.TradeSummary, error) {
+	return nil, nil
+}
+
 type mockJob struct {
 	order   int
 	failure bool

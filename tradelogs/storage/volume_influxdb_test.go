@@ -11,6 +11,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
+	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 func doInfluxHTTPReq(client http.Client, cmd, endpoint, db string) error {
@@ -33,10 +34,22 @@ func doInfluxHTTPReq(client http.Client, cmd, endpoint, db string) error {
 }
 
 func aggregationTestData(is *InfluxStorage) error {
-	const (
-		endpoint = "http://127.0.0.1:8086/"
-	)
+
 	cqs, err := tradelogcq.CreateAssetVolumeCqs(is.dbName)
+	if err != nil {
+		return err
+	}
+	for _, cq := range cqs {
+		err = cq.Execute(is.influxClient, is.sugar)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func aggregationVolumeTestData(is *InfluxStorage) error {
+	cqs, err := tradelogcq.CreateReserveVolumeCqs(is.dbName)
 	if err != nil {
 		return err
 	}
@@ -77,6 +90,54 @@ func TestGetAssetVolume(t *testing.T) {
 	assert.NoError(t, err)
 	timeUint := timeutil.TimeToTimestampMs(timeUnix)
 	result, ok := volume[timeUint]
+	if !ok {
+		t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))
+	}
+
+	if result.USDAmount != ethAmount {
+		t.Fatal(fmt.Errorf("Expect USD amount to be %.18f, got %.18f", ethAmount, result.USDAmount))
+	}
+}
+
+func TestGetReserveVolume(t *testing.T) {
+	const (
+		dbName = "test_rsv_volume"
+
+		// These params are expected to be change when export.dat changes.
+		fromTime   = 1539248043000
+		toTime     = 1539248666000
+		ethAmount  = 227.05539848662738
+		freq       = "h"
+		timeStamp  = "2018-10-11T09:00:00Z"
+		rsvAddrStr = "0x63825c174ab367968EC60f061753D3bbD36A0D8F"
+	)
+
+	is, err := newTestInfluxStorage(dbName)
+	defer func() {
+		if err := is.tearDown(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	if err := loadTestData(dbName); err != nil {
+		t.Fatal(err)
+	}
+	if err := aggregationVolumeTestData(is); err != nil {
+		t.Fatal(err)
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	volume, err := is.GetReserveVolume(ethereum.HexToAddress(rsvAddrStr), core.ETHToken, fromTime, toTime, freq)
+	t.Logf("Volume result %v", volume)
+	if err != nil {
+		t.Fatal(err)
+	}
+	timeUnix, err := time.Parse(time.RFC3339, timeStamp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, ok := volume[timeutil.TimeToTimestampMs(timeUnix)]
 	if !ok {
 		t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))
 	}

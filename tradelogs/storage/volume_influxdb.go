@@ -21,12 +21,45 @@ const (
 )
 
 var (
-	errCantConvert  = errors.New("cannot convert response from influxDB to pre-defined struct")
-	measurementName = map[string]string{
+	errCantConvert       = errors.New("cannot convert response from influxDB to pre-defined struct")
+	assetMeasurementName = map[string]string{
 		"h": "volume_hour",
 		"d": "volume_day",
 	}
+	rsvMeasurementName = map[string]string{
+		"h": "rsv_volume_hour",
+		"d": "rsv_volume_day",
+	}
 )
+
+// GetReserveVolume returns the volume of a specific asset(token) from a reserve
+// between a period and with desired frequency
+func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.Token, fromTime, toTime uint64, frequency string) (map[uint64]*common.VolumeStats, error) {
+	var (
+		rsvAddrHex   = rsvAddr.Hex()
+		tokenAddrHex = ethereum.HexToAddress(token.Address).Hex()
+		logger       = is.sugar.With("reserve Address", rsvAddr.Hex(), "func", "tradelogs/storage/InfluxStorage.GetReserveVolume", "token Address", token.Address, "from", fromTime, "to", toTime)
+	)
+	mName, ok := rsvMeasurementName[strings.ToLower(frequency)]
+	if !ok {
+		return nil, fmt.Errorf("frequency %s is not supported", frequency)
+	}
+
+	addrFilter := fmt.Sprintf("((dst_addr='%s' OR src_addr='%s') AND (dst_rsv_addr='%s' OR src_rsv_addr='%s'))", tokenAddrHex, tokenAddrHex, rsvAddrHex, rsvAddrHex)
+	timeFilter := fmt.Sprintf("(time >=%d%s AND time <= %d%s)", fromTime, timePrecision, toTime, timePrecision)
+	cmd := fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, SUM(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s) FILL(0)", tokenVolumeField, ethVolumeField, fiatVolumeField, mName, timeFilter, addrFilter, frequency)
+
+	logger.Debugw("query rendered", "query", cmd)
+
+	response, err := is.queryDB(is.influxClient, cmd)
+	if err != nil {
+		return nil, err
+	}
+	if len(response) == 0 || len(response[0].Series) == 0 {
+		return nil, nil
+	}
+	return convertQueryResultToVolume(response[0].Series[0])
+}
 
 // GetAssetVolume returns the volume of a specific assset(token) between a period and with desired frequency
 func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime uint64, frequency string) (map[uint64]*common.VolumeStats, error) {
@@ -38,7 +71,7 @@ func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime uint6
 			"to", toTime,
 		)
 	)
-	mName, ok := measurementName[strings.ToLower(frequency)]
+	mName, ok := assetMeasurementName[strings.ToLower(frequency)]
 	if !ok {
 		return nil, fmt.Errorf("frequency %s is not supported", frequency)
 	}

@@ -41,7 +41,7 @@ func TestWalletFeeQuery(t *testing.T) {
 		},
 		{
 			Msg: "Test address is not valid",
-			Endpoint: fmt.Sprintf("%s?walletAddr=%s&reserve=%s&from=%d&to=%d&freq=%s&timezone=%d", endpoint,
+			Endpoint: fmt.Sprintf("%s?walletAddr=%s&reserve=%s&fromTime=%d&toTime=%d&freq=%s&timezone=%d", endpoint,
 				invalidAddress, reserveAddr, fromTime, toTime, freq, timezone),
 			Method: http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -50,7 +50,7 @@ func TestWalletFeeQuery(t *testing.T) {
 		},
 		{
 			Msg: "Test freq is not valid",
-			Endpoint: fmt.Sprintf("%s?walletAddr=%s&reserve=%s&from=%d&to=%d&freq=%s&timezone=%d", endpoint,
+			Endpoint: fmt.Sprintf("%s?walletAddr=%s&reserve=%s&fromTime=%d&toTime=%d&freq=%s&timezone=%d", endpoint,
 				walletAddr, reserveAddr, fromTime, toTime, invalidFreq, timezone),
 			Method: http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -59,7 +59,7 @@ func TestWalletFeeQuery(t *testing.T) {
 		},
 		{
 			Msg: "Test timezone is not supported",
-			Endpoint: fmt.Sprintf("%s?walletAddr=%s&reserve=%s&from=%d&to=%d&freq=%s&timezone=%d", endpoint,
+			Endpoint: fmt.Sprintf("%s?walletAddr=%s&reserve=%s&fromTime=%d&toTime=%d&freq=%s&timezone=%d", endpoint,
 				walletAddr, reserveAddr, fromTime, toTime, freq, invalidTimezone),
 			Method: http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -68,7 +68,7 @@ func TestWalletFeeQuery(t *testing.T) {
 		},
 		{
 			Msg: "Test valid query",
-			Endpoint: fmt.Sprintf("%s?walletAddr=%s&reserve=%s&from=%d&to=%d&freq=%s&timezone=%d", endpoint,
+			Endpoint: fmt.Sprintf("%s?walletAddr=%s&reserve=%s&fromTime=%d&toTime=%d&freq=%s&timezone=%d", endpoint,
 				walletAddr, reserveAddr, fromTime, toTime, freq, timezone),
 			Method: http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {

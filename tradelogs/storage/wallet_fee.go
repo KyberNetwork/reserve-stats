@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -19,15 +20,15 @@ const (
 func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq string,
 	fromTime, toTime time.Time, timezone int64) (map[uint64]float64, error) {
 	var (
-		result      map[uint64]float64
 		err         error
 		measurement string
 	)
+	result := map[uint64]float64{}
 
 	logger := is.sugar.With("reserveAddr", reserveAddr, "walletAddr", walletAddr, "freq", freq,
 		"fromTime", fromTime, "toTime", toTime, "timezone", timezone)
 
-	switch freq {
+	switch strings.ToLower(freq) {
 	case day:
 		measurement = "wallet_fee_day"
 	case hour:
@@ -36,15 +37,15 @@ func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq st
 
 	// in cq we will add timezone as time offset interval
 	q := fmt.Sprintf(`
-		SELECT sum_amount from %s
-		WHERE reserve_addr = '%s' AND wallet_addr = %s
+		SELECT sum_amount FROM "%s"
+		WHERE reserve_addr = '%s' AND wallet_addr = '%s'
 		AND time >= '%s' AND time <= '%s' 
 	`, measurement, reserveAddr, walletAddr,
 		fromTime.Format(time.RFC3339), toTime.Format(time.RFC3339))
 
 	res, err := is.queryDB(is.influxClient, q)
 	if err != nil {
-		logger.Error("cannot query wallet fee from influx")
+		logger.Error(fmt.Sprintf("cannot query wallet fee from influx: %s", err.Error()))
 		return result, err
 	}
 

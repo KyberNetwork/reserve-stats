@@ -5,12 +5,13 @@ import (
 
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 )
 
 type walletFeeQuery struct {
-	From        uint64 `form:"from" binding:"required"`
-	To          uint64 `form:"to" binding:"required"`
+	From        uint64 `form:"fromTime" binding:"required"`
+	To          uint64 `form:"toTime" binding:"required"`
 	Freq        string `form:"freq" binding:"required,isFreq"`
 	ReserveAddr string `form:"reserve" binding:"required,isAddress"`
 	WalletAddr  string `form:"walletAddr" binding:"required,isAddress"`
@@ -30,10 +31,12 @@ func (ha *Server) getWalletFee(c *gin.Context) {
 		return
 	}
 
-	fromTime := timeutil.TimestampMsToTime(query.From)
-	toTime := timeutil.TimestampMsToTime(query.To)
+	fromTime := timeutil.TimestampMsToTime(query.From).UTC()
+	toTime := timeutil.TimestampMsToTime(query.To).UTC()
+	walletAddr := common.HexToAddress(query.WalletAddr).Hex()
+	reserveAddr := common.HexToAddress(query.ReserveAddr).Hex()
 
-	walletFee, err := ha.storage.GetAggregatedWalletFee(query.ReserveAddr, query.WalletAddr, query.Freq, fromTime, toTime, query.Timezone)
+	walletFee, err := ha.storage.GetAggregatedWalletFee(reserveAddr, walletAddr, query.Freq, fromTime, toTime, query.Timezone)
 
 	if err != nil {
 		ha.sugar.Errorw("reserve addr", query.ReserveAddr, "Wallet addr", query.WalletAddr,

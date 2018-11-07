@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -133,6 +134,8 @@ func TestHTTPPriceAnalyticServer(t *testing.T) {
 			Method:   http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, resp.Code)
+				body, _ := ioutil.ReadAll(resp.Body)
+				t.Log(string(body))
 			},
 		},
 	}

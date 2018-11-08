@@ -16,7 +16,7 @@ const (
 	walletAddr      = "0x8a654566edd646283c920e3225873fca5370f489" // a wallet address have rate at jun 1st
 	fromTime        = 1527811200000                                // june 1st 0:00:00
 	toTime          = 1527897599000                                // june 1st 23:59:59
-	freq            = "D"                                          // Day freqency
+	freq            = "d"                                          // Day freqency
 	timezone        = 0                                            // UTC
 	invalidAddress  = "dah1oshfsaoh"                               // address is not valid
 	invalidFreq     = "q"                                          // not exist frequency

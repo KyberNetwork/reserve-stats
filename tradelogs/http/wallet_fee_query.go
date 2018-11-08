@@ -30,6 +30,15 @@ func (ha *Server) getWalletFee(c *gin.Context) {
 		return
 	}
 
+	_, _, err := query.Validate()
+	if err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": err.Error()},
+		)
+		return
+	}
+
 	fromTime := timeutil.TimestampMsToTime(query.From).UTC()
 	toTime := timeutil.TimestampMsToTime(query.To).UTC()
 	walletAddr := common.HexToAddress(query.WalletAddr).Hex()

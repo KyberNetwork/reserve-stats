@@ -31,6 +31,9 @@ func GetTxHashFromInterface(value interface{}) (common.Hash, error) {
 
 // GetFloat64FromInterface converts given value to float64.
 func GetFloat64FromInterface(value interface{}) (float64, error) {
+	if value == nil {
+		return 0, nil
+	}
 	number, ok := value.(json.Number)
 	if !ok {
 		return 0, fmt.Errorf("invalid number value %v", value)
@@ -39,7 +42,11 @@ func GetFloat64FromInterface(value interface{}) (float64, error) {
 }
 
 // GetInt64FromInterface converts given value to int64.
+// Since influx doesn't support fill without group by queries, any nil interface will be considered as 0
 func GetInt64FromInterface(value interface{}) (int64, error) {
+	if value == nil {
+		return 0, nil
+	}
 	number, ok := value.(json.Number)
 	if !ok {
 		return 0, fmt.Errorf("invalid int64 value %v", value)
@@ -50,6 +57,9 @@ func GetInt64FromInterface(value interface{}) (int64, error) {
 // GetInt64FromTagValue converts given value to int64
 // The original tag value should be string
 func GetInt64FromTagValue(value interface{}) (int64, error) {
+	if value == nil {
+		return 0, nil
+	}
 	number, ok := value.(string)
 	if !ok {
 		return 0, fmt.Errorf("invalid uint64 tag value %v", value)

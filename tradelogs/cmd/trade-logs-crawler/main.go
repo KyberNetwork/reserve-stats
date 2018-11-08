@@ -118,7 +118,7 @@ func min(a, b int64) int64 {
 }
 
 func manageCQFromContext(c *cli.Context, influxClient client.Client, sugar *zap.SugaredLogger) error {
-	//Deploy CQ	before get/ store tradelog
+	//Deploy CQ	before get/store trade logs
 	cqs, err := tradelogcq.CreateAssetVolumeCqs(common.DatabaseName)
 	if err != nil {
 		return err
@@ -153,12 +153,16 @@ func run(c *cli.Context) error {
 
 	sugar := logger.Sugar()
 
-	coreClient, err := core.NewClientFromContext(sugar, c)
+	influxClient, err := influxdb.NewClientFromContext(c)
 	if err != nil {
 		return err
 	}
 
-	influxClient, err := influxdb.NewClientFromContext(c)
+	if err = manageCQFromContext(c, influxClient, sugar); err != nil {
+		return err
+	}
+
+	coreClient, err := core.NewClientFromContext(sugar, c)
 	if err != nil {
 		return err
 	}
@@ -172,9 +176,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err = manageCQFromContext(c, influxClient, sugar); err != nil {
-		return err
-	}
+
 	if c.String(fromBlockFlag) == "" {
 		sugar.Info("no from block flag provided, checking last stored block")
 	} else {

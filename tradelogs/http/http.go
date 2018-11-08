@@ -11,7 +11,6 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"github.com/jmoiron/sqlx"
 )
 
 const (
@@ -24,7 +23,7 @@ type Server struct {
 	host         string
 	sugar        *zap.SugaredLogger
 	coreSetting  core.Interface
-	userPostgres *sqlx.DB
+	userPostgres *storage.UserPostgresStorage
 }
 
 type burnFeeQuery struct {
@@ -134,7 +133,7 @@ func (sv *Server) Start() error {
 
 // NewServer returns an instance of HttpApi to serve trade logs
 func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett core.Interface,
-	userPostgres *sqlx.DB) *Server {
+	userPostgres *storage.UserPostgresStorage) *Server {
 	return &Server{
 		storage:      storage,
 		host:         host,

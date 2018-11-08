@@ -2,8 +2,8 @@ package http
 
 import (
 	"net/http"
-	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,20 +25,16 @@ func (ha *Server) getCountryStats(c *gin.Context) {
 		)
 		return
 	}
-	fromTime := time.Unix(0, int64(query.FromTime)*int64(time.Millisecond))
-	toTime := time.Unix(0, int64(query.ToTime)*int64(time.Millisecond))
 
-	countryStats, err := ha.storage.GetCountryStats(query.CountryCode, query.Timezone, fromTime, toTime)
+	countryStats, err := ha.storage.GetCountryStats(query.CountryCode, query.FromTime, query.ToTime)
 	if err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
-			gin.H{
-				"error": err.Error(),
-			},
+			err,
 		)
 		return
 	}
-
 	c.JSON(
 		http.StatusOK,
 		countryStats,

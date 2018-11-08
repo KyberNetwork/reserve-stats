@@ -55,11 +55,7 @@ func (s *mockStorage) GetWalletStats(fromTime, toTime time.Time, walletAddr stri
 	return nil, nil
 }
 
-func (s *mockStorage) GetCountryStats(countryCode string, timezone int64, fromTime, toTime time.Time) (map[uint64]float64, error) {
-	return nil, nil
-}
-
-func (s *mockStorage) GetCountryStats(countryCode string, timezone int64, fromTime, toTime time.Time) (map[uint64]common.CountryStats, error) {
+func (s *mockStorage) GetCountryStats(countryCode string, fromTime, toTime uint64) (map[uint64]*common.CountryStats, error) {
 	return nil, nil
 }
 

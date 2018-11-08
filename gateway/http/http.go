@@ -88,7 +88,7 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL,
 			return nil, err
 		}
 
-		r.GET("/users", auth.Authenticated(), userProxyMW)
+		r.GET("/users", userProxyMW)
 		r.POST("/users", auth.Authenticated(), userProxyMW)
 	}
 

@@ -51,6 +51,8 @@ func main() {
 			return err
 		}
 
+		postgresDB := storage.NewPostgresConnection(userPostgres)
+
 		influxStorage, err := storage.NewInfluxStorage(
 			sugar,
 			"trade_logs",
@@ -62,7 +64,7 @@ func main() {
 		}
 
 		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c),
-			sugar, coreCachedClient, userPostgres)
+			sugar, coreCachedClient, postgresDB)
 		err = api.Start()
 		if err != nil {
 			return err

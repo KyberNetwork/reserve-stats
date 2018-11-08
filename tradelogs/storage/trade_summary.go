@@ -33,7 +33,8 @@ func (is *InfluxStorage) GetTradeSummary(from, to uint64) (map[uint64]*common.Tr
 	logger.Debugw("got result for trade summary query", "response", response)
 
 	if len(response) == 0 || len(response[0].Series) == 0 {
-		return nil, nil
+		result := make(map[uint64]*common.TradeSummary)
+		return result, nil
 	}
 	logger.Debugw("Number of records returned", "nRecord", len(response[0].Series[0].Values))
 	return convertQueryResultToSummary(response[0].Series[0])

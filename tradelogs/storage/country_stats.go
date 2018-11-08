@@ -18,18 +18,18 @@ func (is *InfluxStorage) GetCountryStats(countryCode string, from, to uint64) (m
 		logger = is.sugar.With("country", countryCode,
 			"fromTime", from, "toTime", to)
 		timeFilter    = fmt.Sprintf("(time >=%d%s AND time <= %d%s)", from, timePrecision, to, timePrecision)
-		countryFilter = fmt.Sprintf("(country='%s'", countryCode)
+		countryFilter = fmt.Sprintf("(country='%s')", countryCode)
 	)
 
-	cmd := fmt.Sprintf("SELECT time,eth_per_trade,total_eth_volume,total_trade,total_usd_amount,usd_per_trade,unique_addresses FROM trade_summary WHERE %s AND %s", timeFilter, countryFilter)
-	logger.Debugw("get country summary", "query", cmd)
+	cmd := fmt.Sprintf("SELECT time,eth_per_trade,total_eth_volume,total_trade,total_usd_amount,usd_per_trade,unique_addresses FROM country_stats WHERE %s AND %s", timeFilter, countryFilter)
+	logger.Debugw("get country stats", "query", cmd)
 
 	response, err := is.queryDB(is.influxClient, cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	logger.Debugw("got result for country summary query", "response", response)
+	logger.Debugw("got result for country stats query", "response", response)
 	if len(response) == 0 || len(response[0].Series) == 0 {
 		return nil, nil
 	}

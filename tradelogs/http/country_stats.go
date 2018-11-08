@@ -4,14 +4,14 @@ import (
 	"net/http"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/gin-gonic/gin"
 )
 
 type countryStatsQuery struct {
-	FromTime    uint64 `form:"fromTime" binding:"required"`
-	ToTime      uint64 `form:"toTime" binding:"required"`
-	CountryCode string `form:"country" binding:"required,isValidCountryCod"`
-	Timezone    int64  `form:"timezone" binding:"required,isSupportedTimezone"`
+	FromTime    uint64 `form:"from" binding:"required"`
+	ToTime      uint64 `form:"to" binding:"required"`
+	CountryCode string `form:"country" binding:"required,isValidCountryCode"`
 }
 
 func (ha *Server) getCountryStats(c *gin.Context) {

@@ -9,6 +9,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/is"
 	"gopkg.in/go-playground/validator.v8"
 
+	tradelog "github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"reflect"
 )
 
@@ -63,6 +64,9 @@ func isSupportedTimezone(_ *validator.Validate, _ reflect.Value, _ reflect.Value
 func isValidCountryCode(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
 	field reflect.Value, _ reflect.Type, _ reflect.Kind, _ string) bool {
 	country := field.String()
+	if country == tradelog.UnknownCountry {
+		return true
+	}
 	if err := validation.Validate(country, is.CountryCode2); err != nil {
 		return false
 	}

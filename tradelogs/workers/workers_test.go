@@ -62,6 +62,10 @@ func (s *mockStorage) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo
 	return nil, nil
 }
 
+func (s *mockStorage) GetCountryStats(country string, fromTime, toTime uint64) (map[uint64]*common.CountryStats, error) {
+	return nil, nil
+}
+
 type mockJob struct {
 	order   int
 	failure bool

@@ -1,7 +1,6 @@
 package http
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -15,8 +14,7 @@ const (
 )
 
 type tradeSummaryQuery struct {
-	From     uint64 `form:"fromTime"`
-	To       uint64 `form:"toTime"`
+	httputil.TimeRangeQueryFreq
 	Timezone uint64 `form:"timezone" binding:"required,isValidTimezone"`
 }
 
@@ -35,10 +33,7 @@ func (sv *Server) countKYCEDAddresses(ts uint64) (uint64, error) {
 }
 
 func (sv *Server) getTradeSummary(c *gin.Context) {
-	var (
-		query  tradeSummaryQuery
-		logger = sv.sugar.With("func", "tradelogs/http/Server.getTradeSummary")
-	)
+	var query tradeSummaryQuery
 
 	if err := c.ShouldBindQuery(&query); err != nil {
 		httputil.ResponseFailure(
@@ -48,11 +43,12 @@ func (sv *Server) getTradeSummary(c *gin.Context) {
 		)
 		return
 	}
-	if !timeValidation(&query.From, &query.To, c, logger) {
-		httputil.ResponseFailure(
-			c,
+
+	_, _, err := query.Validate()
+	if err != nil {
+		c.JSON(
 			http.StatusBadRequest,
-			errors.New("time input is not valid"),
+			gin.H{"error": err.Error()},
 		)
 		return
 	}

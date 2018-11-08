@@ -14,7 +14,7 @@ const (
 	cqTemplate = `{{if .IsCQ}}CREATE CONTINUOUS QUERY "{{.ActualName}}" on "{{.Database}}" ` +
 		`{{if or .ResampleEveryInterval .ResampleForInterval}}RESAMPLE {{if .ResampleEveryInterval}}EVERY {{.ResampleEveryInterval}} {{end}}{{if .ResampleForInterval}}FOR {{.ResampleForInterval}} {{end}}{{end}}` +
 		`BEGIN {{end}}{{.ActualQuery}}` +
-		`{{if not .GroupByQuery}} GROUP BY {{else}}, {{end}}time({{.TimeInterval}}{{if .OffsetInterval}},{{.OffsetInterval}}{{end}}) FILL(0) {{if .IsCQ}}END{{end}}`
+		`{{if not .GroupByQuery}} GROUP BY {{else}}, {{end}}time({{.TimeInterval}}{{if .OffsetInterval}},{{.OffsetInterval}}{{end}}) {{if .IsCQ}}END{{end}}`
 )
 
 // NewContinuousQuery creates new ContinuousQuery instance.

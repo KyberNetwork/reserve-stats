@@ -22,8 +22,8 @@ func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq st
 	var (
 		err         error
 		measurement string
+		result      = make(map[uint64]float64)
 	)
-	result := map[uint64]float64{}
 
 	logger := is.sugar.With("reserveAddr", reserveAddr, "walletAddr", walletAddr, "freq", freq,
 		"fromTime", fromTime, "toTime", toTime, "timezone", timezone)
@@ -41,7 +41,7 @@ func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq st
 		WHERE reserve_addr = '%s' AND wallet_addr = '%s'
 		AND time >= '%s' AND time <= '%s' 
 	`, measurement, reserveAddr, walletAddr,
-		fromTime.Format(time.RFC3339), toTime.Format(time.RFC3339))
+		fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
 
 	res, err := is.queryDB(is.influxClient, q)
 	if err != nil {

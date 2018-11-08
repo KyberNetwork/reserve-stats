@@ -5,7 +5,6 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 )
@@ -30,7 +29,7 @@ func (ha *Server) getWalletFee(c *gin.Context) {
 		return
 	}
 
-	_, _, err := query.Validate()
+	fromTime, toTime, err := query.Validate()
 	if err != nil {
 		c.JSON(
 			http.StatusBadRequest,
@@ -39,13 +38,11 @@ func (ha *Server) getWalletFee(c *gin.Context) {
 		return
 	}
 
-	fromTime := timeutil.TimestampMsToTime(query.From).UTC()
-	toTime := timeutil.TimestampMsToTime(query.To).UTC()
+	// normalize Ethereum addresses
 	walletAddr := common.HexToAddress(query.WalletAddr).Hex()
 	reserveAddr := common.HexToAddress(query.ReserveAddr).Hex()
 
 	walletFee, err := ha.storage.GetAggregatedWalletFee(reserveAddr, walletAddr, query.Freq, fromTime, toTime, query.Timezone)
-
 	if err != nil {
 		ha.sugar.Errorw("reserve addr", query.ReserveAddr, "Wallet addr", query.WalletAddr,
 			"from time", fromTime, "to time", toTime, "frequency", query.Freq)

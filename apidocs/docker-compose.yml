@@ -1,7 +1,7 @@
 version: '2'
 services:
   slate:
-    image: local-slate:latest
+    image: kybernetwork/slate:latest
     volumes:
-      - ./source:/slate/source
+      - ./source:/slate/source:ro
       - ./build:/slate/build

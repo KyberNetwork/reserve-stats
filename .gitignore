@@ -21,3 +21,4 @@ data/
 */cmd/*/*
 !*/cmd/*/*.go
 tokeninfo/cmd/output.json
+apidocs/build

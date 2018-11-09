@@ -10,7 +10,10 @@ toc_footers:
 
 includes:
   - tradelogs/trade_logs
+  - tradelogs/trade_summary
   - tradelogs/asset_volume
+  - tradelogs/reserve_volume
+  - tradelogs/wallet_fee
   - users/users
   - price-analytics-data/price_analytics_data
   - errors

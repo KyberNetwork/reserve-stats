@@ -5,23 +5,54 @@ Price analytic component is for analytic module to update their action of settin
 ## Update price analytic data
 
 ```shell
-
+curl -X POST "http://gateway.local/price-analytics-data" \
+-H 'Content-Type: application/json' \
+-d '{
+    "timestamp": 1541478232000,
+    "block_expiration": true,
+    "triggering_tokens_list": [
+        {
+            "token": "KNC",
+            "ask_price": 0.123,
+            "bid_price": 0.125,
+            "mid_afp_price": 0.124,
+            "mid_afp_old_price": 0.12,
+            "min_spread": 0.002,
+            "trigger_update": true
+        },
+        {
+            "token": "OMG",
+            "ask_price": 0.123,
+            "bid_price": 0.125,
+            "mid_afp_price": 0.124,
+            "mid_afp_old_price": 0.12,
+            "min_spread": 0.002,
+            "trigger_update": false
+        }
+    ]
+}'
 ```
 
 > above request will response a struct like this
+on success: http code 200
+
+on error:
 
 ```json
+{
+    "error": <error>
+}
 ```
 
 ### HTTP Request
 
-`POST http://localhost:8000/price-analytics`
+`POST http://gateway.local/price-analytics`
 
 
 ## Get price analytic data
 
 ```shell
-curl -X GET "http://localhost:8000/get-price-analytic-data?from=1522753160000&to=1522755792000"
+curl -X GET "http://gateway.local/price-analytic-data?from=1522753160000&to=1522755792000"
 ```
 
 > sample response:
@@ -56,7 +87,7 @@ curl -X GET "http://localhost:8000/get-price-analytic-data?from=1522753160000&to
 
 ### HTTP Request
 
-`GET http://localhost:8000/price-analytics`
+`GET http://gateway.local/price-analytics`
 
 Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------

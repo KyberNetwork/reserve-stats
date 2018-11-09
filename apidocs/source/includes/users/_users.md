@@ -5,7 +5,21 @@ User component provide service for user dashboard can update user kyced addresse
 ## Update user address
 
 ```shell
-
+curl -X POST "http://gateway.local/users"
+-H 'Content-Type: application/json'
+-d '{
+    "email": "sample@gmail.com",
+    "user_info": [
+        {
+            "address": "0x829bd824b016326a401d083b33d092293333a830",
+            "timestamp": 1538020234000
+        },
+        {
+            "address": "0x5270e589f57936123e649c1c3aa07fd54f2fcb64",
+            "timestamp": 1538975051000
+        }
+    ]
+}'
 ```
 
 >  sample response:
@@ -20,7 +34,7 @@ User component provide service for user dashboard can update user kyced addresse
 
 ### HTTP request:
 
-`POST http://localhost:8006/users`
+`POST http://gateway.local/users`
 
 Content-type: application/json
 
@@ -28,7 +42,7 @@ Content-type: application/json
 ## Get user info by address
 
 ```shell
-curl -X GET "http://localhost:8002/users?address=0x829bd824b016326a401d083b33d092293333a830"
+curl -X GET "http://gateway.local/users?address=0x829bd824b016326a401d083b33d092293333a830"
 ```
 
 > the above request will return reponse like this:
@@ -43,7 +57,7 @@ curl -X GET "http://localhost:8002/users?address=0x829bd824b016326a401d083b33d09
 
 ### HTTP request
 
-`GET http://localhost:8002/users`
+`GET http://gateway.local/users`
 
 Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------

@@ -6,7 +6,7 @@ Trade logs component crawls all tradelogs which go through Kyber contract in ord
 ## Get trade logs 
 
 ```shell
-curl -X GET "http://gateway.local/trade-logs?from="
+curl -X GET "http://gateway.local/trade-logs
 ```
 
 > The above command returns JSON structured like this:

@@ -1,6 +1,8 @@
 package cq
 
 import (
+	"os"
+
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -32,21 +34,32 @@ func NewCQFlags() []cli.Flag {
 
 // ManageCQs manages the given Continous Queries.
 func ManageCQs(c *cli.Context, cqs []*ContinuousQuery, influxClient client.Client, sugar *zap.SugaredLogger) error {
-	deploy := c.Bool(cqsDeployFlag)
-	execute := c.Bool(cqsExecuteFlag)
+	var (
+		deploy  = c.Bool(cqsDeployFlag)
+		execute = c.Bool(cqsExecuteFlag)
+		exit    = deploy || execute
+	)
+
 	if deploy {
 		for _, cQuery := range cqs {
 			if err := cQuery.Deploy(influxClient, sugar); err != nil {
-				return err
+				sugar.Fatalw("failed to deploy CQs", err)
 			}
 		}
 	}
+
 	if execute {
 		for _, cQuery := range cqs {
 			if err := cQuery.Execute(influxClient, sugar); err != nil {
-				return err
+				sugar.Fatalw("failed to deploy CQs", err)
 			}
 		}
 	}
+
+	if exit {
+		sugar.Info("CQ management process completed, exiting")
+		os.Exit(0)
+	}
+
 	return nil
 }

@@ -81,6 +81,42 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	return result, nil
 }
 
+//CreateUserVolumeCqs continueous query for aggregate user volume
+func CreateUserVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
+	var (
+		result []*libcq.ContinuousQuery
+	)
+	userVolumeDayCqs, err := libcq.NewContinuousQuery(
+		"user_volume_day",
+		dbName,
+		dayResampleInterval,
+		dayResampleFor,
+		"SELECT SUM(eth_amount) AS eth_volume, SUM(usd_amount) AS usd_volume "+
+			"INTO user_volume_day FROM (SELECT eth_amount, eth_amount*eth_usd_rate AS usd_amount FROM trades) GROUP BY user_addr",
+		"1d",
+		[]string{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, userVolumeDayCqs)
+	userVolumeHourCqs, err := libcq.NewContinuousQuery(
+		"user_volume_hour",
+		dbName,
+		hourResampleInterval,
+		hourResampleFor,
+		"SELECT SUM(eth_amount) as eth_volume, SUM(usd_amount) as usd_volume "+
+			"INTO user_volume_hour FROM (SELECT eth_amount, eth_amount*eth_usd_rate AS usd_amount FROM trades) GROUP BY user_addr",
+		"1h",
+		[]string{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, userVolumeHourCqs)
+	return result, nil
+}
+
 // RsvFieldsType declare the set of names requires to completed a reserveVolume Cqs
 type RsvFieldsType struct {
 	// AmountType: it can be dst_amount or src_amount

@@ -20,4 +20,5 @@ type Interface interface {
 	GetAggregatedWalletFee(reserveAddr, walletAddr, freq string,
 		fromTime, toTime time.Time, timezone int64) (map[uint64]float64, error)
 	GetTradeSummary(from, to time.Time) (map[uint64]*common.TradeSummary, error)
+	GetUserVolume(userAddr ethereum.Address, from, to uint64, freq string) (map[uint64]common.UserVolume, error)
 }

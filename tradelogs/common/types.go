@@ -79,3 +79,9 @@ type TradeSummary struct {
 	USDPerTrade        float64 `json:"usd_per_trade"`
 	ETHPerTrade        float64 `json:"eth_per_trade"`
 }
+
+//UserVolume represent volume of an user from time to time
+type UserVolume struct {
+	ETHAmount float64 `json:"eth_amount"`
+	USDAmount float64 `json:"usd_amount"`
+}

@@ -37,7 +37,7 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	result = append(result, volCqs)
 
 	newUnqAddressCq, err := libcq.NewContinuousQuery(
-		"summary_volume",
+		"new_unique_addr",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,

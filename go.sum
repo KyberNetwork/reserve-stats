@@ -1,4 +1,3 @@
-github.com/KyberNetwork/reserve-data v0.1.0 h1:x81mn5yOXhWWbQUT7GwJux6dHNf8HSF5eO4s8TlXmHY=
 github.com/KyberNetwork/tokenrate v0.0.0-20181015045844-27abfb84ae1c h1:9+tFR7G+AVDeflRcG/lUWFiu1dkZzHjrUwZ13y6JQv8=
 github.com/KyberNetwork/tokenrate v0.0.0-20181015045844-27abfb84ae1c/go.mod h1:zvMeMoRv7rJjd/q7FkNygUM47UsNjt/fXcbuwpuifKA=
 github.com/aristanetworks/goarista v0.0.0-20181002214814-33151c4543a7 h1:6TQIK3K21/HnYLp+TAI6fjQ1YeH+KgLZbrFJwUjVrnQ=

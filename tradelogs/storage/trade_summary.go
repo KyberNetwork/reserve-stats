@@ -11,8 +11,7 @@ import (
 	influxModel "github.com/influxdata/influxdb/models"
 )
 
-// GetTradeSummary return an incompleted tradeSummary for the specified time period
-// NewUniqueAddress and KYCAddress won't be included
+// GetTradeSummary return an incompleted tradeSummary for the specified time periods
 func (is *InfluxStorage) GetTradeSummary(from, to uint64) (map[uint64]*common.TradeSummary, error) {
 	var (
 		logger = is.sugar.With(
@@ -97,12 +96,12 @@ func convertRowValueToSummary(v []interface{}) (uint64, *common.TradeSummary, er
 		return 0, nil, err
 	}
 	return tsUint64, &common.TradeSummary{
-		ETHVolume:       ethVolume,
-		USDAmount:       usdVolume,
-		TotalTrade:      totalTrade,
-		UniqueAddresses: uniqueAddr,
-		USDPerTrade:     usdPerTrade,
-		ETHPerTrade:     ethPerTrade,
-		NewUquAddresses: newUnqAddress,
+		ETHVolume:          ethVolume,
+		USDAmount:          usdVolume,
+		TotalTrade:         totalTrade,
+		UniqueAddresses:    uniqueAddr,
+		USDPerTrade:        usdPerTrade,
+		ETHPerTrade:        ethPerTrade,
+		NewUniqueAddresses: newUnqAddress,
 	}, nil
 }

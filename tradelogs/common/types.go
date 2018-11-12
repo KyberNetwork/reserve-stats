@@ -85,3 +85,10 @@ type UserVolume struct {
 	ETHAmount float64 `json:"eth_amount"`
 	USDAmount float64 `json:"usd_amount"`
 }
+
+// UserInfo represent trade stats of an address
+type UserInfo struct {
+	Addr      string  `json:"user_address"`
+	ETHVolume float64 `json:"total_eth_volume"`
+	USDVolume float64 `json:"total_usd_volume"`
+}

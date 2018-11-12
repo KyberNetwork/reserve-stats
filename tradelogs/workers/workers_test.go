@@ -46,14 +46,13 @@ func (s *mockStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq strin
 	return nil, nil
 }
 
-func (s *mockStorage) GetTradeSummary(fromTime, toTime time.Time) (map[uint64]*common.TradeSummary, error) {
-	return nil, nil
-}
-
 func (s *mockStorage) GetUserVolume(userAddr ethereum.Address, fromTime, toTime time.Time, freq string) (map[uint64]common.UserVolume, error) {
 	return nil, nil
 }
 
+func (s *mockStorage) GetUserList(fromTime, toTime uint64) ([]common.UserInfo, error) {
+	return nil, nil
+}
 type mockJob struct {
 	order   int
 	failure bool

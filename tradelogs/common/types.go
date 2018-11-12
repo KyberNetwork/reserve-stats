@@ -71,7 +71,6 @@ type VolumeStats struct {
 	Volume    float64 `json:"volume"`
 }
 
-<<<<<<< HEAD
 // TradeSummary struct holds all the fields required for trade summary
 type TradeSummary struct {
 	ETHVolume          float64 `json:"total_eth_volume"`
@@ -89,14 +88,19 @@ type TradeSummary struct {
 type UserVolume struct {
 	ETHAmount float64 `json:"eth_amount"`
 	USDAmount float64 `json:"usd_amount"`
-=======
+}
+
 // WalletStats represent stat for a wallet address
 type WalletStats struct {
-	ETHVolume  float64 `json:"eth_volume"`
-	USDVolume  float64 `json:"usd_volume"`
-	BurnFee    float64 `json:"burn_fee"`
-	TotalTrade int64   `json:"total_trade"`
->>>>>>> 6a197e3... add wallet stats api
+	ETHVolume          float64 `json:"eth_volume"`
+	USDVolume          float64 `json:"usd_volume"`
+	BurnFee            float64 `json:"burn_fee"`
+	TotalTrade         int64   `json:"total_trade"`
+	UniqueAddresses    int64   `json:"unique_addresses"`
+	KYCEDAddresses     int64   `json:"kyced_addresses"`
+	NewUniqueAddresses int64   `json:"new_unique_addresses"`
+	USDPerTrade        float64 `json:"usd_per_trade"`
+	ETHPerTrade        float64 `json:"eth_per_trade"`
 }
 
 // UserInfo represent trade stats of an address

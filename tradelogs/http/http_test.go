@@ -51,6 +51,10 @@ func (s *mockStorage) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo
 	return nil, nil
 }
 
+func (s *mockStorage) GetWalletStats(fromTime, toTime uint64, walletAddr string) (map[uint64]common.WalletStats, error) {
+	return nil, nil
+}
+
 func newTestServer() (*Server, error) {
 	logger, err := zap.NewDevelopment()
 	if err != nil {

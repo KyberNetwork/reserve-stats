@@ -51,6 +51,10 @@ func (s *mockStorage) GetTradeSummary(fromTime, toTime time.Time) (map[uint64]*c
 }
 
 func (s *mockStorage) GetUserVolume(userAddr ethereum.Address, fromTime, toTime time.Time, freq string) (map[uint64]common.UserVolume, error) {
+	return nil. nil
+}
+	
+func (s *mockStorage) GetWalletStats(fromTime, toTime uint64, walletAddr string) (map[uint64]common.WalletStats, error) {
 	return nil, nil
 }
 

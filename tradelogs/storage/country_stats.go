@@ -20,11 +20,13 @@ func (is *InfluxStorage) GetCountryStats(countryCode string, from, to uint64) (m
 		timeFilter    = fmt.Sprintf("(time >=%d%s AND time <= %d%s)", from, timePrecision, to, timePrecision)
 		countryFilter = fmt.Sprintf("(country='%s')", countryCode)
 	)
-	if countryCode == common.UnknownCountry {
-		countryCode = ""
-	}
 
-	cmd := fmt.Sprintf("SELECT time,eth_per_trade,total_eth_volume,total_trade,total_usd_amount,usd_per_trade,unique_addresses FROM country_stats WHERE %s AND %s", timeFilter, countryFilter)
+	cmd := fmt.Sprintf(`
+	SELECT eth_per_trade,
+	total_eth_volume,total_trade,total_usd_amount,
+	usd_per_trade,unique_addresses 
+	FROM country_stats WHERE %s AND %s`, timeFilter, countryFilter)
+
 	logger.Debugw("get country stats", "query", cmd)
 
 	response, err := is.queryDB(is.influxClient, cmd)
@@ -33,8 +35,9 @@ func (is *InfluxStorage) GetCountryStats(countryCode string, from, to uint64) (m
 	}
 
 	logger.Debugw("got result for country stats query", "response", response)
+	result := map[uint64]*common.CountryStats{}
 	if len(response) == 0 || len(response[0].Series) == 0 {
-		return nil, nil
+		return result, nil
 	}
 	return convertQueryResultToCountry(response[0].Series[0])
 }

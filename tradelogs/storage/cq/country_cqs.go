@@ -14,7 +14,8 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT COUNT(record) AS unique_addresses INTO country_stats FROM (SELECT COUNT(eth_amount) AS record FROM trades GROUP BY user_addr) GROUP BY country",
+		"SELECT COUNT(record) AS unique_addresses INTO country_stats FROM "+
+			"(SELECT COUNT(eth_amount) AS record FROM trades GROUP BY user_addr) GROUP BY country",
 		"1d",
 		nil,
 	)

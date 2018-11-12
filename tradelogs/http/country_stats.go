@@ -5,12 +5,12 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/gin-gonic/gin"
 )
 
 type countryStatsQuery struct {
-	FromTime    uint64 `form:"from" binding:"required"`
-	ToTime      uint64 `form:"to" binding:"required"`
+	httputil.TimeRangeQuery
 	CountryCode string `form:"country" binding:"required,isValidCountryCode"`
 }
 
@@ -26,7 +26,17 @@ func (ha *Server) getCountryStats(c *gin.Context) {
 		return
 	}
 
-	countryStats, err := ha.storage.GetCountryStats(query.CountryCode, query.FromTime, query.ToTime)
+	_, _, err := query.Validate()
+	if err != nil {
+		httputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
+	countryCode := query.CountryCode
+	if countryCode == common.UnknownCountry {
+		countryCode = ""
+	}
+
+	countryStats, err := ha.storage.GetCountryStats(countryCode, query.From, query.To)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,

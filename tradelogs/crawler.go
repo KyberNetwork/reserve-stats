@@ -29,6 +29,8 @@ const (
 	tradeEvent = "0x1849bd6a030a1bca28b83437fd3de96f3d27a5d172fa7e9c78e7b61468928a39"
 	// etherReceivalEvent is the topic of event EtherReceival(address indexed sender, uint amount).
 	etherReceivalEvent = "0x75f33ed68675112c77094e7c5b073890598be1d23e27cd7f6907b4a7d98ac619"
+
+	kyberSwapAppName = "KyberSwap"
 )
 
 // NewCrawler create a new Crawler instance.
@@ -151,6 +153,9 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) ([]common.Trade
 				Index:          log.Index,
 			}
 			tradeLog.WalletFees = append(tradeLog.WalletFees, walletFee)
+			if walletAddr.Big().Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(128), nil)) == -1 {
+				tradeLog.IntegrationApp = kyberSwapAppName
+			}
 		case burnFeeEvent:
 			reserveAddr, fee, err := logDataToBurnFeeParams(log.Data)
 			if err != nil {
@@ -206,6 +211,10 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) ([]common.Trade
 
 // GetTradeLogs returns trade logs from KyberNetwork.
 func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
+	var (
+		result []common.TradeLog
+	)
+
 	topics := [][]ethereum.Hash{
 		{
 			ethereum.HexToHash(tradeEvent),
@@ -230,7 +239,7 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 		return nil, err
 	}
 
-	result, err := crawler.assembleTradeLogs(logs)
+	result, err = crawler.assembleTradeLogs(logs)
 	if err != nil {
 		return nil, err
 	}
@@ -246,6 +255,10 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 		}
 		result[i].IP = ip
 		result[i].Country = country
+
+		if result[i].IP != "" {
+			result[i].IntegrationApp = kyberSwapAppName
+		}
 
 		rate, err := crawler.rateProvider.USDRate(tradeLog.Timestamp)
 		if err != nil {

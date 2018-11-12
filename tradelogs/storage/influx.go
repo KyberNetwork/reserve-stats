@@ -239,10 +239,10 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		"src_addr": log.SrcAddress.String(),
 		"dst_addr": log.DestAddress.String(),
 
-		"wallet_addr": walletAddr.String(),
-
-		"country": log.Country,
-		"ip":      log.IP,
+		"wallet_addr":     walletAddr.String(),
+		"country":         log.Country,
+		"ip":              log.IP,
+		"integration_app": log.IntegrationApp,
 
 		"eth_rate_provider": log.ETHUSDProvider,
 

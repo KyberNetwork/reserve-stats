@@ -40,8 +40,9 @@ type TradeLog struct {
 	DestAmount  *big.Int         `json:"dst_amount"`
 	FiatAmount  float64          `json:"fiat_amount"`
 
-	BurnFees   []BurnFee   `json:"burn_fees"`
-	WalletFees []WalletFee `json:"wallet_fees"`
+	BurnFees       []BurnFee   `json:"burn_fees"`
+	WalletFees     []WalletFee `json:"wallet_fees"`
+	IntegrationApp string      `json:"integration_app"`
 
 	IP      string `json:"ip"`
 	Country string `json:"country"`

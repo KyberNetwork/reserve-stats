@@ -86,6 +86,28 @@ func modifyINTOclause(query string, suffix string) string {
 	return strings.TrimSuffix(s, " ")
 }
 
+// hasGroupBy decide if the query has a GROUP BY from the main select
+// the logic is to count the number of complete bracket from the last GROUP BY
+func hasGroupBy(query string) bool {
+	idx := strings.LastIndex(query, "GROUP BY")
+	if idx < 0 {
+		return false
+	}
+	totalBracket := 0
+	for i := idx; i < len(query); i++ {
+		if query[i] == ')' {
+			totalBracket--
+		}
+		if query[i] == '(' {
+			totalBracket++
+		}
+	}
+	if totalBracket == 0 {
+		return true
+	}
+	return false
+}
+
 func (cq *ContinuousQuery) prepareQueries(isCQ bool) ([]string, error) {
 	var queries []string
 
@@ -104,7 +126,6 @@ func (cq *ContinuousQuery) prepareQueries(isCQ bool) ([]string, error) {
 		actualName := cq.Name
 		actualQuery := cq.Query
 		if offsetInterval != "" {
-			// return nil, fmt.Errorf("fuck this shis |%s|", offsetInterval)
 			actualName = actualName + "_" + offsetInterval
 			actualQuery = modifyINTOclause(cq.Query, offsetInterval)
 		}
@@ -119,7 +140,7 @@ func (cq *ContinuousQuery) prepareQueries(isCQ bool) ([]string, error) {
 			ContinuousQuery: cq,
 			ActualName:      actualName,
 			ActualQuery:     actualQuery,
-			GroupByQuery:    strings.Contains(cq.Query, "GROUP BY"),
+			GroupByQuery:    hasGroupBy(cq.Query),
 			IsCQ:            isCQ,
 			OffsetInterval:  offsetInterval,
 		})

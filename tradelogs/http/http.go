@@ -19,10 +19,11 @@ const (
 
 // Server serve trade logs through http endpoint
 type Server struct {
-	storage     storage.Interface
-	host        string
-	sugar       *zap.SugaredLogger
-	coreSetting core.Interface
+	storage      storage.Interface
+	host         string
+	sugar        *zap.SugaredLogger
+	coreSetting  core.Interface
+	userPostgres *storage.UserPostgresStorage
 }
 
 type burnFeeQuery struct {
@@ -120,6 +121,7 @@ func (sv *Server) setupRouter() *gin.Engine {
 	r.GET("/asset-volume", sv.getAssetVolume)
 	r.GET("/reserve-volume", sv.getReserveVolume)
 	r.GET("/wallet-fee", sv.getWalletFee)
+	r.GET("/trade-summary", sv.getTradeSummary)
 	return r
 }
 
@@ -130,6 +132,13 @@ func (sv *Server) Start() error {
 }
 
 // NewServer returns an instance of HttpApi to serve trade logs
-func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett core.Interface) *Server {
-	return &Server{storage: storage, host: host, sugar: sugar, coreSetting: sett}
+func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett core.Interface,
+	userPostgres *storage.UserPostgresStorage) *Server {
+	return &Server{
+		storage:      storage,
+		host:         host,
+		sugar:        sugar,
+		coreSetting:  sett,
+		userPostgres: userPostgres,
+	}
 }

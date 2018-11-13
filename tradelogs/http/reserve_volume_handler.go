@@ -25,7 +25,7 @@ func (sv *Server) getReserveVolume(c *gin.Context) {
 		return
 	}
 
-	_, _, err := query.Validate()
+	from, to, err := query.Validate()
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
@@ -37,7 +37,8 @@ func (sv *Server) getReserveVolume(c *gin.Context) {
 		return
 	}
 
-	result, err := sv.storage.GetReserveVolume(ethereum.HexToAddress(query.Reserve), token, query.From, query.To, query.Freq)
+	result, err := sv.storage.GetReserveVolume(ethereum.HexToAddress(query.Reserve), token,
+		from, to, query.Freq)
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return

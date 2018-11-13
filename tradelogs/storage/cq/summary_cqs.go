@@ -6,9 +6,8 @@ import (
 
 // CreateSummaryCqs return a set of cqs required for trade Summary aggregation
 func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
-	var (
-		result []*libcq.ContinuousQuery
-	)
+	var result []*libcq.ContinuousQuery
+
 	uniqueAddrCqs, err := libcq.NewContinuousQuery(
 		"unique_addr",
 		dbName,
@@ -22,6 +21,7 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		return nil, err
 	}
 	result = append(result, uniqueAddrCqs)
+
 	volCqs, err := libcq.NewContinuousQuery(
 		"summary_volume",
 		dbName,
@@ -35,6 +35,20 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		return nil, err
 	}
 	result = append(result, volCqs)
+
+	totalBurnFeeCqs, err := libcq.NewContinuousQuery(
+		"summary_total_burn_fee",
+		dbName,
+		dayResampleInterval,
+		dayResampleFor,
+		"SELECT SUM(amount) AS total_burn_fee INTO burn_fee_summary FROM burn_fees",
+		"1d",
+		[]string{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, totalBurnFeeCqs)
 
 	newUnqAddressCq, err := libcq.NewContinuousQuery(
 		"new_unique_addr",

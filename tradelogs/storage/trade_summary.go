@@ -20,25 +20,83 @@ func (is *InfluxStorage) GetTradeSummary(from, to time.Time) (map[uint64]*common
 			"to", to,
 		)
 		timeFilter = fmt.Sprintf("(time >='%s' AND time <= '%s')",
-			from.Format(time.RFC3339),
-			to.Format(time.RFC3339))
-	)
-	cmd := fmt.Sprintf("SELECT time,eth_per_trade,total_eth_volume,total_trade,total_usd_amount,usd_per_trade,unique_addresses,new_unique_addresses FROM trade_summary WHERE %s", timeFilter)
-	logger.Debugw("get trade summary", "query", cmd)
+			from.UTC().Format(time.RFC3339),
+			to.UTC().Format(time.RFC3339))
 
-	response, err := is.queryDB(is.influxClient, cmd)
+		results = make(map[uint64]*common.TradeSummary)
+	)
+	tradeLogQuery := fmt.Sprintf("SELECT time,eth_per_trade,total_eth_volume,total_trade,total_usd_amount,usd_per_trade,unique_addresses,new_unique_addresses FROM trade_summary WHERE %s", timeFilter)
+	logger.Debugw("getting trade summary", "query", tradeLogQuery)
+
+	response, err := is.queryDB(is.influxClient, tradeLogQuery)
 	if err != nil {
 		return nil, err
 	}
 
 	logger.Debugw("got result for trade summary query", "response", response)
-
 	if len(response) == 0 || len(response[0].Series) == 0 {
 		result := make(map[uint64]*common.TradeSummary)
 		return result, nil
 	}
+
 	logger.Debugw("Number of records returned", "nRecord", len(response[0].Series[0].Values))
-	return convertQueryResultToSummary(response[0].Series[0])
+	if results, err = convertQueryResultToSummary(response[0].Series[0]); err != nil {
+		return nil, err
+	}
+
+	burnFeeQuery := fmt.Sprintf("SELECT total_burn_fee FROM burn_fee_summary WHERE %s ", timeFilter)
+	logger.Debugw("getting total burn fee", "query", burnFeeQuery)
+
+	if response, err = is.queryDB(is.influxClient, burnFeeQuery); err != nil {
+		return nil, err
+	}
+
+	logger.Debugw("got result for total burn fee query", "response", response)
+	if len(response) == 0 || len(response[0].Series) == 0 {
+		result := make(map[uint64]*common.TradeSummary)
+		return result, nil
+	}
+
+	for _, val := range response[0].Series[0].Values {
+		ts, totalBurnFee, fErr := convertQueryValueToTotalBurnFee(val)
+		if fErr != nil {
+			return nil, fErr
+		}
+
+		summary, ok := results[ts]
+		if !ok {
+			logger.Warnw("no summary result found", "ts", ts)
+			break
+		}
+
+		logger.Debugw("insert total burn fee for trade summary", "ts", ts)
+		summary.TotalBurnFee = totalBurnFee
+		results[ts] = summary
+	}
+
+	return results, nil
+}
+
+func convertQueryValueToTotalBurnFee(val []interface{}) (uint64, float64, error) {
+	if len(val) != 2 {
+		return 0, 0, fmt.Errorf("wrong number of val in total burn fee result: %d", len(val))
+	}
+	timestampString, ok := val[0].(string)
+	if !ok {
+		return 0, 0, errCantConvert
+	}
+
+	ts, err := time.Parse(time.RFC3339, timestampString)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	totalBurnFee, err := influxdb.GetFloat64FromInterface(val[1])
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return timeutil.TimeToTimestampMs(ts), totalBurnFee, nil
 }
 
 func convertQueryResultToSummary(row influxModel.Row) (map[uint64]*common.TradeSummary, error) {

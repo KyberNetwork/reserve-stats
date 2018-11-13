@@ -44,7 +44,7 @@ func (ha *Server) getWalletFee(c *gin.Context) {
 		ha.sugar.Errorw("reserve addr", query.ReserveAddr, "Wallet addr", query.WalletAddr,
 			"from time", fromTime, "to time", toTime, "frequency", query.Freq)
 		httputil.ResponseFailure(
-			c, 
+			c,
 			http.StatusInternalServerError,
 			err,
 		)

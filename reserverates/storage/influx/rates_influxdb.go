@@ -5,7 +5,8 @@ import (
 	"errors"
 	"strconv"
 	"text/template"
-	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -14,7 +15,6 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	influxClient "github.com/influxdata/influxdb/client/v2"
 	influxModel "github.com/influxdata/influxdb/models"
-	"go.uber.org/zap"
 )
 
 const (
@@ -102,8 +102,8 @@ func (rs *RateStorage) UpdateRatesRecords(rateRecords map[string]common.ReserveR
 }
 
 // GetRatesByTimePoint returns all the rate record in a period of time of a reserve
-func (rs *RateStorage) GetRatesByTimePoint(addrs []ethereum.Address, fromTime, toTime time.Time) (map[string]map[uint64]common.ReserveRates, error) {
-	const queryTmpl = `SELECT * FROM "{{.TableName}}" WHERE {{.FromTime }} <= time AND time <= {{.ToTime}}` +
+func (rs *RateStorage) GetRatesByTimePoint(addrs []ethereum.Address, fromTime, toTime uint64) (map[string]map[uint64]common.ReserveRates, error) {
+	const queryTmpl = `SELECT * FROM "{{.TableName}}" WHERE {{.FromTime }}{{.TimePrecision}} <= time AND time <= {{.ToTime}}{{.TimePrecision}} ` +
 		`{{if len .Addrs}}AND ({{range $index, $element := .Addrs}}"reserve" = '{{$element}}'{{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
 	var (
 		logger = rs.sugar.With("reserves", len(addrs),
@@ -125,14 +125,16 @@ func (rs *RateStorage) GetRatesByTimePoint(addrs []ethereum.Address, fromTime, t
 	}
 	if err = tmpl.Execute(&queryStmtBuf, struct {
 		TableName      string
-		FromTime       string
-		ToTime         string
+		FromTime       uint64
+		ToTime         uint64
+		TimePrecision  string
 		Addrs          []string
 		AddrsLastIndex int
 	}{
 		TableName:      RateTableName,
-		FromTime:       fromTime.UTC().Format(time.RFC3339),
-		ToTime:         toTime.UTC().Format(time.RFC3339),
+		FromTime:       fromTime,
+		ToTime:         toTime,
+		TimePrecision:  timePrecision,
 		Addrs:          addrsStrs,
 		AddrsLastIndex: len(addrs) - 1,
 	}); err != nil {

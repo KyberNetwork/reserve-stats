@@ -4,6 +4,8 @@ Price analytic component is for analytic module to update their action of settin
 
 ## Update price analytic data
 
+<aside class="notice">Signing required</aside>
+
 ```shell
 curl -X POST "http://gateway.local/price-analytics-data" \
 -H 'Content-Type: application/json' \
@@ -50,6 +52,8 @@ on error:
 
 
 ## Get price analytic data
+
+<aside class="notice">Signing required</aside>
 
 ```shell
 curl -X GET "http://gateway.local/price-analytic-data?from=1522753160000&to=1522755792000"

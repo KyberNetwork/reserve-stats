@@ -15,6 +15,7 @@ includes:
   - tradelogs/reserve_volume
   - tradelogs/wallet_fee
   - users/users
+  - users/user_list
   - price-analytics-data/price_analytics_data
   - errors
 

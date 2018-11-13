@@ -4,6 +4,8 @@ User component provide service for user dashboard can update user kyced addresse
 
 ## Update user address
 
+<aside class="notice">Signing required</aside>
+
 ```shell
 curl -X POST "http://gateway.local/users"
 -H 'Content-Type: application/json'

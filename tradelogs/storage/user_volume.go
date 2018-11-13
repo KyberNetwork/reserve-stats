@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -29,10 +30,13 @@ func (is *InfluxStorage) GetUserVolume(userAddress ethereum.Address, from, to ui
 		measurement = "user_volume_hour"
 	}
 
+	fromTime := timeutil.TimestampMsToTime(from)
+	toTime := timeutil.TimestampMsToTime(to)
+
 	q := fmt.Sprintf(`
 		SELECT eth_volume, usd_volume from "%s"
-		WHERE user_addr = '%s' AND time >= %d%s AND time <= %d%s
-	`, measurement, userAddr, from, timePrecision, to, timePrecision)
+		WHERE user_addr = '%s' AND time >= '%s' AND time <= '%s'
+	`, measurement, userAddr, fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
 
 	logger.Debug(q)
 

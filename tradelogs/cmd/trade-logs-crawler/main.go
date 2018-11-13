@@ -128,6 +128,11 @@ func manageCQFromContext(c *cli.Context, influxClient client.Client, sugar *zap.
 		return err
 	}
 	cqs = append(cqs, reserveVolumeCqs...)
+	userVolumeCqs, err := tradelogcq.CreateUserVolumeCqs(common.DatabaseName)
+	if err != nil {
+		return err
+	}
+	cqs = append(cqs, userVolumeCqs...)
 	burnFeeCqs, err := tradelogcq.CreateBurnFeeCqs(common.DatabaseName)
 	if err != nil {
 		return err

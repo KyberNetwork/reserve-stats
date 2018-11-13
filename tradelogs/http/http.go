@@ -122,6 +122,7 @@ func (sv *Server) setupRouter() *gin.Engine {
 	r.GET("/reserve-volume", sv.getReserveVolume)
 	r.GET("/wallet-fee", sv.getWalletFee)
 	r.GET("/trade-summary", sv.getTradeSummary)
+	r.GET("/user-volume", sv.getUserVolume)
 	return r
 }
 

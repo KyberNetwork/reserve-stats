@@ -47,6 +47,10 @@ func (s *mockStorage) GetUserVolume(userAddr ethereum.Address, fromTime, toTime 
 	return nil, nil
 }
 
+func (s *mockStorage) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo, error) {
+	return nil, nil
+}
+
 func newTestServer() (*Server, error) {
 	logger, err := zap.NewDevelopment()
 	if err != nil {

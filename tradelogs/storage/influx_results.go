@@ -58,6 +58,22 @@ func (is *InfluxStorage) rowToAggregatedUserVolume(row []interface{}) (time.Time
 	return ts, ethAmount, usdAmount, err
 }
 
+func (is *InfluxStorage) rowToUserInfo(row []interface{}) (float64, float64, error) {
+	var (
+		ethAmount, usdAmount float64
+		err                  error
+	)
+	ethAmount, err = influxdb.GetFloat64FromInterface(row[1])
+	if err != nil {
+		return ethAmount, usdAmount, err
+	}
+	usdAmount, err = influxdb.GetFloat64FromInterface(row[2])
+	if err != nil {
+		return ethAmount, usdAmount, err
+	}
+	return ethAmount, usdAmount, nil
+}
+
 //this function can also work for burnFee and walletFee
 func (is *InfluxStorage) rowToAggregatedFee(row []interface{}) (time.Time, float64, error) {
 	var (

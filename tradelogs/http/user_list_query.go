@@ -23,12 +23,12 @@ func (sv *Server) getUserList(c *gin.Context) {
 		)
 		return
 	}
-	_, _, err := query.Validate()
+	fromTime, toTime, err := query.Validate()
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
-	userList, err := sv.storage.GetUserList(query.From, query.To)
+	userList, err := sv.storage.GetUserList(fromTime, toTime)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,

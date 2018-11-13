@@ -12,14 +12,16 @@ import (
 )
 
 // GetTradeSummary return an incompleted tradeSummary for the specified time periods
-func (is *InfluxStorage) GetTradeSummary(from, to uint64) (map[uint64]*common.TradeSummary, error) {
+func (is *InfluxStorage) GetTradeSummary(from, to time.Time) (map[uint64]*common.TradeSummary, error) {
 	var (
 		logger = is.sugar.With(
 			"func", "tradelogs/storage/InfluxStorage.GetTradeSummary",
 			"from", from,
 			"to", to,
 		)
-		timeFilter = fmt.Sprintf("(time >=%d%s AND time <= %d%s)", from, timePrecision, to, timePrecision)
+		timeFilter = fmt.Sprintf("(time >='%s' AND time <= '%s')",
+			from.Format(time.RFC3339),
+			to.Format(time.RFC3339))
 	)
 	cmd := fmt.Sprintf("SELECT time,eth_per_trade,total_eth_volume,total_trade,total_usd_amount,usd_per_trade,unique_addresses,new_unique_addresses FROM trade_summary WHERE %s", timeFilter)
 	logger.Debugw("get trade summary", "query", cmd)

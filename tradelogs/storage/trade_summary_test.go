@@ -5,16 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func aggregateTradeSummary(is *InfluxStorage) error {
-	const (
-		endpoint = "http://127.0.0.1:8086/"
-	)
 	cqs, err := tradelogcq.CreateSummaryCqs(is.dbName)
 	if err != nil {
 		return err
@@ -32,10 +29,14 @@ func TestTradeSummary(t *testing.T) {
 	const (
 		dbName = "test_trade_summary"
 		// These params are expected to be change when export.dat changes.
-		fromTime  = 1539216000000
-		toTime    = 1539254666000
+
 		ethAmount = 17.390905490542348
 		timeStamp = "2018-10-11T00:00:00Z"
+	)
+
+	var (
+		fromTime = timeutil.TimestampMsToTime(1539216000000)
+		toTime   = timeutil.TimestampMsToTime(1539254666000)
 	)
 
 	is, err := newTestInfluxStorage(dbName)
@@ -44,11 +45,12 @@ func TestTradeSummary(t *testing.T) {
 	defer func() {
 		assert.NoError(t, is.tearDown())
 	}()
+
 	assert.NoError(t, loadTestData(dbName))
 	assert.NoError(t, manualFirstTradeSummary(is))
 	assert.NoError(t, aggregateTradeSummary(is))
 	summary, err := is.GetTradeSummary(fromTime, toTime)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	timeUnix, err := time.Parse(time.RFC3339, timeStamp)
 	assert.NoError(t, err)
@@ -59,7 +61,7 @@ func TestTradeSummary(t *testing.T) {
 	}
 
 	if result.ETHVolume != ethAmount {
-		t.Fatal(fmt.Errorf("Expect USD amount to be %.18f, got %.18f", ethAmount, result.ETHVolume))
+		t.Fatal(fmt.Errorf("expect USD amount to be %.18f, got %.18f", ethAmount, result.ETHVolume))
 	}
 }
 

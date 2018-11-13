@@ -19,5 +19,5 @@ type Interface interface {
 	GetReserveVolume(rsvAddr ethereum.Address, token core.Token, fromTime, toTime uint64, frequency string) (map[uint64]*common.VolumeStats, error)
 	GetAggregatedWalletFee(reserveAddr, walletAddr, freq string,
 		fromTime, toTime time.Time, timezone int64) (map[uint64]float64, error)
-	GetTradeSummary(from, to uint64) (map[uint64]*common.TradeSummary, error)
+	GetTradeSummary(from, to time.Time) (map[uint64]*common.TradeSummary, error)
 }

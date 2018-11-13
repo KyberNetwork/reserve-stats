@@ -24,7 +24,7 @@ func (sv *Server) getTradeSummary(c *gin.Context) {
 		return
 	}
 
-	_, _, err := query.Validate()
+	fromTime, toTime, err := query.Validate()
 	if err != nil {
 		c.JSON(
 			http.StatusBadRequest,
@@ -33,7 +33,7 @@ func (sv *Server) getTradeSummary(c *gin.Context) {
 		return
 	}
 
-	tradeSummary, err := sv.storage.GetTradeSummary(query.From, query.To)
+	tradeSummary, err := sv.storage.GetTradeSummary(fromTime, toTime)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,

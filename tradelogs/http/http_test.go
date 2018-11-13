@@ -39,13 +39,14 @@ func (s *mockStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq strin
 	return nil, nil
 }
 
-func (s *mockStorage) GetUserVolume(userAddr ethereum.Address, fromTime, toTime uint64, freq string) (map[uint64]common.UserVolume, error) {
+func (s *mockStorage) GetTradeSummary(from, to time.Time) (map[uint64]*common.TradeSummary, error) {
 	return nil, nil
 }
 
 func (s *mockStorage) GetUserVolume(userAddr ethereum.Address, fromTime, toTime time.Time, freq string) (map[uint64]common.UserVolume, error) {
 	return nil, nil
 }
+
 func newTestServer() (*Server, error) {
 	logger, err := zap.NewDevelopment()
 	if err != nil {

@@ -20,3 +20,12 @@ type PriceAnalyticData struct {
 	TriggerUpdate   bool    `json:"trigger_update" binding:"true" db:"trigger_update"`
 	PriceAnalyticID int     `json:"-" db:"price_analytic_id"`
 }
+
+//OldPriceAnalyticFormat represent old object of price analytic
+type OldPriceAnalyticFormat struct {
+	Timestamp uint64 `json:"timestamp"`
+	Value     struct {
+		BlockExpiration      bool                `json:"block_expiration"`
+		TriggeringTokensList []PriceAnalyticData `json:"triggering_tokens_list"`
+	} `json:"value"`
+}

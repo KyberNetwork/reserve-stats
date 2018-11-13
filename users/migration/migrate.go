@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/boltutil"

@@ -13,6 +13,7 @@ includes:
   - tradelogs/asset_volume
   - tradelogs/reserve_volume
   - tradelogs/wallet_fee
+  - tradelogs/wallet_stats
   - users/users
   - users/user_list
   - users/user_volume

@@ -13,6 +13,7 @@ import (
 type BurnFee struct {
 	ReserveAddress ethereum.Address `json:"reserve_addr"`
 	Amount         *big.Int         `json:"amount"`
+	Index          uint
 }
 
 // WalletFee represent feeToWallet event on KyberNetwork
@@ -20,6 +21,7 @@ type WalletFee struct {
 	ReserveAddress ethereum.Address `json:"reserve_addr"`
 	WalletAddress  ethereum.Address `json:"wallet_addr"`
 	Amount         *big.Int         `json:"amount"`
+	Index          uint
 }
 
 // TradeLog represent trade event on KyberNetwork
@@ -46,6 +48,8 @@ type TradeLog struct {
 
 	ETHUSDRate     float64 `json:"-"`
 	ETHUSDProvider string  `json:"-"`
+
+	Index uint
 }
 
 // MarshalJSON implements custom JSON marshaler for TradeLog to format timestamp in unix millis instead of RFC3339.

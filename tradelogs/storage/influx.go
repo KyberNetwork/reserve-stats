@@ -216,6 +216,8 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		"ip":      log.IP,
 
 		"eth_rate_provider": log.ETHUSDProvider,
+
+		"log_index": strconv.FormatUint(uint64(log.Index), 10),
 	}
 
 	logger := is.sugar.With(
@@ -289,11 +291,11 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	points = append(points, tradePoint)
 
 	// build burnFeePoint
-	for idx, burn := range log.BurnFees {
+	for _, burn := range log.BurnFees {
 		tags := map[string]string{
 			"tx_hash":      log.TransactionHash.String(),
 			"reserve_addr": burn.ReserveAddress.String(),
-			"ordinal":      strconv.Itoa(idx), // prevent overwrite by other event belong to same trade log
+			"log_index":    strconv.FormatUint(uint64(burn.Index), 10),
 		}
 
 		burnAmount, err := is.coreClient.FromWei(blockchain.KNCAddr, burn.Amount)
@@ -314,12 +316,12 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	}
 
 	// build walletFeePoint
-	for idx, walletFee := range log.WalletFees {
+	for _, walletFee := range log.WalletFees {
 		tags := map[string]string{
 			"tx_hash":      log.TransactionHash.String(),
 			"reserve_addr": walletFee.ReserveAddress.String(),
 			"wallet_addr":  walletFee.WalletAddress.String(),
-			"ordinal":      strconv.Itoa(idx), // prevent overwrite by other event belong to same trade log
+			"log_index":    strconv.FormatUint(uint64(walletFee.Index), 10),
 		}
 
 		amount, err := is.coreClient.FromWei(blockchain.KNCAddr, walletFee.Amount)

@@ -20,13 +20,13 @@ func (sv *Server) getUserVolume(c *gin.Context) {
 		return
 	}
 
-	_, _, err := query.Validate()
+	fromTime, toTime, err := query.Validate()
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
 
-	volume, err := sv.storage.GetUserVolume(ethereum.HexToAddress(query.UserAddress), query.From, query.To, query.Freq)
+	volume, err := sv.storage.GetUserVolume(ethereum.HexToAddress(query.UserAddress), fromTime, toTime, query.Freq)
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return

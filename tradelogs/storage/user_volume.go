@@ -12,7 +12,7 @@ import (
 )
 
 //GetUserVolume return volume of an address from time to time by a frequency
-func (is *InfluxStorage) GetUserVolume(userAddress ethereum.Address, from, to uint64, freq string) (map[uint64]common.UserVolume, error) {
+func (is *InfluxStorage) GetUserVolume(userAddress ethereum.Address, from, to time.Time, freq string) (map[uint64]common.UserVolume, error) {
 	var (
 		userAddr    = userAddress.Hex()
 		measurement string
@@ -30,13 +30,10 @@ func (is *InfluxStorage) GetUserVolume(userAddress ethereum.Address, from, to ui
 		measurement = "user_volume_hour"
 	}
 
-	fromTime := timeutil.TimestampMsToTime(from)
-	toTime := timeutil.TimestampMsToTime(to)
-
 	q := fmt.Sprintf(`
 		SELECT eth_volume, usd_volume from "%s"
 		WHERE user_addr = '%s' AND time >= '%s' AND time <= '%s'
-	`, measurement, userAddr, fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
+	`, measurement, userAddr, from.UTC().Format(time.RFC3339), to.UTC().Format(time.RFC3339))
 
 	logger.Debug(q)
 

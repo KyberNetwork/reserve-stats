@@ -6,6 +6,7 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/influxdata/influxdb/models"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
@@ -54,116 +55,155 @@ func (is *InfluxStorage) rowToAggregatedFee(row []interface{}) (time.Time, float
 	return ts, fee, nil
 }
 
-// rowToBurnFee converts the result of InfluxDB query to BurnFee event
+// rowToBurnFees converts the result of InfluxDB query to BurnFee event
 // The query is:
-// SELECT time, tx_hash, reserve_addr, amount FROM burn_fees WHERE_clause
-func (is *InfluxStorage) rowToBurnFee(row []interface{}) (ethereum.Hash, common.BurnFee, error) {
+// SELECT time, reserve_addr, amount, log_index FROM burn_fees WHERE_clause GROUP BY tx_hash, trade_log_index
+func (is *InfluxStorage) rowToBurnFees(row models.Row) (ethereum.Hash, uint64, []common.BurnFee, error) {
 	var (
-		burnFee common.BurnFee
-		txHash  ethereum.Hash
+		burnFees      []common.BurnFee
+		txHash        ethereum.Hash
+		tradeLogIndex uint64
 	)
 
-	txHash, err := influxdb.GetTxHashFromInterface(row[1])
+	txHash, err := influxdb.GetTxHashFromInterface(row.Tags["tx_hash"])
 	if err != nil {
-		return txHash, burnFee, err
+		return txHash, tradeLogIndex, nil, err
 	}
 
-	reserveAddr, err := influxdb.GetAddressFromInterface(row[2])
+	tradeLogIndex, err = influxdb.GetUint64FromTagValue(row.Tags["trade_log_index"])
 	if err != nil {
-		return txHash, burnFee, err
+		return txHash, tradeLogIndex, nil, err
 	}
 
-	humanizedAmount, err := influxdb.GetFloat64FromInterface(row[3])
-	if err != nil {
-		return txHash, burnFee, err
+	for _, value := range row.Values {
+		reserveAddr, err := influxdb.GetAddressFromInterface(value[1])
+		if err != nil {
+			return txHash, tradeLogIndex, nil, err
+		}
+
+		humanizedAmount, err := influxdb.GetFloat64FromInterface(value[2])
+		if err != nil {
+			return txHash, tradeLogIndex, nil, err
+		}
+
+		weiAmount, err := is.coreClient.ToWei(blockchain.KNCAddr, humanizedAmount)
+		if err != nil {
+			return txHash, tradeLogIndex, nil, err
+		}
+
+		logIndex, err := influxdb.GetUint64FromTagValue(value[3])
+		if err != nil {
+			return txHash, tradeLogIndex, nil, err
+		}
+
+		burnFee := common.BurnFee{
+			ReserveAddress: reserveAddr,
+			Amount:         weiAmount,
+			Index:          uint(logIndex),
+		}
+
+		burnFees = append(burnFees, burnFee)
 	}
 
-	weiAmount, err := is.coreClient.ToWei(blockchain.KNCAddr, humanizedAmount)
-	if err != nil {
-		return txHash, burnFee, err
-	}
-
-	burnFee = common.BurnFee{
-		ReserveAddress: reserveAddr,
-		Amount:         weiAmount,
-	}
-
-	return txHash, burnFee, nil
+	return txHash, tradeLogIndex, burnFees, nil
 }
 
-// rowToWalletFee converts the result of InfluxDB query to FeeToWallet event
+// rowToWalletFees converts the result of InfluxDB query to FeeToWallet event
 // The query is:
-// SELECT time, tx_hash, reserve_addr, wallet_addr, amount FROM wallet_fees WHERE_clause
-func (is *InfluxStorage) rowToWalletFee(row []interface{}) (ethereum.Hash, common.WalletFee, error) {
+// SELECT time, reserve_addr, wallet_addr, amount, log_index FROM wallet_fees WHERE_clause GROUP BY tx_hash, trade_log_index
+func (is *InfluxStorage) rowToWalletFees(row models.Row) (ethereum.Hash, uint64, []common.WalletFee, error) {
 	var (
-		walletFee common.WalletFee
-		txHash    ethereum.Hash
+		walletFees    []common.WalletFee
+		txHash        ethereum.Hash
+		tradeLogIndex uint64
 	)
 
-	txHash, err := influxdb.GetTxHashFromInterface(row[1])
+	txHash, err := influxdb.GetTxHashFromInterface(row.Tags["tx_hash"])
 	if err != nil {
-		return txHash, walletFee, err
+		return txHash, tradeLogIndex, nil, err
 	}
 
-	reserveAddr, err := influxdb.GetAddressFromInterface(row[2])
+	tradeLogIndex, err = influxdb.GetUint64FromTagValue(row.Tags["trade_log_index"])
 	if err != nil {
-		return txHash, walletFee, err
+		return txHash, tradeLogIndex, nil, err
 	}
 
-	walletAddr, err := influxdb.GetAddressFromInterface(row[3])
-	if err != nil {
-		return txHash, walletFee, err
+	for _, value := range row.Values {
+		reserveAddr, err := influxdb.GetAddressFromInterface(value[1])
+		if err != nil {
+			return txHash, tradeLogIndex, nil, err
+		}
+
+		walletAddr, err := influxdb.GetAddressFromInterface(value[2])
+		if err != nil {
+			return txHash, tradeLogIndex, nil, err
+		}
+
+		humanizedAmount, err := influxdb.GetFloat64FromInterface(value[3])
+		if err != nil {
+			return txHash, tradeLogIndex, nil, err
+		}
+
+		weiAmount, err := is.coreClient.ToWei(blockchain.KNCAddr, humanizedAmount)
+		if err != nil {
+			return txHash, tradeLogIndex, nil, err
+		}
+
+		logIndex, err := influxdb.GetUint64FromTagValue(value[4])
+		if err != nil {
+			return txHash, tradeLogIndex, nil, err
+		}
+
+		walletFee := common.WalletFee{
+			ReserveAddress: reserveAddr,
+			WalletAddress:  walletAddr,
+			Amount:         weiAmount,
+			Index:          uint(logIndex),
+		}
+
+		walletFees = append(walletFees, walletFee)
 	}
 
-	humanizedAmount, err := influxdb.GetFloat64FromInterface(row[4])
-	if err != nil {
-		return txHash, walletFee, err
-	}
-
-	weiAmount, err := is.coreClient.ToWei(blockchain.KNCAddr, humanizedAmount)
-	if err != nil {
-		return txHash, walletFee, err
-	}
-
-	walletFee = common.WalletFee{
-		ReserveAddress: reserveAddr,
-		WalletAddress:  walletAddr,
-		Amount:         weiAmount,
-	}
-
-	return txHash, walletFee, nil
+	return txHash, tradeLogIndex, walletFees, nil
 }
 
 // rowToTradeLog converts the result of InfluxDB query from to TradeLog event.
 // The query is:
-// SELECT time, block_number, tx_hash,
+// SELECT time, block_number,
 // eth_receival_sender, eth_receival_amount,
 // user_addr, src_addr, dst_addr, src_amount, dst_amount, (eth_amount * eth_usd_rate) as fiat_amount,
-// ip, country FROM trades WHERE_clause
-func (is *InfluxStorage) rowToTradeLog(row []interface{},
-	burnFeesByTxHash map[ethereum.Hash][]common.BurnFee,
-	walletFeesByTxHash map[ethereum.Hash][]common.WalletFee) (common.TradeLog, error) {
+// ip, country FROM trades WHERE_clause GROUP BY tx_hash, log_index
+func (is *InfluxStorage) rowToTradeLog(row models.Row,
+	burnFeesByTxHash map[ethereum.Hash]map[uint][]common.BurnFee,
+	walletFeesByTxHash map[ethereum.Hash]map[uint][]common.WalletFee) (common.TradeLog, error) {
 
 	var tradeLog common.TradeLog
 
-	timestamp, err := influxdb.GetTimeFromInterface(row[0])
-	if err != nil {
-		return tradeLog, fmt.Errorf("failed to get timestamp: %s", err)
-	}
-
-	blockNumber, err := strconv.ParseUint(row[1].(string), 10, 64)
-
-	txHash, err := influxdb.GetTxHashFromInterface(row[2])
+	txHash, err := influxdb.GetTxHashFromInterface(row.Tags["tx_hash"])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get tx_hash: %s", err)
 	}
 
-	ethReceivalAddr, err := influxdb.GetAddressFromInterface(row[3])
+	logIndex, err := influxdb.GetUint64FromTagValue(row.Tags["log_index"])
+	if err != nil {
+		return tradeLog, fmt.Errorf("failed to get trade log index: %s", err)
+	}
+
+	value := row.Values[0]
+
+	timestamp, err := influxdb.GetTimeFromInterface(value[0])
+	if err != nil {
+		return tradeLog, fmt.Errorf("failed to get timestamp: %s", err)
+	}
+
+	blockNumber, err := strconv.ParseUint(value[1].(string), 10, 64)
+
+	ethReceivalAddr, err := influxdb.GetAddressFromInterface(value[2])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get eth_receival_addr: %s", err)
 	}
 
-	humanizedEthReceival, err := influxdb.GetFloat64FromInterface(row[4])
+	humanizedEthReceival, err := influxdb.GetFloat64FromInterface(value[3])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get eth_receival_amount: %s", err)
 	}
@@ -173,17 +213,17 @@ func (is *InfluxStorage) rowToTradeLog(row []interface{},
 		return tradeLog, fmt.Errorf("failed to convert eth_receival_amount: %s", err)
 	}
 
-	userAddr, err := influxdb.GetAddressFromInterface(row[5])
+	userAddr, err := influxdb.GetAddressFromInterface(value[4])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get user_addr: %s", err)
 	}
 
-	srcAddress, err := influxdb.GetAddressFromInterface(row[6])
+	srcAddress, err := influxdb.GetAddressFromInterface(value[5])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get src_addr: %s", err)
 	}
 
-	humanizedSrcAmount, err := influxdb.GetFloat64FromInterface(row[8])
+	humanizedSrcAmount, err := influxdb.GetFloat64FromInterface(value[7])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get src_amount: %s", err)
 	}
@@ -193,12 +233,12 @@ func (is *InfluxStorage) rowToTradeLog(row []interface{},
 		return tradeLog, fmt.Errorf("failed to convert src_amount: %s", err)
 	}
 
-	dstAddress, err := influxdb.GetAddressFromInterface(row[7])
+	dstAddress, err := influxdb.GetAddressFromInterface(value[6])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get dst_addr: %s", err)
 	}
 
-	humanizedDstAmount, err := influxdb.GetFloat64FromInterface(row[9])
+	humanizedDstAmount, err := influxdb.GetFloat64FromInterface(value[8])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get dst_amount: %s", err)
 	}
@@ -208,17 +248,17 @@ func (is *InfluxStorage) rowToTradeLog(row []interface{},
 		return tradeLog, fmt.Errorf("failed to convert dst_amount: %s", err)
 	}
 
-	fiatAmount, err := influxdb.GetFloat64FromInterface(row[10])
+	fiatAmount, err := influxdb.GetFloat64FromInterface(value[9])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get fiat_amount: %s", err)
 	}
 
-	ip, ok := row[11].(string)
+	ip, ok := value[10].(string)
 	if !ok {
 		ip = ""
 	}
 
-	country, ok := row[12].(string)
+	country, ok := value[11].(string)
 	if !ok {
 		country = ""
 	}
@@ -238,11 +278,13 @@ func (is *InfluxStorage) rowToTradeLog(row []interface{},
 		DestAmount:  dstAmountInWei,
 		FiatAmount:  fiatAmount,
 
-		BurnFees:   burnFeesByTxHash[txHash],
-		WalletFees: walletFeesByTxHash[txHash],
+		BurnFees:   burnFeesByTxHash[txHash][uint(logIndex)],
+		WalletFees: walletFeesByTxHash[txHash][uint(logIndex)],
 
 		IP:      ip,
 		Country: country,
+
+		Index: uint(logIndex),
 	}
 
 	return tradeLog, nil

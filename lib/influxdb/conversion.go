@@ -52,9 +52,19 @@ func GetInt64FromInterface(value interface{}) (int64, error) {
 func GetInt64FromTagValue(value interface{}) (int64, error) {
 	number, ok := value.(string)
 	if !ok {
-		return 0, fmt.Errorf("invalid uint64 tag value %v", value)
+		return 0, fmt.Errorf("invalid int64 tag value %v", value)
 	}
 	return strconv.ParseInt(number, 10, 64)
+}
+
+// GetUint64FromTagValue converts given value to uint64
+// The original tag value should be string
+func GetUint64FromTagValue(value interface{}) (uint64, error) {
+	number, ok := value.(string)
+	if !ok {
+		return 0, fmt.Errorf("invalid uint64 tag value %v", value)
+	}
+	return strconv.ParseUint(number, 10, 64)
 }
 
 // GetTimeFromInterface converts given value to time.

@@ -8,13 +8,14 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -40,11 +41,13 @@ func (c *mockCore) ToWei(ethereum.Address, float64) (*big.Int, error) {
 	return nil, nil
 }
 
-func (s *mockStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.Token, fromTime, toTime uint64, frequency string) (map[uint64]*common.VolumeStats, error) {
+func (s *mockStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.Token, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
 	return nil, nil
 }
 
-func (s *mockStorage) GetAssetVolume(token core.Token, fromTime, toTime uint64, frequency string) (map[uint64]*common.VolumeStats, error) {
+func (s *mockStorage) GetAssetVolume(token core.Token, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
+	from := timeutil.TimeToTimestampMs(fromTime)
+	to := timeutil.TimeToTimestampMs(toTime)
 	var (
 		mockVolumeStat = common.VolumeStats{
 			ETHAmount: testETHAmount,
@@ -52,8 +55,8 @@ func (s *mockStorage) GetAssetVolume(token core.Token, fromTime, toTime uint64, 
 			Volume:    testVolAmount,
 		}
 		mockResult = map[uint64]*common.VolumeStats{
-			fromTime: &mockVolumeStat,
-			toTime:   &mockVolumeStat,
+			from: &mockVolumeStat,
+			to:   &mockVolumeStat,
 		}
 	)
 

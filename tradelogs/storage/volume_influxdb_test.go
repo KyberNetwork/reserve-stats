@@ -76,12 +76,15 @@ func TestGetAssetVolume(t *testing.T) {
 	is, err := newTestInfluxStorage(dbName)
 	assert.NoError(t, err)
 
+	from := timeutil.TimestampMsToTime(fromTime)
+	to := timeutil.TimestampMsToTime(toTime)
+
 	defer func() {
 		assert.NoError(t, is.tearDown())
 	}()
 	assert.NoError(t, loadTestData(dbName))
 	assert.NoError(t, aggregationTestData(is))
-	volume, err := is.GetAssetVolume(core.ETHToken, fromTime, toTime, freq)
+	volume, err := is.GetAssetVolume(core.ETHToken, from, to, freq)
 	assert.NoError(t, err)
 
 	t.Logf("Volume result %v", volume)
@@ -127,8 +130,10 @@ func TestGetReserveVolume(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	from := timeutil.TimestampMsToTime(fromTime)
+	to := timeutil.TimestampMsToTime(toTime)
 
-	volume, err := is.GetReserveVolume(ethereum.HexToAddress(rsvAddrStr), core.ETHToken, fromTime, toTime, freq)
+	volume, err := is.GetReserveVolume(ethereum.HexToAddress(rsvAddrStr), core.ETHToken, from, to, freq)
 	t.Logf("Volume result %v", volume)
 	if err != nil {
 		t.Fatal(err)

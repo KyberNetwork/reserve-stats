@@ -31,10 +31,7 @@ func (ha *Server) getWalletFee(c *gin.Context) {
 
 	fromTime, toTime, err := query.Validate()
 	if err != nil {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
 
@@ -46,11 +43,10 @@ func (ha *Server) getWalletFee(c *gin.Context) {
 	if err != nil {
 		ha.sugar.Errorw("reserve addr", query.ReserveAddr, "Wallet addr", query.WalletAddr,
 			"from time", fromTime, "to time", toTime, "frequency", query.Freq)
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
-			gin.H{
-				"error": err.Error(),
-			},
+			err,
 		)
 		return
 	}

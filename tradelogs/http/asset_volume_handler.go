@@ -1,9 +1,9 @@
 package http
 
 import (
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"net/http"
 
+	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/gin-gonic/gin"
@@ -26,7 +26,7 @@ func (sv *Server) getAssetVolume(c *gin.Context) {
 		return
 	}
 
-	_, _, err := query.Validate()
+	from, to, err := query.Validate()
 	if err != nil {
 		c.JSON(
 			http.StatusBadRequest,
@@ -43,7 +43,7 @@ func (sv *Server) getAssetVolume(c *gin.Context) {
 		return
 	}
 
-	result, err := sv.storage.GetAssetVolume(token, query.From, query.To, query.Freq)
+	result, err := sv.storage.GetAssetVolume(token, from, to, query.Freq)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,

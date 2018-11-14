@@ -44,11 +44,7 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 
 	fromTime, toTime, err := query.Validate()
 	if err != nil {
-		libhttputil.ResponseFailure(
-			c,
-			http.StatusBadRequest,
-			err,
-		)
+		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
 

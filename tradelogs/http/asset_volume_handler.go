@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/KyberNetwork/reserve-stats/lib/core"
-
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/gin-gonic/gin"

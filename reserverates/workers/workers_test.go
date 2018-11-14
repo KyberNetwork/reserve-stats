@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
-
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"

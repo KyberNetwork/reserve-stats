@@ -74,6 +74,7 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL,
 		r.GET("/wallet-fee", tradeLogsProxyMW)
 		r.GET("/user-volume", tradeLogsProxyMW)
 		r.GET("/user-list", auth.Authenticated(), tradeLogsProxyMW)
+		r.GET("/trade-summary", tradeLogsProxyMW)
 		// r.GET("/country-stats", tradeLogsProxyMW)
 	}
 	if reserveRatesURL != "" {

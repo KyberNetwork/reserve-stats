@@ -116,64 +116,91 @@ func logDataToBurnFeeParams(data []byte) (ethereum.Address, ethereum.Hash, error
 	return reserveAddr, burnFees, nil
 }
 
-func updateTradeLog(tradeLog *common.TradeLog, eventLog types.Log) error {
-	switch eventLog.Topics[0].Hex() {
-	case feeToWalletEvent:
-		reserveAddr, walletAddr, fee, err := logDataToFeeWalletParams(eventLog.Data)
-		if err != nil {
-			return err
+func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) ([]common.TradeLog, error) {
+	var (
+		result   []common.TradeLog
+		tradeLog common.TradeLog
+	)
+
+	for _, log := range eventLogs {
+		if log.Removed {
+			continue // Removed due to chain reorg
 		}
 
-		walletFee := common.WalletFee{
-			ReserveAddress: reserveAddr,
-			WalletAddress:  walletAddr,
-			Amount:         fee.Big(),
-			Index:          eventLog.Index,
-		}
-		tradeLog.WalletFees = append(tradeLog.WalletFees, walletFee)
-	case burnFeeEvent:
-		reserveAddr, fee, err := logDataToBurnFeeParams(eventLog.Data)
-		if err != nil {
-			return err
+		if len(log.Topics) == 0 {
+			return result, errors.New("log item has no topic")
 		}
 
-		burnFee := common.BurnFee{
-			ReserveAddress: reserveAddr,
-			Amount:         fee.Big(),
-			Index:          eventLog.Index,
-		}
-		tradeLog.BurnFees = append(tradeLog.BurnFees, burnFee)
-	case etherReceivalEvent:
-		amount, err := logDataToEtherReceivalParams(eventLog.Data)
-		if err != nil {
-			return err
-		}
+		topic := log.Topics[0]
+		switch topic.Hex() {
+		case feeToWalletEvent:
+			reserveAddr, walletAddr, fee, err := logDataToFeeWalletParams(log.Data)
+			if err != nil {
+				return nil, err
+			}
 
-		tradeLog.EtherReceivalSender = ethereum.BytesToAddress(eventLog.Topics[1].Bytes())
-		tradeLog.EtherReceivalAmount = amount.Big()
-	case tradeEvent:
-		srcAddr, destAddr, srcAmount, destAmount, err := logDataToTradeParams(eventLog.Data)
-		if err != nil {
-			return err
-		}
+			walletFee := common.WalletFee{
+				ReserveAddress: reserveAddr,
+				WalletAddress:  walletAddr,
+				Amount:         fee.Big(),
+				Index:          log.Index,
+			}
+			tradeLog.WalletFees = append(tradeLog.WalletFees, walletFee)
+		case burnFeeEvent:
+			reserveAddr, fee, err := logDataToBurnFeeParams(log.Data)
+			if err != nil {
+				return nil, err
+			}
 
-		tradeLog.SrcAddress = srcAddr
-		tradeLog.DestAddress = destAddr
-		tradeLog.SrcAmount = srcAmount.Big()
-		tradeLog.DestAmount = destAmount.Big()
-		tradeLog.UserAddress = ethereum.BytesToAddress(eventLog.Topics[1].Bytes())
-		tradeLog.Index = eventLog.Index
+			burnFee := common.BurnFee{
+				ReserveAddress: reserveAddr,
+				Amount:         fee.Big(),
+				Index:          log.Index,
+			}
+			tradeLog.BurnFees = append(tradeLog.BurnFees, burnFee)
+		case etherReceivalEvent:
+			amount, err := logDataToEtherReceivalParams(log.Data)
+			if err != nil {
+				return nil, err
+			}
+
+			tradeLog.EtherReceivalSender = ethereum.BytesToAddress(log.Topics[1].Bytes())
+			tradeLog.EtherReceivalAmount = amount.Big()
+		case tradeEvent:
+			srcAddr, destAddr, srcAmount, destAmount, err := logDataToTradeParams(log.Data)
+			if err != nil {
+				return nil, err
+			}
+
+			tradeLog.SrcAddress = srcAddr
+			tradeLog.DestAddress = destAddr
+			tradeLog.SrcAmount = srcAmount.Big()
+			tradeLog.DestAmount = destAmount.Big()
+			tradeLog.UserAddress = ethereum.BytesToAddress(log.Topics[1].Bytes())
+			tradeLog.Index = log.Index
+
+			tradeLog.BlockNumber = log.BlockNumber
+			tradeLog.TransactionHash = log.TxHash
+
+			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
+				return nil, err
+			}
+
+			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
+			result = append(result, tradeLog)
+
+			// prepare to fulfill new TradeLog from next event logs
+			tradeLog = common.TradeLog{}
+		default:
+			crawler.sugar.Info("Unknown log topic.")
+		}
 	}
 
-	return nil
+	return result, nil
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.
 func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
-	var (
-		result []common.TradeLog
-	)
-
 	// addresses := []ethereum.Address{
 	// 	ethereum.HexToAddress(pricingAddr),         // pricing
 	// 	ethereum.HexToAddress(networkAddr),         // network
@@ -206,48 +233,12 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 
 	logs, err := crawler.ethClient.FilterLogs(ctx, query)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 
-	tradeLog := common.TradeLog{}
-	for _, logItem := range logs {
-		if logItem.Removed {
-			continue // Removed due to chain reorg
-		}
-
-		ts, err := crawler.txTime.Resolve(logItem.BlockNumber)
-		if err != nil {
-			return result, err
-		}
-
-		if len(logItem.Topics) == 0 {
-			return result, errors.New("log item has no topic")
-		}
-
-		topic := logItem.Topics[0]
-		switch topic.Hex() {
-		case feeToWalletEvent, burnFeeEvent, etherReceivalEvent, tradeEvent:
-			err := updateTradeLog(&tradeLog, logItem)
-			if err != nil {
-				return result, err
-			}
-
-			// a tradeEvent indicate that all tradeLog information was fulfilled
-			// we add the tradeLog into result and prepare to fulfill an other
-			// tradeLog
-			if topic.Hex() == tradeEvent {
-				tradeLog.BlockNumber = logItem.BlockNumber
-				tradeLog.TransactionHash = logItem.TxHash
-				tradeLog.Timestamp = ts
-
-				result = append(result, tradeLog)
-
-				tradeLog = common.TradeLog{}
-			}
-
-		default:
-			crawler.sugar.Info("Unknown log topic.")
-		}
+	result, err := crawler.assembleTradeLogs(logs)
+	if err != nil {
+		return nil, err
 	}
 
 	for i, tradeLog := range result {

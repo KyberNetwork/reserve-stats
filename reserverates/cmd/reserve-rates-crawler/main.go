@@ -34,10 +34,9 @@ const (
 	defaultDelayTime = time.Minute
 )
 
-//reserverates --addresses=0xABCDEF,0xDEFGHI
 func main() {
 	app := libapp.NewApp()
-	app.Name = "reserverates"
+	app.Name = "reserve-rates-crawler"
 	app.Usage = "get the rates of all configured reserves at a certain block"
 	app.Action = run
 

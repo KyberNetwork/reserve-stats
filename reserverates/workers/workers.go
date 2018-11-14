@@ -1,18 +1,18 @@
 package workers
 
 import (
+	"sync"
+	"time"
+
 	"github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
+	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
-	"sync"
-	"time"
-
-	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
 )
 
 type job interface {
@@ -152,8 +152,8 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, rateStorage storage.Reser
 
 					pool.mutex.Lock()
 					if order == pool.lastCompletedJobOrder+1 {
-						err = pool.rateStorage.UpdateRatesRecords(rates)
-						if err == nil {
+						if err = pool.rateStorage.UpdateRatesRecords(rates); err == nil {
+							logger.Debugw("reserve rates is stored successfully", "order", order)
 							saveSuccess = true
 							pool.lastCompletedJobOrder++
 						}

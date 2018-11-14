@@ -48,7 +48,7 @@ func convertQueryResultToCountry(row influxModel.Row) (map[uint64]*common.Countr
 		return nil, nil
 	}
 	for _, v := range row.Values {
-		ts, vol, err := convertRowValueToSummary(v)
+		ts, vol, err := convertRowValueToCountrySummary(v)
 		if err != nil {
 			return nil, err
 		}
@@ -57,7 +57,7 @@ func convertQueryResultToCountry(row influxModel.Row) (map[uint64]*common.Countr
 	return result, nil
 }
 
-func convertRowValueToSummary(v []interface{}) (uint64, *common.CountryStats, error) {
+func convertRowValueToCountrySummary(v []interface{}) (uint64, *common.CountryStats, error) {
 	if len(v) != 7 {
 		return 0, nil, errors.New("value fields is invalid in len")
 	}

@@ -10,7 +10,7 @@ import (
 const (
 	defaultMaxTimeFrame = time.Hour * 24
 	defaultTimeFrame    = time.Hour
-	defaultFreq         = "h"
+	defaultFreq         = "d"
 )
 
 var (

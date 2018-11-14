@@ -3,15 +3,15 @@ package http
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -42,7 +42,7 @@ func TestCountryStatsHttp(t *testing.T) {
 		unknownCountry = "UNKNOWN"
 		validFrom      = 1539129600000
 		invalidFrom    = "xxxx"
-		validTo        = 1539302400000
+		validTo        = 1539216000000
 		// mock core only return ETH, KNC is not in the list of mock core's clients
 		invalidFromInputEndpoint = fmt.Sprintf("%s?from=%s&to=%d&country=%s", endpoint, invalidFrom, validTo, country)
 		invalidCountryEndpoint   = fmt.Sprintf("%s?from=%d&to=%d&country=%s", endpoint, validFrom, validTo, invalidCountry)
@@ -89,6 +89,7 @@ func TestCountryStatsHttp(t *testing.T) {
 func expectCorrectCountryStats(t *testing.T, resp *httptest.ResponseRecorder) {
 	assert.Equal(t, http.StatusOK, resp.Code)
 	var result map[uint64]*common.CountryStats
+	log.Printf("response body: %s", resp.Body)
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		t.Error("Could not decode result", "err", err)
 	}

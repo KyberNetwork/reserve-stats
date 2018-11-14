@@ -2,11 +2,12 @@ package storage
 
 import (
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func aggregateCountryStat(is *InfluxStorage) error {
@@ -22,7 +23,7 @@ func aggregateCountryStat(is *InfluxStorage) error {
 	}
 	return nil
 }
-func TestTradeSummary(t *testing.T) {
+func TestCountryStats(t *testing.T) {
 	const (
 		dbName = "test_country_stats"
 		// These params are expected to be change when export.dat changes.

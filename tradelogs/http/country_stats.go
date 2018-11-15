@@ -10,11 +10,11 @@ import (
 )
 
 type countryStatsQuery struct {
-	httputil.TimeRangeQuery
+	httputil.TimeRangeQueryFreq
 	CountryCode string `form:"country" binding:"required,isValidCountryCode"`
 }
 
-func (ha *Server) getCountryStats(c *gin.Context) {
+func (sv *Server) getCountryStats(c *gin.Context) {
 	var query countryStatsQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
 		c.JSON(
@@ -36,7 +36,7 @@ func (ha *Server) getCountryStats(c *gin.Context) {
 		countryCode = ""
 	}
 
-	countryStats, err := ha.storage.GetCountryStats(countryCode, query.From, query.To)
+	countryStats, err := sv.storage.GetCountryStats(countryCode, query.From, query.To)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,
@@ -45,6 +45,20 @@ func (ha *Server) getCountryStats(c *gin.Context) {
 		)
 		return
 	}
+	// update kyced addresses
+	for ts, stat := range countryStats {
+		kycedAddresses, err := sv.userPostgres.CountKYCEDAddresses(ts)
+		if err != nil {
+			httputil.ResponseFailure(
+				c,
+				http.StatusInternalServerError,
+				err,
+			)
+			return
+		}
+		stat.KYCEDAddresses = kycedAddresses
+	}
+
 	c.JSON(
 		http.StatusOK,
 		countryStats,

@@ -8,7 +8,7 @@ import (
 )
 
 type userListQuery struct {
-	httputil.TimeRangeQuery
+	httputil.TimeRangeQueryFreq
 }
 
 func (sv *Server) getUserList(c *gin.Context) {

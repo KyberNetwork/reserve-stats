@@ -24,7 +24,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, uniqueAddrCqs)
 	volCqs, err := libcq.NewContinuousQuery(
-		"summary_volume",
+		"summary_countr_volume",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
@@ -40,5 +40,52 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		return nil, err
 	}
 	result = append(result, volCqs)
+	newUnqAddressCq, err := libcq.NewContinuousQuery(
+		"new_country_unique_addr",
+		dbName,
+		dayResampleInterval,
+		dayResampleFor,
+		"SELECT COUNT(traded) as new_unique_addresses INTO country_stats FROM first_trades GROUP BY country",
+		"1d",
+		[]string{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, newUnqAddressCq)
+
+	assetVolDstDayCqs, err := libcq.NewContinuousQuery(
+		"asset_country_volume_dst_day",
+		dbName,
+		dayResampleInterval,
+		dayResampleFor,
+		"SELECT SUM(dst_amount) AS token_volume, SUM(eth_amount) AS eth_volume, SUM(usd_amount) AS usd_volume INTO volume_country_stats FROM "+
+			"(SELECT dst_amount, eth_amount, eth_amount*eth_usd_rate AS usd_amount FROM trades WHERE "+
+			"((src_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND dst_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2') OR "+
+			"(src_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND dst_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'))) GROUP BY dst_addr, country",
+		"1d",
+		[]string{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, assetVolDstDayCqs)
+
+	assetVolSrcDayCqs, err := libcq.NewContinuousQuery(
+		"asset_country_volume_src_day",
+		dbName,
+		dayResampleInterval,
+		dayResampleFor,
+		"SELECT SUM(src_amount) AS token_volume, SUM(eth_amount) AS eth_volume, SUM(usd_amount) AS usd_volume INTO volume_country_stats FROM "+
+			"(SELECT src_amount, eth_amount, eth_amount*eth_usd_rate AS usd_amount FROM trades WHERE "+
+			"((src_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND dst_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2') OR "+
+			"(src_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND dst_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'))) GROUP BY src_addr, country",
+		"1d",
+		[]string{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, assetVolSrcDayCqs)
 	return result, nil
 }

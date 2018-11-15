@@ -26,7 +26,7 @@ func (sv *Server) getCountryStats(c *gin.Context) {
 		return
 	}
 
-	_, _, err := query.Validate()
+	from, to, err := query.Validate()
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
@@ -36,7 +36,7 @@ func (sv *Server) getCountryStats(c *gin.Context) {
 		countryCode = ""
 	}
 
-	countryStats, err := sv.storage.GetCountryStats(countryCode, query.From, query.To)
+	countryStats, err := sv.storage.GetCountryStats(countryCode, from, to)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,
@@ -44,19 +44,6 @@ func (sv *Server) getCountryStats(c *gin.Context) {
 			err,
 		)
 		return
-	}
-	// update kyced addresses
-	for ts, stat := range countryStats {
-		kycedAddresses, err := sv.userPostgres.CountKYCEDAddresses(ts)
-		if err != nil {
-			httputil.ResponseFailure(
-				c,
-				http.StatusInternalServerError,
-				err,
-			)
-			return
-		}
-		stat.KYCEDAddresses = kycedAddresses
 	}
 
 	c.JSON(

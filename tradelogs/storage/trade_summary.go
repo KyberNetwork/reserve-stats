@@ -25,8 +25,8 @@ func (is *InfluxStorage) GetTradeSummary(from, to time.Time) (map[uint64]*common
 
 		results = make(map[uint64]*common.TradeSummary)
 	)
-	tradeLogQuery := fmt.Sprintf(`SELECT time,eth_per_trade,total_eth_volume,total_trade,
-	total_usd_amount,usd_per_trade,unique_addresses,new_unique_addresses,kyced FROM trade_summary WHERE %s`, timeFilter)
+	tradeLogQuery := fmt.Sprintf("SELECT time,eth_per_trade,total_eth_volume,total_trade,total_usd_amount,
+		usd_per_trade,unique_addresses,new_unique_addresses,kyced FROM trade_summary WHERE %s", timeFilter)
 	logger.Debugw("getting trade summary", "query", tradeLogQuery)
 
 	response, err := is.queryDB(is.influxClient, tradeLogQuery)

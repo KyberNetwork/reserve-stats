@@ -122,3 +122,15 @@ type UserInfo struct {
 	ETHVolume float64 `json:"total_eth_volume"`
 	USDVolume float64 `json:"total_usd_volume"`
 }
+
+//Heatmap represent a country heatmap
+type Heatmap struct {
+	Country              string  `json:"country"`
+	TotalETHValue        float64 `json:"total_eth_value"`
+	TotalTokenValue      float64 `json:"total_token_value"`
+	TotalFiatValue       float64 `json:"total_fiat_value"`
+	ToTalBurnFee         float64 `json:"total_burn_fee"`
+	TotalTrade           int64   `json:"total_trade"`
+	TotalUniqueAddresses int64   `json:"total_unique_addr"`
+	TotalKYCUser         int64   `json:"total_kyc_user"`
+}

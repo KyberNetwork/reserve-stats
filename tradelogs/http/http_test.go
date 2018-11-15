@@ -12,8 +12,8 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
-
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
@@ -55,7 +55,7 @@ func (s *mockStorage) GetWalletStats(fromTime, toTime time.Time, walletAddr stri
 	return nil, nil
 }
 
-func (s *mockStorage) GetCountryStats(countryCode string, fromTime, toTime uint64) (map[uint64]*common.CountryStats, error) {
+func (s *mockStorage) GetTokenHeatmap(token core.Token, from, to time.Time) (map[string]common.Heatmap, error) {
 	return nil, nil
 }
 

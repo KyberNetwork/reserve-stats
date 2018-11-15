@@ -17,10 +17,12 @@ require (
 	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
 	github.com/go-sql-driver/mysql v1.4.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
+	github.com/gogo/protobuf v1.1.1 // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/hashicorp/golang-lru v0.5.0 // indirect
 	github.com/huin/goupnp v1.0.0 // indirect
 	github.com/influxdata/influxdb v1.6.3
+	github.com/influxdata/influxql v0.0.0-20180925231337-1cbfca8e56b6 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.1 // indirect
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
 	github.com/jsternberg/zap-logfmt v1.2.0 // indirect
@@ -39,6 +41,7 @@ require (
 	github.com/syndtr/goleveldb v0.0.0-20181012014443-6b91fda63f2e // indirect
 	github.com/urfave/cli v1.20.0
 	github.com/vmihailenco/sasl v0.0.0-20180925064641-2f13c189728a // indirect
+	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
 	go.uber.org/zap v1.9.1
 	golang.org/x/crypto v0.0.0-20181015023909-0c41d7ab0a0e // indirect
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f

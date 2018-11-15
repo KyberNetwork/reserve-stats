@@ -7,12 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
-
-	"github.com/KyberNetwork/reserve-stats/lib/core"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 type mockStorage struct {
@@ -62,7 +61,11 @@ func (s *mockStorage) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo
 	return nil, nil
 }
 
-func (s *mockStorage) GetCountryStats(country string, fromTime, toTime uint64) (map[uint64]*common.CountryStats, error) {
+func (s *mockStorage) GetCountryStats(country string, fromTime, toTime time.Time) (map[uint64]*common.CountryStats, error) {
+	return nil, nil
+}
+
+func (s *mockStorage) GetTokenHeatmap(token core.Token, fromTime, toTime time.Time) (map[string]common.Heatmap, error) {
 	return nil, nil
 }
 

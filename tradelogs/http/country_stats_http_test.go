@@ -8,6 +8,9 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -19,15 +22,17 @@ const (
 	testCountryUSDAmount = 0.222
 )
 
-func (s *mockStorage) GetCountryStats(country string, fromTime, toTime uint64) (map[uint64]*common.CountryStats, error) {
+func (s *mockStorage) GetCountryStats(country string, fromTime, toTime time.Time) (map[uint64]*common.CountryStats, error) {
+	from := timeutil.TimeToTimestampMs(fromTime)
+	to := timeutil.TimeToTimestampMs(toTime)
 	var (
 		mockCountryStat = common.CountryStats{
 			TotalETHVolume: testCountryETHAmount,
 			TotalUSDVolume: testCountryUSDAmount,
 		}
 		mockResult = map[uint64]*common.CountryStats{
-			fromTime: &mockCountryStat,
-			toTime:   &mockCountryStat,
+			from: &mockCountryStat,
+			to:   &mockCountryStat,
 		}
 	)
 

@@ -42,7 +42,10 @@ func TestCountryStats(t *testing.T) {
 	assert.NoError(t, loadTestData(dbName))
 	assert.NoError(t, aggregateCountryStat(is))
 
-	stats, err := is.GetCountryStats(country, fromTime, toTime)
+	from := timeutil.TimestampMsToTime(fromTime)
+	to := timeutil.TimestampMsToTime(toTime)
+
+	stats, err := is.GetCountryStats(country, from, to)
 	assert.NoError(t, err)
 	timeUnix, err := time.Parse(time.RFC3339, timeStamp)
 	assert.NoError(t, err)

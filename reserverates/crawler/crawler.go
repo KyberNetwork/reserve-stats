@@ -27,7 +27,7 @@ type ResreveRatesCrawler struct {
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
 func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett tokenSetting, internalReserveAddr ethereum.Address, sugar *zap.SugaredLogger, bl blockchain.BlockTimeResolverInterface) (*ResreveRatesCrawler, error) {
-	wrpContract, err := contracts.NewVersionedWrapper(client)
+	wrpContract, err := contracts.NewVersionedWrapperFallback(sugar, client)
 	if err != nil {
 		return nil, err
 	}

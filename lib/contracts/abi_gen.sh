@@ -16,3 +16,4 @@ abigen -abi "$OLDPWD"/internal_network.abi -pkg contracts -type InternalNetwork 
 abigen -abi "$OLDPWD"/wrapper.abi -pkg contracts -type Wrapper -out "$OLDPWD"/wrapper_abi.go
 abigen -abi "$OLDPWD"/reserve.abi -pkg contracts -type Reserve -out "$OLDPWD"/reserve.go
 abigen -abi "$OLDPWD"/sanity_rates.abi -pkg contracts -type SanityRates -out "$OLDPWD"/sanity_rates.go
+abigen -abi "$OLDPWD"/conversion_rates.abi -pkg contracts -type ConversionRates -out "$OLDPWD"/conversion_rates.go

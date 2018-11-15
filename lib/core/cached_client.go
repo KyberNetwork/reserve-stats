@@ -2,10 +2,9 @@ package core
 
 import (
 	"errors"
+	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"sync"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 // CachedClient is the wrapper of Core Client with caching ability.

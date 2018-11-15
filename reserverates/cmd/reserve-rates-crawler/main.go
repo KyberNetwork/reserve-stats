@@ -21,7 +21,7 @@ const (
 	addressesFlag = "addresses"
 
 	fromBlockFlag    = "from-block"
-	defaultFromblock = 6526056 // TODO: depend on ethereum node, this value might not work as node return empty result on too old node
+	defaultFromblock = 5069586
 	toBlockFlag      = "to-block"
 
 	maxWorkerFlag    = "max-workers"

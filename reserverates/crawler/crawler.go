@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"golang.org/x/sync/errgroup"
 	"sync"
 
@@ -19,18 +20,20 @@ import (
 type ResreveRatesCrawler struct {
 	wrapperContract     reserveRateGetter
 	Addresses           []ethereum.Address
-	tokenSetting        tokenSetting
+	coreClient          core.Interface
 	internalReserveAddr ethereum.Address
 	sugar               *zap.SugaredLogger
 	blkTimeRsv          blockchain.BlockTimeResolverInterface
+	client              bind.ContractBackend
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
-func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett tokenSetting, internalReserveAddr ethereum.Address, sugar *zap.SugaredLogger, bl blockchain.BlockTimeResolverInterface) (*ResreveRatesCrawler, error) {
+func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, coreClient core.Interface, internalReserveAddr ethereum.Address, sugar *zap.SugaredLogger, bl blockchain.BlockTimeResolverInterface) (*ResreveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapperFallback(sugar, client)
 	if err != nil {
 		return nil, err
 	}
+
 	var ethAddrs []ethereum.Address
 	for _, addr := range addrs {
 		ethAddrs = append(ethAddrs, ethereum.HexToAddress(addr))
@@ -38,32 +41,12 @@ func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, sett token
 	return &ResreveRatesCrawler{
 		wrapperContract:     wrpContract,
 		Addresses:           ethAddrs,
-		tokenSetting:        sett,
+		coreClient:          coreClient,
 		internalReserveAddr: internalReserveAddr,
 		sugar:               sugar,
 		blkTimeRsv:          bl,
+		client:              client,
 	}, nil
-}
-
-func (rrc *ResreveRatesCrawler) callTokens(rsvAddr ethereum.Address) ([]core.Token, error) {
-	if rsvAddr.Hex() == rrc.internalReserveAddr.Hex() {
-		return rrc.tokenSetting.GetInternalTokens()
-	}
-	return rrc.tokenSetting.GetActiveTokens()
-}
-
-func (rrc *ResreveRatesCrawler) getSupportedTokens(rsvAddr ethereum.Address) ([]core.Token, error) {
-	var tokens []core.Token
-	tokensFromCore, err := rrc.callTokens(rsvAddr)
-	if err != nil {
-		return tokens, err
-	}
-	for _, token := range tokensFromCore {
-		if token.ID != "ETH" {
-			tokens = append(tokens, token)
-		}
-	}
-	return tokens, nil
 }
 
 func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereum.Address) (*rsvRateCommon.ReserveRates, error) {
@@ -88,7 +71,7 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 		return nil, err
 	}
 
-	tokens, err := rrc.getSupportedTokens(rsvAddr)
+	tokens, err := rrc.getSupportedTokens(rsvAddr, block)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get supported tokens for reserve %s. Error: %s", rsvAddr.Hex(), err)
 	}

@@ -288,11 +288,6 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		return tradeLog, fmt.Errorf("failed to convert dst_amount: %s", err)
 	}
 
-	fiatAmount, err := influxdb.GetFloat64FromInterface(value[9])
-	if err != nil {
-		return tradeLog, fmt.Errorf("failed to get fiat_amount: %s", err)
-	}
-
 	ip, ok := value[10].(string)
 	if !ok {
 		ip = ""
@@ -303,6 +298,10 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		country = ""
 	}
 
+	fiatAmount, err := influxdb.GetFloat64FromInterface(value[12])
+	if err != nil {
+		return tradeLog, fmt.Errorf("failed to get fiat_amount: %s", err)
+	}
 	burnFees := burnFeesByTxHash[txHash][uint(logIndex)]
 	if burnFees == nil {
 		burnFees = []common.BurnFee{}
@@ -312,7 +311,6 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 	if walletFees == nil {
 		walletFees = []common.WalletFee{}
 	}
-
 	tradeLog = common.TradeLog{
 		Timestamp:       timestamp,
 		BlockNumber:     blockNumber,

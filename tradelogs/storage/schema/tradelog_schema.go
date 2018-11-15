@@ -37,6 +37,8 @@ const (
 	EthUSDRate // eth_usd_rate
 	//EthAmount is the enumerated field for ETH Amount
 	EthAmount // eth_amount
+	//FiatAmount is the enimerated field for fiat amount
+	FiatAmount // fiat_amount
 )
 
 //tradeLogSchemaFields translates the stringer of reserveRate fields into its enumerated form
@@ -57,4 +59,5 @@ var tradeLogSchemaFields = map[string]TradeLogSchemaFieldName{
 	"dst_amount":          DstAmount,
 	"eth_usd_rate":        EthUSDRate,
 	"eth_amount":          EthAmount,
+	"fiat_amount":         FiatAmount,
 }

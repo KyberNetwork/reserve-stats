@@ -12,7 +12,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	schema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema"
 )
 
 const (
@@ -108,6 +108,7 @@ func (is InfluxStorage) LastBlock() (int64, error) {
 func prepareTradeLogQuery() string {
 	var (
 		tradeLogQueryFields = []schema.TradeLogSchemaFieldName{
+			schema.Time,
 			schema.BlockNumber,
 			schema.EthReceivalSender,
 			schema.EthReceivalAmount,
@@ -120,7 +121,7 @@ func prepareTradeLogQuery() string {
 			schema.Country,
 			schema.IntegrationApp,
 		}
-		tradeLogQuery = "time, "
+		tradeLogQuery string
 	)
 	for _, field := range tradeLogQueryFields {
 		tradeLogQuery += field.String() + ", "

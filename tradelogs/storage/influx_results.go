@@ -272,6 +272,11 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		return tradeLog, fmt.Errorf("failed to get src_addr: %s", err)
 	}
 
+	dstAddress, err := influxdb.GetAddressFromInterface(value[6])
+	if err != nil {
+		return tradeLog, fmt.Errorf("failed to get dst_addr: %s", err)
+	}
+
 	humanizedSrcAmount, err := influxdb.GetFloat64FromInterface(value[7])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get src_amount: %s", err)
@@ -280,11 +285,6 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 	srcAmountInWei, err := is.tokenAmountFormatter.ToWei(srcAddress, humanizedSrcAmount)
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to convert src_amount: %s", err)
-	}
-
-	dstAddress, err := influxdb.GetAddressFromInterface(value[6])
-	if err != nil {
-		return tradeLog, fmt.Errorf("failed to get dst_addr: %s", err)
 	}
 
 	humanizedDstAmount, err := influxdb.GetFloat64FromInterface(value[8])
@@ -297,26 +297,25 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		return tradeLog, fmt.Errorf("failed to convert dst_amount: %s", err)
 	}
 
-	fiatAmount, err := influxdb.GetFloat64FromInterface(value[9])
-	if err != nil {
-		return tradeLog, fmt.Errorf("failed to get fiat_amount: %s", err)
-	}
-
-	ip, ok := value[10].(string)
+	ip, ok := value[9].(string)
 	if !ok {
 		ip = ""
 	}
 
-	country, ok := value[11].(string)
+	country, ok := value[10].(string)
 	if !ok {
 		country = ""
 	}
 
-	appName, ok := value[12].(string)
+	appName, ok := value[11].(string)
 	if !ok {
 		appName = ""
 	}
 
+	fiatAmount, err := influxdb.GetFloat64FromInterface(value[12])
+	if err != nil {
+		return tradeLog, fmt.Errorf("failed to get fiat_amount: %s", err)
+	}
 	burnFees := burnFeesByTxHash[txHash][uint(logIndex)]
 	if burnFees == nil {
 		burnFees = []common.BurnFee{}
@@ -326,7 +325,6 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 	if walletFees == nil {
 		walletFees = []common.WalletFee{}
 	}
-
 	tradeLog = common.TradeLog{
 		Timestamp:       timestamp,
 		BlockNumber:     blockNumber,

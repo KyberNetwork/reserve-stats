@@ -12,11 +12,13 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	schema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema"
 )
 
 const (
 	//timePrecision is the precision configured for influxDB
-	timePrecision = "s"
+	timePrecision           = "s"
+	tradeLogMeasurementName = "trades"
 )
 
 // InfluxStorage represent a client to store trade data to influx DB
@@ -103,27 +105,47 @@ func (is InfluxStorage) LastBlock() (int64, error) {
 	return influxdb.GetInt64FromTagValue(res[0].Series[0].Values[0][1])
 }
 
+func prepareTradeLogQuery() string {
+	var (
+		tradeLogQueryFields = []schema.TradeLogSchemaFieldName{
+			schema.BlockNumber,
+			schema.EthReceivalSender,
+			schema.EthReceivalAmount,
+			schema.UserAddr,
+			schema.SrcAddr,
+			schema.DstAddr,
+			schema.SrcAmount,
+			schema.DstAmount,
+			schema.IP,
+			schema.Country,
+			schema.IntegrationApp,
+		}
+		tradeLogQuery = "time, "
+	)
+	for _, field := range tradeLogQueryFields {
+		tradeLogQuery += field.String() + ", "
+	}
+	fiatAmount := fmt.Sprintf("(%s + %s) AS %s", schema.EthAmount.String(), schema.EthUSDRate.String(), schema.FiatAmount.String())
+	tradeLogQuery += fiatAmount
+	return tradeLogQuery
+}
+
 // LoadTradeLogs return trade logs from DB
 func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
 	var (
 		result = make([]common.TradeLog, 0)
-
-		q = fmt.Sprintf(
+		q      = fmt.Sprintf(
 			`
-		SELECT %[1]s FROM burn_fees WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, trade_log_index;
+		SELECT %[1]s FROM burn_fees WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, trade_log_index;;
 		SELECT %[2]s FROM wallet_fees WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, trade_log_index;
-		SELECT %[3]s FROM trades WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, log_index;
+		SELECT %[3]s FROM %[6]s WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, log_index;
 		`,
 			"time, reserve_addr, amount, log_index",
 			"time, reserve_addr, wallet_addr, amount, log_index",
-			`
-		time, block_number, 
-		eth_receival_sender, eth_receival_amount, 
-		user_addr, src_addr, dst_addr, src_amount, dst_amount, (eth_amount * eth_usd_rate) as fiat_amount, 		
-		ip, country, integration_app
-		`,
+			prepareTradeLogQuery(),
 			from.Format(time.RFC3339),
 			to.Format(time.RFC3339),
+			tradeLogMeasurementName,
 		)
 
 		logger = is.sugar.With(
@@ -132,7 +154,6 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 			"to", to,
 		)
 	)
-
 	logger.Debug("prepared query statement", "query", q)
 
 	res, err := is.queryDB(is.influxClient, q)
@@ -228,24 +249,22 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	}
 
 	tags := map[string]string{
-		"block_number": strconv.FormatUint(log.BlockNumber, 10),
-		"tx_hash":      log.TransactionHash.String(),
+		schema.BlockNumber.String(): strconv.FormatUint(log.BlockNumber, 10),
+		schema.TxHash.String():      log.TransactionHash.String(),
 
-		"eth_receival_sender": log.EtherReceivalSender.String(),
+		schema.EthReceivalSender.String(): log.EtherReceivalSender.String(),
 
-		"user_addr": log.UserAddress.String(),
+		schema.UserAddr.String(): log.UserAddress.String(),
 
-		"src_addr": log.SrcAddress.String(),
-		"dst_addr": log.DestAddress.String(),
+		schema.WalletAddress.String():  walletAddr.String(),
+		schema.SrcAddr.String():        log.SrcAddress.String(),
+		schema.DstAddr.String():        log.DestAddress.String(),
+		schema.IntegrationApp.String(): log.IntegrationApp,
 
-		"wallet_addr":     walletAddr.String(),
-		"country":         log.Country,
-		"ip":              log.IP,
-		"integration_app": log.IntegrationApp,
-
-		"eth_rate_provider": log.ETHUSDProvider,
-
-		"log_index": strconv.FormatUint(uint64(log.Index), 10),
+		schema.Country.String():        log.Country,
+		schema.IP.String():             log.IP,
+		schema.EthUSDProvider.String(): log.ETHUSDProvider,
+		schema.LogIndex.String():       strconv.FormatUint(uint64(log.Index), 10),
 	}
 
 	logger := is.sugar.With(
@@ -256,21 +275,21 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	if blockchain.IsBurnable(log.SrcAddress) {
 		if blockchain.IsBurnable(log.DestAddress) {
 			if len(log.BurnFees) == 2 {
-				tags["src_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
-				tags["dst_rsv_addr"] = log.BurnFees[1].ReserveAddress.String()
+				tags[schema.SrcReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
+				tags[schema.DstReserveAddr.String()] = log.BurnFees[1].ReserveAddress.String()
 			} else {
 				logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "2 burn fees (src-dst)")
 			}
 		} else {
 			if len(log.BurnFees) == 1 {
-				tags["src_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
+				tags[schema.SrcReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
 			} else {
 				logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (src)")
 			}
 		}
 	} else if blockchain.IsBurnable(log.DestAddress) {
 		if len(log.BurnFees) == 1 {
-			tags["dst_rsv_addr"] = log.BurnFees[0].ReserveAddress.String()
+			tags[schema.DstReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
 		} else {
 			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
 		}
@@ -302,16 +321,16 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	}
 
 	fields := map[string]interface{}{
-		"eth_receival_amount": ethReceivalAmount,
+		schema.EthReceivalAmount.String(): ethReceivalAmount,
 
-		"src_amount":   srcAmount,
-		"dst_amount":   dstAmount,
-		"eth_usd_rate": log.ETHUSDRate,
+		schema.SrcAmount.String():  srcAmount,
+		schema.DstAmount.String():  dstAmount,
+		schema.EthUSDRate.String(): log.ETHUSDRate,
 
-		"eth_amount": ethAmount,
+		schema.EthAmount.String(): ethAmount,
 	}
 
-	tradePoint, err := client.NewPoint("trades", tags, fields, log.Timestamp)
+	tradePoint, err := client.NewPoint(tradeLogMeasurementName, tags, fields, log.Timestamp)
 	if err != nil {
 		return nil, err
 	}

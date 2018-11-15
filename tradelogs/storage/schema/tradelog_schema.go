@@ -37,6 +37,14 @@ const (
 	EthUSDRate // eth_usd_rate
 	//EthAmount is the enumerated field for ETH Amount
 	EthAmount // eth_amount
+	//FiatAmount is the enumerated field for fiat amount
+	FiatAmount // fiat_amount
+	//IntegrationApp is the name of apps integrated kyberswap
+	IntegrationApp //integration_app
+	//WalletAddress is the address of wallet associated with trade log
+	WalletAddress //wallet_addr
+	//LogIndex is the index of the log in that block
+	LogIndex //log_index
 )
 
 //tradeLogSchemaFields translates the stringer of reserveRate fields into its enumerated form
@@ -57,4 +65,5 @@ var tradeLogSchemaFields = map[string]TradeLogSchemaFieldName{
 	"dst_amount":          DstAmount,
 	"eth_usd_rate":        EthUSDRate,
 	"eth_amount":          EthAmount,
+	"fiat_amount":         FiatAmount,
 }

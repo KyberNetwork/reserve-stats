@@ -132,7 +132,7 @@ func prepareTradeLogQuery() string {
 			logschema.DestWalletFeeAmount,
 			logschema.WalletAddress,
 		}
-		tradeLogQuery string
+		tradeLogQuery = "time, "
 	)
 	for _, field := range tradeLogQueryFields {
 		tradeLogQuery += field.String() + ", "

@@ -4,9 +4,9 @@ package schema
 
 import "strconv"
 
-const _TradeLogSchemaFieldName_name = "block_numbertx_hasheth_receival_senderuser_addrsrc_addrdst_addrcountryipeth_rate_providerdst_rsv_addrssrc_rsv_addrseth_receival_amountsrc_amountdst_amounteth_usd_rateeth_amountfiat_amount"
+const _TradeLogSchemaFieldName_name = "timeblock_numbertx_hasheth_receival_senderuser_addrsrc_addrdst_addrcountryipeth_rate_providerdst_rsv_addrssrc_rsv_addrseth_receival_amountsrc_amountdst_amounteth_usd_rateeth_amountfiat_amountlog_index"
 
-var _TradeLogSchemaFieldName_index = [...]uint8{0, 12, 19, 38, 47, 55, 63, 70, 72, 89, 102, 115, 134, 144, 154, 166, 176, 187}
+var _TradeLogSchemaFieldName_index = [...]uint8{0, 4, 16, 23, 42, 51, 59, 67, 74, 76, 93, 106, 119, 138, 148, 158, 170, 180, 191, 200}
 
 func (i TradeLogSchemaFieldName) String() string {
 	if i < 0 || i >= TradeLogSchemaFieldName(len(_TradeLogSchemaFieldName_index)-1) {

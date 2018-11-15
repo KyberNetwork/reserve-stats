@@ -5,8 +5,10 @@ package schema
 type TradeLogSchemaFieldName int
 
 const (
+	//Time is enumerated field name for reserveRate.time
+	Time TradeLogSchemaFieldName = iota //time
 	//BlockNumber is enumerated field name for TradeLog.BlockNumbers
-	BlockNumber TradeLogSchemaFieldName = iota //block_number
+	BlockNumber //block_number
 	//TxHash is enumerated field name for tradeLog.TxHash
 	TxHash //tx_hash
 	//EthReceivalSender is enumerated field name for TradeLog.EtherReceivalSender
@@ -37,12 +39,15 @@ const (
 	EthUSDRate // eth_usd_rate
 	//EthAmount is the enumerated field for ETH Amount
 	EthAmount // eth_amount
-	//FiatAmount is the enimerated field for fiat amount
+	//FiatAmount is the enumberated field for fiat amount
 	FiatAmount // fiat_amount
+	//LogIndex is the enumerated field for log index
+	LogIndex // log_index
 )
 
 //tradeLogSchemaFields translates the stringer of reserveRate fields into its enumerated form
 var tradeLogSchemaFields = map[string]TradeLogSchemaFieldName{
+	"time":                Time,
 	"block_number":        BlockNumber,
 	"tx_hash":             TxHash,
 	"eth_receival_sender": EthReceivalSender,
@@ -60,4 +65,5 @@ var tradeLogSchemaFields = map[string]TradeLogSchemaFieldName{
 	"eth_usd_rate":        EthUSDRate,
 	"eth_amount":          EthAmount,
 	"fiat_amount":         FiatAmount,
+	"log_index":           LogIndex,
 }

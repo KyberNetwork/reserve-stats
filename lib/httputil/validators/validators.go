@@ -1,16 +1,15 @@
 package validators
 
 import (
+	"reflect"
 	"strings"
 
+	tradelog "github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"gopkg.in/go-playground/validator.v8"
-
-	tradelog "github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	"reflect"
 )
 
 // isEthereumAddress is a validator.Func function that returns true if given field

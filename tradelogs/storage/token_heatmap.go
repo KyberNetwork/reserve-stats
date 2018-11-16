@@ -25,6 +25,7 @@ func (is *InfluxStorage) GetTokenHeatmap(asset core.Token, from, to time.Time) (
 		"to", to,
 	)
 
+	// TODO: review and consider keep or remove total_trade, unique_addresses and kyc_user here
 	// tradeQuery := fmt.Sprintf(`
 	// SELECT SUM(total_trade) as total_trade, SUM(unique_addresses) as unique_addresses FROM country_stats
 	// WHERE time >= '%s' AND time <= '%s' GROUP BY country

@@ -13,6 +13,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	burnschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee"
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
+	walletschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfee"
 )
 
 func (is *InfluxStorage) rowToAggregatedBurnFee(row []interface{}) (time.Time, float64, ethereum.Address, error) {
@@ -164,28 +165,33 @@ func (is *InfluxStorage) rowToWalletFees(row models.Row) (ethereum.Hash, uint64,
 		tradeLogIndex uint64
 	)
 
-	txHash, err := influxdb.GetTxHashFromInterface(row.Tags["tx_hash"])
+	txHash, err := influxdb.GetTxHashFromInterface(row.Tags[walletschema.TxHash.String()])
 	if err != nil {
 		return txHash, tradeLogIndex, nil, err
 	}
 
-	tradeLogIndex, err = influxdb.GetUint64FromTagValue(row.Tags["trade_log_index"])
+	tradeLogIndex, err = influxdb.GetUint64FromTagValue(row.Tags[walletschema.TradeLogIndex.String()])
+	if err != nil {
+		return txHash, tradeLogIndex, nil, err
+	}
+
+	idxs, err := walletschema.NewFieldsRegistrar(row.Columns)
 	if err != nil {
 		return txHash, tradeLogIndex, nil, err
 	}
 
 	for _, value := range row.Values {
-		reserveAddr, err := influxdb.GetAddressFromInterface(value[1])
+		reserveAddr, err := influxdb.GetAddressFromInterface(value[idxs[walletschema.ReserveAddr]])
 		if err != nil {
 			return txHash, tradeLogIndex, nil, err
 		}
 
-		walletAddr, err := influxdb.GetAddressFromInterface(value[2])
+		walletAddr, err := influxdb.GetAddressFromInterface(value[idxs[walletschema.WalletAddr]])
 		if err != nil {
 			return txHash, tradeLogIndex, nil, err
 		}
 
-		humanizedAmount, err := influxdb.GetFloat64FromInterface(value[3])
+		humanizedAmount, err := influxdb.GetFloat64FromInterface(value[idxs[walletschema.Amount]])
 		if err != nil {
 			return txHash, tradeLogIndex, nil, err
 		}
@@ -195,7 +201,7 @@ func (is *InfluxStorage) rowToWalletFees(row models.Row) (ethereum.Hash, uint64,
 			return txHash, tradeLogIndex, nil, err
 		}
 
-		logIndex, err := influxdb.GetUint64FromTagValue(value[4])
+		logIndex, err := influxdb.GetUint64FromTagValue(value[idxs[walletschema.LogIndex]])
 		if err != nil {
 			return txHash, tradeLogIndex, nil, err
 		}

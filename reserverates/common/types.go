@@ -1,9 +1,12 @@
 package common
 
 import (
-	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"encoding/json"
 	"math/big"
 	"time"
+
+	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 // ReserveRateEntry hold 4 float number represent necessary data for a rate entry
@@ -33,4 +36,16 @@ type ReserveRates struct {
 	BlockNumber uint64                      `json:"-"`
 	Data        map[string]ReserveRateEntry `json:"data"`
 	Reserve     string                      `json:"-"`
+}
+
+// MarshalJSON implements custom JSON marshaler for TradeLog to format timestamp in unix millis instead of RFC3339.
+func (rr ReserveRates) MarshalJSON() ([]byte, error) {
+	type AliasReserveRates ReserveRates
+	return json.Marshal(struct {
+		Timestamp uint64 `json:"timestamp"`
+		AliasReserveRates
+	}{
+		AliasReserveRates: (AliasReserveRates)(rr),
+		Timestamp:         timeutil.TimeToTimestampMs(rr.Timestamp),
+	})
 }

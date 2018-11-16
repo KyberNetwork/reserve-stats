@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 )
@@ -26,7 +27,9 @@ func (sv *Server) getWalletStats(c *gin.Context) {
 		return
 	}
 	walletAddr := ethereum.HexToAddress(query.WalletAddr)
-	walletStats, err := sv.storage.GetWalletStats(query.From, query.To, walletAddr.Hex())
+	from := timeutil.TimestampMsToTime(query.From)
+	to := timeutil.TimestampMsToTime(query.To)
+	walletStats, err := sv.storage.GetWalletStats(from, to, walletAddr.Hex())
 	if err != nil {
 		httputil.ResponseFailure(
 			c,

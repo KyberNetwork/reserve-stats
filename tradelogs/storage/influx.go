@@ -223,6 +223,10 @@ func (is *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.R
 
 func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error) {
 	var points []*client.Point
+	var walletAddr ethereum.Address
+	if len(log.WalletFees) > 0 {
+		walletAddr = log.WalletFees[0].WalletAddress
+	}
 
 	tags := map[string]string{
 		"block_number": strconv.FormatUint(log.BlockNumber, 10),
@@ -234,6 +238,8 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 
 		"src_addr": log.SrcAddress.String(),
 		"dst_addr": log.DestAddress.String(),
+	
+		"wallet_addr": walletAddr.String(),
 
 		"country": log.Country,
 		"ip":      log.IP,

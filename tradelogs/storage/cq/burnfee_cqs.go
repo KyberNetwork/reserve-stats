@@ -4,6 +4,13 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 )
 
+const (
+	// DayMeasurement is the measure to store aggregatedBurnFee in Day Frequency
+	DayMeasurement = "burn_fee_day"
+	// HourMeasurement is the measure to store aggregatedBurnFee in Hour Frequency
+	HourMeasurement = "burn_fee_hour"
+)
+
 // CreateBurnFeeCqs return a set of cqs required for burnfee aggregation
 func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	var (

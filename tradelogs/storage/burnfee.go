@@ -10,6 +10,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	burnVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee_volume"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
@@ -32,7 +33,7 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 	}
 
 	const queryTmpl = `SELECT sum_amount,src_rsv_addr,dst_rsv_addr FROM "{{.Measurement}}" WHERE '{{.From }}' <= time AND time <= '{{.To}}' ` +
-		`{{if len .Addrs}}AND ({{range $index, $element := .Addrs}}"src_rsv_addr" = '{{$element}}' OR "dst_rsv_addr" = '{{$element}}' {{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
+		`{{if len .Addrs}}AND ({{range $index, $element := .Addrs}} "src_rsv_addr" = '{{$element}}' OR "dst_rsv_addr" = '{{$element}}' {{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
 
 	logger.Debugw("before rendering query statement from template", "query_tempalte", queryTmpl)
 	tmpl, err := template.New("queryStmt").Parse(queryTmpl)
@@ -44,13 +45,16 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 	for _, rsvAddr := range reserveAddrs {
 		addrsStrs = append(addrsStrs, rsvAddr.Hex())
 	}
+	logger.Debug(burnVolumeSchema.ReserveAddr.String())
 	if err = tmpl.Execute(&queryStmtBuf, struct {
+		Fields         string
 		Measurement    string
 		From           string
 		To             string
 		Addrs          []string
 		AddrsLastIndex int
 	}{
+		Fields:         burnVolumeSchema.SumAmount.String() + `, ` + burnVolumeSchema.ReserveAddr.String(),
 		Measurement:    measurement,
 		From:           from.Format(time.RFC3339),
 		To:             to.Format(time.RFC3339),
@@ -74,8 +78,12 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 
 	result := make(map[ethereum.Address]map[string]float64)
 
-	for _, row := range res[0].Series[0].Values {
-		ts, amount, reserve, err := is.rowToAggregatedBurnFee(row)
+	idxs, err := burnVolumeSchema.NewFieldsRegistrar(res[0].Series[0].Columns)
+	if err != nil {
+		return nil, err
+	}
+	for _, value := range res[0].Series[0].Values {
+		ts, amount, reserve, err := is.rowToAggregatedBurnFee(value, idxs)
 		if err != nil {
 			return nil, err
 		}

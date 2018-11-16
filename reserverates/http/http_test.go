@@ -21,7 +21,7 @@ const (
 	testInfluxURL   = "http://127.0.0.1:8086"
 	testRsvAddress  = "0x63825c174ab367968EC60f061753D3bbD36A0D8F"
 	testRsvRateJSON = `{
-		"Timestamp": "2018-10-10T15:57:13.304+07:00",
+		"Timestamp": 1539143833304,
 		"BlockNumber": 123,
 		"Data": {
 		  "ETH-KNC": {

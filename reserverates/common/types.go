@@ -38,7 +38,7 @@ type ReserveRates struct {
 	Reserve     string                      `json:"-"`
 }
 
-// MarshalJSON implements custom JSON marshaler for TradeLog to format timestamp in unix millis instead of RFC3339.
+// MarshalJSON implements custom JSON marshaler for ReserveRates to format timestamp in unix millis instead of RFC3339.
 func (rr ReserveRates) MarshalJSON() ([]byte, error) {
 	type AliasReserveRates ReserveRates
 	return json.Marshal(struct {
@@ -48,4 +48,20 @@ func (rr ReserveRates) MarshalJSON() ([]byte, error) {
 		AliasReserveRates: (AliasReserveRates)(rr),
 		Timestamp:         timeutil.TimeToTimestampMs(rr.Timestamp),
 	})
+}
+
+// UnmarshalJSON implements custom JSON unmarshaler for ReserveRates to format timestamp in unix millis instead of RFC3339.
+func (rr *ReserveRates) UnmarshalJSON(data []byte) error {
+	type AliasReserveRates ReserveRates
+	decoded := new(struct {
+		Timestamp uint64 `json:"timestamp"`
+		AliasReserveRates
+	})
+
+	if err := json.Unmarshal(data, decoded); err != nil {
+		return err
+	}
+	rr.Timestamp = timeutil.TimestampMsToTime(decoded.Timestamp)
+	rr.Data = decoded.Data
+	return nil
 }

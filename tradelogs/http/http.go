@@ -19,11 +19,10 @@ const (
 
 // Server serve trade logs through http endpoint
 type Server struct {
-	storage      storage.Interface
-	host         string
-	sugar        *zap.SugaredLogger
-	coreSetting  core.Interface
-	userPostgres *storage.UserPostgresStorage
+	storage     storage.Interface
+	host        string
+	sugar       *zap.SugaredLogger
+	coreSetting core.Interface
 }
 
 type burnFeeQuery struct {
@@ -130,13 +129,11 @@ func (sv *Server) Start() error {
 }
 
 // NewServer returns an instance of HttpApi to serve trade logs
-func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett core.Interface,
-	userPostgres *storage.UserPostgresStorage) *Server {
+func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett core.Interface) *Server {
 	return &Server{
-		storage:      storage,
-		host:         host,
-		sugar:        sugar,
-		coreSetting:  sett,
-		userPostgres: userPostgres,
+		storage:     storage,
+		host:        host,
+		sugar:       sugar,
+		coreSetting: sett,
 	}
 }

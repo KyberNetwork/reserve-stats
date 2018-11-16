@@ -42,19 +42,7 @@ func (sv *Server) getTradeSummary(c *gin.Context) {
 		)
 		return
 	}
-	// update kyced addresses
-	for ts, trade := range tradeSummary {
-		kycedAddresses, err := sv.userPostgres.CountKYCEDAddresses(ts)
-		if err != nil {
-			httputil.ResponseFailure(
-				c,
-				http.StatusInternalServerError,
-				err,
-			)
-			return
-		}
-		trade.KYCEDAddresses = kycedAddresses
-	}
+
 	c.JSON(
 		http.StatusOK,
 		tradeSummary,

@@ -25,7 +25,7 @@ func (is *InfluxStorage) GetTradeSummary(from, to time.Time) (map[uint64]*common
 
 		results = make(map[uint64]*common.TradeSummary)
 	)
-	tradeLogQuery := fmt.Sprintf("SELECT time,eth_per_trade,total_eth_volume,total_trade,total_usd_amount,usd_per_trade,unique_addresses,new_unique_addresses FROM trade_summary WHERE %s", timeFilter)
+	tradeLogQuery := fmt.Sprintf("SELECT time,eth_per_trade,total_eth_volume,total_trade,total_usd_amount,usd_per_trade,unique_addresses,new_unique_addresses,kyced FROM trade_summary WHERE %s", timeFilter)
 	logger.Debugw("getting trade summary", "query", tradeLogQuery)
 
 	response, err := is.queryDB(is.influxClient, tradeLogQuery)
@@ -115,7 +115,7 @@ func convertQueryResultToSummary(row influxModel.Row) (map[uint64]*common.TradeS
 }
 
 func convertRowValueToSummary(v []interface{}) (uint64, *common.TradeSummary, error) {
-	if len(v) != 8 {
+	if len(v) != 9 {
 		return 0, nil, errors.New("value fields is invalid in len")
 	}
 	timestampString, ok := v[0].(string)
@@ -151,7 +151,11 @@ func convertRowValueToSummary(v []interface{}) (uint64, *common.TradeSummary, er
 	if err != nil {
 		return 0, nil, err
 	}
-	newUnqAddress, err := influxdb.GetUint64FromInterface(v[7])
+	newUniqeAddress, err := influxdb.GetUint64FromInterface(v[7])
+	if err != nil {
+		return 0, nil, err
+	}
+	kyced, err := influxdb.GetUint64FromInterface(v[8])
 	if err != nil {
 		return 0, nil, err
 	}
@@ -162,6 +166,7 @@ func convertRowValueToSummary(v []interface{}) (uint64, *common.TradeSummary, er
 		UniqueAddresses:    uniqueAddr,
 		USDPerTrade:        usdPerTrade,
 		ETHPerTrade:        ethPerTrade,
-		NewUniqueAddresses: newUnqAddress,
+		NewUniqueAddresses: newUniqeAddress,
+		KYCEDAddresses:     kyced,
 	}, nil
 }

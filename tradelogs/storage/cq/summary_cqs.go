@@ -64,5 +64,19 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, newUnqAddressCq)
 
+	kyced, err := libcq.NewContinuousQuery(
+		"kyced",
+		dbName,
+		dayResampleInterval,
+		dayResampleFor,
+		"SELECT COUNT(kyced) as kyced INTO trade_summary FROM (SELECT DISTINCT(kyced) AS kyced FROM kyced GROUP BY user_addr)",
+		"1d",
+		[]string{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, kyced)
+
 	return result, nil
 }

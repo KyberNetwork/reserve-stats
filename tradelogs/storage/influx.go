@@ -13,6 +13,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	burnschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee"
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 )
 
@@ -20,6 +21,7 @@ const (
 	//timePrecision is the precision configured for influxDB
 	timePrecision           = "ms"
 	tradeLogMeasurementName = "trades"
+	burnfeeMeasurementName  = "burn_fees"
 )
 
 // InfluxStorage represent a client to store trade data to influx DB
@@ -125,21 +127,41 @@ func prepareTradeLogQuery() string {
 	return tradeLogQuery
 }
 
+func prepareBurnfeeQuery() string {
+	var (
+		burnFeeFields = []burnschema.FieldName{
+			burnschema.Time,
+			burnschema.ReserveAddr,
+			burnschema.Amount,
+			burnschema.LogIndex,
+		}
+		burnFeeQuery string
+	)
+	for i, field := range burnFeeFields {
+		if i != 0 {
+			burnFeeQuery += ", "
+		}
+		burnFeeQuery += field.String()
+	}
+	return burnFeeQuery
+}
+
 // LoadTradeLogs return trade logs from DB
 func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
 	var (
 		result = make([]common.TradeLog, 0)
 		q      = fmt.Sprintf(
 			`
-		SELECT %[1]s FROM burn_fees WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, trade_log_index;;
+		SELECT %[1]s FROM %[6]s WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, trade_log_index;;
 		SELECT %[2]s FROM wallet_fees WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, trade_log_index;
-		SELECT %[3]s FROM %[6]s WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, log_index;
+		SELECT %[3]s FROM %[7]s WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, log_index;
 		`,
-			"time, reserve_addr, amount, log_index",
+			prepareBurnfeeQuery(),
 			"time, reserve_addr, wallet_addr, amount, log_index",
 			prepareTradeLogQuery(),
 			from.Format(time.RFC3339),
 			to.Format(time.RFC3339),
+			burnfeeMeasurementName,
 			tradeLogMeasurementName,
 		)
 
@@ -330,10 +352,10 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, cacheTradeds map[e
 	// build burnFeePoint
 	for _, burn := range log.BurnFees {
 		tags := map[string]string{
-			"tx_hash":         log.TransactionHash.String(),
-			"reserve_addr":    burn.ReserveAddress.String(),
-			"log_index":       strconv.FormatUint(uint64(burn.Index), 10),
-			"trade_log_index": strconv.FormatUint(uint64(log.Index), 10),
+			burnschema.TxHash.String():        log.TransactionHash.String(),
+			burnschema.ReserveAddr.String():   burn.ReserveAddress.String(),
+			burnschema.LogIndex.String():      strconv.FormatUint(uint64(burn.Index), 10),
+			burnschema.TradeLogIndex.String(): strconv.FormatUint(uint64(log.Index), 10),
 		}
 
 		burnAmount, err := is.coreClient.FromWei(blockchain.KNCAddr, burn.Amount)
@@ -342,10 +364,10 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, cacheTradeds map[e
 		}
 
 		fields := map[string]interface{}{
-			"amount": burnAmount,
+			burnschema.Amount.String(): burnAmount,
 		}
 
-		burnPoint, err := client.NewPoint("burn_fees", tags, fields, log.Timestamp)
+		burnPoint, err := client.NewPoint(burnfeeMeasurementName, tags, fields, log.Timestamp)
 		if err != nil {
 			return nil, err
 		}

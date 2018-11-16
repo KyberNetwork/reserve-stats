@@ -1,6 +1,6 @@
-package tradelog
+package burnfee
 
-// FieldsRegistrar store a map of RateSchemaFieldName to its index in the result from influx db
+// FieldsRegistrar store a map of FieldName to its index in the result from influx db
 type FieldsRegistrar map[FieldName]int
 
 // NewFieldsRegistrar returns a FieldsRegistrar from a list of column name and error if occurs

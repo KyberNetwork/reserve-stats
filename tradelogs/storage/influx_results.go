@@ -11,6 +11,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	burnschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee"
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 )
 
@@ -106,23 +107,27 @@ func (is *InfluxStorage) rowToBurnFees(row models.Row) (ethereum.Hash, uint64, [
 		tradeLogIndex uint64
 	)
 
-	txHash, err := influxdb.GetTxHashFromInterface(row.Tags["tx_hash"])
+	txHash, err := influxdb.GetTxHashFromInterface(row.Tags[burnschema.TxHash.String()])
 	if err != nil {
 		return txHash, tradeLogIndex, nil, err
 	}
 
-	tradeLogIndex, err = influxdb.GetUint64FromTagValue(row.Tags["trade_log_index"])
+	tradeLogIndex, err = influxdb.GetUint64FromTagValue(row.Tags[burnschema.TradeLogIndex.String()])
 	if err != nil {
 		return txHash, tradeLogIndex, nil, err
 	}
 
+	idxs, err := burnschema.NewFieldsRegistrar(row.Columns)
+	if err != nil {
+		return txHash, tradeLogIndex, nil, err
+	}
 	for _, value := range row.Values {
-		reserveAddr, err := influxdb.GetAddressFromInterface(value[1])
+		reserveAddr, err := influxdb.GetAddressFromInterface(value[idxs[burnschema.ReserveAddr]])
 		if err != nil {
 			return txHash, tradeLogIndex, nil, err
 		}
 
-		humanizedAmount, err := influxdb.GetFloat64FromInterface(value[2])
+		humanizedAmount, err := influxdb.GetFloat64FromInterface(value[idxs[burnschema.Amount]])
 		if err != nil {
 			return txHash, tradeLogIndex, nil, err
 		}
@@ -132,7 +137,7 @@ func (is *InfluxStorage) rowToBurnFees(row models.Row) (ethereum.Hash, uint64, [
 			return txHash, tradeLogIndex, nil, err
 		}
 
-		logIndex, err := influxdb.GetUint64FromTagValue(value[3])
+		logIndex, err := influxdb.GetUint64FromTagValue(value[idxs[burnschema.LogIndex]])
 		if err != nil {
 			return txHash, tradeLogIndex, nil, err
 		}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
@@ -27,6 +28,9 @@ func main() {
 			Usage: "bolt db file",
 			Value: "priceanalytic.db",
 		})
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func run(c *cli.Context) error {

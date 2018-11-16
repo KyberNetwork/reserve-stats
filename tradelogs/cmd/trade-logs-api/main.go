@@ -52,12 +52,14 @@ func main() {
 		}
 
 		postgresDB := storage.NewPostgresConnection(userPostgres)
+		kycChecker := storage.NewUserKYCChecker(sugar, userPostgres)
 
 		influxStorage, err := storage.NewInfluxStorage(
 			sugar,
 			"trade_logs",
 			influxClient,
 			coreCachedClient,
+			kycChecker,
 		)
 		if err != nil {
 			return err

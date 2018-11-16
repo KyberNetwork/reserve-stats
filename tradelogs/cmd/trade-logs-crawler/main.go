@@ -41,6 +41,8 @@ const (
 
 	delayFlag        = "delay"
 	defaultDelayTime = time.Minute
+
+	defaultDB = "users"
 )
 
 func main() {
@@ -91,6 +93,7 @@ func main() {
 	app.Flags = append(app.Flags, broadcast.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, cq.NewCQFlags()...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -182,11 +185,19 @@ func run(c *cli.Context) error {
 		return err
 	}
 
+	db, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	kycChecker := storage.NewUserKYCChecker(sugar, db)
+
 	influxStorage, err := storage.NewInfluxStorage(
 		sugar,
 		common.DatabaseName,
 		influxClient,
 		core.NewCachedClient(coreClient),
+		kycChecker,
 	)
 	if err != nil {
 		return err

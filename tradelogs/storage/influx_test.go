@@ -37,6 +37,7 @@ func newTestInfluxStorage(db string) (*InfluxStorage, error) {
 		db,
 		influxClient,
 		core.NewMockClient(),
+		newMockKYCChecker(),
 	)
 	if err != nil {
 		return nil, err

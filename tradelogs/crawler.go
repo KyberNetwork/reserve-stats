@@ -32,7 +32,12 @@ const (
 )
 
 // NewCrawler create a new Crawler instance.
-func NewCrawler(sugar *zap.SugaredLogger, client *ethclient.Client, broadcastClient broadcast.Interface, rateProvider tokenrate.ETHUSDRateProvider, addresses []ethereum.Address) (*Crawler, error) {
+func NewCrawler(
+	sugar *zap.SugaredLogger,
+	client *ethclient.Client,
+	broadcastClient broadcast.Interface,
+	rateProvider tokenrate.ETHUSDRateProvider,
+	addresses []ethereum.Address) (*Crawler, error) {
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
 	if err != nil {
 		return nil, err

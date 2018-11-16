@@ -22,21 +22,25 @@ const (
 
 // InfluxStorage represent a client to store trade data to influx DB
 type InfluxStorage struct {
+	sugar        *zap.SugaredLogger
 	dbName       string
 	influxClient client.Client
 	coreClient   core.Interface
-	sugar        *zap.SugaredLogger
+	kycChecker   kycChecker
 
+	// traded stored traded addresses to use in a single SaveTradeLogs
 	traded map[ethereum.Address]struct{}
 }
 
 // NewInfluxStorage init an instance of InfluxStorage
-func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient client.Client, coreClient core.Interface) (*InfluxStorage, error) {
+func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient client.Client,
+	coreClient core.Interface, kycChecker kycChecker) (*InfluxStorage, error) {
 	storage := &InfluxStorage{
+		sugar:        sugar,
 		dbName:       dbName,
 		influxClient: influxClient,
 		coreClient:   coreClient,
-		sugar:        sugar,
+		kycChecker:   kycChecker,
 		traded:       make(map[ethereum.Address]struct{}),
 	}
 	if err := storage.createDB(); err != nil {
@@ -79,6 +83,9 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 	} else {
 		is.sugar.Debugw("no trade log to store")
 	}
+
+	// reset traded map to avoid ever growing size
+	is.traded = make(map[ethereum.Address]struct{})
 
 	return is.influxClient.Close()
 }
@@ -370,6 +377,15 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		points = append(points, firstTradePoint)
 	}
 
+	kycedPoint, err := is.assembleKYCPoint(log)
+	if err != nil {
+		return nil, err
+	}
+
+	if kycedPoint != nil {
+		points = append(points, kycedPoint)
+	}
+
 	return points, nil
 }
 
@@ -429,4 +445,40 @@ func (is *InfluxStorage) userTraded(addr ethereum.Address) (bool, error) {
 		return false, nil
 	}
 	return true, nil
+}
+
+func (is *InfluxStorage) assembleKYCPoint(logItem common.TradeLog) (*client.Point, error) {
+	var logger = is.sugar.With(
+		"func", "tradelogs/storage/InfluxStorage.assembleKYCPoint",
+		"timestamp", logItem.Timestamp.String(),
+		"user_addr", logItem.UserAddress.Hex(),
+		"country", logItem.Country,
+	)
+
+	kyced, err := is.kycChecker.IsKYCed(logItem.UserAddress, logItem.Timestamp)
+	if err != nil {
+		return nil, err
+	}
+
+	if !kyced {
+		logger.Debugw("user has not been kyced yet")
+		return nil, nil
+	}
+
+	logger.Debugw("user has been kyced")
+	tags := map[string]string{
+		"user_addr": logItem.UserAddress.Hex(),
+		"country":   logItem.Country,
+	}
+
+	for _, walletFee := range logItem.WalletFees {
+		tags["wallet_addr"] = walletFee.WalletAddress.Hex()
+	}
+
+	fields := map[string]interface{}{
+		"kyced": true,
+	}
+
+	point, err := client.NewPoint("kyced", tags, fields, logItem.Timestamp)
+	return point, err
 }

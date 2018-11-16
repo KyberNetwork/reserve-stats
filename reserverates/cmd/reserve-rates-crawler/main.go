@@ -21,7 +21,7 @@ const (
 	addressesFlag = "addresses"
 
 	fromBlockFlag    = "from-block"
-	defaultFromblock = 6526056 // TODO: depend on ethereum node, this value might not work as node return empty result on too old node
+	defaultFromblock = 5069586
 	toBlockFlag      = "to-block"
 
 	maxWorkerFlag    = "max-workers"
@@ -34,10 +34,9 @@ const (
 	defaultDelayTime = time.Minute
 )
 
-//reserverates --addresses=0xABCDEF,0xDEFGHI
 func main() {
 	app := libapp.NewApp()
-	app.Name = "reserverates"
+	app.Name = "reserve-rates-crawler"
 	app.Usage = "get the rates of all configured reserves at a certain block"
 	app.Action = run
 

@@ -17,18 +17,29 @@ const (
 	testRsvAddress = "0x63825c174ab367968EC60f061753D3bbD36A0D8F"
 )
 
+type mockSupportedTokens struct {
+	coreClient core.Interface
+}
+
+func (mst *mockSupportedTokens) supportedTokens(_ ethereum.Address, _ uint64) ([]core.Token, error) {
+	return mst.coreClient.Tokens()
+}
+
+func newMockSupportedTokens() *mockSupportedTokens {
+	return &mockSupportedTokens{coreClient: core.NewMockClient()}
+}
+
 func newTestCrawler(sugar *zap.SugaredLogger) (*ResreveRatesCrawler, error) {
 	var (
 		addrs       = []ethereum.Address{ethereum.HexToAddress(testRsvAddress)}
-		sett        = core.NewMockClient()
 		wrpContract = contracts.MockVersionedWrapper{}
 		bltimeRsver = blockchain.MockBlockTimeResolve{}
 	)
 
 	return &ResreveRatesCrawler{
 		wrapperContract: &wrpContract,
-		Addresses:       addrs,
-		tokenSetting:    sett,
+		addresses:       addrs,
+		stg:             newMockSupportedTokens(),
 		sugar:           sugar,
 		blkTimeRsv:      &bltimeRsver,
 	}, nil

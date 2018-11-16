@@ -51,8 +51,6 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 
 // SaveTradeLogs persist trade logs to DB
 func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
-	defer is.influxClient.Close()
-	// this map will keep track on the current batch to ensure there is no duplication
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  is.dbName,
 		Precision: timePrecision,
@@ -86,8 +84,7 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 
 	// reset traded map to avoid ever growing size
 	is.traded = make(map[ethereum.Address]struct{})
-
-	return is.influxClient.Close()
+	return nil
 }
 
 // LastBlock returns last stored trade log block number from database.

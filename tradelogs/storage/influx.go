@@ -13,7 +13,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema"
+	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 )
 
 const (
@@ -102,25 +102,25 @@ func (is InfluxStorage) LastBlock() (int64, error) {
 
 func prepareTradeLogQuery() string {
 	var (
-		tradeLogQueryFields = []schema.TradeLogSchemaFieldName{
-			schema.Time,
-			schema.BlockNumber,
-			schema.EthReceivalSender,
-			schema.EthReceivalAmount,
-			schema.UserAddr,
-			schema.SrcAddr,
-			schema.DstAddr,
-			schema.SrcAmount,
-			schema.DstAmount,
-			schema.IP,
-			schema.Country,
+		tradeLogQueryFields = []logschema.FieldName{
+			logschema.Time,
+			logschema.BlockNumber,
+			logschema.EthReceivalSender,
+			logschema.EthReceivalAmount,
+			logschema.UserAddr,
+			logschema.SrcAddr,
+			logschema.DstAddr,
+			logschema.SrcAmount,
+			logschema.DstAmount,
+			logschema.IP,
+			logschema.Country,
 		}
 		tradeLogQuery string
 	)
 	for _, field := range tradeLogQueryFields {
 		tradeLogQuery += field.String() + ", "
 	}
-	fiatAmount := fmt.Sprintf("(%s + %s) AS %s", schema.EthAmount.String(), schema.EthUSDRate.String(), schema.FiatAmount.String())
+	fiatAmount := fmt.Sprintf("(%s + %s) AS %s", logschema.EthAmount.String(), logschema.EthUSDRate.String(), logschema.FiatAmount.String())
 	tradeLogQuery += fiatAmount
 	return tradeLogQuery
 }
@@ -240,21 +240,21 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, cacheTradeds map[e
 	var points []*client.Point
 
 	tags := map[string]string{
-		schema.BlockNumber.String(): strconv.FormatUint(log.BlockNumber, 10),
-		schema.TxHash.String():      log.TransactionHash.String(),
+		logschema.BlockNumber.String(): strconv.FormatUint(log.BlockNumber, 10),
+		logschema.TxHash.String():      log.TransactionHash.String(),
 
-		schema.EthReceivalSender.String(): log.EtherReceivalSender.String(),
+		logschema.EthReceivalSender.String(): log.EtherReceivalSender.String(),
 
-		schema.UserAddr.String(): log.UserAddress.String(),
+		logschema.UserAddr.String(): log.UserAddress.String(),
 
-		schema.SrcAddr.String(): log.SrcAddress.String(),
-		schema.DstAddr.String(): log.DestAddress.String(),
+		logschema.SrcAddr.String(): log.SrcAddress.String(),
+		logschema.DstAddr.String(): log.DestAddress.String(),
 
-		schema.Country.String(): log.Country,
-		schema.IP.String():      log.IP,
+		logschema.Country.String(): log.Country,
+		logschema.IP.String():      log.IP,
 
-		schema.EthUSDProvider.String(): log.ETHUSDProvider,
-		"log_index":                    strconv.FormatUint(uint64(log.Index), 10),
+		logschema.EthUSDProvider.String(): log.ETHUSDProvider,
+		logschema.LogIndex.String():       strconv.FormatUint(uint64(log.Index), 10),
 	}
 
 	logger := is.sugar.With(
@@ -265,21 +265,21 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, cacheTradeds map[e
 	if blockchain.IsBurnable(log.SrcAddress) {
 		if blockchain.IsBurnable(log.DestAddress) {
 			if len(log.BurnFees) == 2 {
-				tags[schema.SrcReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
-				tags[schema.DstReserveAddr.String()] = log.BurnFees[1].ReserveAddress.String()
+				tags[logschema.SrcReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
+				tags[logschema.DstReserveAddr.String()] = log.BurnFees[1].ReserveAddress.String()
 			} else {
 				logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "2 burn fees (src-dst)")
 			}
 		} else {
 			if len(log.BurnFees) == 1 {
-				tags[schema.SrcReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
+				tags[logschema.SrcReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
 			} else {
 				logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (src)")
 			}
 		}
 	} else if blockchain.IsBurnable(log.DestAddress) {
 		if len(log.BurnFees) == 1 {
-			tags[schema.DstReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
+			tags[logschema.DstReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
 		} else {
 			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
 		}
@@ -311,13 +311,13 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, cacheTradeds map[e
 	}
 
 	fields := map[string]interface{}{
-		schema.EthReceivalAmount.String(): ethReceivalAmount,
+		logschema.EthReceivalAmount.String(): ethReceivalAmount,
 
-		schema.SrcAmount.String():  srcAmount,
-		schema.DstAmount.String():  dstAmount,
-		schema.EthUSDRate.String(): log.ETHUSDRate,
+		logschema.SrcAmount.String():  srcAmount,
+		logschema.DstAmount.String():  dstAmount,
+		logschema.EthUSDRate.String(): log.ETHUSDRate,
 
-		schema.EthAmount.String(): ethAmount,
+		logschema.EthAmount.String(): ethAmount,
 	}
 
 	tradePoint, err := client.NewPoint(tradeLogMeasurementName, tags, fields, log.Timestamp)

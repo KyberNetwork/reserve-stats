@@ -87,7 +87,7 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 	addresses = append(addresses, contracts.OldBurnerContractAddress().MustGetFromContext(fj.c)...)
 	addresses = append(addresses, contracts.OldNetworkContractAddress().MustGetOneFromContext(fj.c))
 
-	crawler, err := tradelogs.NewCrawler(sugar, client, bc, coingecko.New(), addresses)
+	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses)
 	if err != nil {
 		return nil, err
 	}
@@ -169,8 +169,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 
 					p.mutex.Lock()
 					if order == p.lastCompletedJobOrder+1 {
-						err = p.storage.SaveTradeLogs(tradeLogs)
-						if err == nil {
+						if err = p.storage.SaveTradeLogs(tradeLogs); err == nil {
 							saveSuccess = true
 							p.lastCompletedJobOrder++
 						}

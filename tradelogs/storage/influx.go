@@ -22,19 +22,26 @@ const (
 
 // InfluxStorage represent a client to store trade data to influx DB
 type InfluxStorage struct {
+	sugar        *zap.SugaredLogger
 	dbName       string
 	influxClient client.Client
 	coreClient   core.Interface
-	sugar        *zap.SugaredLogger
+	kycChecker   kycChecker
+
+	// traded stored traded addresses to use in a single SaveTradeLogs
+	traded map[ethereum.Address]struct{}
 }
 
 // NewInfluxStorage init an instance of InfluxStorage
-func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient client.Client, coreClient core.Interface) (*InfluxStorage, error) {
+func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient client.Client,
+	coreClient core.Interface, kycChecker kycChecker) (*InfluxStorage, error) {
 	storage := &InfluxStorage{
+		sugar:        sugar,
 		dbName:       dbName,
 		influxClient: influxClient,
 		coreClient:   coreClient,
-		sugar:        sugar,
+		kycChecker:   kycChecker,
+		traded:       make(map[ethereum.Address]struct{}),
 	}
 	if err := storage.createDB(); err != nil {
 		return nil, err
@@ -44,9 +51,6 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 
 // SaveTradeLogs persist trade logs to DB
 func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
-	defer is.influxClient.Close()
-	// this map will keep track on the current batch to ensure there is no duplication
-	var cacheTraded = make(map[ethereum.Address]bool)
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  is.dbName,
 		Precision: timePrecision,
@@ -55,7 +59,7 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 		return err
 	}
 	for _, log := range logs {
-		points, err := is.tradeLogToPoint(log, cacheTraded)
+		points, err := is.tradeLogToPoint(log)
 		if err != nil {
 			return err
 		}
@@ -78,7 +82,9 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 		is.sugar.Debugw("no trade log to store")
 	}
 
-	return is.influxClient.Close()
+	// reset traded map to avoid ever growing size
+	is.traded = make(map[ethereum.Address]struct{})
+	return nil
 }
 
 // LastBlock returns last stored trade log block number from database.
@@ -215,7 +221,7 @@ func (is *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.R
 	return res, nil
 }
 
-func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, cacheTradeds map[ethereum.Address]bool) ([]*client.Point, error) {
+func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error) {
 	var points []*client.Point
 
 	tags := map[string]string{
@@ -360,32 +366,72 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, cacheTradeds map[e
 		points = append(points, walletFeePoint)
 	}
 
-	_, cacheTraded := cacheTradeds[log.UserAddress]
-	if !cacheTraded {
-		traded, err := is.userTraded(log.UserAddress)
-		if err != nil {
-			return nil, err
-		}
-		if !traded {
-			cacheTradeds[log.UserAddress] = true
-			logger.Debugw("user first trade", "user_addr", log.UserAddress.String())
-			tags := map[string]string{
-				"user_addr": log.UserAddress.String(),
-			}
-			fields := map[string]interface{}{
-				"traded": true,
-			}
-			firstTradePt, err := client.NewPoint("first_trades", tags, fields, log.Timestamp)
-			if err != nil {
-				return nil, err
-			}
-			points = append(points, firstTradePt)
-		}
+	firstTradePoint, err := is.assembleFirstTradePoint(log)
+	if err != nil {
+		return nil, err
 	}
+	if firstTradePoint != nil {
+		points = append(points, firstTradePoint)
+	}
+
+	kycedPoint, err := is.assembleKYCPoint(log)
+	if err != nil {
+		return nil, err
+	}
+
+	if kycedPoint != nil {
+		points = append(points, kycedPoint)
+	}
+
 	return points, nil
 }
 
-func (is InfluxStorage) userTraded(addr ethereum.Address) (bool, error) {
+func (is *InfluxStorage) assembleFirstTradePoint(logItem common.TradeLog) (*client.Point, error) {
+	var logger = is.sugar.With(
+		"func", "tradelogs/storage/InfluxStorage.assembleFirstTradePoint",
+		"timestamp", logItem.Timestamp.String(),
+		"user_addr", logItem.UserAddress.Hex(),
+		"country", logItem.Country,
+	)
+
+	if _, ok := is.traded[logItem.UserAddress]; ok {
+		logger.Debug("user has already traded, ignoring")
+		return nil, nil
+	}
+
+	traded, err := is.userTraded(logItem.UserAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	if traded {
+		return nil, nil
+	}
+
+	logger.Debugw("user first trade")
+	tags := map[string]string{
+		"user_addr": logItem.UserAddress.Hex(),
+		"country":   logItem.Country,
+	}
+
+	for _, walletFee := range logItem.WalletFees {
+		tags["wallet_addr"] = walletFee.WalletAddress.Hex()
+	}
+
+	fields := map[string]interface{}{
+		"traded": true,
+	}
+
+	point, err := client.NewPoint("first_trades", tags, fields, logItem.Timestamp)
+	if err != nil {
+		return nil, err
+	}
+
+	is.traded[logItem.UserAddress] = struct{}{}
+	return point, nil
+}
+
+func (is *InfluxStorage) userTraded(addr ethereum.Address) (bool, error) {
 	q := fmt.Sprintf("SELECT traded FROM first_trades WHERE user_addr='%s'", addr.String())
 	response, err := is.queryDB(is.influxClient, q)
 	if err != nil {
@@ -396,4 +442,40 @@ func (is InfluxStorage) userTraded(addr ethereum.Address) (bool, error) {
 		return false, nil
 	}
 	return true, nil
+}
+
+func (is *InfluxStorage) assembleKYCPoint(logItem common.TradeLog) (*client.Point, error) {
+	var logger = is.sugar.With(
+		"func", "tradelogs/storage/InfluxStorage.assembleKYCPoint",
+		"timestamp", logItem.Timestamp.String(),
+		"user_addr", logItem.UserAddress.Hex(),
+		"country", logItem.Country,
+	)
+
+	kyced, err := is.kycChecker.IsKYCed(logItem.UserAddress, logItem.Timestamp)
+	if err != nil {
+		return nil, err
+	}
+
+	if !kyced {
+		logger.Debugw("user has not been kyced yet")
+		return nil, nil
+	}
+
+	logger.Debugw("user has been kyced")
+	tags := map[string]string{
+		"user_addr": logItem.UserAddress.Hex(),
+		"country":   logItem.Country,
+	}
+
+	for _, walletFee := range logItem.WalletFees {
+		tags["wallet_addr"] = walletFee.WalletAddress.Hex()
+	}
+
+	fields := map[string]interface{}{
+		"kyced": true,
+	}
+
+	point, err := client.NewPoint("kyced", tags, fields, logItem.Timestamp)
+	return point, err
 }

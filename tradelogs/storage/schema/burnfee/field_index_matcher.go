@@ -7,7 +7,7 @@ type FieldsRegistrar map[FieldName]int
 func NewFieldsRegistrar(colums []string) (FieldsRegistrar, error) {
 	result := make(FieldsRegistrar)
 	for idx, fieldNameStr := range colums {
-		fieldName, ok := tradeLogSchemaFields[fieldNameStr]
+		fieldName, ok := burnFeeFieldNames[fieldNameStr]
 		// if a column doesn't map to a field, we wont consider it as an error.
 		if ok {
 			result[fieldName] = idx

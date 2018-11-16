@@ -20,10 +20,7 @@ import (
 
 const (
 	//timePrecision is the precision configured for influxDB
-	timePrecision           = "ms"
-	tradeLogMeasurementName = "trades"
-	burnfeeMeasurementName  = "burn_fees"
-	walletMeasurementName   = "wallet_fees"
+	timePrecision = "ms"
 )
 
 // InfluxStorage represent a client to store trade data to influx DB
@@ -183,9 +180,9 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 			prepareTradeLogQuery(),
 			from.Format(time.RFC3339),
 			to.Format(time.RFC3339),
-			burnfeeMeasurementName,
-			walletMeasurementName,
-			tradeLogMeasurementName,
+			common.BurnfeeMeasurementName,
+			common.WalletMeasurementName,
+			common.TradeLogMeasurementName,
 			burnschema.TxHash.String()+", "+burnschema.TradeLogIndex.String(),
 			walletschema.TxHash.String()+", "+walletschema.TradeLogIndex.String(),
 			logschema.TxHash.String()+", "+logschema.LogIndex.String(),
@@ -368,7 +365,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, cacheTradeds map[e
 		logschema.EthAmount.String(): ethAmount,
 	}
 
-	tradePoint, err := client.NewPoint(tradeLogMeasurementName, tags, fields, log.Timestamp)
+	tradePoint, err := client.NewPoint(common.TradeLogMeasurementName, tags, fields, log.Timestamp)
 	if err != nil {
 		return nil, err
 	}
@@ -393,7 +390,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, cacheTradeds map[e
 			burnschema.Amount.String(): burnAmount,
 		}
 
-		burnPoint, err := client.NewPoint(burnfeeMeasurementName, tags, fields, log.Timestamp)
+		burnPoint, err := client.NewPoint(common.BurnfeeMeasurementName, tags, fields, log.Timestamp)
 		if err != nil {
 			return nil, err
 		}
@@ -420,7 +417,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog, cacheTradeds map[e
 			walletschema.Amount.String(): amount,
 		}
 
-		walletFeePoint, err := client.NewPoint(walletMeasurementName, tags, fields, log.Timestamp)
+		walletFeePoint, err := client.NewPoint(common.WalletMeasurementName, tags, fields, log.Timestamp)
 		if err != nil {
 			return nil, err
 		}

@@ -1,8 +1,32 @@
 package cq
 
 import (
+	"fmt"
+
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	burnschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee"
+	burnVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee_volume"
 )
+
+const (
+	// DayMeasurement is the measure to store aggregatedBurnFee in Day Frequency
+	DayMeasurement = "burn_fee_day"
+	// HourMeasurement is the measure to store aggregatedBurnFee in Hour Frequency
+	HourMeasurement = "burn_fee_hour"
+)
+
+func prepareBurnfeeAggregationQuery(measurement string) string {
+	q := fmt.Sprintf(
+		`SELECT SUM(%s) as %s INTO %s FROM %s GROUP BY %s`,
+		burnschema.Amount.String(),
+		burnVolumeSchema.SumAmount.String(),
+		measurement,
+		common.BurnfeeMeasurementName,
+		burnschema.ReserveAddr.String(),
+	)
+	return q
+}
 
 // CreateBurnFeeCqs return a set of cqs required for burnfee aggregation
 func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
@@ -10,11 +34,11 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		result []*cq.ContinuousQuery
 	)
 	burnfeeHourCqs, err := cq.NewContinuousQuery(
-		"burn_fee_hour",
+		HourMeasurement,
 		dbName,
 		hourResampleInterval,
 		hourResampleFor,
-		"SELECT SUM(amount) as sum_amount INTO burn_fee_hour FROM burn_fees GROUP BY reserve_addr",
+		prepareBurnfeeAggregationQuery(HourMeasurement),
 		"1h",
 		[]string{},
 	)
@@ -23,11 +47,11 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	}
 	result = append(result, burnfeeHourCqs)
 	burnfeeDayCqs, err := cq.NewContinuousQuery(
-		"burn_fee_day",
+		DayMeasurement,
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(amount) as sum_amount INTO burn_fee_day FROM burn_fees GROUP BY reserve_addr",
+		prepareBurnfeeAggregationQuery(DayMeasurement),
 		"1d",
 		[]string{},
 	)

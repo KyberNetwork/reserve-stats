@@ -79,7 +79,7 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (map[string]common.Reserve
 
 	internalReserveAddress := contracts.InternalReserveAddress().MustGetOneFromContext(fj.c)
 
-	ratesCrawler, err := crawler.NewReserveRatesCrawler(fj.addrs, client, coreClient, internalReserveAddress, sugar, blockTimeResolver)
+	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, fj.addrs, client, coreClient, internalReserveAddress, blockTimeResolver)
 	if err != nil {
 		return nil, err
 	}

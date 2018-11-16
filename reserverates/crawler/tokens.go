@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"fmt"
+	"go.uber.org/zap"
 	"math/big"
 
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
@@ -10,17 +11,36 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (rrc *ResreveRatesCrawler) getSupportedTokens(rsvAddr common.Address, block uint64) ([]core.Token, error) {
+type supportedTokensGetter interface {
+	supportedTokens(common.Address, uint64) ([]core.Token, error)
+}
+
+// coreSupportedTokens uses the configuration tokens from Kyber core.
+type coreSupportedTokens struct {
+	sugar      *zap.SugaredLogger
+	ethClient  bind.ContractBackend
+	coreClient core.Interface
+}
+
+func newCoreSupportedTokens(sugar *zap.SugaredLogger, ethClient bind.ContractBackend, coreClient core.Interface) *coreSupportedTokens {
+	return &coreSupportedTokens{
+		sugar:      sugar,
+		ethClient:  ethClient,
+		coreClient: coreClient,
+	}
+}
+
+func (cst *coreSupportedTokens) supportedTokens(rsvAddr common.Address, block uint64) ([]core.Token, error) {
 	var (
-		logger = rrc.sugar.With(
-			"func", "reserverates/crawler/ResreveRatesCrawler.getSupportedTokens",
+		logger = cst.sugar.With(
+			"func", "reserverates/crawler/coreSupportedTokens.supportedTokens",
 			"rsv_addr", rsvAddr.Hex(),
 			"block_number", block,
 		)
 		callOpts = &bind.CallOpts{BlockNumber: big.NewInt(0).SetUint64(block)}
 		results  []core.Token
 	)
-	reserveContract, err := contracts.NewReserve(rsvAddr, rrc.client)
+	reserveContract, err := contracts.NewReserve(rsvAddr, cst.ethClient)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +50,7 @@ func (rrc *ResreveRatesCrawler) getSupportedTokens(rsvAddr common.Address, block
 		return nil, err
 	}
 
-	conversionRatesContract, err := contracts.NewConversionRates(conversionRatesAddr, rrc.client)
+	conversionRatesContract, err := contracts.NewConversionRates(conversionRatesAddr, cst.ethClient)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +60,7 @@ func (rrc *ResreveRatesCrawler) getSupportedTokens(rsvAddr common.Address, block
 		return nil, err
 	}
 
-	configuredTokens, err := rrc.coreClient.Tokens()
+	configuredTokens, err := cst.coreClient.Tokens()
 	if err != nil {
 		return nil, err
 	}

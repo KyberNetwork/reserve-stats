@@ -2,7 +2,6 @@ package crawler
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"golang.org/x/sync/errgroup"
 	"sync"
 
@@ -18,17 +17,17 @@ import (
 // ResreveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
 // a set of addresses to crawl rates from and setting object to query for reserve's token settings
 type ResreveRatesCrawler struct {
+	sugar *zap.SugaredLogger
+
 	wrapperContract     reserveRateGetter
-	Addresses           []ethereum.Address
-	coreClient          core.Interface
+	addresses           []ethereum.Address
+	stg                 supportedTokensGetter
 	internalReserveAddr ethereum.Address
-	sugar               *zap.SugaredLogger
 	blkTimeRsv          blockchain.BlockTimeResolverInterface
-	client              bind.ContractBackend
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
-func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, coreClient core.Interface, internalReserveAddr ethereum.Address, sugar *zap.SugaredLogger, bl blockchain.BlockTimeResolverInterface) (*ResreveRatesCrawler, error) {
+func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *ethclient.Client, coreClient core.Interface, internalReserveAddr ethereum.Address, bl blockchain.BlockTimeResolverInterface) (*ResreveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapperFallback(sugar, client)
 	if err != nil {
 		return nil, err
@@ -39,13 +38,12 @@ func NewReserveRatesCrawler(addrs []string, client *ethclient.Client, coreClient
 		ethAddrs = append(ethAddrs, ethereum.HexToAddress(addr))
 	}
 	return &ResreveRatesCrawler{
-		wrapperContract:     wrpContract,
-		Addresses:           ethAddrs,
-		coreClient:          coreClient,
-		internalReserveAddr: internalReserveAddr,
 		sugar:               sugar,
+		wrapperContract:     wrpContract,
+		addresses:           ethAddrs,
+		stg:                 newCoreSupportedTokens(sugar, client, coreClient),
+		internalReserveAddr: internalReserveAddr,
 		blkTimeRsv:          bl,
-		client:              client,
 	}, nil
 }
 
@@ -71,7 +69,7 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 		return nil, err
 	}
 
-	tokens, err := rrc.getSupportedTokens(rsvAddr, block)
+	tokens, err := rrc.stg.supportedTokens(rsvAddr, block)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get supported tokens for reserve %s. Error: %s", rsvAddr.Hex(), err)
 	}
@@ -107,11 +105,11 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]rsvRat
 	logger := rrc.sugar.With(
 		"func", "reserverates/reserve-rates-crawler/ResreveRatesCrawler.GetReserveRates",
 		"block", block,
-		"reserves", len(rrc.Addresses),
+		"reserves", len(rrc.addresses),
 	)
 	logger.Debug("fetching rates for all reserves")
 
-	for _, rsvAddr := range rrc.Addresses {
+	for _, rsvAddr := range rrc.addresses {
 		// copy to local variables to avoid race condition
 		block, rsvAddr := block, rsvAddr
 		g.Go(func() error {

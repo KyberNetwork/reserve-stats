@@ -303,6 +303,16 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		country = ""
 	}
 
+	burnFees := burnFeesByTxHash[txHash][uint(logIndex)]
+	if burnFees == nil {
+		burnFees = []common.BurnFee{}
+	}
+
+	walletFees := walletFeesByTxHash[txHash][uint(logIndex)]
+	if walletFees == nil {
+		walletFees = []common.WalletFee{}
+	}
+
 	tradeLog = common.TradeLog{
 		Timestamp:       timestamp,
 		BlockNumber:     blockNumber,
@@ -318,8 +328,8 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		DestAmount:  dstAmountInWei,
 		FiatAmount:  fiatAmount,
 
-		BurnFees:   burnFeesByTxHash[txHash][uint(logIndex)],
-		WalletFees: walletFeesByTxHash[txHash][uint(logIndex)],
+		BurnFees:   burnFees,
+		WalletFees: walletFees,
 
 		IP:      ip,
 		Country: country,

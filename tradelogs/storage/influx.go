@@ -100,25 +100,34 @@ func (is InfluxStorage) LastBlock() (int64, error) {
 
 // LoadTradeLogs return trade logs from DB
 func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
-	q := fmt.Sprintf(
-		`
+	var (
+		result = make([]common.TradeLog, 0)
+
+		q = fmt.Sprintf(
+			`
 		SELECT %[1]s FROM burn_fees WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, trade_log_index;
 		SELECT %[2]s FROM wallet_fees WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, trade_log_index;
 		SELECT %[3]s FROM trades WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, log_index;
 		`,
-		"time, reserve_addr, amount, log_index",
-		"time, reserve_addr, wallet_addr, amount, log_index",
-		`
+			"time, reserve_addr, amount, log_index",
+			"time, reserve_addr, wallet_addr, amount, log_index",
+			`
 		time, block_number, 
 		eth_receival_sender, eth_receival_amount, 
 		user_addr, src_addr, dst_addr, src_amount, dst_amount, (eth_amount * eth_usd_rate) as fiat_amount, 		
 		ip, country
 		`,
-		from.Format(time.RFC3339),
-		to.Format(time.RFC3339),
+			from.Format(time.RFC3339),
+			to.Format(time.RFC3339),
+		)
+
+		logger = is.sugar.With(
+			"func", "tradelogs/storage/InfluxStorage.LoadTradLogs",
+			"from", from,
+			"to", to,
+		)
 	)
 
-	logger := is.sugar.With("from", from, "to", to)
 	logger.Debug("prepared query statement", "query", q)
 
 	res, err := is.queryDB(is.influxClient, q)
@@ -127,7 +136,6 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 	}
 
 	// Get BurnFees
-
 	if len(res[0].Series) == 0 {
 		is.sugar.Debug("empty burn fee in query result")
 		return nil, nil
@@ -168,11 +176,9 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 	}
 
 	// Get TradeLogs
-	var result []common.TradeLog
-
 	if len(res[2].Series) == 0 {
 		is.sugar.Debug("empty trades in query result")
-		return nil, nil
+		return result, nil
 	}
 
 	for _, row := range res[2].Series {

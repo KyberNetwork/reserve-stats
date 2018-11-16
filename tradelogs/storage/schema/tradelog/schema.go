@@ -1,12 +1,12 @@
-package schema
+package tradelog
 
-// TradeLogSchemaFieldName define a list of field names for a TradeLog record
-//go:generate stringer -type=TradeLogSchemaFieldName -linecomment
-type TradeLogSchemaFieldName int
+// FieldName define a list of field names for a TradeLog record
+//go:generate stringer -type=FieldName -linecomment
+type FieldName int
 
 const (
 	//Time is enumerated field name for reserveRate.time
-	Time TradeLogSchemaFieldName = iota //time
+	Time FieldName = iota //time
 	//BlockNumber is enumerated field name for TradeLog.BlockNumbers
 	BlockNumber //block_number
 	//TxHash is enumerated field name for tradeLog.TxHash
@@ -50,7 +50,7 @@ const (
 )
 
 //tradeLogSchemaFields translates the stringer of reserveRate fields into its enumerated form
-var tradeLogSchemaFields = map[string]TradeLogSchemaFieldName{
+var tradeLogSchemaFields = map[string]FieldName{
 	"time":                Time,
 	"block_number":        BlockNumber,
 	"tx_hash":             TxHash,

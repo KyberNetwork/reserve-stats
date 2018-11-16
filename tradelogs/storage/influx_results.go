@@ -11,7 +11,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema"
+	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 )
 
 func (is *InfluxStorage) rowToAggregatedBurnFee(row []interface{}) (time.Time, float64, ethereum.Address, error) {
@@ -229,35 +229,35 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 
 	var tradeLog common.TradeLog
 
-	txHash, err := influxdb.GetTxHashFromInterface(row.Tags[schema.TxHash.String()])
+	txHash, err := influxdb.GetTxHashFromInterface(row.Tags[logschema.TxHash.String()])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get tx_hash: %s", err)
 	}
 
-	logIndex, err := influxdb.GetUint64FromTagValue(row.Tags[schema.LogIndex.String()])
+	logIndex, err := influxdb.GetUint64FromTagValue(row.Tags[logschema.LogIndex.String()])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get trade log index: %s", err)
 	}
 
 	value := row.Values[0]
-	idxs, err := schema.NewTradeLogFieldsRegistrar(row.Columns)
+	idxs, err := logschema.NewFieldsRegistrar(row.Columns)
 	if err != nil {
 		return tradeLog, err
 	}
 
-	timestamp, err := influxdb.GetTimeFromInterface(value[idxs[schema.Time]])
+	timestamp, err := influxdb.GetTimeFromInterface(value[idxs[logschema.Time]])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get timestamp: %s", err)
 	}
 
-	blockNumber, err := strconv.ParseUint(value[idxs[schema.BlockNumber]].(string), 10, 64)
+	blockNumber, err := strconv.ParseUint(value[idxs[logschema.BlockNumber]].(string), 10, 64)
 
-	ethReceivalAddr, err := influxdb.GetAddressFromInterface(value[idxs[schema.EthReceivalSender]])
+	ethReceivalAddr, err := influxdb.GetAddressFromInterface(value[idxs[logschema.EthReceivalSender]])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get eth_receival_addr: %s", err)
 	}
 
-	humanizedEthReceival, err := influxdb.GetFloat64FromInterface(value[idxs[schema.EthReceivalAmount]])
+	humanizedEthReceival, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.EthReceivalAmount]])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get eth_receival_amount: %s", err)
 	}
@@ -267,21 +267,21 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		return tradeLog, fmt.Errorf("failed to convert eth_receival_amount: %s", err)
 	}
 
-	userAddr, err := influxdb.GetAddressFromInterface(value[idxs[schema.UserAddr]])
+	userAddr, err := influxdb.GetAddressFromInterface(value[idxs[logschema.UserAddr]])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get user_addr: %s", err)
 	}
 
-	srcAddress, err := influxdb.GetAddressFromInterface(value[idxs[schema.SrcAddr]])
+	srcAddress, err := influxdb.GetAddressFromInterface(value[idxs[logschema.SrcAddr]])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get src_addr: %s", err)
 	}
 
-	dstAddress, err := influxdb.GetAddressFromInterface(value[idxs[schema.DstAddr]])
+	dstAddress, err := influxdb.GetAddressFromInterface(value[idxs[logschema.DstAddr]])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get dst_addr: %s", err)
 	}
-	humanizedSrcAmount, err := influxdb.GetFloat64FromInterface(value[idxs[schema.SrcAmount]])
+	humanizedSrcAmount, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.SrcAmount]])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get src_amount: %s", err)
 	}
@@ -291,7 +291,7 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		return tradeLog, fmt.Errorf("failed to convert src_amount: %s", err)
 	}
 
-	humanizedDstAmount, err := influxdb.GetFloat64FromInterface(value[idxs[schema.DstAmount]])
+	humanizedDstAmount, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.DstAmount]])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get dst_amount: %s", err)
 	}
@@ -301,22 +301,22 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		return tradeLog, fmt.Errorf("failed to convert dst_amount: %s", err)
 	}
 
-	ip, ok := value[idxs[schema.IP]].(string)
+	ip, ok := value[idxs[logschema.IP]].(string)
 	if !ok {
 		ip = ""
 	}
 
-	country, ok := value[idxs[schema.Country]].(string)
+	country, ok := value[idxs[logschema.Country]].(string)
 	if !ok {
 		country = ""
 	}
 
-	appName, ok := value[idxs[schema.IntegrationApp]].(string)
+	appName, ok := value[idxs[logschema.IntegrationApp]].(string)
 	if !ok {
 		appName = ""
 	}
 
-	fiatAmount, err := influxdb.GetFloat64FromInterface(value[idxs[schema.FiatAmount]])
+	fiatAmount, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.FiatAmount]])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get fiat_amount: %s", err)
 	}

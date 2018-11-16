@@ -11,7 +11,15 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-var emptyErrMsg = "abi: unmarshalling empty output"
+var (
+	emptyErrMsg = "abi: unmarshalling empty output"
+
+	// KyberNetwork smart contracts return this address
+	// in case it don't have one
+	// e.g:
+	// get sanity address from reserve, but the sanity was not set at that time
+	voidAddr = common.HexToAddress("0x0000000000000000000000000000000000000000")
+)
 
 // VersionedWrapperFallback is a wrapper around VersionedWrapper with fallback
 // if getSanityRates throw an exception.
@@ -90,21 +98,27 @@ func (vwf *VersionedWrapperFallback) getReserveRateFallback(block uint64, rsvAdd
 				return gErr
 			}
 
-			sanityRateContract, gErr := NewSanityRates(sanityRateAddr, vwf.client)
-			if gErr != nil {
-				return gErr
-			}
-
-			logger = logger.With("sanity_contract", sanityRateAddr.Hex())
-			logger.Debugw("calling sanity rates contract GetSanityRate")
-			sanityRate, gErr := sanityRateContract.GetSanityRate(callOpts, src, dst)
-			if gErr != nil {
-				if gErr.Error() != emptyErrMsg {
+			var sanityRate *big.Int
+			if sanityRateAddr != voidAddr {
+				sanityRateContract, gErr := NewSanityRates(sanityRateAddr, vwf.client)
+				if gErr != nil {
 					return gErr
-
 				}
-				logger.Infow("got exception when calling sanity rate contract")
-				gErr = nil
+
+				logger = logger.With("sanity_contract", sanityRateAddr.Hex())
+				logger.Debugw("calling sanity rates contract GetSanityRate")
+				sanityRate, gErr = sanityRateContract.GetSanityRate(callOpts, src, dst)
+				if gErr != nil {
+					if gErr.Error() != emptyErrMsg {
+						return gErr
+
+					}
+					logger.Infow("got exception when calling sanity rate contract")
+					gErr = nil
+					sanityRate = big.NewInt(0)
+				}
+			} else {
+				logger.Infow("sanity_rate smart contract not available")
 				sanityRate = big.NewInt(0)
 			}
 

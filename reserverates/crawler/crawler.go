@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
@@ -71,6 +72,10 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 
 	tokens, err := rrc.stg.supportedTokens(rsvAddr, block)
 	if err != nil {
+		if err.Error() == bind.ErrNoCode.Error() {
+			logger.Infow("reserve contract does not exist")
+			return nil, nil
+		}
 		return nil, fmt.Errorf("cannot get supported tokens for reserve %s. Error: %s", rsvAddr.Hex(), err)
 	}
 
@@ -117,6 +122,12 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]rsvRat
 			if err != nil {
 				return err
 			}
+
+			if rates == nil {
+				logger.Info("rates is not available, skipping")
+				return nil
+			}
+
 			data.Store(rsvAddr, *rates)
 			return nil
 		})

@@ -201,17 +201,6 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) ([]common.Trade
 
 // GetTradeLogs returns trade logs from KyberNetwork.
 func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
-	// addresses := []ethereum.Address{
-	// 	ethereum.HexToAddress(pricingAddr),         // pricing
-	// 	ethereum.HexToAddress(networkAddr),         // network
-	// 	ethereum.HexToAddress(burnerAddr),          // burner
-	// 	ethereum.HexToAddress(internalNetworkAddr), // internal network
-	// }
-
-	// for _, addr := range oldContractAddrs {
-	// 	addresses = append(addresses, ethereum.HexToAddress(addr))
-	// }
-
 	topics := [][]ethereum.Hash{
 		{
 			ethereum.HexToHash(tradeEvent),

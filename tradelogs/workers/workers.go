@@ -169,8 +169,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 
 					p.mutex.Lock()
 					if order == p.lastCompletedJobOrder+1 {
-						err = p.storage.SaveTradeLogs(tradeLogs)
-						if err == nil {
+						if err = p.storage.SaveTradeLogs(tradeLogs); err == nil {
 							saveSuccess = true
 							p.lastCompletedJobOrder++
 						}

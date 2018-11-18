@@ -9,7 +9,14 @@ import (
 var ETHToken = Token{
 	ID:       "ETH",
 	Name:     "Ethereum",
-	Address:  "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+	Address:  "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+	Decimals: 18,
+}
+
+var WETHToken = Token{
+	ID:       "WETH",
+	Name:     "Wrapped-ETH",
+	Address:  "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
 	Decimals: 18,
 }
 

@@ -151,7 +151,7 @@ func convertRowValueToSummary(v []interface{}) (uint64, *common.TradeSummary, er
 	if err != nil {
 		return 0, nil, err
 	}
-	newUniqeAddress, err := influxdb.GetUint64FromInterface(v[7])
+	newUniqueAddress, err := influxdb.GetUint64FromInterface(v[7])
 	if err != nil {
 		return 0, nil, err
 	}
@@ -166,7 +166,7 @@ func convertRowValueToSummary(v []interface{}) (uint64, *common.TradeSummary, er
 		UniqueAddresses:    uniqueAddr,
 		USDPerTrade:        usdPerTrade,
 		ETHPerTrade:        ethPerTrade,
-		NewUniqueAddresses: newUniqeAddress,
+		NewUniqueAddresses: newUniqueAddress,
 		KYCEDAddresses:     kyced,
 	}, nil
 }

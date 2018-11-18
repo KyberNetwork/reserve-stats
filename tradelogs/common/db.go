@@ -9,4 +9,6 @@ const (
 	BurnfeeMeasurementName = "burn_fees"
 	//WalletMeasurementName is the measurement for wallet fee
 	WalletMeasurementName = "wallet_fees"
+	//FirstTradedMeasurementName is the measurement name for first traded records
+	FirstTradedMeasurementName = "first_trades"
 )

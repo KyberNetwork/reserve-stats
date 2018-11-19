@@ -24,7 +24,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, uniqueAddrCqs)
 	volCqs, err := libcq.NewContinuousQuery(
-		"summary_countr_volume",
+		"summary_country_volume",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
@@ -87,5 +87,19 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		return nil, err
 	}
 	result = append(result, assetVolSrcDayCqs)
+
+	kyced, err := libcq.NewContinuousQuery(
+		"kyced",
+		dbName,
+		dayResampleInterval,
+		dayResampleFor,
+		"SELECT COUNT(kyced) as kyced INTO country_stats FROM (SELECT DISTINCT(kyced) AS kyced FROM kyced GROUP BY user_addr, country)",
+		"1d",
+		[]string{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, kyced)
 	return result, nil
 }

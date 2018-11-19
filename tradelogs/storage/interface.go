@@ -22,4 +22,5 @@ type Interface interface {
 	GetTradeSummary(from, to time.Time) (map[uint64]*common.TradeSummary, error)
 	GetUserVolume(userAddr ethereum.Address, from, to time.Time, freq string) (map[uint64]common.UserVolume, error)
 	GetUserList(from, to time.Time) ([]common.UserInfo, error)
+	GetWalletStats(fromTime, toTime time.Time, walletAddr string) (map[uint64]common.WalletStats, error)
 }

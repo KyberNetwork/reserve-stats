@@ -23,7 +23,7 @@ func (is *InfluxStorage) GetWalletStats(from, to time.Time, walletAddr string) (
 	)
 
 	query := fmt.Sprintf(`
-	SELECT eth_volume, usd_volume, total_trade, unique_addresses, usd_per_trade, eth_per_trade, kyced
+	SELECT eth_volume, usd_volume, total_trade, unique_addresses, usd_per_trade, eth_per_trade, kyced, new_unique_addresses, total_burn_fee
 	FROM wallet_stats WHERE time >= '%s' and time <= '%s' and wallet_addr='%s'
 	`, from.UTC().Format(time.RFC3339), to.UTC().Format(time.RFC3339), walletAddr)
 
@@ -54,7 +54,7 @@ func convertQueryToWalletStats(v []interface{}) (time.Time, common.WalletStats, 
 		walletStats common.WalletStats
 		err         error
 	)
-	if len(v) != 8 {
+	if len(v) != 10 {
 		return ts, walletStats, errors.New("value fields is invalid in len")
 	}
 	ts, err = influxdb.GetTimeFromInterface(v[0])
@@ -90,14 +90,26 @@ func convertQueryToWalletStats(v []interface{}) (time.Time, common.WalletStats, 
 	if err != nil {
 		return ts, walletStats, err
 	}
+
+	newUniqueAddress, err := influxdb.GetInt64FromInterface(v[8])
+	if err != nil {
+		return ts, walletStats, err
+	}
+
+	totalBurnFee, err := influxdb.GetFloat64FromInterface(v[9])
+	if err != nil {
+		return ts, walletStats, err
+	}
 	walletStats = common.WalletStats{
-		ETHVolume:       ethVolume,
-		USDVolume:       usdVolume,
-		TotalTrade:      totalTrade,
-		UniqueAddresses: uniqueAddresses,
-		USDPerTrade:     usdPerTrade,
-		ETHPerTrade:     ethPerTrade,
-		KYCEDAddresses:  kyced,
+		ETHVolume:          ethVolume,
+		USDVolume:          usdVolume,
+		TotalTrade:         totalTrade,
+		UniqueAddresses:    uniqueAddresses,
+		USDPerTrade:        usdPerTrade,
+		ETHPerTrade:        ethPerTrade,
+		KYCEDAddresses:     kyced,
+		NewUniqueAddresses: newUniqueAddress,
+		BurnFee:            totalBurnFee,
 	}
 	return ts, walletStats, err
 }

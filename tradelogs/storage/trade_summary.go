@@ -8,6 +8,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
+	tradeSumSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/trade_summary"
 	influxModel "github.com/influxdata/influxdb/models"
 )
 
@@ -25,7 +27,18 @@ func (is *InfluxStorage) GetTradeSummary(from, to time.Time) (map[uint64]*common
 
 		results = make(map[uint64]*common.TradeSummary)
 	)
-	tradeLogQuery := fmt.Sprintf("SELECT time,eth_per_trade,total_eth_volume,total_trade,total_usd_amount,usd_per_trade,unique_addresses,new_unique_addresses FROM trade_summary WHERE %s", timeFilter)
+	tradeLogQuery := fmt.Sprintf(
+		"SELECT %[1]s,%[2]s,%[3]s,%[4]s,%[5]s,%[6]s,%[7]s,%[8]s FROM %[9]s WHERE %[10]s",
+		tradeSumSchema.Time.String(),
+		tradeSumSchema.ETHPerTrade.String(),
+		tradeSumSchema.TotalETHVolume.String(),
+		tradeSumSchema.TotalTrade.String(),
+		tradeSumSchema.TotalUSDAmount.String(),
+		tradeSumSchema.USDPerTrade.String(),
+		tradeSumSchema.UniqueAddresses.String(),
+		tradeSumSchema.NewUniqueAddresses.String(),
+		cq.TradeSummaryMeasurement,
+		timeFilter)
 	logger.Debugw("getting trade summary", "query", tradeLogQuery)
 
 	response, err := is.queryDB(is.influxClient, tradeLogQuery)
@@ -44,7 +57,11 @@ func (is *InfluxStorage) GetTradeSummary(from, to time.Time) (map[uint64]*common
 		return nil, err
 	}
 
-	burnFeeQuery := fmt.Sprintf("SELECT total_burn_fee FROM burn_fee_summary WHERE %s ", timeFilter)
+	burnFeeQuery := fmt.Sprintf(
+		"SELECT %s FROM %s WHERE %s ",
+		tradeSumSchema.TotalBurnFee.String(),
+		cq.BurnFeeSummaryMeasurement,
+		timeFilter)
 	logger.Debugw("getting total burn fee", "query", burnFeeQuery)
 
 	if response, err = is.queryDB(is.influxClient, burnFeeQuery); err != nil {
@@ -104,8 +121,12 @@ func convertQueryResultToSummary(row influxModel.Row) (map[uint64]*common.TradeS
 	if len(row.Values) == 0 {
 		return nil, nil
 	}
+	idxs, err := tradeSumSchema.NewFieldsRegistrar(row.Columns)
+	if err != nil {
+		return nil, err
+	}
 	for _, v := range row.Values {
-		ts, vol, err := convertRowValueToSummary(v)
+		ts, vol, err := convertRowValueToSummary(v, idxs)
 		if err != nil {
 			return nil, err
 		}
@@ -114,11 +135,11 @@ func convertQueryResultToSummary(row influxModel.Row) (map[uint64]*common.TradeS
 	return result, nil
 }
 
-func convertRowValueToSummary(v []interface{}) (uint64, *common.TradeSummary, error) {
+func convertRowValueToSummary(v []interface{}, idxs map[tradeSumSchema.FieldName]int) (uint64, *common.TradeSummary, error) {
 	if len(v) != 8 {
 		return 0, nil, errors.New("value fields is invalid in len")
 	}
-	timestampString, ok := v[0].(string)
+	timestampString, ok := v[idxs[tradeSumSchema.Time]].(string)
 	if !ok {
 		return 0, nil, errCantConvert
 	}
@@ -127,31 +148,31 @@ func convertRowValueToSummary(v []interface{}) (uint64, *common.TradeSummary, er
 		return 0, nil, err
 	}
 	tsUint64 := timeutil.TimeToTimestampMs(ts)
-	ethPerTrade, err := influxdb.GetFloat64FromInterface(v[1])
+	ethPerTrade, err := influxdb.GetFloat64FromInterface(v[idxs[tradeSumSchema.ETHPerTrade]])
 	if err != nil {
 		return 0, nil, err
 	}
-	ethVolume, err := influxdb.GetFloat64FromInterface(v[2])
+	ethVolume, err := influxdb.GetFloat64FromInterface(v[idxs[tradeSumSchema.TotalETHVolume]])
 	if err != nil {
 		return 0, nil, err
 	}
-	totalTrade, err := influxdb.GetUint64FromInterface(v[3])
+	totalTrade, err := influxdb.GetUint64FromInterface(v[idxs[tradeSumSchema.TotalTrade]])
 	if err != nil {
 		return 0, nil, err
 	}
-	usdVolume, err := influxdb.GetFloat64FromInterface(v[4])
+	usdVolume, err := influxdb.GetFloat64FromInterface(v[idxs[tradeSumSchema.TotalUSDAmount]])
 	if err != nil {
 		return 0, nil, err
 	}
-	usdPerTrade, err := influxdb.GetFloat64FromInterface(v[5])
+	usdPerTrade, err := influxdb.GetFloat64FromInterface(v[idxs[tradeSumSchema.USDPerTrade]])
 	if err != nil {
 		return 0, nil, err
 	}
-	uniqueAddr, err := influxdb.GetUint64FromInterface(v[6])
+	uniqueAddr, err := influxdb.GetUint64FromInterface(v[idxs[tradeSumSchema.UniqueAddresses]])
 	if err != nil {
 		return 0, nil, err
 	}
-	newUnqAddress, err := influxdb.GetUint64FromInterface(v[7])
+	newUnqAddress, err := influxdb.GetUint64FromInterface(v[idxs[tradeSumSchema.NewUniqueAddresses]])
 	if err != nil {
 		return 0, nil, err
 	}

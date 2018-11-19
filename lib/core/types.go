@@ -13,6 +13,7 @@ var ETHToken = Token{
 	Decimals: 18,
 }
 
+// WETHToken is the configuration of Ethereum, will hardly be changed.
 var WETHToken = Token{
 	ID:       "WETH",
 	Name:     "Wrapped-ETH",

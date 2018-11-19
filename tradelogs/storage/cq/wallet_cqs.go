@@ -39,5 +39,20 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		return nil, err
 	}
 	result = append(result, volCqs)
+
+	kyced, err := cq.NewContinuousQuery(
+		"kyced",
+		dbName,
+		dayResampleInterval,
+		dayResampleFor,
+		"SELECT COUNT(kyced) as kyced INTO wallet_stats FROM (SELECT DISTINCT(kyced) AS kyced FROM kyced GROUP BY user_addr, wallet_addr)",
+		"1d",
+		[]string{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, kyced)
+
 	return result, nil
 }

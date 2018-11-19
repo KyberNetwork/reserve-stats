@@ -31,10 +31,8 @@ const (
 	etherReceivalEvent = "0x75f33ed68675112c77094e7c5b073890598be1d23e27cd7f6907b4a7d98ac619"
 
 	kyberSwapAppName = "KyberSwap"
-	appNameJSONPath  = "./app_name.json"
+	appNameJSONPath  = "app_name.json"
 )
-
-var thirdPartyAppNames = common.AddrAppNameFromFile(appNameJSONPath)
 
 // NewCrawler create a new Crawler instance.
 func NewCrawler(
@@ -47,6 +45,10 @@ func NewCrawler(
 	if err != nil {
 		return nil, err
 	}
+	thirdPartyAppNames, err := common.AddrAppNameFromFile(appNameJSONPath)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Crawler{
 		sugar:           sugar,
@@ -55,6 +57,7 @@ func NewCrawler(
 		broadcastClient: broadcastClient,
 		rateProvider:    rateProvider,
 		addresses:       addresses,
+		appNames:        thirdPartyAppNames,
 	}, nil
 }
 
@@ -67,6 +70,9 @@ type Crawler struct {
 	broadcastClient broadcast.Interface
 	rateProvider    tokenrate.ETHUSDRateProvider
 	addresses       []ethereum.Address
+	// appNames is set into Crawler, since the 3rd party app names might changes,
+	// each new Crawler job will read this file again, hence elimitate the need to restart
+	appNames common.AddrToAppName
 }
 
 func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
@@ -157,7 +163,7 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) ([]common.Trade
 			}
 			tradeLog.WalletFees = append(tradeLog.WalletFees, walletFee)
 			//if wallet address is available in thirdPartyAppNames, assign it, otherwise unknown is set.
-			appName, ok := thirdPartyAppNames[walletAddr]
+			appName, ok := crawler.appNames[walletAddr]
 			if !ok {
 				tradeLog.IntegrationApp = "unknown"
 			} else {

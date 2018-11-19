@@ -10,7 +10,8 @@ import (
 //AddrToAppName return the app name according to address
 type AddrToAppName map[ethereum.Address]string
 
-func AddrAppNameFromFile(path string) AddrToAppName {
+//AddrAppNameFromFile return a map WalletAddr to AppName from a file
+func AddrAppNameFromFile(path string) (AddrToAppName, error) {
 	var (
 		result = make(AddrToAppName)
 		tmp    = make(map[string]string)
@@ -18,14 +19,14 @@ func AddrAppNameFromFile(path string) AddrToAppName {
 	data, err := ioutil.ReadFile(path)
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	err = json.Unmarshal(data, &tmp)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	for addr, appName := range tmp {
 		result[ethereum.HexToAddress(addr)] = appName
 	}
-	return result
+	return result, nil
 }

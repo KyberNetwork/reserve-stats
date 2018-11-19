@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -74,6 +75,9 @@ func (is *InfluxStorage) GetTokenHeatmap(asset core.Token, from, to time.Time) (
 	}
 
 	for _, s := range volumeResponse[0].Series {
+		if len(s.Values) != 4 {
+			return result, errors.New("values field is invalid in len")
+		}
 		country := s.Tags["country"]
 		if country == "" {
 			country = "unknown"

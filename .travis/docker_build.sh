@@ -10,7 +10,7 @@ build() {
     local build_dir="$1"
     pushd "$build_dir"
     gometalinter --config="$gometalinter_path" ./...
-    go test -v -mod=vendor ./...
+    go test -v -race -mod=vendor ./...
     popd
 
     for service in "${@:2}"; do
@@ -32,6 +32,6 @@ case "$build_part" in
     *)
         exclude_pattern="github.com/KyberNetwork/reserve-stats/\(reserverates\|tradelogs\|users\|gateway\|priceanalytics\)"
         gometalinter --config="$gometalinter_path" --exclude "$exclude_pattern" ./...
-        go test -v -mod=vendor $(go list -mod=vendor ./... | grep -v "$exclude_pattern")
+        go test -v -race -mod=vendor $(go list -mod=vendor ./... | grep -v "$exclude_pattern")
         ;;
 esac

@@ -23,6 +23,8 @@ const (
 	TotalBurnFee // total_burn_fee
 	//NewUniqueAddresses is the enumerated fieldname for new Unique Address in trade summary
 	NewUniqueAddresses // new_unique_addresses
+	//KYCedAddresses is the enumerated fieldname for number kyced address
+	KYCedAddresses // kyced
 )
 
 //tradeSummaryFields translates the stringer of reserveRate fields into its enumerated form
@@ -36,4 +38,5 @@ var tradeSummaryFields = map[string]FieldName{
 	"eth_per_trade":        ETHPerTrade,
 	"total_burn_fee":       TotalBurnFee,
 	"new_unique_addresses": NewUniqueAddresses,
+	"kyced":                KYCedAddresses,
 }

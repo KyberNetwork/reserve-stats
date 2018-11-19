@@ -4,9 +4,9 @@ package tradesummary
 
 import "strconv"
 
-const _FieldName_name = "timeunique_addressestotal_eth_volumetotal_usd_amounttotal_tradeusd_per_tradeeth_per_tradetotal_burn_feenew_unique_addresses"
+const _FieldName_name = "timeunique_addressestotal_eth_volumetotal_usd_amounttotal_tradeusd_per_tradeeth_per_tradetotal_burn_feenew_unique_addresseskyced"
 
-var _FieldName_index = [...]uint8{0, 4, 20, 36, 52, 63, 76, 89, 103, 123}
+var _FieldName_index = [...]uint8{0, 4, 20, 36, 52, 63, 76, 89, 103, 123, 128}
 
 func (i FieldName) String() string {
 	if i < 0 || i >= FieldName(len(_FieldName_index)-1) {

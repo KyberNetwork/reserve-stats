@@ -31,7 +31,10 @@ const (
 	etherReceivalEvent = "0x75f33ed68675112c77094e7c5b073890598be1d23e27cd7f6907b4a7d98ac619"
 
 	kyberSwapAppName = "KyberSwap"
+	appNameJSONPath  = "./app_name.json"
 )
+
+var thirdPartyAppNames = common.AddrAppNameFromFile(appNameJSONPath)
 
 // NewCrawler create a new Crawler instance.
 func NewCrawler(
@@ -153,6 +156,14 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) ([]common.Trade
 				Index:          log.Index,
 			}
 			tradeLog.WalletFees = append(tradeLog.WalletFees, walletFee)
+			//if wallet address is available in thirdPartyAppNames, assign it, otherwise unknown is set.
+			appName, ok := thirdPartyAppNames[walletAddr]
+			if !ok {
+				tradeLog.IntegrationApp = "unknown"
+			} else {
+				tradeLog.IntegrationApp = appName
+			}
+			//if Wallet Address < maxUint64, it is KyberSwap
 			if walletAddr.Big().Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(128), nil)) == -1 {
 				tradeLog.IntegrationApp = kyberSwapAppName
 			}
@@ -257,6 +268,13 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 		result[i].Country = country
 
 		if result[i].IP != "" {
+			// if a Trade Log has IP address associated --> it is KyberSwap
+			result[i].IntegrationApp = kyberSwapAppName
+		}
+
+		// At this point, if result[i].IntergrationApp is still "", that means it does not come with a fee_to_wallet event.
+		// Of which case, it is a KyberSwap
+		if result[i].IntegrationApp == "" {
 			result[i].IntegrationApp = kyberSwapAppName
 		}
 
@@ -268,6 +286,5 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 		result[i].ETHUSDRate = rate
 
 	}
-
 	return result, nil
 }

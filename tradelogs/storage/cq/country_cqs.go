@@ -93,7 +93,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT COUNT(kyced) as kyced INTO country_stats FROM (SELECT DISTINCT(kyced) AS kyced FROM kyced GROUP BY user_addr, country)",
+		"SELECT COUNT(kyced) as kyced INTO country_stats FROM (SELECT DISTINCT(kyced) AS kyced FROM kyced GROUP BY user_addr, country) GROUP BY country",
 		"1d",
 		[]string{},
 	)
@@ -101,5 +101,20 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		return nil, err
 	}
 	result = append(result, kyced)
+
+	totalBurnFeeCqs, err := libcq.NewContinuousQuery(
+		"summary_total_burn_fee",
+		dbName,
+		dayResampleInterval,
+		dayResampleFor,
+		"SELECT SUM(amount) AS total_burn_fee INTO country_stats FROM burn_fees GROUP BY country",
+		"1d",
+		[]string{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, totalBurnFeeCqs)
+
 	return result, nil
 }

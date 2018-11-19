@@ -24,7 +24,7 @@ func (is *InfluxStorage) GetCountryStats(countryCode string, from, to time.Time)
 	cmd := fmt.Sprintf(`
 	SELECT eth_per_trade,
 	total_eth_volume,total_trade,total_usd_amount,
-	usd_per_trade,unique_addresses,new_unique_addresses, kyced
+	usd_per_trade,unique_addresses,new_unique_addresses, kyced, total_burn_fee
 	FROM country_stats WHERE %s AND %s`, timeFilter, countryFilter)
 
 	logger.Debugw("get country stats", "query", cmd)
@@ -58,7 +58,7 @@ func convertQueryResultToCountry(row influxModel.Row) (map[uint64]*common.Countr
 }
 
 func convertRowValueToCountrySummary(v []interface{}) (uint64, *common.CountryStats, error) {
-	if len(v) != 9 {
+	if len(v) != 10 {
 		return 0, nil, errors.New("value fields is invalid in len")
 	}
 	timestampString, ok := v[0].(string)
@@ -102,6 +102,10 @@ func convertRowValueToCountrySummary(v []interface{}) (uint64, *common.CountrySt
 	if err != nil {
 		return 0, nil, err
 	}
+	totalBurnFee, err := influxdb.GetFloat64FromInterface(v[9])
+	if err != nil {
+		return 0, nil, err
+	}
 	return tsUint64, &common.CountryStats{
 		TotalETHVolume:     ethVolume,
 		TotalUSDVolume:     usdVolume,
@@ -111,5 +115,6 @@ func convertRowValueToCountrySummary(v []interface{}) (uint64, *common.CountrySt
 		USDPerTrade:        usdPerTrade,
 		ETHPerTrade:        ethPerTrade,
 		KYCEDAddresses:     kyced,
+		TotalBurnFee:       totalBurnFee,
 	}, nil
 }

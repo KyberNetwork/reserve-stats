@@ -327,6 +327,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			"log_index":       strconv.FormatUint(uint64(burn.Index), 10),
 			"trade_log_index": strconv.FormatUint(uint64(log.Index), 10),
 			"wallet_addr":     walletAddr.String(),
+			"country":         log.Country,
 		}
 
 		burnAmount, err := is.coreClient.FromWei(blockchain.KNCAddr, burn.Amount)
@@ -354,6 +355,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			"wallet_addr":     walletFee.WalletAddress.String(),
 			"log_index":       strconv.FormatUint(uint64(walletFee.Index), 10),
 			"trade_log_index": strconv.FormatUint(uint64(log.Index), 10),
+			"country":         log.Country,
 		}
 
 		amount, err := is.coreClient.FromWei(blockchain.KNCAddr, walletFee.Amount)

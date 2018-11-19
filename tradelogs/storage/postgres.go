@@ -2,11 +2,12 @@ package storage
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
-	"strings"
-	"time"
 )
 
 type kycChecker interface {

@@ -51,7 +51,6 @@ func main() {
 			return err
 		}
 
-		postgresDB := storage.NewPostgresConnection(userPostgres)
 		kycChecker := storage.NewUserKYCChecker(sugar, userPostgres)
 
 		influxStorage, err := storage.NewInfluxStorage(
@@ -66,7 +65,7 @@ func main() {
 		}
 
 		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c),
-			sugar, coreCachedClient, postgresDB)
+			sugar, coreCachedClient)
 		err = api.Start()
 		if err != nil {
 			return err

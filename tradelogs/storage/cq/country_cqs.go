@@ -10,7 +10,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		result []*libcq.ContinuousQuery
 	)
 	uniqueAddrCqs, err := libcq.NewContinuousQuery(
-		"unique_addr",
+		"country_unique_addr",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
@@ -89,7 +89,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	result = append(result, assetVolSrcDayCqs)
 
 	kyced, err := libcq.NewContinuousQuery(
-		"kyced",
+		"country_kyced",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
@@ -103,7 +103,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	result = append(result, kyced)
 
 	totalBurnFeeCqs, err := libcq.NewContinuousQuery(
-		"summary_total_burn_fee",
+		"country_total_burn_fee",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,

@@ -10,7 +10,7 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		result []*cq.ContinuousQuery
 	)
 	uniqueAddrCqs, err := cq.NewContinuousQuery(
-		"unique_addr",
+		"wallet_unique_addr",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
@@ -23,7 +23,7 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	}
 	result = append(result, uniqueAddrCqs)
 	volCqs, err := cq.NewContinuousQuery(
-		"summary_volume",
+		"wallet_summary_volume",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,

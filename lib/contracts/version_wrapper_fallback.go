@@ -143,7 +143,7 @@ func (vwf *VersionedWrapperFallback) getReserveRateFallback(block uint64, rsvAdd
 	}
 
 	for i := range sanityRates {
-		sanityRatesResults = append(sanityRatesResults, rates[i])
+		sanityRatesResults = append(sanityRatesResults, sanityRates[i])
 	}
 
 	return ratesResults, sanityRatesResults, nil

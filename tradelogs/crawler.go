@@ -45,7 +45,6 @@ func NewCrawler(
 	if err != nil {
 		return nil, err
 	}
-	thirdPartyAppNames, err := common.AddrAppNameFromFile(appNameJSONPath)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +56,6 @@ func NewCrawler(
 		broadcastClient: broadcastClient,
 		rateProvider:    rateProvider,
 		addresses:       addresses,
-		appNames:        thirdPartyAppNames,
 	}, nil
 }
 
@@ -70,9 +68,6 @@ type Crawler struct {
 	broadcastClient broadcast.Interface
 	rateProvider    tokenrate.ETHUSDRateProvider
 	addresses       []ethereum.Address
-	// appNames is set into Crawler, since the 3rd party app names might changes,
-	// each new Crawler job will read this file again, hence elimitate the need to restart
-	appNames common.AddrToAppName
 }
 
 func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
@@ -162,13 +157,8 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) ([]common.Trade
 				Index:          log.Index,
 			}
 			tradeLog.WalletFees = append(tradeLog.WalletFees, walletFee)
-			//if wallet address is available in thirdPartyAppNames, assign it, otherwise unknown is set.
-			appName, ok := crawler.appNames[walletAddr]
-			if !ok {
-				tradeLog.IntegrationApp = "unknown"
-			} else {
-				tradeLog.IntegrationApp = appName
-			}
+			//if a tradelog has feeToWalletEvent, it is default to be unknown intergration app
+			tradeLog.IntegrationApp = "unknown"
 			//if Wallet Address < maxUint64, it is KyberSwap
 			if walletAddr.Big().Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(128), nil)) == -1 {
 				tradeLog.IntegrationApp = kyberSwapAppName

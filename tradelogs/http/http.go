@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/appname"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
@@ -23,6 +24,7 @@ type Server struct {
 	host        string
 	sugar       *zap.SugaredLogger
 	coreSetting core.Interface
+	appName     appname.AddrToAppName
 }
 
 type burnFeeQuery struct {
@@ -56,6 +58,24 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 			err,
 		)
 		return
+	}
+
+	addrToAppName, err := sv.appName.GetAddrToAppName()
+	if err != nil {
+		libhttputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+	for i, log := range tradeLogs {
+		if len(log.WalletFees) > 0 {
+			name, avai := addrToAppName[log.WalletFees[0].WalletAddress]
+			if avai {
+				tradeLogs[i].IntegrationApp = name
+			}
+		}
 	}
 
 	c.JSON(
@@ -132,11 +152,12 @@ func (sv *Server) Start() error {
 }
 
 // NewServer returns an instance of HttpApi to serve trade logs
-func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett core.Interface) *Server {
+func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett core.Interface, an appname.AddrToAppName) *Server {
 	return &Server{
 		storage:     storage,
 		host:        host,
 		sugar:       sugar,
 		coreSetting: sett,
+		appName:     an,
 	}
 }

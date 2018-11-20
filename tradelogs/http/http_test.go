@@ -8,13 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"go.uber.org/zap"
-
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/stretchr/testify/assert"
-
+	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 type mockStorage struct {
@@ -52,6 +51,10 @@ func (s *mockStorage) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo
 }
 
 func (s *mockStorage) GetWalletStats(fromTime, toTime time.Time, walletAddr string) (map[uint64]common.WalletStats, error) {
+	return nil, nil
+}
+
+func (s *mockStorage) GetTokenHeatmap(token core.Token, from, to time.Time) (map[string]common.Heatmap, error) {
 	return nil, nil
 }
 

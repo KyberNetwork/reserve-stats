@@ -2,9 +2,10 @@ package core
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // Interface represents a client o interact with KyberNetwork core APIs.

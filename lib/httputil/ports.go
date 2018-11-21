@@ -22,6 +22,6 @@ const (
 	// PriceAnalytic is the port number of Price Analytics API
 	PriceAnalytic HTTPPort = 8006
 
-	//AddrToAppName is the port number for Integration Address to AppName API
-	AddrToAppName HTTPPort = 8007
+	//AppName is the port number for Integration Address to AppName API
+	AppName HTTPPort = 8007
 )

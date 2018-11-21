@@ -18,7 +18,7 @@ func NewCliFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:   appNameURLFlag,
-			Usage:  "Core API URL",
+			Usage:  "url to query for app name",
 			EnvVar: "APP_NAME_URL",
 		},
 	}

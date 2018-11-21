@@ -3,8 +3,8 @@ package http
 import (
 	"net/http"
 
-	appNames "github.com/KyberNetwork/reserve-stats/integration-app-names"
-	"github.com/KyberNetwork/reserve-stats/lib/httputil"              // import custom validator functions
+	appNames "github.com/KyberNetwork/reserve-stats/app-names"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
@@ -62,8 +62,8 @@ func (sv *Server) updateAddrToAppName(c *gin.Context) {
 }
 
 func (sv *Server) register() {
-	sv.r.GET("/addr-to-appname", sv.getAddrToAppName)
-	sv.r.POST("/addr-to-appname", sv.updateAddrToAppName)
+	sv.r.GET("/application-names", sv.getAddrToAppName)
+	sv.r.POST("/application-names", sv.updateAddrToAppName)
 }
 
 // Run starts HTTP server on preconfigure-host. Return error if occurs

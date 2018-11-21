@@ -20,7 +20,7 @@ type Client struct {
 
 func (c *Client) newRequest(method, endpoint string) (*http.Request, error) {
 	var (
-		logger = c.sugar.With("method", method, "endpoint", endpoint)
+		logger = c.sugar.With("func", "lib/appname/appname_client.go/newRequest()", "method", method, "endpoint", endpoint)
 	)
 	logger.Debug("creating new Intergration app name HTTP request")
 
@@ -33,7 +33,6 @@ func (c *Client) newRequest(method, endpoint string) (*http.Request, error) {
 		return nil, err
 	}
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	return req, nil
 }
@@ -49,11 +48,9 @@ func (c *Client) GetAddrToAppName() (map[ethereum.Address]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.sugar.Debugw("Get Addr To App Name", "response", rsp)
 	c.sugar.Debugw("Get Addr To App Name", "body", rsp.Body)
 
 	defer rsp.Body.Close()
-	c.sugar.Debugw("Get Addr To App Name", "response", rsp)
 	if rsp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected return code: %d", rsp.StatusCode)
 	}

@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 
-	appNames "github.com/KyberNetwork/reserve-stats/integration-app-names"
-	"github.com/KyberNetwork/reserve-stats/integration-app-names/http"
+	appNames "github.com/KyberNetwork/reserve-stats/app-names"
+	"github.com/KyberNetwork/reserve-stats/app-names/http"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/urfave/cli"
@@ -17,16 +17,16 @@ const (
 
 func main() {
 	app := libapp.NewApp()
-	app.Name = "Addre to Intergration App Name"
+	app.Name = "Address to Intergration App Name"
 	app.Action = run
 	app.Version = "0.0.1"
 	app.Flags = append(app.Flags)
-	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AddrToAppName)...)
+	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AppName)...)
 	app.Flags = append(app.Flags,
 		cli.StringFlag{
 			Name:   dataFilePathFlag,
 			Usage:  "file path to address to app name json",
-			EnvVar: "APPNAME_DATA_PATH",
+			EnvVar: "DATA_PATH",
 		},
 	)
 	if err := app.Run(os.Args); err != nil {
@@ -46,10 +46,8 @@ func run(c *cli.Context) error {
 	defer logger.Sync()
 	sugar := logger.Sugar()
 
-	addrToAppname := appNames.NewMapAddrAppName()
-	if err := addrToAppname.LoadFromFile(c.String(dataFilePathFlag)); err != nil {
-		return err
-	}
+	addrToAppname := appNames.NewMapAddrAppName(appNames.WithDataFile(c.String(dataFilePathFlag)))
+
 	server, err := http.NewServer(httputil.NewHTTPAddressFromContext(c), addrToAppname, sugar)
 	if err != nil {
 		return err

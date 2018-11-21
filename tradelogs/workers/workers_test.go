@@ -45,7 +45,7 @@ func (s *mockStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq strin
 	return nil, nil
 }
 
-func (s *mockStorage) GetTradeSummary(fromTime, toTime time.Time) (map[uint64]*common.TradeSummary, error) {
+func (s *mockStorage) GetTradeSummary(fromTime, toTime time.Time, timezone int64) (map[uint64]*common.TradeSummary, error) {
 	return nil, nil
 }
 

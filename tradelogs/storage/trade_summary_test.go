@@ -37,6 +37,7 @@ func TestTradeSummary(t *testing.T) {
 	var (
 		fromTime = timeutil.TimestampMsToTime(1539216000000)
 		toTime   = timeutil.TimestampMsToTime(1539254666000)
+		timezone int64
 	)
 
 	is, err := newTestInfluxStorage(dbName)
@@ -49,7 +50,7 @@ func TestTradeSummary(t *testing.T) {
 	assert.NoError(t, loadTestData(dbName))
 	assert.NoError(t, manualFirstTradeSummary(is))
 	assert.NoError(t, aggregateTradeSummary(is))
-	summary, err := is.GetTradeSummary(fromTime, toTime)
+	summary, err := is.GetTradeSummary(fromTime, toTime, timezone)
 	require.NoError(t, err)
 
 	timeUnix, err := time.Parse(time.RFC3339, timeStamp)

@@ -80,7 +80,10 @@ func TestNewContinuousQuery(t *testing.T) {
 			query:                 `SELECT * FROM super_database GROUP BY "email"`,
 			timeInterval:          "1h",
 			offsetIntervals:       []string{"30m"},
-			queries:               []string{`CREATE CONTINUOUS QUERY "test_cq_30m" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,30m) END`},
+			queries: []string{
+				`CREATE CONTINUOUS QUERY "test_cq_30m" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,30m) END`,
+				`CREATE CONTINUOUS QUERY "test_cq" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h) END`,
+			},
 		},
 		{
 			testName:              "continuous query with multiple offset intervals",
@@ -94,6 +97,7 @@ func TestNewContinuousQuery(t *testing.T) {
 			queries: []string{
 				`CREATE CONTINUOUS QUERY "test_cq_10m" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,10m) END`,
 				`CREATE CONTINUOUS QUERY "test_cq_20m" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,20m) END`,
+				`CREATE CONTINUOUS QUERY "test_cq" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h) END`,
 			},
 		},
 	}

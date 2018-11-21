@@ -178,6 +178,7 @@ func (sv *Server) setupRouter() *gin.Engine {
 	r.GET("/wallet-stats", sv.getWalletStats)
 	r.GET("/country-stats", sv.getCountryStats)
 	r.GET("/heat-map", sv.getTokenHeatMap)
+	r.GET("/integration-volume", sv.getIntegrationVolume)
 	return r
 }
 

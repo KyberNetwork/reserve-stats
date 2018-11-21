@@ -48,7 +48,6 @@ func TestTradeSummary(t *testing.T) {
 	}()
 
 	assert.NoError(t, loadTestData(dbName))
-	assert.NoError(t, manualFirstTradeSummary(is))
 	assert.NoError(t, aggregateTradeSummary(is))
 	summary, err := is.GetTradeSummary(fromTime, toTime, timezone)
 	require.NoError(t, err)
@@ -64,10 +63,4 @@ func TestTradeSummary(t *testing.T) {
 	if result.ETHVolume != ethAmount {
 		t.Fatal(fmt.Errorf("expect USD amount to be %.18f, got %.18f", ethAmount, result.ETHVolume))
 	}
-}
-
-func manualFirstTradeSummary(is *InfluxStorage) error {
-	q := "SELECT FIRST(eth_amount) AS traded into first_trades FROM trades GROUP BY user_addr"
-	_, err := is.queryDB(is.influxClient, q)
-	return err
 }

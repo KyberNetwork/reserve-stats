@@ -51,9 +51,7 @@ func TestIntegrationVolume(t *testing.T) {
 
 	assert.NoError(t, loadTestData(dbName))
 	assert.NoError(t, aggregateIntegrationVolume(is))
-	log.Println("got here")
 	integrationVol, err := is.GetIntegrationVolume(fromTime, toTime)
-	log.Println("got here")
 
 	require.NoError(t, err)
 

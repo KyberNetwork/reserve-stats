@@ -123,13 +123,13 @@ func (vwf *VersionedWrapperFallback) getReserveRateFallback(block uint64, rsvAdd
 			}
 
 			m.Lock()
-			defer m.Unlock()
 			rates[i] = rate
 			sanityRates[i] = sanityRate
 			logger.Debugw("got rates successfully",
 				"rate", rate,
 				"sanity_rate", sanityRate,
 			)
+			m.Unlock()
 			return nil
 		})
 	}
@@ -138,12 +138,12 @@ func (vwf *VersionedWrapperFallback) getReserveRateFallback(block uint64, rsvAdd
 		return nil, nil, err
 	}
 
-	for i := range rates {
+	for i := range srcs {
 		ratesResults = append(ratesResults, rates[i])
 	}
 
-	for i := range sanityRates {
-		sanityRatesResults = append(sanityRatesResults, rates[i])
+	for i := range srcs {
+		sanityRatesResults = append(sanityRatesResults, sanityRates[i])
 	}
 
 	return ratesResults, sanityRatesResults, nil

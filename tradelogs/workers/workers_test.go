@@ -21,6 +21,10 @@ func (s *mockStorage) LastBlock() (int64, error) {
 	return 0, nil
 }
 
+func (s *mockStorage) GetIntegrationVolume(fromTime, toTime time.Time) (map[uint64]*common.IntegrationVolume, error) {
+	return nil, nil
+}
+
 func (s *mockStorage) SaveTradeLogs(logs []common.TradeLog) error {
 	return nil
 }

@@ -16,6 +16,17 @@ import (
 	"go.uber.org/zap"
 )
 
+func (s *mockStorage) GetIntegrationVolume(fromTime, toTime time.Time) (map[uint64]*common.IntegrationVolume, error) {
+	return nil, nil
+}
+
+type mockAddrToAppName struct {
+}
+
+func (a *mockAddrToAppName) GetAddrToAppName() (map[ethereum.Address]string, error) {
+	return make(map[ethereum.Address]string), nil
+}
+
 type mockStorage struct {
 }
 

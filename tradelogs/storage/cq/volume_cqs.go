@@ -2,6 +2,7 @@ package cq
 
 import (
 	"bytes"
+	"fmt"
 	"text/template"
 
 	libcq "github.com/KyberNetwork/reserve-stats/lib/cq"
@@ -21,6 +22,16 @@ const (
 	rsvVolDayMsmName  = `rsv_volume_day`
 )
 
+func supportedTimeZone() []string {
+	timezone := []string{}
+	for i := -11; i < 15; i++ {
+		if i != 0 {
+			timezone = append(timezone, fmt.Sprintf("%dh", i))
+		}
+	}
+	return timezone
+}
+
 // CreateAssetVolumeCqs return a set of cqs required for asset volume aggregation
 func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	var (
@@ -36,7 +47,7 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 			"((src_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND dst_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2') OR "+
 			"(src_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND dst_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'))) GROUP BY dst_addr",
 		"1h",
-		[]string{},
+		supportedTimeZone(),
 	)
 	if err != nil {
 		return nil, err
@@ -52,7 +63,7 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 			"((src_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND dst_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2') OR "+
 			"(src_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND dst_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'))) GROUP BY src_addr",
 		"1h",
-		[]string{},
+		supportedTimeZone(),
 	)
 	if err != nil {
 		return nil, err
@@ -68,7 +79,7 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 			"((src_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND dst_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2') OR "+
 			"(src_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND dst_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'))) GROUP BY dst_addr",
 		"1d",
-		[]string{},
+		supportedTimeZone(),
 	)
 	if err != nil {
 		return nil, err
@@ -85,7 +96,7 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 			"((src_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND dst_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2') OR "+
 			"(src_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND dst_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'))) GROUP BY src_addr",
 		"1d",
-		[]string{},
+		supportedTimeZone(),
 	)
 	if err != nil {
 		return nil, err
@@ -107,7 +118,7 @@ func CreateUserVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		"SELECT SUM(eth_amount) AS eth_volume, SUM(usd_amount) AS usd_volume "+
 			"INTO user_volume_day FROM (SELECT eth_amount, eth_amount*eth_usd_rate AS usd_amount FROM trades) GROUP BY user_addr",
 		"1d",
-		[]string{},
+		supportedTimeZone(),
 	)
 	if err != nil {
 		return nil, err
@@ -121,7 +132,7 @@ func CreateUserVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		"SELECT SUM(eth_amount) as eth_volume, SUM(usd_amount) as usd_volume "+
 			"INTO user_volume_hour FROM (SELECT eth_amount, eth_amount*eth_usd_rate AS usd_amount FROM trades) GROUP BY user_addr",
 		"1h",
-		[]string{},
+		supportedTimeZone(),
 	)
 	if err != nil {
 		return nil, err

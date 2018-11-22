@@ -137,17 +137,17 @@ type Heatmap struct {
 }
 
 //IsKyberSwap determine if the tradelog is through KyberSwap
-func (ls TradeLog) IsKyberSwap() bool {
+func (tl TradeLog) IsKyberSwap() bool {
 
 	//if a trade log has IP address ,it is kyberwap
-	if ls.IP != "" {
+	if tl.IP != "" {
 		return true
 	}
 	//if a tradelog has no feeToWalletEvent, it is KyberSawp
-	if len(ls.WalletFees) == 0 {
+	if len(tl.WalletFees) == 0 {
 		return true
 	}
-	for _, fee := range ls.WalletFees {
+	for _, fee := range tl.WalletFees {
 		//if Wallet Address < Int64, it is KyberSwap
 		if fee.WalletAddress.Big().Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(128), nil)) == -1 {
 			return true

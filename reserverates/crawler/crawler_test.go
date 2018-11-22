@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
@@ -33,7 +32,6 @@ func newTestCrawler(sugar *zap.SugaredLogger) (*ResreveRatesCrawler, error) {
 	var (
 		addrs       = []ethereum.Address{ethereum.HexToAddress(testRsvAddress)}
 		wrpContract = contracts.MockVersionedWrapper{}
-		bltimeRsver = blockchain.MockBlockTimeResolve{}
 	)
 
 	return &ResreveRatesCrawler{
@@ -41,7 +39,6 @@ func newTestCrawler(sugar *zap.SugaredLogger) (*ResreveRatesCrawler, error) {
 		addresses:       addrs,
 		stg:             newMockSupportedTokens(),
 		sugar:           sugar,
-		blkTimeRsv:      &bltimeRsver,
 	}, nil
 }
 
@@ -71,12 +68,13 @@ func TestGetReserveRate(t *testing.T) {
 		sugar.Errorf("result did not contain rate for reserve %s", testRsvAddress)
 		t.Fail()
 	}
-	rateEntry, ok := rate.Data["ETH-KNC"]
+
+	_, ok = rate["ETH-KNC"]
 	if !ok {
-		sugar.Error("result did not contain rate for ETH-KNC pair")
-		t.Fail()
+		t.Fatal("result did not contain rate for ETH-KNC pair")
 	}
-	if !reflect.DeepEqual(rateEntry, testRateEntry) {
+
+	if !reflect.DeepEqual(rate["ETH-KNC"], testRateEntry) {
 		sugar.Error("RateEntry ETH-KNC did not match the expected result")
 		t.Fail()
 	}

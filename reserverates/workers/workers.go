@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
@@ -16,7 +15,7 @@ import (
 )
 
 type job interface {
-	execute(sugar *zap.SugaredLogger) (map[string]common.ReserveRates, error)
+	execute(sugar *zap.SugaredLogger) (map[string]map[string]common.ReserveRateEntry, error)
 	info() (order int, block uint64)
 }
 
@@ -41,9 +40,9 @@ func NewFetcherJob(c *cli.Context, order int, block uint64, addrs []string, atte
 }
 
 // retry the given fn function for attempts time with sleep duration between before returns an error.
-func retry(fn func(*zap.SugaredLogger) (map[string]common.ReserveRates, error), attempts int, logger *zap.SugaredLogger) (map[string]common.ReserveRates, error) {
+func retry(fn func(*zap.SugaredLogger) (map[string]map[string]common.ReserveRateEntry, error), attempts int, logger *zap.SugaredLogger) (map[string]map[string]common.ReserveRateEntry, error) {
 	var (
-		result map[string]common.ReserveRates
+		result map[string]map[string]common.ReserveRateEntry
 		err    error
 	)
 
@@ -60,14 +59,9 @@ func retry(fn func(*zap.SugaredLogger) (map[string]common.ReserveRates, error), 
 	return nil, err
 }
 
-func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (map[string]common.ReserveRates, error) {
+func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (map[string]map[string]common.ReserveRateEntry, error) {
 
 	client, err := app.NewEthereumClientFromFlag(fj.c)
-	if err != nil {
-		return nil, err
-	}
-
-	blockTimeResolver, err := blockchain.NewBlockTimeResolver(sugar, client)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +73,7 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (map[string]common.Reserve
 
 	internalReserveAddress := contracts.InternalReserveAddress().MustGetOneFromContext(fj.c)
 
-	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, fj.addrs, client, coreClient, internalReserveAddress, blockTimeResolver)
+	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, fj.addrs, client, coreClient, internalReserveAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +86,7 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (map[string]common.Reserve
 	return rates, nil
 }
 
-func (fj *FetcherJob) execute(sugar *zap.SugaredLogger) (map[string]common.ReserveRates, error) {
+func (fj *FetcherJob) execute(sugar *zap.SugaredLogger) (map[string]map[string]common.ReserveRateEntry, error) {
 	return retry(fj.fetch, fj.attempts, sugar)
 }
 
@@ -152,7 +146,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, rateStorage storage.Reser
 
 					pool.mutex.Lock()
 					if order == pool.lastCompletedJobOrder+1 {
-						if err = pool.rateStorage.UpdateRatesRecords(rates); err == nil {
+						if err = pool.rateStorage.UpdateRatesRecords(block, rates); err == nil {
 							logger.Debugw("reserve rates is stored successfully", "order", order)
 							saveSuccess = true
 							pool.lastCompletedJobOrder++
@@ -167,9 +161,8 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, rateStorage storage.Reser
 						pool.errCh <- err
 						break
 					}
+					logger.Infow("save rates into db success", "block", block)
 				}
-
-				logger.Infow("save rates into db success", "block", block)
 			}
 
 			logger.Infow("worker stopped",

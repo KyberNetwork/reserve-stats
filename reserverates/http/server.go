@@ -65,7 +65,7 @@ func (sv *Server) reserveRates(c *gin.Context) {
 	}
 
 	if result == nil {
-		result = make(map[string]map[uint64]common.ReserveRates)
+		result = make(map[string]map[string][]common.ReserveRates)
 	}
 
 	c.JSON(http.StatusOK, result)

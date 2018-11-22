@@ -7,14 +7,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/urfave/cli"
-
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserverates/storage/influx"
 	"github.com/KyberNetwork/reserve-stats/reserverates/workers"
+	"github.com/urfave/cli"
 )
 
 const (
@@ -103,8 +103,18 @@ func run(c *cli.Context) error {
 		return err
 	}
 
+	ethClient, err := libapp.NewEthereumClientFromFlag(c)
+	if err != nil {
+		return err
+	}
+
+	blockTimeResolver, err := blockchain.NewBlockTimeResolver(sugar, ethClient)
+	if err != nil {
+		return err
+	}
+
 	rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(
-		sugar, influxClient, common.DatabaseName)
+		sugar, influxClient, common.DatabaseName, blockTimeResolver)
 	if err != nil {
 		return err
 	}
@@ -151,8 +161,7 @@ func run(c *cli.Context) error {
 		}
 
 		if toBlock == nil {
-			client, fErr := libapp.NewEthereumClientFromFlag(c)
-			currentHeader, fErr := client.HeaderByNumber(context.Background(), nil)
+			currentHeader, fErr := ethClient.HeaderByNumber(context.Background(), nil)
 			if fErr != nil {
 				return fErr
 			}

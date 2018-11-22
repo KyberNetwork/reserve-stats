@@ -1,53 +1,51 @@
 package http
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"testing"
-
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	timeutil "github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
 	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserverates/storage/influx"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+	"net/http"
+	"testing"
 )
 
 const (
-	host            = "http://127.0.0.1:9001"
-	testInfluxURL   = "http://127.0.0.1:8086"
-	testRsvAddress  = "0x63825c174ab367968EC60f061753D3bbD36A0D8F"
-	testRsvRateJSON = `{
-		"Timestamp": 1539143833304,
-		"BlockNumber": 123,
-		"Data": {
-		  "ETH-KNC": {
-			"BuyReserveRate": 1,
-			"BuySanityRate": 3,
-			"SellReserveRate": 2,
-			"SellSanityRate": 4
-		  },
-		  "ETH-ZRX": {
-			"BuyReserveRate": 1,
-			"BuySanityRate": 3,
-			"SellReserveRate": 2,
-			"SellSanityRate": 4
-		  }
-		}
-	  }`
-	dbName = "test_reserve_rate"
+	host           = "http://127.0.0.1:9001"
+	testInfluxURL  = "http://127.0.0.1:8086"
+	testRsvAddress = "0x63825c174ab367968EC60f061753D3bbD36A0D8F"
+	dbName         = "test_reserve_rate"
+	testFromBlock  = 123
+	testToBlock    = 124
+	testTs         = 1539143833304
+)
+
+var (
+	testRates = map[string]map[string]common.ReserveRateEntry{
+		testRsvAddress: {
+			"ETH-KNC": {
+				BuyReserveRate:  1,
+				BuySanityRate:   2,
+				SellReserveRate: 3,
+				SellSanityRate:  4,
+			},
+			"ETH-ZRX": {
+				BuyReserveRate:  5,
+				BuySanityRate:   6,
+				SellReserveRate: 7,
+				SellSanityRate:  8,
+			},
+		},
+	}
 )
 
 func newTestServer(sugar *zap.SugaredLogger, dbInstance storage.ReserveRatesStorage) (*Server, error) {
-	var testReserveRate common.ReserveRates
-	if err := json.Unmarshal([]byte(testRsvRateJSON), &testReserveRate); err != nil {
-		return nil, err
-	}
-	testRecords := map[string]common.ReserveRates{testRsvAddress: testReserveRate}
-	if err := dbInstance.UpdateRatesRecords(testRecords); err != nil {
+	if err := dbInstance.UpdateRatesRecords(123, testRates); err != nil {
 		return nil, err
 	}
 	return NewServer(host, dbInstance, sugar)
@@ -75,7 +73,7 @@ func TestHTTPRateServer(t *testing.T) {
 	})
 	assert.Nil(t, err, "influx client should be created successfully")
 
-	dbInstance, err := influxRateStorage.NewRateInfluxDBStorage(sugar, influxClient, dbName)
+	dbInstance, err := influxRateStorage.NewRateInfluxDBStorage(sugar, influxClient, dbName, blockchain.NewMockBlockTimeResolve(timeutil.TimestampMsToTime(testTs)))
 	assert.Nil(t, err, "Rate storage should be created successfully")
 
 	defer tearDownTestDB(t, influxClient)
@@ -85,15 +83,10 @@ func TestHTTPRateServer(t *testing.T) {
 
 	server.register()
 
-	var testReserveRate common.ReserveRates
-	if err = json.Unmarshal([]byte(testRsvRateJSON), &testReserveRate); err != nil {
-		t.Error(err)
-	}
-	fromTime := timeutil.TimeToTimestampMs(testReserveRate.Timestamp)
 	var tests = []httputil.HTTPTestCase{
 		{
 			Msg:      "success query",
-			Endpoint: fmt.Sprintf("%s/%s?from=%d&to=%d&reserve=%s", host, requestEndpoint, fromTime, fromTime, testRsvAddress),
+			Endpoint: fmt.Sprintf("%s/%s?from=%d&to=%d&reserve=%s", host, requestEndpoint, testTs, testTs, testRsvAddress),
 			Method:   http.MethodGet,
 			Assert:   expectCorrectRate,
 		},

@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
+	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,8 @@ const (
 )
 
 // NewServer returns an instance of HttpApi to serve trade logs.
-func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett core.Interface, options ...ServerOption) *Server {
+func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett core.Interface, usp userprofile.Interface,
+	options ...ServerOption) *Server {
 	var (
 		logger = sugar.With("func", "tradelogs/http/NewServer")
 		sv     = &Server{
@@ -28,6 +30,7 @@ func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger,
 			host:        host,
 			sugar:       sugar,
 			coreSetting: sett,
+			userProfile: usp,
 		}
 	)
 
@@ -60,6 +63,7 @@ type Server struct {
 	sugar            *zap.SugaredLogger
 	coreSetting      core.Interface
 	getAddrToAppName func() (map[ethereum.Address]string, error)
+	userProfile      userprofile.Interface
 }
 
 type burnFeeQuery struct {
@@ -104,9 +108,20 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 		)
 		return
 	}
-
 	for i, log := range tradeLogs {
-		if (log.IntegrationApp != appname.KyberSwapAppName) && (len(log.WalletFees) > 0) {
+		up, err := sv.userProfile.LookUpUserProfile(log.UserAddress)
+		if err != nil {
+			sv.sugar.Errorw(err.Error(), "fromTime", fromTime, "toTime", toTime)
+			libhttputil.ResponseFailure(
+				c,
+				http.StatusInternalServerError,
+				err,
+			)
+			return
+		}
+		tradeLogs[i].UserName = up.UserName
+		tradeLogs[i].ProfileID = up.ProfileID
+		if (tradeLogs[i].IntegrationApp != appname.KyberSwapAppName) && (len(log.WalletFees) > 0) {
 			name, avai := addrToAppName[log.WalletFees[0].WalletAddress]
 			if avai {
 				tradeLogs[i].IntegrationApp = name

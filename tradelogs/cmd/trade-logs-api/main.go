@@ -12,6 +12,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/http"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
@@ -68,18 +69,34 @@ func main() {
 		}
 
 		var options []http.ServerOption
-
 		addrToAppName, err := appnames.NewClientFromContext(sugar, c)
 		if err != nil {
 			return err
 		}
-
 		if addrToAppName != nil {
 			options = append(options, http.WithApplicationNames(addrToAppName))
 		}
+		addrToAppName, err = appnames.NewClientFromContext(sugar, c)
+		if err != nil {
+			return err
+		}
+
+		// uncomment this when the real endpoint is ready
+		// userClient, err := userprofile.NewClientFromContext(sugar, c)
+		// if err != nil {
+		// 	return err
+		// }
 
 		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c),
-			sugar, coreCachedClient, options...)
+			sugar, coreCachedClient,
+			userprofile.MockClient{},
+			options...)
+		// replace MockClient with real CachedClient when the real endpoint is ready
+		// userprofile.NewCachedClientFromContext(userClient, c))
+		err = api.Start()
+		if err != nil {
+			return err
+		}
 
 		if err = api.Start(); err != nil {
 			return err
@@ -93,6 +110,7 @@ func main() {
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
 	app.Flags = append(app.Flags, appnames.NewCliFlags()...)
+	app.Flags = append(app.Flags, userprofile.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

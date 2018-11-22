@@ -45,7 +45,7 @@ func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, er
 	return NewClient(sugar, userURL)
 }
 
-// NewCacheClientFromContext return new cached client from cli flags
+// NewCachedClientFromContext return new cached client from cli flags
 func NewCachedClientFromContext(client *Client, c *cli.Context) *CachedClient {
 	maxCacheSize := c.Int64(maxUserCacheFlag)
 	return NewCachedClient(client, maxCacheSize)

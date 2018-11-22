@@ -12,20 +12,22 @@ import (
 )
 
 //GetCountryStats return stats of a country from time to time by daily fred in provided timezone
-func (is *InfluxStorage) GetCountryStats(countryCode string, from, to time.Time) (map[uint64]*common.CountryStats, error) {
+func (is *InfluxStorage) GetCountryStats(countryCode string, from, to time.Time, timezone int64) (map[uint64]*common.CountryStats, error) {
 	var (
 		err    error
 		logger = is.sugar.With("country", countryCode,
 			"fromTime", from, "toTime", to)
-		timeFilter    = fmt.Sprintf("(time >='%s' AND time <= '%s')", from.UTC().Format(time.RFC3339), to.UTC().Format(time.RFC3339))
-		countryFilter = fmt.Sprintf("(country='%s')", countryCode)
+		timeFilter      = fmt.Sprintf("(time >='%s' AND time <= '%s')", from.UTC().Format(time.RFC3339), to.UTC().Format(time.RFC3339))
+		countryFilter   = fmt.Sprintf("(country='%s')", countryCode)
+		measurementName = "country_stats"
 	)
+	measurementName = getMeasurementName(measurementName, timezone)
 
 	cmd := fmt.Sprintf(`
 	SELECT eth_per_trade,
 	total_eth_volume,total_trade,total_usd_amount,
 	usd_per_trade,unique_addresses,new_unique_addresses, kyced, total_burn_fee
-	FROM country_stats WHERE %s AND %s`, timeFilter, countryFilter)
+	FROM %s WHERE %s AND %s`, measurementName, timeFilter, countryFilter)
 
 	logger.Debugw("get country stats", "query", cmd)
 

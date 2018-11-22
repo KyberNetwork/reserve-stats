@@ -12,12 +12,15 @@ import (
 )
 
 //GetTokenHeatmap return list ordered country by asset volume
-func (is *InfluxStorage) GetTokenHeatmap(asset core.Token, from, to time.Time) (map[string]common.Heatmap, error) {
+func (is *InfluxStorage) GetTokenHeatmap(asset core.Token, from, to time.Time, timezone int64) (map[string]common.Heatmap, error) {
 	var (
-		err       error
-		result    = make(map[string]common.Heatmap)
-		tokenAddr = ethereum.HexToAddress(asset.Address).Hex()
+		err             error
+		result          = make(map[string]common.Heatmap)
+		tokenAddr       = ethereum.HexToAddress(asset.Address).Hex()
+		measurementName = "volume_country_stats"
 	)
+
+	measurementName = getMeasurementName(measurementName, timezone)
 
 	logger := is.sugar.With(
 		"func", "tradelogs/storage/InfluxStorage.GetTokenHeatmap",
@@ -63,9 +66,9 @@ func (is *InfluxStorage) GetTokenHeatmap(asset core.Token, from, to time.Time) (
 	// }
 
 	volumeQuery := fmt.Sprintf(`
-	SELECT SUM(eth_volume) as eth_volume, SUM(token_volume) as token_volume, SUM(usd_volume) as usd_volume from volume_country_stats
+	SELECT SUM(eth_volume) as eth_volume, SUM(token_volume) as token_volume, SUM(usd_volume) as usd_volume from %s
 	WHERE (dst_addr='%s' or src_addr='%s') and (time >= '%s' AND time <= '%s') GROUP BY country
-	`, tokenAddr, tokenAddr, from.UTC().Format(time.RFC3339), to.UTC().Format(time.RFC3339))
+	`, measurementName, tokenAddr, tokenAddr, from.UTC().Format(time.RFC3339), to.UTC().Format(time.RFC3339))
 
 	logger.Debug(volumeQuery)
 
@@ -76,6 +79,7 @@ func (is *InfluxStorage) GetTokenHeatmap(asset core.Token, from, to time.Time) (
 
 	for _, s := range volumeResponse[0].Series {
 		if len(s.Values) != 4 {
+			logger.Debug(s.Values)
 			return result, errors.New("values field is invalid in len")
 		}
 		country := s.Tags["country"]

@@ -12,6 +12,7 @@ import (
 type countryStatsQuery struct {
 	httputil.TimeRangeQueryFreq
 	CountryCode string `form:"country" binding:"required,isValidCountryCode"`
+	Timezone    int64  `form:"timezone" binding:"isSupportedTimezone"`
 }
 
 func (sv *Server) getCountryStats(c *gin.Context) {
@@ -36,7 +37,7 @@ func (sv *Server) getCountryStats(c *gin.Context) {
 		countryCode = ""
 	}
 
-	countryStats, err := sv.storage.GetCountryStats(countryCode, from, to)
+	countryStats, err := sv.storage.GetCountryStats(countryCode, from, to, query.Timezone)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,

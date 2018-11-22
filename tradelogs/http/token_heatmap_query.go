@@ -10,7 +10,8 @@ import (
 
 type tokenHeatmapQuery struct {
 	httputil.TimeRangeQuery
-	Asset string `form:"asset" binding:"required"`
+	Asset    string `form:"asset" binding:"required"`
+	Timezone int64  `form:"timezone" binding:"isSupportedTimezone"`
 }
 
 func (sv *Server) getTokenHeatMap(c *gin.Context) {
@@ -37,7 +38,7 @@ func (sv *Server) getTokenHeatMap(c *gin.Context) {
 		return
 	}
 
-	heatmap, err := sv.storage.GetTokenHeatmap(asset, from, to)
+	heatmap, err := sv.storage.GetTokenHeatmap(asset, from, to, query.Timezone)
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return

@@ -57,15 +57,15 @@ func (s *mockStorage) GetWalletStats(fromTime, toTime time.Time, walletAddr stri
 	return nil, nil
 }
 
-func (s *mockStorage) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo, error) {
+func (s *mockStorage) GetUserList(fromTime, toTime time.Time, timezone int64) ([]common.UserInfo, error) {
 	return nil, nil
 }
 
-func (s *mockStorage) GetCountryStats(country string, fromTime, toTime time.Time) (map[uint64]*common.CountryStats, error) {
+func (s *mockStorage) GetCountryStats(country string, fromTime, toTime time.Time, timezone int64) (map[uint64]*common.CountryStats, error) {
 	return nil, nil
 }
 
-func (s *mockStorage) GetTokenHeatmap(token core.Token, fromTime, toTime time.Time) (map[string]common.Heatmap, error) {
+func (s *mockStorage) GetTokenHeatmap(token core.Token, fromTime, toTime time.Time, timezone int64) (map[string]common.Heatmap, error) {
 	return nil, nil
 }
 

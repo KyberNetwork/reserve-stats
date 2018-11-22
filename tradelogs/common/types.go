@@ -123,6 +123,24 @@ type UserInfo struct {
 	USDVolume float64 `json:"total_usd_volume"`
 }
 
+//UserList - list of user
+type UserList []UserInfo
+
+//Len length of user list for sorting function
+func (u UserList) Len() int {
+	return len(u)
+}
+
+//Swap swap 2 item of user list
+func (u UserList) Swap(i, j int) {
+	u[i], u[j] = u[j], u[i]
+}
+
+//Less for sorting function
+func (u UserList) Less(i, j int) bool {
+	return u[i].ETHVolume < u[j].ETHVolume
+}
+
 //Heatmap represent a country heatmap
 type Heatmap struct {
 	Country              string  `json:"country"`

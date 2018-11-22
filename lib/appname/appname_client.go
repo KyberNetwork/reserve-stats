@@ -20,7 +20,7 @@ type Client struct {
 
 func (c *Client) newRequest(method, endpoint string) (*http.Request, error) {
 	var (
-		logger = c.sugar.With("func", "lib/appname/appname_client.go/newRequest()", "method", method, "endpoint", endpoint)
+		logger = c.sugar.With("func", "lib/appname/appname/Client.newRequest()", "method", method, "endpoint", endpoint)
 	)
 	logger.Debug("creating new Intergration app name HTTP request")
 

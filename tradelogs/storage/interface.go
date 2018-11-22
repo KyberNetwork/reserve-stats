@@ -22,7 +22,7 @@ type Interface interface {
 	GetTradeSummary(from, to time.Time, timezone int64) (map[uint64]*common.TradeSummary, error)
 	GetUserVolume(userAddr ethereum.Address, from, to time.Time, freq string) (map[uint64]common.UserVolume, error)
 	GetUserList(from, to time.Time) ([]common.UserInfo, error)
-	GetWalletStats(fromTime, toTime time.Time, walletAddr string) (map[uint64]common.WalletStats, error)
+	GetWalletStats(fromTime, toTime time.Time, walletAddr string, timezone int64) (map[uint64]common.WalletStats, error)
 	GetCountryStats(countryCode string, from, to time.Time) (map[uint64]*common.CountryStats, error)
 	GetTokenHeatmap(asset core.Token, from, to time.Time) (map[string]common.Heatmap, error)
 }

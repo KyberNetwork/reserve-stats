@@ -11,21 +11,24 @@ import (
 )
 
 //GetWalletStats return stats of a wallet address from time to time by a frequency
-func (is *InfluxStorage) GetWalletStats(from, to time.Time, walletAddr string) (map[uint64]common.WalletStats, error) {
+func (is *InfluxStorage) GetWalletStats(from, to time.Time, walletAddr string, timezone int64) (map[uint64]common.WalletStats, error) {
 	var (
 		logger = is.sugar.With(
 			"func", "tradelogs/storage/InfluxStorage.GetWalletStats",
 			"from", from,
 			"to", to,
 		)
-		result = make(map[uint64]common.WalletStats)
-		err    error
+		result          = make(map[uint64]common.WalletStats)
+		err             error
+		measurementName = "wallet_stats"
 	)
+
+	measurementName = getMeasurementName(measurementName, timezone)
 
 	query := fmt.Sprintf(`
 	SELECT eth_volume, usd_volume, total_trade, unique_addresses, usd_per_trade, eth_per_trade, kyced, new_unique_addresses, total_burn_fee
-	FROM wallet_stats WHERE time >= '%s' and time <= '%s' and wallet_addr='%s'
-	`, from.UTC().Format(time.RFC3339), to.UTC().Format(time.RFC3339), walletAddr)
+	FROM %s WHERE time >= '%s' and time <= '%s' and wallet_addr='%s'
+	`, measurementName, from.UTC().Format(time.RFC3339), to.UTC().Format(time.RFC3339), walletAddr)
 
 	logger.Debug(query)
 

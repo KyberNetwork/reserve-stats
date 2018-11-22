@@ -50,7 +50,7 @@ func (s *mockStorage) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo
 	return nil, nil
 }
 
-func (s *mockStorage) GetWalletStats(fromTime, toTime time.Time, walletAddr string) (map[uint64]common.WalletStats, error) {
+func (s *mockStorage) GetWalletStats(fromTime, toTime time.Time, walletAddr string, timezone int64) (map[uint64]common.WalletStats, error) {
 	return nil, nil
 }
 

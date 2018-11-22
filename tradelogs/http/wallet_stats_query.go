@@ -12,6 +12,7 @@ import (
 type walletStatsQuery struct {
 	httputil.TimeRangeQuery
 	WalletAddr string `form:"walletAddr,isEthereumAddress"`
+	Timezone   int64  `form:"timezone" binding:"isSupportTimezone"`
 }
 
 func (sv *Server) getWalletStats(c *gin.Context) {
@@ -29,7 +30,7 @@ func (sv *Server) getWalletStats(c *gin.Context) {
 	walletAddr := ethereum.HexToAddress(query.WalletAddr)
 	from := timeutil.TimestampMsToTime(query.From)
 	to := timeutil.TimestampMsToTime(query.To)
-	walletStats, err := sv.storage.GetWalletStats(from, to, walletAddr.Hex())
+	walletStats, err := sv.storage.GetWalletStats(from, to, walletAddr.Hex(), query.Timezone)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,

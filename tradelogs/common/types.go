@@ -135,3 +135,23 @@ type Heatmap struct {
 	TotalUniqueAddresses int64   `json:"total_unique_addr"`
 	TotalKYCUser         int64   `json:"total_kyc_user"`
 }
+
+//IsKyberSwap determine if the tradelog is through KyberSwap
+func (ls TradeLog) IsKyberSwap() bool {
+
+	//if a trade log has IP address ,it is kyberwap
+	if ls.IP != "" {
+		return true
+	}
+	//if a tradelog has no feeToWalletEvent, it is KyberSawp
+	if len(ls.WalletFees) == 0 {
+		return true
+	}
+	for _, fee := range ls.WalletFees {
+		//if Wallet Address < Int64, it is KyberSwap
+		if fee.WalletAddress.Big().Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(128), nil)) == -1 {
+			return true
+		}
+	}
+	return false
+}

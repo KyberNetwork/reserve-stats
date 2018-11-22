@@ -8,6 +8,13 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
+const (
+	//KyberSwapAppName is the name of kyberswap
+	KyberSwapAppName = "KyberSwap"
+	//ThirdPartyAppName is the generic name for third party apps
+	ThirdPartyAppName = "ThirdParty"
+)
+
 //MapAddrAppName return the app name according to address
 type MapAddrAppName struct {
 	mutex   *sync.RWMutex

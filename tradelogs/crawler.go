@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"time"
 
+	appname "github.com/KyberNetwork/reserve-stats/app-names"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -29,9 +30,6 @@ const (
 	tradeEvent = "0x1849bd6a030a1bca28b83437fd3de96f3d27a5d172fa7e9c78e7b61468928a39"
 	// etherReceivalEvent is the topic of event EtherReceival(address indexed sender, uint amount).
 	etherReceivalEvent = "0x75f33ed68675112c77094e7c5b073890598be1d23e27cd7f6907b4a7d98ac619"
-
-	kyberSwapAppName = "KyberSwap"
-	appNameJSONPath  = "app_name.json"
 )
 
 // NewCrawler create a new Crawler instance.
@@ -157,12 +155,6 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) ([]common.Trade
 				Index:          log.Index,
 			}
 			tradeLog.WalletFees = append(tradeLog.WalletFees, walletFee)
-			//if a tradelog has feeToWalletEvent, it is default to be unknown intergration app
-			tradeLog.IntegrationApp = "unknown"
-			//if Wallet Address < maxUint64, it is KyberSwap
-			if walletAddr.Big().Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(128), nil)) == -1 {
-				tradeLog.IntegrationApp = kyberSwapAppName
-			}
 		case burnFeeEvent:
 			reserveAddr, fee, err := logDataToBurnFeeParams(log.Data)
 			if err != nil {
@@ -262,18 +254,11 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 		}
 		result[i].IP = ip
 		result[i].Country = country
-
-		if result[i].IP != "" {
-			// if a Trade Log has IP address associated --> it is KyberSwap
-			result[i].IntegrationApp = kyberSwapAppName
+		if tradeLog.IsKyberSwap() {
+			result[i].IntegrationApp = appname.KyberSwapAppName
+		} else {
+			result[i].IntegrationApp = appname.ThirdPartyAppName
 		}
-
-		// At this point, if result[i].IntergrationApp is still "", that means it does not come with a fee_to_wallet event.
-		// Of which case, it is a KyberSwap
-		if result[i].IntegrationApp == "" {
-			result[i].IntegrationApp = kyberSwapAppName
-		}
-
 		rate, err := crawler.rateProvider.USDRate(tradeLog.Timestamp)
 		if err != nil {
 			return nil, err

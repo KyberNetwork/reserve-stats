@@ -15,10 +15,10 @@ import (
 type mockStorage struct {
 }
 
-func (s *mockStorage) UpdateRatesRecords(rateRecords map[string]common.ReserveRates) error {
+func (s *mockStorage) UpdateRatesRecords(uint64, map[string]map[string]common.ReserveRateEntry) error {
 	return nil
 }
-func (s *mockStorage) GetRatesByTimePoint(addrs []ethereum.Address, fromTime, toTime uint64) (map[string]map[uint64]common.ReserveRates, error) {
+func (s *mockStorage) GetRatesByTimePoint(addrs []ethereum.Address, fromTime, toTime uint64) (map[string]map[string][]common.ReserveRates, error) {
 	return nil, nil
 }
 
@@ -31,7 +31,7 @@ type mockJob struct {
 	failure bool
 }
 
-func (j *mockJob) execute(sugar *zap.SugaredLogger) (map[string]common.ReserveRates, error) {
+func (j *mockJob) execute(sugar *zap.SugaredLogger) (map[string]map[string]common.ReserveRateEntry, error) {
 	if j.failure {
 		return nil, fmt.Errorf("failed to execute job %d", j.order)
 	}

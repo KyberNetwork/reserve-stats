@@ -12,7 +12,7 @@ import (
 )
 
 //GetTokenHeatmap return list ordered country by asset volume
-func (is *InfluxStorage) GetTokenHeatmap(asset core.Token, from, to time.Time, timezone int64) (map[string]common.Heatmap, error) {
+func (is *InfluxStorage) GetTokenHeatmap(asset core.Token, from, to time.Time, timezone int8) (map[string]common.Heatmap, error) {
 	var (
 		err             error
 		result          = make(map[string]common.Heatmap)

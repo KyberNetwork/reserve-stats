@@ -123,7 +123,7 @@ func (cq *ContinuousQuery) prepareQueries(isCQ bool) ([]string, error) {
 		actualName := cq.Name
 		actualQuery := cq.Query
 		if offsetInterval != "" {
-			// assume
+			// assume that the offsetInterval value is set correctly
 			if strings.Contains(offsetInterval, "-") {
 				offsetIntervalName := strings.Replace(offsetInterval, "-", "minus", 1)
 				actualName = actualName + "_" + offsetIntervalName

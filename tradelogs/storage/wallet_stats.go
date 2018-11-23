@@ -11,7 +11,7 @@ import (
 )
 
 //GetWalletStats return stats of a wallet address from time to time by a frequency
-func (is *InfluxStorage) GetWalletStats(from, to time.Time, walletAddr string, timezone int64) (map[uint64]common.WalletStats, error) {
+func (is *InfluxStorage) GetWalletStats(from, to time.Time, walletAddr string, timezone int8) (map[uint64]common.WalletStats, error) {
 	var (
 		logger = is.sugar.With(
 			"func", "tradelogs/storage/InfluxStorage.GetWalletStats",

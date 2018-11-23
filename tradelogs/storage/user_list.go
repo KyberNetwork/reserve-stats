@@ -8,7 +8,7 @@ import (
 )
 
 //GetUserList return list of user info
-func (is *InfluxStorage) GetUserList(fromTime, toTime time.Time, timezone int64) ([]common.UserInfo, error) {
+func (is *InfluxStorage) GetUserList(fromTime, toTime time.Time, timezone int8) ([]common.UserInfo, error) {
 	var (
 		err             error
 		result          []common.UserInfo

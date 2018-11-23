@@ -12,7 +12,7 @@ import (
 )
 
 //GetCountryStats return stats of a country from time to time by daily fred in provided timezone
-func (is *InfluxStorage) GetCountryStats(countryCode string, from, to time.Time, timezone int64) (map[uint64]*common.CountryStats, error) {
+func (is *InfluxStorage) GetCountryStats(countryCode string, from, to time.Time, timezone int8) (map[uint64]*common.CountryStats, error) {
 	var (
 		err    error
 		logger = is.sugar.With("country", countryCode,

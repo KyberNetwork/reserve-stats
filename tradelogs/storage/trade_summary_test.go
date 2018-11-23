@@ -37,7 +37,7 @@ func TestTradeSummary(t *testing.T) {
 	var (
 		fromTime = timeutil.TimestampMsToTime(1539216000000)
 		toTime   = timeutil.TimestampMsToTime(1539254666000)
-		timezone int64
+		timezone int8
 	)
 
 	is, err := newTestInfluxStorage(dbName)

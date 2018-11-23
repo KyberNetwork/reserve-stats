@@ -22,7 +22,7 @@ const (
 	testCountryUSDAmount = 0.222
 )
 
-func (s *mockStorage) GetCountryStats(country string, fromTime, toTime time.Time, timezone int64) (map[uint64]*common.CountryStats, error) {
+func (s *mockStorage) GetCountryStats(country string, fromTime, toTime time.Time, timezone int8) (map[uint64]*common.CountryStats, error) {
 	from := timeutil.TimeToTimestampMs(fromTime)
 	to := timeutil.TimeToTimestampMs(toTime)
 	var (

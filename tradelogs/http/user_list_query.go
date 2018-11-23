@@ -11,7 +11,7 @@ import (
 
 type userListQuery struct {
 	httputil.TimeRangeQueryFreq
-	Timezone int64 `form:"timezone" binding:"isSupportedTimezone"`
+	Timezone int8 `form:"timezone" binding:"isSupportedTimezone"`
 }
 
 func (sv *Server) getUserList(c *gin.Context) {

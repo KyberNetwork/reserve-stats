@@ -16,7 +16,7 @@ const (
 )
 
 // GetTradeSummary return an incompleted tradeSummary for the specified time periods
-func (is *InfluxStorage) GetTradeSummary(from, to time.Time, timezone int64) (map[uint64]*common.TradeSummary, error) {
+func (is *InfluxStorage) GetTradeSummary(from, to time.Time, timezone int8) (map[uint64]*common.TradeSummary, error) {
 	var (
 		logger = is.sugar.With(
 			"func", "tradelogs/storage/InfluxStorage.GetTradeSummary",

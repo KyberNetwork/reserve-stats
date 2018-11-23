@@ -11,7 +11,7 @@ import (
 type tokenHeatmapQuery struct {
 	httputil.TimeRangeQuery
 	Asset    string `form:"asset" binding:"required"`
-	Timezone int64  `form:"timezone" binding:"isSupportedTimezone"`
+	Timezone int8   `form:"timezone" binding:"isSupportedTimezone"`
 }
 
 func (sv *Server) getTokenHeatMap(c *gin.Context) {

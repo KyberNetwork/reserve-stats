@@ -32,7 +32,7 @@ var (
 	}
 )
 
-func getMeasurementName(baseMeasurement string, timezone int64) string {
+func getMeasurementName(baseMeasurement string, timezone int8) string {
 	if timezone < 0 {
 		baseMeasurement = fmt.Sprintf("%s_minus%dh", baseMeasurement, (-1 * timezone))
 	} else if timezone > 0 {

@@ -143,13 +143,13 @@ func (tl TradeLog) IsKyberSwap() bool {
 	if tl.IP != "" {
 		return true
 	}
-	//if a tradelog has no feeToWalletEvent, it is KyberSawp
+	//if a trade log has no feeToWalletEvent, it is KyberSwap
 	if len(tl.WalletFees) == 0 {
 		return true
 	}
 	for _, fee := range tl.WalletFees {
-		//if Wallet Address < Int64, it is KyberSwap
-		if fee.WalletAddress.Big().Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(128), nil)) == -1 {
+		//if Wallet Address < maxUint64, it is KyberSwap
+		if fee.WalletAddress.Big().Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(64), nil)) == -1 {
 			return true
 		}
 	}

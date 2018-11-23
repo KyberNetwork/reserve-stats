@@ -20,10 +20,10 @@ import (
 )
 
 const (
-	//RateTableName is the name of influx table storing reserveRate
-	RateTableName = "reserve_rate"
+	//rateTableName is the name of influx table storing reserveRate
+	rateTableName = "rates"
 	//timePrecision is the precision configured for influxDB
-	timePrecision = "ms"
+	timePrecision = "s"
 )
 
 // RateStorage is the implementation of influxclient to serve as ReserveRate storage
@@ -85,7 +85,7 @@ func (rs *RateStorage) lastRates(reserveAddr, pair string) (uint64, uint64, *com
 		schema.SellSanityRate.String(),
 		schema.FromBlock.String(),
 		schema.ToBlock.String(),
-		RateTableName,
+		rateTableName,
 		schema.Reserve.String(),
 		reserveAddr,
 		schema.Pair.String(),
@@ -180,7 +180,7 @@ func (rs *RateStorage) constructDataPoint(rsvAddr, pair string, fromBlock, toBlo
 		return nil, err
 	}
 
-	return influxClient.NewPoint(RateTableName, tags, fields, ts)
+	return influxClient.NewPoint(rateTableName, tags, fields, ts)
 }
 
 // UpdateRatesRecords update all the rate records from different reserve to influxDB in one go.
@@ -278,9 +278,10 @@ func (rs *RateStorage) GetRatesByTimePoint(addrs []ethereum.Address, fromTime, t
 		Addrs          []string
 		AddrsLastIndex int
 	}{
-		TableName:      RateTableName,
-		FromTime:       fromTime,
-		ToTime:         toTime,
+		TableName: rateTableName,
+		// convert from milliseconds to seconds
+		FromTime:       fromTime / 1000,
+		ToTime:         toTime / 1000,
 		TimePrecision:  timePrecision,
 		Addrs:          addrsStrs,
 		AddrsLastIndex: len(addrs) - 1,

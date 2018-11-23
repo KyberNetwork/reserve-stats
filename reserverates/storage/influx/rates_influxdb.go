@@ -286,7 +286,6 @@ func (rs *RateStorage) UpdateRatesRecords(blockNumber uint64, rateRecords map[st
 	return rs.client.Write(bp)
 }
 
-//map[string]map[string][]common.ReserveRates
 // GetRatesByTimePoint returns all the rate record in a period of time of a reserve
 func (rs *RateStorage) GetRatesByTimePoint(addrs []ethereum.Address, fromTime, toTime uint64) (map[string]map[string][]common.ReserveRates, error) {
 	const queryTmpl = `SELECT * FROM "{{.TableName}}" WHERE {{.FromTime }}{{.TimePrecision}} <= time AND time <= {{.ToTime}}{{.TimePrecision}} ` +

@@ -7,14 +7,15 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
-const measurement = "trades"
-
 //GetUserList return list of user info
-func (is *InfluxStorage) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo, error) {
+func (is *InfluxStorage) GetUserList(fromTime, toTime time.Time, timezone int8) ([]common.UserInfo, error) {
 	var (
-		err    error
-		result []common.UserInfo
+		err             error
+		result          []common.UserInfo
+		measurementName = "trades"
 	)
+
+	measurementName = getMeasurementName(measurementName, timezone)
 
 	logger := is.sugar.With("from time", fromTime, "to time", toTime, "func", "/tradelogs/storage.GetUserList")
 
@@ -22,7 +23,7 @@ func (is *InfluxStorage) GetUserList(fromTime, toTime time.Time) ([]common.UserI
 		SELECT sum(eth_volume) as eth_amount, sum(usd_volume) as usd_amount
 		FROM (SELECT eth_amount as eth_volume, eth_amount*eth_usd_rate as usd_volume FROM "%s")
 		WHERE time >= '%s' AND TIME <= '%s' GROUP BY user_addr
-	`, measurement, fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
+	`, measurementName, fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
 
 	logger.Debug(q)
 

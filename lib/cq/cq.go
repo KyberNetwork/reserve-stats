@@ -111,10 +111,7 @@ func hasGroupBy(query string) bool {
 func (cq *ContinuousQuery) prepareQueries(isCQ bool) ([]string, error) {
 	var queries []string
 
-	if len(cq.OffsetIntervals) == 0 {
-		cq.OffsetIntervals = []string{""}
-	}
-
+	cq.OffsetIntervals = append(cq.OffsetIntervals, "")
 	for _, offsetInterval := range cq.OffsetIntervals {
 		var query bytes.Buffer
 
@@ -126,15 +123,22 @@ func (cq *ContinuousQuery) prepareQueries(isCQ bool) ([]string, error) {
 		actualName := cq.Name
 		actualQuery := cq.Query
 		if offsetInterval != "" {
-			actualName = actualName + "_" + offsetInterval
-			actualQuery = modifyINTOclause(cq.Query, offsetInterval)
+			// assume that the offsetInterval value is set correctly
+			if strings.Contains(offsetInterval, "-") {
+				offsetIntervalName := strings.Replace(offsetInterval, "-", "minus", 1)
+				actualName = actualName + "_" + offsetIntervalName
+				actualQuery = modifyINTOclause(cq.Query, offsetIntervalName)
+			} else {
+				actualName = actualName + "_" + offsetInterval
+				actualQuery = modifyINTOclause(cq.Query, offsetInterval)
+			}
 		}
 		err = tmpl.Execute(&query, struct {
 			*ContinuousQuery
 			ActualName     string
 			ActualQuery    string
 			GroupByQuery   bool // whether the query included GROUP BY statement
-			IsCQ           bool // wether the query is a continous query or not
+			IsCQ           bool // whether the query is a continous query or not
 			OffsetInterval string
 		}{
 			ContinuousQuery: cq,

@@ -2,13 +2,16 @@ package http
 
 import (
 	"net/http"
+	"sort"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/gin-gonic/gin"
 )
 
 type userListQuery struct {
 	httputil.TimeRangeQueryFreq
+	Timezone int8 `form:"timezone" binding:"isSupportedTimezone"`
 }
 
 func (sv *Server) getUserList(c *gin.Context) {
@@ -28,7 +31,8 @@ func (sv *Server) getUserList(c *gin.Context) {
 		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
-	userList, err := sv.storage.GetUserList(fromTime, toTime)
+	userList, err := sv.storage.GetUserList(fromTime, toTime, query.Timezone)
+	sort.Sort(sort.Reverse(common.UserList(userList)))
 	if err != nil {
 		httputil.ResponseFailure(
 			c,

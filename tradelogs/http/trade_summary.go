@@ -9,7 +9,7 @@ import (
 
 type tradeSummaryQuery struct {
 	httputil.TimeRangeQueryFreq
-	// Timezone uint64 `form:"timezone" binding:"required"`
+	Timezone int8 `form:"timezone" binding:"isSupportedTimezone"`
 }
 
 func (sv *Server) getTradeSummary(c *gin.Context) {
@@ -33,7 +33,7 @@ func (sv *Server) getTradeSummary(c *gin.Context) {
 		return
 	}
 
-	tradeSummary, err := sv.storage.GetTradeSummary(fromTime, toTime)
+	tradeSummary, err := sv.storage.GetTradeSummary(fromTime, toTime, query.Timezone)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,

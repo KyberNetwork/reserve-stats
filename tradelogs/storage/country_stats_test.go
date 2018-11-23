@@ -32,6 +32,7 @@ func TestCountryStats(t *testing.T) {
 		ethAmount = 0.0032361552369382478
 		timeStamp = "2018-10-11T00:00:00Z"
 		country   = "VN"
+		timezone  = 0
 	)
 	is, err := newTestInfluxStorage(dbName)
 	assert.NoError(t, err)
@@ -45,7 +46,7 @@ func TestCountryStats(t *testing.T) {
 	from := timeutil.TimestampMsToTime(fromTime)
 	to := timeutil.TimestampMsToTime(toTime)
 
-	stats, err := is.GetCountryStats(country, from, to)
+	stats, err := is.GetCountryStats(country, from, to, timezone)
 	assert.NoError(t, err)
 	timeUnix, err := time.Parse(time.RFC3339, timeStamp)
 	assert.NoError(t, err)

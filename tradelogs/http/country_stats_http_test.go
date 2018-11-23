@@ -22,7 +22,7 @@ const (
 	testCountryUSDAmount = 0.222
 )
 
-func (s *mockStorage) GetCountryStats(country string, fromTime, toTime time.Time) (map[uint64]*common.CountryStats, error) {
+func (s *mockStorage) GetCountryStats(country string, fromTime, toTime time.Time, timezone int8) (map[uint64]*common.CountryStats, error) {
 	from := timeutil.TimeToTimestampMs(fromTime)
 	to := timeutil.TimeToTimestampMs(toTime)
 	var (
@@ -48,10 +48,11 @@ func TestCountryStatsHttp(t *testing.T) {
 		validFrom      = 1539129600000
 		invalidFrom    = "xxxx"
 		validTo        = 1539216000000
+		timezone       = 0
 		// mock core only return ETH, KNC is not in the list of mock core's clients
 		invalidFromInputEndpoint = fmt.Sprintf("%s?from=%s&to=%d&country=%s", endpoint, invalidFrom, validTo, country)
 		invalidCountryEndpoint   = fmt.Sprintf("%s?from=%d&to=%d&country=%s", endpoint, validFrom, validTo, invalidCountry)
-		validEndpoint            = fmt.Sprintf("%s?from=%d&to=%d&country=%s", endpoint, validFrom, validTo, country)
+		validEndpoint            = fmt.Sprintf("%s?from=%d&to=%d&country=%s&timezone=%d", endpoint, validFrom, validTo, country, timezone)
 		unknownCountryEndpoint   = fmt.Sprintf("%s?from=%d&to=%d&country=%s", endpoint, validFrom, validTo, unknownCountry)
 	)
 	s, err := newTestServer()

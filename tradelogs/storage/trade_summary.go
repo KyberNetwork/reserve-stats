@@ -11,8 +11,12 @@ import (
 	influxModel "github.com/influxdata/influxdb/models"
 )
 
+const (
+	measurementName = "trade_summary"
+)
+
 // GetTradeSummary return an incompleted tradeSummary for the specified time periods
-func (is *InfluxStorage) GetTradeSummary(from, to time.Time) (map[uint64]*common.TradeSummary, error) {
+func (is *InfluxStorage) GetTradeSummary(from, to time.Time, timezone int8) (map[uint64]*common.TradeSummary, error) {
 	var (
 		logger = is.sugar.With(
 			"func", "tradelogs/storage/InfluxStorage.GetTradeSummary",
@@ -22,11 +26,12 @@ func (is *InfluxStorage) GetTradeSummary(from, to time.Time) (map[uint64]*common
 		timeFilter = fmt.Sprintf("(time >='%s' AND time <= '%s')",
 			from.UTC().Format(time.RFC3339),
 			to.UTC().Format(time.RFC3339))
-
 		results = make(map[uint64]*common.TradeSummary)
 	)
+
+	measurement := getMeasurementName(measurementName, timezone)
 	tradeLogQuery := fmt.Sprintf(`SELECT time,eth_per_trade,total_eth_volume,total_trade,total_usd_amount,
-		usd_per_trade,unique_addresses,new_unique_addresses,kyced FROM trade_summary WHERE %s`, timeFilter)
+		usd_per_trade,unique_addresses,new_unique_addresses,kyced FROM %s WHERE %s`, measurement, timeFilter)
 	logger.Debugw("getting trade summary", "query", tradeLogQuery)
 
 	response, err := is.queryDB(is.influxClient, tradeLogQuery)

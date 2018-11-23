@@ -18,7 +18,7 @@ const (
 //frequency (hour, day) and timezone
 //daily_wallet_fee and hourly_wallet_fee measurement is calculate by CQ
 func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq string,
-	fromTime, toTime time.Time, timezone int64) (map[uint64]float64, error) {
+	fromTime, toTime time.Time, timezone int8) (map[uint64]float64, error) {
 	var (
 		err         error
 		measurement string

@@ -74,9 +74,9 @@ type VolumeStats struct {
 
 // TradeSummary struct holds all the fields required for trade summary
 type TradeSummary struct {
-	ETHVolume          float64 `json:"total_eth_volume"`
-	USDAmount          float64 `json:"total_usd_amount"`
-	TotalBurnFee       float64 `json:"total_burn_fee"`
+	ETHVolume          float64 `json:"eth_volume"`
+	USDAmount          float64 `json:"usd_volume"`
+	TotalBurnFee       float64 `json:"burn_fee"`
 	TotalTrade         uint64  `json:"total_trade"`
 	UniqueAddresses    uint64  `json:"unique_addresses"`
 	KYCEDAddresses     uint64  `json:"kyced_addresses"`
@@ -122,6 +122,24 @@ type UserInfo struct {
 	Addr      string  `json:"user_address"`
 	ETHVolume float64 `json:"total_eth_volume"`
 	USDVolume float64 `json:"total_usd_volume"`
+}
+
+//UserList - list of user
+type UserList []UserInfo
+
+//Len length of user list for sorting function
+func (u UserList) Len() int {
+	return len(u)
+}
+
+//Swap swap 2 item of user list
+func (u UserList) Swap(i, j int) {
+	u[i], u[j] = u[j], u[i]
+}
+
+//Less for sorting function
+func (u UserList) Less(i, j int) bool {
+	return u[i].ETHVolume < u[j].ETHVolume
 }
 
 //Heatmap represent a country heatmap

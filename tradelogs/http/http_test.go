@@ -34,11 +34,11 @@ func (s *mockStorage) GetAggregatedBurnFee(from, to time.Time, freq string, rese
 	return nil, nil
 }
 
-func (s *mockStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq string, fromTime, toTime time.Time, timezone int64) (map[uint64]float64, error) {
+func (s *mockStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq string, fromTime, toTime time.Time, timezone int8) (map[uint64]float64, error) {
 	return nil, nil
 }
 
-func (s *mockStorage) GetTradeSummary(from, to time.Time) (map[uint64]*common.TradeSummary, error) {
+func (s *mockStorage) GetTradeSummary(from, to time.Time, timezone int8) (map[uint64]*common.TradeSummary, error) {
 	return nil, nil
 }
 
@@ -46,15 +46,15 @@ func (s *mockStorage) GetUserVolume(userAddr ethereum.Address, fromTime, toTime 
 	return nil, nil
 }
 
-func (s *mockStorage) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo, error) {
+func (s *mockStorage) GetUserList(fromTime, toTime time.Time, timezone int8) ([]common.UserInfo, error) {
 	return nil, nil
 }
 
-func (s *mockStorage) GetWalletStats(fromTime, toTime time.Time, walletAddr string) (map[uint64]common.WalletStats, error) {
+func (s *mockStorage) GetWalletStats(fromTime, toTime time.Time, walletAddr string, timezone int8) (map[uint64]common.WalletStats, error) {
 	return nil, nil
 }
 
-func (s *mockStorage) GetTokenHeatmap(token core.Token, from, to time.Time) (map[string]common.Heatmap, error) {
+func (s *mockStorage) GetTokenHeatmap(token core.Token, from, to time.Time, timezone int8) (map[string]common.Heatmap, error) {
 	return nil, nil
 }
 

@@ -32,9 +32,19 @@ var (
 	}
 )
 
+func getMeasurementName(baseMeasurement string, timezone int8) string {
+	if timezone < 0 {
+		baseMeasurement = fmt.Sprintf("%s_minus%dh", baseMeasurement, (-1 * timezone))
+	} else if timezone > 0 {
+		baseMeasurement = fmt.Sprintf("%s_%dh", baseMeasurement, timezone)
+	}
+	return baseMeasurement
+}
+
 // GetReserveVolume returns the volume of a specific asset(token) from a reserve
 // between a period and with desired frequency
-func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.Token, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
+func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.Token,
+	fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
 	var (
 		rsvAddrHex   = rsvAddr.Hex()
 		tokenAddrHex = ethereum.HexToAddress(token.Address).Hex()
@@ -47,7 +57,8 @@ func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.T
 
 	addrFilter := fmt.Sprintf("((dst_addr='%s' OR src_addr='%s') AND (dst_rsv_addr='%s' OR src_rsv_addr='%s'))", tokenAddrHex, tokenAddrHex, rsvAddrHex, rsvAddrHex)
 	timeFilter := fmt.Sprintf("(time >='%s' AND time <= '%s')", fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
-	cmd := fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, SUM(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s) FILL(0)", tokenVolumeField, ethVolumeField, fiatVolumeField, mName, timeFilter, addrFilter, frequency)
+	cmd := fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, SUM(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s) FILL(0)",
+		tokenVolumeField, ethVolumeField, fiatVolumeField, mName, timeFilter, addrFilter, frequency)
 
 	logger.Debugw("query rendered", "query", cmd)
 
@@ -62,7 +73,8 @@ func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.T
 }
 
 // GetAssetVolume returns the volume of a specific assset(token) between a period and with desired frequency
-func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
+func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime time.Time,
+	frequency string) (map[uint64]*common.VolumeStats, error) {
 	var (
 		logger = is.sugar.With(
 			"func", "tradelogs/storage/InfluxStorage.GetAssetVolume",
@@ -70,29 +82,32 @@ func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime time.
 			"from", fromTime,
 			"to", toTime,
 		)
+		result = make(map[uint64]*common.VolumeStats)
 	)
 	mName, ok := assetMeasurementName[strings.ToLower(frequency)]
 	if !ok {
 		return nil, fmt.Errorf("frequency %s is not supported", frequency)
 	}
+
 	var (
 		tokenAddr  = ethereum.HexToAddress(token.Address).Hex()
 		timeFilter = fmt.Sprintf("(time >='%s' AND time <= '%s')", fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
 		addrFilter = fmt.Sprintf("(dst_addr='%s' OR src_addr='%s')", tokenAddr, tokenAddr)
-		cmd        = fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, sum(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s) fill(0)", tokenVolumeField, ethVolumeField, fiatVolumeField, mName, timeFilter, addrFilter, frequency)
+		cmd        = fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, sum(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s) fill(0)",
+			tokenVolumeField, ethVolumeField, fiatVolumeField, mName, timeFilter, addrFilter, frequency)
 	)
 
 	logger.Debugw("get asset volume query rendered", "query", cmd)
 	response, err := is.queryDB(is.influxClient, cmd)
 
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	logger.Debugw("got result for asset volume query", "response", response)
 
 	if len(response) == 0 || len(response[0].Series) == 0 {
-		return nil, nil
+		return result, nil
 	}
 	return convertQueryResultToVolume(response[0].Series[0])
 }

@@ -7,9 +7,6 @@ import (
 
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/httpsign"
-	"github.com/gin-contrib/httpsign/crypto"
-	"github.com/gin-contrib/httpsign/validator"
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,8 +29,7 @@ func newReverseProxyMW(target string) (gin.HandlerFunc, error) {
 }
 
 // NewServer creates new instance of gateway HTTP server.
-func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL,
-	keyID, secretKey string) (*Server, error) {
+func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL, readKeyID, readKeySecret, writeKeyID, writeKeySecret string) (*Server, error) {
 	r := gin.Default()
 	r.Use(libhttputil.MiddlewareHandler)
 	corsConfig := cors.DefaultConfig()
@@ -43,48 +39,41 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL,
 	r.Use(cors.New(corsConfig))
 
 	// signature middleware for signing message
-	hmacsha512 := &crypto.HmacSha512{}
-	signKeyID := httpsign.KeyID(keyID)
-	secrets := httpsign.Secrets{
-		signKeyID: &httpsign.Secret{
-			Key:       secretKey,
-			Algorithm: hmacsha512,
-		},
+	auth, err := newAuthenticator(readKeyID, readKeySecret, writeKeyID, writeKeySecret)
+	// Permision middleware for checking permission
+	perm, err := newPermissioner(readKeyID, writeKeyID)
+	if err != nil {
+		return nil, err
 	}
-	auth := httpsign.NewAuthenticator(
-		secrets,
-		httpsign.WithValidator(
-			NewNonceValidator(),
-			validator.NewDigestValidator(),
-		),
-		httpsign.WithRequiredHeaders(
-			[]string{"(request-target)", "nonce", "digest"},
-		),
-	)
-
 	if tradeLogsURL != "" {
 		tradeLogsProxyMW, err := newReverseProxyMW(tradeLogsURL)
 		if err != nil {
 			return nil, err
 		}
-		r.GET("/trade-logs", tradeLogsProxyMW)
-		r.GET("/burn-fee", tradeLogsProxyMW)
-		r.GET("/asset-volume", tradeLogsProxyMW)
-		r.GET("/reserve-volume", tradeLogsProxyMW)
-		r.GET("/wallet-fee", tradeLogsProxyMW)
-		r.GET("/user-volume", tradeLogsProxyMW)
-		r.GET("/user-list", auth.Authenticated(), tradeLogsProxyMW)
-		r.GET("/trade-summary", tradeLogsProxyMW)
-		r.GET("/wallet-stats", tradeLogsProxyMW)
-		r.GET("/country-stats", tradeLogsProxyMW)
-		r.GET("/heat-map", tradeLogsProxyMW)
+		authGroup := r.Group("/")
+		authGroup.Use(perm)
+		authGroup.Use(auth.Authenticated())
+		authGroup.GET("/trade-logs", tradeLogsProxyMW)
+		authGroup.GET("/burn-fee", tradeLogsProxyMW)
+		authGroup.GET("/asset-volume", tradeLogsProxyMW)
+		authGroup.GET("/reserve-volume", tradeLogsProxyMW)
+		authGroup.GET("/wallet-fee", tradeLogsProxyMW)
+		authGroup.GET("/user-volume", tradeLogsProxyMW)
+		authGroup.GET("/user-list", tradeLogsProxyMW)
+		authGroup.GET("/trade-summary", tradeLogsProxyMW)
+		authGroup.GET("/wallet-stats", tradeLogsProxyMW)
+		authGroup.GET("/country-stats", tradeLogsProxyMW)
+		authGroup.GET("/heat-map", tradeLogsProxyMW)
 	}
 	if reserveRatesURL != "" {
 		reserveRateProxyMW, err := newReverseProxyMW(reserveRatesURL)
 		if err != nil {
 			return nil, err
 		}
-		r.GET("/reserve-rates", reserveRateProxyMW)
+		authGroup := r.Group("/")
+		authGroup.Use(perm)
+		authGroup.Use(auth.Authenticated())
+		authGroup.GET("/reserve-rates", reserveRateProxyMW)
 	}
 
 	if userURL != "" {
@@ -92,9 +81,11 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL,
 		if err != nil {
 			return nil, err
 		}
-
-		r.GET("/users", userProxyMW)
-		r.POST("/users", auth.Authenticated(), userProxyMW)
+		authGroup := r.Group("/")
+		authGroup.Use(perm)
+		authGroup.Use(auth.Authenticated())
+		authGroup.GET("/users", userProxyMW)
+		authGroup.POST("/users", userProxyMW)
 	}
 
 	if priceAnalyticURL != "" {
@@ -102,8 +93,11 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL,
 		if err != nil {
 			return nil, err
 		}
-		r.GET("/price-analytic-data", auth.Authenticated(), priceProxyMW)
-		r.POST("/price-analytic-data", auth.Authenticated(), priceProxyMW)
+		authGroup := r.Group("/")
+		authGroup.Use(perm)
+		authGroup.Use(auth.Authenticated())
+		authGroup.GET("/price-analytic-data", priceProxyMW)
+		authGroup.POST("/price-analytic-data", priceProxyMW)
 	}
 
 	return &Server{

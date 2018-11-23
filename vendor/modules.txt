@@ -1,3 +1,5 @@
+# github.com/Knetic/govaluate v3.0.0+incompatible
+github.com/Knetic/govaluate
 # github.com/KyberNetwork/tokenrate v0.0.0-20181015045844-27abfb84ae1c
 github.com/KyberNetwork/tokenrate
 github.com/KyberNetwork/tokenrate/coingecko
@@ -9,6 +11,17 @@ github.com/asaskevich/govalidator
 github.com/boltdb/bolt
 # github.com/btcsuite/btcd v0.0.0-20181013004428-67e573d211ac
 github.com/btcsuite/btcd/btcec
+# github.com/casbin/casbin v1.7.0
+github.com/casbin/casbin
+github.com/casbin/casbin/effect
+github.com/casbin/casbin/log
+github.com/casbin/casbin/model
+github.com/casbin/casbin/persist
+github.com/casbin/casbin/persist/file-adapter
+github.com/casbin/casbin/rbac
+github.com/casbin/casbin/rbac/default-role-manager
+github.com/casbin/casbin/util
+github.com/casbin/casbin/config
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
 # github.com/deckarep/golang-set v1.7.1
@@ -86,8 +99,12 @@ github.com/oschwald/geoip2-golang
 github.com/oschwald/maxminddb-golang
 # github.com/pborman/uuid v1.2.0
 github.com/pborman/uuid
+# github.com/pkg/errors v0.8.0
+github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
+# github.com/qiangmzsx/string-adapter v0.0.0-20180323073508-38f25303bb0c
+github.com/qiangmzsx/string-adapter
 # github.com/rjeczalik/notify v0.9.2
 github.com/rjeczalik/notify
 # github.com/rs/cors v1.6.0

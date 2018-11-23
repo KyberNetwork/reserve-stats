@@ -20,6 +20,8 @@ const (
 	priceAnalyticURLFlag   = "price-analytic-url"
 	writeAccessKeyFlag     = "write-access-key"
 	writeSecretKeyFlag     = "write-secret-key"
+	readAccessKeyFlag      = "read-access-key"
+	readSecretKeyFlag      = "read-secret-key"
 )
 
 var (
@@ -39,13 +41,23 @@ func main() {
 	app.Flags = append(app.Flags,
 		cli.StringFlag{
 			Name:   writeAccessKeyFlag,
-			Usage:  "key for access api",
+			Usage:  "key for access POST/GET api",
 			EnvVar: "WRITE_ACCESS_KEY",
 		},
 		cli.StringFlag{
 			Name:   writeSecretKeyFlag,
-			Usage:  "seceret key for write api",
+			Usage:  "seceret key for POST/GET api",
 			EnvVar: "WRITE_SECRET_KEY",
+		},
+		cli.StringFlag{
+			Name:   readAccessKeyFlag,
+			Usage:  "key for access GET api",
+			EnvVar: "READ_ACCESS_KEY",
+		},
+		cli.StringFlag{
+			Name:   readSecretKeyFlag,
+			Usage:  "seceret key for GET api",
+			EnvVar: "READ_SECRET_KEY",
 		},
 		cli.StringFlag{
 			Name:   tradeLogsAPIURLFlag,
@@ -122,7 +134,10 @@ func run(c *cli.Context) error {
 		c.String(userAPIURLFlag),
 		c.String(priceAnalyticURLFlag),
 		c.String(writeAccessKeyFlag),
-		c.String(writeSecretKeyFlag))
+		c.String(writeSecretKeyFlag),
+		c.String(readAccessKeyFlag),
+		c.String(readSecretKeyFlag),
+	)
 	if err != nil {
 		return err
 	}

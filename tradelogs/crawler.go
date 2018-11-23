@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"time"
 
+	appname "github.com/KyberNetwork/reserve-stats/app-names"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -39,6 +40,9 @@ func NewCrawler(
 	rateProvider tokenrate.ETHUSDRateProvider,
 	addresses []ethereum.Address) (*Crawler, error) {
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
+	if err != nil {
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -206,6 +210,10 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) ([]common.Trade
 
 // GetTradeLogs returns trade logs from KyberNetwork.
 func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
+	var (
+		result []common.TradeLog
+	)
+
 	topics := [][]ethereum.Hash{
 		{
 			ethereum.HexToHash(tradeEvent),
@@ -230,7 +238,7 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 		return nil, err
 	}
 
-	result, err := crawler.assembleTradeLogs(logs)
+	result, err = crawler.assembleTradeLogs(logs)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +254,11 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 		}
 		result[i].IP = ip
 		result[i].Country = country
-
+		if tradeLog.IsKyberSwap() {
+			result[i].IntegrationApp = appname.KyberSwapAppName
+		} else {
+			result[i].IntegrationApp = appname.ThirdPartyAppName
+		}
 		rate, err := crawler.rateProvider.USDRate(tradeLog.Timestamp)
 		if err != nil {
 			return nil, err
@@ -255,6 +267,5 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 		result[i].ETHUSDRate = rate
 
 	}
-
 	return result, nil
 }

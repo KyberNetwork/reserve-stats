@@ -312,6 +312,11 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		country = ""
 	}
 
+	appName, ok := value[12].(string)
+	if !ok {
+		appName = ""
+	}
+
 	burnFees := burnFeesByTxHash[txHash][uint(logIndex)]
 	if burnFees == nil {
 		burnFees = []common.BurnFee{}
@@ -340,10 +345,10 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		BurnFees:   burnFees,
 		WalletFees: walletFees,
 
-		IP:      ip,
-		Country: country,
-
-		Index: uint(logIndex),
+		IP:             ip,
+		Country:        country,
+		IntegrationApp: appName,
+		Index:          uint(logIndex),
 	}
 
 	return tradeLog, nil

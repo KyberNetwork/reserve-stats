@@ -121,7 +121,7 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 		time, block_number, 
 		eth_receival_sender, eth_receival_amount, 
 		user_addr, src_addr, dst_addr, src_amount, dst_amount, (eth_amount * eth_usd_rate) as fiat_amount, 		
-		ip, country
+		ip, country, integration_app
 		`,
 			from.Format(time.RFC3339),
 			to.Format(time.RFC3339),
@@ -239,10 +239,10 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		"src_addr": log.SrcAddress.String(),
 		"dst_addr": log.DestAddress.String(),
 
-		"wallet_addr": walletAddr.String(),
-
-		"country": log.Country,
-		"ip":      log.IP,
+		"wallet_addr":     walletAddr.String(),
+		"country":         log.Country,
+		"ip":              log.IP,
+		"integration_app": log.IntegrationApp,
 
 		"eth_rate_provider": log.ETHUSDProvider,
 

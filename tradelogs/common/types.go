@@ -40,8 +40,9 @@ type TradeLog struct {
 	DestAmount  *big.Int         `json:"dst_amount"`
 	FiatAmount  float64          `json:"fiat_amount"`
 
-	BurnFees   []BurnFee   `json:"burn_fees"`
-	WalletFees []WalletFee `json:"wallet_fees"`
+	BurnFees       []BurnFee   `json:"burn_fees"`
+	WalletFees     []WalletFee `json:"wallet_fees"`
+	IntegrationApp string      `json:"integration_app"`
 
 	IP      string `json:"ip"`
 	Country string `json:"country"`
@@ -133,4 +134,24 @@ type Heatmap struct {
 	TotalTrade           int64   `json:"total_trade"`
 	TotalUniqueAddresses int64   `json:"total_unique_addr"`
 	TotalKYCUser         int64   `json:"total_kyc_user"`
+}
+
+//IsKyberSwap determine if the tradelog is through KyberSwap
+func (tl TradeLog) IsKyberSwap() bool {
+
+	//if a trade log has IP address ,it is kyberwap
+	if tl.IP != "" {
+		return true
+	}
+	//if a trade log has no feeToWalletEvent, it is KyberSwap
+	if len(tl.WalletFees) == 0 {
+		return true
+	}
+	for _, fee := range tl.WalletFees {
+		//if Wallet Address < maxUint64, it is KyberSwap
+		if fee.WalletAddress.Big().Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(64), nil)) == -1 {
+			return true
+		}
+	}
+	return false
 }

@@ -20,9 +20,8 @@ import (
 const (
 	addressesFlag = "addresses"
 
-	fromBlockFlag    = "from-block"
-	defaultFromblock = 5069586
-	toBlockFlag      = "to-block"
+	fromBlockFlag = "from-block"
+	toBlockFlag   = "to-block"
 
 	maxWorkerFlag    = "max-workers"
 	defaultMaxWorker = 4
@@ -138,6 +137,11 @@ func run(c *cli.Context) error {
 		}
 	}
 
+	currentHeader, fErr := ethClient.HeaderByNumber(context.Background(), nil)
+	if fErr != nil {
+		return fErr
+	}
+
 	maxWorkers := c.Int(maxWorkerFlag)
 	attempts := c.Int(attemptsFlag)
 	delayTime := c.Duration(delayFlag)
@@ -155,17 +159,13 @@ func run(c *cli.Context) error {
 				fromBlock = big.NewInt(0).SetInt64(lastBlock)
 				sugar.Infow("using last stored block number", "from_block", fromBlock)
 			} else {
-				sugar.Infow("using default from block number", "from_block", defaultFromblock)
-				fromBlock = big.NewInt(0).SetInt64(defaultFromblock)
+				sugar.Infow("using latest known block", "from_block", currentHeader.Number.String())
+				fromBlock = currentHeader.Number
 			}
 		}
 
 		if toBlock == nil {
-			currentHeader, fErr := ethClient.HeaderByNumber(context.Background(), nil)
-			if fErr != nil {
-				return fErr
-			}
-			toBlock = currentHeader.Number
+			toBlock = big.NewInt(0).Add(currentHeader.Number, big.NewInt(1))
 			sugar.Infow("fetching trade logs up to latest known block number", "to_block", toBlock.String())
 		}
 

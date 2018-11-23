@@ -31,6 +31,10 @@ const (
 
 	delayFlag        = "delay"
 	defaultDelayTime = time.Minute
+
+	durationFlag         = "duration"
+	shardDurationFlag    = "shard-duration"
+	defaultShardDuration = time.Hour * 24
 )
 
 func main() {
@@ -73,6 +77,17 @@ func main() {
 			EnvVar: "DELAY",
 			Value:  defaultDelayTime,
 		},
+		cli.DurationFlag{
+			Name:   durationFlag,
+			Usage:  "The duration of a reserve rates before considered expired",
+			EnvVar: "DURATION",
+		},
+		cli.DurationFlag{
+			Name:   shardDurationFlag,
+			Usage:  "The shard duration of a reserve rates",
+			EnvVar: "SHARD_DURATION",
+			Value:  defaultShardDuration,
+		},
 		libapp.NewEthereumNodeFlags(),
 	)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
@@ -112,8 +127,15 @@ func run(c *cli.Context) error {
 		return err
 	}
 
+	var options []influxRateStorage.RateStorageOption
+	duration := c.Duration(durationFlag)
+	shardDuration := c.Duration(shardDurationFlag)
+	if duration != 0 && shardDuration != 0 {
+		options = append(options, influxRateStorage.RateStorageOptionWithRetentionPolicy(duration, shardDuration))
+	}
+
 	rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(
-		sugar, influxClient, common.DatabaseName, blockTimeResolver)
+		sugar, influxClient, common.DatabaseName, blockTimeResolver, options...)
 	if err != nil {
 		return err
 	}

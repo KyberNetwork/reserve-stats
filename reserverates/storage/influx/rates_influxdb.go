@@ -23,7 +23,9 @@ const (
 	//rateTableName is the name of influx table storing reserveRate
 	rateTableName = "rates"
 	//timePrecision is the precision configured for influxDB
-	timePrecision = "s"
+	timePrecision   = "s"
+	dbDuration      = "30d"
+	dbShardDuration = "1d"
 )
 
 // RateStorage is the implementation of influxclient to serve as ReserveRate storage
@@ -32,11 +34,48 @@ type RateStorage struct {
 	client     influxClient.Client
 	dbName     string
 	blkTimeRsv blockchain.BlockTimeResolverInterface
+
+	duration      time.Duration
+	shardDuration time.Duration
+}
+
+// RateStorageOption configures the RateStorage constructor behaviour.
+type RateStorageOption func(rs *RateStorage)
+
+// RateStorageOptionWithRetentionPolicy configures the database with given retention policy.
+func RateStorageOptionWithRetentionPolicy(duration, shardDuration time.Duration) RateStorageOption {
+	return func(rs *RateStorage) {
+		rs.duration = duration
+		rs.shardDuration = shardDuration
+	}
 }
 
 // NewRateInfluxDBStorage return an instance of influx client to store ReserveRate
-func NewRateInfluxDBStorage(sugar *zap.SugaredLogger, client influxClient.Client, dbName string, blkTimeRsv blockchain.BlockTimeResolverInterface) (*RateStorage, error) {
-	q := influxClient.NewQuery("CREATE DATABASE "+dbName, "", timePrecision)
+func NewRateInfluxDBStorage(
+	sugar *zap.SugaredLogger,
+	client influxClient.Client,
+	dbName string,
+	blkTimeRsv blockchain.BlockTimeResolverInterface,
+	options ...RateStorageOption,
+) (*RateStorage, error) {
+	var (
+		rs   = &RateStorage{sugar: sugar, client: client, dbName: dbName, blkTimeRsv: blkTimeRsv}
+		stmt = fmt.Sprintf(`CREATE DATABASE "%s"`, dbName)
+	)
+
+	for _, option := range options {
+		option(rs)
+	}
+
+	if rs.duration != 0 && rs.shardDuration != 0 {
+		stmt = fmt.Sprintf(`"%s" WITH DURATION %s REPLICATION 1 SHARD DURATION %s NAME "rates"`,
+			stmt,
+			dbDuration,
+			dbShardDuration,
+		)
+	}
+
+	q := influxClient.NewQuery(stmt, "", timePrecision)
 	response, err := client.Query(q)
 	if err != nil {
 		return nil, err
@@ -44,7 +83,7 @@ func NewRateInfluxDBStorage(sugar *zap.SugaredLogger, client influxClient.Client
 	if response.Error() != nil {
 		return nil, response.Error()
 	}
-	return &RateStorage{sugar: sugar, client: client, dbName: dbName, blkTimeRsv: blkTimeRsv}, nil
+	return rs, nil
 }
 
 // LastBlock returns last stored rate block number from database.
@@ -78,7 +117,7 @@ func (rs *RateStorage) lastRates(reserveAddr, pair string) (uint64, uint64, *com
 		)
 	)
 
-	stmt := fmt.Sprintf(`SELECT "%s","%s","%s","%s","%s","%s" from "%s" WHERE "%s" = '%s' AND "%s" = '%s' ORDER BY time desc limit 1`,
+	stmt := fmt.Sprintf(`SELECT "%s", "%s", "%s", "%s", "%s", "%s" from "%s" WHERE "%s" = '%s' AND "%s" = '%s' ORDER BY time desc limit 1`,
 		schema.BuyRate.String(),
 		schema.SellRate.String(),
 		schema.BuySanityRate.String(),
@@ -408,6 +447,7 @@ func convertQueryResultToRate(row influxModel.Row) (map[string]map[string][]comm
 
 		if _, ok = result[reserveAddr][pairName]; !ok {
 			result[reserveAddr][pairName] = []common.ReserveRates{rate}
+			continue
 		}
 
 		result[reserveAddr][pairName] = append(result[reserveAddr][pairName], rate)

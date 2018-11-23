@@ -2,6 +2,11 @@ package http
 
 import (
 	"fmt"
+	"go.uber.org/zap"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -10,9 +15,6 @@ import (
 	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserverates/storage/influx"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
-	"net/http"
-	"testing"
 )
 
 const (
@@ -22,7 +24,6 @@ const (
 	dbName         = "test_reserve_rate"
 	testFromBlock  = 123
 	testToBlock    = 124
-	testTs         = 1539143833304
 )
 
 var (
@@ -42,6 +43,7 @@ var (
 			},
 		},
 	}
+	testTs = timeutil.TimeToTimestampMs(time.Now())
 )
 
 func newTestServer(sugar *zap.SugaredLogger, dbInstance storage.ReserveRatesStorage) (*Server, error) {

@@ -1,4 +1,4 @@
-package appname
+package appnames
 
 import (
 	ethereum "github.com/ethereum/go-ethereum/common"

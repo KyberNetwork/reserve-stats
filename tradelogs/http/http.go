@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	appname "github.com/KyberNetwork/reserve-stats/app-names"
-	lipappname "github.com/KyberNetwork/reserve-stats/lib/appname"
+	"github.com/KyberNetwork/reserve-stats/app-names"
+	lipappnames "github.com/KyberNetwork/reserve-stats/lib/appnames"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
@@ -19,13 +19,47 @@ const (
 	hourlyBurnFeeMaxDuration = time.Hour * 24 * 180 // 180 days
 )
 
-// Server serve trade logs through http endpoint
+// NewServer returns an instance of HttpApi to serve trade logs.
+func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett core.Interface, options ...ServerOption) *Server {
+	var (
+		logger = sugar.With("func", "tradelogs/http/NewServer")
+		sv     = &Server{
+			storage:     storage,
+			host:        host,
+			sugar:       sugar,
+			coreSetting: sett,
+		}
+	)
+
+	for _, opt := range options {
+		opt(sv)
+	}
+
+	if sv.getAddrToAppName == nil {
+		logger.Warn("application names integration is not configured")
+		sv.getAddrToAppName = func() (map[ethereum.Address]string, error) { return nil, nil }
+	}
+
+	return sv
+}
+
+// ServerOption configures the behaviour of Server constructor.
+type ServerOption func(server *Server)
+
+// WithApplicationNames configures the Server instance to use appname integration.
+func WithApplicationNames(an lipappnames.AddrToAppName) ServerOption {
+	return func(sv *Server) {
+		sv.getAddrToAppName = an.GetAddrToAppName
+	}
+}
+
+// Server serve trade logs through http endpoint.
 type Server struct {
-	storage     storage.Interface
-	host        string
-	sugar       *zap.SugaredLogger
-	coreSetting core.Interface
-	appName     lipappname.AddrToAppName
+	storage          storage.Interface
+	host             string
+	sugar            *zap.SugaredLogger
+	coreSetting      core.Interface
+	getAddrToAppName func() (map[ethereum.Address]string, error)
 }
 
 type burnFeeQuery struct {
@@ -61,7 +95,7 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 		return
 	}
 
-	addrToAppName, err := sv.appName.GetAddrToAppName()
+	addrToAppName, err := sv.getAddrToAppName()
 	if err != nil {
 		libhttputil.ResponseFailure(
 			c,
@@ -70,6 +104,7 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 		)
 		return
 	}
+
 	for i, log := range tradeLogs {
 		if (log.IntegrationApp != appname.KyberSwapAppName) && (len(log.WalletFees) > 0) {
 			name, avai := addrToAppName[log.WalletFees[0].WalletAddress]
@@ -150,15 +185,4 @@ func (sv *Server) setupRouter() *gin.Engine {
 func (sv *Server) Start() error {
 	r := sv.setupRouter()
 	return r.Run(sv.host)
-}
-
-// NewServer returns an instance of HttpApi to serve trade logs
-func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett core.Interface, an lipappname.AddrToAppName) *Server {
-	return &Server{
-		storage:     storage,
-		host:        host,
-		sugar:       sugar,
-		coreSetting: sett,
-		appName:     an,
-	}
 }

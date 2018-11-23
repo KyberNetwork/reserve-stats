@@ -1,4 +1,4 @@
-package appname
+package appnames
 
 import (
 	"fmt"
@@ -27,6 +27,11 @@ func NewCliFlags() []cli.Flag {
 // NewClientFromContext returns new core client from cli flags.
 func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, error) {
 	appNameURL := c.String(appNameURLFlag)
+
+	if appNameURL == "" {
+		return nil, nil
+	}
+
 	err := validation.Validate(appNameURL,
 		validation.Required,
 		is.URL,

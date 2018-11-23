@@ -1,4 +1,4 @@
-package appname
+package appnames
 
 import (
 	"encoding/json"

@@ -7,7 +7,7 @@ import (
 	"github.com/urfave/cli"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/appname"
+	"github.com/KyberNetwork/reserve-stats/lib/appnames"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
@@ -42,6 +42,7 @@ func main() {
 		if err != nil {
 			return err
 		}
+
 		coreCachedClient := core.NewCachedClient(coreClient)
 		influxClient, err := influxdb.NewClientFromContext(c)
 		if err != nil {
@@ -66,15 +67,21 @@ func main() {
 			return err
 		}
 
-		addrToAppName, err := appname.NewClientFromContext(sugar, c)
+		var options []http.ServerOption
+
+		addrToAppName, err := appnames.NewClientFromContext(sugar, c)
 		if err != nil {
 			return err
 		}
 
+		if addrToAppName != nil {
+			options = append(options, http.WithApplicationNames(addrToAppName))
+		}
+
 		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c),
-			sugar, coreCachedClient, addrToAppName)
-		err = api.Start()
-		if err != nil {
+			sugar, coreCachedClient, options...)
+
+		if err = api.Start(); err != nil {
 			return err
 		}
 
@@ -85,7 +92,7 @@ func main() {
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
-	app.Flags = append(app.Flags, appname.NewCliFlags()...)
+	app.Flags = append(app.Flags, appnames.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

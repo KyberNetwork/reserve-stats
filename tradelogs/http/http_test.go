@@ -16,13 +16,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type mockAddrToAppName struct {
-}
-
-func (a *mockAddrToAppName) GetAddrToAppName() (map[ethereum.Address]string, error) {
-	return make(map[ethereum.Address]string), nil
-}
-
 type mockStorage struct {
 }
 
@@ -73,12 +66,12 @@ func newTestServer() (*Server, error) {
 	defer logger.Sync()
 	sugar := logger.Sugar()
 
-	return &Server{
-		storage:     &mockStorage{},
-		sugar:       sugar,
-		coreSetting: &mockCore{},
-		appName:     &mockAddrToAppName{},
-	}, nil
+	return NewServer(
+		&mockStorage{},
+		"",
+		sugar,
+		&mockCore{},
+	), nil
 
 }
 

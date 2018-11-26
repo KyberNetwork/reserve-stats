@@ -115,20 +115,14 @@ func sendJobsToWorkerPool(pool *Pool, jobs []job, doneCh chan<- struct{}) {
 type assertFn func(t *testing.T, pool *Pool, err error)
 
 func checkWorkerPoolError(t *testing.T, pool *Pool, doneCh <-chan struct{}, fn assertFn) {
-	for {
-		toBreak := false
-		select {
-		case <-doneCh:
-			// all job success, shut down the pool
-			pool.Shutdown()
-		case err := <-pool.errCh:
-			fn(t, pool, err)
-			toBreak = true
-		}
+	<-doneCh
+	pool.Shutdown()
 
-		if toBreak {
-			break
+	for err := range pool.errCh {
+		if err != nil {
+			fn(t, pool, err)
 		}
+		break
 	}
 }
 
@@ -156,8 +150,6 @@ func TestWorkerPoolEncounterErr(t *testing.T) {
 	maxWorkers := 2
 	pool := newTestWorkerPool(maxWorkers)
 
-	lastCompleteJobOrder := pool.GetLastCompleteJobOrder()
-
 	doneCh := make(chan struct{})
 	jobs := []job{
 		&mockJob{order: 1},
@@ -165,11 +157,11 @@ func TestWorkerPoolEncounterErr(t *testing.T) {
 		&mockJob{order: 3},
 		&mockJob{order: 4},
 	}
+
 	sendJobsToWorkerPool(pool, jobs, doneCh)
 
 	checkWorkerPoolError(t, pool, doneCh, func(t *testing.T, pool *Pool, err error) {
 		assert.Equal(t, err.Error(), "failed to execute job 2")
-		// expect the last completed job is job 1
-		assert.Equal(t, pool.GetLastCompleteJobOrder(), lastCompleteJobOrder+1)
+		assert.Equal(t, 4, pool.GetLastCompleteJobOrder())
 	})
 }

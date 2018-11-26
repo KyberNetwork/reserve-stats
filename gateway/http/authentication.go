@@ -6,15 +6,15 @@ import (
 	"github.com/gin-contrib/httpsign/validator"
 )
 
-func newAuthenticator(readKeyID, readKeySecret, writeKeyID, writeKeySecret string) (*httpsign.Authenticator, error) {
-
+// NewAuthenticator create a httpsign.Authenticator to check the message signing is valid or not
+func NewAuthenticator(readKeyID, readKeySecret, writeKeyID, writeKeySecret string) (*httpsign.Authenticator, error) {
 	var (
 		secrets      = make(httpsign.Secrets)
-		mapKeySecret = make(map[string]string)
+		mapKeySecret = map[string]string{
+			readKeyID:  readKeySecret,
+			writeKeyID: writeKeySecret,
+		}
 	)
-
-	mapKeySecret[readKeyID] = readKeySecret
-	mapKeySecret[writeKeyID] = writeKeySecret
 
 	for key, secret := range mapKeySecret {
 		signKeyID := httpsign.KeyID(key)

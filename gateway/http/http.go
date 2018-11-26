@@ -7,6 +7,7 @@ import (
 
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/httpsign"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,7 +30,9 @@ func newReverseProxyMW(target string) (gin.HandlerFunc, error) {
 }
 
 // NewServer creates new instance of gateway HTTP server.
-func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL, readKeyID, readKeySecret, writeKeyID, writeKeySecret string) (*Server, error) {
+func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL string,
+	auth *httpsign.Authenticator,
+	perm gin.HandlerFunc) (*Server, error) {
 	r := gin.Default()
 	r.Use(libhttputil.MiddlewareHandler)
 	corsConfig := cors.DefaultConfig()
@@ -37,43 +40,31 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL, r
 	corsConfig.AddAllowHeaders("Digest", "Authorization", "Signature", "Nonce")
 	corsConfig.MaxAge = 5 * time.Minute
 	r.Use(cors.New(corsConfig))
-
-	// signature middleware for signing message
-	auth, err := newAuthenticator(readKeyID, readKeySecret, writeKeyID, writeKeySecret)
-	// Permision middleware for checking permission
-	perm, err := newPermissioner(readKeyID, writeKeyID)
-	if err != nil {
-		return nil, err
-	}
+	r.Use(perm)
+	r.Use(auth.Authenticated())
 	if tradeLogsURL != "" {
 		tradeLogsProxyMW, err := newReverseProxyMW(tradeLogsURL)
 		if err != nil {
 			return nil, err
 		}
-		authGroup := r.Group("/")
-		authGroup.Use(perm)
-		authGroup.Use(auth.Authenticated())
-		authGroup.GET("/trade-logs", tradeLogsProxyMW)
-		authGroup.GET("/burn-fee", tradeLogsProxyMW)
-		authGroup.GET("/asset-volume", tradeLogsProxyMW)
-		authGroup.GET("/reserve-volume", tradeLogsProxyMW)
-		authGroup.GET("/wallet-fee", tradeLogsProxyMW)
-		authGroup.GET("/user-volume", tradeLogsProxyMW)
-		authGroup.GET("/user-list", tradeLogsProxyMW)
-		authGroup.GET("/trade-summary", tradeLogsProxyMW)
-		authGroup.GET("/wallet-stats", tradeLogsProxyMW)
-		authGroup.GET("/country-stats", tradeLogsProxyMW)
-		authGroup.GET("/heat-map", tradeLogsProxyMW)
+		r.GET("/trade-logs", tradeLogsProxyMW)
+		r.GET("/burn-fee", tradeLogsProxyMW)
+		r.GET("/asset-volume", tradeLogsProxyMW)
+		r.GET("/reserve-volume", tradeLogsProxyMW)
+		r.GET("/wallet-fee", tradeLogsProxyMW)
+		r.GET("/user-volume", tradeLogsProxyMW)
+		r.GET("/user-list", tradeLogsProxyMW)
+		r.GET("/trade-summary", tradeLogsProxyMW)
+		r.GET("/wallet-stats", tradeLogsProxyMW)
+		r.GET("/country-stats", tradeLogsProxyMW)
+		r.GET("/heat-map", tradeLogsProxyMW)
 	}
 	if reserveRatesURL != "" {
 		reserveRateProxyMW, err := newReverseProxyMW(reserveRatesURL)
 		if err != nil {
 			return nil, err
 		}
-		authGroup := r.Group("/")
-		authGroup.Use(perm)
-		authGroup.Use(auth.Authenticated())
-		authGroup.GET("/reserve-rates", reserveRateProxyMW)
+		r.GET("/reserve-rates", reserveRateProxyMW)
 	}
 
 	if userURL != "" {
@@ -81,11 +72,8 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL, r
 		if err != nil {
 			return nil, err
 		}
-		authGroup := r.Group("/")
-		authGroup.Use(perm)
-		authGroup.Use(auth.Authenticated())
-		authGroup.GET("/users", userProxyMW)
-		authGroup.POST("/users", userProxyMW)
+		r.GET("/users", userProxyMW)
+		r.POST("/users", userProxyMW)
 	}
 
 	if priceAnalyticURL != "" {
@@ -93,11 +81,8 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL, r
 		if err != nil {
 			return nil, err
 		}
-		authGroup := r.Group("/")
-		authGroup.Use(perm)
-		authGroup.Use(auth.Authenticated())
-		authGroup.GET("/price-analytic-data", priceProxyMW)
-		authGroup.POST("/price-analytic-data", priceProxyMW)
+		r.GET("/price-analytic-data", priceProxyMW)
+		r.POST("/price-analytic-data", priceProxyMW)
 	}
 
 	return &Server{

@@ -127,16 +127,23 @@ func run(c *cli.Context) error {
 	if err := validation.Validate(c.String(writeSecretKeyFlag), validation.Required); err != nil {
 		return fmt.Errorf("secret key error: %s", err.Error())
 	}
-
+	auth, err := http.NewAuthenticator(c.String(readAccessKeyFlag), c.String(readSecretKeyFlag),
+		c.String(writeAccessKeyFlag), c.String(writeSecretKeyFlag),
+	)
+	if err != nil {
+		return fmt.Errorf("authentication object creation error: %s", err)
+	}
+	perm, err := http.NewPermissioner(c.String(readAccessKeyFlag), c.String(writeAccessKeyFlag))
+	if err != nil {
+		return fmt.Errorf("permission object creation error: %s", err)
+	}
 	svr, err := http.NewServer(httputil.NewHTTPAddressFromContext(c),
 		c.String(tradeLogsAPIURLFlag),
 		c.String(reserveRatesAPIURLFlag),
 		c.String(userAPIURLFlag),
 		c.String(priceAnalyticURLFlag),
-		c.String(writeAccessKeyFlag),
-		c.String(writeSecretKeyFlag),
-		c.String(readAccessKeyFlag),
-		c.String(readSecretKeyFlag),
+		auth,
+		perm,
 	)
 	if err != nil {
 		return err

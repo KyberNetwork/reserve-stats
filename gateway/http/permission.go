@@ -9,8 +9,9 @@ import (
 	scas "github.com/qiangmzsx/string-adapter"
 )
 
-//newPermissioner: currently there  is only 2 permission for POST/GET requests
-func newPermissioner(readKeyID, writeKeyID string) (gin.HandlerFunc, error) {
+//NewPermissioner creates a gin Handle Func to controll permission
+//currently there is only 2 permission for POST/GET requests
+func NewPermissioner(readKeyID, writeKeyID string) (gin.HandlerFunc, error) {
 	const (
 		conf = `
 [request_definition]
@@ -35,7 +36,9 @@ p, %s, /*, GET
 `, writeKeyID, readKeyID)
 	sa := scas.NewAdapter(pol)
 	e := casbin.NewEnforcer(casbin.NewModel(conf), sa)
-	e.LoadPolicy()
+	if err := e.LoadPolicy(); err != nil {
+		return nil, err
+	}
 
 	p := permission.NewPermissioner(e)
 	return p, nil

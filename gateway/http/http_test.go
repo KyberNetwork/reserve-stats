@@ -124,7 +124,15 @@ func TestReverseProxy(t *testing.T) {
 
 	// assert.Nil(t, err, "mockserver should be start ok")
 	testURL := fmt.Sprintf("http://%s", tradeLogsURL)
-	testServer, err := NewServer(testAddr, testURL, testURL, testURL, testURL, readKeyID, readSigningKey, writeKeyID, writeSigningKey)
+	auth, err := NewAuthenticator(readKeyID, readSigningKey, writeKeyID, writeSigningKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	perm, err := NewPermissioner(readKeyID, writeKeyID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testServer, err := NewServer(testAddr, testURL, testURL, testURL, testURL, auth, perm)
 	assert.Nil(t, err, "reverse proxy server should initiate successfully")
 
 	var testCaseReadKey = []httputil.HTTPTestCase{

@@ -2,23 +2,26 @@ package permission
 
 import (
 	"errors"
+	"net/http"
+	"regexp"
+
 	"github.com/casbin/casbin"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"strings"
 )
 
 const (
-	authorizationHeader  = "Authorization"
-	signatureHeader      = "Signature"
-	keyIDHeaderSeperator = "keyId=\""
+	authorizationHeader = "Authorization"
+	signatureHeader     = "Signature"
+	keyIDHeader         = "keyId"
 )
 
 var (
 	//ErrCouldNotGetKeyID error when could not get key id in header
-	ErrCouldNotGetKeyID = errors.New("Could not get key id in header")
+	ErrCouldNotGetKeyID = errors.New("could not get key id in header")
 	//ErrNotEnoughPermission error when keyid do not have enough permission
-	ErrNotEnoughPermission = errors.New("KeyID do not have permission")
+	ErrNotEnoughPermission = errors.New("keyID do not have permission")
+	//kvRegex is the regex to find key-value in a string
+	kvRegex = regexp.MustCompile(`(\w+)="([^"]*)"`)
 )
 
 //KeyID is the abstract key needed for authentication
@@ -33,15 +36,15 @@ type Permissioner struct {
 func NewPermissioner(e *casbin.Enforcer) gin.HandlerFunc {
 	p := &Permissioner{enforcer: e}
 	return func(c *gin.Context) {
-		if !p.CheckPermission(c.Request) {
+		if !p.checkPermission(c.Request) {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 	}
 }
 
-// CheckPermission return a gin middleware which check if a request is authorize to continue or not
-func (p *Permissioner) CheckPermission(r *http.Request) bool {
+// checkPermission return a gin middleware which check if a request is authorize to continue or not
+func (p *Permissioner) checkPermission(r *http.Request) bool {
 	keyID, err := getKeyID(r)
 	if err != nil {
 		return false
@@ -51,20 +54,25 @@ func (p *Permissioner) CheckPermission(r *http.Request) bool {
 	return p.enforcer.Enforce(string(keyID), path, method)
 }
 
-func extractKeyID(s []string) (KeyID, error) {
-	s1 := strings.Split(s[0], keyIDHeaderSeperator)
-	if len(s1) < 2 {
-		return KeyID(""), ErrCouldNotGetKeyID
+func extractKeyID(s string) (KeyID, error) {
+	for _, match := range kvRegex.FindAllStringSubmatch(s, -1) {
+		if len(match) < 3 {
+			return KeyID(""), errors.New("malformed header")
+		}
+		k := match[1]
+		v := match[2]
+		if k == keyIDHeader {
+			return KeyID(v), nil
+		}
 	}
-	keyIDStr := strings.Split(s1[1], "\"")[0]
-	return KeyID(keyIDStr), nil
+	return KeyID(""), ErrCouldNotGetKeyID
 }
 
 func getKeyID(r *http.Request) (KeyID, error) {
-	if s, ok := r.Header[authorizationHeader]; ok {
+	if s := r.Header.Get(authorizationHeader); len(s) > 0 {
 		return extractKeyID(s)
 	}
-	if s, ok := r.Header[signatureHeader]; ok {
+	if s := r.Header.Get(signatureHeader); len(s) > 0 {
 		return extractKeyID(s)
 	}
 	return "", ErrCouldNotGetKeyID

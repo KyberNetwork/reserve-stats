@@ -22,6 +22,7 @@ type CachedClient struct {
 func NewCachedClient(client *Client, maxcache int64) *CachedClient {
 	var h = &AddrHeap{}
 	heap.Init(h)
+	client.sugar.Debugw("Creating cache client ...", "max cache", maxcache)
 	return &CachedClient{
 		Client:       client,
 		mu:           &sync.RWMutex{},
@@ -32,9 +33,9 @@ func NewCachedClient(client *Client, maxcache int64) *CachedClient {
 	}
 }
 
-// LookupUserProfile will look for the UserProfile of input addr in cache first
+// LookUpUserProfile will look for the UserProfile of input addr in cache first
 // If this fail then it will query from endpoint
-func (cc *CachedClient) LookupUserProfile(addr ethereum.Address) (UserProfile, error) {
+func (cc *CachedClient) LookUpUserProfile(addr ethereum.Address) (UserProfile, error) {
 	cc.mu.Lock()
 	defer cc.mu.Unlock()
 	logger := cc.sugar.With(
@@ -43,11 +44,11 @@ func (cc *CachedClient) LookupUserProfile(addr ethereum.Address) (UserProfile, e
 	)
 	p, ok := cc.cached[addr]
 	if ok {
-		logger.Debug("cache hit")
+		logger.Debugw("cache hit")
 		return p, nil
 	}
 
-	logger.Debug("cache missed")
+	logger.Debugf("cache missed. Lookup from API endpoint and caching... Current cache size : %d", cc.cacheSize)
 	p, err := cc.Client.LookUpUserProfile(addr)
 	if err != nil {
 		return p, nil
@@ -59,6 +60,7 @@ func (cc *CachedClient) LookupUserProfile(addr ethereum.Address) (UserProfile, e
 		if !ok {
 			return p, fmt.Errorf("cannot assert address node %v from heap", oldest)
 		}
+		logger.Debugf("removing %s from address heap", addrNode.Addr)
 		delete(cc.cached, ethereum.HexToAddress(addrNode.Addr))
 		cc.cacheSize--
 	}

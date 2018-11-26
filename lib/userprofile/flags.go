@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	userprofileURLFlag  = "user-url"
-	maxUserCacheFlag    = "max-user-cache"
-	maxUserCacheDefault = 1000
+	userprofileURLFlag        = "user-url"
+	userprofileSigningKeyFlag = "user-signing-key"
+	maxUserCacheFlag          = "max-user-cache"
+	maxUserCacheDefault       = 1000
 )
 
 // NewCliFlags returns cli flags to configure a core client.
@@ -29,6 +30,11 @@ func NewCliFlags() []cli.Flag {
 			EnvVar: "MAX_USER_CACHE",
 			Value:  maxUserCacheDefault,
 		},
+		cli.StringFlag{
+			Name:   userprofileSigningKeyFlag,
+			Usage:  "user profile Signing Key",
+			EnvVar: "USER_SIGNING_KEY",
+		},
 	}
 }
 
@@ -42,7 +48,14 @@ func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, er
 	if err != nil {
 		return nil, fmt.Errorf("user profile url: %s", err.Error())
 	}
-	return NewClient(sugar, userURL)
+	signingKey := c.String(userprofileSigningKeyFlag)
+	err = validation.Validate(signingKey,
+		validation.Required,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("core signing key: %s", err.Error())
+	}
+	return NewClient(sugar, userURL, signingKey)
 }
 
 // NewCachedClientFromContext return new cached client from cli flags

@@ -38,7 +38,6 @@ func main() {
 		defer logger.Sync()
 
 		sugar := logger.Sugar()
-
 		coreClient, err := core.NewClientFromContext(sugar, c)
 		if err != nil {
 			return err
@@ -81,18 +80,15 @@ func main() {
 			return err
 		}
 
-		// uncomment this when the real endpoint is ready
-		// userClient, err := userprofile.NewClientFromContext(sugar, c)
-		// if err != nil {
-		// 	return err
-		// }
+		userClient, err := userprofile.NewClientFromContext(sugar, c)
+		if err != nil {
+			return err
+		}
 
 		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c),
 			sugar, coreCachedClient,
-			userprofile.MockClient{},
+			userprofile.NewCachedClientFromContext(userClient, c),
 			options...)
-		// replace MockClient with real CachedClient when the real endpoint is ready
-		// userprofile.NewCachedClientFromContext(userClient, c))
 		err = api.Start()
 		if err != nil {
 			return err

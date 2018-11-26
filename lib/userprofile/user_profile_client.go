@@ -1,10 +1,14 @@
 package userprofile
 
 import (
+	"crypto/hmac"
+	"crypto/sha512"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"go.uber.org/zap"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,9 +17,10 @@ import (
 
 // Client is the the implementation to query userprofile info.
 type Client struct {
-	sugar  *zap.SugaredLogger
-	client *http.Client
-	url    string
+	sugar      *zap.SugaredLogger
+	client     *http.Client
+	url        string
+	signingKey string
 }
 
 func (c *Client) newRequest(method, endpoint string, params map[string]string) (*http.Request, error) {
@@ -24,9 +29,6 @@ func (c *Client) newRequest(method, endpoint string, params map[string]string) (
 		"method", method,
 		"endpoint", endpoint,
 	)
-
-	logger.Debug("creating new Core API HTTP request")
-
 	url := fmt.Sprintf("%s/%s",
 		strings.TrimRight(c.url, "/"),
 		strings.Trim(endpoint, "/"),
@@ -44,13 +46,23 @@ func (c *Client) newRequest(method, endpoint string, params map[string]string) (
 		q.Add(k, v)
 	}
 	req.URL.RawQuery = q.Encode()
-	logger = logger.With("raw_query", req.URL.RawQuery)
 
+	_, ok := params["nonce"]
+	if ok {
+		signed, err := c.sign(q.Encode())
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Add("signed", signed)
+		logger = logger.With("signed", signed)
+	}
+
+	logger.Debugw("User profile API HTTP request created", "host", req.URL.Host, "raw query", req.URL.RawQuery)
 	return req, nil
 }
 
 // NewClient creates a new core client instance.
-func NewClient(sugar *zap.SugaredLogger, url string) (*Client, error) {
+func NewClient(sugar *zap.SugaredLogger, url, signingKey string) (*Client, error) {
 	const timeout = time.Minute
 	client := &http.Client{Timeout: timeout}
 	return &Client{sugar: sugar, url: url, client: client}, nil
@@ -63,6 +75,7 @@ func (c *Client) LookUpUserProfile(addr ethereum.Address) (UserProfile, error) {
 		params = make(map[string]string)
 		result = UserProfile{}
 	)
+	params["nonce"] = generateNonce()
 	params["wallet_address"] = addr.Hex()
 	req, err := c.newRequest(http.MethodGet, endpoint, params)
 	if err != nil {
@@ -80,9 +93,25 @@ func (c *Client) LookUpUserProfile(addr ethereum.Address) (UserProfile, error) {
 		return result, fmt.Errorf("unexpected return code: %d", rsp.StatusCode)
 	}
 
+	c.sugar.Debugw("Reply", "resp.Body", rsp.Body)
 	if err = json.NewDecoder(rsp.Body).Decode(&result); err != nil {
 		return result, err
 	}
 
 	return result, nil
+}
+
+func (c *Client) sign(msg string) (string, error) {
+	mac := hmac.New(sha512.New, []byte(c.signingKey))
+	if _, err := mac.Write([]byte(msg)); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(mac.Sum(nil)), nil
+}
+
+// generateNonce returns nonce header required to use Core API,
+// which is current timestamp in milliseconds.
+func generateNonce() string {
+	now := time.Now().UnixNano() / int64(time.Millisecond)
+	return strconv.FormatInt(now, 10)
 }

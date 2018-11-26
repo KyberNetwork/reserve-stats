@@ -145,6 +145,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 			for j := range p.jobCh {
 				order, from, to := j.info()
 				logger.Infow("executing fetcher job",
+					"oder", order,
 					"from", from.String(),
 					"to", to.String())
 

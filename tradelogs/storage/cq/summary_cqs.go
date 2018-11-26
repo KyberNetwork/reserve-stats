@@ -47,7 +47,7 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dayResampleFor,
 		"SELECT SUM(amount) AS total_burn_fee INTO burn_fee_summary FROM burn_fees",
 		"1d",
-		[]string{},
+		supportedTimeZone(),
 	)
 	if err != nil {
 		return nil, err

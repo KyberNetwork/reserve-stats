@@ -12,7 +12,7 @@ import (
 type walletStatsQuery struct {
 	httputil.TimeRangeQuery
 	WalletAddr string `form:"walletAddr,isEthereumAddress"`
-	Timezone   int8   `form:"timezone" binding:"isSupportTimezone"`
+	Timezone   int8   `form:"timezone" binding:"isSupportedTimezone"`
 }
 
 func (sv *Server) getWalletStats(c *gin.Context) {

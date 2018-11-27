@@ -1,11 +1,13 @@
 module github.com/KyberNetwork/reserve-stats
 
 require (
+	github.com/Knetic/govaluate v3.0.0+incompatible // indirect
 	github.com/KyberNetwork/tokenrate v0.0.0-20181015045844-27abfb84ae1c
 	github.com/aristanetworks/goarista v0.0.0-20181002214814-33151c4543a7 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
 	github.com/boltdb/bolt v1.3.1
 	github.com/btcsuite/btcd v0.0.0-20181013004428-67e573d211ac // indirect
+	github.com/casbin/casbin v1.7.0
 	github.com/cespare/cp v1.0.0 // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/edsrzf/mmap-go v0.0.0-20170320065105-0bce6a688712 // indirect
@@ -32,6 +34,7 @@ require (
 	github.com/oschwald/maxminddb-golang v1.3.0 // indirect
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/pkg/errors v0.8.0 // indirect
+	github.com/qiangmzsx/string-adapter v0.0.0-20180323073508-38f25303bb0c
 	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/rs/cors v1.6.0 // indirect
 	github.com/stretchr/testify v1.2.2

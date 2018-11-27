@@ -19,8 +19,10 @@ const (
 	fromParams      uint64 = 12342082
 	tradeLogsURL           = "127.0.0.1:7000"
 	testAddr               = "127.0.0.1:7001"
-	keyID                  = "keyID"
-	constSigningKey        = "fdsr122541"
+	writeKeyID             = "writekeyID"
+	writeSigningKey        = "fdsr122541"
+	readKeyID              = "readKeyID"
+	readSigningKey         = "xxx123xxx"
 )
 
 //WrappedRecorded wrap the gin response from proxy server
@@ -42,7 +44,7 @@ func (c *WrappedRecorded) CloseNotify() <-chan bool {
 	return c.closed
 }
 
-func runHTTPTestCase(t *testing.T, tc httputil.HTTPTestCase, handler http.Handler, signingKey string) {
+func runHTTPTestCase(t *testing.T, tc httputil.HTTPTestCase, handler http.Handler, key string, signingKey string) {
 	t.Helper()
 	req, err := http.NewRequest(tc.Method, tc.Endpoint, bytes.NewBuffer(tc.Body))
 	if err != nil {
@@ -56,10 +58,8 @@ func runHTTPTestCase(t *testing.T, tc httputil.HTTPTestCase, handler http.Handle
 	}
 	req.URL.RawQuery = q.Encode()
 
-	if tc.Method == http.MethodPost {
-		req, err = httputil.Sign(req, keyID, signingKey)
-		assert.Nil(t, err, "sign request should be success")
-	}
+	req, err = httputil.Sign(req, key, signingKey)
+	assert.Nil(t, err, "sign request should be success")
 
 	resp := NewWrappedRecorder()
 	handler.ServeHTTP(resp, req)
@@ -124,10 +124,18 @@ func TestReverseProxy(t *testing.T) {
 
 	// assert.Nil(t, err, "mockserver should be start ok")
 	testURL := fmt.Sprintf("http://%s", tradeLogsURL)
-	testServer, err := NewServer(testAddr, testURL, testURL, testURL, testURL, keyID, constSigningKey)
+	auth, err := NewAuthenticator(readKeyID, readSigningKey, writeKeyID, writeSigningKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	perm, err := NewPermissioner(readKeyID, writeKeyID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testServer, err := NewServer(testAddr, testURL, testURL, testURL, testURL, auth, perm)
 	assert.Nil(t, err, "reverse proxy server should initiate successfully")
 
-	var testsTrue = []httputil.HTTPTestCase{
+	var testCaseReadKey = []httputil.HTTPTestCase{
 		{
 			Msg:      "Test reverse proxy",
 			Endpoint: fmt.Sprintf("/trade-logs?fromTime=%d", fromParams),
@@ -144,6 +152,8 @@ func TestReverseProxy(t *testing.T) {
 				assert.Equal(t, result.FromTime, fromParams, "Reverse proxy should receive correct params")
 			},
 		},
+	}
+	var testCaseWriteKey = []httputil.HTTPTestCase{
 		{
 			Msg:      "test sign request body is empty",
 			Endpoint: fmt.Sprintf("/users"),
@@ -163,9 +173,9 @@ func TestReverseProxy(t *testing.T) {
 		},
 	}
 
-	var testsFalse = []httputil.HTTPTestCase{
+	var testsFailedWithoutKey = []httputil.HTTPTestCase{
 		{
-			Msg:      "test sign request failed",
+			Msg:      "test sign request without body",
 			Endpoint: fmt.Sprintf("/users"),
 			Method:   http.MethodPost,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -174,12 +184,30 @@ func TestReverseProxy(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testsTrue {
-		t.Run(tc.Msg, func(t *testing.T) { runHTTPTestCase(t, tc, testServer.r, constSigningKey) })
+	var testFailedWhenWriteWithReadKey = []httputil.HTTPTestCase{
+		{
+			Msg:      "test sign write request with read Key",
+			Endpoint: fmt.Sprintf("/users"),
+			Method:   http.MethodPost,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusUnauthorized, resp.Code)
+			},
+		},
 	}
 
-	for _, tc := range testsFalse {
-		t.Run(tc.Msg, func(t *testing.T) { runHTTPTestCase(t, tc, testServer.r, "ahfolah") })
+	for _, tc := range testCaseReadKey {
+		t.Run(tc.Msg, func(t *testing.T) { runHTTPTestCase(t, tc, testServer.r, readKeyID, readSigningKey) })
 	}
 
+	for _, tc := range testCaseWriteKey {
+		t.Run(tc.Msg, func(t *testing.T) { runHTTPTestCase(t, tc, testServer.r, writeKeyID, writeSigningKey) })
+	}
+
+	for _, tc := range testsFailedWithoutKey {
+		t.Run(tc.Msg, func(t *testing.T) { runHTTPTestCase(t, tc, testServer.r, "", "") })
+	}
+
+	for _, tc := range testFailedWhenWriteWithReadKey {
+		t.Run(tc.Msg, func(t *testing.T) { runHTTPTestCase(t, tc, testServer.r, readKeyID, readSigningKey) })
+	}
 }

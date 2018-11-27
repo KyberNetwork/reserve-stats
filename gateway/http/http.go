@@ -8,8 +8,6 @@ import (
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/httpsign"
-	"github.com/gin-contrib/httpsign/crypto"
-	"github.com/gin-contrib/httpsign/validator"
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,8 +30,9 @@ func newReverseProxyMW(target string) (gin.HandlerFunc, error) {
 }
 
 // NewServer creates new instance of gateway HTTP server.
-func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL,
-	keyID, secretKey string) (*Server, error) {
+func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL string,
+	auth *httpsign.Authenticator,
+	perm gin.HandlerFunc) (*Server, error) {
 	r := gin.Default()
 	r.Use(libhttputil.MiddlewareHandler)
 	corsConfig := cors.DefaultConfig()
@@ -41,27 +40,8 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL,
 	corsConfig.AddAllowHeaders("Digest", "Authorization", "Signature", "Nonce")
 	corsConfig.MaxAge = 5 * time.Minute
 	r.Use(cors.New(corsConfig))
-
-	// signature middleware for signing message
-	hmacsha512 := &crypto.HmacSha512{}
-	signKeyID := httpsign.KeyID(keyID)
-	secrets := httpsign.Secrets{
-		signKeyID: &httpsign.Secret{
-			Key:       secretKey,
-			Algorithm: hmacsha512,
-		},
-	}
-	auth := httpsign.NewAuthenticator(
-		secrets,
-		httpsign.WithValidator(
-			NewNonceValidator(),
-			validator.NewDigestValidator(),
-		),
-		httpsign.WithRequiredHeaders(
-			[]string{"(request-target)", "nonce", "digest"},
-		),
-	)
-
+	r.Use(perm)
+	r.Use(auth.Authenticated())
 	if tradeLogsURL != "" {
 		tradeLogsProxyMW, err := newReverseProxyMW(tradeLogsURL)
 		if err != nil {
@@ -73,7 +53,7 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL,
 		r.GET("/reserve-volume", tradeLogsProxyMW)
 		r.GET("/wallet-fee", tradeLogsProxyMW)
 		r.GET("/user-volume", tradeLogsProxyMW)
-		r.GET("/user-list", auth.Authenticated(), tradeLogsProxyMW)
+		r.GET("/user-list", tradeLogsProxyMW)
 		r.GET("/trade-summary", tradeLogsProxyMW)
 		r.GET("/wallet-stats", tradeLogsProxyMW)
 		r.GET("/country-stats", tradeLogsProxyMW)
@@ -92,9 +72,8 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL,
 		if err != nil {
 			return nil, err
 		}
-
 		r.GET("/users", userProxyMW)
-		r.POST("/users", auth.Authenticated(), userProxyMW)
+		r.POST("/users", userProxyMW)
 	}
 
 	if priceAnalyticURL != "" {
@@ -102,8 +81,8 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL,
 		if err != nil {
 			return nil, err
 		}
-		r.GET("/price-analytic-data", auth.Authenticated(), priceProxyMW)
-		r.POST("/price-analytic-data", auth.Authenticated(), priceProxyMW)
+		r.GET("/price-analytic-data", priceProxyMW)
+		r.POST("/price-analytic-data", priceProxyMW)
 	}
 
 	return &Server{

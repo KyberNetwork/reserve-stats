@@ -20,6 +20,8 @@ const (
 	priceAnalyticURLFlag   = "price-analytic-url"
 	writeAccessKeyFlag     = "write-access-key"
 	writeSecretKeyFlag     = "write-secret-key"
+	readAccessKeyFlag      = "read-access-key"
+	readSecretKeyFlag      = "read-secret-key"
 )
 
 var (
@@ -39,13 +41,23 @@ func main() {
 	app.Flags = append(app.Flags,
 		cli.StringFlag{
 			Name:   writeAccessKeyFlag,
-			Usage:  "key for access api",
+			Usage:  "key for access POST/GET api",
 			EnvVar: "WRITE_ACCESS_KEY",
 		},
 		cli.StringFlag{
 			Name:   writeSecretKeyFlag,
-			Usage:  "seceret key for write api",
+			Usage:  "seceret key for POST/GET api",
 			EnvVar: "WRITE_SECRET_KEY",
+		},
+		cli.StringFlag{
+			Name:   readAccessKeyFlag,
+			Usage:  "key for access GET api",
+			EnvVar: "READ_ACCESS_KEY",
+		},
+		cli.StringFlag{
+			Name:   readSecretKeyFlag,
+			Usage:  "seceret key for GET api",
+			EnvVar: "READ_SECRET_KEY",
 		},
 		cli.StringFlag{
 			Name:   tradeLogsAPIURLFlag,
@@ -115,14 +127,24 @@ func run(c *cli.Context) error {
 	if err := validation.Validate(c.String(writeSecretKeyFlag), validation.Required); err != nil {
 		return fmt.Errorf("secret key error: %s", err.Error())
 	}
-
+	auth, err := http.NewAuthenticator(c.String(readAccessKeyFlag), c.String(readSecretKeyFlag),
+		c.String(writeAccessKeyFlag), c.String(writeSecretKeyFlag),
+	)
+	if err != nil {
+		return fmt.Errorf("authentication object creation error: %s", err)
+	}
+	perm, err := http.NewPermissioner(c.String(readAccessKeyFlag), c.String(writeAccessKeyFlag))
+	if err != nil {
+		return fmt.Errorf("permission object creation error: %s", err)
+	}
 	svr, err := http.NewServer(httputil.NewHTTPAddressFromContext(c),
 		c.String(tradeLogsAPIURLFlag),
 		c.String(reserveRatesAPIURLFlag),
 		c.String(userAPIURLFlag),
 		c.String(priceAnalyticURLFlag),
-		c.String(writeAccessKeyFlag),
-		c.String(writeSecretKeyFlag))
+		auth,
+		perm,
+	)
 	if err != nil {
 		return err
 	}

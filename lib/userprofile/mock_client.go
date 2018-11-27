@@ -11,6 +11,6 @@ type MockClient struct{}
 func (m MockClient) LookUpUserProfile(addr ethereum.Address) (UserProfile, error) {
 	return UserProfile{
 		UserName:  "mockUserName",
-		ProfileID: "mockID",
+		ProfileID: 999,
 	}, nil
 }

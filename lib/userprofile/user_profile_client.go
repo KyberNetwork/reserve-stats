@@ -92,8 +92,6 @@ func (c *Client) LookUpUserProfile(addr ethereum.Address) (UserProfile, error) {
 	if rsp.StatusCode != http.StatusOK {
 		return result, fmt.Errorf("unexpected return code: %d", rsp.StatusCode)
 	}
-
-	c.sugar.Debugw("Reply", "resp.Body", rsp.Body)
 	if err = json.NewDecoder(rsp.Body).Decode(&result); err != nil {
 		return result, err
 	}

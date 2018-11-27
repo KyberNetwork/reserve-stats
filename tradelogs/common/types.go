@@ -51,7 +51,7 @@ type TradeLog struct {
 	ETHUSDProvider string  `json:"-"`
 
 	UserName  string `json:"user_name"`
-	ProfileID string `json:"profile_id"`
+	ProfileID int64  `json:"profile_id"`
 	Index     uint   `json:"index"` // the index of event log in transaction receipt
 }
 

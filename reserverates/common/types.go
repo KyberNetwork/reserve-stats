@@ -2,11 +2,11 @@ package common
 
 import (
 	"encoding/json"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"math/big"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/core"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 // ReserveRateEntry hold 4 float number represent necessary data for a rate entry
@@ -32,10 +32,10 @@ func NewReserveRateEntry(reserveRates, sanityRates []*big.Int, index int) Reserv
 
 // ReserveRates hold all the pairs's rate for a particular reserve and metadata
 type ReserveRates struct {
-	Timestamp   time.Time                   `json:"timestamp"`
-	BlockNumber uint64                      `json:"-"`
-	Data        map[string]ReserveRateEntry `json:"data"`
-	Reserve     string                      `json:"-"`
+	Timestamp time.Time        `json:"timestamp"`
+	FromBlock uint64           `json:"from_block"`
+	ToBlock   uint64           `json:"to_block"`
+	Rates     ReserveRateEntry `json:"rates"`
 }
 
 // MarshalJSON implements custom JSON marshaler for ReserveRates to format timestamp in unix millis instead of RFC3339.
@@ -62,6 +62,8 @@ func (rr *ReserveRates) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	rr.Timestamp = timeutil.TimestampMsToTime(decoded.Timestamp)
-	rr.Data = decoded.Data
+	rr.FromBlock = decoded.FromBlock
+	rr.ToBlock = decoded.ToBlock
+	rr.Rates = decoded.Rates
 	return nil
 }

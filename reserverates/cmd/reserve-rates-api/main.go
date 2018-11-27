@@ -4,20 +4,18 @@ import (
 	"log"
 	"os"
 
-	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/http"
 	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserverates/storage/influx"
-
 	"github.com/urfave/cli"
 )
 
 func newServerCli() *cli.App {
 	app := libapp.NewApp()
-	app.Name = "reserverates-server"
+	app.Name = "reserve-rates-api"
 	app.Usage = "server for query rate API"
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.ReserveRatesPort)...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
@@ -37,7 +35,7 @@ func newServerCli() *cli.App {
 			return err
 		}
 
-		rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(logger.Sugar(), influxClient, common.DatabaseName)
+		rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(logger.Sugar(), influxClient, common.DatabaseName, nil)
 		if err != nil {
 			return err
 		}

@@ -5,7 +5,6 @@ import (
 	"golang.org/x/sync/errgroup"
 	"sync"
 
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
@@ -24,11 +23,10 @@ type ResreveRatesCrawler struct {
 	addresses           []ethereum.Address
 	stg                 supportedTokensGetter
 	internalReserveAddr ethereum.Address
-	blkTimeRsv          blockchain.BlockTimeResolverInterface
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
-func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *ethclient.Client, coreClient core.Interface, internalReserveAddr ethereum.Address, bl blockchain.BlockTimeResolverInterface) (*ResreveRatesCrawler, error) {
+func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *ethclient.Client, coreClient core.Interface, internalReserveAddr ethereum.Address) (*ResreveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapperFallback(sugar, client)
 	if err != nil {
 		return nil, err
@@ -44,17 +42,13 @@ func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *et
 		addresses:           ethAddrs,
 		stg:                 newCoreSupportedTokens(sugar, client, coreClient),
 		internalReserveAddr: internalReserveAddr,
-		blkTimeRsv:          bl,
 	}, nil
 }
 
-func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereum.Address) (*rsvRateCommon.ReserveRates, error) {
+func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereum.Address) (map[string]rsvRateCommon.ReserveRateEntry, error) {
 	var (
-		err   error
-		rates = &rsvRateCommon.ReserveRates{
-			BlockNumber: block,
-			Data:        make(map[string]rsvRateCommon.ReserveRateEntry),
-		}
+		err           error
+		rates         = make(map[string]rsvRateCommon.ReserveRateEntry)
 		srcAddresses  []ethereum.Address
 		destAddresses []ethereum.Address
 	)
@@ -65,10 +59,6 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 		"reserve_address", rsvAddr.Hex(),
 	)
 	logger.Debug("fetching reserve rates")
-
-	if rates.Timestamp, err = rrc.blkTimeRsv.Resolve(block); err != nil {
-		return nil, err
-	}
 
 	tokens, err := rrc.stg.supportedTokens(rsvAddr, block)
 	if err != nil {
@@ -90,7 +80,7 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 	}
 
 	for index, token := range tokens {
-		rates.Data[fmt.Sprintf("ETH-%s", token.ID)] = rsvRateCommon.NewReserveRateEntry(reserveRates, sanityRates, index)
+		rates[fmt.Sprintf("ETH-%s", token.ID)] = rsvRateCommon.NewReserveRateEntry(reserveRates, sanityRates, index)
 	}
 
 	logger.Debug("reserve rates fetched successfully")
@@ -99,12 +89,12 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 
 // GetReserveRates returns the map[ReserveAddress]ReserveRates at the given block number.
 // It will only return rates from the set of addresses within its definition.
-func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]rsvRateCommon.ReserveRates, error) {
+func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]map[string]rsvRateCommon.ReserveRateEntry, error) {
 	var (
 		err    error
 		g      errgroup.Group
 		data   = sync.Map{}
-		result = make(map[string]rsvRateCommon.ReserveRates)
+		result = make(map[string]map[string]rsvRateCommon.ReserveRateEntry)
 	)
 
 	logger := rrc.sugar.With(
@@ -128,7 +118,7 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]rsvRat
 				return nil
 			}
 
-			data.Store(rsvAddr, *rates)
+			data.Store(rsvAddr, rates)
 			return nil
 		})
 	}
@@ -144,7 +134,7 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]rsvRat
 			err = fmt.Errorf("key (%v) cannot be asserted to ethereum.Address", key)
 			return false
 		}
-		rates, ok := value.(rsvRateCommon.ReserveRates)
+		rates, ok := value.(map[string]rsvRateCommon.ReserveRateEntry)
 		if !ok {
 			err = fmt.Errorf("value (%v) cannot be asserted to reserveRates", value)
 			return false

@@ -7,7 +7,7 @@ import (
 
 //ReserveRatesStorage defines a set of interface for reserve rate storage, which can be implemented by any DB
 type ReserveRatesStorage interface {
-	UpdateRatesRecords(rateRecords map[string]common.ReserveRates) error
-	GetRatesByTimePoint(addrs []ethereum.Address, fromTime, toTime uint64) (map[string]map[uint64]common.ReserveRates, error)
+	UpdateRatesRecords(uint64, map[string]map[string]common.ReserveRateEntry) error
+	GetRatesByTimePoint(addrs []ethereum.Address, fromTime, toTime uint64) (map[string]map[string][]common.ReserveRates, error)
 	LastBlock() (int64, error)
 }

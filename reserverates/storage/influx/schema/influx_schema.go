@@ -17,8 +17,10 @@ const (
 	BuySanityRate //buy_sanity_rate
 	//SellSanityRate is enumerated field name for reserveRate.SellSanityRate
 	SellSanityRate //sell_sanity_rate
-	//BlockNumber is enumerated field name for reserveRate.BlockNumber
-	BlockNumber //block_number
+	//FromBlock is enumerated field name for from block.
+	FromBlock //from_block
+	//ToBlock is enumerated field name for to block.
+	ToBlock //to_block
 	//Reserve is enumerated field name for reserveRate.Reserve
 	Reserve //reserve
 )
@@ -31,6 +33,7 @@ var rateSchemaFields = map[string]RateSchemaFieldName{
 	"sell_rate":        SellRate,
 	"buy_sanity_rate":  BuySanityRate,
 	"sell_sanity_rate": SellSanityRate,
-	"block_number":     BlockNumber,
+	"from_block":       FromBlock,
+	"to_block":         ToBlock,
 	"reserve":          Reserve,
 }

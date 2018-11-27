@@ -7,22 +7,21 @@ import (
 	"os"
 	"time"
 
-	"github.com/urfave/cli"
-
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserverates/storage/influx"
 	"github.com/KyberNetwork/reserve-stats/reserverates/workers"
+	"github.com/urfave/cli"
 )
 
 const (
 	addressesFlag = "addresses"
 
-	fromBlockFlag    = "from-block"
-	defaultFromblock = 5069586
-	toBlockFlag      = "to-block"
+	fromBlockFlag = "from-block"
+	toBlockFlag   = "to-block"
 
 	maxWorkerFlag    = "max-workers"
 	defaultMaxWorker = 4
@@ -32,6 +31,10 @@ const (
 
 	delayFlag        = "delay"
 	defaultDelayTime = time.Minute
+
+	durationFlag         = "duration"
+	shardDurationFlag    = "shard-duration"
+	defaultShardDuration = time.Hour * 24
 )
 
 func main() {
@@ -74,6 +77,17 @@ func main() {
 			EnvVar: "DELAY",
 			Value:  defaultDelayTime,
 		},
+		cli.DurationFlag{
+			Name:   durationFlag,
+			Usage:  "The duration of a reserve rates before considered expired",
+			EnvVar: "DURATION",
+		},
+		cli.DurationFlag{
+			Name:   shardDurationFlag,
+			Usage:  "The shard duration of a reserve rates",
+			EnvVar: "SHARD_DURATION",
+			Value:  defaultShardDuration,
+		},
 		libapp.NewEthereumNodeFlags(),
 	)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
@@ -103,8 +117,25 @@ func run(c *cli.Context) error {
 		return err
 	}
 
+	ethClient, err := libapp.NewEthereumClientFromFlag(c)
+	if err != nil {
+		return err
+	}
+
+	blockTimeResolver, err := blockchain.NewBlockTimeResolver(sugar, ethClient)
+	if err != nil {
+		return err
+	}
+
+	var options []influxRateStorage.RateStorageOption
+	duration := c.Duration(durationFlag)
+	shardDuration := c.Duration(shardDurationFlag)
+	if duration != 0 && shardDuration != 0 {
+		options = append(options, influxRateStorage.RateStorageOptionWithRetentionPolicy(duration, shardDuration))
+	}
+
 	rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(
-		sugar, influxClient, common.DatabaseName)
+		sugar, influxClient, common.DatabaseName, blockTimeResolver, options...)
 	if err != nil {
 		return err
 	}
@@ -128,6 +159,11 @@ func run(c *cli.Context) error {
 		}
 	}
 
+	currentHeader, fErr := ethClient.HeaderByNumber(context.Background(), nil)
+	if fErr != nil {
+		return fErr
+	}
+
 	maxWorkers := c.Int(maxWorkerFlag)
 	attempts := c.Int(attemptsFlag)
 	delayTime := c.Duration(delayFlag)
@@ -145,18 +181,13 @@ func run(c *cli.Context) error {
 				fromBlock = big.NewInt(0).SetInt64(lastBlock)
 				sugar.Infow("using last stored block number", "from_block", fromBlock)
 			} else {
-				sugar.Infow("using default from block number", "from_block", defaultFromblock)
-				fromBlock = big.NewInt(0).SetInt64(defaultFromblock)
+				sugar.Infow("using latest known block", "from_block", currentHeader.Number.String())
+				fromBlock = currentHeader.Number
 			}
 		}
 
 		if toBlock == nil {
-			client, fErr := libapp.NewEthereumClientFromFlag(c)
-			currentHeader, fErr := client.HeaderByNumber(context.Background(), nil)
-			if fErr != nil {
-				return fErr
-			}
-			toBlock = currentHeader.Number
+			toBlock = big.NewInt(0).Add(currentHeader.Number, big.NewInt(1))
 			sugar.Infow("fetching trade logs up to latest known block number", "to_block", toBlock.String())
 		}
 

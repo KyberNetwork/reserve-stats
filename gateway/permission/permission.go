@@ -18,8 +18,6 @@ const (
 var (
 	//ErrCouldNotGetKeyID error when could not get key id in header
 	ErrCouldNotGetKeyID = errors.New("could not get key id in header")
-	//ErrNotEnoughPermission error when keyid do not have enough permission
-	ErrNotEnoughPermission = errors.New("keyID do not have permission")
 	//kvRegex is the regex to find key-value in a string
 	kvRegex = regexp.MustCompile(`(\w+)="([^"]*)"`)
 )

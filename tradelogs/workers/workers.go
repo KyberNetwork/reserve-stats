@@ -118,9 +118,9 @@ type Pool struct {
 	errCh chan error
 
 	mutex                 *sync.Mutex
-	lastCompletedJobOrder int // Keep the order of the last completed job
-
-	storage storage.Interface
+	lastCompletedJobOrder int  // Keep the order of the last completed job
+	failed                bool // mark as failed, all subsequent persistent storage will be passed
+	storage               storage.Interface
 }
 
 // NewPool returns a pool of workers to handle jobs concurrently
@@ -156,15 +156,12 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 						"to", to.String(),
 						"err", err)
 					p.errCh <- err
-					if err = p.serialSaveTradeLogs(order, nil); err != nil {
-						// saving nil trade logs should never fails
-						// if it does, it is programmer error
-						panic(err)
-					}
+					p.markAsFailed(order)
 					break
 				}
 
 				logger.Infow("fetcher job executed successfully",
+					"oder", order,
 					"from", from.String(),
 					"to", to.String())
 				if err = p.serialSaveTradeLogs(order, tradeLogs); err != nil {
@@ -184,22 +181,41 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 	return p
 }
 
+func (p *Pool) markAsFailed(order int) {
+	var (
+		logger = p.sugar.With(
+			"func", "tradelogs/workers/Pool.markAsFailed",
+			"order", order,
+		)
+		toBreak = false
+	)
+	for {
+		p.mutex.Lock()
+		if order == p.lastCompletedJobOrder+1 {
+			logger.Warn("mark as failed")
+			toBreak = true
+			p.lastCompletedJobOrder++
+			p.failed = true
+		}
+		p.mutex.Unlock()
+
+		if toBreak {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+}
+
 // serialSaveTradeLogs waits until the job with order right before it completed and saving the logs to database.
 func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradeLog) error {
 	var (
-		err    error
 		logger = p.sugar.With(
 			"func", "tradelogs/workers/Pool.serialSaveTradeLogs",
 			"order", order,
 		)
-		storeFn func([]common.TradeLog) error
+		err error
 	)
-
-	if logs != nil {
-		storeFn = p.storage.SaveTradeLogs
-	} else {
-		storeFn = func(_ []common.TradeLog) error { return nil }
-	}
 
 	var toBreak = false
 	for {
@@ -207,7 +223,11 @@ func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradeLog) error {
 		if order == p.lastCompletedJobOrder+1 {
 			toBreak = true
 			p.lastCompletedJobOrder++
-			err = storeFn(logs)
+			if p.failed {
+				logger.Warn("Pool has been marked as failed, do not store trade logs")
+			} else {
+				err = p.storage.SaveTradeLogs(logs)
+			}
 		}
 		p.mutex.Unlock()
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"math/big"
 	"os"
@@ -35,6 +36,10 @@ const (
 	durationFlag         = "duration"
 	shardDurationFlag    = "shard-duration"
 	defaultShardDuration = time.Hour * 24
+
+	modeFlag              = "mode"
+	developMode           = "develop"
+	kyberReserveAddresses = "" // TODO: consider if can put default kyber reserve address here
 )
 
 func main() {
@@ -164,6 +169,13 @@ func run(c *cli.Context) error {
 	delayTime := c.Duration(delayFlag)
 
 	addrs := c.StringSlice(addressesFlag)
+	if len(addrs) == 0 {
+		if c.String("mode") == "develop" {
+			addrs = []string{kyberReserveAddresses}
+		} else {
+			return errors.New("addresses flag cannot be empty")
+		}
+	}
 
 	for {
 		currentHeader, fErr := ethClient.HeaderByNumber(context.Background(), nil)

@@ -11,10 +11,16 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
 type mockStorage struct {
+	counter int
+}
+
+func newMockStorage() *mockStorage {
+	return &mockStorage{counter: 0}
 }
 
 func (s *mockStorage) LastBlock() (int64, error) {
@@ -22,6 +28,7 @@ func (s *mockStorage) LastBlock() (int64, error) {
 }
 
 func (s *mockStorage) SaveTradeLogs(logs []common.TradeLog) error {
+	s.counter = s.counter + 1
 	return nil
 }
 
@@ -78,7 +85,9 @@ func (j *mockJob) execute(sugar *zap.SugaredLogger) ([]common.TradeLog, error) {
 	if j.failure {
 		return nil, fmt.Errorf("failed to execute job %d", j.order)
 	}
-	return nil, nil
+	return []common.TradeLog{{
+		Timestamp: time.Now(),
+	}}, nil
 }
 
 func (j *mockJob) info() (order int, from, to *big.Int) {
@@ -93,7 +102,7 @@ func newTestWorkerPool(maxWorkers int) *Pool {
 	defer logger.Sync()
 	sugar := logger.Sugar()
 
-	return NewPool(sugar, maxWorkers, &mockStorage{})
+	return NewPool(sugar, maxWorkers, newMockStorage())
 }
 
 func sendJobsToWorkerPool(pool *Pool, jobs []job, doneCh chan<- struct{}) {
@@ -163,5 +172,8 @@ func TestWorkerPoolEncounterErr(t *testing.T) {
 	checkWorkerPoolError(t, pool, doneCh, func(t *testing.T, pool *Pool, err error) {
 		assert.Equal(t, err.Error(), "failed to execute job 2")
 		assert.Equal(t, 4, pool.GetLastCompleteJobOrder())
+		ms, ok := pool.storage.(*mockStorage)
+		require.True(t, ok)
+		assert.Equal(t, 1, ms.counter)
 	})
 }

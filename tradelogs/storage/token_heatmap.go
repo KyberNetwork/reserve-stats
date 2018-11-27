@@ -78,7 +78,7 @@ func (is *InfluxStorage) GetTokenHeatmap(asset core.Token, from, to time.Time, t
 	}
 
 	for _, s := range volumeResponse[0].Series {
-		if len(s.Values) != 4 {
+		if len(s.Values[0]) != 4 {
 			logger.Debug(s.Values)
 			return result, errors.New("values field is invalid in len")
 		}

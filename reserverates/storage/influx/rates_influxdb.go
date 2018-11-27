@@ -88,7 +88,9 @@ func NewRateInfluxDBStorage(
 
 // LastBlock returns last stored rate block number from database.
 func (rs *RateStorage) LastBlock() (int64, error) {
-	stmt := fmt.Sprintf(`SELECT "%s" from reserve_rate ORDER BY time DESC limit 1`, schema.ToBlock.String())
+	stmt := fmt.Sprintf(`SELECT "%s" from "%s" ORDER BY time DESC limit 1`,
+		schema.ToBlock.String(),
+		rateTableName)
 	q := influxClient.NewQuery(stmt, rs.dbName, timePrecision)
 
 	res, err := rs.client.Query(q)
@@ -245,7 +247,7 @@ func (rs *RateStorage) UpdateRatesRecords(blockNumber uint64, rateRecords map[st
 				fromBlock uint64
 				toBlock   uint64
 			)
-			lastFromBlock, lastToblock, lastRate, fErr := rs.lastRates(rsvAddr, pair)
+			lastFromBlock, lastToBlock, lastRate, fErr := rs.lastRates(rsvAddr, pair)
 			if fErr != nil {
 				return fErr
 			}
@@ -259,7 +261,7 @@ func (rs *RateStorage) UpdateRatesRecords(blockNumber uint64, rateRecords map[st
 			} else if *lastRate != rate {
 				logger.Debugw("rate changed, starting new rate group",
 					"reserve_addr", rsvAddr,
-					"last_to_block", lastToblock,
+					"last_to_block", lastToBlock,
 					"pair", pair,
 					"last_rate", lastRate,
 					"rate", rate,
@@ -270,10 +272,10 @@ func (rs *RateStorage) UpdateRatesRecords(blockNumber uint64, rateRecords map[st
 			} else {
 				logger.Debugw("rate is remain the same as last stored record",
 					"reserve_addr", rsvAddr,
-					"last_to_block", lastToblock,
+					"last_to_block", lastToBlock,
 					"pair", pair)
 				fromBlock = lastFromBlock
-				toBlock = lastToblock + 1
+				toBlock = lastToBlock + 1
 			}
 
 			pt, fErr := rs.constructDataPoint(rsvAddr, pair, fromBlock, toBlock, rate)

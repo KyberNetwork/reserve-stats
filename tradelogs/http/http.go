@@ -109,7 +109,7 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 		return
 	}
 	for i, log := range tradeLogs {
-		up, err := sv.userProfile.LookUpUserProfile(log.UserAddress)
+		up, err := sv.userProfile.LookUpUserProfile(tradeLogs[i].UserAddress)
 		if err != nil {
 			sv.sugar.Errorw(err.Error(), "fromTime", fromTime, "toTime", toTime)
 			libhttputil.ResponseFailure(

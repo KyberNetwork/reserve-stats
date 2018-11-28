@@ -9,5 +9,5 @@ type UserProfile struct {
 type userClientReply struct {
 	Success bool        `json:"success"`
 	Data    UserProfile `json:"data"`
-	Reason  []string    `json:"reason"`
+	Reason  string      `json:"reason"`
 }

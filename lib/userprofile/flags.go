@@ -53,7 +53,7 @@ func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, er
 		validation.Required,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("core signing key: %s", err.Error())
+		return nil, fmt.Errorf("user signing key: %s", err.Error())
 	}
 	return NewClient(sugar, userURL, signingKey)
 }

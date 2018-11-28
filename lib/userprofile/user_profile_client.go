@@ -65,7 +65,7 @@ func (c *Client) newRequest(method, endpoint string, params map[string]string) (
 func NewClient(sugar *zap.SugaredLogger, url, signingKey string) (*Client, error) {
 	const timeout = time.Minute
 	client := &http.Client{Timeout: timeout}
-	return &Client{sugar: sugar, url: url, client: client}, nil
+	return &Client{sugar: sugar, url: url, client: client, signingKey: signingKey}, nil
 }
 
 // LookUpUserProfile will look for the UserProfile of input addr from server

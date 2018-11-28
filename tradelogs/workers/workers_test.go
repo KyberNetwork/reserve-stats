@@ -124,14 +124,11 @@ func sendJobsToWorkerPool(pool *Pool, jobs []job, doneCh chan<- struct{}) {
 type assertFn func(t *testing.T, pool *Pool, err error)
 
 func checkWorkerPoolError(t *testing.T, pool *Pool, doneCh <-chan struct{}, fn assertFn) {
-	<-doneCh
-	pool.Shutdown()
-
-	for err := range pool.errCh {
-		if err != nil {
-			fn(t, pool, err)
-		}
-		break
+	select {
+	case <-doneCh:
+		pool.Shutdown()
+	case err := <-pool.errCh:
+		fn(t, pool, err)
 	}
 }
 
@@ -171,7 +168,7 @@ func TestWorkerPoolEncounterErr(t *testing.T) {
 
 	checkWorkerPoolError(t, pool, doneCh, func(t *testing.T, pool *Pool, err error) {
 		assert.Equal(t, err.Error(), "failed to execute job 2")
-		assert.Equal(t, 4, pool.GetLastCompleteJobOrder())
+		assert.True(t, pool.GetLastCompleteJobOrder() < 2)
 		ms, ok := pool.storage.(*mockStorage)
 		require.True(t, ok)
 		assert.Equal(t, 1, ms.counter)

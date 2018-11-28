@@ -1,6 +1,7 @@
 package workers
 
 import (
+	"errors"
 	"math/big"
 	"sync"
 	"time"
@@ -187,22 +188,17 @@ func (p *Pool) markAsFailed(order int) {
 			"func", "tradelogs/workers/Pool.markAsFailed",
 			"order", order,
 		)
-		toBreak = false
 	)
 	for {
 		p.mutex.Lock()
 		if order == p.lastCompletedJobOrder+1 {
 			logger.Warn("mark as failed")
-			toBreak = true
-			p.lastCompletedJobOrder++
 			p.failed = true
+			p.mutex.Unlock()
+			return
 		}
+
 		p.mutex.Unlock()
-
-		if toBreak {
-			break
-		}
-
 		time.Sleep(time.Second)
 	}
 }
@@ -219,28 +215,30 @@ func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradeLog) error {
 
 	for {
 		p.mutex.Lock()
+
+		if p.failed {
+			p.mutex.Unlock()
+			return errors.New("pool has been marked as failed")
+		}
+
 		if order == p.lastCompletedJobOrder+1 {
-			p.lastCompletedJobOrder++
-
-			if p.failed {
-				logger.Warn("Pool has been marked as failed, do not store trade logs")
-				p.mutex.Unlock()
-				return nil
-			}
-
 			if err = p.storage.SaveTradeLogs(logs); err != nil {
 				logger.Errorw("save trade logs into db failed",
 					"err", err)
 				p.mutex.Unlock()
+				p.markAsFailed(order)
 				return err
 			}
 
+			p.lastCompletedJobOrder++
 			logger.Infow("save trade logs into db success")
 			p.mutex.Unlock()
 			return nil
 		}
-		p.mutex.Unlock()
 
+		logger.Debugw("waiting for previous job to be completed",
+			"last_completed", p.lastCompletedJobOrder)
+		p.mutex.Unlock()
 		time.Sleep(time.Second)
 	}
 }

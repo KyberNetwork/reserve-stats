@@ -1,6 +1,7 @@
 package workers
 
 import (
+	"errors"
 	"math/big"
 	"sync"
 	"time"
@@ -118,9 +119,9 @@ type Pool struct {
 	errCh chan error
 
 	mutex                 *sync.Mutex
-	lastCompletedJobOrder int // Keep the order of the last completed job
-
-	storage storage.Interface
+	lastCompletedJobOrder int  // Keep the order of the last completed job
+	failed                bool // mark as failed, all subsequent persistent storage will be passed
+	storage               storage.Interface
 }
 
 // NewPool returns a pool of workers to handle jobs concurrently
@@ -145,6 +146,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 			for j := range p.jobCh {
 				order, from, to := j.info()
 				logger.Infow("executing fetcher job",
+					"order", order,
 					"from", from.String(),
 					"to", to.String())
 
@@ -155,45 +157,19 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 						"to", to.String(),
 						"err", err)
 					p.errCh <- err
+					p.markAsFailed(order)
 					break
 				}
+
 				logger.Infow("fetcher job executed successfully",
+					"order", order,
 					"from", from.String(),
 					"to", to.String())
-
-				// Compare the job order to lastCompletedOrder and save to database if job order = lastCompletedOrder + 1,
-				// otherwise blocks worker
-				saveSuccess := false
-				for {
-					var err error
-
-					p.mutex.Lock()
-					if order == p.lastCompletedJobOrder+1 {
-						if err = p.storage.SaveTradeLogs(tradeLogs); err == nil {
-							saveSuccess = true
-							p.lastCompletedJobOrder++
-						}
-					}
-					p.mutex.Unlock()
-
-					if err != nil {
-						logger.Errorw("save trade logs into db failed",
-							"from", from.String(),
-							"to", to.String(),
-							"err", err)
-						p.errCh <- err
-						break
-					} else {
-						if saveSuccess {
-							logger.Infow("save trade logs into db success",
-								"from", from.String(),
-								"to", to.String())
-							break
-						} else {
-							time.Sleep(time.Second)
-						}
-					}
+				if err = p.serialSaveTradeLogs(order, tradeLogs); err != nil {
+					p.errCh <- err
+					break
 				}
+
 			}
 			logger.Infow("worker stopped",
 				"func", "tradelogs/workers/NewPool",
@@ -204,6 +180,67 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 	}
 
 	return p
+}
+
+func (p *Pool) markAsFailed(order int) {
+	var (
+		logger = p.sugar.With(
+			"func", "tradelogs/workers/Pool.markAsFailed",
+			"order", order,
+		)
+	)
+	for {
+		p.mutex.Lock()
+		if order == p.lastCompletedJobOrder+1 {
+			logger.Warn("mark as failed")
+			p.failed = true
+			p.mutex.Unlock()
+			return
+		}
+
+		p.mutex.Unlock()
+		time.Sleep(time.Second)
+	}
+}
+
+// serialSaveTradeLogs waits until the job with order right before it completed and saving the logs to database.
+func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradeLog) error {
+	var (
+		logger = p.sugar.With(
+			"func", "tradelogs/workers/Pool.serialSaveTradeLogs",
+			"order", order,
+		)
+		err error
+	)
+
+	for {
+		p.mutex.Lock()
+
+		if p.failed {
+			p.mutex.Unlock()
+			return errors.New("pool has been marked as failed")
+		}
+
+		if order == p.lastCompletedJobOrder+1 {
+			if err = p.storage.SaveTradeLogs(logs); err != nil {
+				logger.Errorw("save trade logs into db failed",
+					"err", err)
+				p.mutex.Unlock()
+				p.markAsFailed(order)
+				return err
+			}
+
+			p.lastCompletedJobOrder++
+			logger.Infow("save trade logs into db success")
+			p.mutex.Unlock()
+			return nil
+		}
+
+		logger.Debugw("waiting for previous job to be completed",
+			"last_completed", p.lastCompletedJobOrder)
+		p.mutex.Unlock()
+		time.Sleep(time.Second)
+	}
 }
 
 // GetLastCompleteJobOrder return the order of the latest completed job

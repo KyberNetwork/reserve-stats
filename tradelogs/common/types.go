@@ -154,20 +154,31 @@ type Heatmap struct {
 	TotalKYCUser         int64   `json:"total_kyc_user"`
 }
 
-//IsKyberSwap determine if the tradelog is through KyberSwap
-func (tl TradeLog) IsKyberSwap() bool {
+var kyberWallets = map[ethereum.Address]struct{}{
+	ethereum.HexToAddress("0x440bBd6a888a36DE6e2F6A25f65bc4e16874faa9"): {},
+	ethereum.HexToAddress("0xEA1a7dE54a427342c8820185867cF49fc2f95d43"): {},
+}
 
-	//if a trade log has IP address ,it is kyberwap
-	if tl.IP != "" {
+func isKyberWallet(addr ethereum.Address) bool {
+	if _, exist := kyberWallets[addr]; exist {
 		return true
 	}
+	return false
+}
+
+//IsKyberSwap determine if the tradelog is through KyberSwap
+func (tl TradeLog) IsKyberSwap() bool {
 	//if a trade log has no feeToWalletEvent, it is KyberSwap
 	if len(tl.WalletFees) == 0 {
 		return true
 	}
 	for _, fee := range tl.WalletFees {
-		//if Wallet Address < maxUint64, it is KyberSwap
-		if fee.WalletAddress.Big().Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(64), nil)) == -1 {
+		//if Wallet Address < maxUint128, it is KyberSwap
+		if fee.WalletAddress.Big().Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(128), nil)) == -1 {
+			return true
+		}
+
+		if isKyberWallet(fee.WalletAddress) {
 			return true
 		}
 	}

@@ -217,34 +217,32 @@ func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradeLog) error {
 		err error
 	)
 
-	var toBreak = false
 	for {
 		p.mutex.Lock()
 		if order == p.lastCompletedJobOrder+1 {
-			toBreak = true
 			p.lastCompletedJobOrder++
+
 			if p.failed {
 				logger.Warn("Pool has been marked as failed, do not store trade logs")
-			} else {
-				err = p.storage.SaveTradeLogs(logs)
+				p.mutex.Unlock()
+				return nil
 			}
+
+			if err = p.storage.SaveTradeLogs(logs); err != nil {
+				logger.Errorw("save trade logs into db failed",
+					"err", err)
+				p.mutex.Unlock()
+				return err
+			}
+
+			logger.Infow("save trade logs into db success")
+			p.mutex.Unlock()
+			return nil
 		}
 		p.mutex.Unlock()
 
-		if toBreak {
-			break
-		}
 		time.Sleep(time.Second)
 	}
-
-	if err != nil {
-		logger.Errorw("save trade logs into db failed",
-			"err", err)
-		return err
-	}
-
-	logger.Infow("save trade logs into db success")
-	return nil
 }
 
 // GetLastCompleteJobOrder return the order of the latest completed job

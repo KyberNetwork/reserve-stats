@@ -154,16 +154,14 @@ type Heatmap struct {
 	TotalKYCUser         int64   `json:"total_kyc_user"`
 }
 
-var kyberWallets = []ethereum.Address{
-	ethereum.HexToAddress("0x440bBd6a888a36DE6e2F6A25f65bc4e16874faa9"),
-	ethereum.HexToAddress("0xEA1a7dE54a427342c8820185867cF49fc2f95d43"),
+var kyberWallets = map[ethereum.Address]struct{}{
+	ethereum.HexToAddress("0x440bBd6a888a36DE6e2F6A25f65bc4e16874faa9"): {},
+	ethereum.HexToAddress("0xEA1a7dE54a427342c8820185867cF49fc2f95d43"): {},
 }
 
 func isKyberWallet(addr ethereum.Address) bool {
-	for _, wallet := range kyberWallets {
-		if addr == wallet {
-			return true
-		}
+	if _, exist := kyberWallets[addr]; exist {
+		return true
 	}
 	return false
 }

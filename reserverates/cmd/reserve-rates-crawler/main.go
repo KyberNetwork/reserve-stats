@@ -159,11 +159,6 @@ func run(c *cli.Context) error {
 		}
 	}
 
-	currentHeader, fErr := ethClient.HeaderByNumber(context.Background(), nil)
-	if fErr != nil {
-		return fErr
-	}
-
 	maxWorkers := c.Int(maxWorkerFlag)
 	attempts := c.Int(attemptsFlag)
 	delayTime := c.Duration(delayFlag)
@@ -171,6 +166,11 @@ func run(c *cli.Context) error {
 	addrs := c.StringSlice(addressesFlag)
 
 	for {
+		currentHeader, fErr := ethClient.HeaderByNumber(context.Background(), nil)
+		if fErr != nil {
+			return fErr
+		}
+
 		if fromBlock == nil {
 			lastBlock, fErr := rateStorage.LastBlock()
 			if fErr != nil {
@@ -188,7 +188,7 @@ func run(c *cli.Context) error {
 
 		if toBlock == nil {
 			toBlock = big.NewInt(0).Add(currentHeader.Number, big.NewInt(1))
-			sugar.Infow("fetching trade logs up to latest known block number", "to_block", toBlock.String())
+			sugar.Infow("fetching reserve rates up to latest known block number", "to_block", toBlock.String())
 		}
 
 		pool := workers.NewPool(sugar, maxWorkers, rateStorage)

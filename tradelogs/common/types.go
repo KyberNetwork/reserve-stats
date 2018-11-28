@@ -154,10 +154,14 @@ type Heatmap struct {
 	TotalKYCUser         int64   `json:"total_kyc_user"`
 }
 
+var kyberWallets = []ethereum.Address{
+	ethereum.HexToAddress("0x440bBd6a888a36DE6e2F6A25f65bc4e16874faa9"),
+	ethereum.HexToAddress("0xEA1a7dE54a427342c8820185867cF49fc2f95d43"),
+}
+
 func isKyberWallet(addr ethereum.Address) bool {
-	wallets := []string{"0x440bBd6a888a36DE6e2F6A25f65bc4e16874faa9", "0xEA1a7dE54a427342c8820185867cF49fc2f95d43"}
-	for _, wallet := range wallets {
-		if addr == ethereum.HexToAddress(wallet) {
+	for _, wallet := range kyberWallets {
+		if addr == wallet {
 			return true
 		}
 	}
@@ -166,11 +170,6 @@ func isKyberWallet(addr ethereum.Address) bool {
 
 //IsKyberSwap determine if the tradelog is through KyberSwap
 func (tl TradeLog) IsKyberSwap() bool {
-
-	//if a trade log has IP address ,it is kyberwap
-	if tl.IP != "" {
-		return true
-	}
 	//if a trade log has no feeToWalletEvent, it is KyberSwap
 	if len(tl.WalletFees) == 0 {
 		return true

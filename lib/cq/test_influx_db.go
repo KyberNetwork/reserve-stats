@@ -14,7 +14,7 @@ const (
 	nTestRecord       = 100
 	recordInterval    = 1000
 	tags              = "abc"
-	timePrecision     = "ms"
+	timePrecision     = "s"
 )
 
 //setupTestInfluxClient return a http influxClient and create test Database

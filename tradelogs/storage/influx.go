@@ -17,7 +17,7 @@ import (
 
 const (
 	//timePrecision is the precision configured for influxDB
-	timePrecision = "ms"
+	timePrecision = "s"
 )
 
 // InfluxStorage represent a client to store trade data to influx DB

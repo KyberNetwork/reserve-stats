@@ -51,7 +51,7 @@ func (cc *CachedClient) LookUpUserProfile(addr ethereum.Address) (UserProfile, e
 	logger.Debugf("cache missed. Lookup from API endpoint and caching... Current cache size : %d", cc.cacheSize)
 	p, err := cc.Client.LookUpUserProfile(addr)
 	if err != nil {
-		return p, nil
+		return p, err
 	}
 	//if MaxCacheSize reached, delete the oldest member
 	if cc.cacheSize >= cc.MaxCacheSize {

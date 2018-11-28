@@ -73,30 +73,34 @@ func (c *Client) LookUpUserProfile(addr ethereum.Address) (UserProfile, error) {
 	const endpoint = "/api/wallet_info"
 	var (
 		params = make(map[string]string)
-		result = UserProfile{}
+		result = userClientReply{
+			Data: UserProfile{},
+		}
 	)
 	params["nonce"] = generateNonce()
 	params["wallet_address"] = addr.Hex()
 	req, err := c.newRequest(http.MethodGet, endpoint, params)
 	if err != nil {
-		return result, err
+		return result.Data, err
 	}
 
 	rsp, err := c.client.Do(req)
 	if err != nil {
-		return result, err
+		return result.Data, err
 	}
 
 	defer rsp.Body.Close()
 
 	if rsp.StatusCode != http.StatusOK {
-		return result, fmt.Errorf("unexpected return code: %d", rsp.StatusCode)
+		return result.Data, fmt.Errorf("unexpected return code: %d", rsp.StatusCode)
 	}
 	if err = json.NewDecoder(rsp.Body).Decode(&result); err != nil {
-		return result, err
+		return result.Data, err
 	}
-
-	return result, nil
+	if !result.Success {
+		return result.Data, fmt.Errorf("failed to get  user profile, reason : %v", result.Reason)
+	}
+	return result.Data, nil
 }
 
 func (c *Client) sign(msg string) (string, error) {

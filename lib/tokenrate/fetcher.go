@@ -91,7 +91,7 @@ func (ef *ETHUSDRateFetcher) queryDB(clnt client.Client, cmd string) (res []clie
 func (ef ETHUSDRateFetcher) SaveTokenRate(rate ETHUSDRate) error {
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  ef.dbName,
-		Precision: "ms",
+		Precision: "s",
 	})
 	if err != nil {
 		return err

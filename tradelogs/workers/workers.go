@@ -145,7 +145,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 			for j := range p.jobCh {
 				order, from, to := j.info()
 				logger.Infow("executing fetcher job",
-					"oder", order,
+					"order", order,
 					"from", from.String(),
 					"to", to.String())
 
@@ -161,7 +161,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 				}
 
 				logger.Infow("fetcher job executed successfully",
-					"oder", order,
+					"order", order,
 					"from", from.String(),
 					"to", to.String())
 				if err = p.serialSaveTradeLogs(order, tradeLogs); err != nil {

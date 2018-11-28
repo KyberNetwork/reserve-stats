@@ -15,6 +15,7 @@ require (
 	github.com/fjl/memsize v0.0.0-20180929194037-2a09253e352a // indirect
 	github.com/gin-contrib/cors v0.0.0-20181008113111-488de3ec974f
 	github.com/gin-contrib/httpsign v0.0.0-20181102021455-787f0a566bf9
+	github.com/gin-contrib/zap v0.0.0-20180827024651-a4f331736217
 	github.com/gin-gonic/gin v1.3.0
 	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
 	github.com/go-sql-driver/mysql v1.4.0 // indirect

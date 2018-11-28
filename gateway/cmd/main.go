@@ -92,7 +92,10 @@ func main() {
 }
 
 func run(c *cli.Context) error {
-	err := validation.Validate(c.String(tradeLogsAPIURLFlag),
+	logger, err := libapp.NewLogger(c)
+	defer logger.Sync()
+
+	err = validation.Validate(c.String(tradeLogsAPIURLFlag),
 		validation.Required,
 		is.URL)
 	if err != nil {
@@ -144,6 +147,7 @@ func run(c *cli.Context) error {
 		c.String(priceAnalyticURLFlag),
 		auth,
 		perm,
+		logger,
 	)
 	if err != nil {
 		return err

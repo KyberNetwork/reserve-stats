@@ -8,7 +8,9 @@ import (
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/httpsign"
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // Server is HTTP server of gateway service.
@@ -32,13 +34,15 @@ func newReverseProxyMW(target string) (gin.HandlerFunc, error) {
 // NewServer creates new instance of gateway HTTP server.
 func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL string,
 	auth *httpsign.Authenticator,
-	perm gin.HandlerFunc) (*Server, error) {
+	perm gin.HandlerFunc,
+	logger *zap.Logger) (*Server, error) {
 	r := gin.Default()
 	r.Use(libhttputil.MiddlewareHandler)
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AddAllowHeaders("Digest", "Authorization", "Signature", "Nonce")
 	corsConfig.MaxAge = 5 * time.Minute
+	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
 	r.Use(cors.New(corsConfig))
 	r.Use(perm)
 	r.Use(auth.Authenticated())

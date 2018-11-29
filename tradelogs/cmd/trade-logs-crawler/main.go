@@ -27,7 +27,7 @@ import (
 
 const (
 	fromBlockFlag    = "from-block"
-	defaultFromblock = 5069586
+	defaultFromBlock = 5069586
 	toBlockFlag      = "to-block"
 
 	maxWorkerFlag    = "max-workers"
@@ -255,8 +255,8 @@ func run(c *cli.Context) error {
 				fromBlock = big.NewInt(0).SetInt64(lastBlock)
 				sugar.Infow("using last stored block number", "from_block", fromBlock)
 			} else {
-				sugar.Infow("using default from block number", "from_block", defaultFromblock)
-				fromBlock = big.NewInt(0).SetInt64(defaultFromblock)
+				sugar.Infow("using default from block number", "from_block", defaultFromBlock)
+				fromBlock = big.NewInt(0).SetInt64(defaultFromBlock)
 			}
 		}
 

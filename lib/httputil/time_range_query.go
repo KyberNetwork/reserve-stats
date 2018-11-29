@@ -42,6 +42,14 @@ func TimeRangeQueryWithMaxTimeFrame(duration time.Duration) TimeRangeQueryValida
 	}
 }
 
+// TimeRangeQueryWithDefaultTimeFrame sets the given duration as the default time
+// frame when doing validation.
+func TimeRangeQueryWithDefaultTimeFrame(duration time.Duration) TimeRangeQueryValidationOption {
+	return func(q *TimeRangeQuery) {
+		q.defaultTimeFrame = duration
+	}
+}
+
 // Validate validates the given time range query and converts them to native
 // time.Time format if there is no error.
 func (q *TimeRangeQuery) Validate(options ...TimeRangeQueryValidationOption) (time.Time, time.Time, error) {

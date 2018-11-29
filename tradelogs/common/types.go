@@ -184,3 +184,9 @@ func (tl TradeLog) IsKyberSwap() bool {
 	}
 	return false
 }
+
+// IntegrationVolume represent kyberSwap and non kyberswap volume
+type IntegrationVolume struct {
+	KyberSwapVolume    float64 `json:"kyber_swap_volume"`
+	NonKyberSwapVolume float64 `json:"non_kyber_swap_volume"`
+}

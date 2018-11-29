@@ -58,6 +58,7 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL st
 		r.GET("/wallet-stats", tradeLogsProxyMW)
 		r.GET("/country-stats", tradeLogsProxyMW)
 		r.GET("/heat-map", tradeLogsProxyMW)
+		r.GET("/integration-volume", tradeLogsProxyMW)
 	}
 	if reserveRatesURL != "" {
 		reserveRateProxyMW, err := newReverseProxyMW(reserveRatesURL)

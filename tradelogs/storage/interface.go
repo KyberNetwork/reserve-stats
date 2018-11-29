@@ -25,4 +25,5 @@ type Interface interface {
 	GetWalletStats(fromTime, toTime time.Time, walletAddr string, timezone int8) (map[uint64]common.WalletStats, error)
 	GetCountryStats(countryCode string, from, to time.Time, timezone int8) (map[uint64]*common.CountryStats, error)
 	GetTokenHeatmap(asset core.Token, from, to time.Time, timezone int8) (map[string]common.Heatmap, error)
+	GetIntegrationVolume(fromTime, toTime time.Time) (map[uint64]*common.IntegrationVolume, error)
 }

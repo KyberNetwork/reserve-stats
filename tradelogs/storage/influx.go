@@ -111,17 +111,17 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 
 		q = fmt.Sprintf(
 			`
-		SELECT %[1]s FROM burn_fees WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, trade_log_index;
-		SELECT %[2]s FROM wallet_fees WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, trade_log_index;
-		SELECT %[3]s FROM trades WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY tx_hash, log_index;
+		SELECT %[1]s FROM burn_fees WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY block_number, trade_log_index;
+		SELECT %[2]s FROM wallet_fees WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY block_number, trade_log_index;
+		SELECT %[3]s FROM trades WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY block_number, log_index;
 		`,
 			"time, reserve_addr, amount, log_index",
 			"time, reserve_addr, wallet_addr, amount, log_index",
 			`
-		time, block_number, 
+		time,
 		eth_receival_sender, eth_receival_amount, 
 		user_addr, src_addr, dst_addr, src_amount, dst_amount, (eth_amount * eth_usd_rate) as fiat_amount, 		
-		ip, country, integration_app
+		ip, country, integration_app, tx_hash
 		`,
 			from.Format(time.RFC3339),
 			to.Format(time.RFC3339),
@@ -147,37 +147,37 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 		return nil, nil
 	}
 
-	// map [tx_hash][trade_log_index][]common.BurnFee
-	burnFeesByTxHash := make(map[ethereum.Hash]map[uint][]common.BurnFee)
+	// map [block_number][trade_log_index][]common.BurnFee
+	burnFeesByIndex := make(map[uint]map[uint][]common.BurnFee)
 	for _, row := range res[0].Series {
-		txHash, tradeLogIndex, burnFees, err := is.rowToBurnFees(row)
+		blockNumber, tradeLogIndex, burnFees, err := is.rowToBurnFees(row)
 		if err != nil {
 			return nil, err
 		}
-		_, exist := burnFeesByTxHash[txHash]
+		_, exist := burnFeesByIndex[blockNumber]
 		if !exist {
-			burnFeesByTxHash[txHash] = make(map[uint][]common.BurnFee)
+			burnFeesByIndex[blockNumber] = make(map[uint][]common.BurnFee)
 		}
-		burnFeesByTxHash[txHash][uint(tradeLogIndex)] = burnFees
+		burnFeesByIndex[blockNumber][uint(tradeLogIndex)] = burnFees
 	}
 
 	// Get WalletFees
 	// map [tx_hash][trade_log_index][]common.WalletFee
-	walletFeesByTxHash := make(map[ethereum.Hash]map[uint][]common.WalletFee)
+	walletFeesByIndex := make(map[uint]map[uint][]common.WalletFee)
 
 	if len(res[1].Series) == 0 {
 		is.sugar.Debug("empty wallet fee in query result")
 	} else {
 		for _, row := range res[1].Series {
-			txHash, tradeLogIndex, walletFees, err := is.rowToWalletFees(row)
+			blockNumber, tradeLogIndex, walletFees, err := is.rowToWalletFees(row)
 			if err != nil {
 				return nil, err
 			}
-			_, exist := walletFeesByTxHash[txHash]
+			_, exist := walletFeesByIndex[blockNumber]
 			if !exist {
-				walletFeesByTxHash[txHash] = make(map[uint][]common.WalletFee)
+				walletFeesByIndex[blockNumber] = make(map[uint][]common.WalletFee)
 			}
-			walletFeesByTxHash[txHash][uint(tradeLogIndex)] = walletFees
+			walletFeesByIndex[blockNumber][tradeLogIndex] = walletFees
 		}
 	}
 
@@ -188,7 +188,7 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 	}
 
 	for _, row := range res[2].Series {
-		tradeLog, err := is.rowToTradeLog(row, burnFeesByTxHash, walletFeesByTxHash)
+		tradeLog, err := is.rowToTradeLog(row, burnFeesByIndex, walletFeesByIndex)
 		if err != nil {
 			return nil, err
 		}
@@ -230,7 +230,6 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 
 	tags := map[string]string{
 		"block_number": strconv.FormatUint(log.BlockNumber, 10),
-		"tx_hash":      log.TransactionHash.String(),
 
 		"eth_receival_sender": log.EtherReceivalSender.String(),
 
@@ -310,6 +309,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		"eth_usd_rate": log.ETHUSDRate,
 
 		"eth_amount": ethAmount,
+		"tx_hash":    log.TransactionHash.String(),
 	}
 
 	tradePoint, err := client.NewPoint("trades", tags, fields, log.Timestamp)
@@ -322,7 +322,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	// build burnFeePoint
 	for _, burn := range log.BurnFees {
 		tags := map[string]string{
-			"tx_hash":         log.TransactionHash.String(),
+			"block_number":    strconv.FormatUint(uint64(log.BlockNumber), 10),
 			"reserve_addr":    burn.ReserveAddress.String(),
 			"log_index":       strconv.FormatUint(uint64(burn.Index), 10),
 			"trade_log_index": strconv.FormatUint(uint64(log.Index), 10),
@@ -350,7 +350,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	// build walletFeePoint
 	for _, walletFee := range log.WalletFees {
 		tags := map[string]string{
-			"tx_hash":         log.TransactionHash.String(),
+			"block_number":    strconv.FormatUint(uint64(log.BlockNumber), 10),
 			"reserve_addr":    walletFee.ReserveAddress.String(),
 			"wallet_addr":     walletFee.WalletAddress.String(),
 			"log_index":       strconv.FormatUint(uint64(walletFee.Index), 10),

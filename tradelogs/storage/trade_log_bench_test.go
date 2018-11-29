@@ -21,9 +21,6 @@ func BenchmarkWriteReadInflux(b *testing.B) {
 		b.Fatal(err)
 	}
 	for n := 0; n < b.N; n++ {
-		if err = is.tearDown(); err != nil {
-			b.Fatal(err)
-		}
 		err = is.SaveTradeLogs(tradeLogs)
 		if err != nil {
 			b.Fatal(err)

@@ -12,8 +12,8 @@ const (
 	IntegrationVolumeMeasurement = "integration_volume"
 )
 
-// CreateIntergrationVoluemCq return a set of cqs required for KyberSwap and non KyberSwap Summary aggregation
-func CreateIntergrationVoluemCq(dbName string) ([]*libcq.ContinuousQuery, error) {
+// CreateIntegrationVolumeCq return a set of cqs required for KyberSwap and non KyberSwap Summary aggregation
+func CreateIntegrationVolumeCq(dbName string) ([]*libcq.ContinuousQuery, error) {
 	var result []*libcq.ContinuousQuery
 
 	kyberSwapVol, err := libcq.NewContinuousQuery(
@@ -21,7 +21,9 @@ func CreateIntergrationVoluemCq(dbName string) ([]*libcq.ContinuousQuery, error)
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf("SELECT SUM(eth_amount) AS kyber_swap_volume INTO %s FROM trades WHERE integration_app='%s'", IntegrationVolumeMeasurement, appnames.KyberSwapAppName),
+		fmt.Sprintf(`SELECT SUM(eth_amount) AS kyber_swap_volume INTO %s FROM trades WHERE integration_app='%s'`,
+			IntegrationVolumeMeasurement,
+			appnames.KyberSwapAppName),
 		"1d",
 		[]string{},
 	)
@@ -35,7 +37,9 @@ func CreateIntergrationVoluemCq(dbName string) ([]*libcq.ContinuousQuery, error)
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf("SELECT SUM(eth_amount) AS non_kyber_swap_volume INTO %s FROM trades WHERE integration_app!='%s'", IntegrationVolumeMeasurement, appnames.KyberSwapAppName),
+		fmt.Sprintf(`SELECT SUM(eth_amount) AS non_kyber_swap_volume INTO %s FROM trades WHERE integration_app!='%s'`,
+			IntegrationVolumeMeasurement,
+			appnames.KyberSwapAppName),
 		"1d",
 		[]string{},
 	)

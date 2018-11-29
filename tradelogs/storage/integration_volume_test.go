@@ -13,7 +13,7 @@ import (
 )
 
 func aggregateIntegrationVolume(is *InfluxStorage) error {
-	cqs, err := tradelogcq.CreateIntergrationVoluemCq(is.dbName)
+	cqs, err := tradelogcq.CreateIntegrationVolumeCq(is.dbName)
 	if err != nil {
 		return err
 	}

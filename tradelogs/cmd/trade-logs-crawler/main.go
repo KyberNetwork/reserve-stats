@@ -161,7 +161,7 @@ func manageCQFromContext(c *cli.Context, influxClient client.Client, sugar *zap.
 		return err
 	}
 	cqs = append(cqs, countryStatsCqs...)
-	integrationVolumeCqs, err := tradelogcq.CreateIntergrationVoluemCq(common.DatabaseName)
+	integrationVolumeCqs, err := tradelogcq.CreateIntegrationVolumeCq(common.DatabaseName)
 	if err != nil {
 		return err
 	}

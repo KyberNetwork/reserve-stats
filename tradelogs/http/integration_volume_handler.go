@@ -2,19 +2,19 @@ package http
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/gin-gonic/gin"
 )
 
-type integrationVolQuery struct {
-	httputil.TimeRangeQueryFreq
-	// Timezone uint64 `form:"timezone" binding:"required"`
-}
+const (
+	maxTimeFrame     = time.Hour * 24 * 365 * 3 // 3 years
+	defaultTimeFrame = time.Hour * 24 * 3       // 3 days
+)
 
 func (sv *Server) getIntegrationVolume(c *gin.Context) {
-	var query integrationVolQuery
-
+	var query httputil.TimeRangeQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
 		httputil.ResponseFailure(
 			c,
@@ -24,7 +24,10 @@ func (sv *Server) getIntegrationVolume(c *gin.Context) {
 		return
 	}
 
-	fromTime, toTime, err := query.Validate()
+	fromTime, toTime, err := query.Validate(
+		httputil.TimeRangeQueryWithMaxTimeFrame(maxTimeFrame),
+		httputil.TimeRangeQueryWithDefaultTimeFrame(defaultTimeFrame),
+	)
 	if err != nil {
 		c.JSON(
 			http.StatusBadRequest,

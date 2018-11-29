@@ -59,6 +59,8 @@ github.com/gin-contrib/httpsign/crypto
 github.com/gin-contrib/httpsign/validator
 # github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7
 github.com/gin-contrib/sse
+# github.com/gin-contrib/zap v0.0.0-20180827024651-a4f331736217
+github.com/gin-contrib/zap
 # github.com/gin-gonic/gin v1.3.0
 github.com/gin-gonic/gin
 github.com/gin-gonic/gin/binding

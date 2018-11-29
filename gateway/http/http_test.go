@@ -13,6 +13,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 const (
@@ -132,7 +133,11 @@ func TestReverseProxy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testServer, err := NewServer(testAddr, testURL, testURL, testURL, testURL, auth, perm)
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		t.Fatal(err)
+	}
+	testServer, err := NewServer(testAddr, testURL, testURL, testURL, testURL, auth, perm, logger)
 	assert.Nil(t, err, "reverse proxy server should initiate successfully")
 
 	var testCaseReadKey = []httputil.HTTPTestCase{

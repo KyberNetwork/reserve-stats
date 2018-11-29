@@ -172,9 +172,10 @@ func TestWorkerPoolEncounterErr(t *testing.T) {
 
 	checkWorkerPoolError(t, pool, doneCh, func(t *testing.T, pool *Pool, err error) {
 		assert.Equal(t, err.Error(), "failed to execute job 2")
-		assert.True(t, pool.GetLastCompleteJobOrder() < 2)
+		assert.True(t, pool.GetLastCompleteJobOrder() < 2, "job with order > 2 should not aborted")
+
 		ms, ok := pool.storage.(*mockStorage)
 		require.True(t, ok)
-		assert.Equal(t, 1, ms.counter)
+		assert.True(t, ms.counter < 2, "no job with order > 2 should trigger database saving")
 	})
 }

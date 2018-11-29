@@ -1,6 +1,7 @@
 package workers
 
 import (
+	"errors"
 	"sync"
 	"time"
 
@@ -104,7 +105,8 @@ type Pool struct {
 	errCh chan error
 
 	mutex                 *sync.Mutex
-	lastCompletedJobOrder int // Keep the order of the last completed job
+	lastCompletedJobOrder int  // Keep the order of the last completed job
+	failed                bool // mark as failed, all subsequent persistent storage will be passed
 
 	rateStorage storage.ReserveRatesStorage
 }
@@ -131,37 +133,20 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, rateStorage storage.Reser
 			for j := range pool.jobCh {
 				order, block := j.info()
 				rates, err := j.execute(sugar)
-
 				if err != nil {
-					logger.Errorw("fetcher job execution failed", "block", block, "err", err)
+					logger.Errorw("fetcher job execution failed",
+						"block", block,
+						"err", err)
 					pool.errCh <- err
+					pool.markAsFailed(order)
 					break
 				}
 
-				logger.Infow("fetcher job executed successfully", "block", block)
-
-				// try to save rate into db until success
-				for saveSuccess := false; saveSuccess == false; time.Sleep(time.Second) {
-					var err error
-
-					pool.mutex.Lock()
-					if order == pool.lastCompletedJobOrder+1 {
-						if err = pool.rateStorage.UpdateRatesRecords(block, rates); err == nil {
-							logger.Debugw("reserve rates is stored successfully", "order", order)
-							saveSuccess = true
-							pool.lastCompletedJobOrder++
-						}
-					}
-					pool.mutex.Unlock()
-
-					if err != nil {
-						logger.Errorw("save rates into db failed",
-							"block", block,
-							"err", err)
-						pool.errCh <- err
-						break
-					}
-					logger.Infow("save rates into db success", "block", block)
+				logger.Infow("fetcher job executed successfully",
+					"block", block)
+				if err = pool.serialSaveTradeLogs(order, block, rates); err != nil {
+					pool.errCh <- err
+					break
 				}
 			}
 
@@ -173,6 +158,70 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, rateStorage storage.Reser
 	}
 
 	return pool
+}
+
+func (p *Pool) markAsFailed(order int) {
+	var (
+		logger = p.sugar.With(
+			"func", "reserverates/workers/Pool.markAsFailed",
+			"order", order,
+		)
+	)
+	for {
+		p.mutex.Lock()
+		if order == p.lastCompletedJobOrder+1 {
+			logger.Warn("mark as failed")
+			p.failed = true
+			p.mutex.Unlock()
+			return
+		}
+
+		p.mutex.Unlock()
+		time.Sleep(time.Second)
+	}
+}
+
+func (p *Pool) serialSaveTradeLogs(
+	order int,
+	blockNumber uint64,
+	rates map[string]map[string]common.ReserveRateEntry) error {
+	var (
+		logger = p.sugar.With(
+			"func", "reserverates/workers/Pool.serialSaveTradeLogs",
+			"order", order,
+			"block_number", blockNumber,
+		)
+		err error
+	)
+
+	for {
+		p.mutex.Lock()
+
+		if p.failed {
+			p.mutex.Unlock()
+			return errors.New("pool has been marked as failed")
+		}
+
+		if order == p.lastCompletedJobOrder+1 {
+			if err = p.rateStorage.UpdateRatesRecords(blockNumber, rates); err != nil {
+				logger.Error("saving rates to persistent storage",
+					"err", err)
+				p.mutex.Unlock()
+				p.markAsFailed(order)
+				return err
+			}
+
+			p.lastCompletedJobOrder++
+			logger.Infow("save rates to storage success")
+			p.mutex.Unlock()
+			return nil
+		}
+
+		logger.Debugw("waiting for previous job to be completed",
+			"last_completed", p.lastCompletedJobOrder)
+		p.mutex.Unlock()
+		time.Sleep(time.Second)
+	}
 }
 
 // GetLastCompleteJobOrder return the order of the latest completed job

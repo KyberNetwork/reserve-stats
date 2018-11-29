@@ -9,13 +9,20 @@ import (
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
 type mockStorage struct {
+	counter int
+}
+
+func newMockStorage() *mockStorage {
+	return &mockStorage{counter: 0}
 }
 
 func (s *mockStorage) UpdateRatesRecords(uint64, map[string]map[string]common.ReserveRateEntry) error {
+	s.counter = s.counter + 1
 	return nil
 }
 func (s *mockStorage) GetRatesByTimePoint(addrs []ethereum.Address, fromTime, toTime uint64) (map[string]map[string][]common.ReserveRates, error) {
@@ -50,7 +57,7 @@ func newTestWorkerPool(maxWorkers int) *Pool {
 	defer logger.Sync()
 	sugar := logger.Sugar()
 
-	return NewPool(sugar, maxWorkers, &mockStorage{})
+	return NewPool(sugar, maxWorkers, newMockStorage())
 }
 
 func sendJobsToWorkerPool(pool *Pool, jobs []job, doneCh chan<- struct{}) {
@@ -113,8 +120,6 @@ func TestWorkerPoolEncounterErr(t *testing.T) {
 	maxWorkers := 2
 	pool := newTestWorkerPool(maxWorkers)
 
-	lastCompleteJobOrder := pool.GetLastCompleteJobOrder()
-
 	doneCh := make(chan struct{})
 	jobs := []job{
 		&mockJob{order: 1},
@@ -126,7 +131,10 @@ func TestWorkerPoolEncounterErr(t *testing.T) {
 
 	checkWorkerPoolError(t, pool, doneCh, func(t *testing.T, pool *Pool, err error) {
 		assert.Equal(t, err.Error(), "failed to execute job 2")
-		// expect the last completed job is job 1
-		assert.Equal(t, pool.GetLastCompleteJobOrder(), lastCompleteJobOrder+1)
+		assert.True(t, pool.GetLastCompleteJobOrder() < 2, "job with order > 2 should not aborted")
+
+		ms, ok := pool.rateStorage.(*mockStorage)
+		require.True(t, ok)
+		assert.True(t, ms.counter < 2, "no job with order > 2 should trigger database saving")
 	})
 }

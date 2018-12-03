@@ -10,6 +10,8 @@ services:
     image: 'postgres:9.5.14-alpine'
     volumes:
       - './data/postgres:/var/lib/postgresql/data'
+      - './init-postgres-db.sh:/docker-entrypoint-initdb.d/init-postgres-db.sh' 
+
     environment:
       POSTGRES_DB: reserve_stats
       POSTGRES_USER: reserve_stats

@@ -5,10 +5,11 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
 	"strings"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 // Client is the the real implementation of core client interface.

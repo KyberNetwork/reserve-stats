@@ -1,14 +1,13 @@
 package crawler
 
 import (
-	"fmt"
-	"go.uber.org/zap"
 	"math/big"
 
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 )
 
 type supportedTokensGetter interface {
@@ -73,9 +72,11 @@ func (cst *coreSupportedTokens) supportedTokens(rsvAddr common.Address, block ui
 	for i := range listedTokens {
 		token, ok := configured[listedTokens[i].Hex()]
 		if !ok {
-			return nil, fmt.Errorf("no configured token found: %s", listedTokens[i].Hex())
+			logger.Warnw("token is not listed", "token has not listed in core ", listedTokens[i].Hex())
+			// return nil, fmt.Errorf("no configured token found: %s", listedTokens[i].Hex())
+		} else {
+			results = append(results, token)
 		}
-		results = append(results, token)
 	}
 
 	logger.Debugw("listed tokens", "listed_tokens", len(results), "configured_tokens", len(configuredTokens))

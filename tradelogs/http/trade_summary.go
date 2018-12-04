@@ -8,7 +8,7 @@ import (
 )
 
 type tradeSummaryQuery struct {
-	httputil.TimeRangeQueryFreq
+	httputil.TimeRangeQuery
 	Timezone int8 `form:"timezone" binding:"isSupportedTimezone"`
 }
 
@@ -24,7 +24,11 @@ func (sv *Server) getTradeSummary(c *gin.Context) {
 		return
 	}
 
-	fromTime, toTime, err := query.Validate()
+	fromTime, toTime, err := query.Validate(
+		httputil.TimeRangeQueryWithMaxTimeFrame(maxTimeFrame),
+		httputil.TimeRangeQueryWithDefaultTimeFrame(defaultTimeFrame),
+	)
+
 	if err != nil {
 		c.JSON(
 			http.StatusBadRequest,

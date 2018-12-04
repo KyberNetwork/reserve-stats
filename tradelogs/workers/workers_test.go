@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 
 type mockStorage struct {
 	counter int
+	m       sync.Mutex
 }
 
 func newMockStorage() *mockStorage {
@@ -32,6 +34,9 @@ func (s *mockStorage) GetIntegrationVolume(fromTime, toTime time.Time) (map[uint
 }
 
 func (s *mockStorage) SaveTradeLogs(logs []common.TradeLog) error {
+	s.m.Lock()
+	defer s.m.Unlock()
+
 	s.counter = s.counter + 1
 	return nil
 }

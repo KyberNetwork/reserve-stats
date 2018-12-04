@@ -16,10 +16,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
 
-const (
-	defaultDB = "users"
-)
-
 func main() {
 	app := libapp.NewApp()
 	app.Name = "Trade Logs HTTP Api"
@@ -49,19 +45,12 @@ func main() {
 			return err
 		}
 
-		userPostgres, err := libapp.NewDBFromContext(c)
-		if err != nil {
-			return err
-		}
-
-		kycChecker := storage.NewUserKYCChecker(sugar, userPostgres)
-
 		influxStorage, err := storage.NewInfluxStorage(
 			sugar,
 			"trade_logs",
 			influxClient,
 			coreCachedClient,
-			kycChecker,
+			nil,
 		)
 		if err != nil {
 			return err
@@ -91,7 +80,6 @@ func main() {
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.TradeLogsPort)...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
 	app.Flags = append(app.Flags, appnames.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {

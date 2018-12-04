@@ -62,7 +62,7 @@ func main() {
 		cli.IntFlag{
 			Name:   maxWorkerFlag,
 			Usage:  "The maximum number of worker to fetch rates",
-			EnvVar: "MAX_WORKER",
+			EnvVar: "MAX_WORKERS",
 			Value:  defaultMaxWorker,
 		},
 		cli.IntFlag{

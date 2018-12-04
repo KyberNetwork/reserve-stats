@@ -63,25 +63,25 @@ func main() {
 			Name:   tradeLogsAPIURLFlag,
 			Usage:  "Trade Logs API URL",
 			Value:  defaultTradeLogsAPIURLValue,
-			EnvVar: "TRADE_LOGS_API_URL",
+			EnvVar: "TRADE_LOGS_URL",
 		},
 		cli.StringFlag{
 			Name:   reserveRatesAPIURLFlag,
 			Usage:  "Reserve Rates API URL",
 			Value:  defaultReserveRatesAPIValue,
-			EnvVar: "RESERVE_RATES_API_URL",
+			EnvVar: "RESERVE_RATES_URL",
 		},
 		cli.StringFlag{
 			Name:   userAPIURLFlag,
 			Usage:  "User API URL",
 			Value:  defaultUserAPIValue,
-			EnvVar: "USER_API_URL",
+			EnvVar: "USER_URL",
 		},
 		cli.StringFlag{
 			Name:   priceAnalyticURLFlag,
 			Usage:  "Price analytic API URL",
 			Value:  defaultPriceAnalyticAPIValue,
-			EnvVar: "PRICE_ANALYTIC_API_URL",
+			EnvVar: "PRICE_ANALYTIC_URL",
 		},
 	)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.GatewayPort)...)

@@ -10,7 +10,7 @@ import (
 )
 
 type userListQuery struct {
-	httputil.TimeRangeQueryFreq
+	httputil.TimeRangeQuery
 	Timezone int8 `form:"timezone" binding:"isSupportedTimezone"`
 }
 
@@ -26,7 +26,10 @@ func (sv *Server) getUserList(c *gin.Context) {
 		)
 		return
 	}
-	fromTime, toTime, err := query.Validate()
+	fromTime, toTime, err := query.Validate(
+		httputil.TimeRangeQueryWithMaxTimeFrame(maxTimeFrame),
+		httputil.TimeRangeQueryWithDefaultTimeFrame(defaultTimeFrame),
+	)
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return

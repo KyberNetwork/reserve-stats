@@ -78,7 +78,10 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 		return
 	}
 
-	fromTime, toTime, err := query.Validate()
+	fromTime, toTime, err := query.Validate(
+		libhttputil.TimeRangeQueryWithMaxTimeFrame(maxTimeFrame),
+		libhttputil.TimeRangeQueryWithDefaultTimeFrame(defaultTimeFrame),
+	)
 	if err != nil {
 		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return

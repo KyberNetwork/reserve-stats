@@ -3,6 +3,7 @@ package workers
 import (
 	"fmt"
 	"log"
+	"sync"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 
 type mockStorage struct {
 	counter int
+	m       sync.Mutex
 }
 
 func newMockStorage() *mockStorage {
@@ -22,6 +24,9 @@ func newMockStorage() *mockStorage {
 }
 
 func (s *mockStorage) UpdateRatesRecords(uint64, map[string]map[string]common.ReserveRateEntry) error {
+	s.m.Lock()
+	defer s.m.Unlock()
+
 	s.counter = s.counter + 1
 	return nil
 }

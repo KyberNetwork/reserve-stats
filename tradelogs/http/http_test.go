@@ -10,7 +10,6 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
 
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -73,7 +72,6 @@ func newTestServer() (*Server, error) {
 		"",
 		sugar,
 		&mockCore{},
-		userprofile.MockClient{},
 	), nil
 
 }

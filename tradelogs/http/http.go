@@ -21,7 +21,7 @@ const (
 )
 
 // NewServer returns an instance of HttpApi to serve trade logs.
-func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett core.Interface, usp userprofile.Interface,
+func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett core.Interface,
 	options ...ServerOption) *Server {
 	var (
 		logger = sugar.With("func", "tradelogs/http/NewServer")
@@ -30,7 +30,6 @@ func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger,
 			host:        host,
 			sugar:       sugar,
 			coreSetting: sett,
-			userProfile: usp,
 		}
 	)
 
@@ -41,6 +40,11 @@ func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger,
 	if sv.getAddrToAppName == nil {
 		logger.Warn("application names integration is not configured")
 		sv.getAddrToAppName = func() (map[ethereum.Address]string, error) { return nil, nil }
+	}
+
+	if sv.getUserProfile == nil {
+		logger.Warn("user profile integration is not configured")
+		sv.getUserProfile = func(ethereum.Address) (userprofile.UserProfile, error) { return userprofile.UserProfile{}, nil }
 	}
 
 	return sv
@@ -56,6 +60,13 @@ func WithApplicationNames(an lipappnames.AddrToAppName) ServerOption {
 	}
 }
 
+// WithUserProfile configures the Server instance to use user profile lookup
+func WithUserProfile(up userprofile.Interface) ServerOption {
+	return func(sv *Server) {
+		sv.getUserProfile = up.LookUpUserProfile
+	}
+}
+
 // Server serve trade logs through http endpoint.
 type Server struct {
 	storage          storage.Interface
@@ -63,7 +74,7 @@ type Server struct {
 	sugar            *zap.SugaredLogger
 	coreSetting      core.Interface
 	getAddrToAppName func() (map[ethereum.Address]string, error)
-	userProfile      userprofile.Interface
+	getUserProfile   func(ethereum.Address) (userprofile.UserProfile, error)
 }
 
 type burnFeeQuery struct {
@@ -109,7 +120,7 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 		return
 	}
 	for i, log := range tradeLogs {
-		up, err := sv.userProfile.LookUpUserProfile(tradeLogs[i].UserAddress)
+		up, err := sv.getUserProfile(tradeLogs[i].UserAddress)
 		if err != nil {
 			sv.sugar.Errorw(err.Error(), "fromTime", fromTime, "toTime", toTime)
 			libhttputil.ResponseFailure(

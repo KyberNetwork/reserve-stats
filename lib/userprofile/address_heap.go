@@ -14,7 +14,7 @@ func (a AddrHeap) Len() int {
 	return len(a)
 }
 
-//Less return bool indicate the comparion between 2 AddrNode by index
+//Less return bool indicate the comparision between 2 AddrNode by index
 func (a AddrHeap) Less(i, j int) bool {
 	return a[i].Timestamp < a[j].Timestamp
 }

@@ -19,30 +19,36 @@ type CachedClient struct {
 }
 
 // NewCachedClient creates a new User Profile cached client instance.
-func NewCachedClient(client *Client, maxcache int64) *CachedClient {
+func NewCachedClient(client *Client, maxCache int64) *CachedClient {
 	var h = &AddrHeap{}
 	heap.Init(h)
-	client.sugar.Debugw("Creating cache client ...", "max cache", maxcache)
+	client.sugar.Debugw("Creating cache client ...", "max cache", maxCache)
 	return &CachedClient{
 		Client:       client,
 		mu:           &sync.RWMutex{},
 		cached:       make(map[ethereum.Address]UserProfile),
-		MaxCacheSize: maxcache,
+		MaxCacheSize: maxCache,
 		cacheSize:    0,
 		minHeap:      h,
 	}
 }
 
+// LookUpCache will lookup the Userprofile from cache
+func (cc *CachedClient) LookUpCache(addr ethereum.Address) (UserProfile, bool) {
+	cc.mu.RLock()
+	defer cc.mu.RUnlock()
+	p, ok := cc.cached[addr]
+	return p, ok
+}
+
 // LookUpUserProfile will look for the UserProfile of input addr in cache first
 // If this fail then it will query from endpoint
 func (cc *CachedClient) LookUpUserProfile(addr ethereum.Address) (UserProfile, error) {
-	cc.mu.Lock()
-	defer cc.mu.Unlock()
 	logger := cc.sugar.With(
 		"func", "lib/core/CachedClient.Token",
 		"address", addr.Hex(),
 	)
-	p, ok := cc.cached[addr]
+	p, ok := cc.LookUpCache(addr)
 	if ok {
 		logger.Debugw("cache hit")
 		return p, nil
@@ -53,6 +59,8 @@ func (cc *CachedClient) LookUpUserProfile(addr ethereum.Address) (UserProfile, e
 	if err != nil {
 		return p, err
 	}
+	cc.mu.Lock()
+	defer cc.mu.Unlock()
 	//if MaxCacheSize reached, delete the oldest member
 	if cc.cacheSize >= cc.MaxCacheSize {
 		oldest := heap.Pop(cc.minHeap)

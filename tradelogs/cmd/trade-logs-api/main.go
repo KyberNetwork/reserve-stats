@@ -85,9 +85,12 @@ func main() {
 			return err
 		}
 
+		cachedUserClient := userprofile.NewCachedClientFromContext(userClient, c)
+		if cachedUserClient != nil {
+			options = append(options, http.WithUserProfile(cachedUserClient))
+		}
 		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c),
 			sugar, coreCachedClient,
-			userprofile.NewCachedClientFromContext(userClient, c),
 			options...)
 		err = api.Start()
 		if err != nil {

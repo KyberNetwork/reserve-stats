@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	userprofileURLFlag        = "user-url"
-	userprofileSigningKeyFlag = "user-signing-key"
-	maxUserCacheFlag          = "max-user-cache"
+	userprofileURLFlag        = "user-profile-url"
+	userprofileSigningKeyFlag = "user-profile-signing-key"
+	maxUserCacheFlag          = "max-user-profile-cache"
 	maxUserCacheDefault       = 1000
 )
 
@@ -22,7 +22,7 @@ func NewCliFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:   userprofileURLFlag,
 			Usage:  "user profile API URL",
-			EnvVar: "USER_URL",
+			EnvVar: "USER_PROFILE_URL",
 		},
 		cli.Int64Flag{
 			Name:   maxUserCacheFlag,
@@ -33,7 +33,7 @@ func NewCliFlags() []cli.Flag {
 		cli.StringFlag{
 			Name:   userprofileSigningKeyFlag,
 			Usage:  "user profile Signing Key",
-			EnvVar: "USER_SIGNING_KEY",
+			EnvVar: "USER_PROFILE_SIGNING_KEY",
 		},
 	}
 }
@@ -41,8 +41,10 @@ func NewCliFlags() []cli.Flag {
 // NewClientFromContext returns new core client from cli flags.
 func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, error) {
 	userURL := c.String(userprofileURLFlag)
+	if userURL == "" {
+		return nil, nil
+	}
 	err := validation.Validate(userURL,
-		validation.Required,
 		is.URL,
 	)
 	if err != nil {
@@ -60,6 +62,9 @@ func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, er
 
 // NewCachedClientFromContext return new cached client from cli flags
 func NewCachedClientFromContext(client *Client, c *cli.Context) *CachedClient {
+	if client == nil {
+		return nil
+	}
 	maxCacheSize := c.Int64(maxUserCacheFlag)
 	return NewCachedClient(client, maxCacheSize)
 }

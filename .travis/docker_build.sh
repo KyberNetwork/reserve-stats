@@ -19,6 +19,12 @@ build() {
 
 }
 
+build_docs() {
+    pushd ./apidocs
+    docker-compose up
+    popd
+}
+
 case "$build_part" in
     1)
         build reserverates reserve-rates-api reserve-rates-crawler
@@ -33,5 +39,9 @@ case "$build_part" in
         exclude_pattern="github.com/KyberNetwork/reserve-stats/\(reserverates\|tradelogs\|users\|gateway\|priceanalytics\)"
         gometalinter --config="$gometalinter_path" --exclude "$exclude_pattern" ./...
         go test -v -race -mod=vendor $(go list -mod=vendor ./... | grep -v "$exclude_pattern")
+
+        if [[ $TRAVIS_BRANCH == 'develop' ]]; then
+            build_docs
+        fi
         ;;
 esac

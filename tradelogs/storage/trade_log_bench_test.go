@@ -5,12 +5,12 @@ import (
 	"time"
 )
 
-//BenchmarkWriteReadInflux can only be ran with pre-crawled database --from-block=6695000 --to-block=6700000
+//BenchmarkWriteReadInflux can only be ran with pre-crawled database --from-block=6690000 --to-block=6700000
 func BenchmarkWriteReadInflux(b *testing.B) {
 	const (
 		dbName   = "trade_logs"
-		fromTime = 1542013200
-		toTime   = 1542153600
+		fromTime = 1518566400
+		toTime   = 1542240000
 	)
 	is, err := newTestInfluxStorage(dbName)
 	if err != nil {

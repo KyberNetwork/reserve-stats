@@ -12,6 +12,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/http"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
@@ -33,7 +34,6 @@ func main() {
 		defer logger.Sync()
 
 		sugar := logger.Sugar()
-
 		coreClient, err := core.NewClientFromContext(sugar, c)
 		if err != nil {
 			return err
@@ -57,18 +57,34 @@ func main() {
 		}
 
 		var options []http.ServerOption
-
 		addrToAppName, err := appnames.NewClientFromContext(sugar, c)
 		if err != nil {
 			return err
 		}
-
 		if addrToAppName != nil {
 			options = append(options, http.WithApplicationNames(addrToAppName))
 		}
+		addrToAppName, err = appnames.NewClientFromContext(sugar, c)
+		if err != nil {
+			return err
+		}
 
+		userClient, err := userprofile.NewClientFromContext(sugar, c)
+		if err != nil {
+			return err
+		}
+
+		cachedUserClient := userprofile.NewCachedClientFromContext(userClient, c)
+		if cachedUserClient != nil {
+			options = append(options, http.WithUserProfile(cachedUserClient))
+		}
 		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c),
-			sugar, coreCachedClient, options...)
+			sugar, coreCachedClient,
+			options...)
+		err = api.Start()
+		if err != nil {
+			return err
+		}
 
 		if err = api.Start(); err != nil {
 			return err
@@ -81,6 +97,7 @@ func main() {
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
 	app.Flags = append(app.Flags, appnames.NewCliFlags()...)
+	app.Flags = append(app.Flags, userprofile.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

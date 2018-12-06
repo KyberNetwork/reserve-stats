@@ -50,7 +50,9 @@ type TradeLog struct {
 	ETHUSDRate     float64 `json:"-"`
 	ETHUSDProvider string  `json:"-"`
 
-	Index uint `json:"index"` // the index of event log in transaction receipt
+	UserName  string `json:"user_name"`
+	ProfileID int64  `json:"profile_id"`
+	Index     uint   `json:"index"` // the index of event log in transaction receipt
 }
 
 // MarshalJSON implements custom JSON marshaler for TradeLog to format timestamp in unix millis instead of RFC3339.

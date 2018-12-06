@@ -31,7 +31,7 @@ matrix:
 install:
   - ./.travis/gometalinter-install.sh
 
-cache: 
+cache:
   directories:
   - ${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
 
@@ -47,6 +47,7 @@ deploy:
     script: bash .travis/docker_push.sh
     on:
       all_branches: true
+
   - provider: s3
     access_key_id: $AWS_ACCESS_KEY_ID
     secret_access_key: $AWS_SECRET_ACCESS_KEY
@@ -57,3 +58,4 @@ deploy:
     skip_cleanup: true
     on:
       branch: develop
+      condition: $BUILD_PART = 3

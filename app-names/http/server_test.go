@@ -1,7 +1,10 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/KyberNetwork/reserve-stats/app-names/common"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -59,17 +62,48 @@ func TestAppNameHTTPServer(t *testing.T) {
 	const (
 		requestEndpoint = "/application-names"
 		appID           = 1
-		appIDNotExist   = 2
 	)
 
 	var (
 		tests = []httputil.HTTPTestCase{
 			{
-				Msg:      "empty db",
+				Msg:      "get non existing user",
 				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, appID),
 				Method:   http.MethodGet,
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 					assert.Equal(t, http.StatusNotFound, resp.Code)
+				},
+			},
+			{
+				Msg:      "fail to create with empty app name",
+				Method:   http.MethodPost,
+				Endpoint: fmt.Sprintf("%s", requestEndpoint),
+				Body: []byte(`
+				{
+					"addresses": [
+						"0x3baE9b9e1dca462Ad8827f62F4A8b5b3714d7700",
+						"0x804aDa8c08A2E8ecff1a6535bf28DC4f1EfF4f8e"
+					]
+				}
+				`),
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					assert.Equal(t, http.StatusBadRequest, resp.Code)
+				},
+			},
+			{
+				Msg:      "fail to create with invalid address",
+				Method:   http.MethodPost,
+				Endpoint: fmt.Sprintf("%s", requestEndpoint),
+				Body: []byte(`
+				{
+					"app_name": "first_app",
+					"addresses": [
+						"WTF-invalid-address",
+					]
+				}
+				`),
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					assert.Equal(t, http.StatusBadRequest, resp.Code)
 				},
 			},
 			{
@@ -86,7 +120,104 @@ func TestAppNameHTTPServer(t *testing.T) {
 				}
 				`),
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					var result common.AppObject
+					assert.Equal(t, http.StatusCreated, resp.Code)
+					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+					assert.Equal(t, 1, result.ID)
+					assert.Equal(t,
+						[]ethereum.Address{
+							ethereum.HexToAddress("0x3baE9b9e1dca462Ad8827f62F4A8b5b3714d7700"),
+							ethereum.HexToAddress("0x804aDa8c08A2E8ecff1a6535bf28DC4f1EfF4f8e"),
+						},
+						result.Addresses,
+					)
+					assert.Equal(t, "first_app", result.AppName)
+				},
+			},
+			{
+				Msg:      "get existing user",
+				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, appID),
+				Method:   http.MethodGet,
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					var result common.AppObject
 					assert.Equal(t, http.StatusOK, resp.Code)
+					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+					assert.Equal(t, 1, result.ID)
+					assert.Equal(t,
+						[]ethereum.Address{
+							ethereum.HexToAddress("0x3baE9b9e1dca462Ad8827f62F4A8b5b3714d7700"),
+							ethereum.HexToAddress("0x804aDa8c08A2E8ecff1a6535bf28DC4f1EfF4f8e"),
+						},
+						result.Addresses,
+					)
+					assert.Equal(t, "first_app", result.AppName)
+				},
+			},
+			{
+				Msg:      "fail to create user with conflict address",
+				Method:   http.MethodPost,
+				Endpoint: fmt.Sprintf("%s", requestEndpoint),
+				Body: []byte(`
+				{
+					"app_name": "first_app_conflict_address",
+					"addresses": [
+						"0x3baE9b9e1dca462Ad8827f62F4A8b5b3714d7700"
+					]
+				}
+				`),
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					assert.Equal(t, http.StatusConflict, resp.Code)
+				},
+			},
+			{
+				Msg:      "update addresses",
+				Method:   http.MethodPost,
+				Endpoint: fmt.Sprintf("%s", requestEndpoint),
+				Body: []byte(`
+				{
+					"id": 1,
+					"app_name": "first_app",
+					"addresses": [
+						"0x587ecf600d304f831201c30ea0845118dd57516e"
+					]
+				}
+				`),
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					var result common.AppObject
+					assert.Equal(t, http.StatusOK, resp.Code)
+					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+					assert.Equal(t, 1, result.ID)
+					assert.Equal(t,
+						[]ethereum.Address{
+							ethereum.HexToAddress("0x587ecf600d304f831201c30ea0845118dd57516e"),
+						},
+						result.Addresses,
+					)
+					assert.Equal(t, "first_app", result.AppName)
+				},
+			},
+			{
+				Msg:      "update application name",
+				Method:   http.MethodPost,
+				Endpoint: fmt.Sprintf("%s", requestEndpoint),
+				Body: []byte(`
+				{
+					"id": 1,
+					"app_name": "first_app_new_edition"
+				}
+				`),
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					var result common.AppObject
+					assert.Equal(t, http.StatusOK, resp.Code)
+					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+					assert.Equal(t, 1, result.ID)
+					assert.Equal(t,
+						[]ethereum.Address{
+							ethereum.HexToAddress("0x587ecf600d304f831201c30ea0845118dd57516e"),
+						},
+						result.Addresses,
+					)
+					assert.Equal(t, "first_app_new_edition", result.AppName)
 				},
 			},
 			{
@@ -98,14 +229,34 @@ func TestAppNameHTTPServer(t *testing.T) {
 				},
 			},
 			{
+				Msg:      "get application with name filter",
+				Endpoint: fmt.Sprintf("%s?app_name=first_app", requestEndpoint),
+				Method:   http.MethodGet,
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					var result []common.AppObject
+					assert.Equal(t, http.StatusOK, resp.Code)
+					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+					assert.Len(t, result, 1)
+					app := result[0]
+					assert.Equal(t, 1, app.ID)
+					assert.Equal(t,
+						[]ethereum.Address{
+							ethereum.HexToAddress("0x587ecf600d304f831201c30ea0845118dd57516e"),
+						},
+						app.Addresses,
+					)
+					assert.Equal(t, "first_app_new_edition", app.AppName)
+				},
+			},
+			{
 				Msg:      "update app not exist",
 				Method:   http.MethodPut,
-				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, appIDNotExist),
+				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, 100),
 				Body: []byte(`
 				{
-					"app_name": "first_app",
+					"app_name": "app_100",
 					"addresses": [
-						"0x804aDa8c08A2E8ecff1a6535bf28DC4f1EfF4f8e"
+						"0xd8c67d024db85b271b6f6eeac5234e29c4d6bbb5"
 					]
 				}
 				`),
@@ -114,19 +265,18 @@ func TestAppNameHTTPServer(t *testing.T) {
 				},
 			},
 			{
-				Msg:      "update address success",
+				Msg:      "update address with invalid address",
 				Method:   http.MethodPut,
 				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, appID),
 				Body: []byte(`
 				{
-					"app_name": "first_app",
 					"addresses": [
-						"0xde6a6fb70b0375d9c761f67f2db3de97f21362dc"
+						"OMG-INVALID-ADDRESS",
 					]
 				}
 				`),
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-					assert.Equal(t, http.StatusOK, resp.Code)
+					assert.Equal(t, http.StatusBadRequest, resp.Code)
 				},
 			},
 			{
@@ -135,14 +285,32 @@ func TestAppNameHTTPServer(t *testing.T) {
 				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, appID),
 				Body: []byte(`
 				{
-					"app_name": "first_app",
+					"app_name": "first_app_updated",
 					"addresses": [
 						"0xde6a6fb70b0375d9c761f67f2db3de97f21362dc"
 					]
 				}
 				`),
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					var result common.AppObject
 					assert.Equal(t, http.StatusOK, resp.Code)
+					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+					assert.Equal(t, 1, result.ID)
+					assert.Equal(t,
+						[]ethereum.Address{
+							ethereum.HexToAddress("0xde6a6fb70b0375d9c761f67f2db3de97f21362dc"),
+						},
+						result.Addresses,
+					)
+					assert.Equal(t, "first_app_updated", result.AppName)
+				},
+			},
+			{
+				Msg:      "delete non existing application",
+				Method:   http.MethodDelete,
+				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, 101),
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					assert.Equal(t, http.NotFound, resp.Code)
 				},
 			},
 			{
@@ -151,6 +319,14 @@ func TestAppNameHTTPServer(t *testing.T) {
 				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, appID),
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 					assert.Equal(t, http.StatusOK, resp.Code)
+				},
+			},
+			{
+				Msg:      "get non existing user",
+				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, appID),
+				Method:   http.MethodGet,
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					assert.Equal(t, http.StatusNotFound, resp.Code)
 				},
 			},
 		}

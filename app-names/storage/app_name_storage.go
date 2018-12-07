@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/KyberNetwork/reserve-stats/app-names/common"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
@@ -89,7 +90,7 @@ func (adb *AppNameDB) CreateOrUpdate(app common.AppObject) (common.AppObject, er
 		logger.Debug("app is created")
 	} else {
 		appID = app.ID
-		if _, err = tx.Exec(`UPDATE app_name SET app_name=$1 WHERE id=$2`, app.AppName, app.ID); err != nil {
+		if _, err = tx.Exec(`UPDATE app_name SET name=$1 WHERE id=$2`, app.AppName, app.ID); err != nil {
 			return app, err
 		}
 	}
@@ -102,14 +103,27 @@ func (adb *AppNameDB) CreateOrUpdate(app common.AppObject) (common.AppObject, er
 		return app, err
 	}
 	for _, address := range app.Addresses {
+		addressStr := address.Hex()
 		logger.Debugw("updating app address",
-			"address", address,
+			"address", addressStr,
 		)
+		var count int
+		if err := tx.Get(&count, fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE address='%s'", addressesTableName, addressStr)); err != nil {
+			return app, err
+		}
+		logger.Debug(count)
+		if count > 0 {
+			if err := tx.Commit(); err != nil {
+				return app, err
+			}
+			return app, errors.New("address already exists")
+		}
+
 		_, err = tx.Exec(fmt.Sprintf(`
 INSERT INTO "%s" (address, app_name_id)
 VALUES ($1, $2);
 `, addressesTableName),
-			address,
+			addressStr,
 			appID)
 		if err != nil {
 			return app, err
@@ -122,43 +136,50 @@ VALUES ($1, $2);
 }
 
 //UpdateAppAddress add addresses to list address of appID
-func (adb *AppNameDB) UpdateAppAddress(appID int64, app common.AppObject) error {
+func (adb *AppNameDB) UpdateAppAddress(appID int64, app common.AppObject) (common.AppObject, error) {
 	var (
-		logger = adb.sugar.With("func", "appname/storage.UpdateAppAddress")
+		logger     = adb.sugar.With("func", "appname/storage.UpdateAppAddress")
+		updatedApp common.AppObject
 	)
 	logger.Debugw("udpate app address", "udpate app address", appID)
 	tx, err := adb.db.Beginx()
 	if err != nil {
-		return err
+		return updatedApp, err
 	}
 	var qr []AppQueryResult
 	if err := tx.Select(&qr, fmt.Sprintf(`SELECT name FROM app_name WHERE id=%d`, appID)); err != nil {
-		return err
+		return updatedApp, err
 	}
 	if len(qr) == 0 {
 		err := tx.Commit()
 		if err != nil {
-			return err
+			return updatedApp, err
 		}
-		return errors.New("app does not exist")
+		return updatedApp, errors.New("app does not exist")
+	}
+	if _, err := tx.Exec("UPDATE app_name SET name=$1 WHERE id=$2", app.AppName, appID); err != nil {
+		return updatedApp, err
 	}
 
 	for _, address := range app.Addresses {
 		var qresult []AppQueryResult
-		if err := tx.Select(&qresult, fmt.Sprintf(`SELECT address FROM addresses WHERE address='%s'`, address)); err != nil {
-			return err
+		addressStr := address.Hex()
+		if err := tx.Select(&qresult, fmt.Sprintf(`SELECT address FROM addresses WHERE address='%s'`, addressStr)); err != nil {
+			return updatedApp, err
 		}
 		if len(qresult) != 0 {
-			logger.Debugw("address already exist", "address already exist", address)
+			logger.Debugw("address already exist", "address already exist", addressStr)
 			continue
 		}
-		logger.Debug(address)
-		if _, err := tx.Exec(`INSERT INTO addresses (address, app_name_id) VALUES ($1, $2)`, address, appID); err != nil {
-			logger.Debug(err)
-			return err
+		if _, err := tx.Exec(`INSERT INTO addresses (address, app_name_id) VALUES ($1, $2)`, addressStr, appID); err != nil {
+			return updatedApp, err
 		}
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return updatedApp, err
+	}
+	updatedApp, err = adb.GetAppAddresses(appID)
+	return updatedApp, err
 }
 
 //AppQueryResult result from query
@@ -202,11 +223,11 @@ func (adb *AppNameDB) GetAllApp(name string) ([]common.AppObject, error) {
 	for _, item := range qresult {
 		exist, index := appExist(item, result)
 		if exist {
-			result[index].Addresses = append(result[index].Addresses, item.Address)
+			result[index].Addresses = append(result[index].Addresses, ethereum.HexToAddress(item.Address))
 		} else {
 			result = append(result, common.AppObject{
 				ID:        item.ID,
-				Addresses: []string{item.Address},
+				Addresses: []ethereum.Address{ethereum.HexToAddress(item.Address)},
 				AppName:   item.AppName,
 			})
 		}
@@ -235,7 +256,7 @@ func (adb *AppNameDB) GetAppAddresses(appID int64) (common.AppObject, error) {
 	result.ID = appID
 	result.AppName = qresult[0].AppName
 	for _, item := range qresult {
-		result.Addresses = append(result.Addresses, item.Address)
+		result.Addresses = append(result.Addresses, ethereum.HexToAddress(item.Address))
 	}
 
 	return result, nil
@@ -247,12 +268,25 @@ func (adb *AppNameDB) DeleteApp(appID int64) error {
 		logger = adb.sugar.With(
 			"func", "appname/storage.DeleteApp",
 		)
+		count int
 	)
 	logger.Debug("start delete app")
 	tx, err := adb.db.Beginx()
 	if err != nil {
 		return err
 	}
+
+	if err := tx.Get(&count, fmt.Sprintf("SELECT COUNT(*) FROM app_name WHERE id=%d", appID)); err != nil {
+		return err
+	}
+
+	if count == 0 {
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+		return errors.New("app does not exist")
+	}
+
 	if _, err := tx.Exec("UPDATE app_name SET active=FALSE WHERE id=$1", appID); err != nil {
 		return err
 	}

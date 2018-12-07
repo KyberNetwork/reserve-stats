@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/KyberNetwork/reserve-stats/app-names/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -50,7 +51,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 
 	sugar := logger.Sugar()
 	appNameStorage, err := newTestDB(sugar)
-	assert.Nil(t, err, "user database should be initiated successfully")
+	assert.Nil(t, err, "database should be initiated successfully")
 
 	defer tearDown(t, appNameStorage)
 
@@ -67,7 +68,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 	var (
 		tests = []httputil.HTTPTestCase{
 			{
-				Msg:      "get non existing user",
+				Msg:      "get non existing app",
 				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, appID),
 				Method:   http.MethodGet,
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -123,7 +124,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 					var result common.AppObject
 					assert.Equal(t, http.StatusCreated, resp.Code)
 					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
-					assert.Equal(t, 1, result.ID)
+					assert.Equal(t, int64(1), result.ID)
 					assert.Equal(t,
 						[]ethereum.Address{
 							ethereum.HexToAddress("0x3baE9b9e1dca462Ad8827f62F4A8b5b3714d7700"),
@@ -135,14 +136,14 @@ func TestAppNameHTTPServer(t *testing.T) {
 				},
 			},
 			{
-				Msg:      "get existing user",
+				Msg:      "get existing app",
 				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, appID),
 				Method:   http.MethodGet,
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 					var result common.AppObject
 					assert.Equal(t, http.StatusOK, resp.Code)
 					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
-					assert.Equal(t, 1, result.ID)
+					assert.Equal(t, int64(1), result.ID)
 					assert.Equal(t,
 						[]ethereum.Address{
 							ethereum.HexToAddress("0x3baE9b9e1dca462Ad8827f62F4A8b5b3714d7700"),
@@ -154,7 +155,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 				},
 			},
 			{
-				Msg:      "fail to create user with conflict address",
+				Msg:      "fail to create app with conflict address",
 				Method:   http.MethodPost,
 				Endpoint: fmt.Sprintf("%s", requestEndpoint),
 				Body: []byte(`
@@ -186,7 +187,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 					var result common.AppObject
 					assert.Equal(t, http.StatusOK, resp.Code)
 					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
-					assert.Equal(t, 1, result.ID)
+					assert.Equal(t, int64(1), result.ID)
 					assert.Equal(t,
 						[]ethereum.Address{
 							ethereum.HexToAddress("0x587ecf600d304f831201c30ea0845118dd57516e"),
@@ -203,14 +204,16 @@ func TestAppNameHTTPServer(t *testing.T) {
 				Body: []byte(`
 				{
 					"id": 1,
-					"app_name": "first_app_new_edition"
+					"app_name": "first_app_new_edition",
+					"addresses": ["0x587ecf600d304f831201c30ea0845118dd57516e"]
 				}
 				`),
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 					var result common.AppObject
+					log.Printf("%+v", resp)
 					assert.Equal(t, http.StatusOK, resp.Code)
 					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
-					assert.Equal(t, 1, result.ID)
+					assert.Equal(t, int64(1), result.ID)
 					assert.Equal(t,
 						[]ethereum.Address{
 							ethereum.HexToAddress("0x587ecf600d304f831201c30ea0845118dd57516e"),
@@ -237,15 +240,17 @@ func TestAppNameHTTPServer(t *testing.T) {
 					assert.Equal(t, http.StatusOK, resp.Code)
 					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 					assert.Len(t, result, 1)
-					app := result[0]
-					assert.Equal(t, 1, app.ID)
-					assert.Equal(t,
-						[]ethereum.Address{
-							ethereum.HexToAddress("0x587ecf600d304f831201c30ea0845118dd57516e"),
-						},
-						app.Addresses,
-					)
-					assert.Equal(t, "first_app_new_edition", app.AppName)
+					if len(result) > 0 {
+						app := result[0]
+						assert.Equal(t, int64(1), app.ID)
+						assert.Equal(t,
+							[]ethereum.Address{
+								ethereum.HexToAddress("0x587ecf600d304f831201c30ea0845118dd57516e"),
+							},
+							app.Addresses,
+						)
+						assert.Equal(t, "first_app_new_edition", app.AppName)
+					}
 				},
 			},
 			{
@@ -295,9 +300,10 @@ func TestAppNameHTTPServer(t *testing.T) {
 					var result common.AppObject
 					assert.Equal(t, http.StatusOK, resp.Code)
 					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
-					assert.Equal(t, 1, result.ID)
+					assert.Equal(t, int64(1), result.ID)
 					assert.Equal(t,
 						[]ethereum.Address{
+							ethereum.HexToAddress("0x587ecf600d304f831201c30ea0845118dd57516e"),
 							ethereum.HexToAddress("0xde6a6fb70b0375d9c761f67f2db3de97f21362dc"),
 						},
 						result.Addresses,
@@ -310,7 +316,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 				Method:   http.MethodDelete,
 				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, 101),
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-					assert.Equal(t, http.NotFound, resp.Code)
+					assert.Equal(t, http.StatusNotFound, resp.Code)
 				},
 			},
 			{
@@ -322,7 +328,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 				},
 			},
 			{
-				Msg:      "get non existing user",
+				Msg:      "get non existing app",
 				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, appID),
 				Method:   http.MethodGet,
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {

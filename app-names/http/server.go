@@ -93,14 +93,26 @@ func (sv *Server) createApp(c *gin.Context) {
 		return
 	}
 	if response, err = sv.db.CreateOrUpdate(q); err != nil {
-		httputil.ResponseFailure(
-			c,
-			http.StatusInternalServerError,
-			err,
-		)
+		if err.Error() == "address already exists" {
+			httputil.ResponseFailure(
+				c,
+				http.StatusConflict,
+				err,
+			)
+		} else {
+			httputil.ResponseFailure(
+				c,
+				http.StatusInternalServerError,
+				err,
+			)
+		}
 		return
 	}
-	c.JSON(http.StatusOK, response)
+	if q.ID != 0 {
+		c.JSON(http.StatusOK, response)
+	} else {
+		c.JSON(http.StatusCreated, response)
+	}
 }
 
 func (sv *Server) updateApp(c *gin.Context) {
@@ -110,7 +122,7 @@ func (sv *Server) updateApp(c *gin.Context) {
 	)
 	logger.Debug("start update app")
 	appID, err := strconv.ParseInt(c.Param("appID"), 10, 64)
-	if err != nil {
+	if err != nil || appID == 0 {
 		httputil.ResponseFailure(
 			c,
 			http.StatusBadRequest,
@@ -126,7 +138,8 @@ func (sv *Server) updateApp(c *gin.Context) {
 		)
 		return
 	}
-	if err := sv.db.UpdateAppAddress(appID, q); err != nil {
+	app, err := sv.db.UpdateAppAddress(appID, q)
+	if err != nil {
 		if err.Error() == "app does not exist" {
 			httputil.ResponseFailure(
 				c,
@@ -142,7 +155,7 @@ func (sv *Server) updateApp(c *gin.Context) {
 		}
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{})
+	c.JSON(http.StatusOK, app)
 }
 
 func (sv *Server) deleteApp(c *gin.Context) {
@@ -160,11 +173,19 @@ func (sv *Server) deleteApp(c *gin.Context) {
 		return
 	}
 	if err := sv.db.DeleteApp(appID); err != nil {
-		httputil.ResponseFailure(
-			c,
-			http.StatusInternalServerError,
-			err,
-		)
+		if err.Error() == "app does not exist" {
+			httputil.ResponseFailure(
+				c,
+				http.StatusNotFound,
+				err,
+			)
+		} else {
+			httputil.ResponseFailure(
+				c,
+				http.StatusInternalServerError,
+				err,
+			)
+		}
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{})

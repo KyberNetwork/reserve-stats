@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -139,7 +140,7 @@ func (adb *AppNameDB) UpdateAppAddress(appID int64, app common.AppObject) error 
 		if err != nil {
 			return err
 		}
-		return fmt.Errorf("App %d does not exist", appID)
+		return errors.New("app does not exist")
 	}
 
 	for _, address := range app.Addresses {
@@ -229,7 +230,7 @@ func (adb *AppNameDB) GetAppAddresses(appID int64) (common.AppObject, error) {
 		return result, err
 	}
 	if len(qresult) == 0 {
-		return result, fmt.Errorf("app %d does not exist", appID)
+		return result, errors.New("app does not exist")
 	}
 	result.ID = appID
 	result.AppName = qresult[0].AppName

@@ -56,11 +56,19 @@ func (sv *Server) getAddressFromAppID(c *gin.Context) {
 
 	result, err := sv.db.GetAppAddresses(appID)
 	if err != nil {
-		httputil.ResponseFailure(
-			c,
-			http.StatusInternalServerError,
-			err,
-		)
+		if err.Error() == "app does not exist" {
+			httputil.ResponseFailure(
+				c,
+				http.StatusNotFound,
+				err,
+			)
+		} else {
+			httputil.ResponseFailure(
+				c,
+				http.StatusInternalServerError,
+				err,
+			)
+		}
 		return
 	}
 
@@ -119,11 +127,19 @@ func (sv *Server) updateApp(c *gin.Context) {
 		return
 	}
 	if err := sv.db.UpdateAppAddress(appID, q); err != nil {
-		httputil.ResponseFailure(
-			c,
-			http.StatusInternalServerError,
-			err,
-		)
+		if err.Error() == "app does not exist" {
+			httputil.ResponseFailure(
+				c,
+				http.StatusNotFound,
+				err,
+			)
+		} else {
+			httputil.ResponseFailure(
+				c,
+				http.StatusInternalServerError,
+				err,
+			)
+		}
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{})

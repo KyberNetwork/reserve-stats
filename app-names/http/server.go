@@ -98,7 +98,7 @@ func (sv *Server) createApp(c *gin.Context) {
 func (sv *Server) updateApp(c *gin.Context) {
 	var (
 		logger = sv.sugar.With("func", "app-names/server.updateApp")
-		q     common.AppObject 
+		q      common.AppObject
 	)
 	logger.Debug("start update app")
 	appID, err := strconv.ParseInt(c.Param("appID"), 10, 64)

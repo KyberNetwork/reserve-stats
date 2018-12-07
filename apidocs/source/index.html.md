@@ -8,6 +8,7 @@ toc_footers:
   - <a href='https://github.com/lord/slate'>Documentation Powered by Slate</a>
 
 includes:
+  - appnames/app_name
   - tradelogs/trade_logs
   - tradelogs/trade_summary
   - tradelogs/asset_volume

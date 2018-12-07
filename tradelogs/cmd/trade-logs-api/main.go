@@ -78,7 +78,10 @@ func main() {
 			return err
 		}
 
-		cachedUserClient := userprofile.NewCachedClientFromContext(userClient, c)
+		cachedUserClient, err := userprofile.NewCachedClientFromContext(userClient, c)
+		if err != nil {
+			return err
+		}
 		if cachedUserClient != nil {
 			options = append(options, http.WithUserProfile(cachedUserClient))
 		}

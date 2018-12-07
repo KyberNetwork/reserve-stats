@@ -98,7 +98,7 @@ func (c *Client) LookUpUserProfile(addr ethereum.Address) (UserProfile, error) {
 		return result.Data, err
 	}
 	if !result.Success {
-		return result.Data, fmt.Errorf("failed to get  user profile, reason : %v", result.Reason)
+		return result.Data, fmt.Errorf("failed to get user profile, reason : %v", result.Reason)
 	}
 	return result.Data, nil
 }

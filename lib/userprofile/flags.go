@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
+	"github.com/go-redis/redis"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
@@ -14,6 +15,10 @@ const (
 	userprofileSigningKeyFlag = "user-profile-signing-key"
 	maxUserCacheFlag          = "max-user-profile-cache"
 	maxUserCacheDefault       = 1000
+	redisEndpointFlag         = "redis-endpoint"
+	redisUserProfileDBFlag    = "redis-user-profile-db"
+	redisUserProfileDBDefault = 0
+	redisPasswordFlag         = "redis-password"
 )
 
 // NewCliFlags returns cli flags to configure a core client.
@@ -34,6 +39,24 @@ func NewCliFlags() []cli.Flag {
 			Name:   userprofileSigningKeyFlag,
 			Usage:  "user profile Signing Key",
 			EnvVar: "USER_PROFILE_SIGNING_KEY",
+		},
+		cli.StringFlag{
+			Name:   redisEndpointFlag,
+			Usage:  "redis connection endpoint, if  this is not set the default mem cache will be use instead of redis",
+			EnvVar: "REDIS_ENDPOINT",
+			Value:  "",
+		},
+		cli.IntFlag{
+			Name:   redisUserProfileDBFlag,
+			Usage:  "Database for redis user profile cache. Default to 0",
+			EnvVar: "REDIS_USER_PROFILE_DB",
+			Value:  redisUserProfileDBDefault,
+		},
+		cli.StringFlag{
+			Name:   redisPasswordFlag,
+			Usage:  "redis connection password",
+			EnvVar: "REDIS_PASSWORD",
+			Value:  "",
 		},
 	}
 }
@@ -61,10 +84,26 @@ func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, er
 }
 
 // NewCachedClientFromContext return new cached client from cli flags
-func NewCachedClientFromContext(client *Client, c *cli.Context) *CachedClient {
+func NewCachedClientFromContext(client *Client, c *cli.Context) (Interface, error) {
 	if client == nil {
-		return nil
+		return nil, nil
 	}
-	maxCacheSize := c.Int64(maxUserCacheFlag)
-	return NewCachedClient(client, maxCacheSize)
+	redisURL := c.String(redisEndpointFlag)
+	if redisURL == "" {
+		client.sugar.Infow("use default in-mem cache for user profile ")
+		maxCacheSize := c.Int64(maxUserCacheFlag)
+		return NewCachedClient(client, maxCacheSize), nil
+	}
+	client.sugar.Infow("use redis cache for user profile")
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     redisURL,
+		Password: c.String(redisPasswordFlag),
+		DB:       c.Int(redisUserProfileDBFlag),
+	})
+	_, err := redisClient.Ping().Result()
+	if err != nil {
+		return nil, err
+	}
+	return NewRedisCachedClient(client, redisClient), nil
 }

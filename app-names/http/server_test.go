@@ -69,7 +69,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, appID),
 				Method:   http.MethodGet,
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-					assert.Equal(t, http.StatusInternalServerError, resp.Code)
+					assert.Equal(t, http.StatusNotFound, resp.Code)
 				},
 			},
 			{
@@ -110,7 +110,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 				}
 				`),
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-					assert.Equal(t, http.StatusInternalServerError, resp.Code)
+					assert.Equal(t, http.StatusNotFound, resp.Code)
 				},
 			},
 			{

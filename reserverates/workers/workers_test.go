@@ -23,6 +23,12 @@ func newMockStorage() *mockStorage {
 	return &mockStorage{counter: 0}
 }
 
+func (s *mockStorage) Counter() int {
+	s.m.Lock()
+	defer s.m.Unlock()
+	return s.counter
+}
+
 func (s *mockStorage) UpdateRatesRecords(uint64, map[string]map[string]common.ReserveRateEntry) error {
 	s.m.Lock()
 	defer s.m.Unlock()
@@ -140,6 +146,6 @@ func TestWorkerPoolEncounterErr(t *testing.T) {
 
 		ms, ok := pool.rateStorage.(*mockStorage)
 		require.True(t, ok)
-		assert.True(t, ms.counter < 2, "no job with order > 2 should trigger database saving")
+		assert.True(t, ms.Counter() < 2, "no job with order > 2 should trigger database saving")
 	})
 }

@@ -21,6 +21,12 @@ type mockStorage struct {
 	m       sync.Mutex
 }
 
+func (s *mockStorage) Counter() int {
+	s.m.Lock()
+	defer s.m.Unlock()
+	return s.counter
+}
+
 func newMockStorage() *mockStorage {
 	return &mockStorage{counter: 0}
 }
@@ -181,6 +187,6 @@ func TestWorkerPoolEncounterErr(t *testing.T) {
 
 		ms, ok := pool.storage.(*mockStorage)
 		require.True(t, ok)
-		assert.True(t, ms.counter < 2, "no job with order > 2 should trigger database saving")
+		assert.True(t, ms.Counter() < 2, "no job with order > 2 should trigger database saving")
 	})
 }

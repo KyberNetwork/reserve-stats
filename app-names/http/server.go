@@ -56,7 +56,7 @@ func (sv *Server) getAddressFromAppID(c *gin.Context) {
 
 	result, err := sv.db.GetAppAddresses(appID)
 	if err != nil {
-		if err.Error() == "app does not exist" {
+		if err == storage.ErrAppNotExist {
 			httputil.ResponseFailure(
 				c,
 				http.StatusNotFound,
@@ -140,7 +140,7 @@ func (sv *Server) updateApp(c *gin.Context) {
 	}
 	app, err := sv.db.UpdateAppAddress(appID, q)
 	if err != nil {
-		if err.Error() == "app does not exist" {
+		if err == storage.ErrAppNotExist {
 			httputil.ResponseFailure(
 				c,
 				http.StatusNotFound,
@@ -173,7 +173,7 @@ func (sv *Server) deleteApp(c *gin.Context) {
 		return
 	}
 	if err := sv.db.DeleteApp(appID); err != nil {
-		if err.Error() == "app does not exist" {
+		if err == storage.ErrAppNotExist {
 			httputil.ResponseFailure(
 				c,
 				http.StatusNotFound,

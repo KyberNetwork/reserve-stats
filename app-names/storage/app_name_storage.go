@@ -16,6 +16,9 @@ const (
 	addressesTableName string = "addresses"
 )
 
+// ErrAppNotExist exported error for checking
+var ErrAppNotExist = fmt.Errorf("app does not exist")
+
 // AppNameDB storage app name with its correspond addresses
 type AppNameDB struct {
 	sugar *zap.SugaredLogger
@@ -155,7 +158,7 @@ func (adb *AppNameDB) UpdateAppAddress(appID int64, app common.AppObject) (commo
 		if err != nil {
 			return updatedApp, err
 		}
-		return updatedApp, errors.New("app does not exist")
+		return updatedApp, ErrAppNotExist
 	}
 	if _, err := tx.Exec("UPDATE app_name SET name=$1 WHERE id=$2", app.AppName, appID); err != nil {
 		return updatedApp, err
@@ -251,7 +254,7 @@ func (adb *AppNameDB) GetAppAddresses(appID int64) (common.AppObject, error) {
 		return result, err
 	}
 	if len(qresult) == 0 {
-		return result, errors.New("app does not exist")
+		return result, ErrAppNotExist
 	}
 	result.ID = appID
 	result.AppName = qresult[0].AppName
@@ -284,7 +287,7 @@ func (adb *AppNameDB) DeleteApp(appID int64) error {
 		if err := tx.Commit(); err != nil {
 			return err
 		}
-		return errors.New("app does not exist")
+		return ErrAppNotExist
 	}
 
 	if _, err := tx.Exec("UPDATE app_name SET active=FALSE WHERE id=$1", appID); err != nil {

@@ -93,7 +93,7 @@ func (sv *Server) createApp(c *gin.Context) {
 		return
 	}
 	if response, err = sv.db.CreateOrUpdate(q); err != nil {
-		if err.Error() == "address already exists" {
+		if err == storage.ErrAddrExisted {
 			httputil.ResponseFailure(
 				c,
 				http.StatusConflict,

@@ -3,7 +3,6 @@ package userprofile
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -11,7 +10,9 @@ import (
 )
 
 const (
-	separator = ":"
+	nameField                  = "name"
+	idField                    = "id"
+	expireDurationForNilResult = 24 * time.Hour
 )
 
 // RedisCachedClient is the wrapper of User Profile Client with caching ability.
@@ -31,29 +32,29 @@ func NewRedisCachedClient(client *Client, redisClient *redis.Client) *RedisCache
 // LookUpCache will lookup the Userprofile from cache
 // Redis cache will return error if the addr is not exist.
 func (cc *RedisCachedClient) LookUpCache(addr ethereum.Address) (UserProfile, error) {
-	result, err := cc.redisClient.Get(addr.Hex()).Result()
+	ps, err := cc.redisClient.HMGet(addr.Hex(), nameField, idField).Result()
 	if err != nil {
 		return UserProfile{}, err
 	}
-	// empty
-	if result == "" {
-		return UserProfile{
-			UserName:  "",
-			ProfileID: 0,
-		}, nil
+	if len(ps) < 2 {
+		return UserProfile{}, fmt.Errorf("result cached in redis returned wrong len")
 	}
-	data := strings.Split(result, separator)
-	if len(data) < 2 {
-		return UserProfile{}, fmt.Errorf("Redis cached wrong result string, expect format name:id, get %s", result)
+	name, ok := ps[0].(string)
+	if !ok {
+		return UserProfile{}, fmt.Errorf("cannot assert name field (%v) to string type", ps[0])
 	}
-	pID, err := strconv.ParseInt(data[1], 10, 64)
+	pID, ok := ps[1].(string)
+	if !ok {
+		return UserProfile{}, fmt.Errorf("cannot assert pID field(%v) to string type", ps[1])
+	}
+	pIDint, err := strconv.ParseInt(pID, 10, 64)
 	if err != nil {
 		return UserProfile{}, err
 	}
 	return UserProfile{
-		UserName:  data[0],
-		ProfileID: pID,
-	}, err
+		UserName:  name,
+		ProfileID: int64(pIDint),
+	}, nil
 }
 
 // LookUpUserProfile will look for the UserProfile of input addr in cache first
@@ -86,11 +87,16 @@ func (cc *RedisCachedClient) LookUpUserProfile(addr ethereum.Address) (UserProfi
 
 func (cc *RedisCachedClient) cacheRedis(addr ethereum.Address, p UserProfile) error {
 	//empty result
-	cc.sugar.Debugf("get user profile from API", "user profile", p)
-	if (p == UserProfile{}) {
-		return cc.redisClient.Set(addr.Hex(), "", 24*time.Hour).Err()
+	cc.sugar.Debugf("cached user profile from API into redis", "address", addr.Hex(), "user profile", p)
+	resultMap := map[string]interface{}{
+		nameField: p.UserName,
+		idField:   p.ProfileID,
 	}
-
-	resultStr := fmt.Sprintf("%s:%s", p.UserName, strconv.FormatInt(p.ProfileID, 10))
-	return cc.redisClient.Set(addr.Hex(), resultStr, 0).Err()
+	if _, err := cc.redisClient.HMSet(addr.Hex(), resultMap).Result(); err != nil {
+		return err
+	}
+	if (p == UserProfile{}) {
+		return cc.redisClient.Expire(addr.Hex(), expireDurationForNilResult).Err()
+	}
+	return nil
 }

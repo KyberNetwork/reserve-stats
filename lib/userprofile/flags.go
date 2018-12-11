@@ -83,18 +83,12 @@ func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, er
 	return NewClient(sugar, userURL, signingKey)
 }
 
-// NewCachedClientFromContext return new cached client from cli flags
-func NewCachedClientFromContext(client *Client, c *cli.Context) (Interface, error) {
-	if client == nil {
-		return nil, nil
-	}
+//NewRedisClientFromContext creates redis client from flag agruments
+func NewRedisClientFromContext(c *cli.Context) (*redis.Client, error) {
 	redisURL := c.String(redisEndpointFlag)
 	if redisURL == "" {
-		client.sugar.Infow("use default in-mem cache for user profile ")
-		maxCacheSize := c.Int64(maxUserCacheFlag)
-		return NewCachedClient(client, maxCacheSize), nil
+		return nil, nil
 	}
-	client.sugar.Infow("use redis cache for user profile")
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     redisURL,
@@ -102,8 +96,11 @@ func NewCachedClientFromContext(client *Client, c *cli.Context) (Interface, erro
 		DB:       c.Int(redisUserProfileDBFlag),
 	})
 	_, err := redisClient.Ping().Result()
-	if err != nil {
-		return nil, err
-	}
-	return NewRedisCachedClient(client, redisClient), nil
+	return redisClient, err
+}
+
+//NewInmemCachedFromContext create the inmem cache client from flag agruments
+func NewInmemCachedFromContext(client *Client, c *cli.Context) Interface {
+	maxCacheSize := c.Int64(maxUserCacheFlag)
+	return NewCachedClient(client, maxCacheSize)
 }

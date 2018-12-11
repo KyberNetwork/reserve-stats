@@ -17,7 +17,10 @@ const (
 )
 
 // ErrAppNotExist exported error for checking
-var ErrAppNotExist = fmt.Errorf("app does not exist")
+var ErrAppNotExist = errors.New("app does not exist")
+
+// ErrAddrExisted exported error for checking
+var ErrAddrExisted = errors.New("address already exists")
 
 // AppNameDB storage app name with its correspond addresses
 type AppNameDB struct {
@@ -119,7 +122,7 @@ func (adb *AppNameDB) CreateOrUpdate(app common.AppObject) (common.AppObject, er
 			if err := tx.Commit(); err != nil {
 				return app, err
 			}
-			return app, errors.New("address already exists")
+			return app, ErrAddrExisted
 		}
 
 		_, err = tx.Exec(fmt.Sprintf(`

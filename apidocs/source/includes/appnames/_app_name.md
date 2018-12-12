@@ -6,7 +6,7 @@
 curl -X POST "https://gateway.local/application-names"
 -H 'Content-Type: application/json'
 -d '{
-    "app_name": "first_app",
+    "name": "first_app",
     "addresses": [
         "0x3baE9b9e1dca462Ad8827f62F4A8b5b3714d7700",
         "0x804aDa8c08A2E8ecff1a6535bf28DC4f1EfF4f8e"
@@ -19,7 +19,7 @@ curl -X POST "https://gateway.local/application-names"
 ```json
 {
     "id": 1,
-    "app_name": "first_app",
+    "name": "first_app",
     "addresses": [
         "0x3baE9b9e1dca462Ad8827f62F4A8b5b3714d7700",
         "0x804aDa8c08A2E8ecff1a6535bf28DC4f1EfF4f8e"
@@ -38,7 +38,7 @@ curl -X POST "https://gateway.local/application-names"
 curl -X PUT "https://gateway.local/application-names/1"
 -H 'Content-Type: application/json'
 -d '{
-    "app_name": "first_app",
+    "name": "first_app",
     "addresses": [
         "0xC26633E672b6A750dC06109be7f2C5dFe36670d1"
     ]
@@ -66,14 +66,14 @@ curl -X GET "https://gateway.local/application-names"
 ```json
 [{
     "id": 1,
-    "app_name": "first_app",
+    "name": "first_app",
     "addresses": [
         "0x3baE9b9e1dca462Ad8827f62F4A8b5b3714d7700",
         "0x804aDa8c08A2E8ecff1a6535bf28DC4f1EfF4f8e"
     ]
 },{
     "id": 2,
-    "app_name": "second_app",
+    "name": "second_app",
     "addresses": [
         "0xC26633E672b6A750dC06109be7f2C5dFe36670d1"
     ]
@@ -96,7 +96,7 @@ curl -X GET "https://gateway.local/application-names/1"
 ```json
 {
     "id": 1,
-    "app_name": "first_app",
+    "name": "first_app",
     "addresses": [
         "0x3baE9b9e1dca462Ad8827f62F4A8b5b3714d7700",
         "0x804aDa8c08A2E8ecff1a6535bf28DC4f1EfF4f8e"

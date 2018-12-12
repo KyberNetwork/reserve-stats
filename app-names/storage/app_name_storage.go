@@ -16,11 +16,14 @@ const (
 	addressesTableName string = "addresses"
 )
 
-// ErrAppNotExist exported error for checking
-var ErrAppNotExist = errors.New("app does not exist")
+var (
 
-// ErrAddrExisted exported error for checking
-var ErrAddrExisted = errors.New("address already exists")
+	// ErrAppNotExist exported error for checking
+	ErrAppNotExist = errors.New("app does not exist")
+
+	// ErrAddrExisted exported error for checking
+	ErrAddrExisted = errors.New("address already exists")
+)
 
 // AppNameDB storage app name with its correspond addresses
 type AppNameDB struct {
@@ -29,8 +32,8 @@ type AppNameDB struct {
 }
 
 //DeleteAllTables delete all table from schema using for test only
-func (adb *AppNameDB) DeleteAllTables() error {
-	_, err := adb.db.Exec(fmt.Sprintf(`DROP TABLE "%s", "%s"`, appNameTable, addressesTableName))
+func (adb *AppNameDB) DeleteAllTables() (err error) {
+	_, err = adb.db.Exec(fmt.Sprintf(`DROP TABLE "%s", "%s"`, appNameTable, addressesTableName))
 	return err
 }
 
@@ -46,8 +49,7 @@ CREATE TABLE IF NOT EXISTS "%s" (
 CREATE TABLE IF NOT EXISTS "%s" (
 	id SERIAL PRIMARY KEY,
 	address text NOT NULL UNIQUE,
-	app_name_id SERIAL NOT NULL REFERENCES app_name (id),
-	active boolean DEFAULT TRUE
+	app_name_id SERIAL NOT NULL REFERENCES app_name (id)
 );
 `
 	var logger = sugar.With("func", "appname/storage.NewAppNameDB")
@@ -56,12 +58,18 @@ CREATE TABLE IF NOT EXISTS "%s" (
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if err != nil {
+			rollBackErr := tx.Rollback()
+			if rollBackErr != err {
+				logger.Debugw("rollback error", "err", rollBackErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
 	logger.Debug("initializing app name database")
 	if _, err = tx.Exec(fmt.Sprintf(schemaFmt, appNameTable, addressesTableName)); err != nil {
-		return nil, err
-	}
-
-	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 	logger.Debug("initialized app name database")
@@ -69,35 +77,46 @@ CREATE TABLE IF NOT EXISTS "%s" (
 	return &AppNameDB{
 		sugar: sugar,
 		db:    db,
-	}, nil
+	}, err
 }
 
 // CreateOrUpdate create or update app name
-func (adb *AppNameDB) CreateOrUpdate(app common.AppObject) (common.AppObject, error) {
+func (adb *AppNameDB) CreateOrUpdate(app common.Application) (id int64, err error) {
 	var (
 		logger = adb.sugar.With(
 			"func", "appname/storage.CreateOrUpdate",
-			"app name", app.AppName,
+			"app name", app.Name,
 		)
 		appID int64
 	)
 	logger.Debug("Create or update an app")
 	tx, err := adb.db.Beginx()
 	if err != nil {
-		return app, err
+		return id, err
 	}
 
+	defer func() {
+		if err != nil {
+			rollBackErr := tx.Rollback()
+			if rollBackErr != err {
+				logger.Debugw("rollback error", "err", rollBackErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
 	if app.ID == 0 {
-		row := tx.QueryRowx(`INSERT INTO app_name (name) VALUES ($1) RETURNING id;`, app.AppName)
+		row := tx.QueryRowx(`INSERT INTO app_name (name) VALUES ($1) RETURNING id;`, app.Name)
 		if err = row.Scan(&appID); err != nil {
-			return app, err
+			return id, err
 		}
 		logger = logger.With("app id", appID)
 		logger.Debug("app is created")
 	} else {
 		appID = app.ID
-		if _, err = tx.Exec(`UPDATE app_name SET name=$1 WHERE id=$2`, app.AppName, app.ID); err != nil {
-			return app, err
+		if _, err = tx.Exec(`UPDATE app_name SET name=$1 WHERE id=$2`, app.Name, app.ID); err != nil {
+			return id, err
 		}
 	}
 
@@ -106,7 +125,7 @@ func (adb *AppNameDB) CreateOrUpdate(app common.AppObject) (common.AppObject, er
 	DELETE FROM "%s" WHERE app_name_id = $1
 `, addressesTableName), appID)
 	if err != nil {
-		return app, err
+		return id, err
 	}
 	for _, address := range app.Addresses {
 		addressStr := address.Hex()
@@ -115,14 +134,11 @@ func (adb *AppNameDB) CreateOrUpdate(app common.AppObject) (common.AppObject, er
 		)
 		var count int
 		if err := tx.Get(&count, fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE address='%s'", addressesTableName, addressStr)); err != nil {
-			return app, err
+			return id, err
 		}
 		logger.Debug(count)
 		if count > 0 {
-			if err := tx.Commit(); err != nil {
-				return app, err
-			}
-			return app, ErrAddrExisted
+			return id, ErrAddrExisted
 		}
 
 		_, err = tx.Exec(fmt.Sprintf(`
@@ -132,70 +148,73 @@ VALUES ($1, $2);
 			addressStr,
 			appID)
 		if err != nil {
-			return app, err
+			return id, err
 		}
 	}
 
-	app.ID = appID
-
-	return app, tx.Commit()
+	return appID, err
 }
 
 //UpdateAppAddress add addresses to list address of appID
-func (adb *AppNameDB) UpdateAppAddress(appID int64, app common.AppObject) (common.AppObject, error) {
+func (adb *AppNameDB) UpdateAppAddress(appID int64, app common.Application) (err error) {
 	var (
-		logger     = adb.sugar.With("func", "appname/storage.UpdateAppAddress")
-		updatedApp common.AppObject
+		logger = adb.sugar.With("func", "appname/storage.UpdateAppAddress")
 	)
-	logger.Debugw("udpate app address", "udpate app address", appID)
+	logger.Debugw("update app address", "id", appID)
 	tx, err := adb.db.Beginx()
 	if err != nil {
-		return updatedApp, err
+		return err
 	}
+
+	defer func() {
+		logger.Debug("commit transaction before return")
+		if err != nil {
+			rollBackErr := tx.Rollback()
+			if rollBackErr != err {
+				logger.Debugw("rollback error", "err", rollBackErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
 	var qr []AppQueryResult
 	if err := tx.Select(&qr, fmt.Sprintf(`SELECT name FROM app_name WHERE id=%d`, appID)); err != nil {
-		return updatedApp, err
+		return err
 	}
 	if len(qr) == 0 {
-		err := tx.Commit()
-		if err != nil {
-			return updatedApp, err
-		}
-		return updatedApp, ErrAppNotExist
+		return ErrAppNotExist
 	}
-	if _, err := tx.Exec("UPDATE app_name SET name=$1 WHERE id=$2", app.AppName, appID); err != nil {
-		return updatedApp, err
+	if _, err := tx.Exec("UPDATE app_name SET name=$1 WHERE id=$2", app.Name, appID); err != nil {
+		return err
 	}
 
 	for _, address := range app.Addresses {
 		var qresult []AppQueryResult
 		addressStr := address.Hex()
 		if err := tx.Select(&qresult, fmt.Sprintf(`SELECT address FROM addresses WHERE address='%s'`, addressStr)); err != nil {
-			return updatedApp, err
+			return err
 		}
 		if len(qresult) != 0 {
 			logger.Debugw("address already exist", "address already exist", addressStr)
 			continue
 		}
 		if _, err := tx.Exec(`INSERT INTO addresses (address, app_name_id) VALUES ($1, $2)`, addressStr, appID); err != nil {
-			return updatedApp, err
+			return err
 		}
 	}
-	if err := tx.Commit(); err != nil {
-		return updatedApp, err
-	}
-	updatedApp, err = adb.GetAppAddresses(appID)
-	return updatedApp, err
+
+	return err
 }
 
 //AppQueryResult result from query
 type AppQueryResult struct {
 	ID      int64  `json:"id"`
-	AppName string `json:"name" db:"name"`
+	Name    string `json:"name" db:"name"`
 	Address string `json:"address"`
 }
 
-func appExist(app AppQueryResult, apps []common.AppObject) (bool, int) {
+func appExist(app AppQueryResult, apps []common.Application) (bool, int) {
 	for index, a := range apps {
 		if a.ID == app.ID {
 			return true, index
@@ -205,12 +224,12 @@ func appExist(app AppQueryResult, apps []common.AppObject) (bool, int) {
 }
 
 // GetAllApp return all app in storage
-func (adb *AppNameDB) GetAllApp(name string) ([]common.AppObject, error) {
+func (adb *AppNameDB) GetAllApp(name string) ([]common.Application, error) {
 	var (
 		logger = adb.sugar.With(
 			"func", "appname/storage.GetAllApp",
 		)
-		result  []common.AppObject
+		result  []common.Application
 		qresult []AppQueryResult
 	)
 	logger.Debug("Get all apps")
@@ -231,10 +250,10 @@ func (adb *AppNameDB) GetAllApp(name string) ([]common.AppObject, error) {
 		if exist {
 			result[index].Addresses = append(result[index].Addresses, ethereum.HexToAddress(item.Address))
 		} else {
-			result = append(result, common.AppObject{
+			result = append(result, common.Application{
 				ID:        item.ID,
 				Addresses: []ethereum.Address{ethereum.HexToAddress(item.Address)},
-				AppName:   item.AppName,
+				Name:      item.Name,
 			})
 		}
 	}
@@ -243,13 +262,13 @@ func (adb *AppNameDB) GetAllApp(name string) ([]common.AppObject, error) {
 }
 
 // GetAppAddresses return app address rom an app id
-func (adb *AppNameDB) GetAppAddresses(appID int64) (common.AppObject, error) {
+func (adb *AppNameDB) GetAppAddresses(appID int64) (common.Application, error) {
 	var (
 		logger = adb.sugar.With(
 			"func", "appname/storage.GetAppAddresses",
 		)
 		qresult []AppQueryResult
-		result  common.AppObject
+		result  common.Application
 	)
 	logger.Debug("get an app")
 	if err := adb.db.Select(&qresult, fmt.Sprintf(`SELECT app_name.id, app_name.name, addresses.address 
@@ -260,7 +279,7 @@ func (adb *AppNameDB) GetAppAddresses(appID int64) (common.AppObject, error) {
 		return result, ErrAppNotExist
 	}
 	result.ID = appID
-	result.AppName = qresult[0].AppName
+	result.Name = qresult[0].Name
 	for _, item := range qresult {
 		result.Addresses = append(result.Addresses, ethereum.HexToAddress(item.Address))
 	}
@@ -269,7 +288,7 @@ func (adb *AppNameDB) GetAppAddresses(appID int64) (common.AppObject, error) {
 }
 
 //DeleteApp set app active is false
-func (adb *AppNameDB) DeleteApp(appID int64) error {
+func (adb *AppNameDB) DeleteApp(appID int64) (err error) {
 	var (
 		logger = adb.sugar.With(
 			"func", "appname/storage.DeleteApp",
@@ -282,14 +301,22 @@ func (adb *AppNameDB) DeleteApp(appID int64) error {
 		return err
 	}
 
+	defer func() {
+		if err != nil {
+			rollbackErr := tx.Rollback()
+			if err != rollbackErr {
+				logger.Debugw("rollback error", "err", err)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
 	if err := tx.Get(&count, fmt.Sprintf("SELECT COUNT(*) FROM app_name WHERE id=%d", appID)); err != nil {
 		return err
 	}
 
 	if count == 0 {
-		if err := tx.Commit(); err != nil {
-			return err
-		}
 		return ErrAppNotExist
 	}
 
@@ -297,22 +324,5 @@ func (adb *AppNameDB) DeleteApp(appID int64) error {
 		return err
 	}
 	logger.Debug("finish delete app")
-	return tx.Commit()
-}
-
-//DeleteAddress soft delete an address
-func (adb *AppNameDB) DeleteAddress(address string) error {
-	var logger = adb.sugar.With(
-		"func", "appname/storage.DeleteAddress",
-	)
-	logger.Debug("start delete address")
-	tx, err := adb.db.Beginx()
-	if err != nil {
-		return nil
-	}
-	if _, err := tx.Exec("UPDATE addresses SET active=FALSE WHERE address=$1", address); err != nil {
-		return err
-	}
-	logger.Debug("finish delete address")
-	return tx.Commit()
+	return err
 }

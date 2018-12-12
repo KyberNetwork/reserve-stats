@@ -3,19 +3,12 @@ package core
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"net/http"
-	"strconv"
-	"time"
-)
 
-// generateNonce returns nonce header required to use Core API,
-// which is current timestamp in milliseconds.
-func generateNonce() string {
-	now := time.Now().UnixNano() / int64(time.Millisecond)
-	return strconv.FormatInt(now, 10)
-}
+	"github.com/KyberNetwork/reserve-stats/lib/httputil/signer"
+	"github.com/ethereum/go-ethereum/common"
+)
 
 type allSettingsResponse struct {
 	commonResponse
@@ -62,9 +55,9 @@ func (c *Client) Tokens() ([]Token, error) {
 	const endpoint = "/setting/all-settings"
 	var params = make(map[string]string)
 
-	params["nonce"] = generateNonce()
+	params["nonce"] = signer.GenerateNonce()
 
-	req, err := c.newRequest(http.MethodGet, endpoint, params)
+	req, err := signer.NewRequest(c.sugar, c.url, http.MethodGet, c.signingKey, endpoint, params)
 	if err != nil {
 		return nil, err
 	}
@@ -99,8 +92,8 @@ type tokensReply struct {
 
 func (c *Client) getTokens(endpoint string) ([]Token, error) {
 	var params = make(map[string]string)
-	params["nonce"] = generateNonce()
-	req, err := c.newRequest(http.MethodGet, endpoint, params)
+	params["nonce"] = signer.GenerateNonce()
+	req, err := signer.NewRequest(c.sugar, c.url, http.MethodGet, c.signingKey, endpoint, params)
 	if err != nil {
 		return nil, err
 	}

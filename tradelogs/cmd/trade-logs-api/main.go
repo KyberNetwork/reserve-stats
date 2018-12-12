@@ -74,7 +74,7 @@ func main() {
 			return err
 		}
 
-		cachedUserClient, err := createUserprofileClient(sugar, c)
+		cachedUserClient, err := newUserprofileClient(sugar, c)
 		if err != nil {
 			return err
 		}
@@ -108,20 +108,20 @@ func main() {
 	}
 }
 
-func createUserprofileClient(sugar *zap.SugaredLogger, c *cli.Context) (userprofile.Interface, error) {
+func newUserprofileClient(sugar *zap.SugaredLogger, c *cli.Context) (userprofile.Interface, error) {
 	userClient, err := userprofile.NewClientFromContext(sugar, c)
 	if err != nil {
 		return nil, err
 	}
 
-	redisClient, err := userprofile.NewRedisClientFromContext(c)
+	redisClient, err := libapp.NewRedisClientFromContext(c)
 	if err != nil {
 		return nil, err
 	}
 
 	if redisClient == nil {
 		sugar.Infow("use default in-mem cache for user profile ")
-		return userprofile.NewInmemCachedFromContext(userClient, c), nil
+		return userprofile.NewInMemCachedFromContext(userClient, c), nil
 	}
 	sugar.Infow("use redis cache for user profile")
 	return userprofile.NewRedisCachedClient(userClient, redisClient), nil

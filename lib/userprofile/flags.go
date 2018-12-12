@@ -3,9 +3,9 @@ package userprofile
 import (
 	"fmt"
 
+	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
-	"github.com/go-redis/redis"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
@@ -15,15 +15,12 @@ const (
 	userprofileSigningKeyFlag = "user-profile-signing-key"
 	maxUserCacheFlag          = "max-user-profile-cache"
 	maxUserCacheDefault       = 1000
-	redisEndpointFlag         = "redis-endpoint"
-	redisUserProfileDBFlag    = "redis-user-profile-db"
 	redisUserProfileDBDefault = 0
-	redisPasswordFlag         = "redis-password"
 )
 
 // NewCliFlags returns cli flags to configure a core client.
 func NewCliFlags() []cli.Flag {
-	return []cli.Flag{
+	userprofileFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:   userprofileURLFlag,
 			Usage:  "user profile API URL",
@@ -40,25 +37,9 @@ func NewCliFlags() []cli.Flag {
 			Usage:  "user profile Signing Key",
 			EnvVar: "USER_PROFILE_SIGNING_KEY",
 		},
-		cli.StringFlag{
-			Name:   redisEndpointFlag,
-			Usage:  "redis connection endpoint, if  this is not set the default mem cache will be use instead of redis",
-			EnvVar: "REDIS_ENDPOINT",
-			Value:  "",
-		},
-		cli.IntFlag{
-			Name:   redisUserProfileDBFlag,
-			Usage:  "Database for redis user profile cache. Default to 0",
-			EnvVar: "REDIS_USER_PROFILE_DB",
-			Value:  redisUserProfileDBDefault,
-		},
-		cli.StringFlag{
-			Name:   redisPasswordFlag,
-			Usage:  "redis connection password",
-			EnvVar: "REDIS_PASSWORD",
-			Value:  "",
-		},
 	}
+	userprofileFlags = append(userprofileFlags, libapp.NewRedisFlags(redisUserProfileDBDefault)...)
+	return userprofileFlags
 }
 
 // NewClientFromContext returns new core client from cli flags.
@@ -83,24 +64,8 @@ func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, er
 	return NewClient(sugar, userURL, signingKey)
 }
 
-//NewRedisClientFromContext creates redis client from flag agruments
-func NewRedisClientFromContext(c *cli.Context) (*redis.Client, error) {
-	redisURL := c.String(redisEndpointFlag)
-	if redisURL == "" {
-		return nil, nil
-	}
-
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     redisURL,
-		Password: c.String(redisPasswordFlag),
-		DB:       c.Int(redisUserProfileDBFlag),
-	})
-	_, err := redisClient.Ping().Result()
-	return redisClient, err
-}
-
-//NewInmemCachedFromContext create the inmem cache client from flag agruments
-func NewInmemCachedFromContext(client *Client, c *cli.Context) Interface {
+//NewInMemCachedFromContext create the inmem cache client from flag agruments
+func NewInMemCachedFromContext(client *Client, c *cli.Context) Interface {
 	maxCacheSize := c.Int64(maxUserCacheFlag)
 	return NewCachedClient(client, maxCacheSize)
 }

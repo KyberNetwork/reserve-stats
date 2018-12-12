@@ -29,14 +29,14 @@ func NewRedisCachedClient(client *Client, redisClient *redis.Client) *RedisCache
 	}
 }
 
-// LookUpCache will lookup the Userprofile from cache
+// LookUpCache will lookup the UserProfile from cache
 // Redis cache will return error if the addr is not exist.
 func (cc *RedisCachedClient) LookUpCache(addr ethereum.Address) (UserProfile, error) {
 	ps, err := cc.redisClient.HMGet(addr.Hex(), nameField, idField).Result()
 	if err != nil {
 		return UserProfile{}, err
 	}
-	if len(ps) < 2 {
+	if len(ps) != 2 {
 		return UserProfile{}, fmt.Errorf("result cached in redis returned wrong len")
 	}
 	name, ok := ps[0].(string)
@@ -72,22 +72,19 @@ func (cc *RedisCachedClient) LookUpUserProfile(addr ethereum.Address) (UserProfi
 
 	logger.Debugw("cache missed", "redis error", err)
 
-	p, err = cc.Client.LookUpUserProfile(addr)
-	if err != nil {
+	if p, err = cc.Client.LookUpUserProfile(addr); err != nil {
 		return p, err
 	}
 
 	//cache the result into redis and return result
-	err = cc.cacheRedis(addr, p)
-	if err != nil {
+	if err = cc.cacheRedis(addr, p); err != nil {
 		logger.Debugw("cache to redis failed", "redis error", err)
 	}
 	return p, err
 }
 
 func (cc *RedisCachedClient) cacheRedis(addr ethereum.Address, p UserProfile) error {
-	//empty result
-	cc.sugar.Debugf("cached user profile from API into redis", "address", addr.Hex(), "user profile", p)
+	cc.sugar.Debugw("cached user profile from API into redis", "address", addr.Hex(), "user profile", p)
 	resultMap := map[string]interface{}{
 		nameField: p.UserName,
 		idField:   p.ProfileID,

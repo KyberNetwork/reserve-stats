@@ -261,8 +261,8 @@ func (adb *AppNameDB) GetAllApp(name string) ([]common.Application, error) {
 	return result, nil
 }
 
-// GetAppAddresses return app address rom an app id
-func (adb *AppNameDB) GetAppAddresses(appID int64) (common.Application, error) {
+// GetApp return app address rom an app id
+func (adb *AppNameDB) GetApp(appID int64) (common.Application, error) {
 	var (
 		logger = adb.sugar.With(
 			"func", "appname/storage.GetAppAddresses",
@@ -295,7 +295,7 @@ func (adb *AppNameDB) DeleteApp(appID int64) (err error) {
 		)
 		count int
 	)
-	logger.Debug("start delete app")
+	logger.Debugw("start delete app", "id", appID)
 	tx, err := adb.db.Beginx()
 	if err != nil {
 		return err

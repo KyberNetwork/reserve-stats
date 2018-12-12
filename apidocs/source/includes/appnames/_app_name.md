@@ -3,7 +3,7 @@
 ## Create App
 
 ```shell
-curl -X POST "https://gateway.local/application-names"
+curl -X POST "https://gateway.local/applications"
 -H 'Content-Type: application/json'
 -d '{
     "name": "first_app",
@@ -29,13 +29,13 @@ curl -X POST "https://gateway.local/application-names"
 
 ### HTTP Request
 
-`POST https://gateway.local/application-names`
+`POST https://gateway.local/applications`
 
 
 ## Update App
 
 ```shell
-curl -X PUT "https://gateway.local/application-names/1"
+curl -X PUT "https://gateway.local/applications/1"
 -H 'Content-Type: application/json'
 -d '{
     "name": "first_app",
@@ -52,13 +52,13 @@ curl -X PUT "https://gateway.local/application-names/1"
 
 ### HTTP Request
 
-`PUT https://gateway.local/application-names/:appID`
+`PUT https://gateway.local/applications/:id`
 
 
 ## Get all app
 
 ```shell
-curl -X GET "https://gateway.local/application-names"
+curl -X GET "https://gateway.local/applications"
 ```
 
 > sample response
@@ -83,12 +83,12 @@ curl -X GET "https://gateway.local/application-names"
 
 ### HTTP Request
 
-`GET https://gateway.local/application-names`
+`GET https://gateway.local/applications`
 
 ## Get an app by id
 
 ```shell
-curl -X GET "https://gateway.local/application-names/1"
+curl -X GET "https://gateway.local/applications/1"
 ```
 
 > sample response
@@ -106,13 +106,13 @@ curl -X GET "https://gateway.local/application-names/1"
 
 ### HTTP Request
 
-`GET https://gateway.local/:appID`
+`GET https://gateway.local/applications/:id`
 
 
 ## Delete an app
 
 ```shell
-curl -X DELETE "https://gateway.local/1"
+curl -X DELETE "https://gateway.local/applications/1"
 ```
 
 > sample response
@@ -122,4 +122,4 @@ curl -X DELETE "https://gateway.local/1"
 
 ### HTTP Request
 
-`DELETE https://gateway.loal/:appID`
+`DELETE https://gateway.loal/applications/:id`

@@ -61,7 +61,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 
 	// test case
 	const (
-		requestEndpoint = "/application-names"
+		requestEndpoint = "/applications"
 		appID           = 1
 	)
 

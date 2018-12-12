@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -43,7 +44,8 @@ func (sv *Server) getApps(c *gin.Context) {
 }
 
 func (sv *Server) getAddressFromAppID(c *gin.Context) {
-	appIDStr := c.Param("appID")
+	// TODO: using ShouldBindUri when gin support it in new release
+	appIDStr := c.Param("id")
 	appID, err := strconv.ParseInt(appIDStr, 10, 64)
 	if err != nil {
 		httputil.ResponseFailure(
@@ -54,7 +56,7 @@ func (sv *Server) getAddressFromAppID(c *gin.Context) {
 		return
 	}
 
-	result, err := sv.db.GetAppAddresses(appID)
+	result, err := sv.db.GetApp(appID)
 	if err != nil {
 		if err == storage.ErrAppNotExist {
 			httputil.ResponseFailure(
@@ -108,7 +110,7 @@ func (sv *Server) createApp(c *gin.Context) {
 		}
 		return
 	}
-	app, err := sv.db.GetAppAddresses(id)
+	app, err := sv.db.GetApp(id)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,
@@ -125,16 +127,23 @@ func (sv *Server) createApp(c *gin.Context) {
 
 func (sv *Server) updateApp(c *gin.Context) {
 	var (
-		logger = sv.sugar.With("func", "app-names/server.updateApp")
-		q      common.Application
+		q common.Application
 	)
-	logger.Debug("start update app")
-	appID, err := strconv.ParseInt(c.Param("appID"), 10, 64)
+	//TODO: using ShouldBindUri when gin support it in new release
+	appID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || appID == 0 {
+		if err != nil {
+			httputil.ResponseFailure(
+				c,
+				http.StatusBadRequest,
+				err,
+			)
+			return
+		}
 		httputil.ResponseFailure(
 			c,
 			http.StatusBadRequest,
-			err,
+			errors.New("invalid app id"),
 		)
 		return
 	}
@@ -163,7 +172,7 @@ func (sv *Server) updateApp(c *gin.Context) {
 		}
 		return
 	}
-	app, err := sv.db.GetAppAddresses(appID)
+	app, err := sv.db.GetApp(appID)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,
@@ -175,11 +184,8 @@ func (sv *Server) updateApp(c *gin.Context) {
 }
 
 func (sv *Server) deleteApp(c *gin.Context) {
-	var (
-		logger = sv.sugar.With("func", "app-names/server.deleteApp")
-	)
-	logger.Debug("delete app")
-	appID, err := strconv.ParseInt(c.Param("appID"), 10, 64)
+	//TODO: using ShouldBindUri when gin support it in new release
+	appID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,
@@ -208,11 +214,11 @@ func (sv *Server) deleteApp(c *gin.Context) {
 }
 
 func (sv *Server) register() {
-	sv.r.GET("/application-names", sv.getApps)
-	sv.r.GET("/application-names/:appID", sv.getAddressFromAppID)
-	sv.r.POST("/application-names", sv.createApp)
-	sv.r.PUT("/application-names/:appID", sv.updateApp)
-	sv.r.DELETE("/application-names/:appID", sv.deleteApp)
+	sv.r.GET("/applications", sv.getApps)
+	sv.r.GET("/applications/:id", sv.getAddressFromAppID)
+	sv.r.POST("/applications", sv.createApp)
+	sv.r.PUT("/applications/:id", sv.updateApp)
+	sv.r.DELETE("/applications/:id", sv.deleteApp)
 }
 
 // Run starts HTTP server on preconfigure-host. Return error if occurs

@@ -77,10 +77,10 @@ func (sv *Server) getAddressFromAppID(c *gin.Context) {
 
 func (sv *Server) createApp(c *gin.Context) {
 	var (
-		logger   = sv.sugar.With("func", "app-names/server.createApp")
-		q        common.Application
-		err      error
-		id int64
+		logger = sv.sugar.With("func", "app-names/server.createApp")
+		q      common.Application
+		err    error
+		id     int64
 	)
 
 	logger.Debug("updating addr to App name")

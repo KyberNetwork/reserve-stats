@@ -32,4 +32,5 @@ var walletFeeSchemaFields = map[string]FieldName{
 	"log_index":       LogIndex,
 	"trade_log_index": TradeLogIndex,
 	"amount":          Amount,
+	"country":         Country,
 }

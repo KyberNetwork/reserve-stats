@@ -70,4 +70,6 @@ var tradeLogSchemaFields = map[string]FieldName{
 	"eth_amount":          EthAmount,
 	"fiat_amount":         FiatAmount,
 	"log_index":           LogIndex,
+	"integration_app":     IntegrationApp,
+	"wallet_addr":         WalletAddress,
 }

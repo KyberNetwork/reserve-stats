@@ -31,4 +31,6 @@ var burnFeeFieldNames = map[string]FieldName{
 	"log_index":       LogIndex,
 	"trade_log_index": TradeLogIndex,
 	"amount":          Amount,
+	"wallet_addr":     WalletAddress,
+	"country":         Country,
 }

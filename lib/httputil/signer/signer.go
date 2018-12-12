@@ -30,7 +30,7 @@ func sign(key, msg string) (string, error) {
 }
 
 //NewRequest create a http request with params and header accordingly
-func NewRequest(sugar *zap.SugaredLogger, url, signingKey, method, endpoint string, params map[string]string) (*http.Request, error) {
+func NewRequest(sugar *zap.SugaredLogger, url, method, signingKey, endpoint string, params map[string]string) (*http.Request, error) {
 	logger := sugar.With(
 		"func", "lib/http/signer/signer.go/NewRequest",
 		"method", method,

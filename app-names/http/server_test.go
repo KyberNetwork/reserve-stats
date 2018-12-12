@@ -3,15 +3,15 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/app-names/common"
-	ethereum "github.com/ethereum/go-ethereum/common"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/KyberNetwork/reserve-stats/app-names/common"
 	"github.com/KyberNetwork/reserve-stats/app-names/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
@@ -97,7 +97,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 				Endpoint: fmt.Sprintf("%s", requestEndpoint),
 				Body: []byte(`
 				{
-					"app_name": "first_app",
+					"name": "first_app",
 					"addresses": [
 						"WTF-invalid-address",
 					]
@@ -113,7 +113,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 				Endpoint: fmt.Sprintf("%s", requestEndpoint),
 				Body: []byte(`
 				{
-					"app_name": "first_app",
+					"name": "first_app",
 					"addresses": [
 						"0x3baE9b9e1dca462Ad8827f62F4A8b5b3714d7700",
 						"0x804aDa8c08A2E8ecff1a6535bf28DC4f1EfF4f8e"
@@ -121,7 +121,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 				}
 				`),
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-					var result common.AppObject
+					var result common.Application
 					assert.Equal(t, http.StatusCreated, resp.Code)
 					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 					assert.Equal(t, int64(1), result.ID)
@@ -132,7 +132,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 						},
 						result.Addresses,
 					)
-					assert.Equal(t, "first_app", result.AppName)
+					assert.Equal(t, "first_app", result.Name)
 				},
 			},
 			{
@@ -140,7 +140,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, appID),
 				Method:   http.MethodGet,
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-					var result common.AppObject
+					var result common.Application
 					assert.Equal(t, http.StatusOK, resp.Code)
 					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 					assert.Equal(t, int64(1), result.ID)
@@ -151,7 +151,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 						},
 						result.Addresses,
 					)
-					assert.Equal(t, "first_app", result.AppName)
+					assert.Equal(t, "first_app", result.Name)
 				},
 			},
 			{
@@ -160,7 +160,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 				Endpoint: fmt.Sprintf("%s", requestEndpoint),
 				Body: []byte(`
 				{
-					"app_name": "first_app_conflict_address",
+					"name": "first_app_conflict_address",
 					"addresses": [
 						"0x3baE9b9e1dca462Ad8827f62F4A8b5b3714d7700"
 					]
@@ -177,14 +177,14 @@ func TestAppNameHTTPServer(t *testing.T) {
 				Body: []byte(`
 				{
 					"id": 1,
-					"app_name": "first_app",
+					"name": "first_app",
 					"addresses": [
 						"0x587ecf600d304f831201c30ea0845118dd57516e"
 					]
 				}
 				`),
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-					var result common.AppObject
+					var result common.Application
 					assert.Equal(t, http.StatusOK, resp.Code)
 					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 					assert.Equal(t, int64(1), result.ID)
@@ -194,7 +194,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 						},
 						result.Addresses,
 					)
-					assert.Equal(t, "first_app", result.AppName)
+					assert.Equal(t, "first_app", result.Name)
 				},
 			},
 			{
@@ -204,12 +204,12 @@ func TestAppNameHTTPServer(t *testing.T) {
 				Body: []byte(`
 				{
 					"id": 1,
-					"app_name": "first_app_new_edition",
+					"name": "first_app_new_edition",
 					"addresses": ["0x587ecf600d304f831201c30ea0845118dd57516e"]
 				}
 				`),
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-					var result common.AppObject
+					var result common.Application
 					log.Printf("%+v", resp)
 					assert.Equal(t, http.StatusOK, resp.Code)
 					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
@@ -220,7 +220,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 						},
 						result.Addresses,
 					)
-					assert.Equal(t, "first_app_new_edition", result.AppName)
+					assert.Equal(t, "first_app_new_edition", result.Name)
 				},
 			},
 			{
@@ -233,10 +233,10 @@ func TestAppNameHTTPServer(t *testing.T) {
 			},
 			{
 				Msg:      "get application with name filter",
-				Endpoint: fmt.Sprintf("%s?app_name=first_app", requestEndpoint),
+				Endpoint: fmt.Sprintf("%s?name=first_app_new_edition", requestEndpoint),
 				Method:   http.MethodGet,
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-					var result []common.AppObject
+					var result []common.Application
 					assert.Equal(t, http.StatusOK, resp.Code)
 					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 					assert.Len(t, result, 1)
@@ -249,7 +249,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 							},
 							app.Addresses,
 						)
-						assert.Equal(t, "first_app_new_edition", app.AppName)
+						assert.Equal(t, "first_app_new_edition", app.Name)
 					}
 				},
 			},
@@ -259,7 +259,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, 100),
 				Body: []byte(`
 				{
-					"app_name": "app_100",
+					"name": "app_100",
 					"addresses": [
 						"0xd8c67d024db85b271b6f6eeac5234e29c4d6bbb5"
 					]
@@ -290,14 +290,14 @@ func TestAppNameHTTPServer(t *testing.T) {
 				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, appID),
 				Body: []byte(`
 				{
-					"app_name": "first_app_updated",
+					"name": "first_app_updated",
 					"addresses": [
 						"0xde6a6fb70b0375d9c761f67f2db3de97f21362dc"
 					]
 				}
 				`),
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-					var result common.AppObject
+					var result common.Application
 					assert.Equal(t, http.StatusOK, resp.Code)
 					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 					assert.Equal(t, int64(1), result.ID)
@@ -308,7 +308,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 						},
 						result.Addresses,
 					)
-					assert.Equal(t, "first_app_updated", result.AppName)
+					assert.Equal(t, "first_app_updated", result.Name)
 				},
 			},
 			{

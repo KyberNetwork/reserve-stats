@@ -24,13 +24,6 @@ func main() {
 	app.Flags = append(app.Flags)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AppName)...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
-	// app.Flags = append(app.Flags,
-	// 	cli.StringFlag{
-	// 		Name:   dataFilePathFlag,
-	// 		Usage:  "file path to address to app name json",
-	// 		EnvVar: "DATA_PATH",
-	// 	},
-	// )
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}

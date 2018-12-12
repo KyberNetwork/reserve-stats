@@ -26,7 +26,7 @@ func (sv *Server) getApps(c *gin.Context) {
 	)
 	logger.Debug("getting addr to App name")
 	name := c.Query("name")
-	logger.Debug(name)
+	logger.Debugw("got name parameter from query", "name", name)
 	apps, err := sv.db.GetAllApp(name)
 	if err != nil {
 		httputil.ResponseFailure(
@@ -78,9 +78,9 @@ func (sv *Server) getAddressFromAppID(c *gin.Context) {
 func (sv *Server) createApp(c *gin.Context) {
 	var (
 		logger   = sv.sugar.With("func", "app-names/server.createApp")
-		q        common.AppObject
-		response common.AppObject
+		q        common.Application
 		err      error
+		id int64
 	)
 
 	logger.Debug("updating addr to App name")
@@ -92,7 +92,7 @@ func (sv *Server) createApp(c *gin.Context) {
 		)
 		return
 	}
-	if response, err = sv.db.CreateOrUpdate(q); err != nil {
+	if id, err = sv.db.CreateOrUpdate(q); err != nil {
 		if err == storage.ErrAddrExisted {
 			httputil.ResponseFailure(
 				c,
@@ -108,17 +108,25 @@ func (sv *Server) createApp(c *gin.Context) {
 		}
 		return
 	}
+	app, err := sv.db.GetAppAddresses(id)
+	if err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			err,
+		)
+	}
 	if q.ID != 0 {
-		c.JSON(http.StatusOK, response)
+		c.JSON(http.StatusOK, app)
 	} else {
-		c.JSON(http.StatusCreated, response)
+		c.JSON(http.StatusCreated, app)
 	}
 }
 
 func (sv *Server) updateApp(c *gin.Context) {
 	var (
 		logger = sv.sugar.With("func", "app-names/server.updateApp")
-		q      common.AppObject
+		q      common.Application
 	)
 	logger.Debug("start update app")
 	appID, err := strconv.ParseInt(c.Param("appID"), 10, 64)
@@ -138,7 +146,7 @@ func (sv *Server) updateApp(c *gin.Context) {
 		)
 		return
 	}
-	app, err := sv.db.UpdateAppAddress(appID, q)
+	err = sv.db.UpdateAppAddress(appID, q)
 	if err != nil {
 		if err == storage.ErrAppNotExist {
 			httputil.ResponseFailure(
@@ -154,6 +162,14 @@ func (sv *Server) updateApp(c *gin.Context) {
 			)
 		}
 		return
+	}
+	app, err := sv.db.GetAppAddresses(appID)
+	if err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			err,
+		)
 	}
 	c.JSON(http.StatusOK, app)
 }

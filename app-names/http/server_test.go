@@ -335,6 +335,40 @@ func TestAppNameHTTPServer(t *testing.T) {
 					assert.Equal(t, http.StatusNotFound, resp.Code)
 				},
 			},
+			{
+				Msg: "get inactive apps",
+				Endpoint: fmt.Sprintf("%s/?active=false", requestEndpoint),
+				Method: http.MethodGet,
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					var result common.Application
+					assert.Equal(t, http.StatusOK, resp.Code)
+					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+					assert.Equal(t, int64(1), result.ID)
+					assert.Equal(t,
+						[]ethereum.Address{
+							ethereum.HexToAddress("0x587ecf600d304f831201c30ea0845118dd57516e"),
+							ethereum.HexToAddress("0xde6a6fb70b0375d9c761f67f2db3de97f21362dc"),
+						},
+						result.Addresses,
+					)
+				},
+			},
+			{
+				Msg: "re-active delete app",
+				Endpoint: fmt.Sprintf("%s", requestEndpoint),
+				Method: http.MethodPost,
+				Body: []byte(`
+				{
+					"name": "first_app_updated",
+					"addresses": [
+						"0xde6a6fb70b0375d9c761f67f2db3de97f21362dc"
+					]
+				}
+				`),
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					assert.Equal(t, http.StatusOK, resp.Code)
+				},
+			},
 		}
 	)
 

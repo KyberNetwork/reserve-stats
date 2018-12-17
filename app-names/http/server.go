@@ -28,7 +28,8 @@ func (sv *Server) getApps(c *gin.Context) {
 	logger.Debug("getting addr to App name")
 	name := c.Query("name")
 	logger.Debugw("got name parameter from query", "name", name)
-	apps, err := sv.db.GetAllApp(name)
+	active := c.Query("active")
+	apps, err := sv.db.GetAllApp(name, active)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,
@@ -83,6 +84,7 @@ func (sv *Server) createApp(c *gin.Context) {
 		q      common.Application
 		err    error
 		id     int64
+		update bool
 	)
 
 	logger.Debug("updating addr to App name")
@@ -94,7 +96,7 @@ func (sv *Server) createApp(c *gin.Context) {
 		)
 		return
 	}
-	if id, err = sv.db.CreateOrUpdate(q); err != nil {
+	if id, update, err = sv.db.CreateOrUpdate(q); err != nil {
 		if err == storage.ErrAddrExisted {
 			httputil.ResponseFailure(
 				c,
@@ -118,7 +120,7 @@ func (sv *Server) createApp(c *gin.Context) {
 			err,
 		)
 	}
-	if q.ID != 0 {
+	if update {
 		c.JSON(http.StatusOK, app)
 	} else {
 		c.JSON(http.StatusCreated, app)

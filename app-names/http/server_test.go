@@ -336,27 +336,30 @@ func TestAppNameHTTPServer(t *testing.T) {
 				},
 			},
 			{
-				Msg: "get inactive apps",
-				Endpoint: fmt.Sprintf("%s/?active=false", requestEndpoint),
-				Method: http.MethodGet,
+				Msg:      "get inactive apps",
+				Endpoint: fmt.Sprintf("%s?active=false", requestEndpoint),
+				Method:   http.MethodGet,
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-					var result common.Application
+					var result []common.Application
 					assert.Equal(t, http.StatusOK, resp.Code)
+					log.Printf("%+v", resp)
 					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
-					assert.Equal(t, int64(1), result.ID)
-					assert.Equal(t,
-						[]ethereum.Address{
-							ethereum.HexToAddress("0x587ecf600d304f831201c30ea0845118dd57516e"),
-							ethereum.HexToAddress("0xde6a6fb70b0375d9c761f67f2db3de97f21362dc"),
-						},
-						result.Addresses,
-					)
+					if len(result) > 0 {
+						assert.Equal(t, int64(1), result[0].ID)
+						assert.Equal(t,
+							[]ethereum.Address{
+								ethereum.HexToAddress("0x587ecf600d304f831201c30ea0845118dd57516e"),
+								ethereum.HexToAddress("0xde6a6fb70b0375d9c761f67f2db3de97f21362dc"),
+							},
+							result[0].Addresses,
+						)
+					}
 				},
 			},
 			{
-				Msg: "re-active delete app",
+				Msg:      "re-active delete app",
 				Endpoint: fmt.Sprintf("%s", requestEndpoint),
-				Method: http.MethodPost,
+				Method:   http.MethodPost,
 				Body: []byte(`
 				{
 					"name": "first_app_updated",

@@ -17,3 +17,5 @@ abigen -abi "$OLDPWD"/wrapper.abi -pkg contracts -type Wrapper -out "$OLDPWD"/wr
 abigen -abi "$OLDPWD"/reserve.abi -pkg contracts -type Reserve -out "$OLDPWD"/reserve.go
 abigen -abi "$OLDPWD"/sanity_rates.abi -pkg contracts -type SanityRates -out "$OLDPWD"/sanity_rates.go
 abigen -abi "$OLDPWD"/conversion_rates.abi -pkg contracts -type ConversionRates -out "$OLDPWD"/conversion_rates.go
+abigen -abi "$OLDPWD"/erc20.abi -pkg contracts -type ERC20 -out "$OLDPWD"/erc20.go
+

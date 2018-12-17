@@ -110,87 +110,94 @@ func (rs *RateStorage) LastBlock() (int64, error) {
 	return influxdb.GetInt64FromInterface(res.Results[0].Series[0].Values[0][1])
 }
 
-func (rs *RateStorage) lastRates(reserveAddr, pair string) (uint64, uint64, *common.ReserveRateEntry, error) {
+func (rs *RateStorage) lastRates(reserveAddr string, rateRecord map[string]common.ReserveRateEntry) (map[string]common.LastRate, error) {
 	var (
 		logger = rs.sugar.With(
 			"func", "reserverates/storage/influx/RateStorage.lastRates",
 			"reserve_addr", reserveAddr,
-			"pair", pair,
 		)
+		lastRates map[string]common.LastRate
 	)
 
-	stmt := fmt.Sprintf(`SELECT "%s", "%s", "%s", "%s", "%s", "%s" from "%s" WHERE "%s" = '%s' AND "%s" = '%s' ORDER BY time desc limit 1`,
-		schema.BuyRate.String(),
-		schema.SellRate.String(),
-		schema.BuySanityRate.String(),
-		schema.SellSanityRate.String(),
-		schema.FromBlock.String(),
-		schema.ToBlock.String(),
-		rateTableName,
-		schema.Reserve.String(),
-		reserveAddr,
-		schema.Pair.String(),
-		pair)
+	for pair := range rateRecord {
+		stmt := fmt.Sprintf(`SELECT "%s", "%s", "%s", "%s", "%s", "%s" from "%s" WHERE "%s" = '%s' AND "%s" = '%s' ORDER BY time desc limit 1`,
+			schema.BuyRate.String(),
+			schema.SellRate.String(),
+			schema.BuySanityRate.String(),
+			schema.SellSanityRate.String(),
+			schema.FromBlock.String(),
+			schema.ToBlock.String(),
+			rateTableName,
+			schema.Reserve.String(),
+			reserveAddr,
+			schema.Pair.String(),
+			pair)
 
-	logger.Debugw("query statement", "query", stmt)
+		logger.Debugw("query statement", "query", stmt)
 
-	q := influxClient.NewQuery(stmt,
-		rs.dbName,
-		timePrecision)
+		q := influxClient.NewQuery(stmt,
+			rs.dbName,
+			timePrecision)
 
-	res, err := rs.client.Query(q)
-	if err != nil {
-		return 0, 0, nil, err
+		res, err := rs.client.Query(q)
+		if err != nil {
+			return nil, err
+		}
+
+		if res.Error() != nil {
+			return nil, res.Error()
+		}
+
+		if len(res.Results) != 1 ||
+			len(res.Results[0].Series) != 1 ||
+			len(res.Results[0].Series[0].Values) != 1 ||
+			len(res.Results[0].Series[0].Values[0]) != 7 {
+			logger.Infow("no rates record found")
+			return nil, nil
+		}
+
+		buyRate, err := influxdb.GetFloat64FromInterface(res.Results[0].Series[0].Values[0][1])
+		if err != nil {
+			return nil, err
+		}
+
+		sellRate, err := influxdb.GetFloat64FromInterface(res.Results[0].Series[0].Values[0][2])
+		if err != nil {
+			return nil, err
+		}
+
+		buySanityRate, err := influxdb.GetFloat64FromInterface(res.Results[0].Series[0].Values[0][3])
+		if err != nil {
+			return nil, err
+		}
+
+		sellSanityRate, err := influxdb.GetFloat64FromInterface(res.Results[0].Series[0].Values[0][4])
+		if err != nil {
+			return nil, err
+		}
+
+		fromBlock, err := influxdb.GetUint64FromTagValue(res.Results[0].Series[0].Values[0][5])
+		if err != nil {
+			return nil, err
+		}
+
+		toBlock, err := influxdb.GetUint64FromInterface(res.Results[0].Series[0].Values[0][6])
+		if err != nil {
+			return nil, err
+		}
+		lastRates[pair] = common.LastRate{
+			Rate: &common.ReserveRateEntry{
+				BuyReserveRate:  buyRate,
+				BuySanityRate:   buySanityRate,
+				SellReserveRate: sellRate,
+				SellSanityRate:  sellSanityRate,
+			},
+			FromBlock: fromBlock,
+			ToBlock:   toBlock,
+		}
 	}
 
-	if res.Error() != nil {
-		return 0, 0, nil, res.Error()
-	}
-
-	if len(res.Results) != 1 ||
-		len(res.Results[0].Series) != 1 ||
-		len(res.Results[0].Series[0].Values) != 1 ||
-		len(res.Results[0].Series[0].Values[0]) != 7 {
-		logger.Infow("no rates record found")
-		return 0, 0, nil, nil
-	}
-
-	buyRate, err := influxdb.GetFloat64FromInterface(res.Results[0].Series[0].Values[0][1])
-	if err != nil {
-		return 0, 0, nil, err
-	}
-
-	sellRate, err := influxdb.GetFloat64FromInterface(res.Results[0].Series[0].Values[0][2])
-	if err != nil {
-		return 0, 0, nil, err
-	}
-
-	buySanityRate, err := influxdb.GetFloat64FromInterface(res.Results[0].Series[0].Values[0][3])
-	if err != nil {
-		return 0, 0, nil, err
-	}
-
-	sellSanityRate, err := influxdb.GetFloat64FromInterface(res.Results[0].Series[0].Values[0][4])
-	if err != nil {
-		return 0, 0, nil, err
-	}
-
-	fromBlock, err := influxdb.GetUint64FromTagValue(res.Results[0].Series[0].Values[0][5])
-	if err != nil {
-		return 0, 0, nil, err
-	}
-
-	toBlock, err := influxdb.GetUint64FromInterface(res.Results[0].Series[0].Values[0][6])
-	if err != nil {
-		return 0, 0, nil, err
-	}
-
-	return fromBlock, toBlock, &common.ReserveRateEntry{
-		BuyReserveRate:  buyRate,
-		BuySanityRate:   buySanityRate,
-		SellReserveRate: sellRate,
-		SellSanityRate:  sellSanityRate,
-	}, nil
+	return lastRates, nil
 }
 
 func (rs *RateStorage) constructDataPoint(rsvAddr, pair string, fromBlock, toBlock uint64, rate common.ReserveRateEntry) (*influxClient.Point, error) {
@@ -242,15 +249,18 @@ func (rs *RateStorage) UpdateRatesRecords(blockNumber uint64, rateRecords map[st
 	}
 
 	for rsvAddr, rateRecord := range rateRecords {
+		lastRates, fErr := rs.lastRates(rsvAddr, rateRecord)
+		if fErr != nil {
+			return fErr
+		}
 		for pair, rate := range rateRecord {
 			var (
 				fromBlock uint64
 				toBlock   uint64
 			)
-			lastFromBlock, lastToBlock, lastRate, fErr := rs.lastRates(rsvAddr, pair)
-			if fErr != nil {
-				return fErr
-			}
+			lastRate := lastRates[pair].Rate
+			lastFromBlock := lastRates[pair].FromBlock
+			lastToBlock := lastRates[pair].ToBlock
 
 			if lastRate == nil {
 				logger.Debugw("no last rate available",

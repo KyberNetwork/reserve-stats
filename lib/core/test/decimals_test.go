@@ -2,6 +2,11 @@ package test
 
 import (
 	"context"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -11,11 +16,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"os"
-	"strings"
-	"testing"
-	"time"
 )
+
+const defaultEthereumNode = "https://mainnet.infura.io"
 
 var timeout = 30 * time.Second
 
@@ -24,21 +27,25 @@ type tokenResult struct {
 	decimal int64
 }
 
+// TestTokenDecimals asserts that token decimals configured from Kyber Core has the same values as by calling the
+// (optional) constant of the token contract directly.
 func TestTokenDecimals(t *testing.T) {
 	t.Skip("disable as this test require external resource")
+
 	logger, err := zap.NewDevelopment()
 	require.Nil(t, err, "logger should be initiated successfully")
+	sugar := logger.Sugar()
 
-	var (
-		sugar  = logger.Sugar()
-		url    = os.Getenv("CORE_URL")
-		secret = os.Getenv("CORE_SIGNING_KEY")
-		node   = "https://mainnet.infura.io"
-	)
+	url, ok := os.LookupEnv("CORE_URL")
+	assert.True(t, ok)
 
-	require.NotEmpty(t, url, "Should have default core url")
-	require.NotEmpty(t, secret, "Should have default core signing key")
-	require.NotEmpty(t, node, "Should have default node enpoint url")
+	secret, ok := os.LookupEnv("CORE_SIGNING_KEY")
+	assert.True(t, ok)
+
+	node, ok := os.LookupEnv("ETHEREUM_NODE")
+	if !ok {
+		node = defaultEthereumNode
+	}
 
 	c, err := core.NewClient(sugar, url, secret)
 	require.NoError(t, err, "core client should be initiated successfully")

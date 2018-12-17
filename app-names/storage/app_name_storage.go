@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -81,7 +82,7 @@ CREATE TABLE IF NOT EXISTS "%s" (
 }
 
 // CreateOrUpdate create or update app name
-func (adb *AppNameDB) CreateOrUpdate(app common.Application) (id int64, err error) {
+func (adb *AppNameDB) CreateOrUpdate(app common.Application) (id int64, update bool, err error) {
 	var (
 		logger = adb.sugar.With(
 			"func", "appname/storage.CreateOrUpdate",
@@ -92,13 +93,13 @@ func (adb *AppNameDB) CreateOrUpdate(app common.Application) (id int64, err erro
 	logger.Debug("Create or update an app")
 	tx, err := adb.db.Beginx()
 	if err != nil {
-		return id, err
+		return id, update, err
 	}
 
 	defer func() {
 		if err != nil {
 			rollBackErr := tx.Rollback()
-			if rollBackErr != err {
+			if rollBackErr != nil && rollBackErr != err {
 				logger.Debugw("rollback error", "err", rollBackErr)
 			}
 			return
@@ -107,16 +108,27 @@ func (adb *AppNameDB) CreateOrUpdate(app common.Application) (id int64, err erro
 	}()
 
 	if app.ID == 0 {
-		row := tx.QueryRowx(`INSERT INTO app_name (name) VALUES ($1) RETURNING id;`, app.Name)
-		if err = row.Scan(&appID); err != nil {
-			return id, err
+		// check if app_name.name exist
+		row := tx.QueryRowx(`SELECT id FROM app_name WHERE name=$1`, app.Name)
+		err = row.Scan(&appID)
+		if err == sql.ErrNoRows {
+			row = tx.QueryRowx(`INSERT INTO app_name (name) VALUES ($1) RETURNING id;`, app.Name)
+			if err = row.Scan(&appID); err != nil {
+				return id, update, err
+			}
+			logger = logger.With("app id", appID)
+			logger.Debug("app is created")
+		} else {
+			update = true
+			if _, err = tx.Exec(`UPDATE app_name SET name=$1, active=$2 WHERE id=$3`, app.Name, "TRUE", appID); err != nil {
+				return id, update, err
+			}
 		}
-		logger = logger.With("app id", appID)
-		logger.Debug("app is created")
 	} else {
 		appID = app.ID
-		if _, err = tx.Exec(`UPDATE app_name SET name=$1 WHERE id=$2`, app.Name, app.ID); err != nil {
-			return id, err
+		update = true
+		if _, err = tx.Exec(`UPDATE app_name SET name=$1, active=$2 WHERE id=$3`, app.Name, "TRUE", app.ID); err != nil {
+			return id, update, err
 		}
 	}
 
@@ -125,7 +137,7 @@ func (adb *AppNameDB) CreateOrUpdate(app common.Application) (id int64, err erro
 	DELETE FROM "%s" WHERE app_name_id = $1
 `, addressesTableName), appID)
 	if err != nil {
-		return id, err
+		return id, update, err
 	}
 	for _, address := range app.Addresses {
 		addressStr := address.Hex()
@@ -134,11 +146,11 @@ func (adb *AppNameDB) CreateOrUpdate(app common.Application) (id int64, err erro
 		)
 		var count int
 		if err := tx.Get(&count, fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE address='%s'", addressesTableName, addressStr)); err != nil {
-			return id, err
+			return id, update, err
 		}
 		logger.Debug(count)
 		if count > 0 {
-			return id, ErrAddrExisted
+			return id, update, ErrAddrExisted
 		}
 
 		_, err = tx.Exec(fmt.Sprintf(`
@@ -148,11 +160,11 @@ VALUES ($1, $2);
 			addressStr,
 			appID)
 		if err != nil {
-			return id, err
+			return id, update, err
 		}
 	}
 
-	return appID, err
+	return appID, update, err
 }
 
 //UpdateAppAddress add addresses to list address of appID
@@ -224,7 +236,7 @@ func appExist(app AppQueryResult, apps []common.Application) (bool, int) {
 }
 
 // GetAllApp return all app in storage
-func (adb *AppNameDB) GetAllApp(name string) ([]common.Application, error) {
+func (adb *AppNameDB) GetAllApp(name, active string) ([]common.Application, error) {
 	var (
 		logger = adb.sugar.With(
 			"func", "appname/storage.GetAllApp",
@@ -235,11 +247,18 @@ func (adb *AppNameDB) GetAllApp(name string) ([]common.Application, error) {
 	logger.Debug("Get all apps")
 
 	query := `SELECT app_name.id, app_name.name, addresses.address from 
-	app_name JOIN addresses ON app_name.id = addresses.app_name_id WHERE app_name.active IS TRUE `
+	app_name JOIN addresses ON app_name.id = addresses.app_name_id WHERE `
+
+	if strings.TrimSpace(active) != "" && strings.TrimSpace(active) == "false" {
+		query += fmt.Sprintf("app_name.active IS FALSE ")
+	} else {
+		query += fmt.Sprintf("app_name.active IS TRUE ")
+	}
 
 	if strings.TrimSpace(name) != "" {
 		query += fmt.Sprintf("AND app_name.name='%s'", name)
 	}
+
 	logger.Debug(query)
 	if err := adb.db.Select(&qresult, query); err != nil {
 		return result, err

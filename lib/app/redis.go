@@ -11,6 +11,7 @@ const (
 	redisDBFlag       = "redis-db"
 )
 
+// NewRedisFlags returns a list of flag for Redis configuration
 func NewRedisFlags(defaultDB int) []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"log"
 	"os"
 
@@ -40,6 +41,10 @@ func main() {
 		}
 
 		coreCachedClient := core.NewCachedClient(coreClient)
+		tokenAmountFormater, err := blockchain.NewTokenAmountFormater(c)
+		if err != nil {
+			return err
+		}
 		influxClient, err := influxdb.NewClientFromContext(c)
 		if err != nil {
 			return err
@@ -49,7 +54,7 @@ func main() {
 			sugar,
 			"trade_logs",
 			influxClient,
-			coreCachedClient,
+			tokenAmountFormater,
 			nil,
 		)
 		if err != nil {

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"log"
 	"math"
 	"math/big"
@@ -196,23 +197,22 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	coreClient, err := core.NewClientFromContext(sugar, c)
-	if err != nil {
-		return err
-	}
-
 	db, err := libapp.NewDBFromContext(c)
 	if err != nil {
 		return err
 	}
 
 	kycChecker := storage.NewUserKYCChecker(sugar, db)
+	tokenAmountFormater, err := blockchain.NewTokenAmountFormater(c)
+	if err != nil {
+		return err
+	}
 
 	influxStorage, err := storage.NewInfluxStorage(
 		sugar,
 		common.DatabaseName,
 		influxClient,
-		core.NewCachedClient(coreClient),
+		tokenAmountFormater,
 		kycChecker,
 	)
 	if err != nil {

@@ -1,11 +1,5 @@
 package core
 
-import (
-	"math/big"
-
-	"github.com/ethereum/go-ethereum/common"
-)
-
 // NewMockClient creates a new instance of MockClient, that implements core.Interface, intended to use in tests.
 func NewMockClient() *MockClient {
 	return &MockClient{
@@ -34,15 +28,4 @@ func (mc *MockClient) GetActiveTokens() ([]Token, error) {
 // GetInternalTokens returns list of Internal Token from core
 func (mc *MockClient) GetInternalTokens() ([]Token, error) {
 	return mc.tokens, nil
-}
-
-// ToWei return the given human friendly number to wei unit.
-func (mc *MockClient) ToWei(_ common.Address, _ float64) (*big.Int, error) {
-	return big.NewInt(100), nil
-}
-
-// FromWei formats the given amount in wei to human friendly
-// number with preconfigured token decimals.
-func (mc *MockClient) FromWei(_ common.Address, _ *big.Int) (float64, error) {
-	return 9.99, nil
 }

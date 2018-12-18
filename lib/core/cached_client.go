@@ -3,7 +3,6 @@ package core
 import (
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
-	"math/big"
 	"sync"
 )
 
@@ -72,24 +71,4 @@ func (cc *CachedClient) token(address common.Address) (Token, error) {
 	}
 	logger.Debug("cache miss after refreshing")
 	return Token{}, errors.New("token not found")
-}
-
-// FromWei formats the given amount in wei to human friendly
-// number with preconfigured token decimals.
-func (cc *CachedClient) FromWei(address common.Address, amount *big.Int) (float64, error) {
-	token, err := cc.token(address)
-	if err != nil {
-		return 0, err
-	}
-	return token.FromWei(amount), nil
-}
-
-// ToWei return the given human friendly number to wei unit.
-func (cc *CachedClient) ToWei(address common.Address, amount float64) (*big.Int, error) {
-	token, err := cc.token(address)
-	if err != nil {
-		return big.NewInt(0), err
-	}
-
-	return token.ToWei(amount), nil
 }

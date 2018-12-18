@@ -3,7 +3,7 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"log"
 	"os"
 	"testing"
@@ -36,7 +36,7 @@ func newTestInfluxStorage(db string) (*InfluxStorage, error) {
 		sugar,
 		db,
 		influxClient,
-		core.NewMockClient(),
+		blockchain.NewMockTokenAmountFormater(),
 		newMockKYCChecker(),
 	)
 	if err != nil {

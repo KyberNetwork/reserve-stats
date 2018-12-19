@@ -2,9 +2,10 @@ package common
 
 import (
 	"encoding/json"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"math/big"
 	"time"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 )
@@ -15,6 +16,13 @@ type ReserveRateEntry struct {
 	BuySanityRate   float64 `json:"buy_sanity_rate"`
 	SellReserveRate float64 `json:"sell_reserve_rate"`
 	SellSanityRate  float64 `json:"sell_sanity_rate"`
+}
+
+// LastRate store last rate
+type LastRate struct {
+	FromBlock uint64 `json:"from_block"`
+	ToBlock   uint64 `json:"to_block"`
+	Rate      *ReserveRateEntry
 }
 
 // NewReserveRateEntry returns new ReserveRateEntry from results of GetReserveRate method.

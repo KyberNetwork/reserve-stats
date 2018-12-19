@@ -39,7 +39,7 @@ const (
 
 	modeFlag              = "mode"
 	developMode           = "develop"
-	kyberReserveAddresses = "" // TODO: consider if can put default kyber reserve address here
+	kyberReserveAddresses = "0x63825c174ab367968EC60f061753D3bbD36A0D8F"
 )
 
 func main() {

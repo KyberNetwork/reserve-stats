@@ -24,19 +24,25 @@ type TokenAmountFormatter struct {
 	cachedDecimals map[common.Address]int64
 }
 
+// NewTokenAmountFormatter returns a new TokenAmountFormatter instance.
+func NewTokenAmountFormatter(client *ethclient.Client) (*TokenAmountFormatter, error) {
+	var cachedDecimals = make(map[common.Address]int64)
+	cachedDecimals[ETHAddr] = 18
+
+	return &TokenAmountFormatter{
+		mu:             &sync.RWMutex{},
+		ethClient:      client,
+		cachedDecimals: cachedDecimals,
+	}, nil
+}
+
 // NewToKenAmountFormatterFromContext return new instance of TokenAmountFormatter
 func NewToKenAmountFormatterFromContext(c *cli.Context) (*TokenAmountFormatter, error) {
 	client, err := app.NewEthereumClientFromFlag(c)
 	if err != nil {
 		return nil, err
 	}
-	var cachedDecimals = make(map[common.Address]int64)
-	cachedDecimals[ETHAddr] = 18
-	return &TokenAmountFormatter{
-		mu:             &sync.RWMutex{},
-		ethClient:      client,
-		cachedDecimals: cachedDecimals,
-	}, nil
+	return NewTokenAmountFormatter(client)
 }
 
 // FromWei formats the given amount in wei to human friendly
@@ -75,9 +81,11 @@ func (f *TokenAmountFormatter) ToWei(address common.Address, amount float64) (*b
 func (f *TokenAmountFormatter) getDecimals(address common.Address) (int64, error) {
 	f.mu.RLock()
 	if decimals, ok := f.cachedDecimals[address]; ok {
+		f.mu.RUnlock()
 		return decimals, nil
 	}
 	f.mu.RUnlock()
+
 	tokenContract, err := contracts.NewERC20(address, f.ethClient)
 	if err != nil {
 		return 0, err

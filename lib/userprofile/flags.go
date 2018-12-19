@@ -1,6 +1,7 @@
 package userprofile
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-ozzo/ozzo-validation"
@@ -42,7 +43,7 @@ func NewCliFlags() []cli.Flag {
 func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, error) {
 	userURL := c.String(userprofileURLFlag)
 	if userURL == "" {
-		return nil, nil
+		return nil, errors.New("user url is empty")
 	}
 	err := validation.Validate(userURL,
 		is.URL,

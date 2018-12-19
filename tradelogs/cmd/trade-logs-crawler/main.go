@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"log"
 	"math"
 	"math/big"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
@@ -203,7 +203,7 @@ func run(c *cli.Context) error {
 	}
 
 	kycChecker := storage.NewUserKYCChecker(sugar, db)
-	tokenAmountFormater, err := blockchain.NewTokenAmountFormater(c)
+	tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
 	if err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func run(c *cli.Context) error {
 		sugar,
 		common.DatabaseName,
 		influxClient,
-		tokenAmountFormater,
+		tokenAmountFormatter,
 		kycChecker,
 	)
 	if err != nil {

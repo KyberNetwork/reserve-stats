@@ -21,11 +21,11 @@ const (
 
 // InfluxStorage represent a client to store trade data to influx DB
 type InfluxStorage struct {
-	sugar               *zap.SugaredLogger
-	dbName              string
-	influxClient        client.Client
-	tokenAmountFormater blockchain.TokenAmountFormaterInterface
-	kycChecker          kycChecker
+	sugar                *zap.SugaredLogger
+	dbName               string
+	influxClient         client.Client
+	tokenAmountFormatter blockchain.TokenAmountFormatterInterface
+	kycChecker           kycChecker
 
 	// traded stored traded addresses to use in a single SaveTradeLogs
 	traded map[ethereum.Address]struct{}
@@ -33,14 +33,14 @@ type InfluxStorage struct {
 
 // NewInfluxStorage init an instance of InfluxStorage
 func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient client.Client,
-	tokenAmountFormater blockchain.TokenAmountFormaterInterface, kycChecker kycChecker) (*InfluxStorage, error) {
+	tokenAmountFormatter blockchain.TokenAmountFormatterInterface, kycChecker kycChecker) (*InfluxStorage, error) {
 	storage := &InfluxStorage{
-		sugar:               sugar,
-		dbName:              dbName,
-		influxClient:        influxClient,
-		tokenAmountFormater: tokenAmountFormater,
-		kycChecker:          kycChecker,
-		traded:              make(map[ethereum.Address]struct{}),
+		sugar:                sugar,
+		dbName:               dbName,
+		influxClient:         influxClient,
+		tokenAmountFormatter: tokenAmountFormatter,
+		kycChecker:           kycChecker,
+		traded:               make(map[ethereum.Address]struct{}),
 	}
 	if err := storage.createDB(); err != nil {
 		return nil, err
@@ -276,17 +276,17 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		}
 	}
 
-	ethReceivalAmount, err := is.tokenAmountFormater.FromWei(blockchain.ETHAddr, log.EtherReceivalAmount)
+	ethReceivalAmount, err := is.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EtherReceivalAmount)
 	if err != nil {
 		return nil, err
 	}
 
-	srcAmount, err := is.tokenAmountFormater.FromWei(log.SrcAddress, log.SrcAmount)
+	srcAmount, err := is.tokenAmountFormatter.FromWei(log.SrcAddress, log.SrcAmount)
 	if err != nil {
 		return nil, err
 	}
 
-	dstAmount, err := is.tokenAmountFormater.FromWei(log.DestAddress, log.DestAmount)
+	dstAmount, err := is.tokenAmountFormatter.FromWei(log.DestAddress, log.DestAmount)
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +329,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			"country":         log.Country,
 		}
 
-		burnAmount, err := is.tokenAmountFormater.FromWei(blockchain.KNCAddr, burn.Amount)
+		burnAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, burn.Amount)
 		if err != nil {
 			return nil, err
 		}
@@ -357,7 +357,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			"country":         log.Country,
 		}
 
-		amount, err := is.tokenAmountFormater.FromWei(blockchain.KNCAddr, walletFee.Amount)
+		amount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, walletFee.Amount)
 		if err != nil {
 			return nil, err
 		}

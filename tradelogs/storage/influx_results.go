@@ -126,7 +126,7 @@ func (is *InfluxStorage) rowToBurnFees(row models.Row) (ethereum.Hash, uint64, [
 			return txHash, tradeLogIndex, nil, err
 		}
 
-		weiAmount, err := is.tokenAmountFormater.ToWei(blockchain.KNCAddr, humanizedAmount)
+		weiAmount, err := is.tokenAmountFormatter.ToWei(blockchain.KNCAddr, humanizedAmount)
 		if err != nil {
 			return txHash, tradeLogIndex, nil, err
 		}
@@ -184,7 +184,7 @@ func (is *InfluxStorage) rowToWalletFees(row models.Row) (ethereum.Hash, uint64,
 			return txHash, tradeLogIndex, nil, err
 		}
 
-		weiAmount, err := is.tokenAmountFormater.ToWei(blockchain.KNCAddr, humanizedAmount)
+		weiAmount, err := is.tokenAmountFormatter.ToWei(blockchain.KNCAddr, humanizedAmount)
 		if err != nil {
 			return txHash, tradeLogIndex, nil, err
 		}
@@ -257,7 +257,7 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		return tradeLog, fmt.Errorf("failed to get eth_receival_amount: %s", err)
 	}
 
-	ethReceivalAmountInWei, err := is.tokenAmountFormater.ToWei(blockchain.ETHAddr, humanizedEthReceival)
+	ethReceivalAmountInWei, err := is.tokenAmountFormatter.ToWei(blockchain.ETHAddr, humanizedEthReceival)
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to convert eth_receival_amount: %s", err)
 	}
@@ -277,7 +277,7 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		return tradeLog, fmt.Errorf("failed to get src_amount: %s", err)
 	}
 
-	srcAmountInWei, err := is.tokenAmountFormater.ToWei(srcAddress, humanizedSrcAmount)
+	srcAmountInWei, err := is.tokenAmountFormatter.ToWei(srcAddress, humanizedSrcAmount)
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to convert src_amount: %s", err)
 	}
@@ -292,7 +292,7 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		return tradeLog, fmt.Errorf("failed to get dst_amount: %s", err)
 	}
 
-	dstAmountInWei, err := is.tokenAmountFormater.ToWei(dstAddress, humanizedDstAmount)
+	dstAmountInWei, err := is.tokenAmountFormatter.ToWei(dstAddress, humanizedDstAmount)
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to convert dst_amount: %s", err)
 	}

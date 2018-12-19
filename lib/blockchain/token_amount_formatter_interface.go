@@ -1,12 +1,13 @@
 package blockchain
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"math/big"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
-// TokenAmountFormaterInterface interface convert token amount from/to wei
-type TokenAmountFormaterInterface interface {
+// TokenAmountFormatterInterface interface convert token amount from/to wei
+type TokenAmountFormatterInterface interface {
 	FromWei(common.Address, *big.Int) (float64, error)
 	ToWei(common.Address, float64) (*big.Int, error)
 }

@@ -2,36 +2,37 @@ package blockchain
 
 import (
 	"context"
+	"math"
+	"math/big"
+	"sync"
+	"time"
+
 	"github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
-	"math"
-	"math/big"
-	"sync"
-	"time"
 )
 
 var timeout = 30 * time.Second
 
-// TokenAmountFormater is a helper to convert token amount from/to wei
-type TokenAmountFormater struct {
+// TokenAmountFormatter is a helper to convert token amount from/to wei
+type TokenAmountFormatter struct {
 	mu             *sync.RWMutex
 	ethClient      *ethclient.Client // eth client
 	cachedDecimals map[common.Address]int64
 }
 
-// NewTokenAmountFormater return new instance of TokenAmountFormater
-func NewTokenAmountFormater(c *cli.Context) (*TokenAmountFormater, error) {
+// NewToKenAmountFormatterFromContext return new instance of TokenAmountFormatter
+func NewToKenAmountFormatterFromContext(c *cli.Context) (*TokenAmountFormatter, error) {
 	client, err := app.NewEthereumClientFromFlag(c)
 	if err != nil {
 		return nil, err
 	}
 	var cachedDecimals = make(map[common.Address]int64)
 	cachedDecimals[ETHAddr] = 18
-	return &TokenAmountFormater{
+	return &TokenAmountFormatter{
 		mu:             &sync.RWMutex{},
 		ethClient:      client,
 		cachedDecimals: cachedDecimals,
@@ -40,7 +41,7 @@ func NewTokenAmountFormater(c *cli.Context) (*TokenAmountFormater, error) {
 
 // FromWei formats the given amount in wei to human friendly
 // number with token decimals from contract.
-func (f *TokenAmountFormater) FromWei(address common.Address, amount *big.Int) (float64, error) {
+func (f *TokenAmountFormatter) FromWei(address common.Address, amount *big.Int) (float64, error) {
 	if amount == nil {
 		return 0, nil
 	}
@@ -58,7 +59,7 @@ func (f *TokenAmountFormater) FromWei(address common.Address, amount *big.Int) (
 }
 
 // ToWei return the given human friendly number to wei unit.
-func (f *TokenAmountFormater) ToWei(address common.Address, amount float64) (*big.Int, error) {
+func (f *TokenAmountFormatter) ToWei(address common.Address, amount float64) (*big.Int, error) {
 	decimals, err := f.getDecimals(address)
 	if err != nil {
 		return nil, err
@@ -71,12 +72,12 @@ func (f *TokenAmountFormater) ToWei(address common.Address, amount float64) (*bi
 	return result.Mul(result, big.NewInt(0).Exp(big.NewInt(10), big.NewInt(decimals-6), nil)), nil
 }
 
-func (f *TokenAmountFormater) getDecimals(address common.Address) (int64, error) {
-	f.mu.Lock()
+func (f *TokenAmountFormatter) getDecimals(address common.Address) (int64, error) {
+	f.mu.RLock()
 	if decimals, ok := f.cachedDecimals[address]; ok {
 		return decimals, nil
 	}
-	f.mu.Unlock()
+	f.mu.RUnlock()
 	tokenContract, err := contracts.NewERC20(address, f.ethClient)
 	if err != nil {
 		return 0, err

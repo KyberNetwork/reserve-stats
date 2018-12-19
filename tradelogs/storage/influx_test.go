@@ -36,7 +36,7 @@ func newTestInfluxStorage(db string) (*InfluxStorage, error) {
 		sugar,
 		db,
 		influxClient,
-		blockchain.NewMockTokenAmountFormater(),
+		blockchain.NewMockTokenAmountFormatter(),
 		newMockKYCChecker(),
 	)
 	if err != nil {

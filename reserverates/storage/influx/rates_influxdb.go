@@ -116,7 +116,7 @@ func (rs *RateStorage) lastRates(reserveAddr string) (map[string]common.LastRate
 			"func", "reserverates/storage/influx/RateStorage.lastRates",
 			"reserve_addr", reserveAddr,
 		)
-		lastRates map[string]common.LastRate
+		lastRates = make(map[string]common.LastRate)
 	)
 
 	stmt := fmt.Sprintf(`SELECT "%s", "%s", "%s", "%s", "%s", "%s" from "%s" WHERE "%s" = '%s' GROUP BY "%s" ORDER BY time desc limit 1`,
@@ -147,47 +147,43 @@ func (rs *RateStorage) lastRates(reserveAddr string) (map[string]common.LastRate
 		return nil, res.Error()
 	}
 
-	if len(res.Results) == 0 {
+	if len(res.Results) == 0 || len(res.Results[0].Series) == 0 {
 		logger.Infow("no rates record found")
 		return nil, nil
 	}
 
-	for _, result := range res.Results {
-		if len(result.Series) != 1 || len(result.Series[0].Values) != 1 || len(result.Series[0].Values[0]) != 7 {
-			logger.Infow("no rates record found")
-			return nil, nil
-		}
-
-		buyRate, err := influxdb.GetFloat64FromInterface(result.Series[0].Values[0][1])
+	for _, serie := range res.Results[0].Series {
+		buyRate, err := influxdb.GetFloat64FromInterface(serie.Values[0][1])
 		if err != nil {
 			return nil, err
 		}
 
-		sellRate, err := influxdb.GetFloat64FromInterface(result.Series[0].Values[0][2])
+		sellRate, err := influxdb.GetFloat64FromInterface(serie.Values[0][2])
 		if err != nil {
 			return nil, err
 		}
 
-		buySanityRate, err := influxdb.GetFloat64FromInterface(result.Series[0].Values[0][3])
+		buySanityRate, err := influxdb.GetFloat64FromInterface(serie.Values[0][3])
 		if err != nil {
 			return nil, err
 		}
 
-		sellSanityRate, err := influxdb.GetFloat64FromInterface(result.Series[0].Values[0][4])
+		sellSanityRate, err := influxdb.GetFloat64FromInterface(serie.Values[0][4])
 		if err != nil {
 			return nil, err
 		}
 
-		fromBlock, err := influxdb.GetUint64FromTagValue(result.Series[0].Values[0][5])
+		fromBlock, err := influxdb.GetUint64FromTagValue(serie.Values[0][5])
 		if err != nil {
 			return nil, err
 		}
 
-		toBlock, err := influxdb.GetUint64FromInterface(result.Series[0].Values[0][6])
+		toBlock, err := influxdb.GetUint64FromInterface(serie.Values[0][6])
 		if err != nil {
 			return nil, err
 		}
-		lastRates[result.Series[0].Tags["pair"]] = common.LastRate{
+
+		lastRates[serie.Tags["pair"]] = common.LastRate{
 			Rate: &common.ReserveRateEntry{
 				BuyReserveRate:  buyRate,
 				BuySanityRate:   buySanityRate,

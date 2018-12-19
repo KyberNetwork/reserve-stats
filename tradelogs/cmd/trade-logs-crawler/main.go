@@ -84,7 +84,7 @@ func main() {
 		},
 		cli.DurationFlag{
 			Name:   delayFlag,
-			Usage:  "The duration to put worker pools into sleep after each batch requets",
+			Usage:  "The duration to put worker pools into sleep after each batch requests",
 			EnvVar: "DELAY",
 			Value:  defaultDelayTime,
 		},

@@ -8,8 +8,8 @@ import (
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/appnames"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
-
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
@@ -40,6 +40,10 @@ func main() {
 		}
 
 		coreCachedClient := core.NewCachedClient(coreClient)
+		tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
+		if err != nil {
+			return err
+		}
 		influxClient, err := influxdb.NewClientFromContext(c)
 		if err != nil {
 			return err
@@ -49,7 +53,7 @@ func main() {
 			sugar,
 			"trade_logs",
 			influxClient,
-			coreCachedClient,
+			tokenAmountFormatter,
 			nil,
 		)
 		if err != nil {

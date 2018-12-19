@@ -10,8 +10,8 @@ import (
 	"time"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -83,13 +83,12 @@ func main() {
 		},
 		cli.DurationFlag{
 			Name:   delayFlag,
-			Usage:  "The duration to put worker pools into sleep after each batch requets",
+			Usage:  "The duration to put worker pools into sleep after each batch requests",
 			EnvVar: "DELAY",
 			Value:  defaultDelayTime,
 		},
 	)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
-	app.Flags = append(app.Flags, core.NewCliFlags()...)
 	app.Flags = append(app.Flags, broadcast.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, cq.NewCQFlags()...)
@@ -196,23 +195,22 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	coreClient, err := core.NewClientFromContext(sugar, c)
-	if err != nil {
-		return err
-	}
-
 	db, err := libapp.NewDBFromContext(c)
 	if err != nil {
 		return err
 	}
 
 	kycChecker := storage.NewUserKYCChecker(sugar, db)
+	tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
+	if err != nil {
+		return err
+	}
 
 	influxStorage, err := storage.NewInfluxStorage(
 		sugar,
 		common.DatabaseName,
 		influxClient,
-		core.NewCachedClient(coreClient),
+		tokenAmountFormatter,
 		kycChecker,
 	)
 	if err != nil {

@@ -85,6 +85,18 @@ func (pad *PriceAnalyticDB) UpdatePriceAnalytic(data common.PriceAnalytic) error
 		logger.Debug(err.Error())
 		return err
 	}
+
+	defer func() {
+		if err != nil {
+			rollBackErr := tx.Rollback()
+			if rollBackErr != err {
+				logger.Debugw("rollback error", "err", rollBackErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
 	// insert into price_analytics
 	row := tx.QueryRowx(`INSERT INTO price_analytics (timestamp, block_expiration) 
 	VALUES ((TO_TIMESTAMP($1::double precision/1000)), $2) RETURNING id;`, data.Timestamp, data.BlockExpiration)

@@ -2,8 +2,9 @@ package migration
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"testing"
+
+	"go.uber.org/zap"
 
 	"github.com/boltdb/bolt"
 	"github.com/jmoiron/sqlx"
@@ -71,6 +72,17 @@ CREATE TABLE IF NOT EXISTS "%[2]s" (
 	if err != nil {
 		return nil, err
 	}
+
+	defer func() {
+		if err != nil {
+			rollBackErr := tx.Rollback()
+			if rollBackErr != err {
+				logger.Debug(fmt.Sprintf("rollback error: %s", rollBackErr))
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
 
 	if _, err = tx.Exec(schema); err != nil {
 		return nil, err

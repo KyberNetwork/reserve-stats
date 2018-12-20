@@ -15,7 +15,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/http"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
-	"go.uber.org/zap"
 )
 
 func main() {
@@ -74,7 +73,7 @@ func main() {
 			return err
 		}
 
-		cachedUserClient, err := newUserprofileClient(sugar, c)
+		cachedUserClient, err := userprofile.NewUserProfileCachedClientFromContext(c, sugar)
 		if err != nil {
 			return err
 		}
@@ -106,23 +105,4 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func newUserprofileClient(sugar *zap.SugaredLogger, c *cli.Context) (userprofile.Interface, error) {
-	userClient, err := userprofile.NewClientFromContext(sugar, c)
-	if err != nil {
-		return nil, err
-	}
-
-	redisClient, err := libapp.NewRedisClientFromContext(c)
-	if err != nil {
-		return nil, err
-	}
-
-	if redisClient == nil {
-		sugar.Infow("use default in-mem cache for user profile ")
-		return userprofile.NewInMemCachedFromContext(userClient, c), nil
-	}
-	sugar.Infow("use redis cache for user profile")
-	return userprofile.NewRedisCachedClient(userClient, redisClient), nil
 }

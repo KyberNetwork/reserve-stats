@@ -14,6 +14,7 @@ const (
 	userprofileURLFlag        = "user-profile-url"
 	userprofileSigningKeyFlag = "user-profile-signing-key"
 	maxUserCacheFlag          = "max-user-profile-cache"
+	redisCacheFlag            = "use-redis-cache"
 	maxUserCacheDefault       = 1000
 	redisUserProfileDBDefault = 0
 )
@@ -25,6 +26,11 @@ func NewCliFlags() []cli.Flag {
 			Name:   userprofileURLFlag,
 			Usage:  "user profile API URL",
 			EnvVar: "USER_PROFILE_URL",
+		},
+		cli.BoolFlag{
+			Name:   redisCacheFlag,
+			Usage:  "this flag is set if redis cache is preferred fro user profile",
+			EnvVar: "USE_REDIS_CACHE",
 		},
 		cli.Int64Flag{
 			Name:   maxUserCacheFlag,
@@ -42,8 +48,8 @@ func NewCliFlags() []cli.Flag {
 	return userprofileFlags
 }
 
-// NewClientFromContext returns new core client from cli flags.
-func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, error) {
+// newClientFromContext returns new core client from cli flags.
+func newClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, error) {
 	userURL := c.String(userprofileURLFlag)
 	if userURL == "" {
 		return nil, nil
@@ -64,8 +70,28 @@ func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, er
 	return NewClient(sugar, userURL, signingKey)
 }
 
-//NewInMemCachedFromContext create the inmem cache client from flag agruments
-func NewInMemCachedFromContext(client *Client, c *cli.Context) Interface {
+//newInMemCachedFromContext create the inmem cache client from flag agruments
+func newInMemCachedFromContext(client *Client, c *cli.Context) Interface {
 	maxCacheSize := c.Int64(maxUserCacheFlag)
-	return NewCachedClient(client, maxCacheSize)
+	return newCachedClient(client, maxCacheSize)
+}
+
+// NewUserProfileCachedClientFromContext return a cached user client from context
+func NewUserProfileCachedClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (Interface, error) {
+	userClient, err := newClientFromContext(sugar, c)
+	if err != nil {
+		return nil, err
+	}
+
+	if c.Bool(redisCacheFlag) {
+		sugar.Infow("use redis cache for user profile")
+		redisClient, err := libapp.NewRedisClientFromContext(c)
+		if err != nil {
+			return nil, err
+		}
+		return newRedisCachedClient(userClient, redisClient), nil
+	}
+
+	sugar.Infow("use default in-mem cache for user profile ")
+	return newInMemCachedFromContext(userClient, c), nil
 }

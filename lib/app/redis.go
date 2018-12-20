@@ -1,6 +1,8 @@
 package app
 
 import (
+	"github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/go-redis/redis"
 	"github.com/urfave/cli"
 )
@@ -16,13 +18,13 @@ func NewRedisFlags(defaultDB int) []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:   redisEndpointFlag,
-			Usage:  "redis connection endpoint, if  this is not set the default mem cache will be use instead of redis",
+			Usage:  "redis connection endpoint",
 			EnvVar: "REDIS_ENDPOINT",
 			Value:  "",
 		},
 		cli.IntFlag{
 			Name:   redisDBFlag,
-			Usage:  "Database for redis user profile cache. Default to 0",
+			Usage:  "Database for redis cache. Default to 0",
 			EnvVar: "REDIS_USER_PROFILE_DB",
 			Value:  defaultDB,
 		},
@@ -38,8 +40,8 @@ func NewRedisFlags(defaultDB int) []cli.Flag {
 //NewRedisClientFromContext creates redis client from flag agruments
 func NewRedisClientFromContext(c *cli.Context) (*redis.Client, error) {
 	redisURL := c.String(redisEndpointFlag)
-	if redisURL == "" {
-		return nil, nil
+	if err := validation.Validate(redisURL, validation.Required, is.URL); err != nil {
+		return nil, err
 	}
 
 	redisClient := redis.NewClient(&redis.Options{

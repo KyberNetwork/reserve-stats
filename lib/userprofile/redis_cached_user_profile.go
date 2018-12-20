@@ -21,8 +21,8 @@ type RedisCachedClient struct {
 	redisClient *redis.Client
 }
 
-// NewRedisCachedClient creates a new User Profile cached client instance.
-func NewRedisCachedClient(client *Client, redisClient *redis.Client) *RedisCachedClient {
+// newRedisCachedClient creates a new User Profile cached client instance.
+func newRedisCachedClient(client *Client, redisClient *redis.Client) *RedisCachedClient {
 	return &RedisCachedClient{
 		Client:      client,
 		redisClient: redisClient,

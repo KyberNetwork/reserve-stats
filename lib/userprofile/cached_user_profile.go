@@ -18,8 +18,8 @@ type CachedClient struct {
 	minHeap      *AddrHeap
 }
 
-// NewCachedClient creates a new User Profile cached client instance.
-func NewCachedClient(client *Client, maxCache int64) *CachedClient {
+// newCachedClient creates a new User Profile cached client instance.
+func newCachedClient(client *Client, maxCache int64) *CachedClient {
 	var h = &AddrHeap{}
 	heap.Init(h)
 	client.sugar.Debugw("Creating cache client ...", "max cache", maxCache)

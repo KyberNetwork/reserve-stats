@@ -100,6 +100,7 @@ func main() {
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.TradeLogsPort)...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
+	app.Flags = append(app.Flags, libapp.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, appnames.NewCliFlags()...)
 	app.Flags = append(app.Flags, userprofile.NewCliFlags()...)
 

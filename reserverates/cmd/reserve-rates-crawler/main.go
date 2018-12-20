@@ -9,6 +9,7 @@ import (
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
@@ -164,6 +165,11 @@ func run(c *cli.Context) error {
 	delayTime := c.Duration(delayFlag)
 
 	addrs := c.StringSlice(addressesFlag)
+	if len(addrs) == 0 {
+		addr := contracts.InternalReserveAddress().MustGetOneFromContext(c)
+		addrs = append(addrs, addr.Hex())
+		sugar.Infow("using internal reserve address as user does not input any", "address", addr.Hex())
+	}
 
 	for {
 		currentHeader, fErr := ethClient.HeaderByNumber(context.Background(), nil)

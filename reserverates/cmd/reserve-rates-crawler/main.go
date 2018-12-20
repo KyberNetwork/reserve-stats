@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"log"
 	"math/big"
 	"os"
@@ -10,6 +9,7 @@ import (
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
@@ -36,10 +36,6 @@ const (
 	durationFlag         = "duration"
 	shardDurationFlag    = "shard-duration"
 	defaultShardDuration = time.Hour * 24
-
-	modeFlag              = "mode"
-	developMode           = "develop"
-	kyberReserveAddresses = "0x63825c174ab367968EC60f061753D3bbD36A0D8F"
 )
 
 func main() {
@@ -170,10 +166,9 @@ func run(c *cli.Context) error {
 
 	addrs := c.StringSlice(addressesFlag)
 	if len(addrs) == 0 {
-		if c.String("mode") == "develop" {
-			addrs = []string{kyberReserveAddresses}
-		} else {
-			return errors.New("addresses flag cannot be empty")
+		addresses := contracts.InternalReserveAddress().MustGetFromContext(c)
+		for _, addr := range addresses {
+			addrs = append(addrs, addr.Hex())
 		}
 	}
 

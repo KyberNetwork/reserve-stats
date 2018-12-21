@@ -14,6 +14,7 @@ includes:
   - tradelogs/reserve_volume
   - tradelogs/wallet_fee
   - tradelogs/wallet_stats
+  - tradelogs/country_stats
   - users/users
   - users/user_list
   - users/user_volume

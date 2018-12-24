@@ -57,7 +57,7 @@ func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.T
 
 	addrFilter := fmt.Sprintf("((dst_addr='%s' OR src_addr='%s') AND (dst_rsv_addr='%s' OR src_rsv_addr='%s'))", tokenAddrHex, tokenAddrHex, rsvAddrHex, rsvAddrHex)
 	timeFilter := fmt.Sprintf("(time >='%s' AND time <= '%s')", fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
-	cmd := fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, SUM(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s) FILL(0)",
+	cmd := fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, SUM(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s) FILL(none)",
 		tokenVolumeField, ethVolumeField, fiatVolumeField, mName, timeFilter, addrFilter, frequency)
 
 	logger.Debugw("query rendered", "query", cmd)

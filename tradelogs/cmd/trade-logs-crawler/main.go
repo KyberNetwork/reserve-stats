@@ -169,6 +169,16 @@ func manageCQFromContext(c *cli.Context, influxClient client.Client, sugar *zap.
 	return cq.ManageCQs(c, cqs, influxClient, sugar)
 }
 
+// requiredWorkers returns number of workers to start. If the number of jobs is smaller than max workers,
+// only start the number of required workers instead of max workers.
+func requiredWorkers(fromBlock, toBlock *big.Int, maxBlocks, maxWorkers int) int {
+	jobs := int(math.Ceil(float64(toBlock.Int64()-fromBlock.Int64()) / float64(maxBlocks)))
+	if jobs < maxWorkers {
+		return jobs
+	}
+	return maxWorkers
+}
+
 func run(c *cli.Context) error {
 	var (
 		err       error
@@ -268,14 +278,12 @@ func run(c *cli.Context) error {
 			sugar.Infow("fetching trade logs up to latest known block number", "to_block", toBlock.String())
 		}
 
-		jobs := int(math.Ceil(float64(toBlock.Int64()-fromBlock.Int64()) / float64(maxBlocks)))
-		if jobs < maxWorkers {
-			maxWorkers = jobs // if jobs < maxWorkers, jobs = n, only start n workers
-		}
-		p := workers.NewPool(sugar, maxWorkers, influxStorage)
+		requiredWorkers := requiredWorkers(fromBlock, toBlock, maxBlocks, maxWorkers)
+		p := workers.NewPool(sugar, requiredWorkers, influxStorage)
 		sugar.Debugw("number of fetcher jobs",
-			"jobs", jobs,
-			"max_workers", maxWorkers,
+			"from_block", fromBlock.String(),
+			"to_block", toBlock.String(),
+			"workers", requiredWorkers,
 			"max_blocks", maxBlocks)
 
 		go func(fromBlock, toBlock, maxBlocks int64) {

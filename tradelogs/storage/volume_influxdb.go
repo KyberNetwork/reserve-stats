@@ -93,7 +93,7 @@ func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime time.
 		tokenAddr  = ethereum.HexToAddress(token.Address).Hex()
 		timeFilter = fmt.Sprintf("(time >='%s' AND time <= '%s')", fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
 		addrFilter = fmt.Sprintf("(dst_addr='%s' OR src_addr='%s')", tokenAddr, tokenAddr)
-		cmd        = fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, sum(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s) fill(0)",
+		cmd        = fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, sum(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s) fill(none)",
 			tokenVolumeField, ethVolumeField, fiatVolumeField, mName, timeFilter, addrFilter, frequency)
 	)
 
@@ -103,8 +103,6 @@ func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime time.
 	if err != nil {
 		return result, err
 	}
-
-	logger.Debugw("got result for asset volume query", "response", response)
 
 	if len(response) == 0 || len(response[0].Series) == 0 {
 		return result, nil

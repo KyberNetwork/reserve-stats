@@ -87,7 +87,7 @@ func (dbm *DBMigration) Migrate(usersTableName, addressTableName string) error {
 
 		logger.Debugw("starting migration process from legacy BoltDB to PostgreSQL")
 		var count = 0
-		usersBucket.ForEach(func(k, v []byte) error {
+		if err := usersBucket.ForEach(func(k, v []byte) error {
 			count++
 			var (
 				email   = string(v)
@@ -106,7 +106,9 @@ func (dbm *DBMigration) Migrate(usersTableName, addressTableName string) error {
 
 			logger.Infow("inserting to addresses table")
 			return dbm.insertAddress(addressTableName, address, timestamp, userID)
-		})
+		}); err != nil {
+			return err
+		}
 
 		logger.Infow("migration completed", "count", count)
 		return nil
@@ -138,8 +140,9 @@ func (dbm *DBMigration) insertIntoUserTable(tableName string, email string) (int
 		}
 	} else if err != nil {
 		return 0, err
+	} else if err == nil {
+		logger.Debugw("user already exists, skipping")
 	}
-
 	logger.Debugw("user already exists, skipping")
 
 	return userID, nil
@@ -151,6 +154,26 @@ func (dbm *DBMigration) insertAddress(tableName, address string, timestamp uint6
 
 	defer pgsql.CommitOrRollback(ptx, dbm.sugar, &err)
 
+	var (
+		logger = dbm.sugar.With(
+			"func", "users/migration/DBMigration.insertAddress",
+			"address", address,
+		)
+		userIDFromDB int
+	)
+
+	err = ptx.Get(&userIDFromDB, fmt.Sprintf(`SELECT user_id FROM "%s" WHERE address = $1;`, tableName), address)
+	if err == nil {
+		if userID != userIDFromDB {
+			logger.Debugw("address already belong to a different user", "userID input", userID, "userID from DB", userIDFromDB)
+			if err = ptx.Commit(); err != nil {
+				return err
+			}
+			return errors.New("address is already existed with a different userID")
+		}
+		logger.Debugw("address already belong to the same user, skipping")
+		return ptx.Commit()
+	}
 	_, err = ptx.Exec(fmt.Sprintf(`
 INSERT INTO "%s" (address, timestamp, user_id)
 VALUES ($1, (TO_TIMESTAMP($2::double precision/1000)), $3);
@@ -158,8 +181,5 @@ VALUES ($1, (TO_TIMESTAMP($2::double precision/1000)), $3);
 		address,
 		timestamp,
 		userID)
-	if err != nil {
-		return err
-	}
 	return err
 }

@@ -30,8 +30,8 @@ const (
 	defaultFromBlock = 5069586
 	toBlockFlag      = "to-block"
 
-	maxWorkerFlag    = "max-workers"
-	defaultMaxWorker = 5
+	maxWorkersFlag    = "max-workers"
+	defaultMaxWorkers = 5
 
 	maxBlocksFlag    = "max-blocks"
 	defaultMaxBlocks = 100
@@ -64,10 +64,10 @@ func main() {
 			EnvVar: "TO_BLOCK",
 		},
 		cli.IntFlag{
-			Name:   maxWorkerFlag,
+			Name:   maxWorkersFlag,
 			Usage:  "The maximum number of worker to fetch trade logs",
 			EnvVar: "MAX_WORKER",
-			Value:  defaultMaxWorker,
+			Value:  defaultMaxWorkers,
 		},
 		cli.IntFlag{
 			Name:   maxBlocksFlag,
@@ -236,8 +236,8 @@ func run(c *cli.Context) error {
 		}
 	}
 
-	maxWorker := c.Int(maxWorkerFlag)
-	maxBlock := c.Int(maxBlocksFlag)
+	maxWorkers := c.Int(maxWorkersFlag)
+	maxBlocks := c.Int(maxBlocksFlag)
 	attempts := c.Int(attemptsFlag) // exit if failed to fetch logs after attempts times
 	delayTime := c.Duration(delayFlag)
 
@@ -268,12 +268,15 @@ func run(c *cli.Context) error {
 			sugar.Infow("fetching trade logs up to latest known block number", "to_block", toBlock.String())
 		}
 
-		jobs := int(math.Ceil(float64(toBlock.Int64()-fromBlock.Int64()) / float64(maxBlock)))
-		if jobs < maxWorker {
-			maxWorker = jobs // if jobs < maxWorkers, jobs = n, only start n workers
+		jobs := int(math.Ceil(float64(toBlock.Int64()-fromBlock.Int64()) / float64(maxBlocks)))
+		if jobs < maxWorkers {
+			maxWorkers = jobs // if jobs < maxWorkers, jobs = n, only start n workers
 		}
-		p := workers.NewPool(sugar, maxWorker, influxStorage)
-		sugar.Debugw("number of fetcher jobs", "jobs", jobs, "max_blocks", maxBlock)
+		p := workers.NewPool(sugar, maxWorkers, influxStorage)
+		sugar.Debugw("number of fetcher jobs",
+			"jobs", jobs,
+			"max_workers", maxWorkers,
+			"max_blocks", maxBlocks)
 
 		go func(fromBlock, toBlock, maxBlocks int64) {
 			var jobOrder = p.GetLastCompleteJobOrder()
@@ -285,7 +288,7 @@ func run(c *cli.Context) error {
 				time.Sleep(time.Second)
 			}
 			doneCh <- struct{}{}
-		}(fromBlock.Int64(), toBlock.Int64(), int64(maxBlock))
+		}(fromBlock.Int64(), toBlock.Int64(), int64(maxBlocks))
 
 		for {
 			var toBreak = false

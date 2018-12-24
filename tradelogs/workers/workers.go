@@ -178,7 +178,6 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 			p.wg.Done()
 		}(sugar, i)
 	}
-
 	return p
 }
 

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
@@ -62,11 +62,6 @@ func retry(fn func(*zap.SugaredLogger) (map[string]map[string]common.ReserveRate
 func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (map[string]map[string]common.ReserveRateEntry, error) {
 
 	client, err := app.NewEthereumClientFromFlag(fj.c)
-	if err != nil {
-		return nil, err
-	}
-
-	coreClient, err := core.NewClientFromContext(sugar, fj.c)
 	if err != nil {
 		return nil, err
 	}

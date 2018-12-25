@@ -16,12 +16,11 @@ import (
 
 // ReserveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
 // a set of addresses to crawl rates from and setting object to query for reserve's token settings
-type ReserveRatesCrawler struct {
-	sugar *zap.SugaredLogger
-
-	wrapperContract reserveRateGetter
-	addresses       []ethereum.Address
-	stg             supportedTokensGetter
+type ResreveRatesCrawler struct {
+	sugar               *zap.SugaredLogger
+	wrapperContract     reserveRateGetter
+	addresses           []ethereum.Address
+	stg                 supportedTokensGetter
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
@@ -35,11 +34,11 @@ func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *et
 	for _, addr := range addrs {
 		ethAddrs = append(ethAddrs, ethereum.HexToAddress(addr))
 	}
-	return &ReserveRatesCrawler{
-		sugar:           sugar,
-		wrapperContract: wrpContract,
-		addresses:       ethAddrs,
-		stg:             newCoreSupportedTokens(sugar, client, coreClient),
+	return &ResreveRatesCrawler{
+		sugar:               sugar,
+		wrapperContract:     wrpContract,
+		addresses:           ethAddrs,
+		stg:                 newCoreSupportedTokens(sugar, client),
 	}, nil
 }
 
@@ -68,8 +67,8 @@ func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 	}
 
 	for _, token := range tokens {
-		srcAddresses = append(srcAddresses, ethereum.HexToAddress(token.Address), ethereum.HexToAddress(core.ETHToken.Address))
-		destAddresses = append(destAddresses, ethereum.HexToAddress(core.ETHToken.Address), ethereum.HexToAddress(token.Address))
+		srcAddresses = append(srcAddresses, token, ethereum.HexToAddress(core.ETHToken.Address))
+		destAddresses = append(destAddresses, ethereum.HexToAddress(core.ETHToken.Address), token)
 	}
 
 	reserveRates, sanityRates, err := rrc.wrapperContract.GetReserveRate(block, rsvAddr, srcAddresses, destAddresses)
@@ -78,7 +77,11 @@ func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 	}
 
 	for index, token := range tokens {
-		rates[fmt.Sprintf("ETH-%s", token.ID)] = rsvRateCommon.NewReserveRateEntry(reserveRates, sanityRates, index)
+		symbol, err := rrc.stg.symbol(token)
+		if err != nil {
+			return nil, err
+		}
+		rates[fmt.Sprintf("ETH-%s", symbol)] = rsvRateCommon.NewReserveRateEntry(reserveRates, sanityRates, index)
 	}
 
 	logger.Debug("reserve rates fetched successfully")

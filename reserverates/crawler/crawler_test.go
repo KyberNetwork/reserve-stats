@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
@@ -16,16 +15,28 @@ const (
 	testRsvAddress = "0x63825c174ab367968EC60f061753D3bbD36A0D8F"
 )
 
-type mockSupportedTokens struct {
-	coreClient core.Interface
+var (
+	knc = ethereum.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200") //KNC
+	zrx = ethereum.HexToAddress("0xe41d2489571d322189246dafa5ebde1f4699f498") //ZRX
+)
+
+type mockSupportedTokens struct{}
+
+func (mst *mockSupportedTokens) supportedTokens(_ ethereum.Address, _ uint64) ([]ethereum.Address, error) {
+	return []ethereum.Address{
+		knc,
+		zrx,
+	}, nil
 }
 
-func (mst *mockSupportedTokens) supportedTokens(_ ethereum.Address, _ uint64) ([]core.Token, error) {
-	return mst.coreClient.Tokens()
-}
-
-func newMockSupportedTokens() *mockSupportedTokens {
-	return &mockSupportedTokens{coreClient: core.NewMockClient()}
+func (mst *mockSupportedTokens) symbol(address ethereum.Address) (string, error) {
+	switch address {
+	case knc:
+		return "KNC", nil
+	case zrx:
+		return "ZRL", nil
+	}
+	return "", nil
 }
 
 func newTestCrawler(sugar *zap.SugaredLogger) (*ReserveRatesCrawler, error) {
@@ -37,7 +48,7 @@ func newTestCrawler(sugar *zap.SugaredLogger) (*ReserveRatesCrawler, error) {
 	return &ReserveRatesCrawler{
 		wrapperContract: &wrpContract,
 		addresses:       addrs,
-		stg:             newMockSupportedTokens(),
+		stg:             &mockSupportedTokens{},
 		sugar:           sugar,
 	}, nil
 }

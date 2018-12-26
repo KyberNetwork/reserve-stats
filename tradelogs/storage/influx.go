@@ -135,7 +135,7 @@ func prepareTradeLogQuery() string {
 	return tradeLogQuery
 }
 
-func prepareBurnfeeQuery() string {
+func prepareBurnFeeQuery() string {
 	var (
 		burnFeeFields = []burnschema.FieldName{
 			burnschema.Time,
@@ -184,7 +184,7 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 		SELECT %[2]s FROM %[7]s WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY %[10]s;
 		SELECT %[3]s FROM %[8]s WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY %[11]s;
 		`,
-			prepareBurnfeeQuery(),
+			prepareBurnFeeQuery(),
 			prepareWalletFeeQuery(),
 			prepareTradeLogQuery(),
 			from.Format(time.RFC3339),

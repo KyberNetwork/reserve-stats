@@ -167,7 +167,7 @@ func (dbm *DBMigration) insertAddress(tableName, address string, timestamp uint6
 		if userID != userIDFromDB {
 			logger.Debugw("address already belong to a different user", "userID input", userID, "userID from DB", userIDFromDB)
 			if err = ptx.Commit(); err != nil {
-				return err
+				return fmt.Errorf("insert error: address is already existed with a different userID. Tx error: %s", err)
 			}
 			return errors.New("address is already existed with a different userID")
 		}

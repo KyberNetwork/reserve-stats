@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"os"
-	"time"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
@@ -17,11 +16,7 @@ import (
 )
 
 const (
-	defaultDB    = "reserve_stats"
-	fromTimeFlag = "fromTime"
-	toTimeFlag   = "toTime"
-	//This is 01 Feb 2018 UTC
-	defaultFromTime = 1517443200000
+	defaultDB = "reserve_stats"
 )
 
 func main() {
@@ -29,20 +24,7 @@ func main() {
 	app.Name = "Trade Logs KYC re-aggregate"
 	app.Version = "0.0.1"
 	app.Action = run
-	app.Flags = append(app.Flags,
-		cli.Uint64Flag{
-			Name:   fromTimeFlag,
-			Usage:  "re-KYC from time. Default is 00:00:00",
-			EnvVar: "FROM_TIME",
-			Value:  defaultFromTime,
-		},
-		cli.Uint64Flag{
-			Name:   toTimeFlag,
-			Usage:  "re-KYC to time",
-			EnvVar: "TO_TIME",
-			Value:  0,
-		},
-	)
+	app.Flags = append(app.Flags, timeutil.NewTimeRangeCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
@@ -62,12 +44,15 @@ func run(c *cli.Context) error {
 	}
 	defer logger.Sync()
 	sugar := logger.Sugar()
-	fromTime := timeutil.TimestampMsToTime(c.Uint64(fromTimeFlag))
-	toTime := timeutil.TimestampMsToTime(c.Uint64(toTimeFlag))
-	if c.Uint64(toTimeFlag) == 0 {
-		toTime = time.Now()
+	fromTime, err := timeutil.FromTimeFromContext(c)
+	if err != nil {
+		return err
 	}
-	worker := workers.NewReKYCJob(c, 0, fromTime, toTime)
+	toTime, err := timeutil.ToTimeFromContext(c)
+	if err != nil {
+		return err
+	}
+	worker := workers.NewKYCUpdateJob(c, fromTime, toTime)
 	if err := worker.Execute(sugar); err != nil {
 		return err
 	}

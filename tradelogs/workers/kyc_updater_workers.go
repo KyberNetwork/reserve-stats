@@ -12,36 +12,34 @@ import (
 	"go.uber.org/zap"
 )
 
-// ReKYCJob describe a
-type ReKYCJob struct {
-	c     *cli.Context
-	order int
-	from  time.Time
-	to    time.Time
+// KYCUpdateJob describe a
+type KYCUpdateJob struct {
+	c    *cli.Context
+	from time.Time
+	to   time.Time
 }
 
-// NewReKYCJob returns a ReKYCJob
-func NewReKYCJob(c *cli.Context, order int, from, to time.Time) *ReKYCJob {
-	return &ReKYCJob{
-		c:     c,
-		order: order,
-		from:  from,
-		to:    to,
+// NewKYCUpdateJob returns a KYCUpdateJob
+func NewKYCUpdateJob(c *cli.Context, from, to time.Time) *KYCUpdateJob {
+	return &KYCUpdateJob{
+		c:    c,
+		from: from,
+		to:   to,
 	}
 }
 
 // Execute get the tradelogs and re-kyc it
-func (rk *ReKYCJob) Execute(sugar *zap.SugaredLogger) error {
-	return rk.getAndReKYC(sugar)
+func (ku *KYCUpdateJob) Execute(sugar *zap.SugaredLogger) error {
+	return ku.update(sugar)
 }
 
-func (rk *ReKYCJob) getAndReKYC(sugar *zap.SugaredLogger) error {
+func (ku *KYCUpdateJob) update(sugar *zap.SugaredLogger) error {
 	logger := sugar.With(
-		"from", rk.from.String(),
-		"to", rk.to.String(),
+		"from", ku.from.String(),
+		"to", ku.to.String(),
 	)
 	logger.Debugw("getting trade logs from DB")
-	c := rk.c
+	c := ku.c
 	influxClient, err := influxdb.NewClientFromContext(c)
 	if err != nil {
 		return err
@@ -63,7 +61,7 @@ func (rk *ReKYCJob) getAndReKYC(sugar *zap.SugaredLogger) error {
 		tokenAmountFormatter,
 		kycChecker,
 	)
-	tradeLogs, err := influxStorage.LoadTradeLogs(rk.from, rk.to)
+	tradeLogs, err := influxStorage.LoadTradeLogs(ku.from, ku.to)
 	if err != nil {
 		return err
 	}

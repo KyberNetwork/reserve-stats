@@ -130,7 +130,7 @@ func prepareTradeLogQuery() string {
 	for _, field := range tradeLogQueryFields {
 		tradeLogQuery += field.String() + ", "
 	}
-	fiatAmount := fmt.Sprintf("(%s + %s) AS %s", logschema.EthAmount.String(), logschema.EthUSDRate.String(), logschema.FiatAmount.String())
+	fiatAmount := fmt.Sprintf("(%s * %s) AS %s", logschema.EthAmount.String(), logschema.EthUSDRate.String(), logschema.FiatAmount.String())
 	tradeLogQuery += fiatAmount
 	return tradeLogQuery
 }

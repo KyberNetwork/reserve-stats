@@ -12,10 +12,12 @@ import (
 )
 
 const (
-	addressTime        = "address_time"
-	kyced              = "kyced"
-	addressesTableName = "addresses"
-	usersTableName     = "users"
+	addressTime = "address_time"
+	kyced       = "kyced"
+	//DefaultAddressesTableName is the default address table name for migration
+	DefaultAddressesTableName = "addresses"
+	//DefaultUsersTableName is the default user table name for migration
+	DefaultUsersTableName = "users"
 )
 
 //DBMigration user storage in bolt
@@ -39,18 +41,18 @@ func NewDBMigration(sugar *zap.SugaredLogger, dbPath string, postgres *sqlx.DB) 
 	}
 
 	// initiate postgres for migration
-	const schema = `
-CREATE TABLE IF NOT EXISTS "users" (
+	var schema = fmt.Sprintf(`
+CREATE TABLE IF NOT EXISTS "%[1]s" (
   id    SERIAL PRIMARY KEY,
   email text NOT NULL UNIQUE
 );
-CREATE TABLE IF NOT EXISTS "addresses" (
+CREATE TABLE IF NOT EXISTS "%[2]s" (
   id        SERIAL PRIMARY KEY,
   address   text      NOT NULL UNIQUE,
   timestamp TIMESTAMP NOT NULL DEFAULT now(),
-  user_id   SERIAL    NOT NULL REFERENCES users (id)
+  user_id   SERIAL    NOT NULL REFERENCES "%[1]s" (id)
 );
-`
+`, DefaultUsersTableName, DefaultAddressesTableName)
 
 	tx, err := postgres.Beginx()
 	if err != nil {
@@ -69,7 +71,7 @@ CREATE TABLE IF NOT EXISTS "addresses" (
 }
 
 //Migrate read data from bolt database file and input into postgres database
-func (dbm *DBMigration) Migrate() error {
+func (dbm *DBMigration) Migrate(usersTableName, addressTableName string) error {
 	var logger = dbm.sugar.With("func", "users/migration/DBMigration.Migrate")
 	return dbm.boltdb.View(func(tx *bolt.Tx) error {
 		usersBucket := tx.Bucket([]byte(kyced))
@@ -93,7 +95,7 @@ func (dbm *DBMigration) Migrate() error {
 			)
 
 			logger.Debugw("inserting to users table")
-			userID, eErr := dbm.insertIntoUserTable(email)
+			userID, eErr := dbm.insertIntoUserTable(usersTableName, email)
 			if eErr != nil {
 				return eErr
 			}
@@ -102,7 +104,7 @@ func (dbm *DBMigration) Migrate() error {
 			timestamp := boltutil.BytesToUint64(timestampByte)
 
 			logger.Infow("inserting to addresses table")
-			return dbm.insertAddress(address, timestamp, userID)
+			return dbm.insertAddress(addressTableName, address, timestamp, userID)
 		})
 
 		logger.Infow("migration completed", "count", count)
@@ -111,7 +113,7 @@ func (dbm *DBMigration) Migrate() error {
 }
 
 //insertIntoUserTable insert email into
-func (dbm *DBMigration) insertIntoUserTable(email string) (int, error) {
+func (dbm *DBMigration) insertIntoUserTable(tableName string, email string) (int, error) {
 	var (
 		logger = dbm.sugar.With(
 			"func", "users/migration/DBMigration.insertIntoUserTable",
@@ -124,7 +126,7 @@ func (dbm *DBMigration) insertIntoUserTable(email string) (int, error) {
 		return 0, err
 	}
 
-	err = ptx.Get(&userID, fmt.Sprintf(`SELECT id FROM "%s" WHERE email = $1;`, usersTableName), email)
+	err = ptx.Get(&userID, fmt.Sprintf(`SELECT id FROM "%s" WHERE email = $1;`, tableName), email)
 	if err == sql.ErrNoRows {
 		logger.Debugw("user does not exist, creating")
 		row := ptx.QueryRowx(`INSERT INTO users (email) VALUES ($1) RETURNING id;`, email)
@@ -144,12 +146,12 @@ func (dbm *DBMigration) insertIntoUserTable(email string) (int, error) {
 }
 
 //insertAddress insert address into address table
-func (dbm *DBMigration) insertAddress(address string, timestamp uint64, userID int) error {
+func (dbm *DBMigration) insertAddress(tableName, address string, timestamp uint64, userID int) error {
 	ptx, err := dbm.postgresdb.Beginx()
 	_, err = ptx.Exec(fmt.Sprintf(`
 INSERT INTO "%s" (address, timestamp, user_id)
 VALUES ($1, (TO_TIMESTAMP($2::double precision/1000)), $3);
-`, addressesTableName),
+`, tableName),
 		address,
 		timestamp,
 		userID)

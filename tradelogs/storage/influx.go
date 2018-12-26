@@ -21,7 +21,7 @@ const (
 	//timePrecision is the precision configured for influxDB
 	timePrecision           = "s"
 	tradeLogMeasurementName = "trades"
-	burnfeeMeasurementName  = "burn_fees"
+	burnFeesMeasurementName = "burn_fees"
 	walletMeasurementName   = "wallet_fees"
 )
 
@@ -189,7 +189,7 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 			prepareTradeLogQuery(),
 			from.Format(time.RFC3339),
 			to.Format(time.RFC3339),
-			burnfeeMeasurementName,
+			burnFeesMeasurementName,
 			walletMeasurementName,
 			tradeLogMeasurementName,
 			burnschema.TxHash.String()+", "+burnschema.TradeLogIndex.String(),
@@ -407,7 +407,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			burnschema.Amount.String(): burnAmount,
 		}
 
-		burnPoint, err := client.NewPoint(burnfeeMeasurementName, tags, fields, log.Timestamp)
+		burnPoint, err := client.NewPoint(burnFeesMeasurementName, tags, fields, log.Timestamp)
 		if err != nil {
 			return nil, err
 		}

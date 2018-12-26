@@ -19,7 +19,7 @@ func (is *InfluxStorage) GetCountryStats(countryCode string, from, to time.Time,
 			"fromTime", from, "toTime", to)
 		timeFilter      = fmt.Sprintf("(time >='%s' AND time <= '%s')", from.UTC().Format(time.RFC3339), to.UTC().Format(time.RFC3339))
 		countryFilter   = fmt.Sprintf("(country='%s')", countryCode)
-		measurementName = "country_stats"
+		measurementName = common.CountryStatsMeasurementName
 	)
 	measurementName = getMeasurementName(measurementName, timezone)
 

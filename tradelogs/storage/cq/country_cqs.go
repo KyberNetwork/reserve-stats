@@ -8,6 +8,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	countryStatSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/country_stats"
 	firstTradedSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/first_traded"
+	heatMapSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/heatmap"
 	kycedschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/kyced"
 	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 )
@@ -96,10 +97,25 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(dst_amount) AS token_volume, SUM(eth_amount) AS eth_volume, SUM(usd_amount) AS usd_volume INTO volume_country_stats FROM "+
-			"(SELECT dst_amount, eth_amount, eth_amount*eth_usd_rate AS usd_amount FROM trades WHERE "+
-			"((src_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND dst_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2') OR "+
-			"(src_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND dst_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'))) GROUP BY dst_addr, country",
+		fmt.Sprintf(
+			`SELECT SUM(%[1]s) AS %[2]s, SUM(%[3]s) AS %[4]s, SUM(usd_amount) AS %[5]s INTO %[6]s FROM `+
+				`(SELECT %[1]s, %[3]s, %[3]s*%[7]s AS usd_amount FROM %[8]s WHERE `+
+				`((%[9]s!='%[10]s' AND %[11]s!='%[12]s') OR `+
+				`(%[9]s!='%[12]s' AND %[11]s!='%[10]s'))) GROUP BY %[11]s, %[13]s`,
+			logSchema.DstAmount.String(),
+			heatMapSchema.TokenVolume.String(),
+			logSchema.EthAmount.String(),
+			heatMapSchema.ETHVolume.String(),
+			heatMapSchema.USDVolume.String(),
+			common.HeatMapMeasurement,
+			logSchema.EthUSDRate.String(),
+			common.TradeLogMeasurementName,
+			logSchema.SrcAddr.String(),
+			core.ETHToken.Address,
+			logSchema.DstAddr.String(),
+			core.WETHToken.Address,
+			logSchema.Country.String(),
+		),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -113,10 +129,25 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(src_amount) AS token_volume, SUM(eth_amount) AS eth_volume, SUM(usd_amount) AS usd_volume INTO volume_country_stats FROM "+
-			"(SELECT src_amount, eth_amount, eth_amount*eth_usd_rate AS usd_amount FROM trades WHERE "+
-			"((src_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND dst_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2') OR "+
-			"(src_addr!='0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND dst_addr!='0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'))) GROUP BY src_addr, country",
+		fmt.Sprintf(
+			`SELECT SUM(%[1]s) AS %[2]s, SUM(%[3]s) AS %[4]s, SUM(usd_amount) AS %[5]s INTO %[6]s FROM `+
+				`(SELECT %[1]s, %[3]s, %[3]s*%[7]s AS usd_amount FROM %[8]s WHERE `+
+				`((%[9]s!='%[10]s' AND %[11]s!='%[12]s') OR `+
+				`(%[9]s!='%[12]s' AND %[11]s!='%[10]s'))) GROUP BY %[9]s, %[13]s`,
+			logSchema.SrcAddr.String(),
+			heatMapSchema.TokenVolume.String(),
+			logSchema.EthAmount.String(),
+			heatMapSchema.ETHVolume.String(),
+			heatMapSchema.USDVolume.String(),
+			common.HeatMapMeasurement,
+			logSchema.EthUSDRate.String(),
+			common.TradeLogMeasurementName,
+			logSchema.SrcAddr.String(),
+			core.ETHToken.Address,
+			logSchema.DstAddr.String(),
+			core.WETHToken.Address,
+			logSchema.Country.String(),
+		),
 		"1d",
 		supportedTimeZone(),
 	)

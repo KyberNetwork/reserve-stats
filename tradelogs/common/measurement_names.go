@@ -25,6 +25,8 @@ const (
 	IntegrationVolumeMeasurement = "integration_volume"
 	//TradeSummaryMeasurement is the measurement to store trade summary
 	TradeSummaryMeasurement = "trade_summary"
-	//BurnFeeSummaryMeasurement is the measurement to storee burnfee summary
+	//BurnFeeSummaryMeasurement is the measurement to store burnfee summary
 	BurnFeeSummaryMeasurement = "burn_fee_summary"
+	//HeatMapMeasurement is the measurement to store country heatmap stats
+	HeatMapMeasurement = "volume_country_stats"
 )

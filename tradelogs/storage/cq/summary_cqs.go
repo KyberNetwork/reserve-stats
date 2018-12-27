@@ -12,13 +12,6 @@ import (
 	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 )
 
-const (
-	//TradeSummaryMeasurement is the measurement to store trade summary
-	TradeSummaryMeasurement = "trade_summary"
-	//BurnFeeSummaryMeasurement is the measurement to storee burnfee summary
-	BurnFeeSummaryMeasurement = "burn_fee_summary"
-)
-
 // CreateSummaryCqs return a set of cqs required for trade Summary aggregation
 func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	var result []*libcq.ContinuousQuery
@@ -31,7 +24,7 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		fmt.Sprintf(
 			"SELECT COUNT(record) AS %[1]s INTO %[2]s FROM (SELECT SUM(%[3]s) AS record FROM %[4]s GROUP BY %[5]s)",
 			tradeSumSchema.UniqueAddresses.String(),
-			TradeSummaryMeasurement,
+			common.TradeSummaryMeasurement,
 			logSchema.EthAmount.String(),
 			common.TradeLogMeasurementName,
 			logSchema.UserAddr.String(),
@@ -58,7 +51,7 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 			tradeSumSchema.TotalTrade.String(),
 			tradeSumSchema.USDPerTrade.String(),
 			tradeSumSchema.ETHPerTrade.String(),
-			TradeSummaryMeasurement,
+			common.TradeSummaryMeasurement,
 			logSchema.EthUSDRate.String(),
 			common.TradeLogMeasurementName,
 			logSchema.SrcAddr.String(),
@@ -97,7 +90,7 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 			"SELECT COUNT(%[1]s) as %[2]s INTO %[3]s FROM %[4]s",
 			firstTradedSchema.Traded.String(),
 			tradeSumSchema.NewUniqueAddresses.String(),
-			TradeSummaryMeasurement,
+			common.TradeSummaryMeasurement,
 			common.FirstTradedMeasurementName,
 		),
 		"1d",
@@ -116,7 +109,7 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		fmt.Sprintf(
 			"SELECT COUNT(kyced) as %[1]s INTO %[2]s FROM (SELECT DISTINCT(%[3]s) AS kyced FROM %[4]s GROUP BY %[5]s)",
 			tradeSumSchema.KYCedAddresses.String(),
-			TradeSummaryMeasurement,
+			common.TradeSummaryMeasurement,
 			kycedschema.KYCed.String(),
 			common.KYCedMeasurementName,
 			kycedschema.UserAddress.String(),

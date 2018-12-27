@@ -10,13 +10,14 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	burnVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee_volume"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 var freqToMeasurement = map[string]string{
-	"h": "burn_fee_hour",
-	"d": "burn_fee_day",
+	"h": common.BurnFeeVolumeHourMeasurement,
+	"d": common.BurnFeeVolumeDayMeasurement,
 }
 
 // GetAggregatedBurnFee get aggregated burn fee in a time range given the reserve address

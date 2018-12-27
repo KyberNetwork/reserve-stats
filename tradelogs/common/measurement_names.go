@@ -17,4 +17,14 @@ const (
 	CountryStatsMeasurementName = "country_stats"
 	//KYCedMeasurementName is the measurement for kyc status
 	KYCedMeasurementName = "kyced"
+	// BurnFeeVolumeDayMeasurement is the measure to store aggregatedBurnFee in Day Frequency
+	BurnFeeVolumeDayMeasurement = "burn_fee_day"
+	// BurnFeeVolumeHourMeasurement is the measure to store aggregatedBurnFee in Hour Frequency
+	BurnFeeVolumeHourMeasurement = "burn_fee_hour"
+	//IntegrationVolumeMeasurement is the name for Integration Volume Measurement
+	IntegrationVolumeMeasurement = "integration_volume"
+	//TradeSummaryMeasurement is the measurement to store trade summary
+	TradeSummaryMeasurement = "trade_summary"
+	//BurnFeeSummaryMeasurement is the measurement to storee burnfee summary
+	BurnFeeSummaryMeasurement = "burn_fee_summary"
 )

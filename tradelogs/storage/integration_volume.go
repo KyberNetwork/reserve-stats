@@ -8,7 +8,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
 	influxModel "github.com/influxdata/influxdb/models"
 )
 
@@ -19,7 +18,7 @@ func (is *InfluxStorage) GetIntegrationVolume(fromTime, toTime time.Time) (map[u
 		logger = is.sugar.With("func", "tradelogs/storage/InfluxStorage.GetIntegrationVolume", "from", fromTime, "to", toTime)
 	)
 	timeFilter := fmt.Sprintf("(time >='%s' AND time <= '%s')", fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
-	cmd := fmt.Sprintf("SELECT kyber_swap_volume, non_kyber_swap_volume FROM %s WHERE %s", tradelogcq.IntegrationVolumeMeasurement, timeFilter)
+	cmd := fmt.Sprintf("SELECT kyber_swap_volume, non_kyber_swap_volume FROM %s WHERE %s", common.IntegrationVolumeMeasurement, timeFilter)
 	logger.Debugw("query rendered", "query", cmd)
 
 	response, err := influxdb.QueryDB(is.influxClient, cmd, is.dbName)

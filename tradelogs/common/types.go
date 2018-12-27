@@ -146,7 +146,6 @@ func (u UserList) Less(i, j int) bool {
 
 //Heatmap represent a country heatmap
 type Heatmap struct {
-	Country              string  `json:"country"`
 	TotalETHValue        float64 `json:"total_eth_value"`
 	TotalTokenValue      float64 `json:"total_token_value"`
 	TotalFiatValue       float64 `json:"total_fiat_value"`

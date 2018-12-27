@@ -7,6 +7,7 @@ import (
 	libcq "github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	firstTradedSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/first_traded"
+	kycedschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/kyced"
 	tradeSumSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/trade_summary"
 	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 )
@@ -112,7 +113,14 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT COUNT(kyced) as kyced INTO trade_summary FROM (SELECT DISTINCT(kyced) AS kyced FROM kyced GROUP BY user_addr)",
+		fmt.Sprintf(
+			"SELECT COUNT(kyced) as %[1]s INTO %[2]s FROM (SELECT DISTINCT(%[3]s) AS kyced FROM %[4]s GROUP BY %[5]s)",
+			tradeSumSchema.KYCedAddresses.String(),
+			TradeSummaryMeasurement,
+			kycedschema.KYCed.String(),
+			common.KYCedMeasurementName,
+			kycedschema.UserAddress.String(),
+		),
 		"1d",
 		supportedTimeZone(),
 	)

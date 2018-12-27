@@ -15,4 +15,6 @@ const (
 	FirstTradedMeasurementName = "first_trades"
 	//CountryStatsMeasurementName is the measurement name for country stat records
 	CountryStatsMeasurementName = "country_stats"
+	//KYCedMeasurementName is the measurement for kyc status
+	KYCedMeasurementName = "kyced"
 )

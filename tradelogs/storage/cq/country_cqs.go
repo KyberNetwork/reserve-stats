@@ -8,6 +8,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	countryStatSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/country_stats"
 	firstTradedSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/first_traded"
+	kycedschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/kyced"
 	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 )
 
@@ -129,9 +130,13 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf("SELECT COUNT(kyced) AS %[1]s INTO %[2]s FROM (SELECT DISTINCT(kyced) AS kyced FROM kyced GROUP BY user_addr, country) GROUP BY country",
+		fmt.Sprintf("SELECT COUNT(kyced) AS %[1]s INTO %[2]s FROM (SELECT DISTINCT(%[3]s) AS kyced FROM %[4]s GROUP BY %[5]s, %[6]s) GROUP BY %[6]s",
 			countryStatSchema.KYCedAddresses.String(),
 			common.CountryStatsMeasurementName,
+			kycedschema.KYCed.String(),
+			common.KYCedMeasurementName,
+			kycedschema.UserAddress.String(),
+			kycedschema.Country.String(),
 		),
 		"1d",
 		supportedTimeZone(),

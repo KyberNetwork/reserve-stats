@@ -48,7 +48,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 			`MEAN(usd_amount) AS %[5]s, MEAN(%[1]s) AS %[6]s INTO %[7]s FROM `+
 			`(SELECT %[8]s, %[1]s, %[1]s*%[9]s AS usd_amount FROM %[10]s `+
 			`WHERE (%[11]s!='%[12]s' AND %[13]s!='%[14]s') `+
-			`OR (%[11]s!='%[14]s' AND %[13]s!='%[12]s')) GROUP BY %[13]s`,
+			`OR (%[11]s!='%[14]s' AND %[13]s!='%[12]s')) GROUP BY %[15]s`,
 			logSchema.EthAmount.String(),
 			countryStatSchema.TotalETHVolume.String(),
 			countryStatSchema.TotalUSDAmount.String(),
@@ -134,7 +134,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 				`(SELECT %[1]s, %[3]s, %[3]s*%[7]s AS usd_amount FROM %[8]s WHERE `+
 				`((%[9]s!='%[10]s' AND %[11]s!='%[12]s') OR `+
 				`(%[9]s!='%[12]s' AND %[11]s!='%[10]s'))) GROUP BY %[9]s, %[13]s`,
-			logSchema.SrcAddr.String(),
+			logSchema.SrcAmount.String(),
 			heatMapSchema.TokenVolume.String(),
 			logSchema.EthAmount.String(),
 			heatMapSchema.ETHVolume.String(),

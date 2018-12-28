@@ -8,6 +8,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	countryStatSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/country_stats"
 	influxModel "github.com/influxdata/influxdb/models"
 )
 
@@ -23,11 +24,20 @@ func (is *InfluxStorage) GetCountryStats(countryCode string, from, to time.Time,
 	)
 	measurementName = getMeasurementName(measurementName, timezone)
 
-	cmd := fmt.Sprintf(`
-	SELECT eth_per_trade,
-	total_eth_volume,total_trade,total_usd_amount,
-	usd_per_trade,unique_addresses,new_unique_addresses, kyced, total_burn_fee
-	FROM %s WHERE %s AND %s`, measurementName, timeFilter, countryFilter)
+	cmd := fmt.Sprintf(
+		`SELECT %[1]s, %[2]s, %[3]s, %[4]s, %[5]s, %[6]s, %[7]s, %[8]s, %[9]s FROM %[10]s WHERE %[11]s AND %[12]s`,
+		countryStatSchema.ETHPerTrade.String(),
+		countryStatSchema.TotalETHVolume.String(),
+		countryStatSchema.TotalTrade.String(),
+		countryStatSchema.TotalUSDAmount.String(),
+		countryStatSchema.USDPerTrade.String(),
+		countryStatSchema.UniqueAddresses.String(),
+		countryStatSchema.NewUniqueAddresses.String(),
+		countryStatSchema.KYCedAddresses.String(),
+		countryStatSchema.TotalBurnFee.String(),
+		measurementName,
+		timeFilter,
+		countryFilter)
 
 	logger.Debugw("get country stats", "query", cmd)
 
@@ -49,8 +59,12 @@ func convertQueryResultToCountry(row influxModel.Row) (map[uint64]*common.Countr
 	if len(row.Values) == 0 {
 		return nil, nil
 	}
+	idxs, err := countryStatSchema.NewFieldsRegistrar(row.Columns)
+	if err != nil {
+		return nil, nil
+	}
 	for _, v := range row.Values {
-		ts, vol, err := convertRowValueToCountrySummary(v)
+		ts, vol, err := convertRowValueToCountrySummary(v, idxs)
 		if err != nil {
 			return nil, err
 		}
@@ -59,11 +73,11 @@ func convertQueryResultToCountry(row influxModel.Row) (map[uint64]*common.Countr
 	return result, nil
 }
 
-func convertRowValueToCountrySummary(v []interface{}) (uint64, *common.CountryStats, error) {
+func convertRowValueToCountrySummary(v []interface{}, idxs map[countryStatSchema.FieldName]int) (uint64, *common.CountryStats, error) {
 	if len(v) != 10 {
 		return 0, nil, errors.New("value fields is invalid in len")
 	}
-	timestampString, ok := v[0].(string)
+	timestampString, ok := v[idxs[countryStatSchema.Time]].(string)
 	if !ok {
 		return 0, nil, errCantConvert
 	}
@@ -72,39 +86,39 @@ func convertRowValueToCountrySummary(v []interface{}) (uint64, *common.CountrySt
 		return 0, nil, err
 	}
 	tsUint64 := timeutil.TimeToTimestampMs(ts)
-	ethPerTrade, err := influxdb.GetFloat64FromInterface(v[1])
+	ethPerTrade, err := influxdb.GetFloat64FromInterface(v[idxs[countryStatSchema.ETHPerTrade]])
 	if err != nil {
 		return 0, nil, err
 	}
-	ethVolume, err := influxdb.GetFloat64FromInterface(v[2])
+	ethVolume, err := influxdb.GetFloat64FromInterface(v[idxs[countryStatSchema.TotalETHVolume]])
 	if err != nil {
 		return 0, nil, err
 	}
-	totalTrade, err := influxdb.GetUint64FromInterface(v[3])
+	totalTrade, err := influxdb.GetUint64FromInterface(v[idxs[countryStatSchema.TotalTrade]])
 	if err != nil {
 		return 0, nil, err
 	}
-	usdVolume, err := influxdb.GetFloat64FromInterface(v[4])
+	usdVolume, err := influxdb.GetFloat64FromInterface(v[idxs[countryStatSchema.TotalUSDAmount]])
 	if err != nil {
 		return 0, nil, err
 	}
-	usdPerTrade, err := influxdb.GetFloat64FromInterface(v[5])
+	usdPerTrade, err := influxdb.GetFloat64FromInterface(v[idxs[countryStatSchema.USDPerTrade]])
 	if err != nil {
 		return 0, nil, err
 	}
-	uniqueAddr, err := influxdb.GetUint64FromInterface(v[6])
+	uniqueAddr, err := influxdb.GetUint64FromInterface(v[idxs[countryStatSchema.UniqueAddresses]])
 	if err != nil {
 		return 0, nil, err
 	}
-	newUniqueAddr, err := influxdb.GetUint64FromInterface(v[7])
+	newUniqueAddr, err := influxdb.GetUint64FromInterface(v[idxs[countryStatSchema.NewUniqueAddresses]])
 	if err != nil {
 		return 0, nil, err
 	}
-	kyced, err := influxdb.GetUint64FromInterface(v[8])
+	kyced, err := influxdb.GetUint64FromInterface(v[idxs[countryStatSchema.KYCedAddresses]])
 	if err != nil {
 		return 0, nil, err
 	}
-	totalBurnFee, err := influxdb.GetFloat64FromInterface(v[9])
+	totalBurnFee, err := influxdb.GetFloat64FromInterface(v[idxs[countryStatSchema.TotalBurnFee]])
 	if err != nil {
 		return 0, nil, err
 	}

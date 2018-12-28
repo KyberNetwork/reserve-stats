@@ -7,6 +7,8 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	walletFeeVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfeevolume"
 )
 
 const (
@@ -31,9 +33,11 @@ func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq st
 
 	switch strings.ToLower(freq) {
 	case day:
-		measurement = "wallet_fee_day"
+		measurement = common.WalletFeeVolumeMeasurementDay
 	case hour:
-		measurement = "wallet_fee_hour"
+		measurement = common.WalletFeeVolumeMeasurementHour
+	default:
+		return nil, fmt.Errorf("Frequency %s is not supported", freq)
 	}
 
 	// in cq we will add timezone as time offset interval
@@ -57,7 +61,11 @@ func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq st
 	}
 
 	for _, row := range res[0].Series[0].Values {
-		ts, amount, err := is.rowToAggregatedFee(row)
+		idxs, err := walletFeeVolumeSchema.NewFieldsRegistrar(res[0].Series[0].Columns)
+		if err != nil {
+			return nil, err
+		}
+		ts, amount, err := is.rowToAggregatedFee(row, idxs)
 		if err != nil {
 			return nil, err
 		}

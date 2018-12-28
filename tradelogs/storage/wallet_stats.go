@@ -27,7 +27,7 @@ func (is *InfluxStorage) GetWalletStats(from, to time.Time, walletAddr string, t
 	measurementName = getMeasurementName(measurementName, timezone)
 
 	query := fmt.Sprintf(
-		`SELECT %[1]s, %[2]s, %[3]s, %[4]s, %[5]s, %[6]s, %[7]s, %[8], %[9]s `+
+		`SELECT %[1]s, %[2]s, %[3]s, %[4]s, %[5]s, %[6]s, %[7]s, %[8]s, %[9]s `+
 			`FROM %[10]s WHERE %[11]s >= '%[12]s' and %[10]s <= '%[13]s' and %[14]s='%[15]s'`,
 		walletStatSchema.ETHVolume.String(),
 		walletStatSchema.USDVolume.String(),

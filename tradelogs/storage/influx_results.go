@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	burnVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee_volume"
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
+	walletFeeVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfeevolume"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
@@ -87,7 +88,7 @@ func (is *InfluxStorage) rowToUserInfo(row []interface{}) (float64, float64, err
 }
 
 //this function can also work for burnFee and walletFee
-func (is *InfluxStorage) rowToAggregatedFee(row []interface{}) (time.Time, float64, error) {
+func (is *InfluxStorage) rowToAggregatedFee(row []interface{}, idxs walletFeeVolumeSchema.FieldsRegistrar) (time.Time, float64, error) {
 	var (
 		ts  time.Time
 		fee float64
@@ -95,11 +96,11 @@ func (is *InfluxStorage) rowToAggregatedFee(row []interface{}) (time.Time, float
 	if len(row) != 2 {
 		return ts, fee, fmt.Errorf("query row len should be 2 but got %d", len(row))
 	}
-	ts, err := influxdb.GetTimeFromInterface(row[0])
+	ts, err := influxdb.GetTimeFromInterface(row[idxs[walletFeeVolumeSchema.Time]])
 	if err != nil {
 		return ts, fee, err
 	}
-	fee, err = influxdb.GetFloat64FromInterface(row[1])
+	fee, err = influxdb.GetFloat64FromInterface(row[idxs[walletFeeVolumeSchema.SumAmount]])
 	if err != nil {
 		return ts, fee, err
 	}

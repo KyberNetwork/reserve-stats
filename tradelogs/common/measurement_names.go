@@ -31,4 +31,8 @@ const (
 	HeatMapMeasurement = "volume_country_stats"
 	//WalletStatsMeasurement is the measurement name to which wallet stats is stored
 	WalletStatsMeasurement = "wallet_stats"
+	//WalletFeeVolumeDay is the measurement to which wallet fee volume daily is stored
+	WalletFeeVolumeMeasurementDay = "wallet_fee_day"
+	//WalletFeeVolumeHour is the measurement to which wallet fee volume hourly is stored
+	WalletFeeVolumeMeasurementHour = "wallet_fee_hour"
 )

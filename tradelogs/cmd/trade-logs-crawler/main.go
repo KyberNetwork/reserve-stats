@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"os"
 	"time"
+	"errors"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
@@ -276,6 +277,10 @@ func run(c *cli.Context) error {
 			}
 			toBlock = currentHeader.Number
 			sugar.Infow("fetching trade logs up to latest known block number", "to_block", toBlock.String())
+		}
+
+		if fromBlock.Int64() > toBlock.Int64() {
+			return errors.New("fromBlock is bigger than toBlock")
 		}
 
 		requiredWorkers := requiredWorkers(fromBlock, toBlock, maxBlocks, maxWorkers)

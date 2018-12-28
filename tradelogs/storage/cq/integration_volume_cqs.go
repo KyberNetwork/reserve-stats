@@ -39,7 +39,7 @@ func CreateIntegrationVolumeCq(dbName string) ([]*libcq.ContinuousQuery, error) 
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(`SELECT SUM(%[1]s) AS $[2]s INTO %[3]s FROM %[4]s WHERE %[5]s!='%[6]s'`,
+		fmt.Sprintf(`SELECT SUM(%[1]s) AS %[2]s INTO %[3]s FROM %[4]s WHERE %[5]s!='%[6]s'`,
 			logSchema.EthAmount,
 			integrationVolumeSchema.NonKyberSwapVolume.String(),
 			common.IntegrationVolumeMeasurement,

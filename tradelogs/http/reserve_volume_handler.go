@@ -11,7 +11,7 @@ import (
 
 type reserveVolumeQuery struct {
 	httputil.TimeRangeQueryFreq
-	Asset   string `form:"asset" binding:"required,isEthereumAddress"`
+	Asset   string `form:"asset" binding:"required,isAddress"`
 	Reserve string `form:"reserve" binding:"isAddress"`
 }
 

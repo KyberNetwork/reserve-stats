@@ -10,7 +10,7 @@ import (
 
 type tokenHeatmapQuery struct {
 	httputil.TimeRangeQuery
-	Asset    string `form:"asset" binding:"required"`
+	Asset    string `form:"asset" binding:"required,isAddress"`
 	Timezone int8   `form:"timezone" binding:"isSupportedTimezone"`
 }
 

@@ -11,7 +11,7 @@ import (
 
 type assetVolumeQuery struct {
 	httputil.TimeRangeQueryFreq
-	Asset string `form:"asset" binding:"required,isEthereumAddress"`
+	Asset string `form:"asset" binding:"required,isAddress"`
 }
 
 func (sv *Server) getAssetVolume(c *gin.Context) {

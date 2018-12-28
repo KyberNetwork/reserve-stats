@@ -11,7 +11,7 @@ import (
 
 type walletStatsQuery struct {
 	httputil.TimeRangeQuery
-	WalletAddr string `form:"walletAddr,isEthereumAddress"`
+	WalletAddr string `form:"walletAddr,isAddress"`
 	Timezone   int8   `form:"timezone" binding:"isSupportedTimezone"`
 }
 

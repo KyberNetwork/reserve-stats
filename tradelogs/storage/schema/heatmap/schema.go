@@ -17,7 +17,7 @@ const (
 	Country //country
 	//DstAddress is the field name for Destination Address
 	DstAddress //dst_addr
-	//SrcAddrss is the field name for srouce address
+	//SrcAddress is the field name for srouce address
 	SrcAddress //src_addr
 )
 

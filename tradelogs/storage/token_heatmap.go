@@ -66,7 +66,7 @@ func (is *InfluxStorage) GetTokenHeatmap(asset ethereum.Address, from, to time.T
 
 	volumeQuery := fmt.Sprintf(`
 	SELECT SUM(%[1]s) as %[1]s, SUM(%[2]s) as %[2]s, SUM(%[3]s) as %[3]s from %[4]s
-	WHERE (%[5]S='%[6]s' or %[7]s='%[6]s') and (time >= '%[8]s' AND time <= '%[9]s') GROUP BY %[10]s`,
+	WHERE (%[5]s='%[6]s' or %[7]s='%[6]s') and (time >= '%[8]s' AND time <= '%[9]s') GROUP BY %[10]s`,
 		heatMapSchema.ETHVolume.String(),
 		heatMapSchema.TokenVolume.String(),
 		heatMapSchema.USDVolume.String(),

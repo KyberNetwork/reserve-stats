@@ -8,6 +8,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	integrationVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/integrationvolume"
 	influxModel "github.com/influxdata/influxdb/models"
 )
 
@@ -18,7 +19,12 @@ func (is *InfluxStorage) GetIntegrationVolume(fromTime, toTime time.Time) (map[u
 		logger = is.sugar.With("func", "tradelogs/storage/InfluxStorage.GetIntegrationVolume", "from", fromTime, "to", toTime)
 	)
 	timeFilter := fmt.Sprintf("(time >='%s' AND time <= '%s')", fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
-	cmd := fmt.Sprintf("SELECT kyber_swap_volume, non_kyber_swap_volume FROM %s WHERE %s", common.IntegrationVolumeMeasurement, timeFilter)
+	cmd := fmt.Sprintf(
+		"SELECT %[1]s, %[2]s FROM %[3]s WHERE %[4]s",
+		integrationVolumeSchema.KyberSwapVolume.String(),
+		integrationVolumeSchema.NonKyberSwapVolume.String(),
+		common.IntegrationVolumeMeasurement,
+		timeFilter)
 	logger.Debugw("query rendered", "query", cmd)
 
 	response, err := influxdb.QueryDB(is.influxClient, cmd, is.dbName)
@@ -38,8 +44,12 @@ func convertQueryResultToIntegrationVolume(row influxModel.Row) (map[uint64]*com
 	if len(row.Values) == 0 {
 		return nil, nil
 	}
+	idxs, err := integrationVolumeSchema.NewFieldsRegistrar(row.Columns)
+	if err != nil {
+		return result, err
+	}
 	for _, v := range row.Values {
-		ts, vol, err := convertRowValueToIntegrationVolume(v)
+		ts, vol, err := convertRowValueToIntegrationVolume(v, idxs)
 		if err != nil {
 			return nil, err
 		}
@@ -48,7 +58,7 @@ func convertQueryResultToIntegrationVolume(row influxModel.Row) (map[uint64]*com
 	return result, nil
 }
 
-func convertRowValueToIntegrationVolume(v []interface{}) (uint64, *common.IntegrationVolume, error) {
+func convertRowValueToIntegrationVolume(v []interface{}, idxs map[integrationVolumeSchema.FieldName]int) (uint64, *common.IntegrationVolume, error) {
 	// number of fields in record result
 	// - time
 	// - kyber_swap_volume
@@ -57,7 +67,7 @@ func convertRowValueToIntegrationVolume(v []interface{}) (uint64, *common.Integr
 		return 0, nil, errors.New("value fields is empty")
 	}
 
-	timestampString, ok := v[0].(string)
+	timestampString, ok := v[idxs[integrationVolumeSchema.Time]].(string)
 	if !ok {
 		return 0, nil, errCantConvert
 	}
@@ -67,11 +77,11 @@ func convertRowValueToIntegrationVolume(v []interface{}) (uint64, *common.Integr
 	}
 	tsUint64 := timeutil.TimeToTimestampMs(ts)
 
-	ksvolume, err := influxdb.GetFloat64FromInterface(v[1])
+	ksvolume, err := influxdb.GetFloat64FromInterface(v[idxs[integrationVolumeSchema.KyberSwapVolume]])
 	if err != nil {
 		return 0, nil, err
 	}
-	nonksVolume, err := influxdb.GetFloat64FromInterface(v[2])
+	nonksVolume, err := influxdb.GetFloat64FromInterface(v[idxs[integrationVolumeSchema.NonKyberSwapVolume]])
 	if err != nil {
 		return 0, nil, err
 	}

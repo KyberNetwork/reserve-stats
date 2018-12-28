@@ -6,6 +6,8 @@ import (
 	appnames "github.com/KyberNetwork/reserve-stats/app-names"
 	libcq "github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	integrationVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/integrationvolume"
+	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 )
 
 // CreateIntegrationVolumeCq return a set of cqs required for KyberSwap and non KyberSwap Summary aggregation
@@ -17,8 +19,12 @@ func CreateIntegrationVolumeCq(dbName string) ([]*libcq.ContinuousQuery, error) 
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(`SELECT SUM(eth_amount) AS kyber_swap_volume INTO %s FROM trades WHERE integration_app='%s'`,
+		fmt.Sprintf(`SELECT SUM(%[1]s) AS %[2]s INTO %[3]s FROM %[4]s WHERE %[5]s='%[6]s'`,
+			logSchema.EthAmount,
+			integrationVolumeSchema.KyberSwapVolume.String(),
 			common.IntegrationVolumeMeasurement,
+			common.TradeLogMeasurementName,
+			logSchema.IntegrationApp.String(),
 			appnames.KyberSwapAppName),
 		"1d",
 		[]string{},
@@ -33,8 +39,12 @@ func CreateIntegrationVolumeCq(dbName string) ([]*libcq.ContinuousQuery, error) 
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(`SELECT SUM(eth_amount) AS non_kyber_swap_volume INTO %s FROM trades WHERE integration_app!='%s'`,
+		fmt.Sprintf(`SELECT SUM(%[1]s) AS $[2]s INTO %[3]s FROM %[4]s WHERE %[5]s!='%[6]s'`,
+			logSchema.EthAmount,
+			integrationVolumeSchema.NonKyberSwapVolume.String(),
 			common.IntegrationVolumeMeasurement,
+			common.TradeLogMeasurementName,
+			logSchema.IntegrationApp,
 			appnames.KyberSwapAppName),
 		"1d",
 		[]string{},

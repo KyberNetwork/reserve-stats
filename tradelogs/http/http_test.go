@@ -8,9 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
@@ -66,7 +64,7 @@ func (s *mockStorage) GetWalletStats(fromTime, toTime time.Time, walletAddr stri
 	return nil, nil
 }
 
-func (s *mockStorage) GetTokenHeatmap(token core.Token, from, to time.Time, timezone int8) (map[string]common.Heatmap, error) {
+func (s *mockStorage) GetTokenHeatmap(token ethereum.Address, from, to time.Time, timezone int8) (map[string]common.Heatmap, error) {
 	return nil, nil
 }
 

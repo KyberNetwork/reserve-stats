@@ -3,15 +3,15 @@ package http
 import (
 	"net/http"
 
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 )
 
 type assetVolumeQuery struct {
 	httputil.TimeRangeQueryFreq
-	Asset string `form:"asset" binding:"required"`
+	Asset string `form:"asset" binding:"required,isEthereumAddress"`
 }
 
 func (sv *Server) getAssetVolume(c *gin.Context) {
@@ -34,14 +34,8 @@ func (sv *Server) getAssetVolume(c *gin.Context) {
 		)
 		return
 	}
-	token, err := core.LookupToken(sv.coreSetting, query.Asset)
-	if err != nil {
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"error": err.Error()},
-		)
-		return
-	}
+
+	token := common.HexToAddress(query.Asset)
 
 	result, err := sv.storage.GetAssetVolume(token, from, to, query.Freq)
 	if err != nil {

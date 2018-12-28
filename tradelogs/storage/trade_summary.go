@@ -143,7 +143,7 @@ func convertQueryResultToSummary(row influxModel.Row) (map[uint64]*common.TradeS
 }
 
 func convertRowValueToSummary(v []interface{}, idxs map[tradeSumSchema.FieldName]int) (uint64, *common.TradeSummary, error) {
-	if len(v) != 8 {
+	if len(v) != 9 {
 		return 0, nil, errors.New("value fields is invalid in len")
 	}
 	timestampString, ok := v[idxs[tradeSumSchema.Time]].(string)

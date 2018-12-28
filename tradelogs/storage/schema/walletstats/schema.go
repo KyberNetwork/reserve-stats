@@ -9,9 +9,9 @@ const (
 	Time FieldName = iota //time
 	//UniqueAddresses is enumerated fieldname for number of Unique Addresses in trade summary
 	UniqueAddresses // unique_addresses
-	//TotalETHVolume is the enumerated fieldname for sum total volume in ETH
+	//ETHVolume is the enumerated fieldname for sum total volume in ETH
 	ETHVolume // eth_volume
-	//TotalUSDAmount is the enumerated fieldname for total total USD amount
+	//USDVolume is the enumerated fieldname for total total USD amount
 	USDVolume // usd_volume
 	//TotalTrade is the enumerated fieldname for total trades
 	TotalTrade // total_trade

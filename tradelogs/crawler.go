@@ -30,6 +30,14 @@ const (
 	tradeEvent = "0x1849bd6a030a1bca28b83437fd3de96f3d27a5d172fa7e9c78e7b61468928a39"
 	// etherReceivalEvent is the topic of event EtherReceival(address indexed sender, uint amount).
 	etherReceivalEvent = "0x75f33ed68675112c77094e7c5b073890598be1d23e27cd7f6907b4a7d98ac619"
+	// kyberTradeEvent is the topic of event
+	// KyberTrade (address trader, address src, address dest, uint256 srcAmount, uint256 dstAmount, address destAddress, uint256 ethWeiValue, address reserve1, address reserve2, bytes hint)
+	// ETHwei = ETHAMOUNT
+	// rsv1 ==0 if eth -> token
+	// rsv2 ==0 if token -> eth
+	kyberTradeEvent = "0xd30ca399cb43507ecec6a629a35cf45eb98cda550c27696dcb0d8c4a3873ce6c"
+	// startingBlockV3 is the block where V3 contract is used.
+	startingBlockV3 = 4715286
 )
 
 // NewCrawler create a new Crawler instance.
@@ -167,41 +175,15 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) ([]common.Trade
 				Index:          log.Index,
 			}
 			tradeLog.BurnFees = append(tradeLog.BurnFees, burnFee)
-		case etherReceivalEvent:
-			amount, err := logDataToEtherReceivalParams(log.Data)
-			if err != nil {
-				return nil, err
-			}
+		}
 
-			tradeLog.EtherReceivalSender = ethereum.BytesToAddress(log.Topics[1].Bytes())
-			tradeLog.EtherReceivalAmount = amount.Big()
-		case tradeEvent:
-			srcAddr, destAddr, srcAmount, destAmount, err := logDataToTradeParams(log.Data)
-			if err != nil {
-				return nil, err
-			}
-
-			tradeLog.SrcAddress = srcAddr
-			tradeLog.DestAddress = destAddr
-			tradeLog.SrcAmount = srcAmount.Big()
-			tradeLog.DestAmount = destAmount.Big()
-			tradeLog.UserAddress = ethereum.BytesToAddress(log.Topics[1].Bytes())
-			tradeLog.Index = log.Index
-
-			tradeLog.BlockNumber = log.BlockNumber
-			tradeLog.TransactionHash = log.TxHash
-
-			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
-				return nil, err
-			}
-
-			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
+		done, err := crawler.handleEventLogWithBlockNumber(log, &tradeLog)
+		if err != nil {
+			return nil, err
+		}
+		if done {
 			result = append(result, tradeLog)
-
-			// prepare to fulfill new TradeLog from next event logs
 			tradeLog = common.TradeLog{}
-		default:
-			crawler.sugar.Info("Unknown log topic.")
 		}
 	}
 

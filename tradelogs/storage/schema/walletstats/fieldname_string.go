@@ -4,9 +4,9 @@ package walletstats
 
 import "strconv"
 
-const _FieldName_name = "timeunique_addressestotal_eth_volumeusd_volumetotal_tradeusd_per_tradeeth_per_tradetotal_burn_feenew_unique_addresseskycedwallet_addr"
+const _FieldName_name = "timeunique_addresseseth_volumeusd_volumetotal_tradeusd_per_tradeeth_per_tradetotal_burn_feenew_unique_addresseskycedwallet_addr"
 
-var _FieldName_index = [...]uint8{0, 4, 20, 36, 46, 57, 70, 83, 97, 117, 122, 133}
+var _FieldName_index = [...]uint8{0, 4, 20, 30, 40, 51, 64, 77, 91, 111, 116, 127}
 
 func (i FieldName) String() string {
 	if i < 0 || i >= FieldName(len(_FieldName_index)-1) {

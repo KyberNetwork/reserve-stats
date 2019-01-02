@@ -67,5 +67,5 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return dbMigration.Migrate()
+	return dbMigration.Migrate(migration.DefaultUsersTableName, migration.DefaultAddressesTableName)
 }

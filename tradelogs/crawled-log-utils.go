@@ -14,7 +14,7 @@ func (crawler *Crawler) handleEventLogWithBlockNumber(log types.Log, tradeLog *c
 		return false, errors.New("log item has no topic")
 	}
 	//if blockNumber < startingBlock/
-	if log.BlockNumber < startingBlockV3 {
+	if startingBlockV3 == 0 || log.BlockNumber < startingBlockV3 {
 		switch log.Topics[0].Hex() {
 		case etherReceivalEvent:
 			amount, err := logDataToEtherReceivalParams(log.Data)
@@ -76,5 +76,7 @@ func (crawler *Crawler) handleEventLogWithBlockNumber(log types.Log, tradeLog *c
 		crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 		return true, nil
 	}
+
+	crawler.sugar.Info("Unknown log topic.")
 	return false, nil
 }

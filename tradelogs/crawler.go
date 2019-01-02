@@ -37,7 +37,7 @@ const (
 	// rsv2 ==0 if token -> eth
 	kyberTradeEvent = "0xd30ca399cb43507ecec6a629a35cf45eb98cda550c27696dcb0d8c4a3873ce6c"
 	// startingBlockV3 is the block where V3 contract is used.
-	startingBlockV3 = 4715286
+	startingBlockV3 = 0
 )
 
 // NewCrawler create a new Crawler instance.
@@ -202,6 +202,7 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 			ethereum.HexToHash(burnFeeEvent),
 			ethereum.HexToHash(feeToWalletEvent),
 			ethereum.HexToHash(etherReceivalEvent),
+			ethereum.HexToHash(kyberTradeEvent),
 		},
 	}
 

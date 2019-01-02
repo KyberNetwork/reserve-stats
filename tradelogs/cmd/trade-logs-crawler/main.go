@@ -279,7 +279,7 @@ func run(c *cli.Context) error {
 			sugar.Infow("fetching trade logs up to latest known block number", "to_block", toBlock.String())
 		}
 
-		if fromBlock.Int64() >= toBlock.Int64() {
+		if  fromBlock.Cmp(toBlock) >= 0 {
 			return errors.New("fromBlock is bigger than toBlock")
 		}
 

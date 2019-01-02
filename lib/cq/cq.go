@@ -227,7 +227,12 @@ func (cq *ContinuousQuery) Drop(c client.Client, sugar *zap.SugaredLogger) error
 	for _, offset := range cq.OffsetIntervals {
 		name := cq.Name
 		if offset != "" {
-			name = cq.Name + "_" + offset
+			if strings.Contains(offset, "-") {
+				offsetIntervalName := strings.Replace(offset, "-", "", 1)
+				name = name + "_" + offsetIntervalName
+			} else {
+				name = name + "_" + "minus" + offset
+			}
 		}
 		sugar.Debugw("Drop cq", "cq name", name)
 		if _, err := cq.queryDB(c, fmt.Sprintf("DROP CONTINUOUS QUERY %s ON %s", name, cq.Database)); err != nil {

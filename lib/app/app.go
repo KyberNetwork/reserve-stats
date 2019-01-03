@@ -45,6 +45,8 @@ func stringToDeploymentMode(mode string) (deployment.Deployment, error) {
 		return deployment.Staging, nil
 	case deployment.Production.String():
 		return deployment.Production, nil
+	case deployment.Ropsten.String():
+		return deployment.Ropsten, nil
 	}
 	return 0, fmt.Errorf("deployment mode is not valid: %s", mode)
 }
@@ -63,4 +65,10 @@ func Validate(c *cli.Context) error {
 		return err
 	}
 	return nil
+}
+
+// GetDeploymentModeFromContext return the deployment mode and error
+func GetDeploymentModeFromContext(c *cli.Context) (deployment.Deployment, error) {
+	dpl := c.GlobalString(Flag)
+	return stringToDeploymentMode(dpl)
 }

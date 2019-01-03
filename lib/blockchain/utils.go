@@ -3,15 +3,7 @@ package blockchain
 import (
 	"math"
 	"math/big"
-
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
-
-var notBurnTokens = map[ethereum.Address]struct{}{
-	ETHAddr:  {},
-	WETHAddr: {},
-	KCCAddr:  {},
-}
 
 // floatToBigInt converts a float to a big int with specific decimal
 // Example:
@@ -29,11 +21,4 @@ func floatToBigInt(amount float64, decimal int64) *big.Int {
 // EthToWei converts Gwei as a float to Wei as a big int
 func EthToWei(n float64) *big.Int {
 	return floatToBigInt(n, 18)
-}
-
-// IsBurnable indicate if the burn fee event was emitted when
-// the given token was trade on KyberNetwork
-func IsBurnable(token ethereum.Address) bool {
-	_, notBurn := notBurnTokens[token]
-	return !notBurn
 }

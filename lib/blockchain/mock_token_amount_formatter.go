@@ -25,3 +25,18 @@ func (mc *MockTokenAmountFormatter) ToWei(_ common.Address, _ float64) (*big.Int
 func (mc *MockTokenAmountFormatter) FromWei(_ common.Address, _ *big.Int) (float64, error) {
 	return 9.99, nil
 }
+
+//KNCAddr return mock knc addr
+func (mc *MockTokenAmountFormatter) KNCAddr() common.Address {
+	return common.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200")
+}
+
+//ETHAddr return mock eth addr
+func (mc *MockTokenAmountFormatter) ETHAddr() common.Address {
+	return common.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+}
+
+//IsBurnable always return false
+func (mc *MockTokenAmountFormatter) IsBurnable(token common.Address) bool {
+	return false
+}

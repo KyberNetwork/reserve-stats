@@ -22,17 +22,19 @@ type TokenAmountFormatter struct {
 	mu             *sync.RWMutex
 	ethClient      *ethclient.Client // eth client
 	cachedDecimals map[common.Address]int64
+	tokenAddress   tokenAddresses
 }
 
 // NewTokenAmountFormatter returns a new TokenAmountFormatter instance.
-func NewTokenAmountFormatter(client *ethclient.Client) (*TokenAmountFormatter, error) {
+func NewTokenAmountFormatter(client *ethclient.Client, tAddr tokenAddresses) (*TokenAmountFormatter, error) {
 	var cachedDecimals = make(map[common.Address]int64)
-	cachedDecimals[ETHAddr] = 18
+	cachedDecimals[tAddr.ETHAddr] = 18
 
 	return &TokenAmountFormatter{
 		mu:             &sync.RWMutex{},
 		ethClient:      client,
 		cachedDecimals: cachedDecimals,
+		tokenAddress:   tAddr,
 	}, nil
 }
 
@@ -42,7 +44,11 @@ func NewToKenAmountFormatterFromContext(c *cli.Context) (*TokenAmountFormatter, 
 	if err != nil {
 		return nil, err
 	}
-	return NewTokenAmountFormatter(client)
+	tokenAddrs, err := getTokenAddressFromContext(c)
+	if err != nil {
+		return nil, err
+	}
+	return NewTokenAmountFormatter(client, tokenAddrs)
 }
 
 // FromWei formats the given amount in wei to human friendly
@@ -101,4 +107,27 @@ func (f *TokenAmountFormatter) getDecimals(address common.Address) (int64, error
 	f.cachedDecimals[address] = int64(decimals)
 	f.mu.Unlock()
 	return int64(decimals), err
+}
+
+// IsBurnable indicate if the burn fee event was emitted when
+// the given token was trade on KyberNetwork
+func (f *TokenAmountFormatter) IsBurnable(token common.Address) bool {
+	var notBurnTokens = map[common.Address]struct{}{
+		f.tokenAddress.ETHAddr:  {},
+		f.tokenAddress.WETHAddr: {},
+		f.tokenAddress.KCCAddr:  {},
+	}
+
+	_, notBurn := notBurnTokens[token]
+	return !notBurn
+}
+
+// KNCAddr return KNC address on current deployment mode
+func (f *TokenAmountFormatter) KNCAddr() common.Address {
+	return f.tokenAddress.KNCAddr
+}
+
+// ETHAddr return ETH address on current deployment mode
+func (f *TokenAmountFormatter) ETHAddr() common.Address {
+	return f.tokenAddress.ETHAddr
 }

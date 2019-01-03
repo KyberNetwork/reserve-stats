@@ -8,7 +8,6 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/influxdata/influxdb/models"
 
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	burnschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee"
@@ -133,7 +132,7 @@ func (is *InfluxStorage) rowToBurnFees(row models.Row) (ethereum.Hash, uint64, [
 			return txHash, tradeLogIndex, nil, err
 		}
 
-		weiAmount, err := is.tokenAmountFormatter.ToWei(blockchain.KNCAddr, humanizedAmount)
+		weiAmount, err := is.tokenAmountFormatter.ToWei(is.tokenAmountFormatter.KNCAddr(), humanizedAmount)
 		if err != nil {
 			return txHash, tradeLogIndex, nil, err
 		}
@@ -196,7 +195,7 @@ func (is *InfluxStorage) rowToWalletFees(row models.Row) (ethereum.Hash, uint64,
 			return txHash, tradeLogIndex, nil, err
 		}
 
-		weiAmount, err := is.tokenAmountFormatter.ToWei(blockchain.KNCAddr, humanizedAmount)
+		weiAmount, err := is.tokenAmountFormatter.ToWei(is.tokenAmountFormatter.KNCAddr(), humanizedAmount)
 		if err != nil {
 			return txHash, tradeLogIndex, nil, err
 		}
@@ -273,7 +272,7 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		return tradeLog, fmt.Errorf("failed to get eth_receival_amount: %s", err)
 	}
 
-	ethReceivalAmountInWei, err := is.tokenAmountFormatter.ToWei(blockchain.ETHAddr, humanizedEthReceival)
+	ethReceivalAmountInWei, err := is.tokenAmountFormatter.ToWei(is.tokenAmountFormatter.ETHAddr(), humanizedEthReceival)
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to convert eth_receival_amount: %s", err)
 	}

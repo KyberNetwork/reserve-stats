@@ -15,10 +15,11 @@ const Flag = "deployment"
 type Address map[deployment.Deployment][]common.Address
 
 // NewAddress returns an Address instance. Address of all deployments should be present.
-func NewAddress(prodAddr, stagingAddr []common.Address) Address {
+func NewAddress(prodAddr, stagingAddr, ropstenAddr []common.Address) Address {
 	return map[deployment.Deployment][]common.Address{
 		deployment.Production: prodAddr,
 		deployment.Staging:    stagingAddr,
+		deployment.Ropsten:    ropstenAddr,
 	}
 }
 
@@ -27,6 +28,7 @@ func NewCrossDeploymentAddress(addr []common.Address) Address {
 	return map[deployment.Deployment][]common.Address{
 		deployment.Production: addr,
 		deployment.Staging:    addr,
+		deployment.Ropsten:    addr,
 	}
 }
 

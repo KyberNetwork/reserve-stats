@@ -322,8 +322,8 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		"log", log,
 	)
 
-	if blockchain.IsBurnable(log.SrcAddress) {
-		if blockchain.IsBurnable(log.DestAddress) {
+	if is.tokenAmountFormatter.IsBurnable(log.SrcAddress) {
+		if is.tokenAmountFormatter.IsBurnable(log.DestAddress) {
 			if len(log.BurnFees) == 2 {
 				tags[logschema.SrcReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
 				tags[logschema.DstReserveAddr.String()] = log.BurnFees[1].ReserveAddress.String()
@@ -337,7 +337,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 				logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (src)")
 			}
 		}
-	} else if blockchain.IsBurnable(log.DestAddress) {
+	} else if is.tokenAmountFormatter.IsBurnable(log.DestAddress) {
 		if len(log.BurnFees) == 1 {
 			tags[logschema.DstReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
 		} else {
@@ -345,7 +345,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		}
 	}
 
-	ethReceivalAmount, err := is.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EtherReceivalAmount)
+	ethReceivalAmount, err := is.tokenAmountFormatter.FromWei(is.tokenAmountFormatter.ETHAddr(), log.EtherReceivalAmount)
 	if err != nil {
 		return nil, err
 	}
@@ -362,9 +362,9 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 
 	var ethAmount float64
 
-	if log.SrcAddress == blockchain.ETHAddr {
+	if log.SrcAddress == is.tokenAmountFormatter.ETHAddr() {
 		ethAmount = srcAmount
-	} else if log.DestAddress == blockchain.ETHAddr {
+	} else if log.DestAddress == is.tokenAmountFormatter.ETHAddr() {
 		ethAmount = dstAmount
 	} else {
 		ethAmount = ethReceivalAmount
@@ -398,7 +398,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			burnschema.Country.String():       log.Country,
 		}
 
-		burnAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, burn.Amount)
+		burnAmount, err := is.tokenAmountFormatter.FromWei(is.tokenAmountFormatter.KNCAddr(), burn.Amount)
 		if err != nil {
 			return nil, err
 		}
@@ -426,7 +426,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			walletschema.Country.String():       log.Country,
 		}
 
-		amount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, walletFee.Amount)
+		amount, err := is.tokenAmountFormatter.FromWei(is.tokenAmountFormatter.KNCAddr(), walletFee.Amount)
 		if err != nil {
 			return nil, err
 		}

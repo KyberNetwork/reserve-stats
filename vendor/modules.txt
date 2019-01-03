@@ -34,10 +34,14 @@ github.com/ethereum/go-ethereum/core/types
 github.com/ethereum/go-ethereum
 github.com/ethereum/go-ethereum/accounts/abi
 github.com/ethereum/go-ethereum/event
+github.com/ethereum/go-ethereum/rpc
 github.com/ethereum/go-ethereum/common/hexutil
 github.com/ethereum/go-ethereum/crypto/sha3
 github.com/ethereum/go-ethereum/rlp
+<<<<<<< HEAD
 github.com/ethereum/go-ethereum/rpc
+=======
+>>>>>>> f904071... add proxy abi
 github.com/ethereum/go-ethereum/accounts/keystore
 github.com/ethereum/go-ethereum/crypto
 github.com/ethereum/go-ethereum/log
@@ -148,8 +152,8 @@ go.uber.org/zap/internal/exit
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
 # golang.org/x/net v0.0.0-20181011144130-49bb7cea24b1
-golang.org/x/net/context
 golang.org/x/net/websocket
+golang.org/x/net/context
 # golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f
 golang.org/x/sync/errgroup
 # golang.org/x/sys v0.0.0-20181030150119-7e31e0c00fa0

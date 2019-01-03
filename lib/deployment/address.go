@@ -13,6 +13,8 @@ const Flag = "deployment"
 // Address is a wrapper of ethereum common Address that supports multiple deployments.
 type Address map[Deployment][]common.Address
 
+// type
+
 // NewAddress returns an Address instance. Address of all deployments should be present.
 func NewAddress(prodAddr, stagingAddr []common.Address) Address {
 	return map[Deployment][]common.Address{

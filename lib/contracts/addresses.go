@@ -3,7 +3,18 @@ package contracts
 import (
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/rpc"
 )
+
+//AddressClient is for dynamically call to get address from proxy contract
+type AddressClient struct {
+	client *rpc.Client
+}
+
+//NewAddressClient return new AddressClient
+func NewAddressClient(client *rpc.Client) *AddressClient {
+	return &AddressClient{client: client}
+}
 
 // InternalNetworkContractAddress returns the address of internal network contract of all deployments.
 func InternalNetworkContractAddress() deployment.Address {
@@ -20,9 +31,14 @@ func PricingContractAddress() deployment.Address {
 	return pricingContractAddress
 }
 
-// NetworkContractAddress returns the address of network contract of all deployments.
-func NetworkContractAddress() deployment.Address {
-	return networkContractAddress
+// // NetworkContractAddress returns the address of network contract of all deployments.
+// func NetworkContractAddress() app.Address {
+// 	return networkContractAddress
+// }
+
+//ProxyContractAddress returns the address of proxy contract of all deployments
+func ProxyContractAddress() app.Address {
+	return proxyContractAddress
 }
 
 // BurnerContractAddress returns the address of burner contract of all deployments.
@@ -53,7 +69,7 @@ var (
 		[]common.Address{common.HexToAddress("0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B")},
 		[]common.Address{common.HexToAddress("0xe3E415a7a6c287a95DC68a01ff036828073fD2e6")},
 	)
-	networkContractAddress = deployment.NewAddress(
+	proxyContractAddress = app.NewAddress(
 		[]common.Address{common.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")},
 		[]common.Address{common.HexToAddress("0xC14f34233071543E979F6A79AA272b0AB1B4947D")},
 	)

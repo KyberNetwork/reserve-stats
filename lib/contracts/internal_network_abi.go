@@ -278,7 +278,7 @@ func (_InternalNetwork *InternalNetworkCallerSession) FeeBurnerContract() (commo
 
 // FindBestRate is a free data retrieval call binding the contract method 0xb8388aca.
 //
-// Solidity: function findBestRate(src address, dest address, srcAmount uint256) constant returns(obsolete uint256, rate uint256)
+// Solidity: function findBestRate(address src, address dest, uint256 srcAmount) constant returns(uint256 obsolete, uint256 rate)
 func (_InternalNetwork *InternalNetworkCaller) FindBestRate(opts *bind.CallOpts, src common.Address, dest common.Address, srcAmount *big.Int) (struct {
 	Obsolete *big.Int
 	Rate     *big.Int
@@ -294,7 +294,7 @@ func (_InternalNetwork *InternalNetworkCaller) FindBestRate(opts *bind.CallOpts,
 
 // FindBestRate is a free data retrieval call binding the contract method 0xb8388aca.
 //
-// Solidity: function findBestRate(src address, dest address, srcAmount uint256) constant returns(obsolete uint256, rate uint256)
+// Solidity: function findBestRate(address src, address dest, uint256 srcAmount) constant returns(uint256 obsolete, uint256 rate)
 func (_InternalNetwork *InternalNetworkSession) FindBestRate(src common.Address, dest common.Address, srcAmount *big.Int) (struct {
 	Obsolete *big.Int
 	Rate     *big.Int
@@ -304,7 +304,7 @@ func (_InternalNetwork *InternalNetworkSession) FindBestRate(src common.Address,
 
 // FindBestRate is a free data retrieval call binding the contract method 0xb8388aca.
 //
-// Solidity: function findBestRate(src address, dest address, srcAmount uint256) constant returns(obsolete uint256, rate uint256)
+// Solidity: function findBestRate(address src, address dest, uint256 srcAmount) constant returns(uint256 obsolete, uint256 rate)
 func (_InternalNetwork *InternalNetworkCallerSession) FindBestRate(src common.Address, dest common.Address, srcAmount *big.Int) (struct {
 	Obsolete *big.Int
 	Rate     *big.Int
@@ -340,7 +340,7 @@ func (_InternalNetwork *InternalNetworkCallerSession) GetAlerters() ([]common.Ad
 
 // GetBalance is a free data retrieval call binding the contract method 0xd4fac45d.
 //
-// Solidity: function getBalance(token address, user address) constant returns(uint256)
+// Solidity: function getBalance(address token, address user) constant returns(uint256)
 func (_InternalNetwork *InternalNetworkCaller) GetBalance(opts *bind.CallOpts, token common.Address, user common.Address) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -352,21 +352,21 @@ func (_InternalNetwork *InternalNetworkCaller) GetBalance(opts *bind.CallOpts, t
 
 // GetBalance is a free data retrieval call binding the contract method 0xd4fac45d.
 //
-// Solidity: function getBalance(token address, user address) constant returns(uint256)
+// Solidity: function getBalance(address token, address user) constant returns(uint256)
 func (_InternalNetwork *InternalNetworkSession) GetBalance(token common.Address, user common.Address) (*big.Int, error) {
 	return _InternalNetwork.Contract.GetBalance(&_InternalNetwork.CallOpts, token, user)
 }
 
 // GetBalance is a free data retrieval call binding the contract method 0xd4fac45d.
 //
-// Solidity: function getBalance(token address, user address) constant returns(uint256)
+// Solidity: function getBalance(address token, address user) constant returns(uint256)
 func (_InternalNetwork *InternalNetworkCallerSession) GetBalance(token common.Address, user common.Address) (*big.Int, error) {
 	return _InternalNetwork.Contract.GetBalance(&_InternalNetwork.CallOpts, token, user)
 }
 
 // GetExpectedRate is a free data retrieval call binding the contract method 0x809a9e55.
 //
-// Solidity: function getExpectedRate(src address, dest address, srcQty uint256) constant returns(expectedRate uint256, slippageRate uint256)
+// Solidity: function getExpectedRate(address src, address dest, uint256 srcQty) constant returns(uint256 expectedRate, uint256 slippageRate)
 func (_InternalNetwork *InternalNetworkCaller) GetExpectedRate(opts *bind.CallOpts, src common.Address, dest common.Address, srcQty *big.Int) (struct {
 	ExpectedRate *big.Int
 	SlippageRate *big.Int
@@ -382,7 +382,7 @@ func (_InternalNetwork *InternalNetworkCaller) GetExpectedRate(opts *bind.CallOp
 
 // GetExpectedRate is a free data retrieval call binding the contract method 0x809a9e55.
 //
-// Solidity: function getExpectedRate(src address, dest address, srcQty uint256) constant returns(expectedRate uint256, slippageRate uint256)
+// Solidity: function getExpectedRate(address src, address dest, uint256 srcQty) constant returns(uint256 expectedRate, uint256 slippageRate)
 func (_InternalNetwork *InternalNetworkSession) GetExpectedRate(src common.Address, dest common.Address, srcQty *big.Int) (struct {
 	ExpectedRate *big.Int
 	SlippageRate *big.Int
@@ -392,7 +392,7 @@ func (_InternalNetwork *InternalNetworkSession) GetExpectedRate(src common.Addre
 
 // GetExpectedRate is a free data retrieval call binding the contract method 0x809a9e55.
 //
-// Solidity: function getExpectedRate(src address, dest address, srcQty uint256) constant returns(expectedRate uint256, slippageRate uint256)
+// Solidity: function getExpectedRate(address src, address dest, uint256 srcQty) constant returns(uint256 expectedRate, uint256 slippageRate)
 func (_InternalNetwork *InternalNetworkCallerSession) GetExpectedRate(src common.Address, dest common.Address, srcQty *big.Int) (struct {
 	ExpectedRate *big.Int
 	SlippageRate *big.Int
@@ -480,7 +480,7 @@ func (_InternalNetwork *InternalNetworkCallerSession) GetReserves() ([]common.Ad
 
 // GetUserCapInTokenWei is a free data retrieval call binding the contract method 0x8eaaeecf.
 //
-// Solidity: function getUserCapInTokenWei(user address, token address) constant returns(uint256)
+// Solidity: function getUserCapInTokenWei(address user, address token) constant returns(uint256)
 func (_InternalNetwork *InternalNetworkCaller) GetUserCapInTokenWei(opts *bind.CallOpts, user common.Address, token common.Address) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -492,21 +492,21 @@ func (_InternalNetwork *InternalNetworkCaller) GetUserCapInTokenWei(opts *bind.C
 
 // GetUserCapInTokenWei is a free data retrieval call binding the contract method 0x8eaaeecf.
 //
-// Solidity: function getUserCapInTokenWei(user address, token address) constant returns(uint256)
+// Solidity: function getUserCapInTokenWei(address user, address token) constant returns(uint256)
 func (_InternalNetwork *InternalNetworkSession) GetUserCapInTokenWei(user common.Address, token common.Address) (*big.Int, error) {
 	return _InternalNetwork.Contract.GetUserCapInTokenWei(&_InternalNetwork.CallOpts, user, token)
 }
 
 // GetUserCapInTokenWei is a free data retrieval call binding the contract method 0x8eaaeecf.
 //
-// Solidity: function getUserCapInTokenWei(user address, token address) constant returns(uint256)
+// Solidity: function getUserCapInTokenWei(address user, address token) constant returns(uint256)
 func (_InternalNetwork *InternalNetworkCallerSession) GetUserCapInTokenWei(user common.Address, token common.Address) (*big.Int, error) {
 	return _InternalNetwork.Contract.GetUserCapInTokenWei(&_InternalNetwork.CallOpts, user, token)
 }
 
 // GetUserCapInWei is a free data retrieval call binding the contract method 0x6432679f.
 //
-// Solidity: function getUserCapInWei(user address) constant returns(uint256)
+// Solidity: function getUserCapInWei(address user) constant returns(uint256)
 func (_InternalNetwork *InternalNetworkCaller) GetUserCapInWei(opts *bind.CallOpts, user common.Address) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -518,21 +518,21 @@ func (_InternalNetwork *InternalNetworkCaller) GetUserCapInWei(opts *bind.CallOp
 
 // GetUserCapInWei is a free data retrieval call binding the contract method 0x6432679f.
 //
-// Solidity: function getUserCapInWei(user address) constant returns(uint256)
+// Solidity: function getUserCapInWei(address user) constant returns(uint256)
 func (_InternalNetwork *InternalNetworkSession) GetUserCapInWei(user common.Address) (*big.Int, error) {
 	return _InternalNetwork.Contract.GetUserCapInWei(&_InternalNetwork.CallOpts, user)
 }
 
 // GetUserCapInWei is a free data retrieval call binding the contract method 0x6432679f.
 //
-// Solidity: function getUserCapInWei(user address) constant returns(uint256)
+// Solidity: function getUserCapInWei(address user) constant returns(uint256)
 func (_InternalNetwork *InternalNetworkCallerSession) GetUserCapInWei(user common.Address) (*big.Int, error) {
 	return _InternalNetwork.Contract.GetUserCapInWei(&_InternalNetwork.CallOpts, user)
 }
 
 // Info is a free data retrieval call binding the contract method 0xb64a097e.
 //
-// Solidity: function info(field bytes32) constant returns(uint256)
+// Solidity: function info(bytes32 field) constant returns(uint256)
 func (_InternalNetwork *InternalNetworkCaller) Info(opts *bind.CallOpts, field [32]byte) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -544,21 +544,21 @@ func (_InternalNetwork *InternalNetworkCaller) Info(opts *bind.CallOpts, field [
 
 // Info is a free data retrieval call binding the contract method 0xb64a097e.
 //
-// Solidity: function info(field bytes32) constant returns(uint256)
+// Solidity: function info(bytes32 field) constant returns(uint256)
 func (_InternalNetwork *InternalNetworkSession) Info(field [32]byte) (*big.Int, error) {
 	return _InternalNetwork.Contract.Info(&_InternalNetwork.CallOpts, field)
 }
 
 // Info is a free data retrieval call binding the contract method 0xb64a097e.
 //
-// Solidity: function info(field bytes32) constant returns(uint256)
+// Solidity: function info(bytes32 field) constant returns(uint256)
 func (_InternalNetwork *InternalNetworkCallerSession) Info(field [32]byte) (*big.Int, error) {
 	return _InternalNetwork.Contract.Info(&_InternalNetwork.CallOpts, field)
 }
 
 // InfoFields is a free data retrieval call binding the contract method 0x1610b59b.
 //
-// Solidity: function infoFields( bytes32) constant returns(uint256)
+// Solidity: function infoFields(bytes32 ) constant returns(uint256)
 func (_InternalNetwork *InternalNetworkCaller) InfoFields(opts *bind.CallOpts, arg0 [32]byte) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -570,14 +570,14 @@ func (_InternalNetwork *InternalNetworkCaller) InfoFields(opts *bind.CallOpts, a
 
 // InfoFields is a free data retrieval call binding the contract method 0x1610b59b.
 //
-// Solidity: function infoFields( bytes32) constant returns(uint256)
+// Solidity: function infoFields(bytes32 ) constant returns(uint256)
 func (_InternalNetwork *InternalNetworkSession) InfoFields(arg0 [32]byte) (*big.Int, error) {
 	return _InternalNetwork.Contract.InfoFields(&_InternalNetwork.CallOpts, arg0)
 }
 
 // InfoFields is a free data retrieval call binding the contract method 0x1610b59b.
 //
-// Solidity: function infoFields( bytes32) constant returns(uint256)
+// Solidity: function infoFields(bytes32 ) constant returns(uint256)
 func (_InternalNetwork *InternalNetworkCallerSession) InfoFields(arg0 [32]byte) (*big.Int, error) {
 	return _InternalNetwork.Contract.InfoFields(&_InternalNetwork.CallOpts, arg0)
 }
@@ -610,7 +610,7 @@ func (_InternalNetwork *InternalNetworkCallerSession) IsEnabled() (bool, error) 
 
 // IsReserve is a free data retrieval call binding the contract method 0x7a2b0587.
 //
-// Solidity: function isReserve( address) constant returns(bool)
+// Solidity: function isReserve(address ) constant returns(bool)
 func (_InternalNetwork *InternalNetworkCaller) IsReserve(opts *bind.CallOpts, arg0 common.Address) (bool, error) {
 	var (
 		ret0 = new(bool)
@@ -622,14 +622,14 @@ func (_InternalNetwork *InternalNetworkCaller) IsReserve(opts *bind.CallOpts, ar
 
 // IsReserve is a free data retrieval call binding the contract method 0x7a2b0587.
 //
-// Solidity: function isReserve( address) constant returns(bool)
+// Solidity: function isReserve(address ) constant returns(bool)
 func (_InternalNetwork *InternalNetworkSession) IsReserve(arg0 common.Address) (bool, error) {
 	return _InternalNetwork.Contract.IsReserve(&_InternalNetwork.CallOpts, arg0)
 }
 
 // IsReserve is a free data retrieval call binding the contract method 0x7a2b0587.
 //
-// Solidity: function isReserve( address) constant returns(bool)
+// Solidity: function isReserve(address ) constant returns(bool)
 func (_InternalNetwork *InternalNetworkCallerSession) IsReserve(arg0 common.Address) (bool, error) {
 	return _InternalNetwork.Contract.IsReserve(&_InternalNetwork.CallOpts, arg0)
 }
@@ -766,7 +766,7 @@ func (_InternalNetwork *InternalNetworkCallerSession) PendingAdmin() (common.Add
 
 // Reserves is a free data retrieval call binding the contract method 0x8334278d.
 //
-// Solidity: function reserves( uint256) constant returns(address)
+// Solidity: function reserves(uint256 ) constant returns(address)
 func (_InternalNetwork *InternalNetworkCaller) Reserves(opts *bind.CallOpts, arg0 *big.Int) (common.Address, error) {
 	var (
 		ret0 = new(common.Address)
@@ -778,21 +778,21 @@ func (_InternalNetwork *InternalNetworkCaller) Reserves(opts *bind.CallOpts, arg
 
 // Reserves is a free data retrieval call binding the contract method 0x8334278d.
 //
-// Solidity: function reserves( uint256) constant returns(address)
+// Solidity: function reserves(uint256 ) constant returns(address)
 func (_InternalNetwork *InternalNetworkSession) Reserves(arg0 *big.Int) (common.Address, error) {
 	return _InternalNetwork.Contract.Reserves(&_InternalNetwork.CallOpts, arg0)
 }
 
 // Reserves is a free data retrieval call binding the contract method 0x8334278d.
 //
-// Solidity: function reserves( uint256) constant returns(address)
+// Solidity: function reserves(uint256 ) constant returns(address)
 func (_InternalNetwork *InternalNetworkCallerSession) Reserves(arg0 *big.Int) (common.Address, error) {
 	return _InternalNetwork.Contract.Reserves(&_InternalNetwork.CallOpts, arg0)
 }
 
 // ReservesPerTokenDest is a free data retrieval call binding the contract method 0x937e909b.
 //
-// Solidity: function reservesPerTokenDest( address,  uint256) constant returns(address)
+// Solidity: function reservesPerTokenDest(address , uint256 ) constant returns(address)
 func (_InternalNetwork *InternalNetworkCaller) ReservesPerTokenDest(opts *bind.CallOpts, arg0 common.Address, arg1 *big.Int) (common.Address, error) {
 	var (
 		ret0 = new(common.Address)
@@ -804,21 +804,21 @@ func (_InternalNetwork *InternalNetworkCaller) ReservesPerTokenDest(opts *bind.C
 
 // ReservesPerTokenDest is a free data retrieval call binding the contract method 0x937e909b.
 //
-// Solidity: function reservesPerTokenDest( address,  uint256) constant returns(address)
+// Solidity: function reservesPerTokenDest(address , uint256 ) constant returns(address)
 func (_InternalNetwork *InternalNetworkSession) ReservesPerTokenDest(arg0 common.Address, arg1 *big.Int) (common.Address, error) {
 	return _InternalNetwork.Contract.ReservesPerTokenDest(&_InternalNetwork.CallOpts, arg0, arg1)
 }
 
 // ReservesPerTokenDest is a free data retrieval call binding the contract method 0x937e909b.
 //
-// Solidity: function reservesPerTokenDest( address,  uint256) constant returns(address)
+// Solidity: function reservesPerTokenDest(address , uint256 ) constant returns(address)
 func (_InternalNetwork *InternalNetworkCallerSession) ReservesPerTokenDest(arg0 common.Address, arg1 *big.Int) (common.Address, error) {
 	return _InternalNetwork.Contract.ReservesPerTokenDest(&_InternalNetwork.CallOpts, arg0, arg1)
 }
 
 // ReservesPerTokenSrc is a free data retrieval call binding the contract method 0x2ab8fc2d.
 //
-// Solidity: function reservesPerTokenSrc( address,  uint256) constant returns(address)
+// Solidity: function reservesPerTokenSrc(address , uint256 ) constant returns(address)
 func (_InternalNetwork *InternalNetworkCaller) ReservesPerTokenSrc(opts *bind.CallOpts, arg0 common.Address, arg1 *big.Int) (common.Address, error) {
 	var (
 		ret0 = new(common.Address)
@@ -830,21 +830,21 @@ func (_InternalNetwork *InternalNetworkCaller) ReservesPerTokenSrc(opts *bind.Ca
 
 // ReservesPerTokenSrc is a free data retrieval call binding the contract method 0x2ab8fc2d.
 //
-// Solidity: function reservesPerTokenSrc( address,  uint256) constant returns(address)
+// Solidity: function reservesPerTokenSrc(address , uint256 ) constant returns(address)
 func (_InternalNetwork *InternalNetworkSession) ReservesPerTokenSrc(arg0 common.Address, arg1 *big.Int) (common.Address, error) {
 	return _InternalNetwork.Contract.ReservesPerTokenSrc(&_InternalNetwork.CallOpts, arg0, arg1)
 }
 
 // ReservesPerTokenSrc is a free data retrieval call binding the contract method 0x2ab8fc2d.
 //
-// Solidity: function reservesPerTokenSrc( address,  uint256) constant returns(address)
+// Solidity: function reservesPerTokenSrc(address , uint256 ) constant returns(address)
 func (_InternalNetwork *InternalNetworkCallerSession) ReservesPerTokenSrc(arg0 common.Address, arg1 *big.Int) (common.Address, error) {
 	return _InternalNetwork.Contract.ReservesPerTokenSrc(&_InternalNetwork.CallOpts, arg0, arg1)
 }
 
 // SearchBestRate is a free data retrieval call binding the contract method 0xab127a0c.
 //
-// Solidity: function searchBestRate(src address, dest address, srcAmount uint256) constant returns(address, uint256)
+// Solidity: function searchBestRate(address src, address dest, uint256 srcAmount) constant returns(address, uint256)
 func (_InternalNetwork *InternalNetworkCaller) SearchBestRate(opts *bind.CallOpts, src common.Address, dest common.Address, srcAmount *big.Int) (common.Address, *big.Int, error) {
 	var (
 		ret0 = new(common.Address)
@@ -860,14 +860,14 @@ func (_InternalNetwork *InternalNetworkCaller) SearchBestRate(opts *bind.CallOpt
 
 // SearchBestRate is a free data retrieval call binding the contract method 0xab127a0c.
 //
-// Solidity: function searchBestRate(src address, dest address, srcAmount uint256) constant returns(address, uint256)
+// Solidity: function searchBestRate(address src, address dest, uint256 srcAmount) constant returns(address, uint256)
 func (_InternalNetwork *InternalNetworkSession) SearchBestRate(src common.Address, dest common.Address, srcAmount *big.Int) (common.Address, *big.Int, error) {
 	return _InternalNetwork.Contract.SearchBestRate(&_InternalNetwork.CallOpts, src, dest, srcAmount)
 }
 
 // SearchBestRate is a free data retrieval call binding the contract method 0xab127a0c.
 //
-// Solidity: function searchBestRate(src address, dest address, srcAmount uint256) constant returns(address, uint256)
+// Solidity: function searchBestRate(address src, address dest, uint256 srcAmount) constant returns(address, uint256)
 func (_InternalNetwork *InternalNetworkCallerSession) SearchBestRate(src common.Address, dest common.Address, srcAmount *big.Int) (common.Address, *big.Int, error) {
 	return _InternalNetwork.Contract.SearchBestRate(&_InternalNetwork.CallOpts, src, dest, srcAmount)
 }
@@ -900,63 +900,63 @@ func (_InternalNetwork *InternalNetworkCallerSession) WhiteListContract() (commo
 
 // AddAlerter is a paid mutator transaction binding the contract method 0x408ee7fe.
 //
-// Solidity: function addAlerter(newAlerter address) returns()
+// Solidity: function addAlerter(address newAlerter) returns()
 func (_InternalNetwork *InternalNetworkTransactor) AddAlerter(opts *bind.TransactOpts, newAlerter common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "addAlerter", newAlerter)
 }
 
 // AddAlerter is a paid mutator transaction binding the contract method 0x408ee7fe.
 //
-// Solidity: function addAlerter(newAlerter address) returns()
+// Solidity: function addAlerter(address newAlerter) returns()
 func (_InternalNetwork *InternalNetworkSession) AddAlerter(newAlerter common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.AddAlerter(&_InternalNetwork.TransactOpts, newAlerter)
 }
 
 // AddAlerter is a paid mutator transaction binding the contract method 0x408ee7fe.
 //
-// Solidity: function addAlerter(newAlerter address) returns()
+// Solidity: function addAlerter(address newAlerter) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) AddAlerter(newAlerter common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.AddAlerter(&_InternalNetwork.TransactOpts, newAlerter)
 }
 
 // AddOperator is a paid mutator transaction binding the contract method 0x9870d7fe.
 //
-// Solidity: function addOperator(newOperator address) returns()
+// Solidity: function addOperator(address newOperator) returns()
 func (_InternalNetwork *InternalNetworkTransactor) AddOperator(opts *bind.TransactOpts, newOperator common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "addOperator", newOperator)
 }
 
 // AddOperator is a paid mutator transaction binding the contract method 0x9870d7fe.
 //
-// Solidity: function addOperator(newOperator address) returns()
+// Solidity: function addOperator(address newOperator) returns()
 func (_InternalNetwork *InternalNetworkSession) AddOperator(newOperator common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.AddOperator(&_InternalNetwork.TransactOpts, newOperator)
 }
 
 // AddOperator is a paid mutator transaction binding the contract method 0x9870d7fe.
 //
-// Solidity: function addOperator(newOperator address) returns()
+// Solidity: function addOperator(address newOperator) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) AddOperator(newOperator common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.AddOperator(&_InternalNetwork.TransactOpts, newOperator)
 }
 
 // AddReserve is a paid mutator transaction binding the contract method 0xa0d7bb1b.
 //
-// Solidity: function addReserve(reserve address, add bool) returns()
+// Solidity: function addReserve(address reserve, bool add) returns()
 func (_InternalNetwork *InternalNetworkTransactor) AddReserve(opts *bind.TransactOpts, reserve common.Address, add bool) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "addReserve", reserve, add)
 }
 
 // AddReserve is a paid mutator transaction binding the contract method 0xa0d7bb1b.
 //
-// Solidity: function addReserve(reserve address, add bool) returns()
+// Solidity: function addReserve(address reserve, bool add) returns()
 func (_InternalNetwork *InternalNetworkSession) AddReserve(reserve common.Address, add bool) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.AddReserve(&_InternalNetwork.TransactOpts, reserve, add)
 }
 
 // AddReserve is a paid mutator transaction binding the contract method 0xa0d7bb1b.
 //
-// Solidity: function addReserve(reserve address, add bool) returns()
+// Solidity: function addReserve(address reserve, bool add) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) AddReserve(reserve common.Address, add bool) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.AddReserve(&_InternalNetwork.TransactOpts, reserve, add)
 }
@@ -984,315 +984,315 @@ func (_InternalNetwork *InternalNetworkTransactorSession) ClaimAdmin() (*types.T
 
 // ListPairForReserve is a paid mutator transaction binding the contract method 0xe02584bf.
 //
-// Solidity: function listPairForReserve(reserve address, token address, ethToToken bool, tokenToEth bool, add bool) returns()
+// Solidity: function listPairForReserve(address reserve, address token, bool ethToToken, bool tokenToEth, bool add) returns()
 func (_InternalNetwork *InternalNetworkTransactor) ListPairForReserve(opts *bind.TransactOpts, reserve common.Address, token common.Address, ethToToken bool, tokenToEth bool, add bool) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "listPairForReserve", reserve, token, ethToToken, tokenToEth, add)
 }
 
 // ListPairForReserve is a paid mutator transaction binding the contract method 0xe02584bf.
 //
-// Solidity: function listPairForReserve(reserve address, token address, ethToToken bool, tokenToEth bool, add bool) returns()
+// Solidity: function listPairForReserve(address reserve, address token, bool ethToToken, bool tokenToEth, bool add) returns()
 func (_InternalNetwork *InternalNetworkSession) ListPairForReserve(reserve common.Address, token common.Address, ethToToken bool, tokenToEth bool, add bool) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.ListPairForReserve(&_InternalNetwork.TransactOpts, reserve, token, ethToToken, tokenToEth, add)
 }
 
 // ListPairForReserve is a paid mutator transaction binding the contract method 0xe02584bf.
 //
-// Solidity: function listPairForReserve(reserve address, token address, ethToToken bool, tokenToEth bool, add bool) returns()
+// Solidity: function listPairForReserve(address reserve, address token, bool ethToToken, bool tokenToEth, bool add) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) ListPairForReserve(reserve common.Address, token common.Address, ethToToken bool, tokenToEth bool, add bool) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.ListPairForReserve(&_InternalNetwork.TransactOpts, reserve, token, ethToToken, tokenToEth, add)
 }
 
 // RemoveAlerter is a paid mutator transaction binding the contract method 0x01a12fd3.
 //
-// Solidity: function removeAlerter(alerter address) returns()
+// Solidity: function removeAlerter(address alerter) returns()
 func (_InternalNetwork *InternalNetworkTransactor) RemoveAlerter(opts *bind.TransactOpts, alerter common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "removeAlerter", alerter)
 }
 
 // RemoveAlerter is a paid mutator transaction binding the contract method 0x01a12fd3.
 //
-// Solidity: function removeAlerter(alerter address) returns()
+// Solidity: function removeAlerter(address alerter) returns()
 func (_InternalNetwork *InternalNetworkSession) RemoveAlerter(alerter common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.RemoveAlerter(&_InternalNetwork.TransactOpts, alerter)
 }
 
 // RemoveAlerter is a paid mutator transaction binding the contract method 0x01a12fd3.
 //
-// Solidity: function removeAlerter(alerter address) returns()
+// Solidity: function removeAlerter(address alerter) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) RemoveAlerter(alerter common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.RemoveAlerter(&_InternalNetwork.TransactOpts, alerter)
 }
 
 // RemoveOperator is a paid mutator transaction binding the contract method 0xac8a584a.
 //
-// Solidity: function removeOperator(operator address) returns()
+// Solidity: function removeOperator(address operator) returns()
 func (_InternalNetwork *InternalNetworkTransactor) RemoveOperator(opts *bind.TransactOpts, operator common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "removeOperator", operator)
 }
 
 // RemoveOperator is a paid mutator transaction binding the contract method 0xac8a584a.
 //
-// Solidity: function removeOperator(operator address) returns()
+// Solidity: function removeOperator(address operator) returns()
 func (_InternalNetwork *InternalNetworkSession) RemoveOperator(operator common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.RemoveOperator(&_InternalNetwork.TransactOpts, operator)
 }
 
 // RemoveOperator is a paid mutator transaction binding the contract method 0xac8a584a.
 //
-// Solidity: function removeOperator(operator address) returns()
+// Solidity: function removeOperator(address operator) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) RemoveOperator(operator common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.RemoveOperator(&_InternalNetwork.TransactOpts, operator)
 }
 
 // SetEnable is a paid mutator transaction binding the contract method 0x7726bed3.
 //
-// Solidity: function setEnable(_enable bool) returns()
+// Solidity: function setEnable(bool _enable) returns()
 func (_InternalNetwork *InternalNetworkTransactor) SetEnable(opts *bind.TransactOpts, _enable bool) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "setEnable", _enable)
 }
 
 // SetEnable is a paid mutator transaction binding the contract method 0x7726bed3.
 //
-// Solidity: function setEnable(_enable bool) returns()
+// Solidity: function setEnable(bool _enable) returns()
 func (_InternalNetwork *InternalNetworkSession) SetEnable(_enable bool) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.SetEnable(&_InternalNetwork.TransactOpts, _enable)
 }
 
 // SetEnable is a paid mutator transaction binding the contract method 0x7726bed3.
 //
-// Solidity: function setEnable(_enable bool) returns()
+// Solidity: function setEnable(bool _enable) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) SetEnable(_enable bool) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.SetEnable(&_InternalNetwork.TransactOpts, _enable)
 }
 
 // SetExpectedRate is a paid mutator transaction binding the contract method 0x5d270cdc.
 //
-// Solidity: function setExpectedRate(expectedRate address) returns()
+// Solidity: function setExpectedRate(address expectedRate) returns()
 func (_InternalNetwork *InternalNetworkTransactor) SetExpectedRate(opts *bind.TransactOpts, expectedRate common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "setExpectedRate", expectedRate)
 }
 
 // SetExpectedRate is a paid mutator transaction binding the contract method 0x5d270cdc.
 //
-// Solidity: function setExpectedRate(expectedRate address) returns()
+// Solidity: function setExpectedRate(address expectedRate) returns()
 func (_InternalNetwork *InternalNetworkSession) SetExpectedRate(expectedRate common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.SetExpectedRate(&_InternalNetwork.TransactOpts, expectedRate)
 }
 
 // SetExpectedRate is a paid mutator transaction binding the contract method 0x5d270cdc.
 //
-// Solidity: function setExpectedRate(expectedRate address) returns()
+// Solidity: function setExpectedRate(address expectedRate) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) SetExpectedRate(expectedRate common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.SetExpectedRate(&_InternalNetwork.TransactOpts, expectedRate)
 }
 
 // SetFeeBurner is a paid mutator transaction binding the contract method 0x1a79464e.
 //
-// Solidity: function setFeeBurner(feeBurner address) returns()
+// Solidity: function setFeeBurner(address feeBurner) returns()
 func (_InternalNetwork *InternalNetworkTransactor) SetFeeBurner(opts *bind.TransactOpts, feeBurner common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "setFeeBurner", feeBurner)
 }
 
 // SetFeeBurner is a paid mutator transaction binding the contract method 0x1a79464e.
 //
-// Solidity: function setFeeBurner(feeBurner address) returns()
+// Solidity: function setFeeBurner(address feeBurner) returns()
 func (_InternalNetwork *InternalNetworkSession) SetFeeBurner(feeBurner common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.SetFeeBurner(&_InternalNetwork.TransactOpts, feeBurner)
 }
 
 // SetFeeBurner is a paid mutator transaction binding the contract method 0x1a79464e.
 //
-// Solidity: function setFeeBurner(feeBurner address) returns()
+// Solidity: function setFeeBurner(address feeBurner) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) SetFeeBurner(feeBurner common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.SetFeeBurner(&_InternalNetwork.TransactOpts, feeBurner)
 }
 
 // SetInfo is a paid mutator transaction binding the contract method 0x5f65d703.
 //
-// Solidity: function setInfo(field bytes32, value uint256) returns()
+// Solidity: function setInfo(bytes32 field, uint256 value) returns()
 func (_InternalNetwork *InternalNetworkTransactor) SetInfo(opts *bind.TransactOpts, field [32]byte, value *big.Int) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "setInfo", field, value)
 }
 
 // SetInfo is a paid mutator transaction binding the contract method 0x5f65d703.
 //
-// Solidity: function setInfo(field bytes32, value uint256) returns()
+// Solidity: function setInfo(bytes32 field, uint256 value) returns()
 func (_InternalNetwork *InternalNetworkSession) SetInfo(field [32]byte, value *big.Int) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.SetInfo(&_InternalNetwork.TransactOpts, field, value)
 }
 
 // SetInfo is a paid mutator transaction binding the contract method 0x5f65d703.
 //
-// Solidity: function setInfo(field bytes32, value uint256) returns()
+// Solidity: function setInfo(bytes32 field, uint256 value) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) SetInfo(field [32]byte, value *big.Int) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.SetInfo(&_InternalNetwork.TransactOpts, field, value)
 }
 
 // SetKyberProxy is a paid mutator transaction binding the contract method 0xc6c3f3f9.
 //
-// Solidity: function setKyberProxy(networkProxy address) returns()
+// Solidity: function setKyberProxy(address networkProxy) returns()
 func (_InternalNetwork *InternalNetworkTransactor) SetKyberProxy(opts *bind.TransactOpts, networkProxy common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "setKyberProxy", networkProxy)
 }
 
 // SetKyberProxy is a paid mutator transaction binding the contract method 0xc6c3f3f9.
 //
-// Solidity: function setKyberProxy(networkProxy address) returns()
+// Solidity: function setKyberProxy(address networkProxy) returns()
 func (_InternalNetwork *InternalNetworkSession) SetKyberProxy(networkProxy common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.SetKyberProxy(&_InternalNetwork.TransactOpts, networkProxy)
 }
 
 // SetKyberProxy is a paid mutator transaction binding the contract method 0xc6c3f3f9.
 //
-// Solidity: function setKyberProxy(networkProxy address) returns()
+// Solidity: function setKyberProxy(address networkProxy) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) SetKyberProxy(networkProxy common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.SetKyberProxy(&_InternalNetwork.TransactOpts, networkProxy)
 }
 
 // SetParams is a paid mutator transaction binding the contract method 0xc0324c77.
 //
-// Solidity: function setParams(_maxGasPrice uint256, _negligibleRateDiff uint256) returns()
+// Solidity: function setParams(uint256 _maxGasPrice, uint256 _negligibleRateDiff) returns()
 func (_InternalNetwork *InternalNetworkTransactor) SetParams(opts *bind.TransactOpts, _maxGasPrice *big.Int, _negligibleRateDiff *big.Int) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "setParams", _maxGasPrice, _negligibleRateDiff)
 }
 
 // SetParams is a paid mutator transaction binding the contract method 0xc0324c77.
 //
-// Solidity: function setParams(_maxGasPrice uint256, _negligibleRateDiff uint256) returns()
+// Solidity: function setParams(uint256 _maxGasPrice, uint256 _negligibleRateDiff) returns()
 func (_InternalNetwork *InternalNetworkSession) SetParams(_maxGasPrice *big.Int, _negligibleRateDiff *big.Int) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.SetParams(&_InternalNetwork.TransactOpts, _maxGasPrice, _negligibleRateDiff)
 }
 
 // SetParams is a paid mutator transaction binding the contract method 0xc0324c77.
 //
-// Solidity: function setParams(_maxGasPrice uint256, _negligibleRateDiff uint256) returns()
+// Solidity: function setParams(uint256 _maxGasPrice, uint256 _negligibleRateDiff) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) SetParams(_maxGasPrice *big.Int, _negligibleRateDiff *big.Int) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.SetParams(&_InternalNetwork.TransactOpts, _maxGasPrice, _negligibleRateDiff)
 }
 
 // SetWhiteList is a paid mutator transaction binding the contract method 0x39e899ee.
 //
-// Solidity: function setWhiteList(whiteList address) returns()
+// Solidity: function setWhiteList(address whiteList) returns()
 func (_InternalNetwork *InternalNetworkTransactor) SetWhiteList(opts *bind.TransactOpts, whiteList common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "setWhiteList", whiteList)
 }
 
 // SetWhiteList is a paid mutator transaction binding the contract method 0x39e899ee.
 //
-// Solidity: function setWhiteList(whiteList address) returns()
+// Solidity: function setWhiteList(address whiteList) returns()
 func (_InternalNetwork *InternalNetworkSession) SetWhiteList(whiteList common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.SetWhiteList(&_InternalNetwork.TransactOpts, whiteList)
 }
 
 // SetWhiteList is a paid mutator transaction binding the contract method 0x39e899ee.
 //
-// Solidity: function setWhiteList(whiteList address) returns()
+// Solidity: function setWhiteList(address whiteList) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) SetWhiteList(whiteList common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.SetWhiteList(&_InternalNetwork.TransactOpts, whiteList)
 }
 
 // TradeWithHint is a paid mutator transaction binding the contract method 0x088322ef.
 //
-// Solidity: function tradeWithHint(trader address, src address, srcAmount uint256, dest address, destAddress address, maxDestAmount uint256, minConversionRate uint256, walletId address, hint bytes) returns(uint256)
+// Solidity: function tradeWithHint(address trader, address src, uint256 srcAmount, address dest, address destAddress, uint256 maxDestAmount, uint256 minConversionRate, address walletId, bytes hint) returns(uint256)
 func (_InternalNetwork *InternalNetworkTransactor) TradeWithHint(opts *bind.TransactOpts, trader common.Address, src common.Address, srcAmount *big.Int, dest common.Address, destAddress common.Address, maxDestAmount *big.Int, minConversionRate *big.Int, walletId common.Address, hint []byte) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "tradeWithHint", trader, src, srcAmount, dest, destAddress, maxDestAmount, minConversionRate, walletId, hint)
 }
 
 // TradeWithHint is a paid mutator transaction binding the contract method 0x088322ef.
 //
-// Solidity: function tradeWithHint(trader address, src address, srcAmount uint256, dest address, destAddress address, maxDestAmount uint256, minConversionRate uint256, walletId address, hint bytes) returns(uint256)
+// Solidity: function tradeWithHint(address trader, address src, uint256 srcAmount, address dest, address destAddress, uint256 maxDestAmount, uint256 minConversionRate, address walletId, bytes hint) returns(uint256)
 func (_InternalNetwork *InternalNetworkSession) TradeWithHint(trader common.Address, src common.Address, srcAmount *big.Int, dest common.Address, destAddress common.Address, maxDestAmount *big.Int, minConversionRate *big.Int, walletId common.Address, hint []byte) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.TradeWithHint(&_InternalNetwork.TransactOpts, trader, src, srcAmount, dest, destAddress, maxDestAmount, minConversionRate, walletId, hint)
 }
 
 // TradeWithHint is a paid mutator transaction binding the contract method 0x088322ef.
 //
-// Solidity: function tradeWithHint(trader address, src address, srcAmount uint256, dest address, destAddress address, maxDestAmount uint256, minConversionRate uint256, walletId address, hint bytes) returns(uint256)
+// Solidity: function tradeWithHint(address trader, address src, uint256 srcAmount, address dest, address destAddress, uint256 maxDestAmount, uint256 minConversionRate, address walletId, bytes hint) returns(uint256)
 func (_InternalNetwork *InternalNetworkTransactorSession) TradeWithHint(trader common.Address, src common.Address, srcAmount *big.Int, dest common.Address, destAddress common.Address, maxDestAmount *big.Int, minConversionRate *big.Int, walletId common.Address, hint []byte) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.TradeWithHint(&_InternalNetwork.TransactOpts, trader, src, srcAmount, dest, destAddress, maxDestAmount, minConversionRate, walletId, hint)
 }
 
 // TransferAdmin is a paid mutator transaction binding the contract method 0x75829def.
 //
-// Solidity: function transferAdmin(newAdmin address) returns()
+// Solidity: function transferAdmin(address newAdmin) returns()
 func (_InternalNetwork *InternalNetworkTransactor) TransferAdmin(opts *bind.TransactOpts, newAdmin common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "transferAdmin", newAdmin)
 }
 
 // TransferAdmin is a paid mutator transaction binding the contract method 0x75829def.
 //
-// Solidity: function transferAdmin(newAdmin address) returns()
+// Solidity: function transferAdmin(address newAdmin) returns()
 func (_InternalNetwork *InternalNetworkSession) TransferAdmin(newAdmin common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.TransferAdmin(&_InternalNetwork.TransactOpts, newAdmin)
 }
 
 // TransferAdmin is a paid mutator transaction binding the contract method 0x75829def.
 //
-// Solidity: function transferAdmin(newAdmin address) returns()
+// Solidity: function transferAdmin(address newAdmin) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) TransferAdmin(newAdmin common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.TransferAdmin(&_InternalNetwork.TransactOpts, newAdmin)
 }
 
 // TransferAdminQuickly is a paid mutator transaction binding the contract method 0x7acc8678.
 //
-// Solidity: function transferAdminQuickly(newAdmin address) returns()
+// Solidity: function transferAdminQuickly(address newAdmin) returns()
 func (_InternalNetwork *InternalNetworkTransactor) TransferAdminQuickly(opts *bind.TransactOpts, newAdmin common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "transferAdminQuickly", newAdmin)
 }
 
 // TransferAdminQuickly is a paid mutator transaction binding the contract method 0x7acc8678.
 //
-// Solidity: function transferAdminQuickly(newAdmin address) returns()
+// Solidity: function transferAdminQuickly(address newAdmin) returns()
 func (_InternalNetwork *InternalNetworkSession) TransferAdminQuickly(newAdmin common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.TransferAdminQuickly(&_InternalNetwork.TransactOpts, newAdmin)
 }
 
 // TransferAdminQuickly is a paid mutator transaction binding the contract method 0x7acc8678.
 //
-// Solidity: function transferAdminQuickly(newAdmin address) returns()
+// Solidity: function transferAdminQuickly(address newAdmin) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) TransferAdminQuickly(newAdmin common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.TransferAdminQuickly(&_InternalNetwork.TransactOpts, newAdmin)
 }
 
 // WithdrawEther is a paid mutator transaction binding the contract method 0xce56c454.
 //
-// Solidity: function withdrawEther(amount uint256, sendTo address) returns()
+// Solidity: function withdrawEther(uint256 amount, address sendTo) returns()
 func (_InternalNetwork *InternalNetworkTransactor) WithdrawEther(opts *bind.TransactOpts, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "withdrawEther", amount, sendTo)
 }
 
 // WithdrawEther is a paid mutator transaction binding the contract method 0xce56c454.
 //
-// Solidity: function withdrawEther(amount uint256, sendTo address) returns()
+// Solidity: function withdrawEther(uint256 amount, address sendTo) returns()
 func (_InternalNetwork *InternalNetworkSession) WithdrawEther(amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.WithdrawEther(&_InternalNetwork.TransactOpts, amount, sendTo)
 }
 
 // WithdrawEther is a paid mutator transaction binding the contract method 0xce56c454.
 //
-// Solidity: function withdrawEther(amount uint256, sendTo address) returns()
+// Solidity: function withdrawEther(uint256 amount, address sendTo) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) WithdrawEther(amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.WithdrawEther(&_InternalNetwork.TransactOpts, amount, sendTo)
 }
 
 // WithdrawToken is a paid mutator transaction binding the contract method 0x3ccdbb28.
 //
-// Solidity: function withdrawToken(token address, amount uint256, sendTo address) returns()
+// Solidity: function withdrawToken(address token, uint256 amount, address sendTo) returns()
 func (_InternalNetwork *InternalNetworkTransactor) WithdrawToken(opts *bind.TransactOpts, token common.Address, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.contract.Transact(opts, "withdrawToken", token, amount, sendTo)
 }
 
 // WithdrawToken is a paid mutator transaction binding the contract method 0x3ccdbb28.
 //
-// Solidity: function withdrawToken(token address, amount uint256, sendTo address) returns()
+// Solidity: function withdrawToken(address token, uint256 amount, address sendTo) returns()
 func (_InternalNetwork *InternalNetworkSession) WithdrawToken(token common.Address, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.WithdrawToken(&_InternalNetwork.TransactOpts, token, amount, sendTo)
 }
 
 // WithdrawToken is a paid mutator transaction binding the contract method 0x3ccdbb28.
 //
-// Solidity: function withdrawToken(token address, amount uint256, sendTo address) returns()
+// Solidity: function withdrawToken(address token, uint256 amount, address sendTo) returns()
 func (_InternalNetwork *InternalNetworkTransactorSession) WithdrawToken(token common.Address, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _InternalNetwork.Contract.WithdrawToken(&_InternalNetwork.TransactOpts, token, amount, sendTo)
 }
@@ -1373,7 +1373,7 @@ type InternalNetworkAddReserveToNetwork struct {
 
 // FilterAddReserveToNetwork is a free log retrieval operation binding the contract event 0x7752182b29e356eb432239f464340b4481e1b0bfad97f06aa2ff8cdc74611449.
 //
-// Solidity: e AddReserveToNetwork(reserve address, add bool)
+// Solidity: event AddReserveToNetwork(address reserve, bool add)
 func (_InternalNetwork *InternalNetworkFilterer) FilterAddReserveToNetwork(opts *bind.FilterOpts) (*InternalNetworkAddReserveToNetworkIterator, error) {
 
 	logs, sub, err := _InternalNetwork.contract.FilterLogs(opts, "AddReserveToNetwork")
@@ -1385,7 +1385,7 @@ func (_InternalNetwork *InternalNetworkFilterer) FilterAddReserveToNetwork(opts 
 
 // WatchAddReserveToNetwork is a free log subscription operation binding the contract event 0x7752182b29e356eb432239f464340b4481e1b0bfad97f06aa2ff8cdc74611449.
 //
-// Solidity: e AddReserveToNetwork(reserve address, add bool)
+// Solidity: event AddReserveToNetwork(address reserve, bool add)
 func (_InternalNetwork *InternalNetworkFilterer) WatchAddReserveToNetwork(opts *bind.WatchOpts, sink chan<- *InternalNetworkAddReserveToNetwork) (event.Subscription, error) {
 
 	logs, sub, err := _InternalNetwork.contract.WatchLogs(opts, "AddReserveToNetwork")
@@ -1496,7 +1496,7 @@ type InternalNetworkAdminClaimed struct {
 
 // FilterAdminClaimed is a free log retrieval operation binding the contract event 0x65da1cfc2c2e81576ad96afb24a581f8e109b7a403b35cbd3243a1c99efdb9ed.
 //
-// Solidity: e AdminClaimed(newAdmin address, previousAdmin address)
+// Solidity: event AdminClaimed(address newAdmin, address previousAdmin)
 func (_InternalNetwork *InternalNetworkFilterer) FilterAdminClaimed(opts *bind.FilterOpts) (*InternalNetworkAdminClaimedIterator, error) {
 
 	logs, sub, err := _InternalNetwork.contract.FilterLogs(opts, "AdminClaimed")
@@ -1508,7 +1508,7 @@ func (_InternalNetwork *InternalNetworkFilterer) FilterAdminClaimed(opts *bind.F
 
 // WatchAdminClaimed is a free log subscription operation binding the contract event 0x65da1cfc2c2e81576ad96afb24a581f8e109b7a403b35cbd3243a1c99efdb9ed.
 //
-// Solidity: e AdminClaimed(newAdmin address, previousAdmin address)
+// Solidity: event AdminClaimed(address newAdmin, address previousAdmin)
 func (_InternalNetwork *InternalNetworkFilterer) WatchAdminClaimed(opts *bind.WatchOpts, sink chan<- *InternalNetworkAdminClaimed) (event.Subscription, error) {
 
 	logs, sub, err := _InternalNetwork.contract.WatchLogs(opts, "AdminClaimed")
@@ -1619,7 +1619,7 @@ type InternalNetworkAlerterAdded struct {
 
 // FilterAlerterAdded is a free log retrieval operation binding the contract event 0x5611bf3e417d124f97bf2c788843ea8bb502b66079fbee02158ef30b172cb762.
 //
-// Solidity: e AlerterAdded(newAlerter address, isAdd bool)
+// Solidity: event AlerterAdded(address newAlerter, bool isAdd)
 func (_InternalNetwork *InternalNetworkFilterer) FilterAlerterAdded(opts *bind.FilterOpts) (*InternalNetworkAlerterAddedIterator, error) {
 
 	logs, sub, err := _InternalNetwork.contract.FilterLogs(opts, "AlerterAdded")
@@ -1631,7 +1631,7 @@ func (_InternalNetwork *InternalNetworkFilterer) FilterAlerterAdded(opts *bind.F
 
 // WatchAlerterAdded is a free log subscription operation binding the contract event 0x5611bf3e417d124f97bf2c788843ea8bb502b66079fbee02158ef30b172cb762.
 //
-// Solidity: e AlerterAdded(newAlerter address, isAdd bool)
+// Solidity: event AlerterAdded(address newAlerter, bool isAdd)
 func (_InternalNetwork *InternalNetworkFilterer) WatchAlerterAdded(opts *bind.WatchOpts, sink chan<- *InternalNetworkAlerterAdded) (event.Subscription, error) {
 
 	logs, sub, err := _InternalNetwork.contract.WatchLogs(opts, "AlerterAdded")
@@ -1742,7 +1742,7 @@ type InternalNetworkEtherReceival struct {
 
 // FilterEtherReceival is a free log retrieval operation binding the contract event 0x75f33ed68675112c77094e7c5b073890598be1d23e27cd7f6907b4a7d98ac619.
 //
-// Solidity: e EtherReceival(sender indexed address, amount uint256)
+// Solidity: event EtherReceival(address indexed sender, uint256 amount)
 func (_InternalNetwork *InternalNetworkFilterer) FilterEtherReceival(opts *bind.FilterOpts, sender []common.Address) (*InternalNetworkEtherReceivalIterator, error) {
 
 	var senderRule []interface{}
@@ -1759,7 +1759,7 @@ func (_InternalNetwork *InternalNetworkFilterer) FilterEtherReceival(opts *bind.
 
 // WatchEtherReceival is a free log subscription operation binding the contract event 0x75f33ed68675112c77094e7c5b073890598be1d23e27cd7f6907b4a7d98ac619.
 //
-// Solidity: e EtherReceival(sender indexed address, amount uint256)
+// Solidity: event EtherReceival(address indexed sender, uint256 amount)
 func (_InternalNetwork *InternalNetworkFilterer) WatchEtherReceival(opts *bind.WatchOpts, sink chan<- *InternalNetworkEtherReceival, sender []common.Address) (event.Subscription, error) {
 
 	var senderRule []interface{}
@@ -1875,7 +1875,7 @@ type InternalNetworkEtherWithdraw struct {
 
 // FilterEtherWithdraw is a free log retrieval operation binding the contract event 0xec47e7ed86c86774d1a72c19f35c639911393fe7c1a34031fdbd260890da90de.
 //
-// Solidity: e EtherWithdraw(amount uint256, sendTo address)
+// Solidity: event EtherWithdraw(uint256 amount, address sendTo)
 func (_InternalNetwork *InternalNetworkFilterer) FilterEtherWithdraw(opts *bind.FilterOpts) (*InternalNetworkEtherWithdrawIterator, error) {
 
 	logs, sub, err := _InternalNetwork.contract.FilterLogs(opts, "EtherWithdraw")
@@ -1887,7 +1887,7 @@ func (_InternalNetwork *InternalNetworkFilterer) FilterEtherWithdraw(opts *bind.
 
 // WatchEtherWithdraw is a free log subscription operation binding the contract event 0xec47e7ed86c86774d1a72c19f35c639911393fe7c1a34031fdbd260890da90de.
 //
-// Solidity: e EtherWithdraw(amount uint256, sendTo address)
+// Solidity: event EtherWithdraw(uint256 amount, address sendTo)
 func (_InternalNetwork *InternalNetworkFilterer) WatchEtherWithdraw(opts *bind.WatchOpts, sink chan<- *InternalNetworkEtherWithdraw) (event.Subscription, error) {
 
 	logs, sub, err := _InternalNetwork.contract.WatchLogs(opts, "EtherWithdraw")
@@ -1998,7 +1998,7 @@ type InternalNetworkKyberProxySet struct {
 
 // FilterKyberProxySet is a free log retrieval operation binding the contract event 0xfdd305502f7797ff3390aa08825f7f6aec92c27a94e103bfaf45452b4cf1d4f4.
 //
-// Solidity: e KyberProxySet(proxy address, sender address)
+// Solidity: event KyberProxySet(address proxy, address sender)
 func (_InternalNetwork *InternalNetworkFilterer) FilterKyberProxySet(opts *bind.FilterOpts) (*InternalNetworkKyberProxySetIterator, error) {
 
 	logs, sub, err := _InternalNetwork.contract.FilterLogs(opts, "KyberProxySet")
@@ -2010,7 +2010,7 @@ func (_InternalNetwork *InternalNetworkFilterer) FilterKyberProxySet(opts *bind.
 
 // WatchKyberProxySet is a free log subscription operation binding the contract event 0xfdd305502f7797ff3390aa08825f7f6aec92c27a94e103bfaf45452b4cf1d4f4.
 //
-// Solidity: e KyberProxySet(proxy address, sender address)
+// Solidity: event KyberProxySet(address proxy, address sender)
 func (_InternalNetwork *InternalNetworkFilterer) WatchKyberProxySet(opts *bind.WatchOpts, sink chan<- *InternalNetworkKyberProxySet) (event.Subscription, error) {
 
 	logs, sub, err := _InternalNetwork.contract.WatchLogs(opts, "KyberProxySet")
@@ -2125,7 +2125,7 @@ type InternalNetworkKyberTrade struct {
 
 // FilterKyberTrade is a free log retrieval operation binding the contract event 0x1c8399ecc5c956b9cb18c820248b10b634cca4af308755e07cd467655e8ec3c7.
 //
-// Solidity: e KyberTrade(srcAddress address, srcToken address, srcAmount uint256, destAddress address, destToken address, destAmount uint256)
+// Solidity: event KyberTrade(address srcAddress, address srcToken, uint256 srcAmount, address destAddress, address destToken, uint256 destAmount)
 func (_InternalNetwork *InternalNetworkFilterer) FilterKyberTrade(opts *bind.FilterOpts) (*InternalNetworkKyberTradeIterator, error) {
 
 	logs, sub, err := _InternalNetwork.contract.FilterLogs(opts, "KyberTrade")
@@ -2137,7 +2137,7 @@ func (_InternalNetwork *InternalNetworkFilterer) FilterKyberTrade(opts *bind.Fil
 
 // WatchKyberTrade is a free log subscription operation binding the contract event 0x1c8399ecc5c956b9cb18c820248b10b634cca4af308755e07cd467655e8ec3c7.
 //
-// Solidity: e KyberTrade(srcAddress address, srcToken address, srcAmount uint256, destAddress address, destToken address, destAmount uint256)
+// Solidity: event KyberTrade(address srcAddress, address srcToken, uint256 srcAmount, address destAddress, address destToken, uint256 destAmount)
 func (_InternalNetwork *InternalNetworkFilterer) WatchKyberTrade(opts *bind.WatchOpts, sink chan<- *InternalNetworkKyberTrade) (event.Subscription, error) {
 
 	logs, sub, err := _InternalNetwork.contract.WatchLogs(opts, "KyberTrade")
@@ -2250,7 +2250,7 @@ type InternalNetworkListReservePairs struct {
 
 // FilterListReservePairs is a free log retrieval operation binding the contract event 0xadb5a4f14d89b3a5ffb3900ac1ea4574d991f93887f6199fabaf25393644e01c.
 //
-// Solidity: e ListReservePairs(reserve address, src address, dest address, add bool)
+// Solidity: event ListReservePairs(address reserve, address src, address dest, bool add)
 func (_InternalNetwork *InternalNetworkFilterer) FilterListReservePairs(opts *bind.FilterOpts) (*InternalNetworkListReservePairsIterator, error) {
 
 	logs, sub, err := _InternalNetwork.contract.FilterLogs(opts, "ListReservePairs")
@@ -2262,7 +2262,7 @@ func (_InternalNetwork *InternalNetworkFilterer) FilterListReservePairs(opts *bi
 
 // WatchListReservePairs is a free log subscription operation binding the contract event 0xadb5a4f14d89b3a5ffb3900ac1ea4574d991f93887f6199fabaf25393644e01c.
 //
-// Solidity: e ListReservePairs(reserve address, src address, dest address, add bool)
+// Solidity: event ListReservePairs(address reserve, address src, address dest, bool add)
 func (_InternalNetwork *InternalNetworkFilterer) WatchListReservePairs(opts *bind.WatchOpts, sink chan<- *InternalNetworkListReservePairs) (event.Subscription, error) {
 
 	logs, sub, err := _InternalNetwork.contract.WatchLogs(opts, "ListReservePairs")
@@ -2373,7 +2373,7 @@ type InternalNetworkOperatorAdded struct {
 
 // FilterOperatorAdded is a free log retrieval operation binding the contract event 0x091a7a4b85135fdd7e8dbc18b12fabe5cc191ea867aa3c2e1a24a102af61d58b.
 //
-// Solidity: e OperatorAdded(newOperator address, isAdd bool)
+// Solidity: event OperatorAdded(address newOperator, bool isAdd)
 func (_InternalNetwork *InternalNetworkFilterer) FilterOperatorAdded(opts *bind.FilterOpts) (*InternalNetworkOperatorAddedIterator, error) {
 
 	logs, sub, err := _InternalNetwork.contract.FilterLogs(opts, "OperatorAdded")
@@ -2385,7 +2385,7 @@ func (_InternalNetwork *InternalNetworkFilterer) FilterOperatorAdded(opts *bind.
 
 // WatchOperatorAdded is a free log subscription operation binding the contract event 0x091a7a4b85135fdd7e8dbc18b12fabe5cc191ea867aa3c2e1a24a102af61d58b.
 //
-// Solidity: e OperatorAdded(newOperator address, isAdd bool)
+// Solidity: event OperatorAdded(address newOperator, bool isAdd)
 func (_InternalNetwork *InternalNetworkFilterer) WatchOperatorAdded(opts *bind.WatchOpts, sink chan<- *InternalNetworkOperatorAdded) (event.Subscription, error) {
 
 	logs, sub, err := _InternalNetwork.contract.WatchLogs(opts, "OperatorAdded")
@@ -2497,7 +2497,7 @@ type InternalNetworkTokenWithdraw struct {
 
 // FilterTokenWithdraw is a free log retrieval operation binding the contract event 0x72cb8a894ddb372ceec3d2a7648d86f17d5a15caae0e986c53109b8a9a9385e6.
 //
-// Solidity: e TokenWithdraw(token address, amount uint256, sendTo address)
+// Solidity: event TokenWithdraw(address token, uint256 amount, address sendTo)
 func (_InternalNetwork *InternalNetworkFilterer) FilterTokenWithdraw(opts *bind.FilterOpts) (*InternalNetworkTokenWithdrawIterator, error) {
 
 	logs, sub, err := _InternalNetwork.contract.FilterLogs(opts, "TokenWithdraw")
@@ -2509,7 +2509,7 @@ func (_InternalNetwork *InternalNetworkFilterer) FilterTokenWithdraw(opts *bind.
 
 // WatchTokenWithdraw is a free log subscription operation binding the contract event 0x72cb8a894ddb372ceec3d2a7648d86f17d5a15caae0e986c53109b8a9a9385e6.
 //
-// Solidity: e TokenWithdraw(token address, amount uint256, sendTo address)
+// Solidity: event TokenWithdraw(address token, uint256 amount, address sendTo)
 func (_InternalNetwork *InternalNetworkFilterer) WatchTokenWithdraw(opts *bind.WatchOpts, sink chan<- *InternalNetworkTokenWithdraw) (event.Subscription, error) {
 
 	logs, sub, err := _InternalNetwork.contract.WatchLogs(opts, "TokenWithdraw")
@@ -2619,7 +2619,7 @@ type InternalNetworkTransferAdminPending struct {
 
 // FilterTransferAdminPending is a free log retrieval operation binding the contract event 0x3b81caf78fa51ecbc8acb482fd7012a277b428d9b80f9d156e8a54107496cc40.
 //
-// Solidity: e TransferAdminPending(pendingAdmin address)
+// Solidity: event TransferAdminPending(address pendingAdmin)
 func (_InternalNetwork *InternalNetworkFilterer) FilterTransferAdminPending(opts *bind.FilterOpts) (*InternalNetworkTransferAdminPendingIterator, error) {
 
 	logs, sub, err := _InternalNetwork.contract.FilterLogs(opts, "TransferAdminPending")
@@ -2631,7 +2631,7 @@ func (_InternalNetwork *InternalNetworkFilterer) FilterTransferAdminPending(opts
 
 // WatchTransferAdminPending is a free log subscription operation binding the contract event 0x3b81caf78fa51ecbc8acb482fd7012a277b428d9b80f9d156e8a54107496cc40.
 //
-// Solidity: e TransferAdminPending(pendingAdmin address)
+// Solidity: event TransferAdminPending(address pendingAdmin)
 func (_InternalNetwork *InternalNetworkFilterer) WatchTransferAdminPending(opts *bind.WatchOpts, sink chan<- *InternalNetworkTransferAdminPending) (event.Subscription, error) {
 
 	logs, sub, err := _InternalNetwork.contract.WatchLogs(opts, "TransferAdminPending")

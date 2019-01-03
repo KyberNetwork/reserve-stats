@@ -21,19 +21,19 @@ type tokenAddresses struct {
 }
 
 var deploymentAddress = map[deployment.Deployment]tokenAddresses{
-	deployment.Production: tokenAddresses{
+	deployment.Production: {
 		ETHAddr:  common.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"),
 		KNCAddr:  common.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200"),
 		WETHAddr: common.HexToAddress("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
 		KCCAddr:  common.HexToAddress("0x09677D0175DEC51E2215426Cddd055a71bf4228d"),
 	},
-	deployment.Staging: tokenAddresses{
+	deployment.Staging: {
 		ETHAddr:  common.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"),
 		KNCAddr:  common.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200"),
 		WETHAddr: common.HexToAddress("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
 		KCCAddr:  common.HexToAddress("0x09677D0175DEC51E2215426Cddd055a71bf4228d"),
 	},
-	deployment.Ropsten: tokenAddresses{
+	deployment.Ropsten: {
 		ETHAddr:  common.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"),
 		KNCAddr:  common.HexToAddress("0x4e470dc7321e84ca96fcaedd0c8abcebbaeb68c6"),
 		WETHAddr: common.HexToAddress(""),

@@ -213,7 +213,7 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 	// Get BurnFees
 	if len(res[0].Series) == 0 {
 		is.sugar.Debug("empty burn fee in query result")
-		return nil, nil
+		return result, nil
 	}
 
 	// map [tx_hash][trade_log_index][]common.BurnFee

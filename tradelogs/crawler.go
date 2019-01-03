@@ -37,7 +37,7 @@ const (
 	// rsv2 ==0 if token -> eth
 	kyberTradeEvent = "0xd30ca399cb43507ecec6a629a35cf45eb98cda550c27696dcb0d8c4a3873ce6c"
 	// startingBlockV3 is the block where V3 contract is used.
-	startingBlockV3 = 0
+	startingBlockV3 = 6997111
 )
 
 // NewCrawler create a new Crawler instance.

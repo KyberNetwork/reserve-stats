@@ -129,8 +129,9 @@ func (cq *ContinuousQuery) prepareQueries(isCQ bool) ([]string, error) {
 				actualName = actualName + "_" + offsetIntervalName
 				actualQuery = modifyINTOclause(cq.Query, offsetIntervalName)
 			} else {
-				actualName = actualName + "_" + "minus" + offsetInterval
-				actualQuery = modifyINTOclause(cq.Query, offsetInterval)
+				offsetIntervalName := "minus" + offsetInterval
+				actualName = actualName + "_" + offsetIntervalName
+				actualQuery = modifyINTOclause(cq.Query, offsetIntervalName)
 			}
 		}
 		err = tmpl.Execute(&query, struct {

@@ -26,9 +26,9 @@ const (
 	//EthUSDProvider is the enumerated field name for TradeLog.ETHUSDProvider
 	EthUSDProvider //eth_rate_provider
 	//DstReserveAddr is enumerated fieldname for destination reserve Address
-	DstReserveAddr // dst_rsv_addrs
+	DstReserveAddr // dst_rsv_addr
 	//SrcReserveAddr is enumerated field for source reserve Address
-	SrcReserveAddr // src_rsv_addrs
+	SrcReserveAddr // src_rsv_addr
 	//EthReceivalAmount is the enumerated field for ETHReceivalAmount
 	EthReceivalAmount // eth_receival_amount
 	//SrcAmount is the enumerated field for source amount

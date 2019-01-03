@@ -77,6 +77,6 @@ func (crawler *Crawler) handleEventLogWithBlockNumber(log types.Log, tradeLog *c
 		return true, nil
 	}
 
-	crawler.sugar.Info("Unknown log topic.")
+	crawler.sugar.Debugw("Unknown log topic or unused log topic with block> StartingBlockV3", "topic", log.Topics[0].Hex())
 	return false, nil
 }

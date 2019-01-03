@@ -175,15 +175,15 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) ([]common.Trade
 				Index:          log.Index,
 			}
 			tradeLog.BurnFees = append(tradeLog.BurnFees, burnFee)
-		}
-
-		done, err := crawler.handleEventLogWithBlockNumber(log, &tradeLog)
-		if err != nil {
-			return nil, err
-		}
-		if done {
-			result = append(result, tradeLog)
-			tradeLog = common.TradeLog{}
+		default:
+			done, err := crawler.handleEventLogWithBlockNumber(log, &tradeLog)
+			if err != nil {
+				return nil, err
+			}
+			if done {
+				result = append(result, tradeLog)
+				tradeLog = common.TradeLog{}
+			}
 		}
 	}
 

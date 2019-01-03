@@ -125,11 +125,11 @@ func (cq *ContinuousQuery) prepareQueries(isCQ bool) ([]string, error) {
 		if offsetInterval != "" {
 			// assume that the offsetInterval value is set correctly
 			if strings.Contains(offsetInterval, "-") {
-				offsetIntervalName := strings.Replace(offsetInterval, "-", "minus", 1)
+				offsetIntervalName := strings.Replace(offsetInterval, "-", "", 1)
 				actualName = actualName + "_" + offsetIntervalName
 				actualQuery = modifyINTOclause(cq.Query, offsetIntervalName)
 			} else {
-				actualName = actualName + "_" + offsetInterval
+				actualName = actualName + "_" + "minus" + offsetInterval
 				actualQuery = modifyINTOclause(cq.Query, offsetInterval)
 			}
 		}
@@ -227,7 +227,12 @@ func (cq *ContinuousQuery) Drop(c client.Client, sugar *zap.SugaredLogger) error
 	for _, offset := range cq.OffsetIntervals {
 		name := cq.Name
 		if offset != "" {
-			name = cq.Name + "_" + offset
+			if strings.Contains(offset, "-") {
+				offsetIntervalName := strings.Replace(offset, "-", "", 1)
+				name = name + "_" + offsetIntervalName
+			} else {
+				name = name + "_" + "minus" + offset
+			}
 		}
 		sugar.Debugw("Drop cq", "cq name", name)
 		if _, err := cq.queryDB(c, fmt.Sprintf("DROP CONTINUOUS QUERY %s ON %s", name, cq.Database)); err != nil {

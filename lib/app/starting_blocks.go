@@ -17,12 +17,12 @@ type VersionedStartingBlocks struct {
 
 //DeploymentToStartingBlocks map deployment to its according starting blocks
 var DeploymentToStartingBlocks = map[deployment.Deployment]VersionedStartingBlocks{
-	deployment.Staging: VersionedStartingBlocks{
+	deployment.Staging: {
 		V1: 0,
 		V2: 0,
 		V3: 6997111,
 	},
-	deployment.Production: VersionedStartingBlocks{
+	deployment.Production: {
 		V1: 0,
 		V2: 5926056,
 		V3: 0,

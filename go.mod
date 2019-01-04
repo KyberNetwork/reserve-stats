@@ -54,10 +54,6 @@ require (
 	google.golang.org/appengine v1.2.0 // indirect
 	golang.org/x/sync v0.0.0-20181108010431-42b317875d0f
 	golang.org/x/tools v0.0.0-20190214204934-8dcb7bc8c7fe // indirect
-	golang.org/x/crypto v0.0.0-20190208162236-193df9c0f06f // indirect
-	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f
-	golang.org/x/tools v0.0.0-20190208222737-3744606dbb67 // indirect
-	google.golang.org/appengine v1.2.0 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect

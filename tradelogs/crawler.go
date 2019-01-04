@@ -1,17 +1,17 @@
 package tradelogs
 
 import (
-	"context"
 	"errors"
 	"github.com/KyberNetwork/tokenrate"
 	"math/big"
 	"time"
 
-	appname "github.com/KyberNetwork/reserve-stats/app-names"
+	"github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
+
+	appname "github.com/KyberNetwork/reserve-stats/app-names"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	ether "github.com/ethereum/go-ethereum"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -36,8 +36,6 @@ const (
 	// rsv1 ==0 if eth -> token
 	// rsv2 ==0 if token -> eth
 	kyberTradeEvent = "0xd30ca399cb43507ecec6a629a35cf45eb98cda550c27696dcb0d8c4a3873ce6c"
-	// startingBlockV3 is the block where V3 contract is used.
-	startingBlockV3 = 6997111
 )
 
 // NewCrawler create a new Crawler instance.
@@ -46,7 +44,8 @@ func NewCrawler(
 	client *ethclient.Client,
 	broadcastClient broadcast.Interface,
 	rateProvider tokenrate.ETHUSDRateProvider,
-	addresses []ethereum.Address) (*Crawler, error) {
+	addresses []ethereum.Address,
+	sb app.VersionedStartingBlocks) (*Crawler, error) {
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
 	if err != nil {
 		return nil, err
@@ -62,6 +61,7 @@ func NewCrawler(
 		broadcastClient: broadcastClient,
 		rateProvider:    rateProvider,
 		addresses:       addresses,
+		startingBlocks:  sb,
 	}, nil
 }
 
@@ -74,6 +74,7 @@ type Crawler struct {
 	broadcastClient broadcast.Interface
 	rateProvider    tokenrate.ETHUSDRateProvider
 	addresses       []ethereum.Address
+	startingBlocks  app.VersionedStartingBlocks
 }
 
 func logDataToTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
@@ -195,35 +196,32 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 	var (
 		result []common.TradeLog
 	)
+	if fromBlock.Uint64() < crawler.startingBlocks.V3 {
+		if toBlock.Uint64() < crawler.startingBlocks.V3 {
+			tradeLogs, err := crawler.fetchTradeLogV2(fromBlock, toBlock, timeout)
+			if err != nil {
+				return result, err
+			}
+			result = append(result, tradeLogs...)
+			return result, nil
+		}
 
-	topics := [][]ethereum.Hash{
-		{
-			ethereum.HexToHash(tradeEvent),
-			ethereum.HexToHash(burnFeeEvent),
-			ethereum.HexToHash(feeToWalletEvent),
-			ethereum.HexToHash(etherReceivalEvent),
-			ethereum.HexToHash(kyberTradeEvent),
-		},
+		tradeLogs, err := crawler.fetchTradeLogV2(fromBlock, big.NewInt(int64(crawler.startingBlocks.V3-1)), timeout)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, tradeLogs...)
+		tradeLogs, err = crawler.fetchTradeLogV3(big.NewInt(int64(crawler.startingBlocks.V3)), toBlock, timeout)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, tradeLogs...)
+		return result, nil
 	}
 
-	query := ether.FilterQuery{
-		FromBlock: fromBlock,
-		ToBlock:   toBlock,
-		Addresses: crawler.addresses,
-		Topics:    topics,
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	logs, err := crawler.ethClient.FilterLogs(ctx, query)
+	result, err := crawler.fetchTradeLogV3(fromBlock, toBlock, timeout)
 	if err != nil {
-		return nil, err
-	}
-
-	result, err = crawler.assembleTradeLogs(logs)
-	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	for i, tradeLog := range result {
@@ -248,7 +246,6 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 		}
 		result[i].ETHUSDProvider = crawler.rateProvider.Name()
 		result[i].ETHUSDRate = rate
-
 	}
 	return result, nil
 }

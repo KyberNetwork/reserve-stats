@@ -81,6 +81,11 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 		return nil, err
 	}
 
+	startingBlocks, err := app.GetStartingBlocksFromContext(fj.c)
+	if err != nil {
+		return nil, err
+	}
+
 	addresses := []ethereum.Address{contracts.PricingContractAddress().MustGetOneFromContext(fj.c)}
 	addresses = append(addresses, contracts.InternalNetworkContractAddress().MustGetOneFromContext(fj.c))
 	addresses = append(addresses, contracts.BurnerContractAddress().MustGetOneFromContext(fj.c))
@@ -88,7 +93,7 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 	addresses = append(addresses, contracts.OldBurnerContractAddress().MustGetFromContext(fj.c)...)
 	addresses = append(addresses, contracts.OldNetworkContractAddress().MustGetFromContext(fj.c)...)
 
-	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses)
+	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks)
 	if err != nil {
 		return nil, err
 	}

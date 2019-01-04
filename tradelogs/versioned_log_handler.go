@@ -1,12 +1,78 @@
 package tradelogs
 
 import (
+	"context"
 	"errors"
+	"math/big"
+	"time"
 
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	ether "github.com/ethereum/go-ethereum"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
+
+func (crawler *Crawler) fetchTypeLogsWithTopics(fromBlock, toBlock *big.Int, timeout time.Duration, topics [][]ethereum.Hash) ([]types.Log, error) {
+	query := ether.FilterQuery{
+		FromBlock: fromBlock,
+		ToBlock:   toBlock,
+		Addresses: crawler.addresses,
+		Topics:    topics,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return crawler.ethClient.FilterLogs(ctx, query)
+
+}
+
+func (crawler *Crawler) fetchTradeLogV2(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
+	var result []common.TradeLog
+	topics := [][]ethereum.Hash{
+		{
+			ethereum.HexToHash(tradeEvent),
+			ethereum.HexToHash(burnFeeEvent),
+			ethereum.HexToHash(feeToWalletEvent),
+			ethereum.HexToHash(etherReceivalEvent),
+		},
+	}
+
+	typeLogs, err := crawler.fetchTypeLogsWithTopics(fromBlock, toBlock, timeout, topics)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err = crawler.assembleTradeLogs(typeLogs)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (crawler *Crawler) fetchTradeLogV3(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
+	var result []common.TradeLog
+
+	topics := [][]ethereum.Hash{
+		{
+			ethereum.HexToHash(burnFeeEvent),
+			ethereum.HexToHash(feeToWalletEvent),
+			ethereum.HexToHash(kyberTradeEvent),
+		},
+	}
+
+	typeLogs, err := crawler.fetchTypeLogsWithTopics(fromBlock, toBlock, timeout, topics)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err = crawler.assembleTradeLogs(typeLogs)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
 
 func (crawler *Crawler) handleEventLogWithBlockNumber(log types.Log, tradeLog *common.TradeLog) (bool, error) {
 	//this should not happen, but still...
@@ -14,7 +80,7 @@ func (crawler *Crawler) handleEventLogWithBlockNumber(log types.Log, tradeLog *c
 		return false, errors.New("log item has no topic")
 	}
 	//if blockNumber < startingBlock/
-	if startingBlockV3 == 0 || log.BlockNumber < startingBlockV3 {
+	if crawler.startingBlocks.V3 == 0 || log.BlockNumber < crawler.startingBlocks.V3 {
 		switch log.Topics[0].Hex() {
 		case etherReceivalEvent:
 			amount, err := logDataToEtherReceivalParams(log.Data)

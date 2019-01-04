@@ -81,7 +81,7 @@ func TestNewContinuousQuery(t *testing.T) {
 			timeInterval:          "1h",
 			offsetIntervals:       []string{"30m"},
 			queries: []string{
-				`CREATE CONTINUOUS QUERY "test_cq_30m" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,30m) END`,
+				`CREATE CONTINUOUS QUERY "test_cq_minus30m" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,30m) END`,
 				`CREATE CONTINUOUS QUERY "test_cq" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h) END`,
 			},
 		},
@@ -95,8 +95,8 @@ func TestNewContinuousQuery(t *testing.T) {
 			timeInterval:          "1h",
 			offsetIntervals:       []string{"10m", "20m"},
 			queries: []string{
-				`CREATE CONTINUOUS QUERY "test_cq_10m" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,10m) END`,
-				`CREATE CONTINUOUS QUERY "test_cq_20m" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,20m) END`,
+				`CREATE CONTINUOUS QUERY "test_cq_minus10m" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,10m) END`,
+				`CREATE CONTINUOUS QUERY "test_cq_minus20m" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h,20m) END`,
 				`CREATE CONTINUOUS QUERY "test_cq" on "test_db" RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * FROM super_database GROUP BY "email", time(1h) END`,
 			},
 		},
@@ -157,8 +157,8 @@ func TestContinuousQuery_Deploy(t *testing.T) {
 	require.NoError(t, err)
 	var (
 		expectedCqs = map[string]string{
-			"test_cq_10m": "CREATE CONTINUOUS QUERY test_cq_10m ON test_db RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * INTO test_db.autogen.test_queries_10m FROM test_db.autogen.super_database GROUP BY email, time(1h, 10m) END",
-			"test_cq_20m": "CREATE CONTINUOUS QUERY test_cq_20m ON test_db RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * INTO test_db.autogen.test_queries_20m FROM test_db.autogen.super_database GROUP BY email, time(1h, 20m) END",
+			"test_cq_minus10m": "CREATE CONTINUOUS QUERY test_cq_minus10m ON test_db RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * INTO test_db.autogen.test_queries_minus10m FROM test_db.autogen.super_database GROUP BY email, time(1h, 10m) END",
+			"test_cq_minus20m": "CREATE CONTINUOUS QUERY test_cq_minus20m ON test_db RESAMPLE EVERY 1h FOR 2h BEGIN SELECT * INTO test_db.autogen.test_queries_minus20m FROM test_db.autogen.super_database GROUP BY email, time(1h, 20m) END",
 		}
 	)
 	for cqName, cq := range expectedCqs {
@@ -283,8 +283,8 @@ func TestContinuousQuery_Execute(t *testing.T) {
 	}
 	var (
 		expectedMsms = map[string]bool{
-			"test_aggregate_10s": false,
-			"test_aggregate_15s": false,
+			"test_aggregate_minus10s": false,
+			"test_aggregate_minus15s": false,
 		}
 	)
 	for _, v := range resp[0].Series[0].Values {

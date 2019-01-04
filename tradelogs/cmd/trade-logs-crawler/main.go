@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -276,6 +277,10 @@ func run(c *cli.Context) error {
 			}
 			toBlock = currentHeader.Number
 			sugar.Infow("fetching trade logs up to latest known block number", "to_block", toBlock.String())
+		}
+
+		if fromBlock.Cmp(toBlock) >= 0 {
+			return errors.New("fromBlock is bigger than toBlock")
 		}
 
 		requiredWorkers := requiredWorkers(fromBlock, toBlock, maxBlocks, maxWorkers)

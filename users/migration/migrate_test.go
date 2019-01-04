@@ -12,12 +12,14 @@ import (
 )
 
 const (
-	postgresHost     = "127.0.0.1"
-	postgresPort     = 5432
-	postgresUser     = "reserve_stats"
-	postgresPassword = "reserve_stats"
-	postgresDatabase = "reserve_stats"
-	dbPath           = "testdata/test_data.db"
+	postgresHost           = "127.0.0.1"
+	postgresPort           = 5432
+	postgresUser           = "reserve_stats"
+	postgresPassword       = "reserve_stats"
+	postgresDatabase       = "reserve_stats"
+	dbPath                 = "testdata/test_data.db"
+	testUsersTableName     = "migrate_users_test"
+	testAddressesTableName = "migrate_addresses_test"
 )
 
 //DeleteTable delete a table from  schema
@@ -52,18 +54,18 @@ func newTestMigrateDB() (*DBMigration, error) {
 	}
 
 	// initiate postgres for migration
-	const schema = `
-	CREATE TABLE IF NOT EXISTS "migrate_users_test" (
-	  id    SERIAL PRIMARY KEY,
-	  email text NOT NULL UNIQUE
-	);
-	CREATE TABLE IF NOT EXISTS "migrate_addresses_test" (
-	  id        SERIAL PRIMARY KEY,
-	  address   text      NOT NULL UNIQUE,
-	  timestamp TIMESTAMP NOT NULL DEFAULT now(),
-	  user_id   SERIAL    NOT NULL REFERENCES migrate_users_test (id)
-	);
-	`
+	var schema = fmt.Sprintf(`
+CREATE TABLE IF NOT EXISTS "%[1]s" (
+  id    SERIAL PRIMARY KEY,
+  email text NOT NULL UNIQUE
+);
+CREATE TABLE IF NOT EXISTS "%[2]s" (
+  id        SERIAL PRIMARY KEY,
+  address   text      NOT NULL UNIQUE,
+  timestamp TIMESTAMP NOT NULL DEFAULT now(),
+  user_id   SERIAL    NOT NULL REFERENCES "%[1]s" (id)
+);
+`, testUsersTableName, testAddressesTableName)
 
 	tx, err := postgres.Beginx()
 	if err != nil {
@@ -81,8 +83,8 @@ func newTestMigrateDB() (*DBMigration, error) {
 }
 
 func tearDown(t *testing.T, dbMigration *DBMigration) {
-	assert.Nil(t, dbMigration.deleteTable("migrate_addresses_test"), "test table should be tear down succesfully.")
-	assert.Nil(t, dbMigration.deleteTable("migrate_users_test"), "test table should be tear down succesfully.")
+	assert.Nil(t, dbMigration.deleteTable(testAddressesTableName), "test table should be tear down succesfully.")
+	assert.Nil(t, dbMigration.deleteTable(testUsersTableName), "test table should be tear down succesfully.")
 }
 
 func TestMigrateDB(t *testing.T) {
@@ -94,5 +96,5 @@ func TestMigrateDB(t *testing.T) {
 
 	defer tearDown(t, dbMigration)
 
-	assert.Nil(t, dbMigration.Migrate(), "db should be migrate successfully")
+	assert.Nil(t, dbMigration.Migrate(testUsersTableName, testAddressesTableName), "db should be migrate successfully")
 }

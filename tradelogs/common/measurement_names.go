@@ -35,4 +35,8 @@ const (
 	WalletFeeVolumeMeasurementDay = "wallet_fee_day"
 	//WalletFeeVolumeMeasurementHour is the measurement to which wallet fee volume hourly is stored
 	WalletFeeVolumeMeasurementHour = "wallet_fee_hour"
+	//VolumeHourMeasurementName
+	VolumeHourMeasurementName = "volume_hour"
+	//VolumeDayMeasurementName
+	VolumeDayMeasurementName = "volume_day"
 )

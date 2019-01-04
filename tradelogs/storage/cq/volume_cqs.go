@@ -184,8 +184,16 @@ func CreateUserVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(eth_amount) AS eth_volume, SUM(usd_amount) AS usd_volume "+
-			"INTO user_volume_day FROM (SELECT eth_amount, eth_amount*eth_usd_rate AS usd_amount FROM trades) GROUP BY user_addr",
+		fmt.Sprintf(`SELECT SUM(%[1]s) AS %[2]s, SUM(usd_amount) AS %[3]s `+
+			`INTO %[4]s FROM (SELECT %[1]s, %[1]s*%[5]s AS usd_amount FROM %[6]s) GROUP BY %[7]s`,
+			logSchema.EthAmount.String(),
+			volSchema.ETHVolume.String(),
+			volSchema.USDVolume.String(),
+			common.UserVolumeDayMeasurementName,
+			logSchema.EthUSDRate.String(),
+			common.TradeLogMeasurementName,
+			logSchema.UserAddr.String(),
+		),
 		"1d",
 		nil,
 	)
@@ -198,8 +206,16 @@ func CreateUserVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dbName,
 		hourResampleInterval,
 		hourResampleFor,
-		"SELECT SUM(eth_amount) as eth_volume, SUM(usd_amount) as usd_volume "+
-			"INTO user_volume_hour FROM (SELECT eth_amount, eth_amount*eth_usd_rate AS usd_amount FROM trades) GROUP BY user_addr",
+		fmt.Sprintf(`SELECT SUM(%[1]s) AS %[2]s, SUM(usd_amount) AS %[3]s `+
+			`INTO %[4]s FROM (SELECT %[1]s, %[1]s*%[5]s AS usd_amount FROM %[6]s) GROUP BY %[7]s`,
+			logSchema.EthAmount.String(),
+			volSchema.ETHVolume.String(),
+			volSchema.USDVolume.String(),
+			common.UserVolumeHourMeasurementName,
+			logSchema.EthUSDRate.String(),
+			common.TradeLogMeasurementName,
+			logSchema.UserAddr.String(),
+		),
 		"1h",
 		nil,
 	)
@@ -241,21 +257,21 @@ func CreateReserveVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		result     []*libcq.ContinuousQuery
 		cqsGroupBY = map[string]RsvFieldsType{
 			"rsv_volume_src_src": {
-				AmountType:     "src_amount",
-				RsvAddressType: "src_rsv_addr",
-				AddressType:    "src_addr"},
+				AmountType:     logSchema.SrcAmount.String(),
+				RsvAddressType: logSchema.SrcReserveAddr.String(),
+				AddressType:    logSchema.SrcAddr.String()},
 			"rsv_volume_src_dst": {
-				AmountType:     "src_amount",
-				RsvAddressType: "dst_rsv_addr",
-				AddressType:    "src_addr"},
+				AmountType:     logSchema.SrcAmount.String(),
+				RsvAddressType: logSchema.DstReserveAddr.String(),
+				AddressType:    logSchema.SrcAddr.String()},
 			"rsv_volume_dst_src": {
-				AmountType:     "dst_amount",
-				RsvAddressType: "src_rsv_addr",
-				AddressType:    "dst_addr"},
+				AmountType:     logSchema.DstAmount.String(),
+				RsvAddressType: logSchema.SrcReserveAddr.String(),
+				AddressType:    logSchema.DstAddr.String()},
 			"rsv_volume_dst_dst": {
-				AmountType:     "dst_amount",
-				RsvAddressType: "dst_rsv_addr",
-				AddressType:    "dst_addr"},
+				AmountType:     logSchema.DstAmount.String(),
+				RsvAddressType: logSchema.DstReserveAddr.String(),
+				AddressType:    logSchema.DstAddr.String()},
 		}
 	)
 

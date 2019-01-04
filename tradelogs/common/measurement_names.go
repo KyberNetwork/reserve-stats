@@ -39,4 +39,8 @@ const (
 	VolumeHourMeasurementName = "volume_hour"
 	//VolumeDayMeasurementName
 	VolumeDayMeasurementName = "volume_day"
+	//UserVolumeDayMeasurementName
+	UserVolumeDayMeasurementName = "user_volume_day"
+	//UserVolumeHourMeasurementName
+	UserVolumeHourMeasurementName = "user_volume_hour"
 )

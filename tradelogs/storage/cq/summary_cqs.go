@@ -15,7 +15,7 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dayResampleFor,
 		"SELECT COUNT(record) AS unique_addresses INTO trade_summary FROM (SELECT SUM(eth_amount) AS record FROM trades GROUP BY user_addr)",
 		"1d",
-		[]string{},
+		supportedTimeZone(),
 	)
 	if err != nil {
 		return nil, err

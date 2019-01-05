@@ -6,7 +6,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	walletschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfee"
-	walletFeeVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfeevolume"
+	walletFeeVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfee_volume"
 )
 
 // CreateWalletFeeCqs return a set of cqs required for burnfee aggregation

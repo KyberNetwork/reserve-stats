@@ -10,7 +10,6 @@ import (
 	burnVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee_volume"
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 	volSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/volume"
-	walletFeeVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfeevolume"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 

@@ -12,7 +12,7 @@ const (
 	//ReserveAddress is the enumerated field for reserve Address
 	ReserveAddress //reserve_addr
 	//WalletAddress is t he enumerated field for wallet Address
-	WalletAddress //wallet_address
+	WalletAddress //wallet_addr
 )
 
 //walletFeeVolumeFields translates the stringer of walletfeevolume fields into its enumerated form

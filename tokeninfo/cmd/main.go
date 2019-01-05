@@ -61,7 +61,8 @@ func reserve(c *cli.Context) error {
 	}
 
 	proxyAddress := contracts.ProxyContractAddress().MustGetOneFromContext(c)
-	internalNetworkAddress, err := contracts.InternalNetworkContractAddress(proxyAddress, client, big.NewInt(1))
+	cachedContractAddressClient := contracts.NewCachedContractAddressClient(client)
+	internalNetworkAddress, err := cachedContractAddressClient.InternalNetworkContractAddress(proxyAddress, big.NewInt(1))
 	if err != nil {
 		return err
 	}

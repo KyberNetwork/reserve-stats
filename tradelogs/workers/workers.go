@@ -68,6 +68,66 @@ func retry(fn executeJob, attempts int, logger *zap.SugaredLogger) ([]common.Tra
 	return result, err
 }
 
+func (fj *FetcherJob) getInternalNetworkAddress(contractAddressClient *contracts.CachedContractAddressClient,
+	proxyAddress ethereum.Address) ([]ethereum.Address, error) {
+	var (
+		addresses []ethereum.Address
+	)
+	addressFrom, err := contractAddressClient.InternalNetworkContractAddress(proxyAddress, fj.from)
+	if err != nil {
+		return addresses, err
+	}
+	addresses = append(addresses, addressFrom)
+	addressTo, err := contractAddressClient.InternalNetworkContractAddress(proxyAddress, fj.to)
+	if err != nil {
+		return addresses, err
+	}
+	if addressTo != addressFrom {
+		addresses = append(addresses, addressTo)
+	}
+	return addresses, nil
+}
+
+func (fj *FetcherJob) getPricingAddress(contractAddressClient *contracts.CachedContractAddressClient,
+	internalNetworkAddress ethereum.Address) ([]ethereum.Address, error) {
+	var (
+		addresses []ethereum.Address
+	)
+	addressFrom, err := contractAddressClient.PricingContractAddress(internalNetworkAddress, fj.from)
+	if err != nil {
+		return addresses, err
+	}
+	addresses = append(addresses, addressFrom)
+	addressTo, err := contractAddressClient.PricingContractAddress(internalNetworkAddress, fj.to)
+	if err != nil {
+		return addresses, err
+	}
+	if addressTo != addressFrom {
+		addresses = append(addresses, addressTo)
+	}
+	return addresses, nil
+}
+
+func (fj *FetcherJob) getBurnerAddress(contractAddressClient *contracts.CachedContractAddressClient,
+	internalNetworkAddress ethereum.Address) ([]ethereum.Address, error) {
+	var (
+		addresses []ethereum.Address
+	)
+	addressFrom, err := contractAddressClient.BurnerContractAddress(internalNetworkAddress, fj.from)
+	if err != nil {
+		return addresses, err
+	}
+	addresses = append(addresses, addressFrom)
+	addressTo, err := contractAddressClient.BurnerContractAddress(internalNetworkAddress, fj.to)
+	if err != nil {
+		return addresses, err
+	}
+	if addressTo != addressFrom {
+		addresses = append(addresses, addressTo)
+	}
+	return addresses, nil
+}
+
 func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error) {
 	logger := sugar.With(
 		"from", fj.from.String(),
@@ -83,24 +143,35 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 	if err != nil {
 		return nil, err
 	}
+	cachedContractAddressClient := contracts.NewCachedContractAddressClient(client)
 	proxyAddress := contracts.ProxyContractAddress().MustGetOneFromContext(fj.c)
 	addresses := []ethereum.Address{proxyAddress}
-	for b := fj.from; b.Cmp(fj.to) < 1; b.Add(b, big.NewInt(1)) {
-		internalNetworkAddress, err := contracts.InternalNetworkContractAddress(proxyAddress, client, b)
+
+	logger.Debugw("get addresses")
+
+	internalNetworkAddress, err := fj.getInternalNetworkAddress(cachedContractAddressClient, proxyAddress)
+	if err != nil {
+		logger.Debug("internal network address error:", err.Error())
+		return nil, err
+	}
+	addresses = append(addresses, internalNetworkAddress...)
+
+	for _, address := range internalNetworkAddress {
+		pricingAddress, err := fj.getPricingAddress(cachedContractAddressClient, address)
 		if err != nil {
+			logger.Debug("internal network address: ", address.Hex())
+			logger.Debug("get pricing address error:", err.Error())
 			return nil, err
 		}
-		addresses = append(addresses, internalNetworkAddress)
-		burnerAddress, err := contracts.BurnerContractAddress(internalNetworkAddress, client, b)
+		addresses = append(addresses, pricingAddress...)
+
+		burnerAddress, err := fj.getBurnerAddress(cachedContractAddressClient, address)
 		if err != nil {
+			logger.Debug("internal network address: ", address.Hex())
+			logger.Debug("get burner address error:", err.Error())
 			return nil, err
 		}
-		addresses = append(addresses, burnerAddress)
-		pricingAddress, err := contracts.PricingContractAddress(internalNetworkAddress, client, b)
-		if err != nil {
-			return nil, err
-		}
-		addresses = append(addresses, pricingAddress)
+		addresses = append(addresses, burnerAddress...)
 	}
 
 	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks)

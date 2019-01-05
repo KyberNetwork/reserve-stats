@@ -3,6 +3,7 @@ package contracts
 import (
 	"context"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
@@ -11,28 +12,102 @@ import (
 )
 
 const (
-	timeout = 30 * time.Second
+	timeout               = 30 * time.Second
+	blockNumberV1         = 5926000
+	startingBlockV3 int64 = 6997111
 )
 
+// CachedContractAddressClient is a client to get contract address
+type CachedContractAddressClient struct {
+	mu                           *sync.RWMutex
+	client                       bind.ContractBackend
+	cachedInternalNetworkAddress map[int64]common.Address
+	cachedPricingAddress         map[int64]common.Address
+	cachedBurnerAddress          map[int64]common.Address
+}
+
+//NewCachedContractAddressClient return new cached contract address client
+func NewCachedContractAddressClient(client bind.ContractBackend) *CachedContractAddressClient {
+	return &CachedContractAddressClient{
+		mu:                           &sync.RWMutex{},
+		client:                       client,
+		cachedInternalNetworkAddress: make(map[int64]common.Address),
+		cachedPricingAddress:         make(map[int64]common.Address),
+		cachedBurnerAddress:          make(map[int64]common.Address),
+	}
+}
+
 //InternalNetworkContractAddress returns the address of internal network of all deployments
-func InternalNetworkContractAddress(proxyAddress common.Address, client bind.ContractBackend, blockNumber *big.Int) (common.Address, error) {
-	proxyContract, err := NewProxy(proxyAddress, client)
+func (cc CachedContractAddressClient) InternalNetworkContractAddress(proxyAddress common.Address, blockNumber *big.Int) (common.Address, error) {
+	if blockNumber.Cmp(big.NewInt(1)) == 0 {
+		return cc.getInternalNetworkAddress(proxyAddress, 1)
+	}
+	if blockNumber.Cmp(big.NewInt(startingBlockV2)) == -1 {
+		return cc.getInternalNetworkAddress(proxyAddress, blockNumberV1)
+	}
+	if blockNumber.Cmp(big.NewInt(startingBlockV2)) >= 0 {
+		return cc.getInternalNetworkAddress(proxyAddress, startingBlockV2)
+	}
+	return cc.getInternalNetworkAddress(proxyAddress, startingBlockV3)
+}
+
+func (cc CachedContractAddressClient) getInternalNetworkAddress(proxyAddress common.Address, blockNumber int64) (common.Address, error) {
+	if blockNumber != 1 {
+		cc.mu.RLock()
+		if _, exist := cc.cachedInternalNetworkAddress[blockNumber]; exist {
+			cc.mu.RUnlock()
+			return cc.cachedInternalNetworkAddress[blockNumber], nil
+		}
+		cc.mu.RUnlock()
+	}
+
+	proxyContract, err := NewProxy(proxyAddress, cc.client)
 	if err != nil {
 		return common.Address{}, err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	// if not input blocknumber then get from latest block
+
 	callOpt := &bind.CallOpts{Context: ctx}
-	if blockNumber.Cmp(big.NewInt(1)) != 0 {
-		callOpt.BlockNumber = blockNumber
+	// if not input blocknumber then get from latest block
+	if blockNumber != 1 {
+		callOpt.BlockNumber = big.NewInt(blockNumber)
 	}
-	return proxyContract.KyberNetworkContract(callOpt)
+
+	address, err := proxyContract.KyberNetworkContract(callOpt)
+	if err != nil {
+		return common.Address{}, err
+	}
+	cc.mu.Lock()
+	cc.cachedInternalNetworkAddress[blockNumber] = address
+	cc.mu.Unlock()
+	return address, nil
 }
 
 // PricingContractAddress returns the address of pricing contract of all deployments.
-func PricingContractAddress(internalNetworkAddress common.Address, client bind.ContractBackend, blockNumber *big.Int) (common.Address, error) {
-	internalNetworkContract, err := NewInternalNetwork(internalNetworkAddress, client)
+func (cc CachedContractAddressClient) PricingContractAddress(internalNetworkAddress common.Address, blockNumber *big.Int) (common.Address, error) {
+	if blockNumber.Cmp(big.NewInt(1)) == 0 {
+		return cc.getPricingContractAddress(internalNetworkAddress, 1)
+	}
+	if blockNumber.Cmp(big.NewInt(startingBlockV2)) == -1 {
+		return cc.getPricingContractAddress(internalNetworkAddress, blockNumberV1)
+	}
+	if blockNumber.Cmp(big.NewInt(startingBlockV2)) >= 0 {
+		return cc.getPricingContractAddress(internalNetworkAddress, startingBlockV2)
+	}
+	return cc.getPricingContractAddress(internalNetworkAddress, startingBlockV3)
+}
+
+func (cc *CachedContractAddressClient) getPricingContractAddress(internalNetworkAddress common.Address, blockNumber int64) (common.Address, error) {
+	if blockNumber != 1 {
+		cc.mu.RLock()
+		if _, exist := cc.cachedPricingAddress[blockNumber]; exist {
+			cc.mu.RUnlock()
+			return cc.cachedPricingAddress[blockNumber], nil
+		}
+		cc.mu.RUnlock()
+	}
+	internalNetworkContract, err := NewInternalNetwork(internalNetworkAddress, cc.client)
 	if err != nil {
 		return common.Address{}, err
 	}
@@ -40,10 +115,17 @@ func PricingContractAddress(internalNetworkAddress common.Address, client bind.C
 	defer cancel()
 	// if not input blocknumber then get from latest block
 	callOpt := &bind.CallOpts{Context: ctx}
-	if blockNumber.Cmp(big.NewInt(1)) != 0 {
-		callOpt.BlockNumber = blockNumber
+	if blockNumber != 1 {
+		callOpt.BlockNumber = big.NewInt(blockNumber)
 	}
-	return internalNetworkContract.ExpectedRateContract(callOpt)
+	address, err := internalNetworkContract.ExpectedRateContract(callOpt)
+	if err != nil {
+		return common.Address{}, err
+	}
+	cc.mu.Lock()
+	cc.cachedPricingAddress[blockNumber] = address
+	cc.mu.Unlock()
+	return address, nil
 }
 
 // InternalReserveAddress returns the address of reserve contract of all deployments.
@@ -57,8 +139,29 @@ func ProxyContractAddress() deployment.Address {
 }
 
 // BurnerContractAddress returns the address of burner contract of all deployments.
-func BurnerContractAddress(internalNetworkAddress common.Address, client bind.ContractBackend, blockNumber *big.Int) (common.Address, error) {
-	internalNetworkContract, err := NewInternalNetwork(internalNetworkAddress, client)
+func (cc CachedContractAddressClient) BurnerContractAddress(internalNetworkAddress common.Address, blockNumber *big.Int) (common.Address, error) {
+	if blockNumber.Cmp(big.NewInt(1)) == 0 {
+		return cc.getBurnerContractAddress(internalNetworkAddress, 1)
+	}
+	if blockNumber.Cmp(big.NewInt(startingBlockV2)) == -1 {
+		return cc.getBurnerContractAddress(internalNetworkAddress, blockNumberV1)
+	}
+	if blockNumber.Cmp(big.NewInt(startingBlockV2)) >= 0 {
+		return cc.getBurnerContractAddress(internalNetworkAddress, startingBlockV2)
+	}
+	return cc.getBurnerContractAddress(internalNetworkAddress, startingBlockV3)
+}
+
+func (cc CachedContractAddressClient) getBurnerContractAddress(internalNetworkAddress common.Address, blockNumber int64) (common.Address, error) {
+	if blockNumber != 1 {
+		cc.mu.RLock()
+		if _, exist := cc.cachedBurnerAddress[blockNumber]; exist {
+			cc.mu.RUnlock()
+			return cc.cachedBurnerAddress[blockNumber], nil
+		}
+		cc.mu.RUnlock()
+	}
+	internalNetworkContract, err := NewInternalNetwork(internalNetworkAddress, cc.client)
 	if err != nil {
 		return common.Address{}, err
 	}
@@ -66,64 +169,23 @@ func BurnerContractAddress(internalNetworkAddress common.Address, client bind.Co
 	defer cancel()
 	// if not input blocknumber then get from latest block
 	callOpt := &bind.CallOpts{Context: ctx}
-	if blockNumber.Cmp(big.NewInt(1)) != 0 {
-		callOpt.BlockNumber = blockNumber
+	if blockNumber != 1 {
+		callOpt.BlockNumber = big.NewInt(blockNumber)
 	}
-	return internalNetworkContract.FeeBurnerContract(callOpt)
+	address, err := internalNetworkContract.FeeBurnerContract(callOpt)
+	cc.mu.Lock()
+	cc.cachedBurnerAddress[blockNumber] = address
+	cc.mu.Unlock()
+	return address, nil
 }
 
-// OldNetworkContractAddress returns old network address of all deployments.
-// func OldNetworkContractAddress() app.Address {
-// 	return oldNetworkContractAddress
-// }
-
-// OldBurnerContractAddress returns old burner address of all deployments.
-// func OldBurnerContractAddress() app.Address {
-// 	return oldBurnerContractAddress
-// }
-
 var (
-	// internalNetworkContractAddress = app.NewAddress(
-	// 	[]common.Address{common.HexToAddress("0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950")},
-	// 	[]common.Address{common.HexToAddress("0x65897aDCBa42dcCA5DD162c647b1cC3E31238490")},
-	// )
-	internalReserveAddress = deployment.NewAddress(
+	internalReserveAddress = app.NewAddress(
 		[]common.Address{common.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")},
 		[]common.Address{common.HexToAddress("0x2C5a182d280EeB5824377B98CD74871f78d6b8BC")},
 	)
-	// pricingContractAddress = app.NewAddress(
-	// 	[]common.Address{common.HexToAddress("0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B")},
-	// 	[]common.Address{common.HexToAddress("0xe3E415a7a6c287a95DC68a01ff036828073fD2e6")},
-	// )
-	proxyContractAddress = deployment.NewAddress(
+	proxyContractAddress = app.NewAddress(
 		[]common.Address{common.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")},
 		[]common.Address{common.HexToAddress("0xC14f34233071543E979F6A79AA272b0AB1B4947D")},
 	)
-	// burnerContractAddress = app.NewAddress(
-	// 	[]common.Address{common.HexToAddress("0x52166528FCC12681aF996e409Ee3a421a4e128A3")},
-	// 	[]common.Address{common.HexToAddress("0x39682A7b8E4A03b2c8dC6DA6E0146Aee4E29A306")},
-	// )
-
-	// oldNetworkContractAddress = app.NewAddress(
-	// 	[]common.Address{
-	// 		common.HexToAddress("0x964F35fAe36d75B1e72770e244F6595B68508CF5"),
-	// 		// production old internal network v2
-	// 		common.HexToAddress("0x91a502C678605fbCe581eae053319747482276b9")},
-	// 	[]common.Address{
-	// 		common.HexToAddress("0xD2D21FdeF0D054D2864ce328cc56D1238d6b239e"),
-	// 		// staging old internal network v2
-	// 		common.HexToAddress("0x706aBcE058DB29eB36578c463cf295F180a1Fe9C")},
-	// )
-
-	// oldBurnerContractAddress = app.NewAddress(
-	// 	[]common.Address{
-	// 		common.HexToAddress("0x4E89bc8484B2c454f2F7B25b612b648c45e14A8e"),
-	// 		common.HexToAddress("0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706"),
-	// 		// old burner contract v2
-	// 		common.HexToAddress("0xed4f53268bfdFF39B36E8786247bA3A02Cf34B04")},
-	// 	[]common.Address{
-	// 		common.HexToAddress("0xB2cB365D803Ad914e63EA49c95eC663715c2F673"),
-	// 		// staging old burner contract v2
-	// 		common.HexToAddress("0xd6703974Dc30155d768c058189A2936Cf7C62Da6")},
-	// )
 )

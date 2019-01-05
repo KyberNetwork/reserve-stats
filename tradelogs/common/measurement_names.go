@@ -35,12 +35,12 @@ const (
 	WalletFeeVolumeMeasurementDay = "wallet_fee_day"
 	//WalletFeeVolumeMeasurementHour is the measurement to which wallet fee volume hourly is stored
 	WalletFeeVolumeMeasurementHour = "wallet_fee_hour"
-	//VolumeHourMeasurementName
+	//VolumeHourMeasurementName is the measurement to which volume hourly is stored
 	VolumeHourMeasurementName = "volume_hour"
-	//VolumeDayMeasurementName
+	//VolumeDayMeasurementName is the measurement to which volume daily is stored
 	VolumeDayMeasurementName = "volume_day"
-	//UserVolumeDayMeasurementName
+	//UserVolumeDayMeasurementName is the measurement to which uservolume daily is stored
 	UserVolumeDayMeasurementName = "user_volume_day"
-	//UserVolumeHourMeasurementName
+	//UserVolumeHourMeasurementName is the measurement to which uservolume hourly is stored
 	UserVolumeHourMeasurementName = "user_volume_hour"
 )

@@ -80,7 +80,6 @@ func newTestServer() (*Server, error) {
 		&mockStorage{},
 		"",
 		sugar,
-		&mockCore{},
 	), nil
 
 }

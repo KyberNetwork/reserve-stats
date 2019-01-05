@@ -19,14 +19,13 @@ import (
 type ResreveRatesCrawler struct {
 	sugar *zap.SugaredLogger
 
-	wrapperContract     reserveRateGetter
-	addresses           []ethereum.Address
-	stg                 supportedTokensGetter
-	internalReserveAddr ethereum.Address
+	wrapperContract reserveRateGetter
+	addresses       []ethereum.Address
+	stg             supportedTokensGetter
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
-func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *ethclient.Client, coreClient core.Interface, internalReserveAddr ethereum.Address) (*ResreveRatesCrawler, error) {
+func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *ethclient.Client, coreClient core.Interface) (*ResreveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapperFallback(sugar, client)
 	if err != nil {
 		return nil, err
@@ -37,11 +36,10 @@ func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *et
 		ethAddrs = append(ethAddrs, ethereum.HexToAddress(addr))
 	}
 	return &ResreveRatesCrawler{
-		sugar:               sugar,
-		wrapperContract:     wrpContract,
-		addresses:           ethAddrs,
-		stg:                 newCoreSupportedTokens(sugar, client, coreClient),
-		internalReserveAddr: internalReserveAddr,
+		sugar:           sugar,
+		wrapperContract: wrpContract,
+		addresses:       ethAddrs,
+		stg:             newCoreSupportedTokens(sugar, client, coreClient),
 	}, nil
 }
 

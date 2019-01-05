@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"log"
+	"math/big"
 	"os"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
@@ -59,8 +60,14 @@ func reserve(c *cli.Context) error {
 		return err
 	}
 
+	proxyAddress := contracts.ProxyContractAddress().MustGetOneFromContext(c)
+	internalNetworkAddress, err := contracts.InternalNetworkContractAddress(proxyAddress, client, big.NewInt(1))
+	if err != nil {
+		return err
+	}
+
 	internalNetworkClient, err := contracts.NewInternalNetwork(
-		contracts.InternalNetworkContractAddress().MustGetOneFromContext(c),
+		internalNetworkAddress,
 		client,
 	)
 	if err != nil {

@@ -69,7 +69,7 @@ func (rf *RateFetcher) FetchRatesInRanges(from, to time.Time, tokenID, currency 
 	}
 	rf.sugar.Debugw("fetching rates", "from", from.String(), "to", to.String())
 
-	for d := from.Truncate(time.Hour * 24); d.Before(to.Truncate(time.Hour * 24)); d = d.AddDate(0, 0, 1) {
+	for d := from.Truncate(time.Hour * 24); !d.After(to.Truncate(time.Hour * 24)); d = d.AddDate(0, 0, 1) {
 		rate, err := rf.FetchRates(tokenID, currency, d)
 		if err != nil {
 			rf.sugar.Errorw("Failed to get rate", "error", err)

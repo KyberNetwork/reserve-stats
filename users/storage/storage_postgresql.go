@@ -2,6 +2,8 @@ package storage
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -151,4 +153,24 @@ func (udb *UserDB) GetAllAddresses() ([]string, error) {
 		return result, err
 	}
 	return result, nil
+}
+
+//IsKYCed returns true when given address is found in database before a given timestamp,
+// means that user is already KYCed before that time
+func (udb *UserDB) IsKYCedAtTime(userAddr string, ts time.Time) (bool, error) {
+	var (
+		logger = udb.sugar.With(
+			"func", "users/storage/UserDB.IsKYCedAtTime",
+			"user_addr", userAddr,
+			"timestamp", ts.String(),
+		)
+		result uint64
+	)
+	stmt := fmt.Sprintf(`SELECT COUNT(1) FROM "%s" WHERE address = $1 AND timestamp < $2`, addressesTableName)
+	logger = logger.With("query", stmt)
+	if err := udb.db.Get(&result, stmt, strings.ToLower(userAddr), ts.UTC()); err != nil {
+		return false, err
+	}
+	logger.Debugw("got result from database", "result", result)
+	return result != 0, nil
 }

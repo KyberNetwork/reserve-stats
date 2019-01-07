@@ -65,8 +65,8 @@ func NewClient(sugar *zap.SugaredLogger, url, signingKey, signingKeyID string) (
 	}, nil
 }
 
-// LookUpUserKyc will look for the user kyc status of input addr from server
-func (c *Client) LookUpUserKyc(addr ethereum.Address) (bool, error) {
+// IsKYCed will look for the user kyc status of input addr from server
+func (c *Client) IsKYCed(addr ethereum.Address, timePoint time.Time) (bool, error) {
 	const endpoint = "/kyced"
 	var (
 		params = make(map[string]string)

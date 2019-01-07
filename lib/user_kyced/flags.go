@@ -20,18 +20,21 @@ func NewCliFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:   userKycedURL,
-			Usage:  "user kyced API URL",
+			Usage:  "user kyced API URL. If this doesn't support, fallback to default PosGres DB for kyced checking",
 			EnvVar: "USER_KYCED_URL",
+			Value:  "",
 		},
 		cli.StringFlag{
 			Name:   userKycedSigningKeyFlag,
 			Usage:  "user profile Signing Key",
 			EnvVar: "USER_KYCED_SIGNING_KEY",
+			Value:  "",
 		},
 		cli.StringFlag{
 			Name:   userKycedKeyIDFlag,
 			Usage:  "user profile Signing Key ID",
 			EnvVar: "USER_KYCED_KEY_ID",
+			Value:  "",
 		},
 	}
 }

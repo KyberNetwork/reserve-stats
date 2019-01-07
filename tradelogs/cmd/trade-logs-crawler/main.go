@@ -17,6 +17,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
+	userkyced "github.com/KyberNetwork/reserve-stats/lib/user_kyced"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
@@ -100,7 +101,7 @@ func main() {
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, cq.NewCQFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
-
+	app.Flags = append(app.Flags, userkyced.NewCliFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -167,7 +168,13 @@ func requiredWorkers(fromBlock, toBlock *big.Int, maxBlocks, maxWorkers int) int
 }
 
 func run(c *cli.Context) error {
-	var err error
+	var (
+		err        error
+		fromBlock  *big.Int
+		toBlock    *big.Int
+		daemon     bool
+		kycChecker storage.KycChecker
+	)
 
 	logger, err := libapp.NewLogger(c)
 	if err != nil {
@@ -186,13 +193,24 @@ func run(c *cli.Context) error {
 	if err = manageCQFromContext(c, influxClient, sugar); err != nil {
 		return err
 	}
-
-	db, err := libapp.NewDBFromContext(c)
+	userKycedClient, err := userkyced.NewClientFromContext(sugar, c)
 	if err != nil {
 		return err
 	}
+	if userKycedClient != nil {
+		sugar.Info("User kyced checker URL provided. check KYCed status from userKYCed client")
+		kycChecker = userKycedClient
 
-	kycChecker := storage.NewUserKYCChecker(sugar, db)
+	} else {
+		sugar.Info("User kyced checker URL is not provided. Use default postGres instead")
+		db, err := libapp.NewDBFromContext(c)
+		if err != nil {
+			return err
+		}
+
+		kycChecker = storage.NewUserKYCChecker(sugar, db)
+	}
+
 	tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
 	if err != nil {
 		return err

@@ -14,9 +14,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// ResreveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
+// ReserveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
 // a set of addresses to crawl rates from and setting object to query for reserve's token settings
-type ResreveRatesCrawler struct {
+type ReserveRatesCrawler struct {
 	sugar *zap.SugaredLogger
 
 	wrapperContract reserveRateGetter
@@ -25,7 +25,7 @@ type ResreveRatesCrawler struct {
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
-func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *ethclient.Client, coreClient core.Interface) (*ResreveRatesCrawler, error) {
+func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *ethclient.Client, coreClient core.Interface) (*ReserveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapperFallback(sugar, client)
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *et
 	for _, addr := range addrs {
 		ethAddrs = append(ethAddrs, ethereum.HexToAddress(addr))
 	}
-	return &ResreveRatesCrawler{
+	return &ReserveRatesCrawler{
 		sugar:           sugar,
 		wrapperContract: wrpContract,
 		addresses:       ethAddrs,
@@ -43,7 +43,7 @@ func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *et
 	}, nil
 }
 
-func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereum.Address) (map[string]rsvRateCommon.ReserveRateEntry, error) {
+func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereum.Address) (map[string]rsvRateCommon.ReserveRateEntry, error) {
 	var (
 		err           error
 		rates         = make(map[string]rsvRateCommon.ReserveRateEntry)
@@ -52,7 +52,7 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 	)
 
 	logger := rrc.sugar.With(
-		"func", "reserverates/reserve-rates-crawler/ResreveRatesCrawler.getEachReserveRate",
+		"func", "reserverates/crawler/ReserveRatesCrawler.getEachReserveRate",
 		"block", block,
 		"reserve_address", rsvAddr.Hex(),
 	)
@@ -87,7 +87,7 @@ func (rrc *ResreveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 
 // GetReserveRates returns the map[ReserveAddress]ReserveRates at the given block number.
 // It will only return rates from the set of addresses within its definition.
-func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]map[string]rsvRateCommon.ReserveRateEntry, error) {
+func (rrc *ReserveRatesCrawler) GetReserveRates(block uint64) (map[string]map[string]rsvRateCommon.ReserveRateEntry, error) {
 	var (
 		err    error
 		g      errgroup.Group
@@ -96,7 +96,7 @@ func (rrc *ResreveRatesCrawler) GetReserveRates(block uint64) (map[string]map[st
 	)
 
 	logger := rrc.sugar.With(
-		"func", "reserverates/reserve-rates-crawler/ResreveRatesCrawler.GetReserveRates",
+		"func", "reserverates/crawler/ReserveRatesCrawler.GetReserveRates",
 		"block", block,
 		"reserves", len(rrc.addresses),
 	)

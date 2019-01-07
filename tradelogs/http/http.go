@@ -27,7 +27,6 @@ func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger,
 			storage: storage,
 			host:    host,
 			sugar:   sugar,
-			// coreSetting: sett,
 		}
 	)
 
@@ -67,10 +66,9 @@ func WithUserProfile(up userprofile.Interface) ServerOption {
 
 // Server serve trade logs through http endpoint.
 type Server struct {
-	storage storage.Interface
-	host    string
-	sugar   *zap.SugaredLogger
-	// coreSetting      core.Interface
+	storage          storage.Interface
+	host             string
+	sugar            *zap.SugaredLogger
 	getAddrToAppName func() (map[ethereum.Address]string, error)
 	getUserProfile   func(ethereum.Address) (userprofile.UserProfile, error)
 }

@@ -8,45 +8,43 @@ import (
 )
 
 const (
-	toTimeFlag        = "to"
-	fromTimeFlag      = "from"
-	timePrecisionFlag = "time-precision"
+	toTimeFlag   = "to"
+	fromTimeFlag = "from"
 )
 
 // NewTimeRangeCliFlags returns cli flags to configure a fromTime-toTime.
 func NewTimeRangeCliFlags() []cli.Flag {
 	return []cli.Flag{
-		cli.Uint64Flag{
+		cli.StringFlag{
 			Name:   fromTimeFlag,
-			Usage:  "from time. Default is  00:00:00 UTC on 1 January 1970 in millisecond",
+			Usage:  "from time in format YYYY-MM-DD",
 			EnvVar: "FROM_TIME",
-			Value:  0,
 		},
-		cli.Uint64Flag{
+		cli.StringFlag{
 			Name:   toTimeFlag,
-			Usage:  "to time. Default is time.Now() in millisecond",
+			Usage:  "to time in format YYYY-MM-DD. Default is time.Now()",
 			EnvVar: "TO_TIME",
-			Value:  0,
+			Value:  "",
 		},
 	}
 }
 
 //MustGetFromTimeFromContext return from time from context and error if it's not provide
 func MustGetFromTimeFromContext(c *cli.Context) (time.Time, error) {
-	fromTime := TimestampMsToTime(c.Uint64(fromTimeFlag))
-	if c.Uint64(fromTimeFlag) == 0 {
-		return fromTime, errors.New("From time flag is not provide")
+	timeString := c.String(fromTimeFlag)
+	if timeString == "" {
+		return time.Time{}, errors.New("From time flag is not provide")
 	}
-
-	return fromTime, nil
+	const shortForm = "2006-Jan-02"
+	return time.Parse(shortForm, timeString)
 }
 
 //GetToTimeFromContext return totime from context. Return time.Now if it's not provide
-func GetToTimeFromContext(c *cli.Context) time.Time {
-	if c.Uint64(toTimeFlag) == 0 {
-		return time.Now()
+func GetToTimeFromContext(c *cli.Context) (time.Time, error) {
+	timeString := c.String(toTimeFlag)
+	if timeString == "" {
+		return time.Now(), nil
 	}
-	toTime := TimestampMsToTime(c.Uint64(toTimeFlag))
-
-	return toTime
+	const shortForm = "2006-Jan-02"
+	return time.Parse(shortForm, timeString)
 }

@@ -1,4 +1,4 @@
-package tokenrate
+package tokenratefetcher
 
 import (
 	"fmt"

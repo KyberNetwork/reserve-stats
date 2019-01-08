@@ -6,7 +6,7 @@ import (
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
+	tokenrate "github.com/KyberNetwork/reserve-stats/token-rate-fetcher"
 	"github.com/KyberNetwork/tokenrate/coingecko"
 
 	"github.com/urfave/cli"
@@ -55,7 +55,10 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	to := timeutil.GetToTimeFromContext(c)
+	to, err := timeutil.GetToTimeFromContext(c)
+	if err != nil {
+		return err
+	}
 
 	return tokenRate.FetchRatesInRanges(from, to, kyberNetworkTokenID, usdCurrencyID)
 }

@@ -1,4 +1,4 @@
-package tokenrate
+package tokenratefetcher
 
 //tokenSymbol is the mapping of tokenID to token Symbol
 var tokenSymbols = map[string]string{

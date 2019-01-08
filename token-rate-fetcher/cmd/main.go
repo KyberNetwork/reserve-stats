@@ -10,7 +10,6 @@ import (
 	tokenrate "github.com/KyberNetwork/reserve-stats/token-rate-fetcher"
 	"github.com/KyberNetwork/reserve-stats/token-rate-fetcher/storage"
 	"github.com/KyberNetwork/tokenrate/coingecko"
-
 	"github.com/urfave/cli"
 )
 
@@ -36,7 +35,7 @@ func main() {
 func run(c *cli.Context) error {
 	logger, err := libapp.NewLogger(c)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer logger.Sync()
 	sugar := logger.Sugar()
@@ -58,7 +57,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	from, err := timeutil.MustGetFromTimeFromContext(c)
+	from, err := timeutil.GetFromTimeFromContext(c)
 	if err != nil {
 		sugar.Info("No from time is provided, seeking for the first data point in DB...")
 		from, err = influxStorage.GetFirstTimePoint(cgk.Name(), kyberNetworkTokenID, usdCurrencyID)
@@ -66,7 +65,7 @@ func run(c *cli.Context) error {
 			return err
 		}
 	}
-	to, err := timeutil.GetToTimeFromContextWithDeamon(c)
+	to, err := timeutil.GetToTimeFromContextWithDaemon(c)
 	if err == timeutil.ErrEmptyFlag {
 		sugar.Info("No to time is provide, running in daemon mode...")
 		for {

@@ -7,9 +7,9 @@ type FieldName int
 const (
 	//Time is enumerated field name for time
 	Time FieldName = iota //time
-	//provider is enumerated field name for provider
+	//Provider is enumerated field name for provider
 	Provider //provider
-	//rate is the enumerated field for country rate
+	//Rate is the enumerated field for country rate
 	Rate //rate
 )
 

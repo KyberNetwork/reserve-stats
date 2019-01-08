@@ -12,17 +12,17 @@ import (
 
 //RateFetcher represent fetcher for anyToken-USD rate
 type RateFetcher struct {
-	sugar         *zap.SugaredLogger
-	influxStorage *storage.InfluxStorage
-	rateProvider  tokenrate.Provider
+	sugar        *zap.SugaredLogger
+	storage      storage.Interface
+	rateProvider tokenrate.Provider
 }
 
 //NewRateFetcher return a RateFetcher for any Token_USD rate
-func NewRateFetcher(sugar *zap.SugaredLogger, is *storage.InfluxStorage, rp tokenrate.Provider) (*RateFetcher, error) {
+func NewRateFetcher(sugar *zap.SugaredLogger, str storage.Interface, rp tokenrate.Provider) (*RateFetcher, error) {
 	fetcher := &RateFetcher{
-		sugar:         sugar,
-		influxStorage: is,
-		rateProvider:  rp,
+		sugar:        sugar,
+		storage:      str,
+		rateProvider: rp,
 	}
 
 	return fetcher, nil
@@ -43,7 +43,7 @@ func (rf *RateFetcher) FetchRatesInRanges(from, to time.Time, tokenID, currency 
 		rf.sugar.Infow("Rate return", "rate", rate, "time", d.String())
 		rates = append(rates, rate)
 	}
-	return rf.influxStorage.SaveRates(rates)
+	return rf.storage.SaveRates(rates)
 }
 
 //FetchRates return the rate for pair token-currency at timestamp timeStamp

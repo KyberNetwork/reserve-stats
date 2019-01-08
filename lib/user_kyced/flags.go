@@ -52,19 +52,8 @@ func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, er
 		return nil, fmt.Errorf("user kyced url: %s", err.Error())
 	}
 	signingKey := c.String(userKycedSigningKeyFlag)
-	err = validation.Validate(signingKey,
-		validation.Required,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("user kyced signing key: %s", err.Error())
-	}
+
 	keyID := c.String(userKycedKeyIDFlag)
-	err = validation.Validate(keyID,
-		validation.Required,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("user kyced signing key id: %s", err.Error())
-	}
 
 	return NewClient(sugar, userURL, signingKey, keyID)
 }

@@ -83,8 +83,10 @@ func run(c *cli.Context) error {
 		beginOfThisMonth := now.New(startTime).BeginningOfMonth()
 		previousMonth := beginOfThisMonth.Add(-24 * time.Hour)
 		beginOfLastMonth := now.New(previousMonth).BeginningOfMonth()
-		query := fmt.Sprintf(`SELECT SUM(eth_volume) AS eth_volume, SUM(usd_volume) AS usd_volume
-		INTO monthly_reserve_volume FROM rsv_volume_day WHERE time >= '%s' AND time < '%s'
+
+		// reserve volume monthly
+		query := fmt.Sprintf(`SELECT SUM(eth_amount) AS eth_volume, SUM(usd_volume) AS usd_volume
+		INTO monthly_reserve_volume FROM trades WHERE time >= '%s' AND time < '%s'
 		GROUP BY src_rsv_addr, dst_rsv_addr`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339))
 
 		sugar.Debug("query ", query)
@@ -93,6 +95,33 @@ func run(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
+
+		// burn fee monthly
+
+		query = fmt.Sprintf(`SELECT SUM(amount) as burn_fee INTO monthly_fee 
+		FROM burn_fees WHERE time >= '%s' AND time <= '%s'
+		GROUP BY reserve_addr`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339))
+
+		sugar.Debug("query ", query)
+
+		_, err = queryDB(influxClient, query)
+		if err != nil {
+			return err
+		}
+
+		// wallet fee monthly
+
+		query = fmt.Sprintf(`SELECT SUM(amount) as wallet_fee INTO monthly_fee 
+		FROM wallet_fees WHERE time >= '%s' AND time <= '%s'
+		GROUP BY reserve_addr`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339))
+
+		sugar.Debug("query ", query)
+
+		_, err = queryDB(influxClient, query)
+		if err != nil {
+			return err
+		}
+
 		if beginOfThisMonth.Equal(now.New(time.Now().In(time.UTC)).BeginningOfMonth()) {
 			time.Sleep(10 * 24 * time.Hour)
 			startTime = time.Now()

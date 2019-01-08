@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
+//KycChecker is the interface to abstract functionality for checking kyc status
 type KycChecker interface {
 	IsKYCed(common.Address, time.Time) (bool, error)
 }

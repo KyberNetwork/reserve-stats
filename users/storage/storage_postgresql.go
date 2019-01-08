@@ -155,7 +155,7 @@ func (udb *UserDB) GetAllAddresses() ([]string, error) {
 	return result, nil
 }
 
-//IsKYCed returns true when given address is found in database before a given timestamp,
+//IsKYCedAtTime returns true when given address is found in database before a given timestamp,
 // means that user is already KYCed before that time
 func (udb *UserDB) IsKYCedAtTime(userAddr string, ts time.Time) (bool, error) {
 	var (

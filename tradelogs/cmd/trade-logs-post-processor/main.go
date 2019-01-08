@@ -49,7 +49,6 @@ func queryDB(clnt client.Client, cmd string) (res []client.Result, err error) {
 }
 
 func run(c *cli.Context) error {
-
 	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
@@ -67,7 +66,7 @@ func run(c *cli.Context) error {
 	sugar.Debugw("influx client initiate successfully", "influx client", influxClient)
 
 	// get first timestamp from db
-	q := fmt.Sprintf(`SELECT eth_volume FROM rsv_volume_day ORDER BY ASC LIMIT 1`)
+	q := fmt.Sprintf(`SELECT eth_amount FROM trades ORDER BY ASC LIMIT 1`)
 	res, err := queryDB(influxClient, q)
 	if err != nil {
 		return err
@@ -78,7 +77,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	// run each 10-day
+	// run each day
 	for {
 		beginOfThisMonth := now.New(startTime).BeginningOfMonth()
 		previousMonth := beginOfThisMonth.Add(-24 * time.Hour)
@@ -123,7 +122,7 @@ func run(c *cli.Context) error {
 		}
 
 		if beginOfThisMonth.Equal(now.New(time.Now().In(time.UTC)).BeginningOfMonth()) {
-			time.Sleep(10 * 24 * time.Hour)
+			time.Sleep(24 * time.Hour)
 			startTime = time.Now()
 		} else {
 			nextMonth := now.New(startTime).EndOfMonth().Add(24 * time.Hour)

@@ -2,11 +2,13 @@ package main
 
 import (
 	"os"
+	"time"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	tokenrate "github.com/KyberNetwork/reserve-stats/token-rate-fetcher"
+	"github.com/KyberNetwork/reserve-stats/token-rate-fetcher/storage"
 	"github.com/KyberNetwork/tokenrate/coingecko"
 
 	"github.com/urfave/cli"
@@ -46,16 +48,36 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	tokenRate, err := tokenrate.NewRateFetcher(sugar, dbName, influxClient, cgk)
+	influxStorage, err := storage.NewInfluxStorage(influxClient, dbName, sugar)
+	if err != nil {
+		return err
+	}
+
+	tokenRate, err := tokenrate.NewRateFetcher(sugar, influxStorage, cgk)
 	if err != nil {
 		return err
 	}
 
 	from, err := timeutil.MustGetFromTimeFromContext(c)
 	if err != nil {
-		return err
+		sugar.Info("No from time is provided, seeking for the first data point in DB...")
+		from, err = influxStorage.GetFirstTimePoint(cgk.Name(), kyberNetworkTokenID, usdCurrencyID)
+		if err != nil {
+			return err
+		}
 	}
-	to, err := timeutil.GetToTimeFromContext(c)
+	to, err := timeutil.GetToTimeFromContextWithDeamon(c)
+	if err == timeutil.ErrEmptyFlag {
+		sugar.Info("No to time is provide, running in daemon mode...")
+		for {
+			to = time.Now()
+			if err := tokenRate.FetchRatesInRanges(from, to, kyberNetworkTokenID, usdCurrencyID); err != nil {
+				return err
+			}
+			from = to
+			time.Sleep(12 * time.Hour)
+		}
+	}
 	if err != nil {
 		return err
 	}

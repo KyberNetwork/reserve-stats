@@ -1,4 +1,4 @@
-package tokenratefetcher
+package common
 
 import (
 	"time"

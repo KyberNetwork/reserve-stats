@@ -12,6 +12,9 @@ const (
 	fromTimeFlag = "from"
 )
 
+//ErrEmptyFlag is the error returned when empty flag
+var ErrEmptyFlag = errors.New("empty flag")
+
 // NewTimeRangeCliFlags returns cli flags to configure a fromTime-toTime.
 func NewTimeRangeCliFlags() []cli.Flag {
 	return []cli.Flag{
@@ -39,11 +42,11 @@ func MustGetFromTimeFromContext(c *cli.Context) (time.Time, error) {
 	return time.Parse(shortForm, timeString)
 }
 
-//GetToTimeFromContext return totime from context. Return time.Now if it's not provide
-func GetToTimeFromContext(c *cli.Context) (time.Time, error) {
+//GetToTimeFromContextWithDeamon return totime from context. Return err=ErrEmptyFlag to indicate daemon Mode if it's not provide
+func GetToTimeFromContextWithDeamon(c *cli.Context) (time.Time, error) {
 	timeString := c.String(toTimeFlag)
 	if timeString == "" {
-		return time.Now(), nil
+		return time.Time{}, ErrEmptyFlag
 	}
 	const shortForm = "2006-Jan-02"
 	return time.Parse(shortForm, timeString)

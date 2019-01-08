@@ -10,5 +10,6 @@ import (
 type Interface interface {
 	CreateOrUpdate(common.UserData) error
 	IsKYCed(string) (bool, error)
-	IsKYCedAtTime(string, time.Time) error
+	// Is KYCed at time return if the user is already KYCed before that time point.
+	IsKYCedAtTime(string, time.Time) (bool, error)
 }

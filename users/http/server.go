@@ -13,6 +13,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"              // import custom validator functions
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -41,6 +42,35 @@ type Server struct {
 	rateProvider  tokenrate.ETHUSDRateProvider
 	storage       storage.Interface
 	influxStorage *storage.InfluxStorage
+}
+
+type userQuery struct {
+	UserAddr  string `form:"address" binding:"isAddress"`
+	TimeStamp uint64 `form:"time" binding:"required"`
+}
+
+func (s *Server) isKyced(c *gin.Context) {
+	var query userQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		httputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
+	kyced, err := s.storage.IsKYCedAtTime(query.UserAddr, timeutil.TimestampMsToTime(query.TimeStamp))
+	if err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			fmt.Errorf("failed to check kyc status: %s", err.Error()),
+		)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		gin.H{
+			"kyced":   kyced,
+			"success": true,
+		},
+	)
 }
 
 //getTransactionLimit returns cap limit of a user.

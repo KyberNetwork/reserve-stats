@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"go.uber.org/zap"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
@@ -73,6 +75,7 @@ func (c *Client) IsKYCed(addr ethereum.Address, timePoint time.Time) (bool, erro
 		result = userKycedReply{}
 	)
 	params["address"] = addr.Hex()
+	params["time"] = strconv.FormatUint(timeutil.TimeToTimestampMs(timePoint), 10)
 	req, err := c.newRequest(http.MethodGet, endpoint, params)
 	if err != nil {
 		return result.Kyced, err

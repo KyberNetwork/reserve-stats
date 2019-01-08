@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type kycChecker interface {
+type KycChecker interface {
 	IsKYCed(common.Address, time.Time) (bool, error)
 }
 

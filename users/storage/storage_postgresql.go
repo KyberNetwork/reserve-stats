@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
@@ -48,15 +49,13 @@ CREATE TABLE IF NOT EXISTS "%s" (
 		return nil, err
 	}
 
+	defer pgsql.CommitOrRollback(tx, logger, &err)
+
 	logger.Debug("initializing database schema")
 	if _, err = tx.Exec(fmt.Sprintf(schemaFmt, usersTableName, addressesTableName)); err != nil {
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
-
-	if err = tx.Commit(); err != nil {
-		return nil, err
-	}
 
 	return &UserDB{
 		sugar: sugar,
@@ -83,6 +82,8 @@ func (udb *UserDB) CreateOrUpdate(userData common.UserData) error {
 	if err != nil {
 		return err
 	}
+
+	defer pgsql.CommitOrRollback(tx, logger, &err)
 
 	err = tx.Get(&userID, fmt.Sprintf(`SELECT id FROM "%s" WHERE email = $1;`, usersTableName), userData.Email)
 	if err == sql.ErrNoRows {
@@ -124,7 +125,7 @@ VALUES ($1, (TO_TIMESTAMP($2::double precision/1000)), $3);
 		}
 	}
 
-	return tx.Commit()
+	return err
 }
 
 //IsKYCed returns true when given address is found in database,

@@ -6,6 +6,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/boltdb/bolt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
@@ -73,24 +74,12 @@ CREATE TABLE IF NOT EXISTS "%[2]s" (
 		return nil, err
 	}
 
-	defer func() {
-		if err != nil {
-			rollBackErr := tx.Rollback()
-			if rollBackErr != err {
-				logger.Debug(fmt.Sprintf("rollback error: %s", rollBackErr))
-			}
-			return
-		}
-		err = tx.Commit()
-	}()
+	defer pgsql.CommitOrRollback(tx, sugar, &err)
 
 	if _, err = tx.Exec(schema); err != nil {
 		return nil, err
 	}
 
-	if err = tx.Commit(); err != nil {
-		return nil, err
-	}
 	return &DBMigration{sugar, boltDB, postgres}, nil
 }
 

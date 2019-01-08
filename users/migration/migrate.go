@@ -4,11 +4,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/boltutil"
+	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/boltdb/bolt"
 	"github.com/jmoiron/sqlx"
 )
@@ -61,24 +61,12 @@ CREATE TABLE IF NOT EXISTS "%[2]s" (
 		return nil, err
 	}
 
-	defer func() {
-		if err != nil {
-			rollBackErr := tx.Rollback()
-			if rollBackErr != err {
-				log.Printf("rollback error: %s", rollBackErr)
-			}
-			return
-		}
-		err = tx.Commit()
-	}()
+	defer pgsql.CommitOrRollback(tx, sugar, &err)
 
 	if _, err = tx.Exec(schema); err != nil {
 		return nil, err
 	}
 
-	if err = tx.Commit(); err != nil {
-		return nil, err
-	}
 	storage := &DBMigration{sugar: sugar, boltdb: boltDB, postgresdb: postgres}
 	return storage, err
 }
@@ -139,6 +127,8 @@ func (dbm *DBMigration) insertIntoUserTable(tableName string, email string) (int
 		return 0, err
 	}
 
+	defer pgsql.CommitOrRollback(ptx, logger, &err)
+
 	err = ptx.Get(&userID, fmt.Sprintf(`SELECT id FROM "%s" WHERE email = $1;`, tableName), email)
 	if err == sql.ErrNoRows {
 		logger.Debugw("user does not exist, creating")
@@ -152,15 +142,15 @@ func (dbm *DBMigration) insertIntoUserTable(tableName string, email string) (int
 
 	logger.Debugw("user already exists, skipping")
 
-	if err = ptx.Commit(); err != nil {
-		return 0, err
-	}
 	return userID, nil
 }
 
 //insertAddress insert address into address table
 func (dbm *DBMigration) insertAddress(tableName, address string, timestamp uint64, userID int) error {
 	ptx, err := dbm.postgresdb.Beginx()
+
+	defer pgsql.CommitOrRollback(ptx, dbm.sugar, &err)
+
 	_, err = ptx.Exec(fmt.Sprintf(`
 INSERT INTO "%s" (address, timestamp, user_id)
 VALUES ($1, (TO_TIMESTAMP($2::double precision/1000)), $3);
@@ -171,8 +161,5 @@ VALUES ($1, (TO_TIMESTAMP($2::double precision/1000)), $3);
 	if err != nil {
 		return err
 	}
-	if err = ptx.Commit(); err != nil {
-		return err
-	}
-	return nil
+	return err
 }

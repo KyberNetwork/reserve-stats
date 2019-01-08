@@ -93,6 +93,7 @@ func (bfs *BurnedFeesStorage) Store(events []common.BurnAssignedFeesEvent) error
 	return bfs.client.Write(bp)
 }
 
+// LastBlock returns the latest stored burned fees block.
 func (bfs *BurnedFeesStorage) LastBlock() (int64, error) {
 	stmt := fmt.Sprintf(`SELECT "block_number", "qty" from "%s" ORDER BY time DESC limit 1`,
 		measurementName)

@@ -8,8 +8,8 @@ import (
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	tokenrate "github.com/KyberNetwork/reserve-stats/token-rate-fetcher"
-	"github.com/KyberNetwork/reserve-stats/token-rate-fetcher/storage"
+	tokenrate "github.com/KyberNetwork/reserve-stats/tokenratefetcher"
+	"github.com/KyberNetwork/reserve-stats/tokenratefetcher/storage"
 	"github.com/KyberNetwork/tokenrate/coingecko"
 	"github.com/urfave/cli"
 )
@@ -61,7 +61,7 @@ func run(c *cli.Context) error {
 
 	from, err := timeutil.FromTimeFromContext(c)
 	if err == timeutil.ErrEmptyFlag {
-		sugar.Debug("no from time is provided, seeking for the first data point in DB...")
+		sugar.Debug("no from time provided, seeking for the first data point in DB...")
 		from, err = influxStorage.LastTimePoint(cgk.Name(), kyberNetworkTokenID, usdCurrencyID)
 		if err != nil {
 			return err
@@ -88,16 +88,9 @@ func run(c *cli.Context) error {
 
 	to, err := timeutil.ToTimeFromContext(c)
 	if err == timeutil.ErrEmptyFlag {
-		sugar.Info("No to time is provide, running in daemon mode...")
-		for {
-			to = time.Now().UTC()
-			if err := tokenRate.FetchRatesInRanges(from, to, kyberNetworkTokenID, usdCurrencyID); err != nil {
-				return err
-			}
-			from = to
-			sugar.Info("sleeping")
-			time.Sleep(12 * time.Hour)
-		}
+		to = time.Now().UTC()
+		sugar.Info("no to time provided, using current timestamp",
+			"to", to)
 	} else if err != nil {
 		return err
 	}

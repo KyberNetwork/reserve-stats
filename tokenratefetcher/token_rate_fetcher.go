@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/KyberNetwork/reserve-stats/token-rate-fetcher/common"
-	"github.com/KyberNetwork/reserve-stats/token-rate-fetcher/storage"
+	"github.com/KyberNetwork/reserve-stats/tokenratefetcher/common"
+	"github.com/KyberNetwork/reserve-stats/tokenratefetcher/storage"
 	"github.com/KyberNetwork/tokenrate"
 	"go.uber.org/zap"
 )
@@ -68,6 +68,7 @@ func (rf *RateFetcher) FetchRatesInRanges(from, to time.Time, tokenID, currency 
 			"timestamp", d,
 		)
 	}
+	logger.Info("all rates fetched")
 	return nil
 }
 

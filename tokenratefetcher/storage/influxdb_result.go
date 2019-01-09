@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	"github.com/KyberNetwork/reserve-stats/token-rate-fetcher/common"
-	schema "github.com/KyberNetwork/reserve-stats/token-rate-fetcher/storage/schema/tokenrate"
+	"github.com/KyberNetwork/reserve-stats/tokenratefetcher/common"
+	schema "github.com/KyberNetwork/reserve-stats/tokenratefetcher/storage/schema/tokenrate"
 )
 
 //LastTimePoint return first  time point in db or error if it is empty.

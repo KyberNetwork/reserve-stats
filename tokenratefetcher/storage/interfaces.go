@@ -3,7 +3,7 @@ package storage
 import (
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/token-rate-fetcher/common"
+	"github.com/KyberNetwork/reserve-stats/tokenratefetcher/common"
 )
 
 //Interface abstracts the implementation of storage functionality.

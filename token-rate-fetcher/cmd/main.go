@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	defaultFromTime     = "2018-01-01T00:00:00Z"
 	kyberNetworkTokenID = "kyber-network"
 	usdCurrencyID       = "usd"
 	dbName              = "token_rate"
@@ -60,11 +61,27 @@ func run(c *cli.Context) error {
 
 	from, err := timeutil.FromTimeFromContext(c)
 	if err == timeutil.ErrEmptyFlag {
-		sugar.Info("No from time is provided, seeking for the first data point in DB...")
+		sugar.Debug("no from time is provided, seeking for the first data point in DB...")
 		from, err = influxStorage.LastTimePoint(cgk.Name(), kyberNetworkTokenID, usdCurrencyID)
 		if err != nil {
 			return err
 		}
+
+		if from.IsZero() {
+			if from, err = time.Parse(time.RFC3339, defaultFromTime); err != nil {
+				return err
+			}
+			sugar.Infow("no record found in database, using default from time",
+				"from", from,
+			)
+		} else {
+			sugar.Infow("found last timestamp in database",
+				"from", from,
+			)
+		}
+
+		// starts with the day after the day stored in database
+		from = from.AddDate(0, 0, 1)
 	} else if err != nil {
 		return err
 	}
@@ -73,11 +90,12 @@ func run(c *cli.Context) error {
 	if err == timeutil.ErrEmptyFlag {
 		sugar.Info("No to time is provide, running in daemon mode...")
 		for {
-			to = time.Now()
+			to = time.Now().UTC()
 			if err := tokenRate.FetchRatesInRanges(from, to, kyberNetworkTokenID, usdCurrencyID); err != nil {
 				return err
 			}
 			from = to
+			sugar.Info("sleeping")
 			time.Sleep(12 * time.Hour)
 		}
 	} else if err != nil {

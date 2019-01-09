@@ -33,7 +33,7 @@ func NewTimeRangeCliFlags() []cli.Flag {
 }
 
 func timeFlagFromContext(c *cli.Context, flag string) (time.Time, error) {
-	const shortForm = "2006-Jan-02"
+	const shortForm = "2006-01-02"
 	timeString := c.String(flag)
 	if timeString == "" {
 		return time.Time{}, ErrEmptyFlag

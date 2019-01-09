@@ -16,3 +16,10 @@ func TimeToTimestampMs(t time.Time) uint64 {
 func UnixMilliSecond() uint64 {
 	return TimeToTimestampMs(time.Now())
 }
+
+// Midnight returns midnight of given timestamp.
+// Truncate(24*time.Hour) only works for UTC based.
+// https://github.com/golang/go/commit/e1ced3219506938daf404bb2373333cd3352f350
+func Midnight(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+}

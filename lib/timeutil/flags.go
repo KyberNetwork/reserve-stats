@@ -32,22 +32,21 @@ func NewTimeRangeCliFlags() []cli.Flag {
 	}
 }
 
-//MustGetFromTimeFromContext return from time from context and error if it's not provide
-func MustGetFromTimeFromContext(c *cli.Context) (time.Time, error) {
-	timeString := c.String(fromTimeFlag)
-	if timeString == "" {
-		return time.Time{}, errors.New("From time flag is not provide")
-	}
-	const shortForm = "2006-Jan-02"
-	return time.Parse(shortForm, timeString)
-}
-
-//GetToTimeFromContextWithDeamon return totime from context. Return err=ErrEmptyFlag to indicate daemon Mode if it's not provide
-func GetToTimeFromContextWithDeamon(c *cli.Context) (time.Time, error) {
-	timeString := c.String(toTimeFlag)
+func timeFlagFromContext(c *cli.Context, flag string) (time.Time, error) {
+	const shortForm = "2006-01-02"
+	timeString := c.String(flag)
 	if timeString == "" {
 		return time.Time{}, ErrEmptyFlag
 	}
-	const shortForm = "2006-Jan-02"
 	return time.Parse(shortForm, timeString)
+}
+
+//FromTimeFromContext return from time from context and error if it's not provide
+func FromTimeFromContext(c *cli.Context) (time.Time, error) {
+	return timeFlagFromContext(c, fromTimeFlag)
+}
+
+//ToTimeFromContext return to time from context. Return err=ErrEmptyFlag to indicate daemon Mode if it's not provide
+func ToTimeFromContext(c *cli.Context) (time.Time, error) {
+	return timeFlagFromContext(c, toTimeFlag)
 }

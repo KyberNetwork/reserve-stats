@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/token-rate-fetcher/common"
-	"github.com/KyberNetwork/reserve-stats/token-rate-fetcher/storage"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/KyberNetwork/reserve-stats/tokenratefetcher/common"
+	"github.com/KyberNetwork/reserve-stats/tokenratefetcher/storage"
 	"github.com/KyberNetwork/tokenrate"
 	"go.uber.org/zap"
 )
@@ -30,20 +31,45 @@ func NewRateFetcher(sugar *zap.SugaredLogger, str storage.Interface, rp tokenrat
 
 //FetchRatesInRanges fetch and saves times into influxDB
 func (rf *RateFetcher) FetchRatesInRanges(from, to time.Time, tokenID, currency string) error {
-	var rates []common.TokenRate
+	var (
+		logger = rf.sugar.With(
+			"func", "tokenratefetcher/RateFetcher.FetchRatesInRanges",
+			"from", from,
+			"to", to,
+			"token_id", tokenID,
+			"currency", currency,
+		)
+	)
 
-	rf.sugar.Debugw("fetching rates", "from", from.String(), "to", to.String())
+	// normalizes time range input
+	from = timeutil.Midnight(from)
+	to = timeutil.Midnight(to)
 
-	for d := from.Truncate(time.Hour * 24); !d.After(to.Truncate(time.Hour * 24)); d = d.AddDate(0, 0, 1) {
+	logger.Debugw("normalized time range input",
+		"normalized_from", from,
+		"normalized_to", to,
+	)
+
+	logger.Debug("fetching rates")
+	for d := from.UTC(); !d.After(to); d = d.AddDate(0, 0, 1) {
+		logger.Infow("fetching rates at specific timestamp",
+			"timestamp", d,
+		)
 		rate, err := rf.fetchRates(tokenID, currency, d)
 		if err != nil {
-			rf.sugar.Errorw("Failed to get rate", "error", err)
+			rf.sugar.Errorw("failed to get rate", "error", err)
 			return err
 		}
-		rf.sugar.Infow("Rate return", "rate", rate, "time", d.String())
-		rates = append(rates, rate)
+		rf.sugar.Infow("got token rate", "rate", rate, "time", d.String())
+		if err = rf.storage.SaveRates([]common.TokenRate{rate}); err != nil {
+			return err
+		}
+		logger.Debugw("successfully stored rate to database",
+			"timestamp", d,
+		)
 	}
-	return rf.storage.SaveRates(rates)
+	logger.Info("all rates fetched")
+	return nil
 }
 
 //FetchRates return the rate for pair token-currency at timestamp timeStamp

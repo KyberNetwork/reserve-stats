@@ -1,20 +1,21 @@
 package main
 
 import (
+	"log"
 	"os"
 	"time"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	tokenrate "github.com/KyberNetwork/reserve-stats/token-rate-fetcher"
-	"github.com/KyberNetwork/reserve-stats/token-rate-fetcher/storage"
+	tokenrate "github.com/KyberNetwork/reserve-stats/tokenratefetcher"
+	"github.com/KyberNetwork/reserve-stats/tokenratefetcher/storage"
 	"github.com/KyberNetwork/tokenrate/coingecko"
-
 	"github.com/urfave/cli"
 )
 
 const (
+	defaultFromTime     = "2018-01-01T00:00:00Z"
 	kyberNetworkTokenID = "kyber-network"
 	usdCurrencyID       = "usd"
 	dbName              = "token_rate"
@@ -29,14 +30,14 @@ func main() {
 	app.Flags = append(app.Flags, timeutil.NewTimeRangeCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	if err := app.Run(os.Args); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
 
 func run(c *cli.Context) error {
 	logger, err := libapp.NewLogger(c)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer logger.Sync()
 	sugar := logger.Sugar()
@@ -58,27 +59,39 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	from, err := timeutil.MustGetFromTimeFromContext(c)
-	if err != nil {
-		sugar.Info("No from time is provided, seeking for the first data point in DB...")
-		from, err = influxStorage.GetFirstTimePoint(cgk.Name(), kyberNetworkTokenID, usdCurrencyID)
+	from, err := timeutil.FromTimeFromContext(c)
+	if err == timeutil.ErrEmptyFlag {
+		sugar.Debug("no from time provided, seeking for the first data point in DB...")
+		from, err = influxStorage.LastTimePoint(cgk.Name(), kyberNetworkTokenID, usdCurrencyID)
 		if err != nil {
 			return err
 		}
-	}
-	to, err := timeutil.GetToTimeFromContextWithDeamon(c)
-	if err == timeutil.ErrEmptyFlag {
-		sugar.Info("No to time is provide, running in daemon mode...")
-		for {
-			to = time.Now()
-			if err := tokenRate.FetchRatesInRanges(from, to, kyberNetworkTokenID, usdCurrencyID); err != nil {
+
+		if from.IsZero() {
+			if from, err = time.Parse(time.RFC3339, defaultFromTime); err != nil {
 				return err
 			}
-			from = to
-			time.Sleep(12 * time.Hour)
+			sugar.Infow("no record found in database, using default from time",
+				"from", from,
+			)
+		} else {
+			sugar.Infow("found last timestamp in database",
+				"from", from,
+			)
 		}
+
+		// starts with the day after the day stored in database
+		from = from.AddDate(0, 0, 1)
+	} else if err != nil {
+		return err
 	}
-	if err != nil {
+
+	to, err := timeutil.ToTimeFromContext(c)
+	if err == timeutil.ErrEmptyFlag {
+		to = time.Now().UTC()
+		sugar.Info("no to time provided, using current timestamp",
+			"to", to)
+	} else if err != nil {
 		return err
 	}
 

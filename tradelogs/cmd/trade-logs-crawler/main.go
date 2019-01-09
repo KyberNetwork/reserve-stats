@@ -15,6 +15,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
@@ -111,13 +112,6 @@ func parseBigIntFlag(c *cli.Context, flag string) (*big.Int, error) {
 		return nil, fmt.Errorf("invalid number %s", c.String(flag))
 	}
 	return result, nil
-}
-
-func min(a, b int64) int64 {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 func manageCQFromContext(c *cli.Context, influxClient client.Client, sugar *zap.SugaredLogger) error {
@@ -295,7 +289,7 @@ func run(c *cli.Context) error {
 			var jobOrder = p.GetLastCompleteJobOrder()
 			for i := int64(fromBlock); i < toBlock; i = i + maxBlocks {
 				jobOrder++
-				p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(min(i+maxBlocks, toBlock)), attempts))
+				p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(mathutil.MintInt64(i+maxBlocks, toBlock)), attempts))
 			}
 			for p.GetLastCompleteJobOrder() < jobOrder {
 				time.Sleep(time.Second)

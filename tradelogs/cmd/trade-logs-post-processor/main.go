@@ -71,6 +71,11 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	sugar.Info(fmt.Sprintf("%+v", res))
+	if len(res) != 1 || len(res[0].Series) != 1 || len(res[0].Series[0].Values[0]) != 2 {
+		sugar.Info("There is no trade in tradelogs")
+		return nil
+	}
 
 	startTimeString := res[0].Series[0].Values[0][0].(string)
 	startTime, err := time.Parse(time.RFC3339, startTimeString)

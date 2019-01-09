@@ -1,14 +1,15 @@
 package crawler
 
 import (
+	"os"
+	"testing"
+
 	"github.com/KyberNetwork/reserve-stats/burnedfees/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"os"
-	"testing"
 )
 
 const defaultEthereumNode = "https://mainnet.infura.io"

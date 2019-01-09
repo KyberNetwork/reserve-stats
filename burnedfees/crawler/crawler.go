@@ -3,6 +3,8 @@ package crawler
 import (
 	"context"
 	"errors"
+	"math/big"
+
 	"github.com/KyberNetwork/reserve-stats/burnedfees/common"
 	"github.com/KyberNetwork/reserve-stats/burnedfees/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
@@ -10,7 +12,6 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
-	"math/big"
 )
 
 // burnAssignedFeesTopic is the topic of BurnAssignedFees (index_topic_1 address reserve, address sender, uint256 quantity)

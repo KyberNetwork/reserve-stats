@@ -2,8 +2,9 @@ package common
 
 import (
 	"fmt"
-	ethereum "github.com/ethereum/go-ethereum/common"
 	"math/big"
+
+	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 // BurnAssignedFeesEvent is the event emit from burner contract of KNC token.

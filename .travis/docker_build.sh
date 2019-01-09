@@ -30,10 +30,12 @@ case "$build_part" in
         build reserverates reserve-rates-api reserve-rates-crawler
         build users users-api
         build gateway gateway
+        build burnedfees burned-fees-crawler
         ;;
     2)
         build tradelogs trade-logs-api trade-logs-crawler
         build priceanalytics price-analytics-api
+        build tokenratefetcher token-rate-fetcher
         ;;
     *)
         exclude_pattern="github.com/KyberNetwork/reserve-stats/\(reserverates\|tradelogs\|users\|gateway\|priceanalytics\)"

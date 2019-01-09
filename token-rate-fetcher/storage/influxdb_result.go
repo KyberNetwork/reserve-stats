@@ -9,8 +9,8 @@ import (
 	schema "github.com/KyberNetwork/reserve-stats/token-rate-fetcher/storage/schema/tokenrate"
 )
 
-//GetFirstTimePoint return first  time point in db or error if it is emptuy
-func (is *InfluxStorage) GetFirstTimePoint(providerName, tokenID, currencyID string) (time.Time, error) {
+//LastTimePoint return first  time point in db or error if it is empty.
+func (is *InfluxStorage) LastTimePoint(providerName, tokenID, currencyID string) (time.Time, error) {
 	measurementName := fmt.Sprintf("%s_%s", common.GetTokenSymbolFromProviderNameTokenID(providerName, tokenID), currencyID)
 	stmt := fmt.Sprintf(`SELECT LAST("%s") FROM "%s"`,
 		schema.Rate.String(),

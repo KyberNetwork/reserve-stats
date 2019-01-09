@@ -12,8 +12,6 @@ const (
 	fromTimeFlag = "from"
 )
 
-const timeLayout = "2006-Jan-02"
-
 //ErrEmptyFlag is the error returned when empty flag
 var ErrEmptyFlag = errors.New("empty flag")
 
@@ -34,20 +32,21 @@ func NewTimeRangeCliFlags() []cli.Flag {
 	}
 }
 
-//GetFromTimeFromContext return from time from context and error if it's not provide
-func GetFromTimeFromContext(c *cli.Context) (time.Time, error) {
-	timeString := c.String(fromTimeFlag)
-	if timeString == "" {
-		return time.Time{}, errors.New("from time flag is not provide")
-	}
-	return time.Parse(timeLayout, timeString)
-}
-
-//GetToTimeFromContextWithDaemon return to time from context. Return err=ErrEmptyFlag to indicate daemon Mode if it's not provide
-func GetToTimeFromContextWithDaemon(c *cli.Context) (time.Time, error) {
-	timeString := c.String(toTimeFlag)
+func timeFlagFromContext(c *cli.Context, flag string) (time.Time, error) {
+	const shortForm = "2006-Jan-02"
+	timeString := c.String(flag)
 	if timeString == "" {
 		return time.Time{}, ErrEmptyFlag
 	}
-	return time.Parse(timeLayout, timeString)
+	return time.Parse(shortForm, timeString)
+}
+
+//FromTimeFromContext return from time from context and error if it's not provide
+func FromTimeFromContext(c *cli.Context) (time.Time, error) {
+	return timeFlagFromContext(c, fromTimeFlag)
+}
+
+//ToTimeFromContext return to time from context. Return err=ErrEmptyFlag to indicate daemon Mode if it's not provide
+func ToTimeFromContext(c *cli.Context) (time.Time, error) {
+	return timeFlagFromContext(c, toTimeFlag)
 }

@@ -6,8 +6,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/token-rate-fetcher/common"
 )
 
-//Interface abstracts the implementation of storage functionalities
+//Interface abstracts the implementation of storage functionality.
 type Interface interface {
-	GetFirstTimePoint(providerName, tokenID, currencyID string) (time.Time, error)
+	LastTimePoint(providerName, tokenID, currencyID string) (time.Time, error)
 	SaveRates(rates []common.TokenRate) error
 }

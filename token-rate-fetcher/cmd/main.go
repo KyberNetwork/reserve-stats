@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"time"
 
@@ -28,7 +29,7 @@ func main() {
 	app.Flags = append(app.Flags, timeutil.NewTimeRangeCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	if err := app.Run(os.Args); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
 
@@ -57,15 +58,18 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	from, err := timeutil.GetFromTimeFromContext(c)
-	if err != nil {
+	from, err := timeutil.FromTimeFromContext(c)
+	if err == timeutil.ErrEmptyFlag {
 		sugar.Info("No from time is provided, seeking for the first data point in DB...")
-		from, err = influxStorage.GetFirstTimePoint(cgk.Name(), kyberNetworkTokenID, usdCurrencyID)
+		from, err = influxStorage.LastTimePoint(cgk.Name(), kyberNetworkTokenID, usdCurrencyID)
 		if err != nil {
 			return err
 		}
+	} else if err != nil {
+		return err
 	}
-	to, err := timeutil.GetToTimeFromContextWithDaemon(c)
+
+	to, err := timeutil.ToTimeFromContext(c)
 	if err == timeutil.ErrEmptyFlag {
 		sugar.Info("No to time is provide, running in daemon mode...")
 		for {
@@ -76,8 +80,7 @@ func run(c *cli.Context) error {
 			from = to
 			time.Sleep(12 * time.Hour)
 		}
-	}
-	if err != nil {
+	} else if err != nil {
 		return err
 	}
 

@@ -8,6 +8,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/gateway/http"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/gin-gonic/gin"
 	"github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/urfave/cli"
@@ -22,6 +23,8 @@ const (
 	writeSecretKeyFlag     = "write-secret-key"
 	readAccessKeyFlag      = "read-access-key"
 	readSecretKeyFlag      = "read-secret-key"
+	grafanaAPIKeyFlag      = "grafana-key"
+	grafanaURLFlag         = "grafana-url"
 )
 
 var (
@@ -83,6 +86,18 @@ func main() {
 			Value:  defaultPriceAnalyticAPIValue,
 			EnvVar: "PRICE_ANALYTIC_URL",
 		},
+		cli.StringFlag{
+			Name:   grafanaURLFlag,
+			Usage:  "grafanaURL Flag. If this is not set or empty the gateway won't include grafana proxy",
+			Value:  "",
+			EnvVar: "GRAFANA_URL",
+		},
+		cli.StringFlag{
+			Name:   grafanaAPIKeyFlag,
+			Usage:  "grafana API key for reading",
+			Value:  "",
+			EnvVar: "GRAFANA_API_KEY",
+		},
 	)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.GatewayPort)...)
 
@@ -124,7 +139,7 @@ func run(c *cli.Context) error {
 	}
 
 	if err := validation.Validate(c.String(writeAccessKeyFlag), validation.Required); err != nil {
-		return fmt.Errorf("access key error: %s", err.Error())
+		return fmt.Errorf("write access key error: %s", err.Error())
 	}
 
 	if err := validation.Validate(c.String(writeSecretKeyFlag), validation.Required); err != nil {
@@ -140,6 +155,15 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("permission object creation error: %s", err)
 	}
+	var grafanaProxy gin.HandlerFunc
+
+	if c.String(grafanaURLFlag) != "" {
+		logger.Info("grafana url is provided. Create grafana proxy...")
+		grafanaProxy, err = http.NewGrafanaProxy(c.String(grafanaURLFlag), c.String(grafanaAPIKeyFlag))
+		if err != nil {
+			return fmt.Errorf("grafna proxy can not be created: %s", err)
+		}
+	}
 	svr, err := http.NewServer(httputil.NewHTTPAddressFromContext(c),
 		c.String(tradeLogsAPIURLFlag),
 		c.String(reserveRatesAPIURLFlag),
@@ -148,6 +172,7 @@ func run(c *cli.Context) error {
 		auth,
 		perm,
 		logger,
+		grafanaProxy,
 	)
 	if err != nil {
 		return err

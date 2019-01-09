@@ -35,7 +35,8 @@ func newReverseProxyMW(target string) (gin.HandlerFunc, error) {
 func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL string,
 	auth *httpsign.Authenticator,
 	perm gin.HandlerFunc,
-	logger *zap.Logger) (*Server, error) {
+	logger *zap.Logger,
+	grafanaProxyMW gin.HandlerFunc) (*Server, error) {
 	r := gin.Default()
 	r.Use(libhttputil.MiddlewareHandler)
 	corsConfig := cors.DefaultConfig()
@@ -88,6 +89,13 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL st
 		}
 		r.GET("/price-analytic-data", priceProxyMW)
 		r.POST("/price-analytic-data", priceProxyMW)
+	}
+
+	if grafanaProxyMW != nil {
+		logger.Info("You got here")
+		// group := r.Group("/" + grafanaPrexfix)
+		// group.GET("/:path", grafanaProxyMW)
+		r.GET("grafana/d-solo/L7hh9BYiz/kyberswap", grafanaProxyMW)
 	}
 
 	return &Server{

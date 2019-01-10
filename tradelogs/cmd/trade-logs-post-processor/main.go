@@ -9,22 +9,12 @@ import (
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/jinzhu/now"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
-
-const (
-	tradeLogsDatabase = "trade_logs"
-	timePrecision     = "s"
-	reportMeasurement = "monthly_report"
-)
-
-type reserveVolume struct {
-	ethVolume float64
-	usdVolume float64
-}
 
 func main() {
 	app := libapp.NewApp()
@@ -44,7 +34,7 @@ func main() {
 func queryDB(clnt client.Client, cmd string) (res []client.Result, err error) {
 	q := client.Query{
 		Command:  cmd,
-		Database: tradeLogsDatabase,
+		Database: storage.TradeLogsDatabase,
 	}
 	if response, err := clnt.Query(q); err == nil {
 		if response.Error() != nil {
@@ -57,34 +47,9 @@ func queryDB(clnt client.Client, cmd string) (res []client.Result, err error) {
 	return res, nil
 }
 
-func writeReserveVolumeMonthly(influxclient client.Client, timestamp time.Time, reserveVolume map[string]reserveVolume) error {
-	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
-		Database:  tradeLogsDatabase,
-		Precision: timePrecision,
-	})
-	if err != nil {
-		return err
-	}
-	for reserveAddr, vol := range reserveVolume {
-		tags := map[string]string{
-			"reserve_addr": reserveAddr,
-		}
-		fields := map[string]interface{}{
-			"eth_volume": vol.ethVolume,
-			"usd_volume": vol.usdVolume,
-		}
-		point, err := client.NewPoint(reportMeasurement, tags, fields, timestamp)
-		if err != nil {
-			return err
-		}
-		bp.AddPoint(point)
-	}
-	return influxclient.Write(bp)
-}
-
-func fromInfluxResultToMap(res []client.Result, sugar *zap.SugaredLogger, tagKeys string) (map[string]reserveVolume, error) {
+func fromInfluxResultToMap(res []client.Result, sugar *zap.SugaredLogger, tagKeys string) (map[string]storage.ReserveVolume, error) {
 	var (
-		result = make(map[string]reserveVolume)
+		result = make(map[string]storage.ReserveVolume)
 	)
 	if len(res) < 1 || len(res[0].Series) < 1 {
 		sugar.Info("There is no trades")
@@ -103,9 +68,9 @@ func fromInfluxResultToMap(res []client.Result, sugar *zap.SugaredLogger, tagKey
 		if err != nil {
 			return nil, err
 		}
-		result[reserveAddr] = reserveVolume{
-			ethVolume: ethVolume,
-			usdVolume: usdVolume,
+		result[reserveAddr] = storage.ReserveVolume{
+			ETHVolume: ethVolume,
+			USDVolume: usdVolume,
 		}
 	}
 	return result, nil
@@ -132,7 +97,7 @@ func run(c *cli.Context) error {
 	sugar.Debugw("influx client initiate successfully", "influx client", influxClient)
 
 	// get first timestamp from db
-	q := fmt.Sprintf(`SELECT eth_volume from %s ORDER BY DESC LIMIT 1`, reportMeasurement)
+	q := fmt.Sprintf(`SELECT eth_volume from %s ORDER BY DESC LIMIT 1`, storage.ReportMeasurement)
 	sugar.Info(q)
 	res, err := queryDB(influxClient, q)
 	if err != nil {
@@ -211,16 +176,16 @@ func run(c *cli.Context) error {
 
 		for reserveAddr, vol := range dstReserveVolume {
 			if _, exist := srcReserveVolume[reserveAddr]; exist {
-				srcReserveVolume[reserveAddr] = reserveVolume{
-					ethVolume: srcReserveVolume[reserveAddr].ethVolume + vol.ethVolume,
-					usdVolume: srcReserveVolume[reserveAddr].usdVolume + vol.usdVolume,
+				srcReserveVolume[reserveAddr] = storage.ReserveVolume{
+					ETHVolume: srcReserveVolume[reserveAddr].ETHVolume + vol.ETHVolume,
+					USDVolume: srcReserveVolume[reserveAddr].USDVolume + vol.USDVolume,
 				}
 			} else {
 				srcReserveVolume[reserveAddr] = vol
 			}
 		}
 
-		if err = writeReserveVolumeMonthly(influxClient, beginOfLastMonth, srcReserveVolume); err != nil {
+		if err = storage.WriteReserveVolumeMonthly(influxClient, beginOfLastMonth, srcReserveVolume); err != nil {
 			return err
 		}
 
@@ -228,7 +193,7 @@ func run(c *cli.Context) error {
 
 		query = fmt.Sprintf(`SELECT SUM(amount) as burn_fee INTO %s 
 		FROM burn_fees WHERE time >= '%s' AND time < '%s'
-		GROUP BY reserve_addr`, reportMeasurement, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339))
+		GROUP BY reserve_addr`, storage.ReportMeasurement, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339))
 
 		sugar.Debug("query ", query)
 
@@ -241,7 +206,7 @@ func run(c *cli.Context) error {
 
 		query = fmt.Sprintf(`SELECT SUM(amount) as wallet_fee INTO %s  
 		FROM wallet_fees WHERE time >= '%s' AND time < '%s'
-		GROUP BY reserve_addr`, reportMeasurement, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339))
+		GROUP BY reserve_addr`, storage.ReportMeasurement, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339))
 
 		sugar.Debug("query ", query)
 

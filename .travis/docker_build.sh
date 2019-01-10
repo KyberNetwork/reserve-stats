@@ -33,7 +33,7 @@ case "$build_part" in
         build burnedfees burned-fees-crawler
         ;;
     2)
-        build tradelogs trade-logs-api trade-logs-crawler
+        build tradelogs trade-logs-api trade-logs-crawler trade-logs-postprocessor
         build priceanalytics price-analytics-api
         build tokenratefetcher token-rate-fetcher
         ;;

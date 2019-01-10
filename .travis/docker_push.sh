@@ -24,6 +24,6 @@ case "$build_part" in
         push reserve-rates-api reserve-rates-crawler users-api gateway burned-fees-crawler
         ;;
     2)
-        push trade-logs-api trade-logs-crawler price-analytics-api token-rate-fetcher
+        push trade-logs-api trade-logs-crawler trade_logs_postprocessor_docker price-analytics-api token-rate-fetcher
         ;;
 esac

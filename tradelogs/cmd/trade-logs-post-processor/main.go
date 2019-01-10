@@ -112,6 +112,9 @@ func fromInfluxResultToMap(res []client.Result, sugar *zap.SugaredLogger, tagKey
 }
 
 func run(c *cli.Context) error {
+	var (
+		startTime time.Time
+	)
 	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
@@ -129,21 +132,36 @@ func run(c *cli.Context) error {
 	sugar.Debugw("influx client initiate successfully", "influx client", influxClient)
 
 	// get first timestamp from db
-	q := fmt.Sprintf(`SELECT eth_amount FROM trades ORDER BY ASC LIMIT 1`)
+	q := fmt.Sprintf(`SELECT eth_volume from %s ORDER BY DESC LIMIT 1`, reportMeasurement)
+	sugar.Info(q)
 	res, err := queryDB(influxClient, q)
 	if err != nil {
 		return err
 	}
 	sugar.Info(fmt.Sprintf("%+v", res))
 	if len(res) != 1 || len(res[0].Series) != 1 || len(res[0].Series[0].Values) < 1 || len(res[0].Series[0].Values[0]) != 2 {
-		sugar.Info("There is no trade in tradelogs")
-		return nil
-	}
+		q = fmt.Sprintf(`SELECT eth_amount FROM trades ORDER BY ASC LIMIT 1`)
+		res, err := queryDB(influxClient, q)
+		if err != nil {
+			return err
+		}
+		sugar.Info(fmt.Sprintf("%+v", res))
+		if len(res) != 1 || len(res[0].Series) != 1 || len(res[0].Series[0].Values) < 1 || len(res[0].Series[0].Values[0]) != 2 {
+			sugar.Info("There is no trade in tradelogs")
+			return nil
+		}
 
-	startTimeString := res[0].Series[0].Values[0][0].(string)
-	startTime, err := time.Parse(time.RFC3339, startTimeString)
-	if err != nil {
-		return err
+		startTimeString := res[0].Series[0].Values[0][0].(string)
+		startTime, err = time.Parse(time.RFC3339, startTimeString)
+		if err != nil {
+			return err
+		}
+	} else {
+		startTimeString := res[0].Series[0].Values[0][0].(string)
+		startTime, err = time.Parse(time.RFC3339, startTimeString)
+		if err != nil {
+			return err
+		}
 	}
 	// run each day
 	for {
@@ -233,12 +251,12 @@ func run(c *cli.Context) error {
 		}
 
 		if beginOfThisMonth.Equal(now.New(time.Now().In(time.UTC)).BeginningOfMonth()) {
-			sugar.Info("Sleep for 10 day...")
-			time.Sleep(24 * time.Hour)
-			startTime = time.Now()
+			sugar.Info("Finish aggregating...")
+			break
 		} else {
 			nextMonth := now.New(startTime).EndOfMonth().Add(24 * time.Hour)
 			startTime = nextMonth
 		}
 	}
+	return nil
 }

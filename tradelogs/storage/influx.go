@@ -2,19 +2,18 @@ package storage
 
 import (
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"strconv"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/influxdata/influxdb/client/v2"
-	"go.uber.org/zap"
-
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	burnschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee"
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 	walletschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfee"
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/influxdata/influxdb/client/v2"
+	"go.uber.org/zap"
 )
 
 const (

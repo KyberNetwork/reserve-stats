@@ -83,7 +83,7 @@ func (c *BurnedFeesCrawler) crawl(fromBlock, toBlock uint64) ([]common.BurnAssig
 		}
 		event := common.BurnAssignedFeesEvent{
 			BlockNumber: logItem.BlockNumber,
-			TxHash:      ethcommon.BytesToAddress(logItem.TxHash.Bytes()),
+			TxHash:      logItem.TxHash,
 			Reserve:     ethcommon.BytesToAddress(logItem.Topics[1].Bytes()),
 			Sender:      sender,
 			Quantity:    qty,

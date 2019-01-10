@@ -57,23 +57,28 @@ func queryDB(clnt client.Client, cmd string) (res []client.Result, err error) {
 	return res, nil
 }
 
-func writeReserveVolumeMonthly(influxclient client.Client, timestamp time.Time, ethVolume, usdVolume float64, reserveAddr string) error {
-	tags := map[string]string{
-		"reserve_addr": reserveAddr,
-	}
-	fields := map[string]interface{}{
-		"eth_volume": ethVolume,
-		"usd_volume": usdVolume,
-	}
-	point, err := client.NewPoint(reportMeasurement, tags, fields, timestamp)
-	if err != nil {
-		return err
-	}
+func writeReserveVolumeMonthly(influxclient client.Client, timestamp time.Time, reserveVolume map[string]reserveVolume) error {
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  tradeLogsDatabase,
 		Precision: timePrecision,
 	})
-	bp.AddPoint(point)
+	if err != nil {
+		return err
+	}
+	for reserveAddr, vol := range reserveVolume {
+		tags := map[string]string{
+			"reserve_addr": reserveAddr,
+		}
+		fields := map[string]interface{}{
+			"eth_volume": vol.ethVolume,
+			"usd_volume": vol.usdVolume,
+		}
+		point, err := client.NewPoint(reportMeasurement, tags, fields, timestamp)
+		if err != nil {
+			return err
+		}
+		bp.AddPoint(point)
+	}
 	return influxclient.Write(bp)
 }
 
@@ -85,14 +90,11 @@ func fromInfluxResultToMap(res []client.Result, sugar *zap.SugaredLogger, tagKey
 		sugar.Info("There is no trades")
 	}
 	for _, row := range res[0].Series {
-		if len(row.Values[0]) != 3 {
+		if len(row.Values) < 1 || len(row.Values[0]) != 3 {
 			sugar.Info("record is not correct format")
 			break
 		}
 		reserveAddr := row.Tags[tagKeys]
-		if reserveAddr == "" {
-			continue
-		}
 		ethVolume, err := influxdb.GetFloat64FromInterface(row.Values[0][1])
 		if err != nil {
 			return nil, err
@@ -133,7 +135,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 	sugar.Info(fmt.Sprintf("%+v", res))
-	if len(res) != 1 || len(res[0].Series) != 1 || len(res[0].Series[0].Values[0]) != 2 {
+	if len(res) != 1 || len(res[0].Series) != 1 || len(res[0].Series[0].Values) < 1 || len(res[0].Series[0].Values[0]) != 2 {
 		sugar.Info("There is no trade in tradelogs")
 		return nil
 	}
@@ -151,7 +153,7 @@ func run(c *cli.Context) error {
 
 		// reserve volume monthly for dst reserve
 		query := fmt.Sprintf(`SELECT SUM(eth_amount) AS eth_volume, SUM(usd_amount) AS usd_volume FROM 
-		(SELECT eth_amount, eth_amount*eth_usd_rate as usd_amount FROM trades WHERE time >= '%s' AND time < '%s'
+		(SELECT eth_amount, eth_amount*eth_usd_rate as usd_amount FROM trades WHERE time >= '%s' AND time < '%s' AND src_rsv_addr != '' 
 		GROUP BY src_rsv_addr) GROUP BY src_rsv_addr`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339))
 
 		sugar.Debug("src query ", query)
@@ -168,7 +170,7 @@ func run(c *cli.Context) error {
 
 		// reserve volume monthly for dst reserve
 		query = fmt.Sprintf(`SELECT SUM(eth_amount) AS eth_volume, SUM(usd_amount) AS usd_volume FROM
-		(SELECT eth_amount, eth_amount*eth_usd_rate as usd_amount FROM trades WHERE time >= '%s' AND time < '%s'
+		(SELECT eth_amount, eth_amount*eth_usd_rate as usd_amount FROM trades WHERE time >= '%s' AND time < '%s' AND dst_rsv_addr != '' 
 		GROUP BY dst_rsv_addr) GROUP BY dst_rsv_addr`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339))
 
 		sugar.Debug("dst query ", query)
@@ -194,11 +196,8 @@ func run(c *cli.Context) error {
 			}
 		}
 
-		for reserveAddr, vol := range srcReserveVolume {
-			// insert into report monthly
-			if err = writeReserveVolumeMonthly(influxClient, beginOfLastMonth, vol.ethVolume, vol.usdVolume, reserveAddr); err != nil {
-				return err
-			}
+		if err = writeReserveVolumeMonthly(influxClient, beginOfLastMonth, srcReserveVolume); err != nil {
+			return err
 		}
 
 		// burn fee monthly

@@ -11,7 +11,7 @@ import (
 // https://etherscan.io/txs?ea=0xed4f53268bfdff39b36e8786247ba3a02cf34b04&topic0=0x2f8d2d194cbe1816411754a2fc9478a11f0707da481b11cff7c69791eb877ee1
 type BurnAssignedFeesEvent struct {
 	BlockNumber uint64
-	TxHash      ethereum.Address
+	TxHash      ethereum.Hash
 	Reserve     ethereum.Address
 	Sender      ethereum.Address
 	Quantity    *big.Int

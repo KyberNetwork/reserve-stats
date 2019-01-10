@@ -172,8 +172,8 @@ func run(c *cli.Context) error {
 		// reserve volume monthly for dst reserve
 		query := fmt.Sprintf(`SELECT SUM(eth_amount) AS eth_volume, SUM(usd_amount) AS usd_volume FROM 
 		(SELECT eth_amount, eth_amount*eth_usd_rate as usd_amount FROM trades WHERE time >= '%s' AND time < '%s' AND src_rsv_addr != '' 
-		AND ((src_addr != '%s' AND dst_addr != '%s') 
-		OR (src_addr != '%s' AND dst_addr != '%s'))
+		AND ((src_addr != '%s' OR dst_addr != '%s') 
+		AND (src_addr != '%s' OR dst_addr != '%s'))
 		GROUP BY src_rsv_addr) GROUP BY src_rsv_addr`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339),
 			blockchain.ETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.ETHAddr.Hex())
 
@@ -192,8 +192,8 @@ func run(c *cli.Context) error {
 		// reserve volume monthly for dst reserve
 		query = fmt.Sprintf(`SELECT SUM(eth_amount) AS eth_volume, SUM(usd_amount) AS usd_volume FROM
 		(SELECT eth_amount, eth_amount*eth_usd_rate as usd_amount FROM trades WHERE time >= '%s' AND time < '%s' AND dst_rsv_addr != '' 
-		AND ((src_addr != '%s' AND dst_addr != '%s') 
-		OR (src_addr != '%s' AND dst_addr != '%s'))
+		AND ((src_addr != '%s' OR dst_addr != '%s') 
+		AND (src_addr != '%s' OR dst_addr != '%s'))
 		GROUP BY dst_rsv_addr) GROUP BY dst_rsv_addr`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339),
 			blockchain.ETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.ETHAddr.Hex())
 

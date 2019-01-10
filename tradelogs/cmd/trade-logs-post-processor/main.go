@@ -6,13 +6,13 @@ import (
 	"os"
 	"time"
 
-	"go.uber.org/zap"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/jinzhu/now"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 )
 
 const (
@@ -157,7 +157,7 @@ func run(c *cli.Context) error {
 		AND ((src_addr != '%s' AND dst_addr != '%s') 
 		OR (src_addr != '%s' AND dst_addr != '%s'))
 		GROUP BY src_rsv_addr) GROUP BY src_rsv_addr`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339),
-		blockchain.ETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.ETHAddr.Hex())
+			blockchain.ETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.ETHAddr.Hex())
 
 		sugar.Debug("src query ", query)
 
@@ -177,7 +177,7 @@ func run(c *cli.Context) error {
 		AND ((src_addr != '%s' AND dst_addr != '%s') 
 		OR (src_addr != '%s' AND dst_addr != '%s'))
 		GROUP BY dst_rsv_addr) GROUP BY dst_rsv_addr`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339),
-		blockchain.ETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.ETHAddr.Hex())
+			blockchain.ETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.ETHAddr.Hex())
 
 		sugar.Debug("dst query ", query)
 

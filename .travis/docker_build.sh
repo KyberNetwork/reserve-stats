@@ -30,13 +30,15 @@ case "$build_part" in
         build reserverates reserve-rates-api reserve-rates-crawler
         build users users-api
         build gateway gateway
+        build burnedfees burned-fees-crawler
         ;;
     2)
-        build tradelogs trade-logs-api trade-logs-crawler
+        build tradelogs trade-logs-api trade-logs-crawler trade-logs-post-processor
         build priceanalytics price-analytics-api
+        build tokenratefetcher token-rate-fetcher
         ;;
     *)
-        exclude_pattern="github.com/KyberNetwork/reserve-stats/\(reserverates\|tradelogs\|users\|gateway\|priceanalytics\)"
+        exclude_pattern="github.com/KyberNetwork/reserve-stats/\(reserverates\|users\|gateway\|burnedfees\|tradelogs\|priceanalytics\|tokenratefetcher\)"
         gometalinter --config="$gometalinter_path" --exclude "$exclude_pattern" ./...
         go test -v -race -mod=vendor $(go list -mod=vendor ./... | grep -v "$exclude_pattern")
 

@@ -13,7 +13,7 @@ import (
 func ParseBigIntFlag(c *cli.Context, flag string) (*big.Int, error) {
 	val := c.String(flag)
 	if err := validation.Validate(val, validation.Required, is.Digit); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("flag %s: %v", flag, err)
 	}
 
 	result, ok := big.NewInt(0).SetString(val, 0)

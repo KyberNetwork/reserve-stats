@@ -29,28 +29,28 @@ github.com/deckarep/golang-set
 # github.com/ethereum/go-ethereum v1.8.17 => github.com/favadi/go-ethereum v1.8.16-fork
 github.com/ethereum/go-ethereum/common
 github.com/ethereum/go-ethereum/ethclient
+github.com/ethereum/go-ethereum/accounts/abi/bind
 github.com/ethereum/go-ethereum/core/types
 github.com/ethereum/go-ethereum
 github.com/ethereum/go-ethereum/accounts/abi
-github.com/ethereum/go-ethereum/accounts/abi/bind
 github.com/ethereum/go-ethereum/event
 github.com/ethereum/go-ethereum/common/hexutil
 github.com/ethereum/go-ethereum/crypto/sha3
 github.com/ethereum/go-ethereum/rlp
 github.com/ethereum/go-ethereum/rpc
+github.com/ethereum/go-ethereum/accounts/keystore
 github.com/ethereum/go-ethereum/crypto
+github.com/ethereum/go-ethereum/log
 github.com/ethereum/go-ethereum/params
 github.com/ethereum/go-ethereum/trie
 github.com/ethereum/go-ethereum/common/math
-github.com/ethereum/go-ethereum/accounts/keystore
-github.com/ethereum/go-ethereum/log
 github.com/ethereum/go-ethereum/common/mclock
 github.com/ethereum/go-ethereum/p2p/netutil
+github.com/ethereum/go-ethereum/accounts
 github.com/ethereum/go-ethereum/crypto/secp256k1
 github.com/ethereum/go-ethereum/common/prque
 github.com/ethereum/go-ethereum/ethdb
 github.com/ethereum/go-ethereum/metrics
-github.com/ethereum/go-ethereum/accounts
 # github.com/gin-contrib/cors v0.0.0-20181008113111-488de3ec974f
 github.com/gin-contrib/cors
 # github.com/gin-contrib/httpsign v0.0.0-20181102021455-787f0a566bf9
@@ -81,6 +81,8 @@ github.com/google/uuid
 github.com/influxdata/influxdb/client/v2
 github.com/influxdata/influxdb/models
 github.com/influxdata/influxdb/pkg/escape
+# github.com/jinzhu/now v0.0.0-20181116074157-8ec929ed50c3
+github.com/jinzhu/now
 # github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
 github.com/jmoiron/sqlx
 github.com/jmoiron/sqlx/reflectx

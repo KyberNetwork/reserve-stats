@@ -28,13 +28,13 @@ func newMockSupportedTokens() *mockSupportedTokens {
 	return &mockSupportedTokens{coreClient: core.NewMockClient()}
 }
 
-func newTestCrawler(sugar *zap.SugaredLogger) (*ResreveRatesCrawler, error) {
+func newTestCrawler(sugar *zap.SugaredLogger) (*ReserveRatesCrawler, error) {
 	var (
 		addrs       = []ethereum.Address{ethereum.HexToAddress(testRsvAddress)}
 		wrpContract = contracts.MockVersionedWrapper{}
 	)
 
-	return &ResreveRatesCrawler{
+	return &ReserveRatesCrawler{
 		wrapperContract: &wrpContract,
 		addresses:       addrs,
 		stg:             newMockSupportedTokens(),

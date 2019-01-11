@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
@@ -72,9 +71,7 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (map[string]map[string]com
 		return nil, err
 	}
 
-	internalReserveAddress := contracts.InternalReserveAddress().MustGetOneFromContext(fj.c)
-
-	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, fj.addrs, client, coreClient, internalReserveAddress)
+	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, fj.addrs, client, coreClient)
 	if err != nil {
 		return nil, err
 	}

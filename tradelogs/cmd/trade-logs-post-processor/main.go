@@ -139,7 +139,7 @@ func run(c *cli.Context) error {
 		(SELECT eth_amount, eth_amount*eth_usd_rate as usd_amount FROM trades WHERE time >= '%s' AND time < '%s' AND src_rsv_addr != '' 
 		AND ((src_addr != '%s' OR dst_addr != '%s') 
 		AND (src_addr != '%s' OR dst_addr != '%s'))
-		GROUP BY src_rsv_addr) GROUP BY src_rsv_addr`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339),
+		GROUP BY src_rsv_addr) GROUP BY src_rsv_addr FILL(0)`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339),
 			blockchain.ETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.ETHAddr.Hex())
 
 		sugar.Debug("src query ", query)
@@ -159,7 +159,7 @@ func run(c *cli.Context) error {
 		(SELECT eth_amount, eth_amount*eth_usd_rate as usd_amount FROM trades WHERE time >= '%s' AND time < '%s' AND dst_rsv_addr != '' 
 		AND ((src_addr != '%s' OR dst_addr != '%s') 
 		AND (src_addr != '%s' OR dst_addr != '%s'))
-		GROUP BY dst_rsv_addr) GROUP BY dst_rsv_addr`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339),
+		GROUP BY dst_rsv_addr) GROUP BY dst_rsv_addr FILL(0)`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339),
 			blockchain.ETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.ETHAddr.Hex())
 
 		sugar.Debug("dst query ", query)
@@ -193,7 +193,7 @@ func run(c *cli.Context) error {
 
 		query = fmt.Sprintf(`SELECT SUM(amount) as burn_fee INTO %s 
 		FROM burn_fees WHERE time >= '%s' AND time < '%s'
-		GROUP BY reserve_addr`, storage.ReportMeasurement, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339))
+		GROUP BY reserve_addr FILL(0)`, storage.ReportMeasurement, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339))
 
 		sugar.Debug("query ", query)
 
@@ -206,7 +206,7 @@ func run(c *cli.Context) error {
 
 		query = fmt.Sprintf(`SELECT SUM(amount) as wallet_fee INTO %s  
 		FROM wallet_fees WHERE time >= '%s' AND time < '%s'
-		GROUP BY reserve_addr`, storage.ReportMeasurement, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339))
+		GROUP BY reserve_addr FILL(0)`, storage.ReportMeasurement, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339))
 
 		sugar.Debug("query ", query)
 
@@ -222,6 +222,7 @@ func run(c *cli.Context) error {
 			nextMonth := now.New(startTime).EndOfMonth().Add(24 * time.Hour)
 			startTime = nextMonth
 		}
+
 	}
 	return nil
 }

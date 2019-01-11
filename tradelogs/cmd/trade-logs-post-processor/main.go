@@ -216,7 +216,7 @@ func run(c *cli.Context) error {
 		}
 
 		query = fmt.Sprintf(
-			`SELECT * INTO %[1]s FROM %[1]s WHERE time >= '%[2]s' AND time < '%[3]s' FILL(0)`,
+			`SELECT * INTO %[1]s FROM %[1]s WHERE time >= '%[2]s' AND time < '%[3]s' GROUP BY * FILL(0)`,
 			storage.ReportMeasurement, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339),
 		)
 		sugar.Debug("query ", query)

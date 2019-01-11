@@ -2,7 +2,6 @@ package blockchain
 
 import (
 	"context"
-	"math"
 	"math/big"
 	"sync"
 	"time"
@@ -70,12 +69,10 @@ func (f *TokenAmountFormatter) ToWei(address common.Address, amount float64) (*b
 	if err != nil {
 		return nil, err
 	}
-	// 6 is our smallest precision,
-	if decimals < 6 {
-		return big.NewInt(int64(amount * math.Pow10(int(decimals)))), nil
-	}
-	result := big.NewInt(int64(amount * math.Pow10(6)))
-	return result.Mul(result, big.NewInt(0).Exp(big.NewInt(10), big.NewInt(decimals-6), nil)), nil
+
+	exp := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(decimals), nil)
+	result, _ := big.NewFloat(0).Mul(big.NewFloat(amount), big.NewFloat(0).SetInt(exp)).Int(nil)
+	return result, nil
 }
 
 func (f *TokenAmountFormatter) getDecimals(address common.Address) (int64, error) {

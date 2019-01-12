@@ -92,10 +92,9 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL st
 	}
 
 	if grafanaProxyMW != nil {
-		logger.Info("You got here")
-		// group := r.Group("/" + grafanaPrexfix)
-		// group.GET("/:path", grafanaProxyMW)
-		r.GET("grafana/d-solo/L7hh9BYiz/kyberswap", grafanaProxyMW)
+		logger.Info("Use grafana proxy")
+		//This will rout any request to gateway with /grafana prefix with grafanaProxyMW
+		r.GET("/grafana/*grafana", grafanaProxyMW)
 	}
 
 	return &Server{

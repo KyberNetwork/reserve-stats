@@ -1,7 +1,6 @@
 package http
 
 import (
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -27,11 +26,20 @@ func newGrafanaDirector(targetURL string, apiKey string) (func(req *http.Request
 	if err != nil {
 		return nil, err
 	}
+	var cloudFlareHeaders = []string{
+		"CF-Connecting-IP",
+		"CF-Ray",
+		"CF-Visitor",
+		"CF-Ipcountry",
+	}
+
 	return func(req *http.Request) {
 		req.URL.Scheme = target.Scheme
 		req.URL.Host = target.Host
 		req.URL.Path = singleJoiningSlash(target.Path, removeFirstComponent(req.URL.Path))
-		log.Print("redirecting...")
+		req.Header.Add("Authorization", grafanaKeyID+" "+apiKey)
+		req.Header.Set("Accept-Encoding", "*/*")
+		req.Host = target.Host
 		if target.RawQuery == "" || req.URL.RawQuery == "" {
 			req.URL.RawQuery = target.RawQuery + req.URL.RawQuery
 		} else {
@@ -41,10 +49,10 @@ func newGrafanaDirector(targetURL string, apiKey string) (func(req *http.Request
 			// explicitly disable User-Agent so it's not set to default value
 			req.Header.Set("User-Agent", "")
 		}
-		log.Printf("%s", req.URL)
-		req.Header.Add("Authorization", grafanaKeyID+" "+apiKey)
-		log.Printf("%s", req.Header.Get("Authorization"))
-		log.Printf("%s", req.Header)
+		//remove CloudFlare header for redirect
+		for _, cfh := range cloudFlareHeaders {
+			req.Header.Del(cfh)
+		}
 	}, nil
 }
 

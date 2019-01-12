@@ -137,7 +137,7 @@ func TestReverseProxy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testServer, err := NewServer(testAddr, testURL, testURL, testURL, testURL, auth, perm, logger)
+	testServer, err := NewServer(testAddr, testURL, testURL, testURL, testURL, auth, perm, logger, nil)
 	assert.Nil(t, err, "reverse proxy server should initiate successfully")
 
 	var testCaseReadKey = []httputil.HTTPTestCase{

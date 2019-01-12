@@ -10,6 +10,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	schema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelogs-post-processor"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/jinzhu/now"
 	"github.com/urfave/cli"
@@ -52,7 +53,7 @@ func fromInfluxResultToMap(res []client.Result, sugar *zap.SugaredLogger, tagKey
 		result = make(map[string]storage.ReserveVolume)
 	)
 	if len(res) < 1 || len(res[0].Series) < 1 {
-		sugar.Info("There is no trades")
+		sugar.Info("There is no reserve_volume for current query")
 	}
 	for _, row := range res[0].Series {
 		if len(row.Values) < 1 || len(row.Values[0]) != 3 {
@@ -133,7 +134,6 @@ func run(c *cli.Context) error {
 		beginOfThisMonth := now.New(startTime).BeginningOfMonth()
 		previousMonth := beginOfThisMonth.Add(-24 * time.Hour)
 		beginOfLastMonth := now.New(previousMonth).BeginningOfMonth()
-
 		// reserve volume monthly for dst reserve
 		query := fmt.Sprintf(`SELECT SUM(eth_amount) AS eth_volume, SUM(usd_amount) AS usd_volume FROM 
 		(SELECT eth_amount, eth_amount*eth_usd_rate as usd_amount FROM trades WHERE time >= '%s' AND time < '%s' AND src_rsv_addr != '' 
@@ -216,8 +216,13 @@ func run(c *cli.Context) error {
 		}
 
 		query = fmt.Sprintf(
-			`SELECT * INTO %[1]s FROM %[1]s WHERE time >= '%[2]s' AND time < '%[3]s' GROUP BY * FILL(0)`,
-			storage.ReportMeasurement, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339),
+			`SELECT %[1]s, %[2]s, %[3]s, %[4]s, %[5]s INTO %[6]s FROM %[6]s GROUP BY * FILL(0)`,
+			schema.Time.String(),
+			schema.BurnFee.String(),
+			schema.ETHVolume.String(),
+			schema.USDVolume.String(),
+			schema.WalletFee.String(),
+			storage.ReportMeasurement,
 		)
 		sugar.Debug("query ", query)
 
@@ -225,6 +230,7 @@ func run(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
+
 		if beginOfThisMonth.Equal(now.New(time.Now().In(time.UTC)).BeginningOfMonth()) {
 			sugar.Info("Finish aggregating...")
 			break

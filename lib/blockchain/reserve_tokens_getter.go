@@ -14,7 +14,7 @@ type TokenInfo struct {
 	Symbol  string
 }
 
-// reserveTokenFetcher returns supported tokens information by
+// ReserveTokenFetcher returns supported tokens information by
 // calling GetListedTokens of pricing contract attached to reserve.
 type ReserveTokenFetcher struct {
 	sugar          *zap.SugaredLogger

@@ -21,7 +21,7 @@ func NewAddress(prodAddr, stagingAddr []common.Address) Address {
 	}
 }
 
-// DeploymentFromContext returns deployment from cli context.
+// MustGetDeploymentFromContext returns deployment from cli context.
 func MustGetDeploymentFromContext(c *cli.Context) Deployment {
 	dpl := c.GlobalString(Flag)
 	switch dpl {

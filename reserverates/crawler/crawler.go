@@ -16,15 +16,15 @@ import (
 
 // ReserveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
 // a set of addresses to crawl rates from and setting object to query for reserve's token settings
-type ResreveRatesCrawler struct {
-	sugar               *zap.SugaredLogger
-	wrapperContract     reserveRateGetter
-	addresses           []ethereum.Address
-	stg                 supportedTokensGetter
+type ReserveRatesCrawler struct {
+	sugar           *zap.SugaredLogger
+	wrapperContract reserveRateGetter
+	addresses       []ethereum.Address
+	stg             supportedTokensGetter
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
-func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *ethclient.Client, coreClient core.Interface) (*ReserveRatesCrawler, error) {
+func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *ethclient.Client) (*ReserveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapperFallback(sugar, client)
 	if err != nil {
 		return nil, err
@@ -34,11 +34,11 @@ func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *et
 	for _, addr := range addrs {
 		ethAddrs = append(ethAddrs, ethereum.HexToAddress(addr))
 	}
-	return &ResreveRatesCrawler{
-		sugar:               sugar,
-		wrapperContract:     wrpContract,
-		addresses:           ethAddrs,
-		stg:                 newCoreSupportedTokens(sugar, client),
+	return &ReserveRatesCrawler{
+		sugar:           sugar,
+		wrapperContract: wrpContract,
+		addresses:       ethAddrs,
+		stg:             newCoreSupportedTokens(sugar, client),
 	}, nil
 }
 

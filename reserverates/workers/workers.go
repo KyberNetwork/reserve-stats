@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
@@ -66,7 +65,7 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (map[string]map[string]com
 		return nil, err
 	}
 
-	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, fj.addrs, client, coreClient)
+	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, fj.addrs, client)
 	if err != nil {
 		return nil, err
 	}

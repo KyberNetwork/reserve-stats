@@ -338,7 +338,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		} else {
 			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
 		}
-	}
+	} 
 
 	ethReceivalAmount, err := is.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)
 	if err != nil {

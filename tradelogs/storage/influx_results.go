@@ -305,18 +305,14 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		return tradeLog, fmt.Errorf("failed to get dst_amount: %s", err)
 	}
 
-	if value[idxs[logschema.SrcReserveAddr]] != nil {
-		srcReserveAddress, err = influxdb.GetAddressFromInterface(value[idxs[logschema.SrcReserveAddr]])
-		if err != nil {
-			return tradeLog, fmt.Errorf("failed to get src_reserve_addr: %s", err.Error())
-		}
+	srcReserveAddress, err := influxdb.GetAddressFromInterface(value[idxs[logschema.SrcReserveAddr]])
+	if err != nil {
+		return tradeLog, fmt.Errorf("failed to get src_reserve_addr: %s", err.Error())
 	}
 
-	if value[idxs[logschema.DstReserveAddr]] != nil {
-		dstReserveAddress, err = influxdb.GetAddressFromInterface(value[idxs[logschema.DstReserveAddr]])
-		if err != nil {
-			return tradeLog, fmt.Errorf("failed to get dst_reserve_addr: %s", err.Error())
-		}
+	dstReserveAddress, err := influxdb.GetAddressFromInterface(value[idxs[logschema.DstReserveAddr]])
+	if err != nil {
+		return tradeLog, fmt.Errorf("failed to get dst_reserve_addr: %s", err.Error())
 	}
 
 	dstAmountInWei, err := is.tokenAmountFormatter.ToWei(dstAddress, humanizedDstAmount)
@@ -359,6 +355,7 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 
 		EthAmount: ethAmountInWei,
 
+<<<<<<< HEAD
 		UserAddress:       userAddr,
 		SrcAddress:        srcAddress,
 		DestAddress:       dstAddress,
@@ -367,6 +364,18 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		SrcAmount:         srcAmountInWei,
 		DestAmount:        dstAmountInWei,
 		FiatAmount:        fiatAmount,
+=======
+		UserAddress: userAddr,
+		SrcAddress:  srcAddress,
+		DestAddress: dstAddress,
+		ReserveAddresses: common.ReserveAddress{
+			SrcReserveAddress: srcReserveAddress,
+			DstReserveAddress: dstReserveAddress,
+		},
+		SrcAmount:  srcAmountInWei,
+		DestAmount: dstAmountInWei,
+		FiatAmount: fiatAmount,
+>>>>>>> e739a08... update reserve addresses to weth eth tradelogs
 
 		BurnFees:   burnFees,
 		WalletFees: walletFees,

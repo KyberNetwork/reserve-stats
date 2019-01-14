@@ -24,6 +24,12 @@ type WalletFee struct {
 	Index          uint             `json:"index"` // the index of event log in transaction receipt
 }
 
+//ReserveAddress represent reserve address for tradelog
+type ReserveAddress struct {
+	SrcReserveAddress ethereum.Address `json:"src_reserve_addr"`
+	DstReserveAddress ethereum.Address `json:"dst_reserve_addr"`
+}
+
 // TradeLog represent trade event on KyberNetwork
 type TradeLog struct {
 	Timestamp       time.Time     `json:"timestamp"`
@@ -32,13 +38,14 @@ type TradeLog struct {
 
 	EthAmount *big.Int `json:"eth_receival_amount"`
 
-	UserAddress      ethereum.Address   `json:"user_addr"`
-	SrcAddress       ethereum.Address   `json:"src_addr"`
-	DestAddress      ethereum.Address   `json:"dst_addr"`
-	ReserveAddresses []ethereum.Address `json:"reserve_addrs"`
-	SrcAmount        *big.Int           `json:"src_amount"`
-	DestAmount       *big.Int           `json:"dst_amount"`
-	FiatAmount       float64            `json:"fiat_amount"`
+	UserAddress ethereum.Address `json:"user_addr"`
+	SrcAddress  ethereum.Address `json:"src_addr"`
+	DestAddress ethereum.Address `json:"dst_addr"`
+	//ReserveAddresses is reserve address for case when burn fee is nil
+	ReserveAddresses ReserveAddress `json:"reserve_addr"`
+	SrcAmount        *big.Int       `json:"src_amount"`
+	DestAmount       *big.Int       `json:"dst_amount"`
+	FiatAmount       float64        `json:"fiat_amount"`
 
 	BurnFees       []BurnFee   `json:"burn_fees"`
 	WalletFees     []WalletFee `json:"wallet_fees"`

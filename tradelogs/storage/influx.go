@@ -122,6 +122,8 @@ func prepareTradeLogQuery() string {
 			logschema.IP,
 			logschema.Country,
 			logschema.IntegrationApp,
+			logschema.SrcReserveAddr,
+			logschema.DstReserveAddr,
 		}
 		tradeLogQuery string
 	)
@@ -337,6 +339,12 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			tags[logschema.DstReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
 		} else {
 			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
+		}
+	} else {
+		if log.ReserveAddresses.SrcReserveAddress.Hex() != "0x0000000000000000000000000000000000000000"	{
+			tags[logschema.SrcReserveAddr.String()] = log.ReserveAddresses.SrcReserveAddress.Hex()
+		} else {
+			logger.Warnw("unexpected reserve address", "got", log.ReserveAddresses.SrcReserveAddress.Hex(), "want", "1 valid address (not default one)" )
 		}
 	} 
 

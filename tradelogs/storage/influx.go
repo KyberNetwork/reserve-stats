@@ -341,15 +341,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		} else {
 			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
 		}
-	} else {
-		if !contracts.IsZeroAddress(log.EtherReceivalSender) {
-			tags[logschema.SrcReserveAddr.String()] = log.EtherReceivalSender.Hex()
-		} else if !contracts.IsZeroAddress(log.SrcReserveAddress) {
-			tags[logschema.SrcReserveAddr.String()] = log.SrcReserveAddress.Hex()
-		} else {
-			logger.Warnw("unexpected reserve address", "got", log.SrcReserveAddress.Hex(), "want", "1 valid address (not default one)")
-		}
-	}
+	} 
 
 	ethReceivalAmount, err := is.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)
 	if err != nil {

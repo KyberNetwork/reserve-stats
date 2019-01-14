@@ -44,6 +44,9 @@ const (
 	delayFlag        = "delay"
 	defaultDelayTime = time.Minute
 
+	blockConfirmationFlag    = "wait-for-confirmations"
+	defaultBlockConfirmation = 7
+
 	defaultDB = "users"
 )
 
@@ -88,6 +91,12 @@ func main() {
 			Usage:  "The duration to put worker pools into sleep after each batch requests",
 			EnvVar: "DELAY",
 			Value:  defaultDelayTime,
+		},
+		cli.Int64Flag{
+			Name:   blockConfirmationFlag,
+			Usage:  "The number of block confirmations to latest known block",
+			EnvVar: "WAIT_FOR_CONFIRMATIONS",
+			Value:  defaultBlockConfirmation,
 		},
 	)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
@@ -245,6 +254,7 @@ func run(c *cli.Context) error {
 	maxBlocks := c.Int(maxBlocksFlag)
 	attempts := c.Int(attemptsFlag) // exit if failed to fetch logs after attempts times
 	delayTime := c.Duration(delayFlag)
+	blockConfirmation := c.Int64(blockConfirmationFlag)
 
 	for {
 		var doneCh = make(chan struct{})
@@ -269,7 +279,7 @@ func run(c *cli.Context) error {
 			if fErr != nil {
 				return fErr
 			}
-			toBlock = currentHeader.Number
+			toBlock = currentHeader.Number.Sub(currentHeader.Number, big.NewInt(blockConfirmation))
 			sugar.Infow("fetching trade logs up to latest known block number", "to_block", toBlock.String())
 		}
 

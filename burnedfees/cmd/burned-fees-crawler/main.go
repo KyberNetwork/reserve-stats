@@ -32,7 +32,7 @@ func main() {
 	app.Action = run
 	app.Version = "0.0.1"
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewEthereumNodeFlags())
+	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags,
 		cli.StringFlag{
 			Name:   fromBlockFlag,
@@ -74,7 +74,7 @@ func run(c *cli.Context) error {
 	defer logger.Sync()
 	sugar := logger.Sugar()
 
-	ethClient, err := libapp.NewEthereumClientFromFlag(c)
+	ethClient, err := blockchain.NewEthereumClientFromFlag(c)
 	if err != nil {
 		return err
 	}

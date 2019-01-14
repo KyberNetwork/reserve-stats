@@ -92,7 +92,7 @@ func main() {
 	)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, broadcast.NewCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewEthereumNodeFlags())
+	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, cq.NewCQFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
 
@@ -264,7 +264,7 @@ func run(c *cli.Context) error {
 		}
 
 		if toBlock == nil {
-			ethClient, fErr := libapp.NewEthereumClientFromFlag(c)
+			ethClient, fErr := blockchain.NewEthereumClientFromFlag(c)
 			currentHeader, fErr := ethClient.HeaderByNumber(context.Background(), nil)
 			if fErr != nil {
 				return fErr

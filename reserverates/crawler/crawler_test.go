@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"reflect"
 	"testing"
 
@@ -22,21 +23,17 @@ var (
 
 type mockSupportedTokens struct{}
 
-func (mst *mockSupportedTokens) supportedTokens(_ ethereum.Address, _ uint64) ([]ethereum.Address, error) {
-	return []ethereum.Address{
-		knc,
-		zrx,
+func (mst *mockSupportedTokens) Tokens(ethereum.Address, uint64) ([]blockchain.TokenInfo, error) {
+	return []blockchain.TokenInfo{
+		{
+			Address: knc,
+			Symbol:  "KNC",
+		},
+		{
+			Address: zrx,
+			Symbol:  "ZRX",
+		},
 	}, nil
-}
-
-func (mst *mockSupportedTokens) symbol(address ethereum.Address) (string, error) {
-	switch address {
-	case knc:
-		return "KNC", nil
-	case zrx:
-		return "ZRL", nil
-	}
-	return "", nil
 }
 
 func newTestCrawler(sugar *zap.SugaredLogger) (*ReserveRatesCrawler, error) {
@@ -48,7 +45,7 @@ func newTestCrawler(sugar *zap.SugaredLogger) (*ReserveRatesCrawler, error) {
 	return &ReserveRatesCrawler{
 		wrapperContract: &wrpContract,
 		addresses:       addrs,
-		stg:             &mockSupportedTokens{},
+		rtf:             &mockSupportedTokens{},
 		sugar:           sugar,
 	}, nil
 }

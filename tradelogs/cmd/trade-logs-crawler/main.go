@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -284,7 +283,8 @@ func run(c *cli.Context) error {
 		}
 
 		if fromBlock.Cmp(toBlock) >= 0 {
-			return errors.New("fromBlock is bigger than toBlock")
+			sugar.Infow("fromBlock is bigger than toBlock", "fromBlock", fromBlock.String(), "toBlock", toBlock.String())
+			return nil
 		}
 
 		requiredWorkers := requiredWorkers(fromBlock, toBlock, maxBlocks, maxWorkers)

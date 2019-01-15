@@ -8,24 +8,23 @@ import (
 	"github.com/urfave/cli"
 )
 
-//VersionedStartingBlocks is the list of versioned block for each new contract deployment
+// VersionedStartingBlocks is the list of versioned block for each new contract deployment
 type VersionedStartingBlocks struct {
-	V1 uint64
-	V2 uint64
-	V3 uint64
+	v3 uint64
+}
+
+// V3 returns starting block of KyberNetwork v3.
+func (v *VersionedStartingBlocks) V3() uint64 {
+	return v.v3
 }
 
 //DeploymentToStartingBlocks map deployment to its according starting blocks
 var DeploymentToStartingBlocks = map[deployment.Deployment]VersionedStartingBlocks{
 	deployment.Staging: {
-		V1: 0,
-		V2: 0,
-		V3: 6997111,
+		v3: 6997111,
 	},
 	deployment.Production: {
-		V1: 0,
-		V2: 5926056,
-		V3: 7024980,
+		v3: 7024980,
 	},
 }
 

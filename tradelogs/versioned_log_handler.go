@@ -80,7 +80,7 @@ func (crawler *Crawler) handleEventLogWithBlockNumber(log types.Log, tradeLog *c
 		return false, errors.New("log item has no topic")
 	}
 	//if blockNumber < startingBlock/
-	if crawler.startingBlocks.V3 == 0 || log.BlockNumber < crawler.startingBlocks.V3 {
+	if crawler.startingBlocks.V3() == 0 || log.BlockNumber < crawler.startingBlocks.V3() {
 		switch log.Topics[0].Hex() {
 		case etherReceivalEvent:
 			amount, err := logDataToEtherReceivalParams(log.Data)

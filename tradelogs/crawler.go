@@ -10,7 +10,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 
-	appname "github.com/KyberNetwork/reserve-stats/app-names"
+	"github.com/KyberNetwork/reserve-stats/app-names"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -196,8 +196,8 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 	var (
 		result []common.TradeLog
 	)
-	if fromBlock.Uint64() < crawler.startingBlocks.V3 {
-		if toBlock.Uint64() < crawler.startingBlocks.V3 {
+	if fromBlock.Uint64() < crawler.startingBlocks.V3() {
+		if toBlock.Uint64() < crawler.startingBlocks.V3() {
 			tradeLogs, err := crawler.fetchTradeLogV2(fromBlock, toBlock, timeout)
 			if err != nil {
 				return result, err
@@ -206,12 +206,12 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 			return result, nil
 		}
 
-		tradeLogs, err := crawler.fetchTradeLogV2(fromBlock, big.NewInt(int64(crawler.startingBlocks.V3-1)), timeout)
+		tradeLogs, err := crawler.fetchTradeLogV2(fromBlock, big.NewInt(int64(crawler.startingBlocks.V3()-1)), timeout)
 		if err != nil {
 			return result, err
 		}
 		result = append(result, tradeLogs...)
-		tradeLogs, err = crawler.fetchTradeLogV3(big.NewInt(int64(crawler.startingBlocks.V3)), toBlock, timeout)
+		tradeLogs, err = crawler.fetchTradeLogV3(big.NewInt(int64(crawler.startingBlocks.V3())), toBlock, timeout)
 		if err != nil {
 			return result, err
 		}

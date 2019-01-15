@@ -5,15 +5,14 @@ import (
 	"strconv"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/influxdata/influxdb/models"
-
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	burnschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee"
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 	walletschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfee"
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/influxdata/influxdb/models"
 )
 
 func (is *InfluxStorage) rowToAggregatedBurnFee(row []interface{}) (time.Time, float64, ethereum.Address, error) {
@@ -238,7 +237,11 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 	burnFeesByTxHash map[ethereum.Hash]map[uint][]common.BurnFee,
 	walletFeesByTxHash map[ethereum.Hash]map[uint][]common.WalletFee) (common.TradeLog, error) {
 
-	var tradeLog common.TradeLog
+	var (
+		tradeLog          common.TradeLog
+		dstReserveAddress ethereum.Address
+		srcReserveAddress ethereum.Address
+	)
 
 	txHash, err := influxdb.GetTxHashFromInterface(row.Tags[logschema.TxHash.String()])
 	if err != nil {
@@ -302,14 +305,18 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		return tradeLog, fmt.Errorf("failed to get dst_amount: %s", err)
 	}
 
-	srcReserveAddress, err := influxdb.GetAddressFromInterface(value[idxs[logschema.SrcReserveAddr]])
-	if err != nil {
-		return tradeLog, fmt.Errorf("failed to get src_reserve_addr: %s", err.Error())
+	if value[idxs[logschema.SrcReserveAddr]] != nil {
+		srcReserveAddress, err = influxdb.GetAddressFromInterface(value[idxs[logschema.SrcReserveAddr]])
+		if err != nil {
+			return tradeLog, fmt.Errorf("failed to get src_reserve_addr: %s", err.Error())
+		}
 	}
 
-	dstReserveAddress, err := influxdb.GetAddressFromInterface(value[idxs[logschema.DstReserveAddr]])
-	if err != nil {
-		return tradeLog, fmt.Errorf("failed to get dst_reserve_addr: %s", err.Error())
+	if value[idxs[logschema.DstReserveAddr]] != nil {
+		dstReserveAddress, err = influxdb.GetAddressFromInterface(value[idxs[logschema.DstReserveAddr]])
+		if err != nil {
+			return tradeLog, fmt.Errorf("failed to get dst_reserve_addr: %s", err.Error())
+		}
 	}
 
 	dstAmountInWei, err := is.tokenAmountFormatter.ToWei(dstAddress, humanizedDstAmount)

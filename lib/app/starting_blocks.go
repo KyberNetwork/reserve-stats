@@ -28,16 +28,17 @@ var DeploymentToStartingBlocks = map[deployment.Deployment]VersionedStartingBloc
 	},
 }
 
-//GetStartingBlocksFromContext return starting blocks from context
-func GetStartingBlocksFromContext(c *cli.Context) (VersionedStartingBlocks, error) {
+//MustGetStartingBlocksFromContext return starting blocks from context
+func MustGetStartingBlocksFromContext(c *cli.Context) VersionedStartingBlocks {
 	dpl := c.GlobalString(Flag)
 	deploymentMode, err := stringToDeploymentMode(dpl)
 	if err != nil {
-		return VersionedStartingBlocks{}, err
+		panic(err)
 	}
 	result, ok := DeploymentToStartingBlocks[deploymentMode]
 	if !ok {
-		return result, fmt.Errorf("starting blocks for deployment Mode %s is not supported", deploymentMode.String())
+		panic(fmt.Errorf("starting blocks for deployment Mode %s is not supported",
+			deploymentMode.String()))
 	}
-	return result, nil
+	return result
 }

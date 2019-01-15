@@ -81,11 +81,7 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 		return nil, err
 	}
 
-	startingBlocks, err := app.GetStartingBlocksFromContext(fj.c)
-	if err != nil {
-		return nil, err
-	}
-
+	startingBlocks := app.MustGetStartingBlocksFromContext(fj.c)
 	addresses := []ethereum.Address{contracts.PricingContractAddress().MustGetOneFromContext(fj.c)}
 	addresses = append(addresses, contracts.InternalNetworkContractAddress().MustGetOneFromContext(fj.c))
 	addresses = append(addresses, contracts.BurnerContractAddress().MustGetOneFromContext(fj.c))

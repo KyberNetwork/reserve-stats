@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	"log"
 	"testing"
 	"time"
@@ -33,7 +32,6 @@ func TestIntegrationVolume(t *testing.T) {
 		dbName = "test_integration_volume"
 		// These params are expected to be change when export.dat changes.
 
-		ethAmount = 5.3909054905423455
 		timeStamp = "2018-10-11T00:00:00Z"
 	)
 
@@ -62,8 +60,6 @@ func TestIntegrationVolume(t *testing.T) {
 	if !ok {
 		t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))
 	}
-
-	if result.KyberSwapVolume != ethAmount {
-		t.Fatal(fmt.Errorf("expect KyberSwap amount to be %.18f, got %.18f", ethAmount, result.KyberSwapVolume))
-	}
+	assert.NotZero(t, result.KyberSwapVolume)
+	assert.NotZero(t, result.NonKyberSwapVolume)
 }

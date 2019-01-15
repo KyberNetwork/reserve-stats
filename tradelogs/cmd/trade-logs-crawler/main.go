@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -273,18 +274,28 @@ func run(c *cli.Context) error {
 		}
 
 		if toBlock == nil {
-			ethClient, fErr := blockchain.NewEthereumClientFromFlag(c)
-			currentHeader, fErr := ethClient.HeaderByNumber(context.Background(), nil)
+			ethClient, fErr := libapp.NewEthereumClientFromFlag(c)
 			if fErr != nil {
 				return fErr
 			}
-			toBlock = currentHeader.Number.Sub(currentHeader.Number, big.NewInt(blockConfirmation))
-			sugar.Infow("fetching trade logs up to latest known block number", "to_block", toBlock.String())
+			for {
+				currentHeader, fErr := ethClient.HeaderByNumber(context.Background(), nil)
+				if fErr != nil {
+					return fErr
+				}
+				toBlock = currentHeader.Number.Sub(currentHeader.Number, big.NewInt(blockConfirmation))
+				sugar.Infow("fetching trade logs up to latest known block number", "to_block", toBlock.String())
+				if fromBlock.Cmp(toBlock) >= 0 {
+					sugar.Infow("fromBlock is bigger than toBlock", "fromBlock", fromBlock.String(), "toBlock", toBlock.String())
+					time.Sleep(delayTime)
+				} else {
+					break
+				}
+			}
 		}
 
 		if fromBlock.Cmp(toBlock) >= 0 {
-			sugar.Infow("fromBlock is bigger than toBlock", "fromBlock", fromBlock.String(), "toBlock", toBlock.String())
-			return nil
+			return errors.New("fromBlock is bigger than toBlock")
 		}
 
 		requiredWorkers := requiredWorkers(fromBlock, toBlock, maxBlocks, maxWorkers)

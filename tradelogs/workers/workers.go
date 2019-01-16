@@ -2,11 +2,11 @@ package workers
 
 import (
 	"errors"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"math/big"
 	"sync"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
@@ -76,7 +76,7 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 		return nil, err
 	}
 
-	client, err := app.NewEthereumClientFromFlag(fj.c)
+	client, err := blockchain.NewEthereumClientFromFlag(fj.c)
 	if err != nil {
 		return nil, err
 	}

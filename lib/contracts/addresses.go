@@ -1,68 +1,68 @@
 package contracts
 
 import (
-	"github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/ethereum/go-ethereum/common"
 )
 
 // InternalNetworkContractAddress returns the address of internal network contract of all deployments.
-func InternalNetworkContractAddress() app.Address {
+func InternalNetworkContractAddress() deployment.Address {
 	return internalNetworkContractAddress
 }
 
 // InternalReserveAddress returns the address of reserve contract of all deployments.
-func InternalReserveAddress() app.Address {
+func InternalReserveAddress() deployment.Address {
 	return internalReserveAddress
 }
 
 // PricingContractAddress returns the address of pricing contract of all deployments.
-func PricingContractAddress() app.Address {
+func PricingContractAddress() deployment.Address {
 	return pricingContractAddress
 }
 
 // NetworkContractAddress returns the address of network contract of all deployments.
-func NetworkContractAddress() app.Address {
+func NetworkContractAddress() deployment.Address {
 	return networkContractAddress
 }
 
 // BurnerContractAddress returns the address of burner contract of all deployments.
-func BurnerContractAddress() app.Address {
+func BurnerContractAddress() deployment.Address {
 	return burnerContractAddress
 }
 
 // OldNetworkContractAddress returns old network address of all deployments.
-func OldNetworkContractAddress() app.Address {
+func OldNetworkContractAddress() deployment.Address {
 	return oldNetworkContractAddress
 }
 
 // OldBurnerContractAddress returns old burner address of all deployments.
-func OldBurnerContractAddress() app.Address {
+func OldBurnerContractAddress() deployment.Address {
 	return oldBurnerContractAddress
 }
 
 var (
-	internalNetworkContractAddress = app.NewAddress(
+	internalNetworkContractAddress = deployment.NewAddress(
 		[]common.Address{common.HexToAddress("0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950")},
 		[]common.Address{common.HexToAddress("0x65897aDCBa42dcCA5DD162c647b1cC3E31238490")},
 	)
-	internalReserveAddress = app.NewAddress(
+	internalReserveAddress = deployment.NewAddress(
 		[]common.Address{common.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")},
 		[]common.Address{common.HexToAddress("0x2C5a182d280EeB5824377B98CD74871f78d6b8BC")},
 	)
-	pricingContractAddress = app.NewAddress(
+	pricingContractAddress = deployment.NewAddress(
 		[]common.Address{common.HexToAddress("0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B")},
 		[]common.Address{common.HexToAddress("0xe3E415a7a6c287a95DC68a01ff036828073fD2e6")},
 	)
-	networkContractAddress = app.NewAddress(
+	networkContractAddress = deployment.NewAddress(
 		[]common.Address{common.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")},
 		[]common.Address{common.HexToAddress("0xC14f34233071543E979F6A79AA272b0AB1B4947D")},
 	)
-	burnerContractAddress = app.NewAddress(
+	burnerContractAddress = deployment.NewAddress(
 		[]common.Address{common.HexToAddress("0x52166528FCC12681aF996e409Ee3a421a4e128A3")},
 		[]common.Address{common.HexToAddress("0x39682A7b8E4A03b2c8dC6DA6E0146Aee4E29A306")},
 	)
 
-	oldNetworkContractAddress = app.NewAddress(
+	oldNetworkContractAddress = deployment.NewAddress(
 		[]common.Address{
 			common.HexToAddress("0x964F35fAe36d75B1e72770e244F6595B68508CF5"),
 			// production old internal network v2
@@ -73,7 +73,7 @@ var (
 			common.HexToAddress("0x706aBcE058DB29eB36578c463cf295F180a1Fe9C")},
 	)
 
-	oldBurnerContractAddress = app.NewAddress(
+	oldBurnerContractAddress = deployment.NewAddress(
 		[]common.Address{
 			common.HexToAddress("0x4E89bc8484B2c454f2F7B25b612b648c45e14A8e"),
 			common.HexToAddress("0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706"),

@@ -16,4 +16,10 @@ var (
 
 	// KCCAddr is Kyber Community Coupon token address
 	KCCAddr = common.HexToAddress("0x09677D0175DEC51E2215426Cddd055a71bf4228d")
+
+	// OSTAddr is OST token address
+	OSTAddr = common.HexToAddress("0x2c4e8f2d746113d0696ce89b35f0d8bf88e0aeca")
+
+	// BQXAddr is ETHOS/BQX token address
+	BQXAddr = common.HexToAddress("0x5af2be193a6abca9c8817001f45744777db30756")
 )

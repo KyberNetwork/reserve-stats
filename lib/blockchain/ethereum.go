@@ -1,4 +1,4 @@
-package app
+package blockchain
 
 import (
 	"github.com/ethereum/go-ethereum/ethclient"

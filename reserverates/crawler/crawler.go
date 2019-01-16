@@ -2,6 +2,8 @@ package crawler
 
 import (
 	"fmt"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"golang.org/x/sync/errgroup"
 	"sync"
 
@@ -10,22 +12,24 @@ import (
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
 )
 
 // ReserveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
 // a set of addresses to crawl rates from and setting object to query for reserve's token settings
 type ReserveRatesCrawler struct {
-	sugar *zap.SugaredLogger
-
+	sugar           *zap.SugaredLogger
 	wrapperContract reserveRateGetter
 	addresses       []ethereum.Address
-	stg             supportedTokensGetter
+	rtf             reserveTokenFetcherInterface
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
-func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *ethclient.Client, coreClient core.Interface) (*ReserveRatesCrawler, error) {
+func NewReserveRatesCrawler(
+	sugar *zap.SugaredLogger,
+	addrs []string,
+	client *ethclient.Client,
+	symbolResolver blockchain.TokenSymbolResolver) (*ReserveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapperFallback(sugar, client)
 	if err != nil {
 		return nil, err
@@ -35,11 +39,12 @@ func NewReserveRatesCrawler(sugar *zap.SugaredLogger, addrs []string, client *et
 	for _, addr := range addrs {
 		ethAddrs = append(ethAddrs, ethereum.HexToAddress(addr))
 	}
+
 	return &ReserveRatesCrawler{
 		sugar:           sugar,
 		wrapperContract: wrpContract,
 		addresses:       ethAddrs,
-		stg:             newCoreSupportedTokens(sugar, client, coreClient),
+		rtf:             blockchain.NewReserveTokenFetcher(sugar, client, symbolResolver),
 	}, nil
 }
 
@@ -58,7 +63,7 @@ func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 	)
 	logger.Debug("fetching reserve rates")
 
-	tokens, err := rrc.stg.supportedTokens(rsvAddr, block)
+	tokens, err := rrc.rtf.Tokens(rsvAddr, block)
 	if err != nil {
 		if err.Error() == bind.ErrNoCode.Error() {
 			logger.Infow("reserve contract does not exist")
@@ -68,8 +73,8 @@ func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 	}
 
 	for _, token := range tokens {
-		srcAddresses = append(srcAddresses, ethereum.HexToAddress(token.Address), ethereum.HexToAddress(core.ETHToken.Address))
-		destAddresses = append(destAddresses, ethereum.HexToAddress(core.ETHToken.Address), ethereum.HexToAddress(token.Address))
+		srcAddresses = append(srcAddresses, token.Address, ethereum.HexToAddress(core.ETHToken.Address))
+		destAddresses = append(destAddresses, ethereum.HexToAddress(core.ETHToken.Address), token.Address)
 	}
 
 	reserveRates, sanityRates, err := rrc.wrapperContract.GetReserveRate(block, rsvAddr, srcAddresses, destAddresses)
@@ -78,7 +83,7 @@ func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 	}
 
 	for index, token := range tokens {
-		rates[fmt.Sprintf("ETH-%s", token.ID)] = rsvRateCommon.NewReserveRateEntry(reserveRates, sanityRates, index)
+		rates[fmt.Sprintf("ETH-%s", token.Symbol)] = rsvRateCommon.NewReserveRateEntry(reserveRates, sanityRates, index)
 	}
 
 	logger.Debug("reserve rates fetched successfully")

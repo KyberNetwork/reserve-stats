@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"log"
 	"os"
 
@@ -11,11 +12,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-const (
-	nodeURLFlag         = "node"
-	nodeURLDefaultValue = "https://mainnet.infura.io"
-	outputFlag          = "output"
-)
+const outputFlag = "output"
 
 func main() {
 	app := libapp.NewApp()
@@ -39,7 +36,7 @@ func main() {
 			Value: "./output.json",
 		},
 	)
-	app.Flags = append(app.Flags, libapp.NewEthereumNodeFlags())
+	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -57,7 +54,7 @@ func reserve(c *cli.Context) error {
 	}
 	defer logger.Sync()
 
-	client, err := libapp.NewEthereumClientFromFlag(c)
+	client, err := blockchain.NewEthereumClientFromFlag(c)
 	if err != nil {
 		return err
 	}

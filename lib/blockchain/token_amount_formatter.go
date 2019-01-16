@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -37,7 +36,7 @@ func NewTokenAmountFormatter(client *ethclient.Client) (*TokenAmountFormatter, e
 
 // NewToKenAmountFormatterFromContext return new instance of TokenAmountFormatter
 func NewToKenAmountFormatterFromContext(c *cli.Context) (*TokenAmountFormatter, error) {
-	client, err := app.NewEthereumClientFromFlag(c)
+	client, err := NewEthereumClientFromFlag(c)
 	if err != nil {
 		return nil, err
 	}

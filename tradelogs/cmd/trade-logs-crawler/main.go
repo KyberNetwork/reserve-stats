@@ -1,14 +1,16 @@
 package main
 
 import (
-	"context"
-	"errors"
-	"fmt"
+	"io"
 	"log"
 	"math"
 	"math/big"
 	"os"
 	"time"
+
+	"github.com/influxdata/influxdb/client/v2"
+	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
@@ -20,11 +22,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
-	"github.com/go-ozzo/ozzo-validation"
-	"github.com/go-ozzo/ozzo-validation/is"
-	"github.com/influxdata/influxdb/client/v2"
-	"github.com/urfave/cli"
-	"go.uber.org/zap"
 )
 
 const (
@@ -110,19 +107,6 @@ func main() {
 	}
 }
 
-func parseBigIntFlag(c *cli.Context, flag string) (*big.Int, error) {
-	val := c.String(flag)
-	if err := validation.Validate(val, validation.Required, is.Digit); err != nil {
-		return nil, err
-	}
-
-	result, ok := big.NewInt(0).SetString(val, 0)
-	if !ok {
-		return nil, fmt.Errorf("invalid number %s", c.String(flag))
-	}
-	return result, nil
-}
-
 func manageCQFromContext(c *cli.Context, influxClient client.Client, sugar *zap.SugaredLogger) error {
 	//Deploy CQ	before get/store trade logs
 	cqs, err := tradelogcq.CreateAssetVolumeCqs(common.DatabaseName)
@@ -184,12 +168,7 @@ func requiredWorkers(fromBlock, toBlock *big.Int, maxBlocks, maxWorkers int) int
 }
 
 func run(c *cli.Context) error {
-	var (
-		err       error
-		fromBlock *big.Int
-		toBlock   *big.Int
-		daemon    bool
-	)
+	var err error
 
 	logger, err := libapp.NewLogger(c)
 	if err != nil {
@@ -231,71 +210,24 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	if c.String(fromBlockFlag) == "" {
-		sugar.Info("no from block flag provided, checking last stored block")
-	} else {
-		fromBlock, err = parseBigIntFlag(c, fromBlockFlag)
-		if err != nil {
-			return err
-		}
-	}
-
-	if c.String(toBlockFlag) == "" {
-		daemon = true
-		sugar.Info("running in daemon mode")
-	} else {
-		toBlock, err = parseBigIntFlag(c, toBlockFlag)
-		if err != nil {
-			return err
-		}
-	}
-
 	maxWorkers := c.Int(maxWorkersFlag)
 	maxBlocks := c.Int(maxBlocksFlag)
 	attempts := c.Int(attemptsFlag) // exit if failed to fetch logs after attempts times
-	delayTime := c.Duration(delayFlag)
-	blockConfirmations := c.Int64(blockConfirmationsFlag)
+	planner, err := newCrawlerPlanner(sugar, c, influxStorage)
+	if err != nil {
+		return nil
+	}
 
 	for {
-		var doneCh = make(chan struct{})
-
-		if fromBlock == nil {
-			lastBlock, fErr := influxStorage.LastBlock()
-			if fErr != nil {
-				return fErr
-			}
-			if lastBlock != 0 {
-				fromBlock = big.NewInt(0).SetInt64(lastBlock)
-				sugar.Infow("using last stored block number", "from_block", fromBlock)
-			} else {
-				sugar.Infow("using default from block number", "from_block", defaultFromBlock)
-				fromBlock = big.NewInt(0).SetInt64(defaultFromBlock)
-			}
-		}
-
-		if toBlock == nil {
-			ethClient, fErr := blockchain.NewEthereumClientFromFlag(c)
-			if fErr != nil {
-				return fErr
-			}
-			for {
-				currentHeader, fErr := ethClient.HeaderByNumber(context.Background(), nil)
-				if fErr != nil {
-					return fErr
-				}
-				toBlock = currentHeader.Number.Sub(currentHeader.Number, big.NewInt(blockConfirmations))
-				sugar.Infow("fetching trade logs up to latest known block number", "to_block", toBlock.String())
-				if fromBlock.Cmp(toBlock) >= 0 {
-					sugar.Infow("fromBlock is bigger than toBlock", "fromBlock", fromBlock.String(), "toBlock", toBlock.String())
-					time.Sleep(delayTime)
-				} else {
-					break
-				}
-			}
-		}
-
-		if fromBlock.Cmp(toBlock) >= 0 {
-			return errors.New("fromBlock is bigger than toBlock")
+		var (
+			doneCh             = make(chan struct{})
+			fromBlock, toBlock *big.Int
+		)
+		if fromBlock, toBlock, err = planner.Next(); err == io.EOF {
+			sugar.Info("completed!")
+			break
+		} else if err != nil {
+			return err
 		}
 
 		requiredWorkers := requiredWorkers(fromBlock, toBlock, maxBlocks, maxWorkers)
@@ -336,17 +268,6 @@ func run(c *cli.Context) error {
 			if toBreak {
 				break
 			}
-		}
-
-		if daemon {
-			sugar.Infow("waiting before fetching new trade logs",
-				"last_from_block", fromBlock.String(),
-				"last_to_block", toBlock.String(),
-				"sleep", delayTime.String())
-			fromBlock, toBlock = nil, nil
-			time.Sleep(delayTime)
-		} else {
-			break
 		}
 	}
 	return nil

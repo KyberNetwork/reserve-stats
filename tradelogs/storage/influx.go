@@ -343,10 +343,10 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	} else {
 		if log.EtherReceivalSender.Hex() != "0x0000000000000000000000000000000000000000" {
 			tags[logschema.SrcReserveAddr.String()] = log.EtherReceivalSender.Hex()
-		} else if log.ReserveAddresses.SrcReserveAddress.Hex() != "0x0000000000000000000000000000000000000000" {
-			tags[logschema.SrcReserveAddr.String()] = log.ReserveAddresses.SrcReserveAddress.Hex()
+		} else if log.SrcReserveAddress.Hex() != "0x0000000000000000000000000000000000000000" {
+			tags[logschema.SrcReserveAddr.String()] = log.SrcReserveAddress.Hex()
 		} else {
-			logger.Warnw("unexpected reserve address", "got", log.ReserveAddresses.SrcReserveAddress.Hex(), "want", "1 valid address (not default one)")
+			logger.Warnw("unexpected reserve address", "got", log.SrcReserveAddress.Hex(), "want", "1 valid address (not default one)")
 		}
 	}
 

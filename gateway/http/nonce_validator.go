@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	
+
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 

@@ -44,8 +44,8 @@ const (
 	delayFlag        = "delay"
 	defaultDelayTime = time.Minute
 
-	blockConfirmationFlag    = "wait-for-confirmations"
-	defaultBlockConfirmation = 7
+	blockConfirmationsFlag    = "wait-for-confirmations"
+	defaultBlockConfirmations = 7
 
 	defaultDB = "users"
 )
@@ -93,10 +93,10 @@ func main() {
 			Value:  defaultDelayTime,
 		},
 		cli.Int64Flag{
-			Name:   blockConfirmationFlag,
+			Name:   blockConfirmationsFlag,
 			Usage:  "The number of block confirmations to latest known block",
 			EnvVar: "WAIT_FOR_CONFIRMATIONS",
-			Value:  defaultBlockConfirmation,
+			Value:  defaultBlockConfirmations,
 		},
 	)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
@@ -254,7 +254,7 @@ func run(c *cli.Context) error {
 	maxBlocks := c.Int(maxBlocksFlag)
 	attempts := c.Int(attemptsFlag) // exit if failed to fetch logs after attempts times
 	delayTime := c.Duration(delayFlag)
-	blockConfirmation := c.Int64(blockConfirmationFlag)
+	blockConfirmations := c.Int64(blockConfirmationsFlag)
 
 	for {
 		var doneCh = make(chan struct{})
@@ -274,7 +274,7 @@ func run(c *cli.Context) error {
 		}
 
 		if toBlock == nil {
-			ethClient, fErr := libapp.NewEthereumClientFromFlag(c)
+			ethClient, fErr := blockchain.NewEthereumClientFromFlag(c)
 			if fErr != nil {
 				return fErr
 			}
@@ -283,7 +283,7 @@ func run(c *cli.Context) error {
 				if fErr != nil {
 					return fErr
 				}
-				toBlock = currentHeader.Number.Sub(currentHeader.Number, big.NewInt(blockConfirmation))
+				toBlock = currentHeader.Number.Sub(currentHeader.Number, big.NewInt(blockConfirmations))
 				sugar.Infow("fetching trade logs up to latest known block number", "to_block", toBlock.String())
 				if fromBlock.Cmp(toBlock) >= 0 {
 					sugar.Infow("fromBlock is bigger than toBlock", "fromBlock", fromBlock.String(), "toBlock", toBlock.String())

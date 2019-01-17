@@ -24,7 +24,7 @@ var DeploymentToStartingBlocks = map[deployment.Deployment]VersionedStartingBloc
 		v3: 6997111,
 	},
 	deployment.Production: {
-		v3: 7024980,
+		v3: 7019038,
 	},
 }
 

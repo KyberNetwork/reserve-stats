@@ -17,6 +17,10 @@ const (
 	tradeExecuteEvent = "0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de"
 )
 
+func isZeroAddress(address ethereum.Address) bool {
+	return address.Hex() == "0x0000000000000000000000000000000000000000"
+}
+
 func (crawler *Crawler) fetchTradeLogV2(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
 	var result []common.TradeLog
 	topics := [][]ethereum.Hash{
@@ -58,11 +62,7 @@ func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time
 				break
 			}
 		}
-<<<<<<< HEAD
 		if !contracts.IsZeroAddress(reserveAddr) {
-=======
-		if reserveAddr.Hex() != "0x0000000000000000000000000000000000000000" {
->>>>>>> f7e9dd7... rebase develop
 			break
 		}
 	}

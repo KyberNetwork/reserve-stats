@@ -355,7 +355,6 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 
 		EthAmount: ethAmountInWei,
 
-<<<<<<< HEAD
 		UserAddress:       userAddr,
 		SrcAddress:        srcAddress,
 		DestAddress:       dstAddress,
@@ -364,18 +363,6 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		SrcAmount:         srcAmountInWei,
 		DestAmount:        dstAmountInWei,
 		FiatAmount:        fiatAmount,
-=======
-		UserAddress: userAddr,
-		SrcAddress:  srcAddress,
-		DestAddress: dstAddress,
-		ReserveAddresses: common.ReserveAddress{
-			SrcReserveAddress: srcReserveAddress,
-			DstReserveAddress: dstReserveAddress,
-		},
-		SrcAmount:  srcAmountInWei,
-		DestAmount: dstAmountInWei,
-		FiatAmount: fiatAmount,
->>>>>>> e739a08... update reserve addresses to weth eth tradelogs
 
 		BurnFees:   burnFees,
 		WalletFees: walletFees,

@@ -24,12 +24,6 @@ type WalletFee struct {
 	Index          uint             `json:"index"` // the index of event log in transaction receipt
 }
 
-//ReserveAddress represent reserve address for tradelog
-type ReserveAddress struct {
-	SrcReserveAddress ethereum.Address `json:"src_reserve_addr"`
-	DstReserveAddress ethereum.Address `json:"dst_reserve_addr"`
-}
-
 // TradeLog represent trade event on KyberNetwork
 type TradeLog struct {
 	Timestamp       time.Time     `json:"timestamp"`

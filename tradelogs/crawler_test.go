@@ -47,7 +47,7 @@ func assertTradeLog(t *testing.T, tradeLog common.TradeLog) {
 	assert.NotZero(t, tradeLog.DestAddress)
 	assert.NotZero(t, tradeLog.SrcAmount)
 	assert.NotZero(t, tradeLog.DestAmount)
-	assert.NotZero(t, tradeLog.ReserveAddresses.SrcReserveAddress)
+	assert.NotZero(t, tradeLog.SrcReserveAddress)
 
 	if blockchain.IsBurnable(tradeLog.SrcAddress) || blockchain.IsBurnable(tradeLog.DestAddress) {
 		assert.NotZero(t, tradeLog.BurnFees)

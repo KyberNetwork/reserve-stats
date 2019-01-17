@@ -2,9 +2,11 @@ package http
 
 import (
 	"errors"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const maxTimeGap = 30000 // 30 secs
@@ -30,7 +32,7 @@ func NewNonceValidator() *NonceValidator {
 func (v *NonceValidator) Validate(r *http.Request) error {
 	nonce, err := strconv.ParseUint(r.Header.Get("nonce"), 10, 64)
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not parse nonce in header. Error: %s", err.Error())
 	}
 	serverTime := timeutil.UnixMilliSecond()
 	start := serverTime - v.TimeGap

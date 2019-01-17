@@ -202,7 +202,7 @@ func fillBurnFees(tradeLog common.TradeLog, logItem types.Log) (common.TradeLog,
 }
 
 func logDataToKyberTradeParams(data []byte) (
-	srcAddress, destAddress ethereum.Address,
+	srcAddress, destAddress, srcReserve, dstReserve ethereum.Address,
 	srcAmount, destAmount, etherReceivalAmount ethereum.Hash,
 	err error,
 ) {
@@ -212,6 +212,8 @@ func logDataToKyberTradeParams(data []byte) (
 	}
 	srcAddress = ethereum.BytesToAddress(data[0:32])
 	destAddress = ethereum.BytesToAddress(data[32:64])
+	srcReserve = ethereum.BytesToAddress(data[192:224])
+	dstReserve = ethereum.BytesToAddress(data[224:256])
 	srcAmount = ethereum.BytesToHash(data[64:96])
 	destAmount = ethereum.BytesToHash(data[96:128])
 	etherReceivalAmount = ethereum.BytesToHash(data[160:192])
@@ -219,7 +221,7 @@ func logDataToKyberTradeParams(data []byte) (
 }
 
 func fillKyberTrade(tradeLog common.TradeLog, logItem types.Log) (common.TradeLog, error) {
-	srcAddress, destAddress, srcAmount, destAmount, ethAmount, err := logDataToKyberTradeParams(logItem.Data)
+	srcAddress, destAddress,srcReserve, dstReserve, srcAmount, destAmount, ethAmount, err := logDataToKyberTradeParams(logItem.Data)
 	if err != nil {
 		return common.TradeLog{}, err
 	}
@@ -233,6 +235,8 @@ func fillKyberTrade(tradeLog common.TradeLog, logItem types.Log) (common.TradeLo
 	tradeLog.Index = logItem.Index
 	tradeLog.UserAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
 	tradeLog.BlockNumber = logItem.BlockNumber
+	tradeLog.ReserveAddresses.SrcReserveAddress = srcReserve
+	tradeLog.ReserveAddresses.SrcReserveAddress = dstReserve
 
 	return tradeLog, nil
 }

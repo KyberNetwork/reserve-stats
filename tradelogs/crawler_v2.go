@@ -1,6 +1,7 @@
 package tradelogs
 
 import (
+	"context"
 	"errors"
 	"math/big"
 	"time"
@@ -8,6 +9,11 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+)
+
+const (
+	//TradeExecute(address sender, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
+	tradeExecuteEvent = "0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de"
 )
 
 func (crawler *Crawler) fetchTradeLogV2(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
@@ -32,6 +38,30 @@ func (crawler *Crawler) fetchTradeLogV2(fromBlock, toBlock *big.Int, timeout tim
 	}
 
 	return result, nil
+}
+
+func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time.Duration) (ethereum.Address, error) {
+	var (
+		reserveAddr ethereum.Address
+	)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	receipt, err := crawler.ethClient.TransactionReceipt(ctx, txHash)
+	if err != nil {
+		return reserveAddr, err
+	}
+	for _, log := range receipt.Logs {
+		for _, topic := range log.Topics {
+			if topic == ethereum.HexToHash(tradeExecuteEvent) {
+				reserveAddr = log.Address
+				break
+			}
+		}
+		if reserveAddr.Hex() != "0x0000000000000000000000000000000000000000" {
+			break
+		}
+	}
+	return reserveAddr, nil
 }
 
 func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.TradeLog, error) {
@@ -71,6 +101,15 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
 				return nil, err
 			}
+			// when the tradelog does not contain burnfee and etherReceival event
+			// get tx receipt to get reserve address
+			if len(tradeLog.BurnFees) == 0 && tradeLog.EtherReceivalSender.Hex() == "0x0000000000000000000000000000000000000000" {
+				tradeLog.ReserveAddresses.SrcReserveAddress, err = crawler.getTransactionReceipt(tradeLog.TransactionHash, 10*time.Second)
+				if err != nil {
+					return nil, err
+				}
+			}
+
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)

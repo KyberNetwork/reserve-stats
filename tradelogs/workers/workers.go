@@ -2,20 +2,23 @@ package workers
 
 import (
 	"errors"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"math/big"
 	"sync"
 	"time"
+
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/deployment"
+
+	"github.com/KyberNetwork/tokenrate/coingecko"
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
-	"github.com/KyberNetwork/tokenrate/coingecko"
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/urfave/cli"
-	"go.uber.org/zap"
 )
 
 type executeJob func(*zap.SugaredLogger) ([]common.TradeLog, error)
@@ -81,7 +84,7 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 		return nil, err
 	}
 
-	startingBlocks := app.MustGetStartingBlocksFromContext(fj.c)
+	startingBlocks := deployment.MustGetStartingBlocksFromContext(fj.c)
 	addresses := []ethereum.Address{contracts.PricingContractAddress().MustGetOneFromContext(fj.c)}
 	addresses = append(addresses, contracts.InternalNetworkContractAddress().MustGetOneFromContext(fj.c))
 	addresses = append(addresses, contracts.BurnerContractAddress().MustGetOneFromContext(fj.c))

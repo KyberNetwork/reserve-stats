@@ -3,20 +3,22 @@ package tradelogs
 import (
 	"context"
 	"errors"
-	"github.com/KyberNetwork/tokenrate"
-	"github.com/ethereum/go-ethereum/core/types"
 	"math/big"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/app-names"
-	"github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	"github.com/KyberNetwork/tokenrate"
+	"github.com/ethereum/go-ethereum/core/types"
+
 	ether "github.com/ethereum/go-ethereum"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/app-names"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
+	"github.com/KyberNetwork/reserve-stats/lib/deployment"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 const (
@@ -52,7 +54,7 @@ func NewCrawler(
 	broadcastClient broadcast.Interface,
 	rateProvider tokenrate.ETHUSDRateProvider,
 	addresses []ethereum.Address,
-	sb app.VersionedStartingBlocks) (*Crawler, error) {
+	sb deployment.VersionedStartingBlocks) (*Crawler, error) {
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
 	if err != nil {
 		return nil, err
@@ -81,7 +83,7 @@ type Crawler struct {
 	broadcastClient broadcast.Interface
 	rateProvider    tokenrate.ETHUSDRateProvider
 	addresses       []ethereum.Address
-	startingBlocks  app.VersionedStartingBlocks
+	startingBlocks  deployment.VersionedStartingBlocks
 }
 
 func logDataToExecuteTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {

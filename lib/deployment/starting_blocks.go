@@ -1,9 +1,7 @@
-package app
+package deployment
 
 import (
 	"fmt"
-
-	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 
 	"github.com/urfave/cli"
 )
@@ -18,24 +16,20 @@ func (v *VersionedStartingBlocks) V3() uint64 {
 	return v.v3
 }
 
-//DeploymentToStartingBlocks map deployment to its according starting blocks
-var DeploymentToStartingBlocks = map[deployment.Deployment]VersionedStartingBlocks{
-	deployment.Staging: {
+//StartingBlocks map deployment to its according starting blocks
+var StartingBlocks = map[Deployment]VersionedStartingBlocks{
+	Staging: {
 		v3: 6997111,
 	},
-	deployment.Production: {
+	Production: {
 		v3: 7019038,
 	},
 }
 
 //MustGetStartingBlocksFromContext return starting blocks from context
 func MustGetStartingBlocksFromContext(c *cli.Context) VersionedStartingBlocks {
-	dpl := c.GlobalString(Flag)
-	deploymentMode, err := stringToDeploymentMode(dpl)
-	if err != nil {
-		panic(err)
-	}
-	result, ok := DeploymentToStartingBlocks[deploymentMode]
+	deploymentMode := MustGetDeploymentFromContext(c)
+	result, ok := StartingBlocks[deploymentMode]
 	if !ok {
 		panic(fmt.Errorf("starting blocks for deployment Mode %s is not supported",
 			deploymentMode.String()))

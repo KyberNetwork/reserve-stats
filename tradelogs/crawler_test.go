@@ -6,16 +6,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/deployment"
-	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/deployment"
+	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 const defaultEthereumNode = "https://mainnet.infura.io"
@@ -84,7 +84,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		newMockBroadCastClient(),
 		tokenrate.NewMock(),
 		v3Addresses,
-		app.DeploymentToStartingBlocks[deployment.Production])
+		deployment.StartingBlocks[deployment.Production])
 	require.NoError(t, err)
 
 	tradeLogs, err := c.GetTradeLogs(big.NewInt(7025000), big.NewInt(7025100), time.Minute)
@@ -107,7 +107,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		newMockBroadCastClient(),
 		tokenrate.NewMock(),
 		v2Addresses,
-		app.DeploymentToStartingBlocks[deployment.Production])
+		deployment.StartingBlocks[deployment.Production])
 	require.NoError(t, err)
 
 	tradeLogs, err = c.GetTradeLogs(big.NewInt(7000000), big.NewInt(7000100), time.Minute)

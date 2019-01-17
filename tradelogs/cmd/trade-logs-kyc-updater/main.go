@@ -4,15 +4,17 @@ import (
 	"log"
 	"os"
 
+	"github.com/urfave/cli"
+	"go.uber.org/zap"
+
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
-	"github.com/urfave/cli"
-	"go.uber.org/zap"
 )
 
 const (
@@ -26,7 +28,7 @@ func main() {
 	app.Action = run
 	app.Flags = append(app.Flags, timeutil.NewTimeRangeCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewEthereumNodeFlags())
+	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
 
 	if err := app.Run(os.Args); err != nil {

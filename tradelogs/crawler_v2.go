@@ -58,7 +58,11 @@ func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time
 				break
 			}
 		}
+<<<<<<< HEAD
 		if !contracts.IsZeroAddress(reserveAddr) {
+=======
+		if reserveAddr.Hex() != "0x0000000000000000000000000000000000000000" {
+>>>>>>> f7e9dd7... rebase develop
 			break
 		}
 	}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io"
 	"log"
 	"math"
 	"math/big"
@@ -223,7 +222,7 @@ func run(c *cli.Context) error {
 			doneCh             = make(chan struct{})
 			fromBlock, toBlock *big.Int
 		)
-		if fromBlock, toBlock, err = planner.Next(); err == io.EOF {
+		if fromBlock, toBlock, err = planner.next(); err == errEOF {
 			sugar.Info("completed!")
 			break
 		} else if err != nil {

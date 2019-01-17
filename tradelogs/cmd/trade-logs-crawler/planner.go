@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"io"
 	"math/big"
 	"time"
 
@@ -16,6 +15,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
+
+var errEOF = errors.New("no more planned blocks")
 
 // crawlPlanner returns next from/to block to use in trade logs crawler.
 type crawlPlanner struct {
@@ -68,16 +69,16 @@ func newCrawlerPlanner(sugar *zap.SugaredLogger, c *cli.Context, st storage.Inte
 	}, nil
 }
 
-// Next returns next from/to block to fetch trade logs.
-// This method will return io.EOF if there is no next block range to fetch.
-func (p *crawlPlanner) Next() (*big.Int, *big.Int, error) {
+// next returns next from/to block to fetch trade logs.
+// This method will return errEOF if there is no next block range to fetch.
+func (p *crawlPlanner) next() (*big.Int, *big.Int, error) {
 	var (
 		logger   = p.sugar.With("func", "tradelogs/cmd/trade-logs-crawler/crawlPlanner.Next")
 		err      error
 		dstBlock *big.Int
 	)
 	if p.completed {
-		return nil, nil, io.EOF
+		return nil, nil, errEOF
 	}
 
 	if p.fromBlock == nil {

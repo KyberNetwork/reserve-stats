@@ -3,9 +3,10 @@ package http
 import (
 	"errors"
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"net/http"
 	"strconv"
+	
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const maxTimeGap = 30000 // 30 secs

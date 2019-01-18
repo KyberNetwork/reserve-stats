@@ -11,7 +11,7 @@ type TestMode int
 const (
 	//Internal only test all the internal modules without requiring external resources
 	Internal TestMode = iota //internal
-	//ExternalTest test the modules that requires external resources
+	//External test the modules that requires external resources
 	External //external
 )
 

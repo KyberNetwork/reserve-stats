@@ -6,12 +6,19 @@ import (
 	"go.uber.org/zap"
 	"testing"
 
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/require"
 )
 
 func TestVersionedWrapperFallback_GetReserveRate(t *testing.T) {
-	t.Skip("disable as this test require external resource")
+	testMode, err := testutil.GetTestMode()
+	if err != nil {
+		t.Skip("Can't get test mode. skip this external test")
+	}
+	if testMode != testutil.External {
+		t.Skip("disable as this test require external resource")
+	}
 	const (
 		ethNodeURL      = "https://mainnet.infura.io"
 		blockNumber     = 6000744

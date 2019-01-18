@@ -7,6 +7,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
@@ -23,8 +24,13 @@ type tokenIDResult struct {
 // TestTokenSymbols asserts that token symbols configured from Kyber Core has the same values as by calling the
 // (optional) constant of the token contract directly.
 func TestTokenSymbols(t *testing.T) {
-	t.Skip("disable as this test require external resource")
-
+	testMode, err := testutil.GetTestMode()
+	if err != nil {
+		t.Skip("Can't get test mode. skip this external test")
+	}
+	if testMode != testutil.External {
+		t.Skip("disable as this test require external resource")
+	}
 	logger, err := zap.NewDevelopment()
 	require.Nil(t, err, "logger should be initiated successfully")
 	sugar := logger.Sugar()

@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/KyberNetwork/reserve-stats/burnedfees/common"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +31,13 @@ func (*mockStorage) LastBlock() (int64, error) {
 }
 
 func TestBurnedFeesCrawlerExecute(t *testing.T) {
-	t.Skip("disable as this test require external resource")
+	testMode, err := testutil.GetTestMode()
+	if err != nil {
+		t.Skip("Can't get test mode. skip this external test")
+	}
+	if testMode != testutil.External {
+		t.Skip("disable as this test require external resource")
+	}
 	logger, err := zap.NewDevelopment()
 	require.Nil(t, err, "logger should be initiated successfully")
 	sugar := logger.Sugar()

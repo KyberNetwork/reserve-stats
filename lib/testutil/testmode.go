@@ -23,7 +23,7 @@ var testModes = map[string]TestMode{
 func getTestModeFromString(key string) (TestMode, error) {
 	mode, avail := testModes[key]
 	if !avail {
-		return Internal, fmt.Errorf("mode %s is not available; internal test mode should be assumed. Make sure to set %s ENV", key, testModeFlag)
+		return 0, fmt.Errorf("mode %s is not available, make sure to set %s ENV", key, testModeFlag)
 	}
 	return mode, nil
 }

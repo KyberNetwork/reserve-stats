@@ -14,6 +14,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
@@ -58,8 +59,13 @@ func assertTradeLog(t *testing.T, tradeLog common.TradeLog) {
 }
 
 func TestCrawlerGetTradeLogs(t *testing.T) {
-	t.Skip("disable as this test require external resource")
-
+	testMode, err := testutil.GetTestMode()
+	if err != nil {
+		t.Skip("Can't get test mode. skip this external test")
+	}
+	if testMode != testutil.External {
+		t.Skip("disable as this test require external resource")
+	}
 	node, ok := os.LookupEnv("ETHEREUM_NODE")
 	if !ok {
 		node = defaultEthereumNode

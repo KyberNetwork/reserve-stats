@@ -4,14 +4,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTokenAmountFormatter(t *testing.T) {
-	t.Skip("disable as this test require external resource")
-
+	testMode, err := testutil.GetTestMode()
+	if err != nil {
+		t.Skip("Can't get test mode. skip this external test")
+	}
+	if testMode != testutil.External {
+		t.Skip("disable as this test require external resource")
+	}
 	client, err := ethclient.Dial("https://mainnet.infura.io")
 	require.NoError(t, err)
 	f, err := NewTokenAmountFormatter(client)

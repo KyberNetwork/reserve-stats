@@ -78,10 +78,11 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 	txLimit := blockchain.EthToWei(uc.TxLimit / rate)
 	rich, err := s.influxStorage.IsExceedDailyLimit(address, uc.DailyLimit)
 	if err != nil {
+		s.sugar.Error(err)
 		httputil.ResponseFailure(
 			c,
 			http.StatusInternalServerError,
-			err,
+			fmt.Errorf("could not retrieve user volume"),
 		)
 		return
 	}

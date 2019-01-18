@@ -137,7 +137,6 @@ func fillEtherReceival(tradeLog common.TradeLog, logItem types.Log) (common.Trad
 	if err != nil {
 		return tradeLog, err
 	}
-	tradeLog.EtherReceivalSender = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
 	tradeLog.EtherReceivalAmount = amount.Big()
 	return tradeLog, nil
 }

@@ -11,8 +11,6 @@ const (
 	BlockNumber //block_number
 	//TxHash is enumerated field name for tradeLog.TxHash
 	TxHash //tx_hash
-	//EthReceivalSender is enumerated field name for TradeLog.EtherReceivalSender
-	EthReceivalSender //eth_receival_sender
 	//UserAddr is enumerated field name for TradeLog.UserAddr
 	UserAddr //user_addr
 	//SrcAddr is enumerated field name for TradeLog.SrcAddr
@@ -29,8 +27,6 @@ const (
 	DstReserveAddr // dst_rsv_addr
 	//SrcReserveAddr is enumerated field for source reserve Address
 	SrcReserveAddr // src_rsv_addr
-	//EthReceivalAmount is the enumerated field for ETHReceivalAmount
-	EthReceivalAmount // eth_receival_amount
 	//SrcAmount is the enumerated field for source amount
 	SrcAmount //src_amount
 	//DstAmount is the enumerated field for source amount
@@ -51,25 +47,23 @@ const (
 
 //tradeLogSchemaFields translates the stringer of reserveRate fields into its enumerated form
 var tradeLogSchemaFields = map[string]FieldName{
-	"time":                Time,
-	"block_number":        BlockNumber,
-	"tx_hash":             TxHash,
-	"eth_receival_sender": EthReceivalSender,
-	"user_addr":           UserAddr,
-	"src_addr":            SrcAddr,
-	"dst_addr":            DstAddr,
-	"country":             Country,
-	"ip":                  IP,
-	"eth_rate_provider":   EthUSDProvider,
-	"dst_rsv_addr":        DstReserveAddr,
-	"src_rsv_addr":        SrcReserveAddr,
-	"eth_receival_amount": EthReceivalAmount,
-	"src_amount":          SrcAmount,
-	"dst_amount":          DstAmount,
-	"eth_usd_rate":        EthUSDRate,
-	"eth_amount":          EthAmount,
-	"fiat_amount":         FiatAmount,
-	"log_index":           LogIndex,
-	"integration_app":     IntegrationApp,
-	"wallet_addr":         WalletAddress,
+	"time":              Time,
+	"block_number":      BlockNumber,
+	"tx_hash":           TxHash,
+	"user_addr":         UserAddr,
+	"src_addr":          SrcAddr,
+	"dst_addr":          DstAddr,
+	"country":           Country,
+	"ip":                IP,
+	"eth_rate_provider": EthUSDProvider,
+	"dst_rsv_addr":      DstReserveAddr,
+	"src_rsv_addr":      SrcReserveAddr,
+	"src_amount":        SrcAmount,
+	"dst_amount":        DstAmount,
+	"eth_usd_rate":      EthUSDRate,
+	"eth_amount":        EthAmount,
+	"fiat_amount":       FiatAmount,
+	"log_index":         LogIndex,
+	"integration_app":   IntegrationApp,
+	"wallet_addr":       WalletAddress,
 }

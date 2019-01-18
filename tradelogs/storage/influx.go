@@ -113,8 +113,7 @@ func prepareTradeLogQuery() string {
 		tradeLogQueryFields = []logschema.FieldName{
 			logschema.Time,
 			logschema.BlockNumber,
-			logschema.EthReceivalSender,
-			logschema.EthReceivalAmount,
+			logschema.EthAmount,
 			logschema.UserAddr,
 			logschema.SrcAddr,
 			logschema.DstAddr,
@@ -299,10 +298,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	tags := map[string]string{
 		logschema.BlockNumber.String(): strconv.FormatUint(log.BlockNumber, 10),
 		logschema.TxHash.String():      log.TransactionHash.String(),
-
-		logschema.EthReceivalSender.String(): log.EtherReceivalSender.String(),
-
-		logschema.UserAddr.String(): log.UserAddress.String(),
+		logschema.UserAddr.String():    log.UserAddress.String(),
 
 		logschema.SrcAddr.String():        log.SrcAddress.String(),
 		logschema.DstAddr.String():        log.DestAddress.String(),
@@ -370,7 +366,6 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	}
 
 	fields := map[string]interface{}{
-		logschema.EthReceivalAmount.String(): ethReceivalAmount,
 
 		logschema.SrcAmount.String():  srcAmount,
 		logschema.DstAmount.String():  dstAmount,

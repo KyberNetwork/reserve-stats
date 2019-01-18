@@ -30,8 +30,7 @@ type TradeLog struct {
 	BlockNumber     uint64        `json:"block_number"`
 	TransactionHash ethereum.Hash `json:"tx_hash"`
 
-	EtherReceivalSender ethereum.Address `json:"eth_receival_sender"`
-	EtherReceivalAmount *big.Int         `json:"eth_receival_amount"`
+	EtherReceivalAmount *big.Int `json:"eth_receival_amount"`
 
 	UserAddress ethereum.Address `json:"user_addr"`
 	SrcAddress  ethereum.Address `json:"src_addr"`

@@ -305,6 +305,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.DstAddr.String():        log.DestAddress.String(),
 		logschema.IntegrationApp.String(): log.IntegrationApp,
 		logschema.WalletAddress.String():  walletAddr.String(),
+		logschema.LogIndex.String():       strconv.FormatUint(uint64(log.Index), 10),
 
 		logschema.Country.String(): log.Country,
 
@@ -349,7 +350,6 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.TxHash.String():         log.TransactionHash.String(),
 		logschema.IP.String():             log.IP,
 		logschema.EthUSDProvider.String(): log.ETHUSDProvider,
-		logschema.LogIndex.String():       strconv.FormatUint(uint64(log.Index), 10),
 	}
 
 	tradePoint, err := client.NewPoint(tradeLogMeasurementName, tags, fields, log.Timestamp)
@@ -365,6 +365,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			burnschema.ReserveAddr.String():   burn.ReserveAddress.String(),
 			burnschema.WalletAddress.String(): walletAddr.String(),
 			burnschema.Country.String():       log.Country,
+			burnschema.TradeLogIndex.String(): strconv.FormatUint(uint64(log.Index), 10),
 		}
 
 		burnAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, burn.Amount)
@@ -373,10 +374,9 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		}
 
 		fields := map[string]interface{}{
-			burnschema.Amount.String():        burnAmount,
-			burnschema.TxHash.String():        log.TransactionHash.String(),
-			burnschema.LogIndex.String():      strconv.FormatUint(uint64(burn.Index), 10),
-			burnschema.TradeLogIndex.String(): strconv.FormatUint(uint64(log.Index), 10),
+			burnschema.Amount.String():   burnAmount,
+			burnschema.TxHash.String():   log.TransactionHash.String(),
+			burnschema.LogIndex.String(): strconv.FormatUint(uint64(burn.Index), 10),
 		}
 
 		burnPoint, err := client.NewPoint(burnFeesMeasurementName, tags, fields, log.Timestamp)
@@ -390,9 +390,10 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	// build walletFeePoint
 	for _, walletFee := range log.WalletFees {
 		tags := map[string]string{
-			walletschema.ReserveAddr.String(): walletFee.ReserveAddress.String(),
-			walletschema.WalletAddr.String():  walletFee.WalletAddress.String(),
-			walletschema.Country.String():     log.Country,
+			walletschema.ReserveAddr.String():   walletFee.ReserveAddress.String(),
+			walletschema.WalletAddr.String():    walletFee.WalletAddress.String(),
+			walletschema.Country.String():       log.Country,
+			walletschema.TradeLogIndex.String(): strconv.FormatUint(uint64(log.Index), 10),
 		}
 
 		amount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, walletFee.Amount)
@@ -401,10 +402,9 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		}
 
 		fields := map[string]interface{}{
-			walletschema.Amount.String():        amount,
-			walletschema.TxHash.String():        log.TransactionHash.String(),
-			walletschema.LogIndex.String():      strconv.FormatUint(uint64(walletFee.Index), 10),
-			walletschema.TradeLogIndex.String(): strconv.FormatUint(uint64(log.Index), 10),
+			walletschema.Amount.String():   amount,
+			walletschema.TxHash.String():   log.TransactionHash.String(),
+			walletschema.LogIndex.String(): strconv.FormatUint(uint64(walletFee.Index), 10),
 		}
 
 		walletFeePoint, err := client.NewPoint(walletMeasurementName, tags, fields, log.Timestamp)

@@ -297,10 +297,6 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	}
 
 	tags := map[string]string{
-		logschema.BlockNumber.String(): strconv.FormatUint(log.BlockNumber, 10),
-		logschema.TxHash.String():      log.TransactionHash.String(),
-
-		logschema.EthReceivalSender.String(): log.EtherReceivalSender.String(),
 
 		logschema.UserAddr.String(): log.UserAddress.String(),
 
@@ -310,10 +306,6 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.WalletAddress.String():  walletAddr.String(),
 
 		logschema.Country.String(): log.Country,
-		logschema.IP.String():      log.IP,
-
-		logschema.EthUSDProvider.String(): log.ETHUSDProvider,
-		logschema.LogIndex.String():       strconv.FormatUint(uint64(log.Index), 10),
 	}
 
 	logger := is.sugar.With(
@@ -376,7 +368,13 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.DstAmount.String():  dstAmount,
 		logschema.EthUSDRate.String(): log.ETHUSDRate,
 
-		logschema.EthAmount.String(): ethAmount,
+		logschema.EthAmount.String():         ethAmount,
+		logschema.BlockNumber.String():       strconv.FormatUint(log.BlockNumber, 10),
+		logschema.TxHash.String():            log.TransactionHash.String(),
+		logschema.EthReceivalSender.String(): log.EtherReceivalSender.String(),
+		logschema.IP.String():                log.IP,
+		logschema.EthUSDProvider.String():    log.ETHUSDProvider,
+		logschema.LogIndex.String():          strconv.FormatUint(uint64(log.Index), 10),
 	}
 
 	tradePoint, err := client.NewPoint(tradeLogMeasurementName, tags, fields, log.Timestamp)
@@ -389,10 +387,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	// build burnFeePoint
 	for _, burn := range log.BurnFees {
 		tags := map[string]string{
-			burnschema.TxHash.String():        log.TransactionHash.String(),
 			burnschema.ReserveAddr.String():   burn.ReserveAddress.String(),
-			burnschema.LogIndex.String():      strconv.FormatUint(uint64(burn.Index), 10),
-			burnschema.TradeLogIndex.String(): strconv.FormatUint(uint64(log.Index), 10),
 			burnschema.WalletAddress.String(): walletAddr.String(),
 			burnschema.Country.String():       log.Country,
 		}
@@ -403,7 +398,10 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		}
 
 		fields := map[string]interface{}{
-			burnschema.Amount.String(): burnAmount,
+			burnschema.Amount.String():        burnAmount,
+			burnschema.TxHash.String():        log.TransactionHash.String(),
+			burnschema.LogIndex.String():      strconv.FormatUint(uint64(burn.Index), 10),
+			burnschema.TradeLogIndex.String(): strconv.FormatUint(uint64(log.Index), 10),
 		}
 
 		burnPoint, err := client.NewPoint(burnFeesMeasurementName, tags, fields, log.Timestamp)
@@ -417,12 +415,9 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	// build walletFeePoint
 	for _, walletFee := range log.WalletFees {
 		tags := map[string]string{
-			walletschema.TxHash.String():        log.TransactionHash.String(),
-			walletschema.ReserveAddr.String():   walletFee.ReserveAddress.String(),
-			walletschema.WalletAddr.String():    walletFee.WalletAddress.String(),
-			walletschema.LogIndex.String():      strconv.FormatUint(uint64(walletFee.Index), 10),
-			walletschema.TradeLogIndex.String(): strconv.FormatUint(uint64(log.Index), 10),
-			walletschema.Country.String():       log.Country,
+			walletschema.ReserveAddr.String(): walletFee.ReserveAddress.String(),
+			walletschema.WalletAddr.String():  walletFee.WalletAddress.String(),
+			walletschema.Country.String():     log.Country,
 		}
 
 		amount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, walletFee.Amount)
@@ -431,7 +426,10 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		}
 
 		fields := map[string]interface{}{
-			walletschema.Amount.String(): amount,
+			walletschema.Amount.String():        amount,
+			walletschema.TxHash.String():        log.TransactionHash.String(),
+			walletschema.LogIndex.String():      strconv.FormatUint(uint64(walletFee.Index), 10),
+			walletschema.TradeLogIndex.String(): strconv.FormatUint(uint64(log.Index), 10),
 		}
 
 		walletFeePoint, err := client.NewPoint(walletMeasurementName, tags, fields, log.Timestamp)

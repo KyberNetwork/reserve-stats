@@ -31,13 +31,8 @@ type tokenResult struct {
 // TestTokenDecimals asserts that token decimals configured from Kyber Core has the same values as by calling the
 // (optional) constant of the token contract directly.
 func TestTokenDecimals(t *testing.T) {
-	testMode, err := testutil.GetTestMode()
-	if err != nil {
-		t.Skip("Can't get test mode. skip this external test")
-	}
-	if testMode != testutil.External {
-		t.Skip("disable as this test require external resource")
-	}
+	testutil.SkipExternal(t)
+
 	logger, err := zap.NewDevelopment()
 	require.Nil(t, err, "logger should be initiated successfully")
 	sugar := logger.Sugar()

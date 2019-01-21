@@ -11,13 +11,7 @@ import (
 )
 
 func TestTokenAmountFormatter(t *testing.T) {
-	testMode, err := testutil.GetTestMode()
-	if err != nil {
-		t.Skip("Can't get test mode. skip this external test")
-	}
-	if testMode != testutil.External {
-		t.Skip("disable as this test require external resource")
-	}
+	testutil.SkipExternal(t)
 	client, err := ethclient.Dial("https://mainnet.infura.io")
 	require.NoError(t, err)
 	f, err := NewTokenAmountFormatter(client)

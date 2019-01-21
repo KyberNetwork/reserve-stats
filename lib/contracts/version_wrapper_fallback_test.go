@@ -12,13 +12,8 @@ import (
 )
 
 func TestVersionedWrapperFallback_GetReserveRate(t *testing.T) {
-	testMode, err := testutil.GetTestMode()
-	if err != nil {
-		t.Skip("Can't get test mode. skip this external test")
-	}
-	if testMode != testutil.External {
-		t.Skip("disable as this test require external resource")
-	}
+	testutil.SkipExternal(t)
+
 	const (
 		ethNodeURL      = "https://mainnet.infura.io"
 		blockNumber     = 6000744

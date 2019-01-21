@@ -59,13 +59,8 @@ func assertTradeLog(t *testing.T, tradeLog common.TradeLog) {
 }
 
 func TestCrawlerGetTradeLogs(t *testing.T) {
-	testMode, err := testutil.GetTestMode()
-	if err != nil {
-		t.Skip("Can't get test mode. skip this external test")
-	}
-	if testMode != testutil.External {
-		t.Skip("disable as this test require external resource")
-	}
+	testutil.SkipExternal(t)
+
 	node, ok := os.LookupEnv("ETHEREUM_NODE")
 	if !ok {
 		node = defaultEthereumNode

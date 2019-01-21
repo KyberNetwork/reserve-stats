@@ -13,6 +13,7 @@ func GetTestMode() (TestMode, error) {
 	return getTestModeFromString(testMode)
 }
 
+//SkipExternal will skip the test if mode is not external
 func SkipExternal(t *testing.T) {
 	testMode, err := GetTestMode()
 	if err != nil {

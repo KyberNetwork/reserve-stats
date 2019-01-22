@@ -68,8 +68,7 @@ func NewClientFromContext(c *cli.Context) (client.Client, error) {
 	}
 
 	// ping to make sure connection success
-	_, _, err = influxClient.Ping(5 * time.Second)
-	if err != nil {
+	if _, _, err = influxClient.Ping(5 * time.Second); err != nil {
 		return nil, err
 	}
 

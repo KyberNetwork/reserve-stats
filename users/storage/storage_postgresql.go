@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
-	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
+	"github.com/KyberNetwork/reserve-stats/users/common"
 )
 
 const (
@@ -85,45 +86,64 @@ func (udb *UserDB) CreateOrUpdate(userData common.UserData) error {
 
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 
-	err = tx.Get(&userID, fmt.Sprintf(`SELECT id FROM "%s" WHERE email = $1;`, usersTableName), userData.Email)
-	if err == sql.ErrNoRows {
-		logger.Debug("user does not exist, creating")
-		row := tx.QueryRowx(`INSERT INTO users (email) VALUES ($1) RETURNING id;`, userData.Email)
-		if err = row.Scan(&userID); err != nil {
-			return err
-		}
-		logger = logger.With("user_id", userID)
-		logger.Debug("user is created")
+	row := tx.QueryRow(
+		fmt.Sprintf(`
+INSERT INTO %s(email)
+VALUES ($1)
+ON CONFLICT DO NOTHING RETURNING id;`, usersTableName,
+		), userData.Email)
+	if err = row.Scan(&userID); err == sql.ErrNoRows {
+		logger.Debug("user already exists")
+		err = nil
 	} else if err != nil {
 		return err
-	} else {
-		logger = logger.With("user_id", userID)
-		logger.Debug("user already exists")
 	}
 
-	// client will submit all registered addresses every time
-	_, err = tx.Exec(fmt.Sprintf(`
-	DELETE FROM "%s" WHERE user_id = $1
-`, addressesTableName), userID)
-	if err != nil {
-		return err
-	}
-	for _, info := range userData.UserInfo {
-		logger.Debugw("updating user address",
-			"address", info.Address,
-			"timestamp", info.Timestamp,
-		)
-		_, err = tx.Exec(fmt.Sprintf(`
-INSERT INTO "%s" (address, timestamp, user_id)
-VALUES ($1, (TO_TIMESTAMP($2::double precision/1000)), $3);
-`, addressesTableName),
-			info.Address,
-			info.Timestamp,
-			userID)
-		if err != nil {
-			return err
-		}
-	}
+	// TODO add all user addresses exists in query but no in database
+
+	// TODO delete all user addresses exist in database but not in query
+
+	//err = tx.Get(&userID, fmt.Sprintf(`SELECT id FROM "%s" WHERE email = $1;`, usersTableName), userData.Email)
+	//if err != nil {
+	//	return err
+	//}
+
+	//	if err == sql.ErrNoRows {
+	//		logger.Debug("user does not exist, creating")
+	//		row := tx.QueryRowx(`INSERT INTO users (email) VALUES ($1) RETURNING id;`, userData.Email)
+	//		if err = row.Scan(&userID); err != nil {
+	//			return err
+	//		}
+	//		logger = logger.With("user_id", userID)
+	//		logger.Debug("user is created")
+	//	} else {
+	//		logger = logger.With("user_id", userID)
+	//		logger.Debug("user already exists")
+	//	}
+	//
+	//	// client will submit all registered addresses every time
+	//	_, err = tx.Exec(fmt.Sprintf(`
+	//	DELETE FROM "%s" WHERE user_id = $1
+	//`, addressesTableName), userID)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	for _, info := range userData.UserInfo {
+	//		logger.Debugw("updating user address",
+	//			"address", info.Address,
+	//			"timestamp", info.Timestamp,
+	//		)
+	//		_, err = tx.Exec(fmt.Sprintf(`
+	//INSERT INTO "%s" (address, timestamp, user_id)
+	//VALUES ($1, (TO_TIMESTAMP($2::double precision/1000)), $3);
+	//`, addressesTableName),
+	//			info.Address,
+	//			info.Timestamp,
+	//			userID)
+	//		if err != nil {
+	//			return err
+	//		}
+	//	}
 
 	return err
 }

@@ -2,6 +2,7 @@ package influxdb
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
@@ -65,6 +66,12 @@ func NewClientFromContext(c *cli.Context) (client.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// ping to make sure connection success
+_, _, err = influxClient.Ping(5*time.Second)
+if err != nil {
+	return nil, err
+}
 
 	return influxClient, nil
 }

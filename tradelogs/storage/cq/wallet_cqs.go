@@ -68,19 +68,33 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	}
 	result = append(result, newUnqAddressCq)
 
-	totalBurnFeeCqs, err := cq.NewContinuousQuery(
-		"wallet_total_burn_fee",
+	srcTotalBurnFeeCqs, err := cq.NewContinuousQuery(
+		"wallet_total_src_burn_fee",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(amount) AS total_burn_fee INTO wallet_stats FROM burn_fees GROUP BY wallet_addr",
+		"SELECT SUM(src_burn_fee) AS total_burn_fee INTO wallet_stats FROM trades GROUP BY wallet_addr",
 		"1d",
 		supportedTimeZone(),
 	)
 	if err != nil {
 		return nil, err
 	}
-	result = append(result, totalBurnFeeCqs)
+	result = append(result, srcTotalBurnFeeCqs)
+
+	dstTotalBurnFeeCqs, err := cq.NewContinuousQuery(
+		"wallet_total_dst_burn_fee",
+		dbName,
+		dayResampleInterval,
+		dayResampleFor,
+		"SELECT SUM(dst_burn_fee) AS total_burn_fee INTO wallet_stats FROM trades GROUP BY wallet_addr",
+		"1d",
+		supportedTimeZone(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, dstTotalBurnFeeCqs)
 
 	return result, nil
 }

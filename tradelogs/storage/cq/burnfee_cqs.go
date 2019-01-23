@@ -9,31 +9,63 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	var (
 		result []*cq.ContinuousQuery
 	)
-	burnfeeHourCqs, err := cq.NewContinuousQuery(
-		"burn_fee_hour",
+	srcBurnfeeHourCqs, err := cq.NewContinuousQuery(
+		"src_burn_fee_hour",
 		dbName,
 		hourResampleInterval,
 		hourResampleFor,
-		"SELECT SUM(amount) as sum_amount INTO burn_fee_hour FROM burn_fees GROUP BY reserve_addr",
+		"SELECT SUM(src_burn_fee) as sum_amount INTO burn_fee_hour FROM trades GROUP BY src_rsv_addr",
 		"1h",
 		[]string{},
 	)
+
 	if err != nil {
 		return nil, err
 	}
-	result = append(result, burnfeeHourCqs)
-	burnfeeDayCqs, err := cq.NewContinuousQuery(
-		"burn_fee_day",
+	result = append(result, srcBurnfeeHourCqs)
+
+	dstBurnfeedstHourCqs, err := cq.NewContinuousQuery(
+		"dst_burn_fee_hour",
 		dbName,
-		dayResampleInterval,
-		dayResampleFor,
-		"SELECT SUM(amount) as sum_amount INTO burn_fee_day FROM burn_fees GROUP BY reserve_addr",
+		hourResampleInterval,
+		hourResampleFor,
+		"SELECT SUM(dst_burn_fee) as sum_amount INTO burn_fee_hour FROM trades GROUP BY dst_rsv_addr",
+		"1h",
+		[]string{},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, dstBurnfeedstHourCqs)
+	srcBurnfeeDayCqs, err := cq.NewContinuousQuery(
+		"src_burn_fee_day",
+		dbName,
+		hourResampleInterval,
+		hourResampleFor,
+		"SELECT SUM(src_burn_fee) as sum_amount INTO burn_fee_day FROM trades GROUP BY src_rsv_addr",
 		"1d",
 		[]string{},
 	)
+
 	if err != nil {
 		return nil, err
 	}
-	result = append(result, burnfeeDayCqs)
+	result = append(result, srcBurnfeeDayCqs)
+
+	dstBurnfeedstDayCqs, err := cq.NewContinuousQuery(
+		"dst_burn_fee_day",
+		dbName,
+		hourResampleInterval,
+		hourResampleFor,
+		"SELECT SUM(dst_burn_fee) as sum_amount INTO burn_fee_day FROM trades GROUP BY dst_rsv_addr",
+		"1d",
+		[]string{},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, dstBurnfeedstDayCqs)
 	return result, nil
 }

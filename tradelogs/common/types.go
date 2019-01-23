@@ -9,6 +9,13 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
+// BurnFee represent burnFee event on KyberNetwork
+type BurnFee struct {
+	ReserveAddress ethereum.Address `json:"reserve_addr"`
+	Amount         *big.Int         `json:"amount"`
+	Index          uint             `json:"index"` // the index of event log in transaction receipt
+}
+
 // WalletFee represent feeToWallet event on KyberNetwork
 type WalletFee struct {
 	ReserveAddress ethereum.Address `json:"reserve_addr"`
@@ -34,8 +41,10 @@ type TradeLog struct {
 	DestAmount        *big.Int         `json:"dst_amount"`
 	FiatAmount        float64          `json:"fiat_amount"`
 
-	SrcBurnFee     float64     `json:"src_burn_fee"`
-	DstBurnFee     float64     `json:"dst_burn_fee"`
+	SrcBurnFee float64 `json:"src_burn_fee"`
+	DstBurnFee float64 `json:"dst_burn_fee"`
+
+	BurnFees       []BurnFee   `json:"burn_fees"`
 	WalletFees     []WalletFee `json:"wallet_fees"`
 	IntegrationApp string      `json:"integration_app"`
 

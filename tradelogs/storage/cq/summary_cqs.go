@@ -40,33 +40,19 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, volCqs)
 
-	srcTotalBurnFeeCqs, err := libcq.NewContinuousQuery(
-		"summary_total_src_burn_fee",
+	totalBurnFeeCqs, err := libcq.NewContinuousQuery(
+		"summary_total_burn_fee",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(src_burn_fee) AS total_burn_fee INTO burn_fee_summary FROM trades",
+		"SELECT SUM(src_burn_fee)+SUM(dst_burn_fee) AS total_burn_fee INTO burn_fee_summary FROM trades",
 		"1d",
 		supportedTimeZone(),
 	)
 	if err != nil {
 		return nil, err
 	}
-	result = append(result, srcTotalBurnFeeCqs)
-
-	dstTotalBurnFeeCqs, err := libcq.NewContinuousQuery(
-		"summary_total_dst_burn_fee",
-		dbName,
-		dayResampleInterval,
-		dayResampleFor,
-		"SELECT SUM(dst_burn_fee) AS total_burn_fee INTO burn_fee_summary FROM trades",
-		"1d",
-		supportedTimeZone(),
-	)
-	if err != nil {
-		return nil, err
-	}
-	result = append(result, dstTotalBurnFeeCqs)
+	result = append(result, totalBurnFeeCqs)
 
 	newUnqAddressCq, err := libcq.NewContinuousQuery(
 		"new_unique_addr",

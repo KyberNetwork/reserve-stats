@@ -124,6 +124,8 @@ func prepareTradeLogQuery() string {
 			logschema.IntegrationApp,
 			logschema.DestBurnFee,
 			logschema.SourceBurnFee,
+			logschema.LogIndex,
+			logschema.TxHash,
 		}
 		tradeLogQuery string
 	)
@@ -161,8 +163,8 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 		result = make([]common.TradeLog, 0)
 		q      = fmt.Sprintf(
 			`
-		SELECT %[1]s FROM %[5]s WHERE time >= '%[3]s' AND time <= '%[4]s';
-		SELECT %[2]s FROM %[6]s WHERE time >= '%[3]s' AND time <= '%[4]s' GROUP BY %[8]s;
+		SELECT %[1]s FROM %[5]s WHERE time >= '%[3]s' AND time <= '%[4]s' GROUP BY %[7]s;
+		SELECT %[2]s FROM %[6]s WHERE time >= '%[3]s' AND time <= '%[4]s';
 		`,
 			prepareWalletFeeQuery(),
 			prepareTradeLogQuery(),
@@ -171,7 +173,6 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 			walletMeasurementName,
 			tradeLogMeasurementName,
 			walletschema.TxHash.String()+", "+walletschema.TradeLogIndex.String(),
-			logschema.TxHash.String()+", "+logschema.LogIndex.String(),
 		)
 
 		logger = is.sugar.With(
@@ -191,10 +192,10 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 	// map [tx_hash][trade_log_index][]common.WalletFee
 	walletFeesByTxHash := make(map[ethereum.Hash]map[uint][]common.WalletFee)
 
-	if len(res[1].Series) == 0 {
+	if len(res[0].Series) == 0 {
 		is.sugar.Debug("empty wallet fee in query result")
 	} else {
-		for _, row := range res[1].Series {
+		for _, row := range res[0].Series {
 			txHash, tradeLogIndex, walletFees, err := is.rowToWalletFees(row)
 			if err != nil {
 				return nil, err
@@ -208,13 +209,17 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 	}
 
 	// Get TradeLogs
-	if len(res[2].Series) == 0 {
+	if len(res[1].Series) == 0 {
 		is.sugar.Debug("empty trades in query result")
 		return result, nil
 	}
+	idxs, err := logschema.NewFieldsRegistrar(res[1].Series[0].Columns)
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range res[1].Series[0].Values {
 
-	for _, row := range res[2].Series {
-		tradeLog, err := is.rowToTradeLog(row, walletFeesByTxHash)
+		tradeLog, err := is.rowToTradeLog(row, walletFeesByTxHash, idxs)
 		if err != nil {
 			return nil, err
 		}
@@ -368,6 +373,8 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			walletschema.WalletAddr.String():    walletFee.WalletAddress.String(),
 			walletschema.Country.String():       log.Country,
 			walletschema.TradeLogIndex.String(): strconv.FormatUint(uint64(log.Index), 10),
+			walletschema.TxHash.String():        log.TransactionHash.String(),
+			walletschema.LogIndex.String():      strconv.FormatUint(uint64(walletFee.Index), 10),
 		}
 
 		amount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, walletFee.Amount)
@@ -376,9 +383,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		}
 
 		fields := map[string]interface{}{
-			walletschema.Amount.String():   amount,
-			walletschema.TxHash.String():   log.TransactionHash.String(),
-			walletschema.LogIndex.String(): strconv.FormatUint(uint64(walletFee.Index), 10),
+			walletschema.Amount.String(): amount,
 		}
 
 		walletFeePoint, err := client.NewPoint(walletMeasurementName, tags, fields, log.Timestamp)

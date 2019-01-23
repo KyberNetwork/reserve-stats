@@ -351,7 +351,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			if err != nil {
 				return nil, err
 			}
-			fields[logschema.SourceBurnFee.String()] = burnAmount
+			fields[logschema.DestBurnFee.String()] = burnAmount
 		} else {
 			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
 		}

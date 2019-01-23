@@ -47,6 +47,10 @@ const (
 	WalletAddress //wallet_addr
 	//LogIndex is the index of the log in that block
 	LogIndex //log_index
+	//SourceBurnFee is the name of burnFee amount  for source rsv
+	SourceBurnFee //src_burn_fee
+	//DestBurnFee is the name of burnFee amount for dst rsv
+	DestBurnFee //dst_burn_fee
 )
 
 //tradeLogSchemaFields translates the stringer of reserveRate fields into its enumerated form
@@ -72,4 +76,6 @@ var tradeLogSchemaFields = map[string]FieldName{
 	"log_index":           LogIndex,
 	"integration_app":     IntegrationApp,
 	"wallet_addr":         WalletAddress,
+	"src_burn_fee":        SourceBurnFee,
+	"dst_burn_fee":        DestBurnFee,
 }

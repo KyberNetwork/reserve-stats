@@ -102,12 +102,12 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, kyced)
 
-	srcTotalBurnFeeCqs, err := libcq.NewContinuousQuery(
-		"src_country_total_burn_fee",
+	totalBurnFeeCqs, err := libcq.NewContinuousQuery(
+		"country_total_burn_fee",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(src_burn_fee) AS total_burn_fee INTO country_stats FROM trades GROUP BY country",
+		"SELECT SUM(src_burn_fee)+SUM(dst_burn_fee) AS total_burn_fee INTO country_stats FROM trades GROUP BY country",
 		"1d",
 		supportedTimeZone(),
 	)
@@ -115,22 +115,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-	result = append(result, srcTotalBurnFeeCqs)
-
-	dstTotalBurnFeeCqs, err := libcq.NewContinuousQuery(
-		"src_country_total_burn_fee",
-		dbName,
-		dayResampleInterval,
-		dayResampleFor,
-		"SELECT SUM(dst_burn_fee) AS total_burn_fee INTO country_stats FROM trades GROUP BY country",
-		"1d",
-		supportedTimeZone(),
-	)
-
-	if err != nil {
-		return nil, err
-	}
-	result = append(result, dstTotalBurnFeeCqs)
+	result = append(result, totalBurnFeeCqs)
 
 	return result, nil
 }

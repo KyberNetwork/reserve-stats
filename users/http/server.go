@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -44,6 +45,10 @@ type Server struct {
 
 //getTransactionLimit returns cap limit of a user.
 func (s *Server) getTransactionLimit(c *gin.Context) {
+	var logger = s.sugar.With(
+		"func", "users/http/Server.getTransactionLimit",
+	)
+
 	address := c.Query("address")
 	if !ethereum.IsHexAddress(address) {
 		httputil.ResponseFailure(
@@ -53,6 +58,9 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 		)
 		return
 	}
+
+	logger = logger.With("address", address)
+
 	kyced, err := s.storage.IsKYCed(address)
 	if err != nil {
 		httputil.ResponseFailure(
@@ -78,10 +86,12 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 	txLimit := blockchain.EthToWei(uc.TxLimit / rate)
 	rich, err := s.influxStorage.IsExceedDailyLimit(address, uc.DailyLimit)
 	if err != nil {
+		var errMsg = "could not retrieve user volume"
+		logger.Errorw(errMsg, "err", err.Error())
 		httputil.ResponseFailure(
 			c,
 			http.StatusInternalServerError,
-			err,
+			errors.New(errMsg),
 		)
 		return
 	}

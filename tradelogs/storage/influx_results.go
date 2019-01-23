@@ -31,9 +31,15 @@ func (is *InfluxStorage) rowToAggregatedBurnFee(row []interface{}) (time.Time, f
 	if err != nil {
 		return ts, burnFee, reserve, err
 	}
-
-	reserve, err = influxdb.GetAddressFromInterface(row[2])
-
+	if (row[2] != nil) && (row[3] != nil) {
+		return ts, burnFee, reserve, fmt.Errorf("Logic fault : there should not be a record with both source and dest reserve address")
+	} else if row[2] != nil {
+		reserve, err = influxdb.GetAddressFromInterface(row[2])
+	} else if row[3] != nil {
+		reserve, err = influxdb.GetAddressFromInterface(row[3])
+	} else {
+		return ts, burnFee, reserve, fmt.Errorf("Logic fault : there should not be a record with nil source and dest reserve address")
+	}
 	return ts, burnFee, reserve, nil
 }
 

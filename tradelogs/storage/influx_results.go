@@ -119,7 +119,7 @@ func (is *InfluxStorage) rowToWalletFees(row models.Row) (ethereum.Hash, uint64,
 
 	tradeLogIndex, err = influxdb.GetUint64FromTagValue(row.Tags[walletschema.TradeLogIndex.String()])
 	if err != nil {
-		return txHash, tradeLogIndex, nil, err
+		return txHash, tradeLogIndex, nil, fmt.Errorf("failed to get tradeLogIndex: %s", err)
 	}
 
 	idxs, err := walletschema.NewFieldsRegistrar(row.Columns)
@@ -150,7 +150,7 @@ func (is *InfluxStorage) rowToWalletFees(row models.Row) (ethereum.Hash, uint64,
 
 		logIndex, err := influxdb.GetUint64FromTagValue(value[idxs[walletschema.LogIndex]])
 		if err != nil {
-			return txHash, tradeLogIndex, nil, err
+			return txHash, tradeLogIndex, nil, fmt.Errorf("failed to get logIndex: %s", err)
 		}
 
 		walletFee := common.WalletFee{
@@ -181,8 +181,8 @@ func (is *InfluxStorage) rowToCountryStats(row []interface{}) (time.Time, common
 // eth_receival_sender, eth_receival_amount,
 // user_addr, src_addr, dst_addr, src_amount, dst_amount, (eth_amount * eth_usd_rate) as fiat_amount,
 // ip, country FROM trades WHERE_clause GROUP BY tx_hash, log_index
-func (is *InfluxStorage) rowToTradeLog(row models.Row,
-	walletFeesByTxHash map[ethereum.Hash]map[uint][]common.WalletFee) (common.TradeLog, error) {
+func (is *InfluxStorage) rowToTradeLog(value []interface{},
+	walletFeesByTxHash map[ethereum.Hash]map[uint][]common.WalletFee, idxs logschema.FieldsRegistrar) (common.TradeLog, error) {
 
 	var (
 		tradeLog          common.TradeLog
@@ -190,20 +190,14 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		srcReserveAddress ethereum.Address
 	)
 
-	txHash, err := influxdb.GetTxHashFromInterface(row.Tags[logschema.TxHash.String()])
+	txHash, err := influxdb.GetTxHashFromInterface(value[idxs[logschema.TxHash]])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get tx_hash: %s", err)
 	}
 
-	logIndex, err := influxdb.GetUint64FromTagValue(row.Tags[logschema.LogIndex.String()])
+	logIndex, err := influxdb.GetUint64FromTagValue(value[idxs[logschema.LogIndex]])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get trade log index: %s", err)
-	}
-
-	value := row.Values[0]
-	idxs, err := logschema.NewFieldsRegistrar(row.Columns)
-	if err != nil {
-		return tradeLog, err
 	}
 
 	timestamp, err := influxdb.GetTimeFromInterface(value[idxs[logschema.Time]])

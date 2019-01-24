@@ -61,7 +61,7 @@ func convertQueryResultToCountry(row influxModel.Row) (map[uint64]*common.Countr
 	}
 	idxs, err := countryStatSchema.NewFieldsRegistrar(row.Columns)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	for _, v := range row.Values {
 		ts, vol, err := convertRowValueToCountrySummary(v, idxs)

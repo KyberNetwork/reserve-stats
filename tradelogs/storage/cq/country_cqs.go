@@ -1,7 +1,8 @@
 package cq
 
 import (
-	"fmt"
+	"bytes"
+	"text/template"
 
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	libcq "github.com/KyberNetwork/reserve-stats/lib/cq"
@@ -13,25 +14,85 @@ import (
 	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 )
 
+func executeCountryVolumeTemplate(templateString string) (string, error) {
+	var (
+		queryBuf bytes.Buffer
+	)
+	tmpl, err := template.New("countryVolume").Parse(templateString)
+	if err != nil {
+		return "", err
+	}
+	if err = tmpl.Execute(&queryBuf, struct {
+		DstAmount               string
+		TokenVolume             string
+		ETHAmount               string
+		ETHVolume               string
+		USDVolume               string
+		HeatMapMeasurementName  string
+		ETHUSDRate              string
+		TradeLogMeasurementName string
+		SrcAddr                 string
+		ETHTokenAddr            string
+		DstAddr                 string
+		WETHTokenAddr           string
+		Country                 string
+	}{
+		DstAmount:               logSchema.DstAmount.String(),
+		TokenVolume:             heatMapSchema.TokenVolume.String(),
+		ETHAmount:               logSchema.EthAmount.String(),
+		ETHVolume:               heatMapSchema.ETHVolume.String(),
+		USDVolume:               heatMapSchema.USDVolume.String(),
+		HeatMapMeasurementName:  common.HeatMapMeasurement,
+		ETHUSDRate:              logSchema.EthUSDRate.String(),
+		TradeLogMeasurementName: common.TradeLogMeasurementName,
+		SrcAddr:                 logSchema.SrcAddr.String(),
+		ETHTokenAddr:            core.ETHToken.Address,
+		DstAddr:                 logSchema.DstAddr.String(),
+		WETHTokenAddr:           core.WETHToken.Address,
+		Country:                 logSchema.Country.String(),
+	}); err != nil {
+		return "", err
+	}
+	return queryBuf.String(), nil
+}
+
 // CreateCountryCqs return a set of cqs required for country trade aggregation
 func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	var (
 		result []*libcq.ContinuousQuery
 	)
+	uniqueAddrCqsTemplate := `SELECT COUNT(record) AS {{.UniqueAddresses}} INTO {{.CountryStatsMeasurementName}} FROM ` +
+		`(SELECT COUNT({{.ETHAmount}}) AS record FROM {{.TradeLogMeasurementName}} GROUP BY {{.UserAddr}}) GROUP BY {{.Country}}`
+
+	tmpl, err := template.New("uniqueAddr").Parse(uniqueAddrCqsTemplate)
+	if err != nil {
+		return nil, err
+	}
+	var queryBuf bytes.Buffer
+	if err = tmpl.Execute(&queryBuf, struct {
+		UniqueAddresses             string
+		CountryStatsMeasurementName string
+		ETHAmount                   string
+		TradeLogMeasurementName     string
+		UserAddr                    string
+		Country                     string
+	}{
+		UniqueAddresses:             countryStatSchema.UniqueAddresses.String(),
+		CountryStatsMeasurementName: common.CountryStatsMeasurementName,
+		ETHAmount:                   logSchema.EthAmount.String(),
+		TradeLogMeasurementName:     common.TradeLogMeasurementName,
+		UserAddr:                    logSchema.UserAddr.String(),
+		Country:                     logSchema.Country.String(),
+	}); err != nil {
+		return nil, err
+	}
+
 	uniqueAddrCqs, err := libcq.NewContinuousQuery(
 		"country_unique_addr",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(`SELECT COUNT(record) AS %[1]s INTO %[2]s FROM `+
-			`(SELECT COUNT(%[3]s) AS record FROM %[4]s GROUP BY %[5]s) GROUP BY %[6]s`,
-			countryStatSchema.UniqueAddresses.String(),
-			common.CountryStatsMeasurementName,
-			logSchema.EthAmount.String(),
-			common.TradeLogMeasurementName,
-			logSchema.UserAddr.String(),
-			logSchema.Country.String(),
-		),
+		queryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -39,32 +100,58 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		return nil, err
 	}
 	result = append(result, uniqueAddrCqs)
+
+	volCqsTemplate := `SELECT SUM({{.ETHAmount}}) AS {{.TotalETHVolume}}, SUM(usd_amount) AS {{.TotalUSDAmount}}, COUNT({{.ETHAmount}}) AS {{.TotalTrade}}, ` +
+		`MEAN(usd_amount) AS {{.USDPerTrade}}, MEAN({{.ETHAmount}}) AS {{.ETHPerTrade}} INTO {{.CountryStatsMeasurementName}} FROM ` +
+		`(SELECT {{.DstAmount}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} ` +
+		`WHERE ({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') ` +
+		`OR ({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}')) GROUP BY {{.Country}}`
+
+	tmpl, err = template.New("volCqs").Parse(volCqsTemplate)
+	if err != nil {
+		return nil, err
+	}
+	if err = tmpl.Execute(&queryBuf, struct {
+		ETHAmount                   string
+		TotalETHVolume              string
+		TotalUSDAmount              string
+		TotalTrade                  string
+		USDPerTrade                 string
+		ETHPerTrade                 string
+		CountryStatsMeasurementName string
+		DstAmount                   string
+		ETHUSDRate                  string
+		TradeLogMeasurementName     string
+		SrcAddr                     string
+		DstAddr                     string
+		ETHTokenAddr                string
+		WETHTokenAddr               string
+		Country                     string
+	}{
+		ETHAmount:                   logSchema.EthAmount.String(),
+		TotalETHVolume:              countryStatSchema.TotalETHVolume.String(),
+		TotalUSDAmount:              countryStatSchema.TotalUSDAmount.String(),
+		TotalTrade:                  countryStatSchema.TotalTrade.String(),
+		USDPerTrade:                 countryStatSchema.USDPerTrade.String(),
+		ETHPerTrade:                 countryStatSchema.ETHPerTrade.String(),
+		CountryStatsMeasurementName: common.CountryStatsMeasurementName,
+		DstAmount:                   logSchema.DstAmount.String(),
+		ETHUSDRate:                  logSchema.EthUSDRate.String(),
+		TradeLogMeasurementName:     common.TradeLogMeasurementName,
+		SrcAddr:                     logSchema.SrcAddr.String(),
+		DstAddr:                     logSchema.DstAddr.String(),
+		ETHTokenAddr:                core.ETHToken.Address,
+		WETHTokenAddr:               core.WETHToken.Address,
+		Country:                     logSchema.Country.String(),
+	}); err != nil {
+		return nil, err
+	}
 	volCqs, err := libcq.NewContinuousQuery(
 		"summary_country_volume",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(`SELECT SUM(%[1]s) AS %[2]s, SUM(usd_amount) AS %[3]s, COUNT(%[1]s) AS %[4]s, `+
-			`MEAN(usd_amount) AS %[5]s, MEAN(%[1]s) AS %[6]s INTO %[7]s FROM `+
-			`(SELECT %[8]s, %[1]s, %[1]s*%[9]s AS usd_amount FROM %[10]s `+
-			`WHERE (%[11]s!='%[12]s' AND %[13]s!='%[14]s') `+
-			`OR (%[11]s!='%[14]s' AND %[13]s!='%[12]s')) GROUP BY %[15]s`,
-			logSchema.EthAmount.String(),
-			countryStatSchema.TotalETHVolume.String(),
-			countryStatSchema.TotalUSDAmount.String(),
-			countryStatSchema.TotalTrade.String(),
-			countryStatSchema.USDPerTrade.String(),
-			countryStatSchema.ETHPerTrade.String(),
-			common.CountryStatsMeasurementName,
-			logSchema.DstAmount.String(),
-			logSchema.EthUSDRate.String(),
-			common.TradeLogMeasurementName,
-			logSchema.SrcAddr.String(),
-			core.ETHToken.Address,
-			logSchema.DstAddr.String(),
-			core.WETHToken.Address,
-			logSchema.Country.String(),
-		),
+		queryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -72,18 +159,35 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		return nil, err
 	}
 	result = append(result, volCqs)
+
+	NewUniqueAddressCqTemplate := `SELECT COUNT({{.Traded}}) as {{.NewUniqueAddresses}} INTO {{.CountryStatsMeasurementName}} FROM ` +
+		`{{.FirstTradeMeasurementName}} GROUP BY {{.Country}}`
+
+	tmpl, err = template.New("newUniqueAddr").Parse(NewUniqueAddressCqTemplate)
+	if err != nil {
+		return nil, err
+	}
+	if err = tmpl.Execute(&queryBuf, struct {
+		Traded                      string
+		NewUniqueAddresses          string
+		CountryStatsMeasurementName string
+		FirstTradeMeasurementName   string
+		Country                     string
+	}{
+		Traded:                      firstTradedSchema.Traded.String(),
+		NewUniqueAddresses:          countryStatSchema.NewUniqueAddresses.String(),
+		CountryStatsMeasurementName: common.CountryStatsMeasurementName,
+		FirstTradeMeasurementName:   common.FirstTradedMeasurementName,
+		Country:                     firstTradedSchema.Country.String(),
+	}); err != nil {
+		return nil, err
+	}
 	newUnqAddressCq, err := libcq.NewContinuousQuery(
 		"new_country_unique_addr",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf("SELECT COUNT(%[1]s) as %[2]s INTO %[3]s FROM %[4]s GROUP BY %[5]s",
-			firstTradedSchema.Traded.String(),
-			countryStatSchema.NewUniqueAddresses.String(),
-			common.CountryStatsMeasurementName,
-			common.FirstTradedMeasurementName,
-			logSchema.Country.String(),
-		),
+		queryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -92,30 +196,22 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, newUnqAddressCq)
 
+	assetVolDstDayCqsTemplate := `SELECT SUM({{.DstAmount}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} INTO {{.HeatMapMeasurementName}} FROM ` +
+		`(SELECT {{.DstAmount}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} WHERE ` +
+		`(({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') OR ` +
+		`({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}'))) GROUP BY {{.DstAddr}}, {{.Country}}`
+
+	queryString, err := executeCountryVolumeTemplate(assetVolDstDayCqsTemplate)
+	if err != nil {
+		return nil, err
+	}
+
 	assetVolDstDayCqs, err := libcq.NewContinuousQuery(
 		"asset_country_volume_dst_day",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(
-			`SELECT SUM(%[1]s) AS %[2]s, SUM(%[3]s) AS %[4]s, SUM(usd_amount) AS %[5]s INTO %[6]s FROM `+
-				`(SELECT %[1]s, %[3]s, %[3]s*%[7]s AS usd_amount FROM %[8]s WHERE `+
-				`((%[9]s!='%[10]s' AND %[11]s!='%[12]s') OR `+
-				`(%[9]s!='%[12]s' AND %[11]s!='%[10]s'))) GROUP BY %[11]s, %[13]s`,
-			logSchema.DstAmount.String(),
-			heatMapSchema.TokenVolume.String(),
-			logSchema.EthAmount.String(),
-			heatMapSchema.ETHVolume.String(),
-			heatMapSchema.USDVolume.String(),
-			common.HeatMapMeasurement,
-			logSchema.EthUSDRate.String(),
-			common.TradeLogMeasurementName,
-			logSchema.SrcAddr.String(),
-			core.ETHToken.Address,
-			logSchema.DstAddr.String(),
-			core.WETHToken.Address,
-			logSchema.Country.String(),
-		),
+		queryString,
 		"1d",
 		supportedTimeZone(),
 	)
@@ -124,30 +220,22 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, assetVolDstDayCqs)
 
+	assetVolSrcDayCqsTemplate := `SELECT SUM({{.SrcAmount}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} INTO {{.HeatMapMeasurementName}} FROM ` +
+		`(SELECT {{.SrcAmount}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} WHERE ` +
+		`(({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') OR ` +
+		`({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}'))) GROUP BY {{.SrcAddr}}, {{.Country}}`
+
+	queryString, err = executeCountryVolumeTemplate(assetVolSrcDayCqsTemplate)
+	if err != nil {
+		return nil, err
+	}
+
 	assetVolSrcDayCqs, err := libcq.NewContinuousQuery(
 		"asset_country_volume_src_day",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(
-			`SELECT SUM(%[1]s) AS %[2]s, SUM(%[3]s) AS %[4]s, SUM(usd_amount) AS %[5]s INTO %[6]s FROM `+
-				`(SELECT %[1]s, %[3]s, %[3]s*%[7]s AS usd_amount FROM %[8]s WHERE `+
-				`((%[9]s!='%[10]s' AND %[11]s!='%[12]s') OR `+
-				`(%[9]s!='%[12]s' AND %[11]s!='%[10]s'))) GROUP BY %[9]s, %[13]s`,
-			logSchema.SrcAmount.String(),
-			heatMapSchema.TokenVolume.String(),
-			logSchema.EthAmount.String(),
-			heatMapSchema.ETHVolume.String(),
-			heatMapSchema.USDVolume.String(),
-			common.HeatMapMeasurement,
-			logSchema.EthUSDRate.String(),
-			common.TradeLogMeasurementName,
-			logSchema.SrcAddr.String(),
-			core.ETHToken.Address,
-			logSchema.DstAddr.String(),
-			core.WETHToken.Address,
-			logSchema.Country.String(),
-		),
+		queryString,
 		"1d",
 		supportedTimeZone(),
 	)
@@ -156,19 +244,38 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, assetVolSrcDayCqs)
 
+	kycedTemplate := "SELECT COUNT(kyced) AS {{.KYCedAddresses}} INTO {{.CountryStatsMeasurementName}} FROM (SELECT DISTINCT({{.KYCed}}) AS kyced FROM " +
+		"{{.KYCedMeasurementName}} GROUP BY {{.UserAddr}}, {{.Country}}) GROUP BY {{.Country}}"
+
+	tmpl, err = template.New("kyced").Parse(kycedTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tmpl.Execute(&queryBuf, struct {
+		KYCedAddresses              string
+		CountryStatsMeasurementName string
+		KYCed                       string
+		KYCedMeasurementName        string
+		UserAddr                    string
+		Country                     string
+	}{
+		KYCedAddresses:              countryStatSchema.KYCedAddresses.String(),
+		CountryStatsMeasurementName: common.CountryStatsMeasurementName,
+		KYCed:                       kycedschema.KYCed.String(),
+		KYCedMeasurementName:        common.KYCedMeasurementName,
+		UserAddr:                    kycedschema.UserAddress.String(),
+		Country:                     kycedschema.Country.String(),
+	}); err != nil {
+		return nil, err
+	}
+
 	kyced, err := libcq.NewContinuousQuery(
 		"country_kyced",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf("SELECT COUNT(kyced) AS %[1]s INTO %[2]s FROM (SELECT DISTINCT(%[3]s) AS kyced FROM %[4]s GROUP BY %[5]s, %[6]s) GROUP BY %[6]s",
-			countryStatSchema.KYCedAddresses.String(),
-			common.CountryStatsMeasurementName,
-			kycedschema.KYCed.String(),
-			common.KYCedMeasurementName,
-			kycedschema.UserAddress.String(),
-			kycedschema.Country.String(),
-		),
+		queryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -177,6 +284,28 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, kyced)
 
+	totalBurnFeeCqsTemplate := "SELECT SUM({{.BurnFeeAmount}}) AS {{.TotalBurnFee}} INTO {{.CountryStatsMeasurementName}} FROM {{.BurnFeeMeasurementName}} GROUP BY {{.Country}}"
+
+	tmpl, err = template.New("kyced").Parse(totalBurnFeeCqsTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tmpl.Execute(&queryBuf, struct {
+		BurnFeeAmount               string
+		TotalBurnFee                string
+		CountryStatsMeasurementName string
+		BurnFeeMeasurementName      string
+		Country                     string
+	}{
+		BurnFeeAmount:               burnschema.Amount.String(),
+		TotalBurnFee:                countryStatSchema.TotalBurnFee.String(),
+		CountryStatsMeasurementName: common.CountryStatsMeasurementName,
+		BurnFeeMeasurementName:      common.BurnFeeMeasurementName,
+		Country:                     burnschema.Country.String(),
+	}); err != nil {
+		return nil, err
+	}
 	totalBurnFeeCqs, err := libcq.NewContinuousQuery(
 		"country_total_burn_fee",
 		dbName,

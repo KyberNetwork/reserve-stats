@@ -46,21 +46,25 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 	for _, rsvAddr := range reserveAddrs {
 		addrsStrs = append(addrsStrs, rsvAddr.Hex())
 	}
-	logger.Debug(burnVolumeSchema.ReserveAddr.String())
+	fields := []string{burnVolumeSchema.SumAmount.String(), burnVolumeSchema.ReserveAddr.String()}
 	if err = tmpl.Execute(&queryStmtBuf, struct {
-		Fields         string
-		Measurement    string
-		From           string
-		To             string
-		Addrs          []string
-		AddrsLastIndex int
+		Fields          []string
+		FieldsLastIndex int
+		Measurement     string
+		From            string
+		To              string
+		Addrs           []string
+		BurnfeeReserve  string
+		AddrsLastIndex  int
 	}{
-		Fields:         burnVolumeSchema.SumAmount.String() + `, ` + burnVolumeSchema.ReserveAddr.String(),
-		Measurement:    measurement,
-		From:           from.Format(time.RFC3339),
-		To:             to.Format(time.RFC3339),
-		Addrs:          addrsStrs,
-		AddrsLastIndex: len(reserveAddrs) - 1,
+		Fields:          fields,
+		FieldsLastIndex: len(fields) - 1,
+		Measurement:     measurement,
+		From:            from.Format(time.RFC3339),
+		To:              to.Format(time.RFC3339),
+		Addrs:           addrsStrs,
+		BurnfeeReserve:  burnVolumeSchema.ReserveAddr.String(),
+		AddrsLastIndex:  len(reserveAddrs) - 1,
 	}); err != nil {
 		return nil, err
 	}

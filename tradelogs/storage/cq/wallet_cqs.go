@@ -1,7 +1,8 @@
 package cq
 
 import (
-	"fmt"
+	"bytes"
+	"text/template"
 
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
@@ -12,26 +13,51 @@ import (
 	walletStatSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletstats"
 )
 
+func executeWalletStatsTemplate(templateString string) (string, error) {
+	tmpl, err := template.New("walletStats").Parse(templateString)
+	if err != nil {
+		return "", err
+	}
+	var queryBuf bytes.Buffer
+	if err = tmpl.Execute(&queryBuf, struct {
+		UniqueAddresses            string
+		WalletStatsMeasurementName string
+		ETHAmount                  string
+		TradeLogMeasurementName    string
+		UserAddr                   string
+		WalletAddr                 string
+	}{
+		UniqueAddresses:            walletStatSchema.UniqueAddresses.String(),
+		WalletStatsMeasurementName: common.WalletStatsMeasurement,
+		ETHAmount:                  logSchema.EthAmount.String(),
+		TradeLogMeasurementName:    common.TradeLogMeasurementName,
+		UserAddr:                   logSchema.UserAddr.String(),
+		WalletAddr:                 logSchema.WalletAddress.String(),
+	}); err != nil {
+		return "", err
+	}
+	return queryBuf.String(), nil
+}
+
 //CreateWalletStatsCqs return a new set of cqs required for wallet stats aggregation
 func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	var (
 		result []*cq.ContinuousQuery
 	)
+	walletStatsCqTemplate := `SELECT COUNT(record) AS {{.UniqueAddresses}} INTO {{.WalletStatsMeasurementName}} FROM ` +
+		`(SELECT SUM({{.ETHAmount}}) AS record FROM {{.TradeLogMeasurementName}} GROUP BY {{.UserAddr}}, {{.WalletAddr}}) GROUP BY {{.WalletAddr}}`
+
+	queryString, err := executeWalletStatsTemplate(walletStatsCqTemplate)
+	if err != nil {
+		return nil, err
+	}
+
 	uniqueAddrCqs, err := cq.NewContinuousQuery(
 		"wallet_unique_addr",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(`SELECT COUNT(record) AS %[1]s INTO %[2]s FROM `+
-			`(SELECT SUM(%[3]s) AS record FROM %[4]s GROUP BY %[5]s, %[6]s) GROUP BY %[7]s`,
-			walletStatSchema.UniqueAddresses.String(),
-			common.WalletStatsMeasurement,
-			logSchema.EthAmount.String(),
-			common.TradeLogMeasurementName,
-			logSchema.UserAddr.String(),
-			logSchema.WalletAddress.String(),
-			walletStatSchema.WalletAddress.String(),
-		),
+		queryString,
 		"1d",
 		supportedTimeZone(),
 	)
@@ -39,32 +65,61 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		return nil, err
 	}
 	result = append(result, uniqueAddrCqs)
+
+	walletStatsVolCqs := `SELECT SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}}, COUNT({{.ETHAmount}}) AS {{.TotalTrade}}, ` +
+		`MEAN(usd_amount) AS {{.USDPerTrade}}, MEAN({{.ETHAmount}}) AS {{.ETHPerTrade}} INTO {{.WalletStatsMeasurementName}} FROM ` +
+		`(SELECT {{.DstAmount}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} ` +
+		`WHERE ({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') ` +
+		`OR ({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}') GROUP BY {{.WalletAddr}}) GROUP BY {{.WalletAddr}}`
+
+	tmpl, err := template.New("walletStatsQuery").Parse(walletStatsVolCqs)
+	if err != nil {
+		return nil, err
+	}
+
+	var queryBuf bytes.Buffer
+	if err = tmpl.Execute(&queryBuf, struct {
+		ETHAmount                  string
+		ETHVolume                  string
+		USDVolume                  string
+		TotalTrade                 string
+		USDPerTrade                string
+		ETHPerTrade                string
+		WalletStatsMeasurementName string
+		DstAmount                  string
+		ETHUSDRate                 string
+		TradeLogMeasurementName    string
+		SrcAddr                    string
+		ETHTokenAddr               string
+		DstAddr                    string
+		WETHTokenAddr              string
+		WalletAddr                 string
+	}{
+		ETHAmount:                  logSchema.EthAmount.String(),
+		ETHVolume:                  walletStatSchema.ETHVolume.String(),
+		USDVolume:                  walletStatSchema.USDVolume.String(),
+		TotalTrade:                 walletStatSchema.TotalTrade.String(),
+		USDPerTrade:                walletStatSchema.USDPerTrade.String(),
+		ETHPerTrade:                walletStatSchema.ETHPerTrade.String(),
+		WalletStatsMeasurementName: common.WalletStatsMeasurement,
+		DstAmount:                  logSchema.DstAmount.String(),
+		ETHUSDRate:                 logSchema.EthUSDRate.String(),
+		TradeLogMeasurementName:    common.TradeLogMeasurementName,
+		SrcAddr:                    logSchema.SrcAddr.String(),
+		ETHTokenAddr:               core.ETHToken.Address,
+		DstAddr:                    logSchema.DstAddr.String(),
+		WETHTokenAddr:              core.WETHToken.Address,
+		WalletAddr:                 logSchema.WalletAddress.String(),
+	}); err != nil {
+		return nil, err
+	}
+
 	volCqs, err := cq.NewContinuousQuery(
 		"wallet_summary_volume",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(`SELECT SUM(%[1]s) AS %[2]s, SUM(usd_amount) AS %[3]s, COUNT(%[1]s) AS %[4]s, `+
-			`MEAN(usd_amount) AS %[5]s, MEAN(%[1]s) AS %[6]s INTO %[7]s FROM `+
-			`(SELECT %[8]s, %[1]s, %[1]s*%[9]s AS usd_amount FROM %[10]s `+
-			`WHERE (%[11]s!='%[12]s' AND %[13]s!='%[14]s') `+
-			`OR (%[11]s!='%[14]s' AND %[13]s!='%[12]s') GROUP BY %[15]s) GROUP BY %[15]s`,
-			logSchema.EthAmount.String(),
-			walletStatSchema.ETHVolume.String(),
-			walletStatSchema.USDVolume.String(),
-			walletStatSchema.TotalTrade.String(),
-			walletStatSchema.USDPerTrade.String(),
-			walletStatSchema.ETHPerTrade.String(),
-			common.WalletStatsMeasurement,
-			logSchema.DstAmount.String(),
-			logSchema.EthUSDRate.String(),
-			common.TradeLogMeasurementName,
-			logSchema.SrcAddr.String(),
-			core.ETHToken.Address,
-			logSchema.DstAddr.String(),
-			core.WETHToken.Address,
-			logSchema.WalletAddress.String(),
-		),
+		queryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -73,21 +128,38 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	}
 	result = append(result, volCqs)
 
+	kycedQueryTemplate := `SELECT COUNT(kyced) AS {{.KYCedAddresses}} INTO {{.WalletStatsMeasurementName}} ` +
+		`FROM (SELECT DISTINCT({{.KYCed}}) AS kyced FROM {{.KYCedMeasurementName}} GROUP BY {{.UserAddr}}, {{.WalletAddr}}) GROUP BY {{.WalletAddr}}`
+
+	tmpl, err = template.New("walletStatsQuery").Parse(kycedQueryTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tmpl.Execute(&queryBuf, struct {
+		KYCedAddresses             string
+		WalletStatsMeasurementName string
+		KYCed                      string
+		KYCedMeasurementName       string
+		UserAddr                   string
+		WalletAddr                 string
+	}{
+		KYCedAddresses:             walletStatSchema.KYCedAddresses.String(),
+		WalletStatsMeasurementName: common.WalletStatsMeasurement,
+		KYCed:                      kycedschema.KYCed.String(),
+		KYCedMeasurementName:       common.KYCedMeasurementName,
+		UserAddr:                   kycedschema.UserAddress.String(),
+		WalletAddr:                 kycedschema.WalletAddress.String(),
+	}); err != nil {
+		return nil, err
+	}
+
 	kyced, err := cq.NewContinuousQuery(
 		"wallet_kyced",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(`SELECT COUNT(kyced) AS %[1]s INTO %[2]s `+
-			`FROM (SELECT DISTINCT(%[3]s) AS kyced FROM %[4]s GROUP BY %[5]s, %[6]s) GROUP BY %[7]s`,
-			walletStatSchema.KYCedAddresses.String(),
-			common.WalletStatsMeasurement,
-			kycedschema.KYCed.String(),
-			common.KYCedMeasurementName,
-			kycedschema.UserAddress.String(),
-			kycedschema.WalletAddress.String(),
-			walletStatSchema.WalletAddress.String(),
-		),
+		queryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -96,18 +168,34 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	}
 	result = append(result, kyced)
 
+	newUniqueAddressCqTemplate := `SELECT COUNT({{.Traded}}) AS {{.NewUniqueAddresses}} INTO {{.WalletStatsMeasurementName}} FROM {{.FirstTradeMeasurementName}} GROUP BY {{.WalletAddr}}`
+	tmpl, err = template.New("walletStatsQuery").Parse(newUniqueAddressCqTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tmpl.Execute(&queryBuf, struct {
+		Traded                     string
+		NewUniqueAddresses         string
+		WalletStatsMeasurementName string
+		FirstTradeMeasurementName  string
+		WalletAddr                 string
+	}{
+		Traded:                     firstTradedSchema.Traded.String(),
+		NewUniqueAddresses:         walletStatSchema.NewUniqueAddresses.String(),
+		WalletStatsMeasurementName: common.WalletStatsMeasurement,
+		FirstTradeMeasurementName:  common.FirstTradedMeasurementName,
+		WalletAddr:                 firstTradedSchema.WalletAddress.String(),
+	}); err != nil {
+		return nil, err
+	}
+
 	newUnqAddressCq, err := cq.NewContinuousQuery(
 		"wallet_new_unique_addr",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(`SELECT COUNT(%[1]s) AS %[2]s INTO %[3]s FROM %[4]s GROUP BY %[5]s`,
-			firstTradedSchema.Traded.String(),
-			walletStatSchema.NewUniqueAddresses.String(),
-			common.WalletStatsMeasurement,
-			common.FirstTradedMeasurementName,
-			firstTradedSchema.WalletAddress.String(),
-		),
+		queryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -115,6 +203,28 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		return nil, err
 	}
 	result = append(result, newUnqAddressCq)
+
+	totalBurnFeeCqTemplate := `SELECT SUM({{.BurFeeAmount}}) AS {{.TotalBurnFee}} INTO {{.WalletStatsMeasurementName}} FROM {{.BurnFeeMeasurementName}} GROUP BY {{.WalletAddr}}`
+	tmpl, err = template.New("walletStatsQuery").Parse(totalBurnFeeCqTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tmpl.Execute(&queryBuf, struct {
+		BurnFeeAmount              string
+		TotalBurnFee               string
+		WalletStatsMeasurementName string
+		BurenFeeMeasurementName    string
+		WalletAddr                 string
+	}{
+		BurnFeeAmount:              burnschema.Amount.String(),
+		TotalBurnFee:               walletStatSchema.TotalBurnFee.String(),
+		WalletStatsMeasurementName: common.WalletStatsMeasurement,
+		BurenFeeMeasurementName:    common.BurnFeeMeasurementName,
+		WalletAddr:                 burnschema.WalletAddress.String(),
+	}); err != nil {
+		return nil, err
+	}
 
 	totalBurnFeeCqs, err := cq.NewContinuousQuery(
 		"wallet_total_burn_fee",

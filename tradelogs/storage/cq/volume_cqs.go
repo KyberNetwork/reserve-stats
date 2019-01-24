@@ -20,23 +20,12 @@ const (
 	rsvVolDayMsmName  = `rsv_volume_day`
 )
 
-var rsvVolTemplate = fmt.Sprintf(`SELECT SUM({{.AmountType}}) AS %[1]s, SUM(%[2]s) AS %[3]s, SUM(usd_amount) AS %[4]s `+
-	`INTO {{.MeasurementName}} FROM `+
-	`(SELECT {{.AmountType}}, %[2]s, %[2]s*%[5]s AS usd_amount FROM %[6]s WHERE`+
-	`((%[7]s!='%[8]s' AND %[9]s!='%[10]s') OR `+
-	`(%[7]s!='%[10]s' AND %[9]s!='%[8]s')) `+
-	`AND {{.RsvAddressType}}!='') GROUP BY {{.AddressType}},{{.RsvAddressType}}`,
-	volSchema.TokenVolume.String(),
-	logSchema.EthAmount.String(),
-	volSchema.ETHVolume.String(),
-	volSchema.USDVolume.String(),
-	logSchema.EthUSDRate.String(),
-	common.TradeLogMeasurementName,
-	logSchema.SrcAddr.String(),
-	core.ETHToken.Address,
-	logSchema.DstAddr.String(),
-	core.WETHToken.Address,
-)
+var rsvVolTemplate = `SELECT SUM({{.AmountType}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} ` +
+	`INTO {{.MeasurementName}} FROM ` +
+	`(SELECT {{.AmountType}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} WHERE` +
+	`(({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') OR ` +
+	`({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}')) ` +
+	`AND {{.RsvAddressType}}!='') GROUP BY {{.AddressType}},{{.RsvAddressType}}`
 
 func supportedTimeZone() []string {
 	timezone := []string{}
@@ -48,33 +37,70 @@ func supportedTimeZone() []string {
 	return timezone
 }
 
+func executeAssetVolumeTemplate(stringTemplate string) (string, error) {
+	tmpl, err := template.New("queryAssetVolume").Parse(stringTemplate)
+	if err != nil {
+		return "", err
+	}
+	var queryBuf bytes.Buffer
+	if err = tmpl.Execute(&queryBuf, struct {
+		DstAmount                 string
+		SrcAmount                 string
+		TokenVolume               string
+		ETHAmount                 string
+		ETHVolume                 string
+		USDVolume                 string
+		VolumeHourMeasurementName string
+		VolumeDayMeasurementName  string
+		ETHUSDRate                string
+		TradeLogMeasurementName   string
+		SrcAddr                   string
+		DstAddr                   string
+		ETHTokenAddr              string
+		WETHTokenAddr             string
+	}{
+		DstAmount:                 logSchema.DstAmount.String(),
+		SrcAmount:                 logSchema.SrcAmount.String(),
+		TokenVolume:               volSchema.TokenVolume.String(),
+		ETHAmount:                 logSchema.EthAmount.String(),
+		ETHVolume:                 volSchema.ETHVolume.String(),
+		USDVolume:                 volSchema.USDVolume.String(),
+		VolumeHourMeasurementName: common.VolumeHourMeasurementName,
+		VolumeDayMeasurementName:  common.VolumeDayMeasurementName,
+		ETHUSDRate:                logSchema.EthUSDRate.String(),
+		TradeLogMeasurementName:   common.TradeLogMeasurementName,
+		SrcAddr:                   logSchema.SrcAddr.String(),
+		DstAddr:                   logSchema.DstAddr.String(),
+		ETHTokenAddr:              core.ETHToken.Address,
+		WETHTokenAddr:             core.WETHToken.Address,
+	}); err != nil {
+		return "", err
+	}
+	return queryBuf.String(), nil
+}
+
 // CreateAssetVolumeCqs return a set of cqs required for asset volume aggregation
 func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	var (
 		result []*libcq.ContinuousQuery
 	)
+
+	assetVolDstHourCqsTemplate := `SELECT SUM({{.DstAmount}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeHourMeasurementName}}` +
+		`FROM (SELECT {{.DstAmount}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} WHERE ` +
+		`(({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') OR ` +
+		`({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}'))) GROUP BY {{.DstAddr}}`
+
+	queryString, err := executeAssetVolumeTemplate(assetVolDstHourCqsTemplate)
+	if err != nil {
+		return nil, err
+	}
+
 	assetVolDstHourCqs, err := libcq.NewContinuousQuery(
 		"asset_volume_dst_hour",
 		dbName,
 		hourResampleInterval,
 		hourResampleFor,
-		fmt.Sprintf(`SELECT SUM(%[1]s) AS %[2]s, SUM(%[3]s) AS %[4]s, SUM(usd_amount) AS %[5]s INTO %[6]s `+
-			`FROM (SELECT %[1]s, %[3]s, %[3]s*%[7]s AS usd_amount FROM %[8]s WHERE `+
-			`((%[9]s!='%[10]s' AND %[11]s!='%[12]s') OR `+
-			`(%[9]s!='%[12]s' AND %[11]s!='%[10]s'))) GROUP BY %[11]s`,
-			logSchema.DstAmount.String(),
-			volSchema.TokenVolume.String(),
-			logSchema.EthAmount.String(),
-			volSchema.ETHVolume.String(),
-			volSchema.USDVolume.String(),
-			common.VolumeHourMeasurementName,
-			logSchema.EthUSDRate.String(),
-			common.TradeLogMeasurementName,
-			logSchema.SrcAddr.String(),
-			core.ETHToken.Address,
-			logSchema.DstAddr.String(),
-			core.WETHToken.Address,
-		),
+		queryString,
 		"1h",
 		nil,
 	)
@@ -82,29 +108,23 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		return nil, err
 	}
 	result = append(result, assetVolDstHourCqs)
+
+	assetVolSrcHourCqsTemplate := `SELECT SUM({{.SrcAmount}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeHourMeasurementName}}` +
+		`FROM (SELECT {{.SrcAmount}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} WHERE ` +
+		`(({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') OR ` +
+		`({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}'))) GROUP BY {{.SrcAddr}}`
+
+	queryString, err = executeAssetVolumeTemplate(assetVolSrcHourCqsTemplate)
+	if err != nil {
+		return nil, err
+	}
+
 	assetVolSrcHourCqs, err := libcq.NewContinuousQuery(
 		"asset_volume_src_hour",
 		dbName,
 		hourResampleInterval,
 		hourResampleFor,
-		fmt.Sprintf(`SELECT SUM(%[1]s) AS %[2]s, SUM(%[3]s) AS %[4]s, SUM(usd_amount) AS %[5]s INTO %[6]s `+
-			`FROM (SELECT %[1]s, %[3]s, %[3]s*%[7]s AS usd_amount FROM %[8]s WHERE `+
-			`((%[9]s!='%[10]s' AND %[11]s!='%[12]s') OR `+
-			`(%[9]s!='%[12]s' AND %[11]s!='%[10]s'))) GROUP BY %[9]s`,
-			logSchema.SrcAmount.String(),
-			volSchema.TokenVolume.String(),
-			logSchema.EthAmount.String(),
-			volSchema.ETHVolume.String(),
-			volSchema.USDVolume.String(),
-			common.VolumeHourMeasurementName,
-			logSchema.EthUSDRate.String(),
-			common.TradeLogMeasurementName,
-			logSchema.SrcAddr.String(),
-			core.ETHToken.Address,
-			logSchema.DstAddr.String(),
-			core.WETHToken.Address,
-		),
-
+		queryString,
 		"1h",
 		nil,
 	)
@@ -112,28 +132,23 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		return nil, err
 	}
 	result = append(result, assetVolSrcHourCqs)
+
+	assetVolDstDayCqsTemplate := `SELECT SUM({{.DstAmount}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeDayMeasurementName}}` +
+		`FROM (SELECT {{.DstAmount}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} WHERE ` +
+		`(({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') OR ` +
+		`({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}'))) GROUP BY {{.DstAddr}}`
+
+	queryString, err = executeAssetVolumeTemplate(assetVolDstDayCqsTemplate)
+	if err != nil {
+		return nil, err
+	}
+
 	assetVolDstDayCqs, err := libcq.NewContinuousQuery(
 		"asset_volume_dst_day",
 		dbName,
 		"1h",
 		"2d",
-		fmt.Sprintf(`SELECT SUM(%[1]s) AS %[2]s, SUM(%[3]s) AS %[4]s, SUM(usd_amount) AS %[5]s INTO %[6]s `+
-			`FROM (SELECT %[1]s, %[3]s, %[3]s*%[7]s AS usd_amount FROM %[8]s WHERE `+
-			`((%[9]s!='%[10]s' AND %[11]s!='%[12]s') OR `+
-			`(%[9]s!='%[12]s' AND %[11]s!='%[10]s'))) GROUP BY %[11]s`,
-			logSchema.DstAmount.String(),
-			volSchema.TokenVolume.String(),
-			logSchema.EthAmount.String(),
-			volSchema.ETHVolume.String(),
-			volSchema.USDVolume.String(),
-			common.VolumeDayMeasurementName,
-			logSchema.EthUSDRate.String(),
-			common.TradeLogMeasurementName,
-			logSchema.SrcAddr.String(),
-			core.ETHToken.Address,
-			logSchema.DstAddr.String(),
-			core.WETHToken.Address,
-		),
+		queryString,
 		"1d",
 		nil,
 	)
@@ -142,28 +157,22 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, assetVolDstDayCqs)
 
+	assetVolSrcDayCqsTemplate := `SELECT SUM({{.SrcAmount}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeDayMeasurementName}}` +
+		`FROM (SELECT {{.SrcAmount}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} WHERE ` +
+		`(({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') OR ` +
+		`({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}'))) GROUP BY {{.SrcAddr}}`
+
+	queryString, err = executeAssetVolumeTemplate(assetVolSrcDayCqsTemplate)
+	if err != nil {
+		return nil, err
+	}
+
 	assetVolSrcDayCqs, err := libcq.NewContinuousQuery(
 		"asset_volume_src_day",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(`SELECT SUM(%[1]s) AS %[2]s, SUM(%[3]s) AS %[4]s, SUM(usd_amount) AS %[5]s INTO %[6]s `+
-			`FROM (SELECT %[1]s, %[3]s, %[3]s*%[7]s AS usd_amount FROM %[8]s WHERE `+
-			`((%[9]s!='%[10]s' AND %[11]s!='%[12]s') OR `+
-			`(%[9]s!='%[12]s' AND %[11]s!='%[10]s'))) GROUP BY %[9]s`,
-			logSchema.SrcAmount.String(),
-			volSchema.TokenVolume.String(),
-			logSchema.EthAmount.String(),
-			volSchema.ETHVolume.String(),
-			volSchema.USDVolume.String(),
-			common.VolumeDayMeasurementName,
-			logSchema.EthUSDRate.String(),
-			common.TradeLogMeasurementName,
-			logSchema.SrcAddr.String(),
-			core.ETHToken.Address,
-			logSchema.DstAddr.String(),
-			core.WETHToken.Address,
-		),
+		queryString,
 		"1d",
 		nil,
 	)
@@ -174,26 +183,55 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	return result, nil
 }
 
+func executeUserVolumeTemplate(templateString string) (string, error) {
+	tmpl, err := template.New("queryUserVolume").Parse(templateString)
+	if err != nil {
+		return "", err
+	}
+	var queryBuf bytes.Buffer
+	if err = tmpl.Execute(&queryBuf, struct {
+		ETHAmount                     string
+		ETHVolume                     string
+		USDVolume                     string
+		UserVolumeDayMeasurementName  string
+		UserVolumeHourMeasurementName string
+		ETHUSDRate                    string
+		TradeLogMeasurementName       string
+		UserAddr                      string
+	}{
+		ETHAmount:                     logSchema.EthAmount.String(),
+		ETHVolume:                     volSchema.ETHVolume.String(),
+		USDVolume:                     volSchema.USDVolume.String(),
+		UserVolumeDayMeasurementName:  common.UserVolumeDayMeasurementName,
+		UserVolumeHourMeasurementName: common.UserVolumeHourMeasurementName,
+		ETHUSDRate:                    logSchema.EthUSDRate.String(),
+		TradeLogMeasurementName:       common.TradeLogMeasurementName,
+		UserAddr:                      logSchema.UserAddr.String(),
+	}); err != nil {
+		return "", err
+	}
+	return queryBuf.String(), nil
+}
+
 //CreateUserVolumeCqs continueous query for aggregate user volume
 func CreateUserVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	var (
 		result []*libcq.ContinuousQuery
 	)
+	userVolumeDayCqsQueryTemplate := `SELECT SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} ` +
+		`INTO {{.UserVolumeDayMeasurementName}} FROM (SELECT {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}}) GROUP BY {{.UserAddr}}`
+
+	queryString, err := executeUserVolumeTemplate(userVolumeDayCqsQueryTemplate)
+	if err != nil {
+		return nil, err
+	}
+
 	userVolumeDayCqs, err := libcq.NewContinuousQuery(
 		"user_volume_day",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(`SELECT SUM(%[1]s) AS %[2]s, SUM(usd_amount) AS %[3]s `+
-			`INTO %[4]s FROM (SELECT %[1]s, %[1]s*%[5]s AS usd_amount FROM %[6]s) GROUP BY %[7]s`,
-			logSchema.EthAmount.String(),
-			volSchema.ETHVolume.String(),
-			volSchema.USDVolume.String(),
-			common.UserVolumeDayMeasurementName,
-			logSchema.EthUSDRate.String(),
-			common.TradeLogMeasurementName,
-			logSchema.UserAddr.String(),
-		),
+		queryString,
 		"1d",
 		nil,
 	)
@@ -201,21 +239,21 @@ func CreateUserVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		return nil, err
 	}
 	result = append(result, userVolumeDayCqs)
+
+	userVolumeHourCqsTemplate := `SELECT SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} ` +
+		`INTO {{.UserVolumeHourMeasurementName}} FROM (SELECT {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}}) GROUP BY {{.UserAddr}}`
+
+	queryString, err = executeUserVolumeTemplate(userVolumeHourCqsTemplate)
+	if err != nil {
+		return nil, err
+	}
+
 	userVolumeHourCqs, err := libcq.NewContinuousQuery(
 		"user_volume_hour",
 		dbName,
 		hourResampleInterval,
 		hourResampleFor,
-		fmt.Sprintf(`SELECT SUM(%[1]s) AS %[2]s, SUM(usd_amount) AS %[3]s `+
-			`INTO %[4]s FROM (SELECT %[1]s, %[1]s*%[5]s AS usd_amount FROM %[6]s) GROUP BY %[7]s`,
-			logSchema.EthAmount.String(),
-			volSchema.ETHVolume.String(),
-			volSchema.USDVolume.String(),
-			common.UserVolumeHourMeasurementName,
-			logSchema.EthUSDRate.String(),
-			common.TradeLogMeasurementName,
-			logSchema.UserAddr.String(),
-		),
+		queryString,
 		"1h",
 		nil,
 	)
@@ -239,11 +277,31 @@ type RsvFieldsType struct {
 func renderRsvCqFromTemplate(tmpl *template.Template, mName string, types RsvFieldsType) (string, error) {
 	var query bytes.Buffer
 	err := tmpl.Execute(&query, struct {
+		TokenVolume             string
+		ETHAmount               string
+		ETHVolume               string
+		USDVolume               string
+		ETHUSDRate              string
+		TradeLogMeasurementName string
+		SrcAddr                 string
+		ETHTokenAddr            string
+		DstAddr                 string
+		WETHTokenAddr           string
 		RsvFieldsType
 		MeasurementName string
 	}{
-		RsvFieldsType:   types,
-		MeasurementName: mName,
+		TokenVolume:             volSchema.TokenVolume.String(),
+		ETHAmount:               logSchema.EthAmount.String(),
+		ETHVolume:               volSchema.ETHVolume.String(),
+		USDVolume:               volSchema.USDVolume.String(),
+		ETHUSDRate:              logSchema.EthUSDRate.String(),
+		TradeLogMeasurementName: common.TradeLogMeasurementName,
+		SrcAddr:                 logSchema.SrcAddr.String(),
+		ETHTokenAddr:            core.ETHToken.Address,
+		DstAddr:                 logSchema.DstAddr.String(),
+		WETHTokenAddr:           core.WETHToken.Address,
+		RsvFieldsType:           types,
+		MeasurementName:         mName,
 	})
 	if err != nil {
 		return "", err

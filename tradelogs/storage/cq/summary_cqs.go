@@ -1,7 +1,8 @@
 package cq
 
 import (
-	"fmt"
+	"bytes"
+	"text/template"
 
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	libcq "github.com/KyberNetwork/reserve-stats/lib/cq"
@@ -16,19 +17,37 @@ import (
 func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	var result []*libcq.ContinuousQuery
 
+	uniqueAddrCqsTemplate := "SELECT COUNT(record) AS {{.UniqueAddresses}} INTO {{.TradeSummaryMeasurementName}} FROM " +
+		"(SELECT SUM({{.ETHAmount}}) AS record FROM {{.TradeLogMeasurementName}} GROUP BY {{.UserAddr}})"
+
+	tmpl, err := template.New("uniqueAddr").Parse(uniqueAddrCqsTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	var queryBuf bytes.Buffer
+	if err = tmpl.Execute(&queryBuf, struct {
+		UniqueAddresses             string
+		TradeSummaryMeasurementName string
+		ETHAmount                   string
+		TradeLogMeasurementName     string
+		UserAddr                    string
+	}{
+		UniqueAddresses:             tradeSumSchema.UniqueAddresses.String(),
+		TradeSummaryMeasurementName: common.TradeSummaryMeasurement,
+		ETHAmount:                   logSchema.EthAmount.String(),
+		TradeLogMeasurementName:     common.TradeLogMeasurementName,
+		UserAddr:                    logSchema.UserAddr.String(),
+	}); err != nil {
+		return nil, err
+	}
+
 	uniqueAddrCqs, err := libcq.NewContinuousQuery(
 		"unique_addr",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(
-			"SELECT COUNT(record) AS %[1]s INTO %[2]s FROM (SELECT SUM(%[3]s) AS record FROM %[4]s GROUP BY %[5]s)",
-			tradeSumSchema.UniqueAddresses.String(),
-			common.TradeSummaryMeasurement,
-			logSchema.EthAmount.String(),
-			common.TradeLogMeasurementName,
-			logSchema.UserAddr.String(),
-		),
+		queryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -37,28 +56,51 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, uniqueAddrCqs)
 
+	volCqsTemplate := "SELECT SUM({{.ETHAmount}}) AS {{.TotalETHVolume}}, SUM({{.FiatAmount}}) AS {{.TotalUSDAmount}}, COUNT({{.ETHAmount}}) AS {{.TotalTrade}}, " +
+		"MEAN({{.FiatAmount}}) AS {{.USDPerTrade}}, MEAN({{.ETHAmount}}) AS {{.ETHPerTrade}} INTO {{.TradeSummaryMeasurementName}} " +
+		"FROM (SELECT {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS {{.FiatAmount}} FROM {{.TradeLogMeasurementName}} WHERE " +
+		"({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') OR ({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}'))"
+	tmpl, err = template.New("uniqueAddr").Parse(volCqsTemplate)
+	if err != nil {
+		return nil, err
+	}
+	if err = tmpl.Execute(&queryBuf, struct {
+		ETHAmount                   string
+		TotalETHVolume              string
+		FiatAmount                  string
+		TotalUSDAmount              string
+		TotalTrade                  string
+		USDPerTrade                 string
+		ETHPerTrade                 string
+		TradeSummaryMeasurementName string
+		ETHUSDRate                  string
+		TradeLogMeasurementName     string
+		SrcAddr                     string
+		DstAddr                     string
+		ETHTokenAddr                string
+		WETHTokenAddr               string
+	}{
+		ETHAmount:                   logSchema.EthAmount.String(),
+		TotalETHVolume:              tradeSumSchema.TotalETHVolume.String(),
+		FiatAmount:                  logSchema.FiatAmount.String(),
+		TotalUSDAmount:              tradeSumSchema.TotalUSDAmount.String(),
+		TotalTrade:                  tradeSumSchema.TotalTrade.String(),
+		USDPerTrade:                 tradeSumSchema.USDPerTrade.String(),
+		ETHPerTrade:                 tradeSumSchema.ETHPerTrade.String(),
+		TradeSummaryMeasurementName: common.TradeSummaryMeasurement,
+		SrcAddr:                     logSchema.SrcAddr.String(),
+		DstAddr:                     logSchema.DstAddr.String(),
+		ETHTokenAddr:                core.ETHToken.Address,
+		WETHTokenAddr:               core.WETHToken.Address,
+	}); err != nil {
+		return nil, err
+	}
 	volCqs, err := libcq.NewContinuousQuery(
 		"summary_volume",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(
-			"SELECT SUM(%[1]s) AS %[2]s, SUM(%[3]s) AS %[4]s, COUNT(%[1]s) AS %[5]s, MEAN(%[3]s) AS %[6]s, MEAN(%[1]s) AS %[7]s INTO %[8]s FROM (SELECT %[1]s, %[1]s*%[9]s AS %[3]s FROM %[10]s WHERE (%[11]s!='%[12]s' AND %[13]s!='%[14]s') OR (%[11]s!='%[14]s' AND %[13]s!='%[12]s'))",
-			logSchema.EthAmount.String(),
-			tradeSumSchema.TotalETHVolume.String(),
-			logSchema.FiatAmount.String(),
-			tradeSumSchema.TotalUSDAmount.String(),
-			tradeSumSchema.TotalTrade.String(),
-			tradeSumSchema.USDPerTrade.String(),
-			tradeSumSchema.ETHPerTrade.String(),
-			common.TradeSummaryMeasurement,
-			logSchema.EthUSDRate.String(),
-			common.TradeLogMeasurementName,
-			logSchema.SrcAddr.String(),
-			core.ETHToken.Address,
-			logSchema.DstAddr.String(),
-			core.WETHToken.Address,
-		),
+		queryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -66,6 +108,25 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		return nil, err
 	}
 	result = append(result, volCqs)
+
+	totalBurnFeeCqsTemplate := "SELECT SUM({{.BurnFeeAmount}}) AS {{.TotalBurnFee}} INTO {{.BurnFeeSummaryMeasurementName}} FROM {{.BurnFeeMeasurementName}}"
+	tmpl, err = template.New("uniqueAddr").Parse(totalBurnFeeCqsTemplate)
+	if err != nil {
+		return nil, err
+	}
+	if err = tmpl.Execute(&queryBuf, struct {
+		BurnFeeAmount                 string
+		TotalBurnFee                  string
+		BurnFeeSummaryMeasurementName string
+		BurnFeeMeasurementName        string
+	}{
+		BurnFeeAmount:                 burnSchema.Amount.String(),
+		TotalBurnFee:                  tradeSumSchema.TotalBurnFee.String(),
+		BurnFeeSummaryMeasurementName: common.BurnFeeSummaryMeasurement,
+		BurnFeeMeasurementName:        common.BurnFeeMeasurementName,
+	}); err != nil {
+		return nil, err
+	}
 
 	totalBurnFeeCqs, err := libcq.NewContinuousQuery(
 		"summary_total_burn_fee",
@@ -81,18 +142,30 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, totalBurnFeeCqs)
 
+	newUniqueAddressCqTemplate := "SELECT COUNT({{.Traded}}) as {{.NewUniqueAddresses}} INTO {{.TradeSummaryMeasurementName}} FROM {{.FirstTradeMeasurementName}}"
+	tmpl, err = template.New("uniqueAddr").Parse(newUniqueAddressCqTemplate)
+	if err != nil {
+		return nil, err
+	}
+	if err = tmpl.Execute(&queryBuf, struct {
+		Traded                      string
+		NewUniqueAddresses          string
+		TradeSummaryMeasurementName string
+		FirstTradeMeasurementName   string
+	}{
+		Traded:                      firstTradedSchema.Traded.String(),
+		NewUniqueAddresses:          tradeSumSchema.NewUniqueAddresses.String(),
+		TradeSummaryMeasurementName: common.TradeSummaryMeasurement,
+		FirstTradeMeasurementName:   common.FirstTradedMeasurementName,
+	}); err != nil {
+		return nil, err
+	}
 	newUnqAddressCq, err := libcq.NewContinuousQuery(
 		"new_unique_addr",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(
-			"SELECT COUNT(%[1]s) as %[2]s INTO %[3]s FROM %[4]s",
-			firstTradedSchema.Traded.String(),
-			tradeSumSchema.NewUniqueAddresses.String(),
-			common.TradeSummaryMeasurement,
-			common.FirstTradedMeasurementName,
-		),
+		queryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -101,19 +174,33 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, newUnqAddressCq)
 
+	kycedTemplate := "SELECT COUNT(kyced) as {{.KYCedAddresses}} INTO {{.TradeSummaryMeasurementName}} FROM " +
+		"(SELECT DISTINCT({{.KYCed}}) AS kyced FROM {{.KYCedMeasurementName}} GROUP BY {{.UserAddr}})"
+	tmpl, err = template.New("uniqueAddr").Parse(kycedTemplate)
+	if err != nil {
+		return nil, err
+	}
+	if err = tmpl.Execute(&queryBuf, struct {
+		KYCedAddresses              string
+		TradeSummaryMeasurementName string
+		KYCed                       string
+		KYCedMeasurementName        string
+		UserAddr                    string
+	}{
+		KYCedAddresses:              tradeSumSchema.KYCedAddresses.String(),
+		TradeSummaryMeasurementName: common.TradeSummaryMeasurement,
+		KYCed:                       kycedschema.KYCed.String(),
+		KYCedMeasurementName:        common.KYCedMeasurementName,
+		UserAddr:                    kycedschema.UserAddress.String(),
+	}); err != nil {
+		return nil, err
+	}
 	kyced, err := libcq.NewContinuousQuery(
 		"kyced",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		fmt.Sprintf(
-			"SELECT COUNT(kyced) as %[1]s INTO %[2]s FROM (SELECT DISTINCT(%[3]s) AS kyced FROM %[4]s GROUP BY %[5]s)",
-			tradeSumSchema.KYCedAddresses.String(),
-			common.TradeSummaryMeasurement,
-			kycedschema.KYCed.String(),
-			common.KYCedMeasurementName,
-			kycedschema.UserAddress.String(),
-		),
+		queryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)

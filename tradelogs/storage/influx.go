@@ -252,6 +252,55 @@ func (is *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.R
 	return res, nil
 }
 
+func (is *InfluxStorage) setBurnFeeTagsAndFields(log common.TradeLog, tags map[string]string, fields map[string]interface{}) error {
+	var logger = is.sugar.With(
+		"func", "tradelogs/storage/setBurnFeeTagsAndFields",
+		"log", log,
+	)
+	if blockchain.IsBurnable(log.SrcAddress) {
+		if len(log.BurnFees) < 1 {
+			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "at least 1 burn fees (src)")
+			return nil
+		}
+		tags[logschema.SrcReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
+		burnAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
+		if err != nil {
+			return err
+		}
+		fields[logschema.SourceBurnFee.String()] = burnAmount
+
+		if blockchain.IsBurnable(log.DestAddress) {
+			if len(log.BurnFees) < 2 {
+				logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "2 burn fees (src-dst)")
+				return nil
+			}
+			tags[logschema.DstReserveAddr.String()] = log.BurnFees[1].ReserveAddress.String()
+			burnAmount, err = is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[1].Amount)
+			if err != nil {
+				return err
+			}
+			fields[logschema.DestBurnFee.String()] = burnAmount
+			return nil
+		}
+
+		return nil
+	}
+
+	if blockchain.IsBurnable(log.DestAddress) {
+		if len(log.BurnFees) < 1 {
+			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "at least 1 burn fees (dst)")
+			return nil
+		}
+		tags[logschema.DstReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
+		burnAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
+		if err != nil {
+			return err
+		}
+		fields[logschema.DestBurnFee.String()] = burnAmount
+	}
+	return nil
+}
+
 func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error) {
 	var points []*client.Point
 	var walletAddr ethereum.Address
@@ -272,10 +321,6 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.Country.String(): log.Country,
 	}
 
-	logger := is.sugar.With(
-		"func", "tradelogs/storage/tradeLogToPoint",
-		"log", log,
-	)
 	ethReceivalAmount, err := is.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EtherReceivalAmount)
 	if err != nil {
 		return nil, err
@@ -315,49 +360,8 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.EthUSDProvider.String():    log.ETHUSDProvider,
 	}
 
-	if blockchain.IsBurnable(log.SrcAddress) {
-		if blockchain.IsBurnable(log.DestAddress) {
-			if len(log.BurnFees) == 2 {
-				tags[logschema.SrcReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
-				burnAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
-				if err != nil {
-					return nil, err
-				}
-				fields[logschema.SourceBurnFee.String()] = burnAmount
-
-				tags[logschema.DstReserveAddr.String()] = log.BurnFees[1].ReserveAddress.String()
-				burnAmount, err = is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[1].Amount)
-				if err != nil {
-					return nil, err
-				}
-				fields[logschema.DestBurnFee.String()] = burnAmount
-			} else {
-				logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "2 burn fees (src-dst)")
-			}
-		} else {
-			if len(log.BurnFees) == 1 {
-				tags[logschema.SrcReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
-				burnAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
-				if err != nil {
-					return nil, err
-				}
-				fields[logschema.SourceBurnFee.String()] = burnAmount
-
-			} else {
-				logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (src)")
-			}
-		}
-	} else if blockchain.IsBurnable(log.DestAddress) {
-		if len(log.BurnFees) == 1 {
-			tags[logschema.DstReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
-			burnAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
-			if err != nil {
-				return nil, err
-			}
-			fields[logschema.DestBurnFee.String()] = burnAmount
-		} else {
-			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
-		}
+	if err = is.setBurnFeeTagsAndFields(log, tags, fields); err != nil {
+		return nil, err
 	}
 
 	tradePoint, err := client.NewPoint(tradeLogMeasurementName, tags, fields, log.Timestamp)

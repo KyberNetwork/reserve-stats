@@ -5,6 +5,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+//IsZeroAddress return if address is zero
+func IsZeroAddress(address common.Address) bool {
+	return address.Hex() == "0x0000000000000000000000000000000000000000"
+}
+
 // InternalNetworkContractAddress returns the address of internal network contract of all deployments.
 func InternalNetworkContractAddress() deployment.Address {
 	return internalNetworkContractAddress

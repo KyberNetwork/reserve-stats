@@ -7,6 +7,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	burnschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee"
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
@@ -341,9 +342,9 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
 		}
 	} else {
-		if log.EtherReceivalSender.Hex() != "0x0000000000000000000000000000000000000000" {
+		if !contracts.IsZeroAddress(log.EtherReceivalSender) {
 			tags[logschema.SrcReserveAddr.String()] = log.EtherReceivalSender.Hex()
-		} else if log.SrcReserveAddress.Hex() != "0x0000000000000000000000000000000000000000" {
+		} else if !contracts.IsZeroAddress(log.SrcReserveAddress) {
 			tags[logschema.SrcReserveAddr.String()] = log.SrcReserveAddress.Hex()
 		} else {
 			logger.Warnw("unexpected reserve address", "got", log.SrcReserveAddress.Hex(), "want", "1 valid address (not default one)")

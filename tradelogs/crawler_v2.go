@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -15,10 +16,6 @@ const (
 	//TradeExecute(address sender, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
 	tradeExecuteEvent = "0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de"
 )
-
-func isZeroAddress(address ethereum.Address) bool {
-	return address.Hex() == "0x0000000000000000000000000000000000000000"
-}
 
 func (crawler *Crawler) fetchTradeLogV2(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
 	var result []common.TradeLog
@@ -61,7 +58,7 @@ func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time
 				break
 			}
 		}
-		if !isZeroAddress(reserveAddr) {
+		if !contracts.IsZeroAddress(reserveAddr) {
 			break
 		}
 	}
@@ -107,7 +104,7 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			}
 			// when the tradelog does not contain burnfee and etherReceival event
 			// get tx receipt to get reserve address
-			if len(tradeLog.BurnFees) == 0 && isZeroAddress(tradeLog.EtherReceivalSender) {
+			if len(tradeLog.BurnFees) == 0 && contracts.IsZeroAddress(tradeLog.EtherReceivalSender) {
 				tradeLog.SrcReserveAddress, err = crawler.getTransactionReceipt(tradeLog.TransactionHash, 10*time.Second)
 				if err != nil {
 					return nil, err

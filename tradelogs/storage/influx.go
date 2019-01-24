@@ -324,7 +324,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.DstReserveAddr.String(): log.DstReserveAddress.String(),
 	}
 
-	ethReceivalAmount, err := is.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EtherReceivalAmount)
+	ethReceivalAmount, err := is.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)
 	if err != nil {
 		return nil, err
 	}

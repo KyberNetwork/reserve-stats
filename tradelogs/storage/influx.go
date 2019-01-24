@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	burnschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee"
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"

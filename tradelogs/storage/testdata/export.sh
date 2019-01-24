@@ -13,15 +13,6 @@ readonly influxdb_image='influxdb:1.6.3-alpine'
 readonly container_name='trade-logs-sample-data-exporter'
 readonly data_dir='/tmp/trade-logs-sample-data-exporter'
 
-if [[ -z "$core_url" ]]; then
-    echo "missing core url"
-    exit 1
-fi
-
-if [[ -z "$core_signing_key" ]]; then
-    echo "missing core signing key"
-    exit 1
-fi
 
 docker run --rm --detach --name "$container_name" \
     --volume "$data_dir:/var/lib/influxdb/" \
@@ -33,7 +24,6 @@ sleep 5
 pushd ../../cmd/trade-logs-crawler
 go build
 ./trade-logs-crawler --influxdb-endpoint=http://127.0.0.1:8087 \
-    --core-url "$core_url" --core-signing-key "$core_signing_key" \
     --from-block "$from_block" --to-block "$to_block"
 popd
 

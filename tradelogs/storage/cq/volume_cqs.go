@@ -85,7 +85,7 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		result []*libcq.ContinuousQuery
 	)
 
-	assetVolDstHourCqsTemplate := `SELECT SUM({{.DstAmount}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeHourMeasurementName}}` +
+	assetVolDstHourCqsTemplate := `SELECT SUM({{.DstAmount}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeHourMeasurementName}}  ` +
 		`FROM (SELECT {{.DstAmount}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} WHERE ` +
 		`(({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') OR ` +
 		`({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}'))) GROUP BY {{.DstAddr}}`
@@ -109,7 +109,7 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, assetVolDstHourCqs)
 
-	assetVolSrcHourCqsTemplate := `SELECT SUM({{.SrcAmount}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeHourMeasurementName}}` +
+	assetVolSrcHourCqsTemplate := `SELECT SUM({{.SrcAmount}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeHourMeasurementName}} ` +
 		`FROM (SELECT {{.SrcAmount}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} WHERE ` +
 		`(({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') OR ` +
 		`({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}'))) GROUP BY {{.SrcAddr}}`
@@ -133,7 +133,7 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, assetVolSrcHourCqs)
 
-	assetVolDstDayCqsTemplate := `SELECT SUM({{.DstAmount}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeDayMeasurementName}}` +
+	assetVolDstDayCqsTemplate := `SELECT SUM({{.DstAmount}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeDayMeasurementName}} ` +
 		`FROM (SELECT {{.DstAmount}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} WHERE ` +
 		`(({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') OR ` +
 		`({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}'))) GROUP BY {{.DstAddr}}`
@@ -157,7 +157,7 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, assetVolDstDayCqs)
 
-	assetVolSrcDayCqsTemplate := `SELECT SUM({{.SrcAmount}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeDayMeasurementName}}` +
+	assetVolSrcDayCqsTemplate := `SELECT SUM({{.SrcAmount}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeDayMeasurementName}} ` +
 		`FROM (SELECT {{.SrcAmount}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} WHERE ` +
 		`(({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') OR ` +
 		`({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}'))) GROUP BY {{.SrcAddr}}`

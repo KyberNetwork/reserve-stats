@@ -64,7 +64,8 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = tmpl.Execute(&queryBuf, struct {
+	var volQueryBuf bytes.Buffer
+	if err = tmpl.Execute(&volQueryBuf, struct {
 		ETHAmount                   string
 		TotalETHVolume              string
 		FiatAmount                  string
@@ -88,6 +89,8 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		USDPerTrade:                 tradeSumSchema.USDPerTrade.String(),
 		ETHPerTrade:                 tradeSumSchema.ETHPerTrade.String(),
 		TradeSummaryMeasurementName: common.TradeSummaryMeasurement,
+		ETHUSDRate:                  logSchema.EthUSDRate.String(),
+		TradeLogMeasurementName:     common.TradeLogMeasurementName,
 		SrcAddr:                     logSchema.SrcAddr.String(),
 		DstAddr:                     logSchema.DstAddr.String(),
 		ETHTokenAddr:                core.ETHToken.Address,
@@ -100,7 +103,7 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		queryBuf.String(),
+		volQueryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -114,7 +117,8 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = tmpl.Execute(&queryBuf, struct {
+	var totalBurnFeeQueryBuf bytes.Buffer
+	if err = tmpl.Execute(&totalBurnFeeQueryBuf, struct {
 		BurnFeeAmount                 string
 		TotalBurnFee                  string
 		BurnFeeSummaryMeasurementName string
@@ -147,7 +151,8 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = tmpl.Execute(&queryBuf, struct {
+	var newUniqueAddressQueryBuf bytes.Buffer
+	if err = tmpl.Execute(&newUniqueAddressQueryBuf, struct {
 		Traded                      string
 		NewUniqueAddresses          string
 		TradeSummaryMeasurementName string
@@ -165,7 +170,7 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		queryBuf.String(),
+		newUniqueAddressQueryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -180,7 +185,8 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = tmpl.Execute(&queryBuf, struct {
+	var kycedQueryBuf bytes.Buffer
+	if err = tmpl.Execute(&kycedQueryBuf, struct {
 		KYCedAddresses              string
 		TradeSummaryMeasurementName string
 		KYCed                       string
@@ -200,7 +206,7 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		queryBuf.String(),
+		kycedQueryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)

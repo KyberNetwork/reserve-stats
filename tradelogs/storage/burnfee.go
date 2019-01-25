@@ -54,7 +54,6 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 		From            string
 		To              string
 		Addrs           []string
-		BurnfeeReserve  string
 		AddrsLastIndex  int
 	}{
 		Fields:          fields,
@@ -63,7 +62,6 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 		From:            from.Format(time.RFC3339),
 		To:              to.Format(time.RFC3339),
 		Addrs:           addrsStrs,
-		BurnfeeReserve:  burnVolumeSchema.ReserveAddr.String(),
 		AddrsLastIndex:  len(reserveAddrs) - 1,
 	}); err != nil {
 		return nil, err

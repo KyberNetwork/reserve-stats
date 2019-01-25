@@ -23,6 +23,7 @@ func executeCountryVolumeTemplate(templateString string) (string, error) {
 		return "", err
 	}
 	if err = tmpl.Execute(&queryBuf, struct {
+		SrcAmount               string
 		DstAmount               string
 		TokenVolume             string
 		ETHAmount               string
@@ -37,6 +38,7 @@ func executeCountryVolumeTemplate(templateString string) (string, error) {
 		WETHTokenAddr           string
 		Country                 string
 	}{
+		SrcAmount:               logSchema.SrcAmount.String(),
 		DstAmount:               logSchema.DstAmount.String(),
 		TokenVolume:             heatMapSchema.TokenVolume.String(),
 		ETHAmount:               logSchema.EthAmount.String(),
@@ -111,7 +113,8 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = tmpl.Execute(&queryBuf, struct {
+	var volCqsQueryBuf bytes.Buffer
+	if err = tmpl.Execute(&volCqsQueryBuf, struct {
 		ETHAmount                   string
 		TotalETHVolume              string
 		TotalUSDAmount              string
@@ -151,7 +154,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		queryBuf.String(),
+		volCqsQueryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -160,14 +163,15 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, volCqs)
 
-	NewUniqueAddressCqTemplate := `SELECT COUNT({{.Traded}}) as {{.NewUniqueAddresses}} INTO {{.CountryStatsMeasurementName}} FROM ` +
+	newUniqueAddressCqTemplate := `SELECT COUNT({{.Traded}}) as {{.NewUniqueAddresses}} INTO {{.CountryStatsMeasurementName}} FROM ` +
 		`{{.FirstTradeMeasurementName}} GROUP BY {{.Country}}`
 
-	tmpl, err = template.New("newUniqueAddr").Parse(NewUniqueAddressCqTemplate)
+	tmpl, err = template.New("newUniqueAddr").Parse(newUniqueAddressCqTemplate)
 	if err != nil {
 		return nil, err
 	}
-	if err = tmpl.Execute(&queryBuf, struct {
+	var newUniqueAddressCqQueryBuf bytes.Buffer
+	if err = tmpl.Execute(&newUniqueAddressCqQueryBuf, struct {
 		Traded                      string
 		NewUniqueAddresses          string
 		CountryStatsMeasurementName string
@@ -187,7 +191,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		queryBuf.String(),
+		newUniqueAddressCqQueryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -251,8 +255,8 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	if err = tmpl.Execute(&queryBuf, struct {
+	var kycedQueryBuf bytes.Buffer
+	if err = tmpl.Execute(&kycedQueryBuf, struct {
 		KYCedAddresses              string
 		CountryStatsMeasurementName string
 		KYCed                       string
@@ -275,7 +279,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		queryBuf.String(),
+		kycedQueryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -290,8 +294,8 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	if err = tmpl.Execute(&queryBuf, struct {
+	var totalBurnFeeCqsQueryBuf bytes.Buffer
+	if err = tmpl.Execute(&totalBurnFeeCqsQueryBuf, struct {
 		BurnFeeAmount               string
 		TotalBurnFee                string
 		CountryStatsMeasurementName string

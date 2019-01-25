@@ -11,21 +11,17 @@ import (
 	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 )
 
-// CreateIntegrationVolumeCq return a set of cqs required for KyberSwap and non KyberSwap Summary aggregation
-func CreateIntegrationVolumeCq(dbName string) ([]*libcq.ContinuousQuery, error) {
-	var result []*libcq.ContinuousQuery
-
-	kyberSwapVolTemplate := `SELECT SUM({{.ETHAmount}}) AS {{.KyberSwapVolume}} INTO {{.IntegrationVolumeMeasurementName}} FROM {{.TradeLogMeasurementName}} WHERE {{.IntegrationApp}}='{{.KyberSwapAppName}}'`
-
-	tmpl, err := template.New("kyberSwapVol").Parse(kyberSwapVolTemplate)
+func executeIntegrationVolumeTemplate(templateString string) (string, error) {
+	var queryBuf bytes.Buffer
+	tmpl, err := template.New("kyberSwapVol").Parse(templateString)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	var queryBuf bytes.Buffer
 	if err = tmpl.Execute(&queryBuf, struct {
 		ETHAmount                        string
 		KyberSwapVolume                  string
+		NonKyberSwapVolume               string
 		IntegrationVolumeMeasurementName string
 		TradeLogMeasurementName          string
 		IntegrationApp                   string
@@ -33,11 +29,25 @@ func CreateIntegrationVolumeCq(dbName string) ([]*libcq.ContinuousQuery, error) 
 	}{
 		ETHAmount:                        logSchema.EthAmount.String(),
 		KyberSwapVolume:                  integrationVolumeSchema.KyberSwapVolume.String(),
+		NonKyberSwapVolume:               integrationVolumeSchema.NonKyberSwapVolume.String(),
 		IntegrationVolumeMeasurementName: common.IntegrationVolumeMeasurement,
 		TradeLogMeasurementName:          common.TradeLogMeasurementName,
 		IntegrationApp:                   logSchema.IntegrationApp.String(),
 		KyberSwapAppName:                 appnames.KyberSwapAppName,
 	}); err != nil {
+		return "", err
+	}
+	return queryBuf.String(), nil
+}
+
+// CreateIntegrationVolumeCq return a set of cqs required for KyberSwap and non KyberSwap Summary aggregation
+func CreateIntegrationVolumeCq(dbName string) ([]*libcq.ContinuousQuery, error) {
+	var result []*libcq.ContinuousQuery
+
+	kyberSwapVolTemplate := `SELECT SUM({{.ETHAmount}}) AS {{.KyberSwapVolume}} INTO {{.IntegrationVolumeMeasurementName}} FROM {{.TradeLogMeasurementName}} WHERE {{.IntegrationApp}}='{{.KyberSwapAppName}}'`
+
+	queryString, err := executeIntegrationVolumeTemplate(kyberSwapVolTemplate)
+	if err != nil {
 		return nil, err
 	}
 
@@ -46,7 +56,7 @@ func CreateIntegrationVolumeCq(dbName string) ([]*libcq.ContinuousQuery, error) 
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		queryBuf.String(),
+		queryString,
 		"1d",
 		[]string{},
 	)
@@ -55,28 +65,10 @@ func CreateIntegrationVolumeCq(dbName string) ([]*libcq.ContinuousQuery, error) 
 	}
 	result = append(result, kyberSwapVol)
 
-	nonKyberSwapVolTemplate := `SELECT SUM({{.ETHAmount}}) AS {{.NonKyberSwapVolume}} INTO {{.IntegrationVolumeMeasurementName}} FROM {{.TradeLogMeasurementName}} WHERE {{.IntegrationApp}}!='{{KyberSwapAppName}}'`
+	nonKyberSwapVolTemplate := `SELECT SUM({{.ETHAmount}}) AS {{.NonKyberSwapVolume}} INTO {{.IntegrationVolumeMeasurementName}} FROM {{.TradeLogMeasurementName}} WHERE {{.IntegrationApp}}!='{{.KyberSwapAppName}}'`
 
-	tmpl, err = template.New("kyberSwapVol").Parse(nonKyberSwapVolTemplate)
+	queryString, err = executeIntegrationVolumeTemplate(nonKyberSwapVolTemplate)
 	if err != nil {
-		return nil, err
-	}
-
-	if err = tmpl.Execute(&queryBuf, struct {
-		ETHAmount                        string
-		NonKyberSwapVolume               string
-		IntegrationVolumeMeasurementName string
-		TradeLogMeasurementName          string
-		IntegrationApp                   string
-		KyberSwapAppName                 string
-	}{
-		ETHAmount:                        logSchema.EthAmount.String(),
-		NonKyberSwapVolume:               integrationVolumeSchema.NonKyberSwapVolume.String(),
-		IntegrationVolumeMeasurementName: common.IntegrationVolumeMeasurement,
-		TradeLogMeasurementName:          common.TradeLogMeasurementName,
-		IntegrationApp:                   logSchema.IntegrationApp.String(),
-		KyberSwapAppName:                 appnames.KyberSwapAppName,
-	}); err != nil {
 		return nil, err
 	}
 
@@ -85,7 +77,7 @@ func CreateIntegrationVolumeCq(dbName string) ([]*libcq.ContinuousQuery, error) 
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		queryBuf.String(),
+		queryString,
 		"1d",
 		[]string{},
 	)

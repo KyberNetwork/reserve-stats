@@ -5,18 +5,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 //GetTokenHeatmap return list ordered country by asset volume
-func (is *InfluxStorage) GetTokenHeatmap(asset core.Token, from, to time.Time, timezone int8) (map[string]common.Heatmap, error) {
+func (is *InfluxStorage) GetTokenHeatmap(asset ethereum.Address, from, to time.Time, timezone int8) (map[string]common.Heatmap, error) {
 	var (
 		err             error
 		result          = make(map[string]common.Heatmap)
-		tokenAddr       = ethereum.HexToAddress(asset.Address).Hex()
+		tokenAddr       = asset.Hex()
 		measurementName = "volume_country_stats"
 	)
 
@@ -24,7 +23,7 @@ func (is *InfluxStorage) GetTokenHeatmap(asset core.Token, from, to time.Time, t
 
 	logger := is.sugar.With(
 		"func", "tradelogs/storage/InfluxStorage.GetTokenHeatmap",
-		"asset", asset.ID,
+		"asset", asset.Hex(),
 		"from", from,
 		"to", to,
 	)

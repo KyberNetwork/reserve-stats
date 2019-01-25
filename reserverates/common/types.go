@@ -5,9 +5,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-
 	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 // ReserveRateEntry hold 4 float number represent necessary data for a rate entry

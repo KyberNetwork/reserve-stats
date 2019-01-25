@@ -6,12 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
 )
 
 func doInfluxHTTPReq(client http.Client, cmd, endpoint, db string) error {
@@ -66,11 +64,12 @@ func TestGetAssetVolume(t *testing.T) {
 	const (
 		dbName = "test_volume"
 		// These params are expected to be change when export.dat changes.
-		fromTime  = 1539248043000
-		toTime    = 1539248666000
-		ethAmount = 238.33849929550047
-		freq      = "h"
-		timeStamp = "2018-10-11T09:00:00Z"
+		fromTime   = 1539248043000
+		toTime     = 1539248666000
+		ethAmount  = 238.33849929550047
+		freq       = "h"
+		timeStamp  = "2018-10-11T09:00:00Z"
+		ethAddress = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 	)
 
 	is, err := newTestInfluxStorage(dbName)
@@ -84,7 +83,7 @@ func TestGetAssetVolume(t *testing.T) {
 	}()
 	assert.NoError(t, loadTestData(dbName))
 	assert.NoError(t, aggregationTestData(is))
-	volume, err := is.GetAssetVolume(core.ETHToken, from, to, freq)
+	volume, err := is.GetAssetVolume(ethereum.HexToAddress(ethAddress), from, to, freq)
 	assert.NoError(t, err)
 
 	t.Logf("Volume result %v", volume)
@@ -113,6 +112,7 @@ func TestGetReserveVolume(t *testing.T) {
 		freq       = "h"
 		timeStamp  = "2018-10-11T09:00:00Z"
 		rsvAddrStr = "0x63825c174ab367968EC60f061753D3bbD36A0D8F"
+		ethAddress = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 	)
 
 	is, err := newTestInfluxStorage(dbName)
@@ -133,7 +133,7 @@ func TestGetReserveVolume(t *testing.T) {
 	from := timeutil.TimestampMsToTime(fromTime)
 	to := timeutil.TimestampMsToTime(toTime)
 
-	volume, err := is.GetReserveVolume(ethereum.HexToAddress(rsvAddrStr), core.ETHToken, from, to, freq)
+	volume, err := is.GetReserveVolume(ethereum.HexToAddress(rsvAddrStr), ethereum.HexToAddress(ethAddress), from, to, freq)
 	t.Logf("Volume result %v", volume)
 	if err != nil {
 		t.Fatal(err)

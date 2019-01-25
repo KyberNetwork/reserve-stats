@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
@@ -55,11 +54,11 @@ func (s *mockStorage) GetAggregatedBurnFee(from, to time.Time, freq string, rese
 	return nil, nil
 }
 
-func (s *mockStorage) GetAssetVolume(token core.Token, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
+func (s *mockStorage) GetAssetVolume(token ethereum.Address, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
 	return nil, nil
 }
 
-func (s *mockStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.Token, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
+func (s *mockStorage) GetReserveVolume(rsvAddr ethereum.Address, token ethereum.Address, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
 	return nil, nil
 }
 
@@ -87,7 +86,7 @@ func (s *mockStorage) GetCountryStats(country string, fromTime, toTime time.Time
 	return nil, nil
 }
 
-func (s *mockStorage) GetTokenHeatmap(token core.Token, fromTime, toTime time.Time, timezone int8) (map[string]common.Heatmap, error) {
+func (s *mockStorage) GetTokenHeatmap(token ethereum.Address, fromTime, toTime time.Time, timezone int8) (map[string]common.Heatmap, error) {
 	return nil, nil
 }
 

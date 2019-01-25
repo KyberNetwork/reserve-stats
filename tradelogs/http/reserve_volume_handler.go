@@ -3,9 +3,7 @@ package http
 import (
 	"net/http"
 
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
@@ -13,7 +11,7 @@ import (
 
 type reserveVolumeQuery struct {
 	httputil.TimeRangeQueryFreq
-	Asset   string `form:"asset" binding:"required"`
+	Asset   string `form:"asset" binding:"required,isAddress"`
 	Reserve string `form:"reserve" binding:"isAddress"`
 }
 
@@ -31,11 +29,7 @@ func (sv *Server) getReserveVolume(c *gin.Context) {
 		return
 	}
 
-	token, err := core.LookupToken(sv.coreSetting, query.Asset)
-	if err != nil {
-		httputil.ResponseFailure(c, http.StatusInternalServerError, err)
-		return
-	}
+	token := ethereum.HexToAddress(query.Asset)
 
 	result, err := sv.storage.GetReserveVolume(ethereum.HexToAddress(query.Reserve), token,
 		from, to, query.Freq)

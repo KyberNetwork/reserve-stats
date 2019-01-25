@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -43,12 +42,12 @@ func getMeasurementName(baseMeasurement string, timezone int8) string {
 
 // GetReserveVolume returns the volume of a specific asset(token) from a reserve
 // between a period and with desired frequency
-func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.Token,
+func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token ethereum.Address,
 	fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
 	var (
 		rsvAddrHex   = rsvAddr.Hex()
-		tokenAddrHex = ethereum.HexToAddress(token.Address).Hex()
-		logger       = is.sugar.With("reserve Address", rsvAddr.Hex(), "func", "tradelogs/storage/InfluxStorage.GetReserveVolume", "token Address", token.Address, "from", fromTime, "to", toTime)
+		tokenAddrHex = token.Hex()
+		logger       = is.sugar.With("reserve Address", rsvAddr.Hex(), "func", "tradelogs/storage/InfluxStorage.GetReserveVolume", "token Address", token.Hex(), "from", fromTime, "to", toTime)
 	)
 	mName, ok := rsvMeasurementName[strings.ToLower(frequency)]
 	if !ok {
@@ -73,12 +72,12 @@ func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.T
 }
 
 // GetAssetVolume returns the volume of a specific assset(token) between a period and with desired frequency
-func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime time.Time,
+func (is *InfluxStorage) GetAssetVolume(token ethereum.Address, fromTime, toTime time.Time,
 	frequency string) (map[uint64]*common.VolumeStats, error) {
 	var (
 		logger = is.sugar.With(
 			"func", "tradelogs/storage/InfluxStorage.GetAssetVolume",
-			"token", token.Address,
+			"token", token.Hex(),
 			"from", fromTime,
 			"to", toTime,
 		)
@@ -90,7 +89,7 @@ func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime time.
 	}
 
 	var (
-		tokenAddr  = ethereum.HexToAddress(token.Address).Hex()
+		tokenAddr  = token.Hex()
 		timeFilter = fmt.Sprintf("(time >='%s' AND time <= '%s')", fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
 		addrFilter = fmt.Sprintf("(dst_addr='%s' OR src_addr='%s')", tokenAddr, tokenAddr)
 		cmd        = fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, sum(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s) fill(none)",

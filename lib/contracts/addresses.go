@@ -5,6 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+// TODO: move me to blockchain package
 //IsZeroAddress return if address is zero
 func IsZeroAddress(address common.Address) bool {
 	return address.Hex() == "0x0000000000000000000000000000000000000000"

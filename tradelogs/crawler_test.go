@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
@@ -47,7 +48,7 @@ func assertTradeLog(t *testing.T, tradeLog common.TradeLog) {
 	assert.NotZero(t, tradeLog.DestAddress)
 	assert.NotZero(t, tradeLog.SrcAmount)
 	assert.NotZero(t, tradeLog.DestAmount)
-	assert.NotZero(t, tradeLog.SrcReserveAddress)
+	assert.True(t, contracts.IsZeroAddress(tradeLog.SrcReserveAddress) || contracts.IsZeroAddress(tradeLog.DstReserveAddress))
 
 	if blockchain.IsBurnable(tradeLog.SrcAddress) || blockchain.IsBurnable(tradeLog.DestAddress) {
 		assert.NotZero(t, tradeLog.BurnFees)
@@ -59,7 +60,8 @@ func assertTradeLog(t *testing.T, tradeLog common.TradeLog) {
 }
 
 func TestCrawlerGetTradeLogs(t *testing.T) {
-	testutil.SkipExternal(t)
+	// TODO: uncomment me
+	//t.Skip("disable as this test require external resource")
 
 	node, ok := os.LookupEnv("ETHEREUM_NODE")
 	if !ok {
@@ -111,10 +113,47 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		deployment.StartingBlocks[deployment.Production])
 	require.NoError(t, err)
 
-	tradeLogs, err = c.GetTradeLogs(big.NewInt(7000000), big.NewInt(7000100), time.Minute)
+	tradeLogs, err = c.GetTradeLogs(big.NewInt(6343120), big.NewInt(6343220), time.Minute)
 	require.NoError(t, err)
-	require.Len(t, tradeLogs, 12)
+	require.Len(t, tradeLogs, 8)
 	for _, tradeLog := range tradeLogs {
 		assertTradeLog(t, tradeLog)
 	}
+
+	// block: 6343124
+	// tx: 0x4959968da434aa9b1da585479a19da0ce71c47b6e896aab85c6a285400d6de18
+	// conversion: WETH --> ETH
+	var sampleTxHash = "0x4959968da434aa9b1da585479a19da0ce71c47b6e896aab85c6a285400d6de18"
+	var found = false
+	for _, tradeLog := range tradeLogs {
+		if tradeLog.TransactionHash == ethereum.HexToHash(sampleTxHash) {
+			found = true
+			assert.Equal(t, ethereum.HexToAddress("0x57f8160e1c59d16c01bbe181fd94db4e56b60495"), tradeLog.SrcReserveAddress,
+				"WETH --> ETH trade log must have source reserve address")
+		}
+	}
+	assert.True(t, found, "transaction %s not found", sampleTxHash)
+
+	tradeLogs, err = c.GetTradeLogs(big.NewInt(6325136), big.NewInt(6325137), time.Minute)
+	require.NoError(t, err)
+	require.Len(t, tradeLogs, 3)
+	for _, tradeLog := range tradeLogs {
+		assertTradeLog(t, tradeLog)
+	}
+
+	// block: 6325136
+	// tx: 0xa1a0cec06413c5466f46d64bc8d6aa2606e82e2da466ec7b266331c056e20133
+	// conversion: ETH --> WETH
+	sampleTxHash = "0xa1a0cec06413c5466f46d64bc8d6aa2606e82e2da466ec7b266331c056e20133"
+	found = false
+	for _, tradeLog := range tradeLogs {
+		if tradeLog.TransactionHash == ethereum.HexToHash(sampleTxHash) {
+			found = true
+			assert.Equal(t,
+				ethereum.HexToAddress("0x57f8160e1c59d16c01bbe181fd94db4e56b60495"),
+				tradeLog.SrcReserveAddress,
+				"ETH --> WETH trade log must have dest reserve address")
+		}
+	}
+	assert.True(t, found, "transaction %s not found", sampleTxHash)
 }

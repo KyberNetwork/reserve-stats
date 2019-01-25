@@ -2,24 +2,16 @@ package testutil
 
 import (
 	"os"
+	"strconv"
 	"testing"
 )
 
-const testModeFlag = "TEST_MODE"
+const externalTestFlag = "EXTERNAL_TEST"
 
-//GetTestMode return TestMode from environment key
-func GetTestMode() (TestMode, error) {
-	testMode := os.Getenv(testModeFlag)
-	return getTestModeFromString(testMode)
-}
-
-//SkipExternal will skip the test if mode is not external
+// SkipExternal will skip the test if mode is not external
 func SkipExternal(t *testing.T) {
-	testMode, err := GetTestMode()
-	if err != nil {
-		t.Skip("Can't get test mode. skip this external test")
-	}
-	if testMode != External {
+	external, err := strconv.ParseBool(os.Getenv(externalTestFlag))
+	if err != nil && !external {
 		t.Skip("disable as this test require external resource")
 	}
 }

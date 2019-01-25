@@ -7,9 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/contracts"
-	"github.com/KyberNetwork/reserve-stats/lib/core"
-	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -17,6 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
+	"github.com/KyberNetwork/reserve-stats/lib/core"
 )
 
 const defaultEthereumNode = "https://mainnet.infura.io"
@@ -31,7 +31,7 @@ type tokenResult struct {
 // TestTokenDecimals asserts that token decimals configured from Kyber Core has the same values as by calling the
 // (optional) constant of the token contract directly.
 func TestTokenDecimals(t *testing.T) {
-	testutil.SkipExternal(t)
+	t.Skip("skip this test as it requires reserve-core")
 
 	logger, err := zap.NewDevelopment()
 	require.Nil(t, err, "logger should be initiated successfully")

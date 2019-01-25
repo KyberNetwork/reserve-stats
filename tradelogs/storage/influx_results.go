@@ -268,7 +268,7 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		return tradeLog, fmt.Errorf("failed to get ethAmount: %s", err)
 	}
 
-	ethReceivalAmount, err := is.tokenAmountFormatter.ToWei(blockchain.ETHAddr, ethAmount)
+	ethAmountInWei, err := is.tokenAmountFormatter.ToWei(blockchain.ETHAddr, ethAmount)
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get ethReceivalAmount: %s", err)
 	}
@@ -340,7 +340,7 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		BlockNumber:     blockNumber,
 		TransactionHash: txHash,
 
-		EtherReceivalAmount: ethReceivalAmount,
+		EthAmount: ethAmountInWei,
 
 		UserAddress: userAddr,
 		SrcAddress:  srcAddress,

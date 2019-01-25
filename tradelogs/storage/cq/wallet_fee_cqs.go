@@ -6,7 +6,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	walletschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfee"
+	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 	walletFeeVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfee_volume"
 )
 
@@ -25,17 +25,17 @@ func executeWalletFeeQueryTemplate(templateString string) (string, error) {
 		ReserveAddr                  string
 		WalletAddr                   string
 	}{
-		WalletAmount:                 walletschema.Amount.String(),
+		WalletAmount:                 logSchema.Amount.String(),
 		WalletSumAmount:              walletFeeVolumeSchema.SumAmount.String(),
 		WalletFeeHourMeasurementName: common.WalletFeeVolumeMeasurementHour,
 		WalletFeeDayMeasurementName:  common.WalletFeeVolumeMeasurementDay,
 		WalletFeeMeasurementName:     common.WalletMeasurementName,
-		ReserveAddr:                  walletschema.ReserveAddr.String(),
-		WalletAddr:                   walletschema.WalletAddr.String(),
+		ReserveAddr:                  logSchema.ReserveAddr.String(),
+		WalletAddr:                   logSchema.WalletAddr.String(),
 	}); err != nil {
 		return "", err
 	}
-	return "", nil
+	return queryBuf.String(), nil
 }
 
 // CreateWalletFeeCqs return a set of cqs required for burnfee aggregation

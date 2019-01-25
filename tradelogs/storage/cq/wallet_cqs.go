@@ -135,8 +135,8 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	if err = tmpl.Execute(&queryBuf, struct {
+	var kycedQueryBuf bytes.Buffer
+	if err = tmpl.Execute(&kycedQueryBuf, struct {
 		KYCedAddresses             string
 		WalletStatsMeasurementName string
 		KYCed                      string
@@ -159,7 +159,7 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		queryBuf.String(),
+		kycedQueryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -173,8 +173,8 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	if err = tmpl.Execute(&queryBuf, struct {
+	var newUniqueAddressQueryBuf bytes.Buffer
+	if err = tmpl.Execute(&newUniqueAddressQueryBuf, struct {
 		Traded                     string
 		NewUniqueAddresses         string
 		WalletStatsMeasurementName string
@@ -195,7 +195,7 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		queryBuf.String(),
+		newUniqueAddressQueryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)
@@ -204,24 +204,24 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	}
 	result = append(result, newUnqAddressCq)
 
-	totalBurnFeeCqTemplate := `SELECT SUM({{.BurFeeAmount}}) AS {{.TotalBurnFee}} INTO {{.WalletStatsMeasurementName}} FROM {{.BurnFeeMeasurementName}} GROUP BY {{.WalletAddr}}`
+	totalBurnFeeCqTemplate := `SELECT SUM({{.BurnFeeAmount}}) AS {{.TotalBurnFee}} INTO {{.WalletStatsMeasurementName}} FROM {{.BurnFeeMeasurementName}} GROUP BY {{.WalletAddr}}`
 	tmpl, err = template.New("walletStatsQuery").Parse(totalBurnFeeCqTemplate)
 	if err != nil {
 		return nil, err
 	}
-
-	if err = tmpl.Execute(&queryBuf, struct {
+	var totalBurnFeeQueryBuf bytes.Buffer
+	if err = tmpl.Execute(&totalBurnFeeQueryBuf, struct {
 		BurnFeeAmount              string
 		TotalBurnFee               string
 		WalletStatsMeasurementName string
-		BurenFeeMeasurementName    string
+		BurnFeeMeasurementName     string
 		WalletAddr                 string
 	}{
-		BurnFeeAmount:              burnschema.Amount.String(),
+		BurnFeeAmount:              "",
 		TotalBurnFee:               walletStatSchema.TotalBurnFee.String(),
 		WalletStatsMeasurementName: common.WalletStatsMeasurement,
-		BurenFeeMeasurementName:    common.BurnFeeMeasurementName,
-		WalletAddr:                 burnschema.WalletAddress.String(),
+		BurnFeeMeasurementName:     common.BurnFeeMeasurementName,
+		WalletAddr:                 "",
 	}); err != nil {
 		return nil, err
 	}

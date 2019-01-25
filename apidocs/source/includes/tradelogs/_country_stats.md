@@ -50,7 +50,7 @@ timezone | integer | 0 | time zone code from -11 to +13
 ## Heatmap
 
 ```shell
-curl -X GET "http://gateway.local/heat-map?from=1542067200000&to=1542153600000&asset=AE"
+curl -X GET "http://gateway.local/heat-map?from=1542067200000&to=1542153600000&asset=0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 ```
 
 > the above request will return a struct like this
@@ -80,4 +80,4 @@ Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
 from | integer | false | one hour from now | start time range
 to | integer | false | now | end time range 
-asset | string | true | nil | token to get heatmap
+asset | string | true | nil | address of token to get heatmap for

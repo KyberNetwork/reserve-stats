@@ -39,8 +39,7 @@ func assertTradeLog(t *testing.T, tradeLog common.TradeLog) {
 	assert.NotZero(t, tradeLog.TransactionHash)
 
 	if tradeLog.SrcAddress != blockchain.ETHAddr {
-		assert.NotZero(t, tradeLog.EtherReceivalSender)
-		assert.NotZero(t, tradeLog.EtherReceivalAmount)
+		assert.NotZero(t, tradeLog.EthAmount)
 	}
 
 	assert.NotZero(t, tradeLog.UserAddress)

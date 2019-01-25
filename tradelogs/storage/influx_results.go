@@ -263,19 +263,14 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 
 	blockNumber, err := strconv.ParseUint(value[idxs[logschema.BlockNumber]].(string), 10, 64)
 
-	ethReceivalAddr, err := influxdb.GetAddressFromInterface(value[idxs[logschema.EthReceivalSender]])
+	ethAmount, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.EthAmount]])
 	if err != nil {
-		return tradeLog, fmt.Errorf("failed to get eth_receival_addr: %s", err)
+		return tradeLog, fmt.Errorf("failed to get ethAmount: %s", err)
 	}
 
-	humanizedEthReceival, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.EthReceivalAmount]])
+	ethAmountInWei, err := is.tokenAmountFormatter.ToWei(blockchain.ETHAddr, ethAmount)
 	if err != nil {
-		return tradeLog, fmt.Errorf("failed to get eth_receival_amount: %s", err)
-	}
-
-	ethReceivalAmountInWei, err := is.tokenAmountFormatter.ToWei(blockchain.ETHAddr, humanizedEthReceival)
-	if err != nil {
-		return tradeLog, fmt.Errorf("failed to convert eth_receival_amount: %s", err)
+		return tradeLog, fmt.Errorf("failed to get ethReceivalAmount: %s", err)
 	}
 
 	userAddr, err := influxdb.GetAddressFromInterface(value[idxs[logschema.UserAddr]])
@@ -345,8 +340,7 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		BlockNumber:     blockNumber,
 		TransactionHash: txHash,
 
-		EtherReceivalSender: ethReceivalAddr,
-		EtherReceivalAmount: ethReceivalAmountInWei,
+		EthAmount: ethAmountInWei,
 
 		UserAddress: userAddr,
 		SrcAddress:  srcAddress,

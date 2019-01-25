@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	burnschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee"
@@ -313,6 +312,8 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 
 		logschema.EthUSDProvider.String(): log.ETHUSDProvider,
 		logschema.LogIndex.String():       strconv.FormatUint(uint64(log.Index), 10),
+		logschema.SrcReserveAddr.String(): log.SrcReserveAddress.String(),
+		logschema.DstReserveAddr.String(): log.DstReserveAddress.String(),
 	}
 
 	logger := is.sugar.With(
@@ -342,8 +343,10 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
 		}
 	} else {
-		if log.ReserveAddresses.SrcReserveAddress.Hex() != "0x0000000000000000000000000000000000000000" {
-			tags[logschema.SrcReserveAddr.String()] = log.ReserveAddresses.SrcReserveAddress.Hex()
+		if !blockchain.IsZeroAddress(log.EtherReceivalSender) {
+			tags[logschema.SrcReserveAddr.String()] = log.EtherReceivalSender.Hex()
+		} else if !blockchain.IsZeroAddress(log.SrcReserveAddress) {
+			tags[logschema.SrcReserveAddr.String()] = log.SrcReserveAddress.Hex()
 		} else {
 			logger.Warnw("unexpected reserve address", "got", log.SrcReserveAddress.Hex(), "want", "1 valid address (not default one)")
 		}

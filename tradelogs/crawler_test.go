@@ -13,7 +13,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
@@ -48,7 +47,7 @@ func assertTradeLog(t *testing.T, tradeLog common.TradeLog) {
 	assert.NotZero(t, tradeLog.DestAddress)
 	assert.NotZero(t, tradeLog.SrcAmount)
 	assert.NotZero(t, tradeLog.DestAmount)
-	assert.True(t, contracts.IsZeroAddress(tradeLog.SrcReserveAddress) || contracts.IsZeroAddress(tradeLog.DstReserveAddress))
+	assert.True(t, blockchain.IsZeroAddress(tradeLog.SrcReserveAddress) || blockchain.IsZeroAddress(tradeLog.DstReserveAddress))
 
 	if blockchain.IsBurnable(tradeLog.SrcAddress) || blockchain.IsBurnable(tradeLog.DestAddress) {
 		assert.NotZero(t, tradeLog.BurnFees)

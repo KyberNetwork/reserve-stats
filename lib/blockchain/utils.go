@@ -37,3 +37,8 @@ func IsBurnable(token ethereum.Address) bool {
 	_, notBurn := notBurnTokens[token]
 	return !notBurn
 }
+
+//IsZeroAddress return if address is zero
+func IsZeroAddress(address ethereum.Address) bool {
+	return address.Hex() == "0x0000000000000000000000000000000000000000"
+}

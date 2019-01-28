@@ -5,14 +5,15 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
-	"github.com/KyberNetwork/reserve-stats/users/storage"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
+	"github.com/KyberNetwork/reserve-stats/users/storage"
 )
 
 const (
@@ -209,8 +210,7 @@ func TestUserHTTPServer(t *testing.T) {
     }
   ]
 }`),
-				// TODO: should not return 500
-				Assert: expectInternalServerError,
+				Assert: expectSuccess,
 			},
 			{
 				Msg:      "user is not kyced",
@@ -230,7 +230,7 @@ func TestUserHTTPServer(t *testing.T) {
 				Method:   http.MethodPost,
 				Body: []byte(`
 					{
-						"email": "test@gmail.com",
+						"email": "test2@gmail.com",
 						"user_info": [
 							{
 								"address": "0x2ea6200a999f4c6c982be525f8dc294f14f4cb08",

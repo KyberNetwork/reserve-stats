@@ -305,14 +305,18 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		return tradeLog, fmt.Errorf("failed to get dst_amount: %s", err)
 	}
 
-	srcReserveAddress, err = influxdb.GetAddressFromInterface(value[idxs[logschema.SrcReserveAddr]])
-	if err != nil {
-		return tradeLog, fmt.Errorf("failed to get src_reserve_addr: %s", err.Error())
+	if value[idxs[logschema.SrcReserveAddr]] != nil {
+		srcReserveAddress, err = influxdb.GetAddressFromInterface(value[idxs[logschema.SrcReserveAddr]])
+		if err != nil {
+			return tradeLog, fmt.Errorf("failed to get src_reserve_addr: %s", err.Error())
+		}
 	}
 
-	dstReserveAddress, err = influxdb.GetAddressFromInterface(value[idxs[logschema.DstReserveAddr]])
-	if err != nil {
-		return tradeLog, fmt.Errorf("failed to get dst_reserve_addr: %s", err.Error())
+ 	if value[idxs[logschema.DstReserveAddr]] != nil {
+		dstReserveAddress, err = influxdb.GetAddressFromInterface(value[idxs[logschema.DstReserveAddr]])
+		if err != nil {
+			return tradeLog, fmt.Errorf("failed to get dst_reserve_addr: %s", err.Error())
+		}
 	}
 
 	dstAmountInWei, err := is.tokenAmountFormatter.ToWei(dstAddress, humanizedDstAmount)

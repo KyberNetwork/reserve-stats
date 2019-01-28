@@ -44,10 +44,10 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	var (
 		result []*cq.ContinuousQuery
 	)
-	walletStatsCqTemplate := `SELECT COUNT(record) AS {{.UniqueAddresses}} INTO {{.WalletStatsMeasurementName}} FROM ` +
+	walletStatsUniqueAddresses := `SELECT COUNT(record) AS {{.UniqueAddresses}} INTO {{.WalletStatsMeasurementName}} FROM ` +
 		`(SELECT SUM({{.ETHAmount}}) AS record FROM {{.TradeLogMeasurementName}} GROUP BY {{.UserAddr}}, {{.WalletAddr}}) GROUP BY {{.WalletAddr}}`
 
-	queryString, err := executeWalletStatsTemplate(walletStatsCqTemplate)
+	queryString, err := executeWalletStatsTemplate(walletStatsUniqueAddresses)
 	if err != nil {
 		return nil, err
 	}

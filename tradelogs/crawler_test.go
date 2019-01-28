@@ -58,8 +58,7 @@ func assertTradeLog(t *testing.T, tradeLog common.TradeLog) {
 }
 
 func TestCrawlerGetTradeLogs(t *testing.T) {
-	// TODO: uncomment me
-	//t.Skip("disable as this test require external resource")
+	t.Skip("disable as this test require external resource")
 
 	node, ok := os.LookupEnv("ETHEREUM_NODE")
 	if !ok {

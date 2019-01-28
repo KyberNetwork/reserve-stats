@@ -1,13 +1,14 @@
 package storage
 
 import (
-	"database/sql"
 	"fmt"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/users/common"
-	"github.com/jmoiron/sqlx"
-	"go.uber.org/zap"
 )
 
 const (
@@ -29,13 +30,15 @@ func (udb *UserDB) DeleteAllTables() error {
 
 //NewDB open a new database connection
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*UserDB, error) {
-	const schemaFmt = `
-CREATE TABLE IF NOT EXISTS "%s" (
-  id    SERIAL PRIMARY KEY,
-  email text NOT NULL UNIQUE
+	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%s"
+(
+  id           SERIAL PRIMARY KEY,
+  email        text      NOT NULL UNIQUE,
+  last_updated TIMESTAMP NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "%s" (
+CREATE TABLE IF NOT EXISTS "%s"
+(
   id        SERIAL PRIMARY KEY,
   address   text      NOT NULL UNIQUE,
   timestamp TIMESTAMP NOT NULL,
@@ -72,11 +75,20 @@ func (udb *UserDB) Close() error {
 func (udb *UserDB) CreateOrUpdate(userData common.UserData) error {
 	var (
 		logger = udb.sugar.With(
-			"func", "users/storage.NewDB",
+			"func", "users/storage.CreateOrUpdate",
 			"email", userData.Email,
 		)
-		userID int
+		stmt       string
+		addresses  []string
+		timestamps []int64
 	)
+
+	for _, ui := range userData.UserInfo {
+		addresses = append(addresses, ui.Address)
+	}
+	for _, ui := range userData.UserInfo {
+		timestamps = append(timestamps, ui.Timestamp)
+	}
 
 	tx, err := udb.db.Beginx()
 	if err != nil {
@@ -85,46 +97,50 @@ func (udb *UserDB) CreateOrUpdate(userData common.UserData) error {
 
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 
-	err = tx.Get(&userID, fmt.Sprintf(`SELECT id FROM "%s" WHERE email = $1;`, usersTableName), userData.Email)
-	if err == sql.ErrNoRows {
-		logger.Debug("user does not exist, creating")
-		row := tx.QueryRowx(`INSERT INTO users (email) VALUES ($1) RETURNING id;`, userData.Email)
-		if err = row.Scan(&userID); err != nil {
-			return err
-		}
-		logger = logger.With("user_id", userID)
-		logger.Debug("user is created")
-	} else if err != nil {
-		return err
-	} else {
-		logger = logger.With("user_id", userID)
-		logger.Debug("user already exists")
-	}
-
-	// client will submit all registered addresses every time
-	_, err = tx.Exec(fmt.Sprintf(`
-	DELETE FROM "%s" WHERE user_id = $1
-`, addressesTableName), userID)
+	stmt = fmt.Sprintf(`WITH u AS (
+  INSERT INTO "%s" (email, last_updated)
+    VALUES ($1, NOW())
+    ON CONFLICT ON CONSTRAINT users_email_key
+      DO UPDATE SET last_updated = NOW() RETURNING id
+),
+     a AS (
+       SELECT unnest($2::text[])             AS address,
+              unnest($3::double precision[]) AS timestamp
+     )
+INSERT
+INTO "%s"(address, timestamp, user_id)
+SELECT a.address, to_timestamp(a.timestamp / 1000), u.id
+FROM u NATURAL JOIN a
+ON CONFLICT ON CONSTRAINT addresses_address_key DO UPDATE SET timestamp = EXCLUDED.timestamp, user_id = EXCLUDED.user_id
+`,
+		usersTableName,
+		addressesTableName)
+	logger.Debugw("upsert email and Ethereum addresses",
+		"stmt", stmt)
+	_, err = tx.Exec(stmt,
+		userData.Email,
+		pq.StringArray(addresses),
+		pq.Int64Array(timestamps),
+	)
 	if err != nil {
 		return err
 	}
-	for _, info := range userData.UserInfo {
-		logger.Debugw("updating user address",
-			"address", info.Address,
-			"timestamp", info.Timestamp,
-		)
-		_, err = tx.Exec(fmt.Sprintf(`
-INSERT INTO "%s" (address, timestamp, user_id)
-VALUES ($1, (TO_TIMESTAMP($2::double precision/1000)), $3);
-`, addressesTableName),
-			info.Address,
-			info.Timestamp,
-			userID)
-		if err != nil {
-			return err
-		}
-	}
 
+	logger.Debugw("delete removed Ethereum addresses",
+		"stmt", stmt)
+	stmt = fmt.Sprintf(`DELETE
+FROM "%s"
+WHERE user_id IN (SELECT id AS user_id FROM "%s" WHERE email = $1)
+ AND address NOT IN (SELECT unnest($2::text[]) as address)
+`,
+		addressesTableName,
+		usersTableName)
+	_, err = tx.Exec(stmt,
+		userData.Email,
+		pq.StringArray(addresses))
+	if err != nil {
+		return err
+	}
 	return err
 }
 

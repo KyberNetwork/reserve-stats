@@ -312,7 +312,7 @@ func (is *InfluxStorage) rowToTradeLog(row models.Row,
 		}
 	}
 
- 	if value[idxs[logschema.DstReserveAddr]] != nil {
+	if value[idxs[logschema.DstReserveAddr]] != nil {
 		dstReserveAddress, err = influxdb.GetAddressFromInterface(value[idxs[logschema.DstReserveAddr]])
 		if err != nil {
 			return tradeLog, fmt.Errorf("failed to get dst_reserve_addr: %s", err.Error())

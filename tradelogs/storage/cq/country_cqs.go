@@ -105,7 +105,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 
 	volCqsTemplate := `SELECT SUM({{.ETHAmount}}) AS {{.TotalETHVolume}}, SUM(usd_amount) AS {{.TotalUSDAmount}}, COUNT({{.ETHAmount}}) AS {{.TotalTrade}}, ` +
 		`MEAN(usd_amount) AS {{.USDPerTrade}}, MEAN({{.ETHAmount}}) AS {{.ETHPerTrade}} INTO {{.CountryStatsMeasurementName}} FROM ` +
-		`(SELECT {{.DstAmount}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} ` +
+		`(SELECT {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} ` +
 		`WHERE ({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') ` +
 		`OR ({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}')) GROUP BY {{.Country}}`
 
@@ -122,7 +122,6 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		USDPerTrade                 string
 		ETHPerTrade                 string
 		CountryStatsMeasurementName string
-		DstAmount                   string
 		ETHUSDRate                  string
 		TradeLogMeasurementName     string
 		SrcAddr                     string
@@ -138,7 +137,6 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		USDPerTrade:                 countryStatSchema.USDPerTrade.String(),
 		ETHPerTrade:                 countryStatSchema.ETHPerTrade.String(),
 		CountryStatsMeasurementName: common.CountryStatsMeasurementName,
-		DstAmount:                   logSchema.DstAmount.String(),
 		ETHUSDRate:                  logSchema.EthUSDRate.String(),
 		TradeLogMeasurementName:     common.TradeLogMeasurementName,
 		SrcAddr:                     logSchema.SrcAddr.String(),

@@ -68,7 +68,7 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 
 	walletStatsVolCqs := `SELECT SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}}, COUNT({{.ETHAmount}}) AS {{.TotalTrade}}, ` +
 		`MEAN(usd_amount) AS {{.USDPerTrade}}, MEAN({{.ETHAmount}}) AS {{.ETHPerTrade}} INTO {{.WalletStatsMeasurementName}} FROM ` +
-		`(SELECT {{.DstAmount}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} ` +
+		`(SELECT {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} ` +
 		`WHERE ({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') ` +
 		`OR ({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}') GROUP BY {{.WalletAddr}}) GROUP BY {{.WalletAddr}}`
 
@@ -86,7 +86,6 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		USDPerTrade                string
 		ETHPerTrade                string
 		WalletStatsMeasurementName string
-		DstAmount                  string
 		ETHUSDRate                 string
 		TradeLogMeasurementName    string
 		SrcAddr                    string
@@ -102,7 +101,6 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		USDPerTrade:                walletStatSchema.USDPerTrade.String(),
 		ETHPerTrade:                walletStatSchema.ETHPerTrade.String(),
 		WalletStatsMeasurementName: common.WalletStatsMeasurement,
-		DstAmount:                  logSchema.DstAmount.String(),
 		ETHUSDRate:                 logSchema.EthUSDRate.String(),
 		TradeLogMeasurementName:    common.TradeLogMeasurementName,
 		SrcAddr:                    logSchema.SrcAddr.String(),

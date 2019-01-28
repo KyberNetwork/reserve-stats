@@ -10,20 +10,19 @@ import (
 	walletFeeVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfee_volume"
 )
 
-func executeWalletFeeQueryTemplate(templateString string) (string, error) {
+func executeWalletFeeQueryTemplate(templateString, cqMeasurementName string) (string, error) {
 	tmpl, err := template.New("walletFeeQuery").Parse(templateString)
 	if err != nil {
 		return "", err
 	}
 	var queryBuf bytes.Buffer
 	if err := tmpl.Execute(&queryBuf, struct {
-		WalletAmount                 string
-		WalletSumAmount              string
-		WalletFeeHourMeasurementName string
-		WalletFeeDayMeasurementName  string
-		WalletFeeMeasurementName     string
-		ReserveAddr                  string
-		WalletAddr                   string
+		WalletAmount               string
+		WalletSumAmount            string
+		WalletFeeCQMeasurementName string
+		WalletFeeMeasurementName   string
+		ReserveAddr                string
+		WalletAddr                 string
 	}{
 		WalletAmount:                 logSchema.Amount.String(),
 		WalletSumAmount:              walletFeeVolumeSchema.SumAmount.String(),

@@ -316,42 +316,6 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.DstReserveAddr.String(): log.DstReserveAddress.String(),
 	}
 
-	logger := is.sugar.With(
-		"func", "tradelogs/storage/tradeLogToPoint",
-		"log", log,
-	)
-
-	if blockchain.IsBurnable(log.SrcAddress) {
-		if blockchain.IsBurnable(log.DestAddress) {
-			if len(log.BurnFees) == 2 {
-				tags[logschema.SrcReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
-				tags[logschema.DstReserveAddr.String()] = log.BurnFees[1].ReserveAddress.String()
-			} else {
-				logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "2 burn fees (src-dst)")
-			}
-		} else {
-			if len(log.BurnFees) == 1 {
-				tags[logschema.SrcReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
-			} else {
-				logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (src)")
-			}
-		}
-	} else if blockchain.IsBurnable(log.DestAddress) {
-		if len(log.BurnFees) == 1 {
-			tags[logschema.DstReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
-		} else {
-			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
-		}
-	} else {
-		if !blockchain.IsZeroAddress(log.EtherReceivalSender) {
-			tags[logschema.SrcReserveAddr.String()] = log.EtherReceivalSender.Hex()
-		} else if !blockchain.IsZeroAddress(log.SrcReserveAddress) {
-			tags[logschema.SrcReserveAddr.String()] = log.SrcReserveAddress.Hex()
-		} else {
-			logger.Warnw("unexpected reserve address", "got", log.SrcReserveAddress.Hex(), "want", "1 valid address (not default one)")
-		}
-	}
-
 	ethReceivalAmount, err := is.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)
 	if err != nil {
 		return nil, err

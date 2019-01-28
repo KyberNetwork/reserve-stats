@@ -96,10 +96,6 @@ func assembleTradeLogsReserveAddr(log common.TradeLog, sugar *zap.SugaredLogger)
 		} else {
 			sugar.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
 		}
-	} else {
-		if !blockchain.IsZeroAddress(log.EtherReceivalSender) {
-			log.SrcReserveAddress = log.EtherReceivalSender
-		}
 	}
 	return log
 }
@@ -143,7 +139,7 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			}
 			// when the tradelog does not contain burnfee and etherReceival event
 			// get tx receipt to get reserve address
-			if len(tradeLog.BurnFees) == 0 && blockchain.IsZeroAddress(tradeLog.EtherReceivalSender) {
+			if len(tradeLog.BurnFees) == 0 && blockchain.IsZeroAddress(tradeLog.SrcReserveAddress) {
 				tradeLog.SrcReserveAddress, err = crawler.getTransactionReceipt(tradeLog.TransactionHash, 10*time.Second, log.Index)
 				if err != nil {
 					return nil, err

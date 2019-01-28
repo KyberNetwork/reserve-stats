@@ -236,7 +236,7 @@ func fillKyberTrade(tradeLog common.TradeLog, logItem types.Log) (common.TradeLo
 	tradeLog.UserAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
 	tradeLog.BlockNumber = logItem.BlockNumber
 	tradeLog.SrcReserveAddress = srcReserve
-	tradeLog.SrcReserveAddress = dstReserve
+	tradeLog.DstReserveAddress = dstReserve
 
 	return tradeLog, nil
 }

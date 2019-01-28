@@ -83,12 +83,14 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		result []*libcq.ContinuousQuery
 	)
 
-	assetVolCqsTemplate := `SELECT SUM({{.AmountType}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeCqMeasurement}}  ` +
+	assetVolCqsTemplate := `SELECT SUM({{.AmountType}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, ` +
+		`SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeCqMeasurement}}  ` +
 		`FROM (SELECT {{.AmountType}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} WHERE ` +
 		`(({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') OR ` +
 		`({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}'))) GROUP BY {{.AmountTypeAddr}}`
 
-	queryString, err := executeAssetVolumeTemplate(assetVolCqsTemplate, logSchema.DstAmount.String(), common.VolumeHourMeasurementName, logSchema.DstAddr.String())
+	queryString, err := executeAssetVolumeTemplate(assetVolCqsTemplate, logSchema.DstAmount.String(),
+		common.VolumeHourMeasurementName, logSchema.DstAddr.String())
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +109,8 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, assetVolDstHourCqs)
 
-	queryString, err = executeAssetVolumeTemplate(assetVolCqsTemplate, logSchema.SrcAmount.String(), common.VolumeHourMeasurementName, logSchema.SrcAddr.String())
+	queryString, err = executeAssetVolumeTemplate(assetVolCqsTemplate, logSchema.SrcAmount.String(),
+		common.VolumeHourMeasurementName, logSchema.SrcAddr.String())
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +129,8 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, assetVolSrcHourCqs)
 
-	queryString, err = executeAssetVolumeTemplate(assetVolCqsTemplate, logSchema.DstAmount.String(), common.VolumeDayMeasurementName, logSchema.DstAddr.String())
+	queryString, err = executeAssetVolumeTemplate(assetVolCqsTemplate, logSchema.DstAmount.String(),
+		common.VolumeDayMeasurementName, logSchema.DstAddr.String())
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +149,8 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, assetVolDstDayCqs)
 
-	queryString, err = executeAssetVolumeTemplate(assetVolCqsTemplate, logSchema.SrcAmount.String(), common.VolumeDayMeasurementName, logSchema.SrcAddr.String())
+	queryString, err = executeAssetVolumeTemplate(assetVolCqsTemplate, logSchema.SrcAmount.String(),
+		common.VolumeDayMeasurementName, logSchema.SrcAddr.String())
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +205,8 @@ func CreateUserVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		result []*libcq.ContinuousQuery
 	)
 	userVolumeCqsQueryTemplate := `SELECT SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} ` +
-		`INTO {{.UserVolumeMeasurementName}} FROM (SELECT {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}}) GROUP BY {{.UserAddr}}`
+		`INTO {{.UserVolumeMeasurementName}} FROM (SELECT {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount ` +
+		`FROM {{.TradeLogMeasurementName}}) GROUP BY {{.UserAddr}}`
 
 	queryString, err := executeUserVolumeTemplate(userVolumeCqsQueryTemplate, common.UserVolumeDayMeasurementName)
 	if err != nil {

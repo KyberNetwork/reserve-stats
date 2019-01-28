@@ -127,7 +127,8 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	result = append(result, volCqs)
 
 	kycedQueryTemplate := `SELECT COUNT(kyced) AS {{.KYCedAddresses}} INTO {{.WalletStatsMeasurementName}} ` +
-		`FROM (SELECT DISTINCT({{.KYCed}}) AS kyced FROM {{.KYCedMeasurementName}} GROUP BY {{.UserAddr}}, {{.WalletAddr}}) GROUP BY {{.WalletAddr}}`
+		`FROM (SELECT DISTINCT({{.KYCed}}) AS kyced FROM {{.KYCedMeasurementName}} GROUP BY {{.UserAddr}}, ` +
+		`{{.WalletAddr}}) GROUP BY {{.WalletAddr}}`
 
 	tmpl, err = template.New("walletStatsQuery").Parse(kycedQueryTemplate)
 	if err != nil {
@@ -166,7 +167,8 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	}
 	result = append(result, kyced)
 
-	newUniqueAddressCqTemplate := `SELECT COUNT({{.Traded}}) AS {{.NewUniqueAddresses}} INTO {{.WalletStatsMeasurementName}} FROM {{.FirstTradeMeasurementName}} GROUP BY {{.WalletAddr}}`
+	newUniqueAddressCqTemplate := `SELECT COUNT({{.Traded}}) AS {{.NewUniqueAddresses}} INTO ` +
+		`{{.WalletStatsMeasurementName}} FROM {{.FirstTradeMeasurementName}} GROUP BY {{.WalletAddr}}`
 	tmpl, err = template.New("walletStatsQuery").Parse(newUniqueAddressCqTemplate)
 	if err != nil {
 		return nil, err
@@ -202,7 +204,8 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	}
 	result = append(result, newUnqAddressCq)
 
-	totalBurnFeeCqTemplate := `SELECT SUM({{.BurnFeeAmount}}) AS {{.TotalBurnFee}} INTO {{.WalletStatsMeasurementName}} FROM {{.BurnFeeMeasurementName}} GROUP BY {{.WalletAddr}}`
+	totalBurnFeeCqTemplate := `SELECT SUM({{.BurnFeeAmount}}) AS {{.TotalBurnFee}} INTO {{.WalletStatsMeasurementName}} ` +
+		`FROM {{.BurnFeeMeasurementName}} GROUP BY {{.WalletAddr}}`
 	tmpl, err = template.New("walletStatsQuery").Parse(totalBurnFeeCqTemplate)
 	if err != nil {
 		return nil, err

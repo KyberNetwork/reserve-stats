@@ -18,10 +18,6 @@ const (
 	tradeExecuteEvent = "0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de"
 )
 
-func isZeroAddress(address ethereum.Address) bool {
-	return address.Hex() == "0x0000000000000000000000000000000000000000"
-}
-
 func (crawler *Crawler) fetchTradeLogV2(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
 	var result []common.TradeLog
 	topics := [][]ethereum.Hash{
@@ -140,6 +136,7 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			// when the tradelog does not contain burnfee and etherReceival event
 			// get tx receipt to get reserve address
 			if len(tradeLog.BurnFees) == 0 && blockchain.IsZeroAddress(tradeLog.SrcReserveAddress) {
+				crawler.sugar.Debug("Tradelog have no burnfee and ethReceival event, fallback to get reserve address from tx receipt")
 				tradeLog.SrcReserveAddress, err = crawler.getTransactionReceipt(tradeLog.TransactionHash, 10*time.Second, log.Index)
 				if err != nil {
 					return nil, err

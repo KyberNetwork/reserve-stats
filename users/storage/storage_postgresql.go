@@ -144,7 +144,7 @@ WHERE user_id IN (SELECT id AS user_id FROM "%s" WHERE email = $1)
 	return err
 }
 
-//IsKYCed returns true when given address is found in database,
+// IsKYCed returns true when given address is found in database,
 // means that user is already KYCed.
 func (udb *UserDB) IsKYCed(address string) (bool, error) {
 	var count int

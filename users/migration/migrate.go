@@ -89,9 +89,9 @@ func (dbm *DBMigration) InsertOrUpdate(address, email, usersTableName, addressTa
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 	timepoint := timeutil.TimestampMsToTime(timestamp)
 	stmt = fmt.Sprintf(`WITH u AS (
-  INSERT INTO "%s" (email, last_updated)
+  INSERT INTO "%[1]s" (email, last_updated)
     VALUES ($1, $2)
-    ON CONFLICT ON CONSTRAINT users_email_key
+    ON CONFLICT ON CONSTRAINT %[1]s_email_key
       DO UPDATE SET last_updated = $2 RETURNING id
 ),
      a AS (
@@ -99,10 +99,10 @@ func (dbm *DBMigration) InsertOrUpdate(address, email, usersTableName, addressTa
               $2 AS timestamp
      )
 INSERT
-INTO "%s"(address, timestamp, user_id)
+INTO "%[2]s"(address, timestamp, user_id)
 SELECT a.address, a.timestamp, u.id
 FROM u NATURAL JOIN a
-ON CONFLICT ON CONSTRAINT addresses_address_key DO UPDATE SET timestamp = EXCLUDED.timestamp, user_id = EXCLUDED.user_id 
+ON CONFLICT ON CONSTRAINT %[2]s_address_key DO UPDATE SET timestamp = EXCLUDED.timestamp, user_id = EXCLUDED.user_id 
 `,
 		usersTableName,
 		addressTableName)

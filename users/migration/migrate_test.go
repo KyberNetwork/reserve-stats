@@ -59,7 +59,8 @@ func newTestMigrateDB() (*DBMigration, error) {
 	var schema = fmt.Sprintf(`
 CREATE TABLE IF NOT EXISTS "%[1]s" (
   id    SERIAL PRIMARY KEY,
-  email text NOT NULL UNIQUE
+  email text NOT NULL UNIQUE,
+  last_updated TIMESTAMP NOT NULL
 );
 CREATE TABLE IF NOT EXISTS "%[2]s" (
   id        SERIAL PRIMARY KEY,

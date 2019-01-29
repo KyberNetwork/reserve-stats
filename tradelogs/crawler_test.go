@@ -16,6 +16,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 const defaultEthereumNode = "https://mainnet.infura.io"
@@ -58,7 +59,7 @@ func assertTradeLog(t *testing.T, tradeLog common.TradeLog) {
 }
 
 func TestCrawlerGetTradeLogs(t *testing.T) {
-	t.Skip("disable as this test require external resource")
+	testutil.SkipExternal(t)
 
 	node, ok := os.LookupEnv("ETHEREUM_NODE")
 	if !ok {

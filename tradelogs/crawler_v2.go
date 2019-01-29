@@ -6,11 +6,13 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 const (
@@ -52,10 +54,7 @@ func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time
 	if err != nil {
 		return reserveAddr, err
 	}
-	for index := len(receipt.Logs) - 1; index >= 0; index-- {
-		if uint(index) > logIndex {
-			continue
-		}
+	for index := mathutil.MinUint64(uint64(len(receipt.Logs)-1), uint64(logIndex)); index >= 0; index-- {
 		log := receipt.Logs[index]
 		for _, topic := range log.Topics {
 			if topic == ethereum.HexToHash(tradeExecuteEvent) {
@@ -91,6 +90,13 @@ func assembleTradeLogsReserveAddr(log common.TradeLog, sugar *zap.SugaredLogger)
 			log.DstReserveAddress = log.BurnFees[0].ReserveAddress
 		} else {
 			sugar.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
+		}
+	} else if len(log.WalletFees) != 0 {
+		if len(log.WalletFees) == 1 {
+			log.SrcReserveAddress = log.WalletFees[0].ReserveAddress
+		} else {
+			log.SrcReserveAddress = log.WalletFees[0].ReserveAddress
+			log.DstReserveAddress = log.WalletFees[1].ReserveAddress
 		}
 	}
 	return log
@@ -133,6 +139,9 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
 				return nil, err
 			}
+
+			tradeLog = assembleTradeLogsReserveAddr(tradeLog, crawler.sugar)
+
 			// when the tradelog does not contain burnfee and etherReceival event
 			// get tx receipt to get reserve address
 			if len(tradeLog.BurnFees) == 0 && blockchain.IsZeroAddress(tradeLog.SrcReserveAddress) {
@@ -142,7 +151,6 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 					return nil, err
 				}
 			}
-			tradeLog = assembleTradeLogsReserveAddr(tradeLog, crawler.sugar)
 
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			// one trade only has one and only ExecuteTrade event

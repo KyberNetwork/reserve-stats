@@ -200,9 +200,8 @@ func (rs *RateStorage) lastRates(reserveAddr string) (map[string]common.LastRate
 
 func (rs *RateStorage) constructDataPoint(rsvAddr, pair string, fromBlock, toBlock uint64, rate common.ReserveRateEntry) (*influxClient.Point, error) {
 	tags := map[string]string{
-		schema.Reserve.String():   rsvAddr,
-		schema.Pair.String():      pair,
-		schema.FromBlock.String(): strconv.FormatUint(fromBlock, 10),
+		schema.Reserve.String(): rsvAddr,
+		schema.Pair.String():    pair,
 	}
 
 	if toBlock == 0 {
@@ -215,6 +214,7 @@ func (rs *RateStorage) constructDataPoint(rsvAddr, pair string, fromBlock, toBlo
 		schema.BuySanityRate.String():  rate.BuySanityRate,
 		schema.SellSanityRate.String(): rate.SellSanityRate,
 		schema.ToBlock.String():        int64(toBlock),
+		schema.FromBlock.String():      strconv.FormatUint(fromBlock, 10),
 	}
 
 	if rs.blkTimeRsv == nil {

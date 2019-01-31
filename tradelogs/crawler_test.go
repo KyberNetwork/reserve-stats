@@ -14,7 +14,6 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
-	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
@@ -59,7 +58,7 @@ func assertTradeLog(t *testing.T, tradeLog common.TradeLog) {
 }
 
 func TestCrawlerGetTradeLogs(t *testing.T) {
-	testutil.SkipExternal(t)
+	//testutil.SkipExternal(t)
 
 	node, ok := os.LookupEnv("ETHEREUM_NODE")
 	if !ok {

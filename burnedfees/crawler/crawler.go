@@ -107,7 +107,7 @@ func (c *BurnedFeesCrawler) Crawl(fromBlock, toBlock, maxBlocks uint64) error {
 	logger.Debugw("fetching BurnAssignedFees event logs")
 
 	for i := fromBlock; i < toBlock; i += maxBlocks {
-		events, err := c.crawl(i, mathutil.MintUint64(i+maxBlocks, toBlock))
+		events, err := c.crawl(i, mathutil.MinUint64(i+maxBlocks, toBlock))
 		if err != nil {
 			return err
 		}

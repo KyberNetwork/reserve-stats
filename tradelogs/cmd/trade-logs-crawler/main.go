@@ -241,7 +241,7 @@ func run(c *cli.Context) error {
 			var jobOrder = p.GetLastCompleteJobOrder()
 			for i := int64(fromBlock); i < toBlock; i = i + maxBlocks {
 				jobOrder++
-				p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(mathutil.MintInt64(i+maxBlocks, toBlock)), attempts))
+				p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(mathutil.MinInt64(i+maxBlocks, toBlock)), attempts))
 			}
 			for p.GetLastCompleteJobOrder() < jobOrder {
 				time.Sleep(time.Second)

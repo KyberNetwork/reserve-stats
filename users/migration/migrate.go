@@ -90,9 +90,9 @@ func (dbm *DBMigration) InsertOrUpdate(address, email, usersTableName, addressTa
 	timepoint := timeutil.TimestampMsToTime(timestamp)
 	stmt = fmt.Sprintf(`WITH u AS (
   INSERT INTO "%[1]s" (email, last_updated)
-    VALUES ($1, $2)
+    VALUES ($1, NOW())
     ON CONFLICT ON CONSTRAINT %[1]s_email_key
-      DO UPDATE SET last_updated = $2 RETURNING id
+      DO UPDATE SET last_updated = NOW() RETURNING id
 ),
      a AS (
        SELECT $3::text            AS address,

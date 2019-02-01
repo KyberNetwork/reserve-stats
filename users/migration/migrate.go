@@ -8,7 +8,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/boltutil"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	// "github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/boltdb/bolt"
 	"github.com/jmoiron/sqlx"
 )
@@ -87,7 +87,7 @@ func (dbm *DBMigration) InsertOrUpdate(address, email, usersTableName, addressTa
 	}
 
 	defer pgsql.CommitOrRollback(tx, logger, &err)
-	timepoint := timeutil.TimestampMsToTime(timestamp)
+	// timepoint := timeutil.TimestampMsToTime(timestamp)
 	stmt = fmt.Sprintf(`WITH u AS (
   INSERT INTO "%[1]s" (email, last_updated)
     VALUES ($1, NOW())
@@ -95,12 +95,12 @@ func (dbm *DBMigration) InsertOrUpdate(address, email, usersTableName, addressTa
       DO UPDATE SET last_updated = NOW() RETURNING id
 ),
      a AS (
-       SELECT $3::text            AS address,
-              $2 AS timestamp
+       SELECT $2::text            AS address,
+              $3::double precision AS timestamp
      )
 INSERT
 INTO "%[2]s"(address, timestamp, user_id)
-SELECT a.address, a.timestamp, u.id
+SELECT a.address, to_timestamp(a.timestamp / 1000), u.id
 FROM u NATURAL JOIN a
 ON CONFLICT ON CONSTRAINT %[2]s_address_key DO UPDATE SET timestamp = EXCLUDED.timestamp, user_id = EXCLUDED.user_id 
 `,
@@ -110,8 +110,8 @@ ON CONFLICT ON CONSTRAINT %[2]s_address_key DO UPDATE SET timestamp = EXCLUDED.t
 		"stmt", stmt)
 	_, err = tx.Exec(stmt,
 		email,
-		timepoint,
 		address,
+		int64(timestamp),
 	)
 	return err
 }

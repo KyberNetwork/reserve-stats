@@ -73,6 +73,7 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 	}
 
 	if err := is.influxClient.Write(bp); err != nil {
+		is.sugar.Errorw("saving error", "error", err)
 		return err
 	}
 
@@ -354,7 +355,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.EthUSDRate.String(): log.ETHUSDRate,
 
 		logschema.EthAmount.String():      ethAmount,
-		logschema.BlockNumber.String():    log.BlockNumber,
+		logschema.BlockNumber.String():    int64(log.BlockNumber),
 		logschema.TxHash.String():         log.TransactionHash.String(),
 		logschema.IP.String():             log.IP,
 		logschema.EthUSDProvider.String(): log.ETHUSDProvider,

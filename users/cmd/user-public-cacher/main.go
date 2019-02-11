@@ -69,6 +69,6 @@ func run(c *cli.Context) error {
 
 func cachedUserInfo(postgresDB *sqlx.DB, cached *redis.Client) error {
 	// cache all user address
-
+	
 	return nil
 }

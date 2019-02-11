@@ -436,7 +436,7 @@ func (is *InfluxStorage) assembleKYCPoint(logItem common.TradeLog) (*client.Poin
 		"country", logItem.Country,
 	)
 
-	kyced, err := is.kycChecker.IsKYCed(logItem.UserAddress, logItem.Timestamp)
+	kyced, err := is.kycChecker.IsKYCedAtTime(logItem.UserAddress, logItem.Timestamp)
 	if err != nil {
 		return nil, err
 	}

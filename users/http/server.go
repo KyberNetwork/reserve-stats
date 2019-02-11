@@ -91,7 +91,7 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 
 	logger = logger.With("address", address)
 
-	kyced, err := s.storage.IsKYCed(address)
+	kyced, err := s.storage.IsKYCedAtTime(address, time.Now())
 	if err != nil {
 		httputil.ResponseFailure(
 			c,

@@ -25,7 +25,7 @@ type Client struct {
 
 func (c *Client) newRequest(method, endpoint string, params map[string]string) (*http.Request, error) {
 	logger := c.sugar.With(
-		"func", "lib/user_kyced/client.go/newRequest",
+		"func", "lib/userkyced/client.go/newRequest",
 		"method", method,
 		"endpoint", endpoint,
 	)
@@ -67,8 +67,8 @@ func NewClient(sugar *zap.SugaredLogger, url, signingKey, signingKeyID string) (
 	}, nil
 }
 
-// IsKYCed will look for the user kyc status of input addr from server
-func (c *Client) IsKYCed(addr ethereum.Address, timePoint time.Time) (bool, error) {
+// IsKYCedAtTime will look for the user kyc status of input addr from server
+func (c *Client) IsKYCedAtTime(addr ethereum.Address, timePoint time.Time) (bool, error) {
 	const endpoint = "/kyced"
 	var (
 		params = make(map[string]string)
@@ -95,7 +95,7 @@ func (c *Client) IsKYCed(addr ethereum.Address, timePoint time.Time) (bool, erro
 		return result.Kyced, err
 	}
 	if !result.Success {
-		return result.Kyced, fmt.Errorf("failed to get  user profile, reason : %v", result.Reason)
+		return result.Kyced, fmt.Errorf("failed to get user profile, reason : %v", result.Reason)
 	}
 	return result.Kyced, nil
 }

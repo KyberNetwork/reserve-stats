@@ -17,7 +17,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
-	userkyced "github.com/KyberNetwork/reserve-stats/lib/user_kyced"
+	userkyced "github.com/KyberNetwork/reserve-stats/lib/userkyced"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"

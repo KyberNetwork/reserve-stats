@@ -12,7 +12,7 @@ import (
 
 //KycChecker is the interface to abstract functionality for checking kyc status
 type KycChecker interface {
-	IsKYCed(common.Address, time.Time) (bool, error)
+	IsKYCedAtTime(common.Address, time.Time) (bool, error)
 }
 
 // NewUserKYCChecker creates a new instance of UserKYCChecker.
@@ -26,8 +26,8 @@ type UserKYCChecker struct {
 	db    *sqlx.DB
 }
 
-// IsKYCed returns true if user is already KYCed at the given timestamp.
-func (c *UserKYCChecker) IsKYCed(userAddr common.Address, ts time.Time) (bool, error) {
+// IsKYCedAtTime returns true if user is already KYCed at the given timestamp.
+func (c *UserKYCChecker) IsKYCedAtTime(userAddr common.Address, ts time.Time) (bool, error) {
 	const addressesTableName = "addresses"
 
 	var (
@@ -39,7 +39,7 @@ func (c *UserKYCChecker) IsKYCed(userAddr common.Address, ts time.Time) (bool, e
 		result uint64
 	)
 
-	stmt := fmt.Sprintf(`SELECT COUNT(1) FROM "%s" WHERE address = $1 AND timestamp < $2`, addressesTableName)
+	stmt := fmt.Sprintf(`SELECT COUNT(1) FROM "%s" WHERE address = $1 AND timestamp <= $2`, addressesTableName)
 	logger = logger.With("query", stmt)
 	if err := c.db.Get(&result, stmt, strings.ToLower(userAddr.Hex()), ts.UTC()); err != nil {
 		return false, err
@@ -50,7 +50,7 @@ func (c *UserKYCChecker) IsKYCed(userAddr common.Address, ts time.Time) (bool, e
 
 type mocKYCChecker struct{}
 
-func (*mocKYCChecker) IsKYCed(_ common.Address, _ time.Time) (bool, error) {
+func (*mocKYCChecker) IsKYCedAtTime(_ common.Address, _ time.Time) (bool, error) {
 	return true, nil
 }
 

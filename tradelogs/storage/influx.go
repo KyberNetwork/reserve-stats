@@ -251,7 +251,8 @@ func (is *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.R
 	return res, nil
 }
 
-func (is *InfluxStorage) setBurnFeeTagsAndFields(log common.TradeLog, tags map[string]string, fields map[string]interface{}) error {
+//setBurnFeeFields set all the dst/srcBurnFee amount fields
+func (is *InfluxStorage) setBurnFeeFields(log common.TradeLog, fields map[string]interface{}) error {
 	var logger = is.sugar.With(
 		"func", "tradelogs/storage/setBurnFeeTagsAndFields",
 		"log", log,
@@ -261,7 +262,6 @@ func (is *InfluxStorage) setBurnFeeTagsAndFields(log common.TradeLog, tags map[s
 			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "at least 1 burn fees (src)")
 			return nil
 		}
-		tags[logschema.SrcReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
 		burnAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
 		if err != nil {
 			return err
@@ -273,7 +273,6 @@ func (is *InfluxStorage) setBurnFeeTagsAndFields(log common.TradeLog, tags map[s
 				logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "2 burn fees (src-dst)")
 				return nil
 			}
-			tags[logschema.DstReserveAddr.String()] = log.BurnFees[1].ReserveAddress.String()
 			burnAmount, err = is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[1].Amount)
 			if err != nil {
 				return err
@@ -290,7 +289,6 @@ func (is *InfluxStorage) setBurnFeeTagsAndFields(log common.TradeLog, tags map[s
 			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "at least 1 burn fees (dst)")
 			return nil
 		}
-		tags[logschema.DstReserveAddr.String()] = log.BurnFees[0].ReserveAddress.String()
 		burnAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
 		if err != nil {
 			return err
@@ -356,13 +354,13 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.EthUSDRate.String(): log.ETHUSDRate,
 
 		logschema.EthAmount.String():      ethAmount,
-		logschema.BlockNumber.String():    strconv.FormatUint(log.BlockNumber, 10),
+		logschema.BlockNumber.String():    log.BlockNumber,
 		logschema.TxHash.String():         log.TransactionHash.String(),
 		logschema.IP.String():             log.IP,
 		logschema.EthUSDProvider.String(): log.ETHUSDProvider,
 	}
 
-	if err = is.setBurnFeeTagsAndFields(log, tags, fields); err != nil {
+	if err = is.setBurnFeeFields(log, fields); err != nil {
 		return nil, err
 	}
 

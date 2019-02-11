@@ -170,9 +170,6 @@ func requiredWorkers(fromBlock, toBlock *big.Int, maxBlocks, maxWorkers int) int
 func run(c *cli.Context) error {
 	var (
 		err        error
-		fromBlock  *big.Int
-		toBlock    *big.Int
-		daemon     bool
 		kycChecker storage.KycChecker
 	)
 

@@ -122,8 +122,8 @@ func prepareTradeLogQuery() string {
 			logschema.IP,
 			logschema.Country,
 			logschema.IntegrationApp,
-			logschema.DestBurnFee,
-			logschema.SourceBurnFee,
+			logschema.SourceBurnAmount,
+			logschema.DestBurnAmount,
 			logschema.LogIndex,
 			logschema.TxHash,
 			logschema.SrcReserveAddr,
@@ -269,7 +269,7 @@ func (is *InfluxStorage) setBurnFeeFields(log common.TradeLog, fields map[string
 		if err != nil {
 			return err
 		}
-		fields[logschema.SourceBurnFee.String()] = burnAmount
+		fields[logschema.SourceBurnAmount.String()] = burnAmount
 
 		if blockchain.IsBurnable(log.DestAddress) {
 			if len(log.BurnFees) < 2 {
@@ -280,7 +280,7 @@ func (is *InfluxStorage) setBurnFeeFields(log common.TradeLog, fields map[string
 			if err != nil {
 				return err
 			}
-			fields[logschema.DestBurnFee.String()] = burnAmount
+			fields[logschema.DestBurnAmount.String()] = burnAmount
 			return nil
 		}
 
@@ -296,7 +296,7 @@ func (is *InfluxStorage) setBurnFeeFields(log common.TradeLog, fields map[string
 		if err != nil {
 			return err
 		}
-		fields[logschema.DestBurnFee.String()] = burnAmount
+		fields[logschema.DestBurnAmount.String()] = burnAmount
 	}
 	return nil
 }

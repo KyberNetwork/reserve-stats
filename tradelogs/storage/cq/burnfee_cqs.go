@@ -10,11 +10,11 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		result []*cq.ContinuousQuery
 	)
 	srcBurnfeeHourCqs, err := cq.NewContinuousQuery(
-		"src_burn_fee_hour",
+		"src_burn_amount_hour",
 		dbName,
 		hourResampleInterval,
 		hourResampleFor,
-		"SELECT SUM(src_burn_fee) as sum_amount INTO burn_fee_hour FROM trades GROUP BY src_rsv_addr",
+		"SELECT SUM(src_burn_amount) as sum_amount INTO burn_fee_hour FROM trades GROUP BY src_rsv_addr",
 		"1h",
 		[]string{},
 	)
@@ -25,11 +25,11 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	result = append(result, srcBurnfeeHourCqs)
 
 	dstBurnfeedstHourCqs, err := cq.NewContinuousQuery(
-		"dst_burn_fee_hour",
+		"dst_burn_amount_hour",
 		dbName,
 		hourResampleInterval,
 		hourResampleFor,
-		"SELECT SUM(dst_burn_fee) as sum_amount INTO burn_fee_hour FROM trades GROUP BY dst_rsv_addr",
+		"SELECT SUM(dst_burn_amount) as sum_amount INTO burn_fee_hour FROM trades GROUP BY dst_rsv_addr",
 		"1h",
 		[]string{},
 	)
@@ -39,11 +39,11 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	}
 	result = append(result, dstBurnfeedstHourCqs)
 	srcBurnfeeDayCqs, err := cq.NewContinuousQuery(
-		"src_burn_fee_day",
+		"src_burn_amount_day",
 		dbName,
 		hourResampleInterval,
 		hourResampleFor,
-		"SELECT SUM(src_burn_fee) as sum_amount INTO burn_fee_day FROM trades GROUP BY src_rsv_addr",
+		"SELECT SUM(src_burn_amount) as sum_amount INTO burn_fee_day FROM trades GROUP BY src_rsv_addr",
 		"1d",
 		[]string{},
 	)
@@ -54,11 +54,11 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	result = append(result, srcBurnfeeDayCqs)
 
 	dstBurnfeedstDayCqs, err := cq.NewContinuousQuery(
-		"dst_burn_fee_day",
+		"dst_burn_amount_day",
 		dbName,
 		hourResampleInterval,
 		hourResampleFor,
-		"SELECT SUM(dst_burn_fee) as sum_amount INTO burn_fee_day FROM trades GROUP BY dst_rsv_addr",
+		"SELECT SUM(dst_burn_amount) as sum_amount INTO burn_fee_day FROM trades GROUP BY dst_rsv_addr",
 		"1d",
 		[]string{},
 	)

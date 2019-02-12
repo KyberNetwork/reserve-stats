@@ -287,12 +287,12 @@ func (is *InfluxStorage) rowToTradeLog(value []interface{},
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get fiat_amount: %s", err)
 	}
-	srcBurnFee, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.SourceBurnFee]])
+	srcBurnFee, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.SourceBurnAmount]])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get src_burn_fee: %s", err)
 	}
 
-	dstBurnFee, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.DestBurnFee]])
+	dstBurnFee, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.DestBurnAmount]])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get dst_burn_fee: %s", err)
 	}
@@ -317,9 +317,9 @@ func (is *InfluxStorage) rowToTradeLog(value []interface{},
 		DestAmount:        dstAmountInWei,
 		FiatAmount:        fiatAmount,
 
-		SrcBurnFee: srcBurnFee,
-		DstBurnFee: dstBurnFee,
-		WalletFees: walletFees,
+		SrcBurnAmount: srcBurnFee,
+		DstBurnAmount: dstBurnFee,
+		WalletFees:    walletFees,
 
 		IP:             ip,
 		Country:        country,

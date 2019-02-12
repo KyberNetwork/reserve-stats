@@ -48,7 +48,7 @@ type TradeLog struct {
 	DstWalletFeeAmount float64 `json:"dst_wallet_fee_amount"`
 
 	BurnFees       []BurnFee   `json:"-"`
-	WalletFees     []WalletFee `json:"_"`
+	WalletFees     []WalletFee `json:"-"`
 	IntegrationApp string      `json:"integration_app"`
 
 	IP      string `json:"ip"`

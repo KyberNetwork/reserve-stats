@@ -8,9 +8,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
-	walletschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfee"
 	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/influxdata/influxdb/models"
 )
 
 func (is *InfluxStorage) rowToAggregatedBurnFee(row []interface{}) (time.Time, float64, ethereum.Address, error) {
@@ -101,70 +99,6 @@ func (is *InfluxStorage) rowToAggregatedFee(row []interface{}) (time.Time, float
 	return ts, fee, nil
 }
 
-// rowToWalletFees converts the result of InfluxDB query to FeeToWallet event
-// The query is:
-// SELECT time, reserve_addr, wallet_addr, amount, log_index FROM wallet_fees WHERE_clause GROUP BY tx_hash, trade_log_index
-func (is *InfluxStorage) rowToWalletFees(row models.Row) (ethereum.Hash, uint64, []common.WalletFee, error) {
-	var (
-		walletFees    []common.WalletFee
-		txHash        ethereum.Hash
-		tradeLogIndex uint64
-	)
-
-	txHash, err := influxdb.GetTxHashFromInterface(row.Tags[walletschema.TxHash.String()])
-	if err != nil {
-		return txHash, tradeLogIndex, nil, err
-	}
-
-	tradeLogIndex, err = influxdb.GetUint64FromTagValue(row.Tags[walletschema.TradeLogIndex.String()])
-	if err != nil {
-		return txHash, tradeLogIndex, nil, fmt.Errorf("failed to get tradeLogIndex: %s", err)
-	}
-
-	idxs, err := walletschema.NewFieldsRegistrar(row.Columns)
-	if err != nil {
-		return txHash, tradeLogIndex, nil, err
-	}
-
-	for _, value := range row.Values {
-		reserveAddr, err := influxdb.GetAddressFromInterface(value[idxs[walletschema.ReserveAddr]])
-		if err != nil {
-			return txHash, tradeLogIndex, nil, err
-		}
-
-		walletAddr, err := influxdb.GetAddressFromInterface(value[idxs[walletschema.WalletAddr]])
-		if err != nil {
-			return txHash, tradeLogIndex, nil, err
-		}
-
-		humanizedAmount, err := influxdb.GetFloat64FromInterface(value[idxs[walletschema.Amount]])
-		if err != nil {
-			return txHash, tradeLogIndex, nil, err
-		}
-
-		weiAmount, err := is.tokenAmountFormatter.ToWei(blockchain.KNCAddr, humanizedAmount)
-		if err != nil {
-			return txHash, tradeLogIndex, nil, err
-		}
-
-		logIndex, err := influxdb.GetUint64FromTagValue(value[idxs[walletschema.LogIndex]])
-		if err != nil {
-			return txHash, tradeLogIndex, nil, fmt.Errorf("failed to get logIndex: %s", err)
-		}
-
-		walletFee := common.WalletFee{
-			ReserveAddress: reserveAddr,
-			WalletAddress:  walletAddr,
-			Amount:         weiAmount,
-			Index:          uint(logIndex),
-		}
-
-		walletFees = append(walletFees, walletFee)
-	}
-
-	return txHash, tradeLogIndex, walletFees, nil
-}
-
 func (is *InfluxStorage) rowToCountryStats(row []interface{}) (time.Time, common.CountryStats, error) {
 	var (
 		ts           time.Time
@@ -181,7 +115,7 @@ func (is *InfluxStorage) rowToCountryStats(row []interface{}) (time.Time, common
 // user_addr, src_addr, dst_addr, src_amount, dst_amount, (eth_amount * eth_usd_rate) as fiat_amount,
 // ip, country FROM trades WHERE_clause GROUP BY tx_hash, log_index
 func (is *InfluxStorage) rowToTradeLog(value []interface{},
-	walletFeesByTxHash map[ethereum.Hash]map[uint][]common.WalletFee, idxs logschema.FieldsRegistrar) (common.TradeLog, error) {
+	idxs logschema.FieldsRegistrar) (common.TradeLog, error) {
 
 	var (
 		tradeLog          common.TradeLog
@@ -297,9 +231,19 @@ func (is *InfluxStorage) rowToTradeLog(value []interface{},
 		return tradeLog, fmt.Errorf("failed to get dst_burn_fee: %s", err)
 	}
 
-	walletFees := walletFeesByTxHash[txHash][uint(logIndex)]
-	if walletFees == nil {
-		walletFees = []common.WalletFee{}
+	srcWalletFee, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.SourceWalletFeeAmount]])
+	if err != nil {
+		return tradeLog, fmt.Errorf("failed to get src_wallet_fee_amount: %s", err)
+	}
+
+	dstWalletFee, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.DestWalletFeeAmount]])
+	if err != nil {
+		return tradeLog, fmt.Errorf("failed to get dst_wallet_fee_amount: %s", err)
+	}
+
+	walletAddr, err := influxdb.GetAddressFromInterface(value[idxs[logschema.WalletAddress]])
+	if err != nil {
+		return tradeLog, fmt.Errorf("failed to get wallet_addr: %s", err)
 	}
 	tradeLog = common.TradeLog{
 		Timestamp:       timestamp,
@@ -316,10 +260,12 @@ func (is *InfluxStorage) rowToTradeLog(value []interface{},
 		SrcAmount:         srcAmountInWei,
 		DestAmount:        dstAmountInWei,
 		FiatAmount:        fiatAmount,
+		WalletAddress:     walletAddr,
 
-		SrcBurnAmount: srcBurnFee,
-		DstBurnAmount: dstBurnFee,
-		WalletFees:    walletFees,
+		SrcBurnAmount:      srcBurnFee,
+		DstBurnAmount:      dstBurnFee,
+		SrcWalletFeeAmount: srcWalletFee,
+		DstWalletFeeAmount: dstWalletFee,
 
 		IP:             ip,
 		Country:        country,

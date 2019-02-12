@@ -127,6 +127,9 @@ func prepareTradeLogQuery() string {
 			logschema.TxHash,
 			logschema.SrcReserveAddr,
 			logschema.DstReserveAddr,
+			logschema.SourceWalletFeeAmount,
+			logschema.DestWalletFeeAmount,
+			logschema.WalletAddress,
 		}
 		tradeLogQuery string
 	)
@@ -165,38 +168,18 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 		return nil, err
 	}
 
-	// Get WalletFees
-	// map [tx_hash][trade_log_index][]common.WalletFee
-	walletFeesByTxHash := make(map[ethereum.Hash]map[uint][]common.WalletFee)
-
-	if len(res[0].Series) == 0 {
-		is.sugar.Debug("empty wallet fee in query result")
-	} else {
-		for _, row := range res[0].Series {
-			txHash, tradeLogIndex, walletFees, err := is.rowToWalletFees(row)
-			if err != nil {
-				return nil, err
-			}
-			_, exist := walletFeesByTxHash[txHash]
-			if !exist {
-				walletFeesByTxHash[txHash] = make(map[uint][]common.WalletFee)
-			}
-			walletFeesByTxHash[txHash][uint(tradeLogIndex)] = walletFees
-		}
-	}
-
 	// Get TradeLogs
-	if len(res[1].Series) == 0 {
+	if (len(res) == 0) || len(res[0].Series) == 0 || (len(res[0].Series[0].Values) == 0) {
 		is.sugar.Debug("empty trades in query result")
 		return result, nil
 	}
-	idxs, err := logschema.NewFieldsRegistrar(res[1].Series[0].Columns)
+	idxs, err := logschema.NewFieldsRegistrar(res[0].Series[0].Columns)
 	if err != nil {
 		return nil, err
 	}
-	for _, row := range res[1].Series[0].Values {
+	for _, row := range res[0].Series[0].Values {
 
-		tradeLog, err := is.rowToTradeLog(row, walletFeesByTxHash, idxs)
+		tradeLog, err := is.rowToTradeLog(row, idxs)
 		if err != nil {
 			return nil, err
 		}

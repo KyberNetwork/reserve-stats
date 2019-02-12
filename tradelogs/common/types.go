@@ -40,6 +40,7 @@ type TradeLog struct {
 	SrcAmount         *big.Int         `json:"src_amount"`
 	DestAmount        *big.Int         `json:"dst_amount"`
 	FiatAmount        float64          `json:"fiat_amount"`
+	WalletAddress     ethereum.Address `json:"wallet_addr"`
 
 	SrcBurnAmount      float64 `json:"src_burn_amount"`
 	DstBurnAmount      float64 `json:"dst_burn_amount"`

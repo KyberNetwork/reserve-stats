@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
@@ -205,7 +204,11 @@ func (is *InfluxStorage) rowToTradeLog(value []interface{},
 		return tradeLog, fmt.Errorf("failed to get timestamp: %s", err)
 	}
 
-	blockNumber, err := strconv.ParseUint(value[idxs[logschema.BlockNumber]].(string), 10, 64)
+	blockNumber, err := influxdb.GetUint64FromInterface(value[idxs[logschema.BlockNumber]])
+
+	if err != nil {
+		return tradeLog, fmt.Errorf("failed to get blockNumber: %s", err)
+	}
 
 	ethAmount, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.EthAmount]])
 	if err != nil {

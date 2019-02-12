@@ -126,6 +126,8 @@ func prepareTradeLogQuery() string {
 			logschema.SourceBurnFee,
 			logschema.LogIndex,
 			logschema.TxHash,
+			logschema.SrcReserveAddr,
+			logschema.DstReserveAddr,
 		}
 		tradeLogQuery string
 	)

@@ -9,7 +9,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
-	walletschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfee"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
@@ -139,42 +138,18 @@ func prepareTradeLogQuery() string {
 	return tradeLogQuery
 }
 
-func prepareWalletFeeQuery() string {
-	var (
-		walletFeeFields = []walletschema.FieldName{
-			walletschema.Time,
-			walletschema.ReserveAddr,
-			walletschema.WalletAddr,
-			walletschema.Amount,
-			walletschema.LogIndex,
-		}
-		walletQuery string
-	)
-	for i, field := range walletFeeFields {
-		if i != 0 {
-			walletQuery += ", "
-		}
-		walletQuery += field.String()
-	}
-	return walletQuery
-}
-
 // LoadTradeLogs return trade logs from DB
 func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
 	var (
 		result = make([]common.TradeLog, 0)
 		q      = fmt.Sprintf(
 			`
-		SELECT %[1]s FROM %[5]s WHERE time >= '%[3]s' AND time <= '%[4]s' GROUP BY %[7]s;
-		SELECT %[2]s FROM %[6]s WHERE time >= '%[3]s' AND time <= '%[4]s';
+		SELECT %[1]s FROM %[2]s WHERE time >= '%[3]s' AND time <= '%[4]s';
 		`,
-			prepareWalletFeeQuery(),
 			prepareTradeLogQuery(),
+			tradeLogMeasurementName,
 			from.Format(time.RFC3339),
 			to.Format(time.RFC3339),
-			walletMeasurementName,
-			tradeLogMeasurementName,
-			walletschema.TxHash.String()+", "+walletschema.TradeLogIndex.String(),
 		)
 
 		logger = is.sugar.With(
@@ -367,39 +342,26 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		return nil, err
 	}
 
+	// build walletFeePoint
+	for _, walletFee := range log.WalletFees {
+		amount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, walletFee.Amount)
+		if err != nil {
+			return nil, err
+		}
+		if walletFee.ReserveAddress == log.SrcReserveAddress {
+			fields[logschema.SourceWalletFeeAmount.String()] = amount
+		} else if walletFee.ReserveAddress == log.DstReserveAddress {
+			fields[logschema.DestWalletFeeAmount.String()] = amount
+		} else {
+			is.sugar.Warnw("unexpected wallet fees with unrecognized reserve address", "wallet fee", walletFee)
+		}
+	}
 	tradePoint, err := client.NewPoint(tradeLogMeasurementName, tags, fields, log.Timestamp)
 	if err != nil {
 		return nil, err
 	}
 
 	points = append(points, tradePoint)
-	// build walletFeePoint
-	for _, walletFee := range log.WalletFees {
-		tags := map[string]string{
-			walletschema.ReserveAddr.String():   walletFee.ReserveAddress.String(),
-			walletschema.WalletAddr.String():    walletFee.WalletAddress.String(),
-			walletschema.Country.String():       log.Country,
-			walletschema.TradeLogIndex.String(): strconv.FormatUint(uint64(log.Index), 10),
-			walletschema.TxHash.String():        log.TransactionHash.String(),
-			walletschema.LogIndex.String():      strconv.FormatUint(uint64(walletFee.Index), 10),
-		}
-
-		amount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, walletFee.Amount)
-		if err != nil {
-			return nil, err
-		}
-
-		fields := map[string]interface{}{
-			walletschema.Amount.String(): amount,
-		}
-
-		walletFeePoint, err := client.NewPoint(walletMeasurementName, tags, fields, log.Timestamp)
-		if err != nil {
-			return nil, err
-		}
-
-		points = append(points, walletFeePoint)
-	}
 
 	firstTradePoint, err := is.assembleFirstTradePoint(log)
 	if err != nil {

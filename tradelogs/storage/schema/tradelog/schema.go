@@ -47,29 +47,35 @@ const (
 	SourceBurnAmount //src_burn_amount
 	//DestBurnAmount is the name of burnFee amount for dst rsv
 	DestBurnAmount //dst_burn_amount
+	//SourceWalletFeeAmount is the name of wallet fee Amount for source rsv
+	SourceWalletFeeAmount //src_wallet_fee_amount
+	//DestWalletFeeAmount is the name of dest wallet fee Amount for dest rsv
+	DestWalletFeeAmount //dst_wallet_fee_amount
 )
 
 //tradeLogSchemaFields translates the stringer of reserveRate fields into its enumerated form
 var tradeLogSchemaFields = map[string]FieldName{
-	"time":              Time,
-	"block_number":      BlockNumber,
-	"tx_hash":           TxHash,
-	"user_addr":         UserAddr,
-	"src_addr":          SrcAddr,
-	"dst_addr":          DstAddr,
-	"country":           Country,
-	"ip":                IP,
-	"eth_rate_provider": EthUSDProvider,
-	"dst_rsv_addr":      DstReserveAddr,
-	"src_rsv_addr":      SrcReserveAddr,
-	"src_amount":        SrcAmount,
-	"dst_amount":        DstAmount,
-	"eth_usd_rate":      EthUSDRate,
-	"eth_amount":        EthAmount,
-	"fiat_amount":       FiatAmount,
-	"log_index":         LogIndex,
-	"integration_app":   IntegrationApp,
-	"wallet_addr":       WalletAddress,
-	"src_burn_amount":   SourceBurnAmount,
-	"dst_burn_amount":   DestBurnAmount,
+	"time":                  Time,
+	"block_number":          BlockNumber,
+	"tx_hash":               TxHash,
+	"user_addr":             UserAddr,
+	"src_addr":              SrcAddr,
+	"dst_addr":              DstAddr,
+	"country":               Country,
+	"ip":                    IP,
+	"eth_rate_provider":     EthUSDProvider,
+	"dst_rsv_addr":          DstReserveAddr,
+	"src_rsv_addr":          SrcReserveAddr,
+	"src_amount":            SrcAmount,
+	"dst_amount":            DstAmount,
+	"eth_usd_rate":          EthUSDRate,
+	"eth_amount":            EthAmount,
+	"fiat_amount":           FiatAmount,
+	"log_index":             LogIndex,
+	"integration_app":       IntegrationApp,
+	"wallet_addr":           WalletAddress,
+	"src_burn_amount":       SourceBurnAmount,
+	"dst_burn_amount":       DestBurnAmount,
+	"src_wallet_fee_amount": SourceWalletFeeAmount,
+	"dst_wallet_fee_amount": DestWalletFeeAmount,
 }

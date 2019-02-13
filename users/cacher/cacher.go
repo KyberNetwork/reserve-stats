@@ -150,7 +150,7 @@ func (rc RedisCacher) saveToCache(key string, value common.UserResponse, expireT
 		rc.sugar.Debugw("set cache to redis error", "error", err)
 		return err
 	}
-	rc.sugar.Debug("save data to cache success")
+	rc.sugar.Debugw("save data to cache succes", "key", key, "value", value)
 	return nil
 }
 

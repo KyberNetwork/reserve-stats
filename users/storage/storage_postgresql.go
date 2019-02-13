@@ -153,3 +153,12 @@ func (udb *UserDB) IsKYCed(address string) (bool, error) {
 	}
 	return count > 0, nil
 }
+
+//GetAllAddresses return all user address info from addresses table
+func (udb *UserDB) GetAllAddresses() ([]string, error) {
+	var result []string
+	if err := udb.db.Select(&result, fmt.Sprintf(`SELECT address FROM "%s"`, addressesTableName)); err != nil {
+		return result, err
+	}
+	return result, nil
+}

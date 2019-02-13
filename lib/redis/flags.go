@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/go-redis/redis"
 	"github.com/urfave/cli"
@@ -12,7 +12,7 @@ const (
 	redisDBFlag       = "redis-db"
 	redisPasswordFlag = "redis-password"
 
-	redisEndpointDefaultValue = "http://127.0.0.1:6379"
+	redisEndpointDefaultValue = "localhost:6379"
 	redisDBDefaultValue       = 0
 )
 

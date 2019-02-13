@@ -1,5 +1,7 @@
 package common
 
+import "math/big"
+
 var (
 	nonKYCCap = &UserCap{
 		DailyLimit: 15000.0,
@@ -17,6 +19,19 @@ type Info struct {
 	Address string `json:"address" binding:"required,isAddress"`
 	//Timestamp return timestamp of adding address
 	Timestamp int64 `json:"timestamp" binding:"required"`
+}
+
+//AddressResponse from get all address from addressestable
+type AddressResponse struct {
+	ID int `json:"id" db:"id"`
+	Info
+}
+
+//UserResponse is reponse to user api
+type UserResponse struct {
+	Cap   *big.Int `json:"cap"`
+	Rich  bool     `json:"rich"`
+	KYCed bool     `json:"kyced"`
 }
 
 //UserData user data post through post request to store in stats database

@@ -4,17 +4,17 @@ import (
 	"log"
 	"os"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/urfave/cli"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	rediscache "github.com/KyberNetwork/reserve-stats/lib/redis"
+	"github.com/KyberNetwork/reserve-stats/users/cacher"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
-	"github.com/go-redis/redis"
 )
 
 const (
-	defaultDB = "users"
+	defaultDB = "reserve_stats"
 )
 
 func main() {
@@ -26,6 +26,7 @@ func main() {
 
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
 	app.Flags = append(app.Flags, rediscache.NewCliFlags()...)
+	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -54,21 +55,23 @@ func run(c *cli.Context) error {
 		sugar,
 		postgresDB,
 	)
-
 	sugar.Debugw("Initiated postgres client", "client", userDB)
 
-	cached, err := rediscache.NewClientFromContext(c)
+	influxDBClient, err := influxdb.NewClientFromContext(c)
 	if err != nil {
 		return err
 	}
 
-	sugar.Debugw("Initiated redis cached", "cache", cached)
+	redisCacheClient, err := rediscache.NewClientFromContext(c)
+	if err != nil {
+		return err
+	}
 
-	return nil
-}
+	sugar.Debugw("Initiated redis cached", "cache", redisCacheClient)
 
-func cachedUserInfo(postgresDB *sqlx.DB, cached *redis.Client) error {
-	// cache all user address
-	
+	redisCacher := cacher.NewRedisCacher(sugar, userDB, influxDBClient, redisCacheClient)
+
+	redisCacher.CachedUserInfo()
+
 	return nil
 }

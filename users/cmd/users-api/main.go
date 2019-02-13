@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/urfave/cli"
+
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
@@ -11,7 +13,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/users/http"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 	"github.com/KyberNetwork/tokenrate/coingecko"
-	"github.com/urfave/cli"
 )
 
 const defaultDB = "users"

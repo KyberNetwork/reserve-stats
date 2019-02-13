@@ -21,17 +21,11 @@ type Info struct {
 	Timestamp int64 `json:"timestamp" binding:"required"`
 }
 
-//AddressResponse from get all address from addressestable
-type AddressResponse struct {
-	ID int `json:"id" db:"id"`
-	Info
-}
-
 //UserResponse is reponse to user api
 type UserResponse struct {
 	Cap   *big.Int `json:"cap"`
-	Rich  bool     `json:"rich"`
 	KYCed bool     `json:"kyced"`
+	Rich  bool     `json:"rich"`
 }
 
 //UserData user data post through post request to store in stats database

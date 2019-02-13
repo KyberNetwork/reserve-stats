@@ -98,10 +98,10 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 
 	c.JSON(
 		http.StatusOK,
-		gin.H{
-			"cap":   txLimit,
-			"rich":  rich,
-			"kyced": kyced,
+		common.UserResponse{
+			Cap:   txLimit,
+			Rich:  rich,
+			KYCed: kyced,
 		},
 	)
 }

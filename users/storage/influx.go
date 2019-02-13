@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
 )
@@ -49,7 +51,7 @@ func (inf *InfluxStorage) IsExceedDailyLimit(address string, dailyLimit float64)
 FROM trades WHERE user_addr='%s' AND time <= now() AND time >= (now()-24h))`,
 			address)
 		userTradeAmount float64
-		ok              bool
+		err             error
 	)
 
 	res, err := inf.queryDB(inf.influxClient, query)
@@ -64,9 +66,9 @@ FROM trades WHERE user_addr='%s' AND time <= now() AND time >= (now()-24h))`,
 		return false, nil
 	}
 
-	userTradeAmount, ok = (res[0].Series[0].Values[0][1]).(float64)
-	if !ok {
-		inf.sugar.Debugw("values second should be float", "value", res[0].Series[0].Values[0][1])
+	userTradeAmount, err = influxdb.GetFloat64FromInterface(res[0].Series[0].Values[0][1])
+	if err != nil {
+		inf.sugar.Debugw("values second should be float", "value", res[0].Series[0].Values[0][1], "error", err.Error())
 		return false, errors.New("trade amount values is not a float")
 	}
 

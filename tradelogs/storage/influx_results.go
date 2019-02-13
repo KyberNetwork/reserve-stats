@@ -27,12 +27,18 @@ func (is *InfluxStorage) rowToAggregatedBurnFee(row []interface{}) (time.Time, f
 	if err != nil {
 		return ts, burnFee, reserve, err
 	}
-	if (row[2] != nil) && (row[3] != nil) {
+	if row[2] != nil && row[3] != nil {
 		panic("Logic fault : there should not be a record with both source and dest reserve address")
 	} else if row[2] != nil {
 		reserve, err = influxdb.GetAddressFromInterface(row[2])
+		if err != nil {
+			return ts, burnFee, reserve, err
+		}
 	} else if row[3] != nil {
 		reserve, err = influxdb.GetAddressFromInterface(row[3])
+		if err != nil {
+			return ts, burnFee, reserve, err
+		}
 	} else {
 		panic("Logic fault : there should not be a record with nil source and dest reserve address")
 	}
@@ -223,12 +229,12 @@ func (is *InfluxStorage) rowToTradeLog(value []interface{},
 	}
 	srcBurnFee, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.SourceBurnAmount]])
 	if err != nil {
-		return tradeLog, fmt.Errorf("failed to get src_burn_fee: %s", err)
+		return tradeLog, fmt.Errorf("failed to get src_burn_amount: %s", err)
 	}
 
 	dstBurnFee, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.DestBurnAmount]])
 	if err != nil {
-		return tradeLog, fmt.Errorf("failed to get dst_burn_fee: %s", err)
+		return tradeLog, fmt.Errorf("failed to get dst_burn_amount: %s", err)
 	}
 
 	srcWalletFee, err := influxdb.GetFloat64FromInterface(value[idxs[logschema.SourceWalletFeeAmount]])

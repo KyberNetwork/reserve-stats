@@ -107,7 +107,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(src_burn_fee)+SUM(dst_burn_fee) AS total_burn_fee INTO country_stats FROM trades GROUP BY country",
+		"SELECT SUM(src_burn_amount)+SUM(dst_burn_amount) AS total_burn_fee INTO country_stats FROM trades GROUP BY country",
 		"1d",
 		supportedTimeZone(),
 	)

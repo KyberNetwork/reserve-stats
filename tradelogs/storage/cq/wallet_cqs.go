@@ -73,7 +73,7 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(src_burn_fee) + SUM(dst_burn_fee) AS total_burn_fee INTO wallet_stats FROM trades GROUP BY wallet_addr",
+		"SELECT SUM(src_burn_amount) + SUM(dst_burn_amount) AS total_burn_fee INTO wallet_stats FROM trades GROUP BY wallet_addr",
 		"1d",
 		supportedTimeZone(),
 	)

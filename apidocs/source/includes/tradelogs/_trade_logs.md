@@ -25,21 +25,16 @@ curl -X GET "http://gateway.local/trade-logs
         "src_amount": 100000000000000000,
         "dst_amount": 21246750000000000000,
         "fiat_amount": 21.340763439234546,
-        "burn_fees": [
-            {
-                "reserve_addr": "0x9e2b650f890236ab49609c5a6b00cddb4e61f408",
-                "amount": 62500000000000000
-            }
-        ],
-        "wallet_fees": [
-            {
-                "reserve_addr": "0x9e2b650f890236ab49609c5a6b00cddb4e61f408",
-                "wallet_addr": "0xb9e29984fe50602e7a619662ebed4f90d93824c7",
-                "amount": 62500000000000000
-            }
-        ],
+        "src_reserve_addr": "0x9e2b650f890236ab49609c5a6b00cddb4e61f408",
+        "dst_reserve_addr": "0x0000000000000000000000000000000000000000",
+        "src_burn_amount": 6.25000000000,
+        "dst_burn_amount": 0.00000000000,
+        "wallet_addr": "0xb9e29984fe50602e7a619662ebed4f90d93824c7",
+        "src_wallet_fee_amount": 6.25000000000,
+        "dst_wallet_fee_amount": 0.00000000000,
         "ip": "",
-        "country": ""
+        "country": "",
+        "integration_app": "KyberSwap"
     },
     {
         "timestamp": 1541731218000,
@@ -53,15 +48,16 @@ curl -X GET "http://gateway.local/trade-logs
         "src_amount": 14110000000000000000,
         "dst_amount": 73069182000,
         "fiat_amount": 3011.1817212759943,
-        "burn_fees": [
-            {
-                "reserve_addr": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
-                "amount": 17637500000000000000
-            }
-        ],
-        "wallet_fees": null,
+        "src_reserve_addr": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
+        "dst_reserve_addr": "0x0000000000000000000000000000000000000000",
+        "src_burn_amount": 1.7637500000000000000,
+        "dst_burn_amount": 0.0000000000000000000,
+        "wallet_addr": "0x0000000000000000000000000000000000000000",
+        "src_wallet_fee_amount": 0.00000000000,
+        "dst_wallet_fee_amount": 0.00000000000,
         "ip": "186.109.142.254",
-        "country": "AR"
+        "country": "AR",
+        "integration_app": "ThirdParty"
     }
 ]
 ```

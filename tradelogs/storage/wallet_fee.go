@@ -37,9 +37,9 @@ func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq st
 
 	// in cq we will add timezone as time offset interval
 	q := fmt.Sprintf(`
-		SELECT SUM(sum_amount) AS sum_amount FROM "%[1]s"
+		SELECT sum_amount FROM "%[1]s"
 		WHERE (src_rsv_addr = '%[2]s' OR dst_rsv_addr= '%[2]s') AND wallet_addr = '%[3]s'
-		AND time >= '%[4]s' AND time <= '%[5]s' GROUP BY time(1%[6]s) FILL(none) 
+		AND time >= '%[4]s' AND time <= '%[5]s' 
 	`, measurement, reserveAddr, walletAddr,
 		fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339), freq)
 
@@ -61,7 +61,12 @@ func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq st
 			return nil, err
 		}
 		key := timeutil.TimeToTimestampMs(ts)
-		result[key] = amount
+		//if the result is already there, that mean there was either src/dst wallet fee
+		if _, avail := result[key]; avail {
+			result[key] += amount
+		} else {
+			result[key] = amount
+		}
 	}
 
 	return result, err

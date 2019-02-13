@@ -85,6 +85,7 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 		if !ok {
 			result[reserve] = make(map[string]float64)
 		}
+		//if the reserve is already there, that mean it already has either src_amount/dest_amount previously. Sum them up.
 		result[reserve][key] = result[reserve][key] + amount
 	}
 

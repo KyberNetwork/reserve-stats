@@ -18,8 +18,6 @@ const (
 	//timePrecision is the precision configured for influxDB
 	timePrecision           = "s"
 	tradeLogMeasurementName = "trades"
-	burnFeesMeasurementName = "burn_fees"
-	walletMeasurementName   = "wallet_fees"
 )
 
 // InfluxStorage represent a client to store trade data to influx DB
@@ -53,6 +51,9 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 
 // SaveTradeLogs persist trade logs to DB
 func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
+	logger := is.sugar.With(
+		"func", "tradelogs/storage/InfluxStorage.SaveTradeLogs",
+	)
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  is.dbName,
 		Precision: timePrecision,
@@ -72,17 +73,17 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 	}
 
 	if err := is.influxClient.Write(bp); err != nil {
-		is.sugar.Errorw("saving error", "error", err)
+		logger.Errorw("saving error", "error", err)
 		return err
 	}
 
 	if len(logs) > 0 {
-		is.sugar.Debugw("saved trade logs into influxdb",
+		logger.Debugw("saved trade logs into influxdb",
 			"first_block", logs[0].BlockNumber,
 			"last_block", logs[len(logs)-1].BlockNumber,
 			"trade_logs", len(logs))
 	} else {
-		is.sugar.Debugw("no trade log to store")
+		logger.Debugw("no trade log to store")
 	}
 
 	// reset traded map to avoid ever growing size
@@ -104,7 +105,7 @@ func (is InfluxStorage) LastBlock() (int64, error) {
 		return 0, nil
 	}
 
-	return influxdb.GetInt64FromTagValue(res[0].Series[0].Values[0][1])
+	return influxdb.GetInt64FromInterface(res[0].Series[0].Values[0][1])
 }
 
 func prepareTradeLogQuery() string {
@@ -169,7 +170,7 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 	}
 
 	// Get TradeLogs
-	if (len(res) == 0) || len(res[0].Series) == 0 || (len(res[0].Series[0].Values) == 0) {
+	if len(res) == 0 || len(res[0].Series) == 0 || len(res[0].Series[0].Values) == 0 {
 		is.sugar.Debug("empty trades in query result")
 		return result, nil
 	}
@@ -212,54 +213,60 @@ func (is *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.R
 	return res, nil
 }
 
-//setBurnFeeFields set all the dst/srcBurnFee amount fields
-func (is *InfluxStorage) setBurnFeeFields(log common.TradeLog, fields map[string]interface{}) error {
-	var logger = is.sugar.With(
-		"func", "tradelogs/storage/setBurnFeeTagsAndFields",
-		"log", log,
+//getBurnAmount return the burn amount in float for src and
+func (is *InfluxStorage) getBurnAmount(log common.TradeLog) (float64, float64, error) {
+	var (
+		logger = is.sugar.With(
+			"func", "tradelogs/storage/getBurnAmount",
+			"log", log,
+		)
+		srcAmount float64
+		dstAmount float64
 	)
 	if blockchain.IsBurnable(log.SrcAddress) {
 		if len(log.BurnFees) < 1 {
 			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "at least 1 burn fees (src)")
-			return nil
+			return srcAmount, dstAmount, nil
 		}
-		burnAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
+		srcAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
 		if err != nil {
-			return err
+			return srcAmount, dstAmount, err
 		}
-		fields[logschema.SourceBurnAmount.String()] = burnAmount
 
 		if blockchain.IsBurnable(log.DestAddress) {
 			if len(log.BurnFees) < 2 {
 				logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "2 burn fees (src-dst)")
-				return nil
+				return srcAmount, dstAmount, nil
 			}
-			burnAmount, err = is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[1].Amount)
+			dstAmount, err = is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[1].Amount)
 			if err != nil {
-				return err
+				return srcAmount, dstAmount, err
 			}
-			fields[logschema.DestBurnAmount.String()] = burnAmount
-			return nil
+			return srcAmount, dstAmount, nil
 		}
-
-		return nil
+		return srcAmount, dstAmount, nil
 	}
 
 	if blockchain.IsBurnable(log.DestAddress) {
 		if len(log.BurnFees) < 1 {
 			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "at least 1 burn fees (dst)")
-			return nil
+			return srcAmount, dstAmount, nil
 		}
-		burnAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
+		dstAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
 		if err != nil {
-			return err
+			return srcAmount, dstAmount, err
 		}
-		fields[logschema.DestBurnAmount.String()] = burnAmount
+		return srcAmount, dstAmount, nil
 	}
-	return nil
+
+	return srcAmount, dstAmount, nil
 }
 
 func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error) {
+	logger := is.sugar.With(
+		"func", "tradelogs/storage/InfluxStorage.tradeLogToPoint",
+		"txHash", log.TransactionHash.String(),
+	)
 	var points []*client.Point
 	var walletAddr ethereum.Address
 	if len(log.WalletFees) > 0 {
@@ -283,7 +290,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.DstReserveAddr.String(): log.DstReserveAddress.String(),
 	}
 
-	ethReceivalAmount, err := is.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)
+	ethAmount, err := is.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)
 	if err != nil {
 		return nil, err
 	}
@@ -298,21 +305,17 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		return nil, err
 	}
 
-	var ethAmount float64
-
-	if log.SrcAddress == blockchain.ETHAddr {
-		ethAmount = srcAmount
-	} else if log.DestAddress == blockchain.ETHAddr {
-		ethAmount = dstAmount
-	} else {
-		ethAmount = ethReceivalAmount
+	srcBurnAmount, dstBurnAmount, err := is.getBurnAmount(log)
+	if err != nil {
+		return nil, err
 	}
-
 	fields := map[string]interface{}{
 
-		logschema.SrcAmount.String():  srcAmount,
-		logschema.DstAmount.String():  dstAmount,
-		logschema.EthUSDRate.String(): log.ETHUSDRate,
+		logschema.SrcAmount.String():        srcAmount,
+		logschema.DstAmount.String():        dstAmount,
+		logschema.EthUSDRate.String():       log.ETHUSDRate,
+		logschema.SourceBurnAmount.String(): srcBurnAmount,
+		logschema.DestBurnAmount.String():   dstBurnAmount,
 
 		logschema.EthAmount.String():      ethAmount,
 		logschema.BlockNumber.String():    int64(log.BlockNumber),
@@ -320,11 +323,6 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.IP.String():             log.IP,
 		logschema.EthUSDProvider.String(): log.ETHUSDProvider,
 	}
-
-	if err = is.setBurnFeeFields(log, fields); err != nil {
-		return nil, err
-	}
-
 	// build walletFeePoint
 	for _, walletFee := range log.WalletFees {
 		amount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, walletFee.Amount)
@@ -336,7 +334,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		} else if walletFee.ReserveAddress == log.DstReserveAddress {
 			fields[logschema.DestWalletFeeAmount.String()] = amount
 		} else {
-			is.sugar.Warnw("unexpected wallet fees with unrecognized reserve address", "wallet fee", walletFee)
+			logger.Warnw("unexpected wallet fees with unrecognized reserve address", "wallet fee", walletFee)
 		}
 	}
 	tradePoint, err := client.NewPoint(tradeLogMeasurementName, tags, fields, log.Timestamp)

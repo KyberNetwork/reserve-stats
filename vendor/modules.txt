@@ -28,10 +28,10 @@ github.com/davecgh/go-spew/spew
 github.com/deckarep/golang-set
 # github.com/ethereum/go-ethereum v1.8.17 => github.com/favadi/go-ethereum v1.8.16-fork
 github.com/ethereum/go-ethereum/common
+github.com/ethereum/go-ethereum
 github.com/ethereum/go-ethereum/ethclient
 github.com/ethereum/go-ethereum/accounts/abi/bind
 github.com/ethereum/go-ethereum/core/types
-github.com/ethereum/go-ethereum
 github.com/ethereum/go-ethereum/accounts/abi
 github.com/ethereum/go-ethereum/event
 github.com/ethereum/go-ethereum/common/hexutil
@@ -69,6 +69,14 @@ github.com/gin-gonic/gin/render
 # github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
 github.com/go-ozzo/ozzo-validation
 github.com/go-ozzo/ozzo-validation/is
+# github.com/go-redis/redis v6.15.1+incompatible
+github.com/go-redis/redis
+github.com/go-redis/redis/internal
+github.com/go-redis/redis/internal/consistenthash
+github.com/go-redis/redis/internal/hashtag
+github.com/go-redis/redis/internal/pool
+github.com/go-redis/redis/internal/proto
+github.com/go-redis/redis/internal/util
 # github.com/go-stack/stack v1.8.0
 github.com/go-stack/stack
 # github.com/golang/protobuf v1.2.0
@@ -144,7 +152,7 @@ go.uber.org/zap/zapcore
 go.uber.org/zap/buffer
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
-# golang.org/x/crypto v0.0.0-20181015023909-0c41d7ab0a0e
+# golang.org/x/crypto v0.0.0-20190131182504-b8fe1690c613
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
 # golang.org/x/net v0.0.0-20181011144130-49bb7cea24b1
@@ -155,11 +163,18 @@ golang.org/x/sync/errgroup
 # golang.org/x/sys v0.0.0-20181030150119-7e31e0c00fa0
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/tools v0.0.0-20181105230042-78dc5bac0cac
+# golang.org/x/tools v0.0.0-20190205050122-7f7074d5bcfd
 golang.org/x/tools/imports
 golang.org/x/tools/go/ast/astutil
+golang.org/x/tools/go/packages
 golang.org/x/tools/internal/gopathwalk
+golang.org/x/tools/internal/module
+golang.org/x/tools/go/gcexportdata
+golang.org/x/tools/go/internal/cgo
+golang.org/x/tools/go/internal/packagesdriver
+golang.org/x/tools/internal/semver
 golang.org/x/tools/internal/fastwalk
+golang.org/x/tools/go/internal/gcimporter
 # gopkg.in/go-playground/validator.v8 v8.18.2
 gopkg.in/go-playground/validator.v8
 # gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce

@@ -30,8 +30,8 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 		return nil, fmt.Errorf("invalid burn fee frequency %s", freq)
 	}
 
-	const queryTmpl = `SELECT sum_amount, reserve_addr FROM "{{.Measurement}}" WHERE '{{.From }}' <= time AND time <= '{{.To}}' ` +
-		`{{if len .Addrs}}AND ({{range $index, $element := .Addrs}}"reserve_addr" = '{{$element}}'{{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
+	const queryTmpl = `SELECT sum_amount,src_rsv_addr,dst_rsv_addr FROM "{{.Measurement}}" WHERE '{{.From }}' <= time AND time <= '{{.To}}' ` +
+		`{{if len .Addrs}}AND ({{range $index, $element := .Addrs}}"src_rsv_addr" = '{{$element}}' OR "dst_rsv_addr" = '{{$element}}' {{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
 
 	logger.Debugw("before rendering query statement from template", "query_tempalte", queryTmpl)
 	tmpl, err := template.New("queryStmt").Parse(queryTmpl)
@@ -85,7 +85,8 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 		if !ok {
 			result[reserve] = make(map[string]float64)
 		}
-		result[reserve][key] = amount
+		//if the reserve is already there, that mean it already has either src_amount/dest_amount previously. Sum them up.
+		result[reserve][key] = result[reserve][key] + amount
 	}
 
 	return result, nil

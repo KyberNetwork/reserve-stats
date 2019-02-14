@@ -8,9 +8,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	burnschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee"
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
-	walletschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfee"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
@@ -20,8 +18,6 @@ const (
 	//timePrecision is the precision configured for influxDB
 	timePrecision           = "s"
 	tradeLogMeasurementName = "trades"
-	burnFeesMeasurementName = "burn_fees"
-	walletMeasurementName   = "wallet_fees"
 )
 
 // InfluxStorage represent a client to store trade data to influx DB
@@ -55,6 +51,9 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 
 // SaveTradeLogs persist trade logs to DB
 func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
+	logger := is.sugar.With(
+		"func", "tradelogs/storage/InfluxStorage.SaveTradeLogs",
+	)
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  is.dbName,
 		Precision: timePrecision,
@@ -74,16 +73,17 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 	}
 
 	if err := is.influxClient.Write(bp); err != nil {
+		logger.Errorw("saving error", "error", err)
 		return err
 	}
 
 	if len(logs) > 0 {
-		is.sugar.Debugw("saved trade logs into influxdb",
+		logger.Debugw("saved trade logs into influxdb",
 			"first_block", logs[0].BlockNumber,
 			"last_block", logs[len(logs)-1].BlockNumber,
 			"trade_logs", len(logs))
 	} else {
-		is.sugar.Debugw("no trade log to store")
+		logger.Debugw("no trade log to store")
 	}
 
 	// reset traded map to avoid ever growing size
@@ -105,7 +105,7 @@ func (is InfluxStorage) LastBlock() (int64, error) {
 		return 0, nil
 	}
 
-	return influxdb.GetInt64FromTagValue(res[0].Series[0].Values[0][1])
+	return influxdb.GetInt64FromInterface(res[0].Series[0].Values[0][1])
 }
 
 func prepareTradeLogQuery() string {
@@ -122,8 +122,15 @@ func prepareTradeLogQuery() string {
 			logschema.IP,
 			logschema.Country,
 			logschema.IntegrationApp,
+			logschema.SourceBurnAmount,
+			logschema.DestBurnAmount,
+			logschema.LogIndex,
+			logschema.TxHash,
 			logschema.SrcReserveAddr,
 			logschema.DstReserveAddr,
+			logschema.SourceWalletFeeAmount,
+			logschema.DestWalletFeeAmount,
+			logschema.WalletAddress,
 		}
 		tradeLogQuery string
 	)
@@ -135,66 +142,18 @@ func prepareTradeLogQuery() string {
 	return tradeLogQuery
 }
 
-func prepareBurnFeeQuery() string {
-	var (
-		burnFeeFields = []burnschema.FieldName{
-			burnschema.Time,
-			burnschema.ReserveAddr,
-			burnschema.Amount,
-			burnschema.LogIndex,
-		}
-		burnFeeQuery string
-	)
-	for i, field := range burnFeeFields {
-		if i != 0 {
-			burnFeeQuery += ", "
-		}
-		burnFeeQuery += field.String()
-	}
-	return burnFeeQuery
-}
-
-func prepareWalletFeeQuery() string {
-	var (
-		walletFeeFields = []walletschema.FieldName{
-			walletschema.Time,
-			walletschema.ReserveAddr,
-			walletschema.WalletAddr,
-			walletschema.Amount,
-			walletschema.LogIndex,
-		}
-		walletQuery string
-	)
-	for i, field := range walletFeeFields {
-		if i != 0 {
-			walletQuery += ", "
-		}
-		walletQuery += field.String()
-	}
-	return walletQuery
-}
-
 // LoadTradeLogs return trade logs from DB
 func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
 	var (
 		result = make([]common.TradeLog, 0)
 		q      = fmt.Sprintf(
 			`
-		SELECT %[1]s FROM %[6]s WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY %[9]s;
-		SELECT %[2]s FROM %[7]s WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY %[10]s;
-		SELECT %[3]s FROM %[8]s WHERE time >= '%[4]s' AND time <= '%[5]s' GROUP BY %[11]s;
+		SELECT %[1]s FROM %[2]s WHERE time >= '%[3]s' AND time <= '%[4]s';
 		`,
-			prepareBurnFeeQuery(),
-			prepareWalletFeeQuery(),
 			prepareTradeLogQuery(),
+			tradeLogMeasurementName,
 			from.Format(time.RFC3339),
 			to.Format(time.RFC3339),
-			burnFeesMeasurementName,
-			walletMeasurementName,
-			tradeLogMeasurementName,
-			burnschema.TxHash.String()+", "+burnschema.TradeLogIndex.String(),
-			walletschema.TxHash.String()+", "+walletschema.TradeLogIndex.String(),
-			logschema.TxHash.String()+", "+logschema.LogIndex.String(),
 		)
 
 		logger = is.sugar.With(
@@ -210,54 +169,18 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 		return nil, err
 	}
 
-	// Get BurnFees
-	if len(res[0].Series) == 0 {
-		is.sugar.Debug("empty burn fee in query result")
-		return result, nil
-	}
-
-	// map [tx_hash][trade_log_index][]common.BurnFee
-	burnFeesByTxHash := make(map[ethereum.Hash]map[uint][]common.BurnFee)
-	for _, row := range res[0].Series {
-		txHash, tradeLogIndex, burnFees, err := is.rowToBurnFees(row)
-		if err != nil {
-			return nil, err
-		}
-		_, exist := burnFeesByTxHash[txHash]
-		if !exist {
-			burnFeesByTxHash[txHash] = make(map[uint][]common.BurnFee)
-		}
-		burnFeesByTxHash[txHash][uint(tradeLogIndex)] = burnFees
-	}
-
-	// Get WalletFees
-	// map [tx_hash][trade_log_index][]common.WalletFee
-	walletFeesByTxHash := make(map[ethereum.Hash]map[uint][]common.WalletFee)
-
-	if len(res[1].Series) == 0 {
-		is.sugar.Debug("empty wallet fee in query result")
-	} else {
-		for _, row := range res[1].Series {
-			txHash, tradeLogIndex, walletFees, err := is.rowToWalletFees(row)
-			if err != nil {
-				return nil, err
-			}
-			_, exist := walletFeesByTxHash[txHash]
-			if !exist {
-				walletFeesByTxHash[txHash] = make(map[uint][]common.WalletFee)
-			}
-			walletFeesByTxHash[txHash][uint(tradeLogIndex)] = walletFees
-		}
-	}
-
 	// Get TradeLogs
-	if len(res[2].Series) == 0 {
+	if len(res) == 0 || len(res[0].Series) == 0 || len(res[0].Series[0].Values) == 0 {
 		is.sugar.Debug("empty trades in query result")
 		return result, nil
 	}
+	idxs, err := logschema.NewFieldsRegistrar(res[0].Series[0].Columns)
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range res[0].Series[0].Values {
 
-	for _, row := range res[2].Series {
-		tradeLog, err := is.rowToTradeLog(row, burnFeesByTxHash, walletFeesByTxHash)
+		tradeLog, err := is.rowToTradeLog(row, idxs)
 		if err != nil {
 			return nil, err
 		}
@@ -290,7 +213,60 @@ func (is *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.R
 	return res, nil
 }
 
+//getBurnAmount return the burn amount in float for src and
+func (is *InfluxStorage) getBurnAmount(log common.TradeLog) (float64, float64, error) {
+	var (
+		logger = is.sugar.With(
+			"func", "tradelogs/storage/getBurnAmount",
+			"log", log,
+		)
+		srcAmount float64
+		dstAmount float64
+	)
+	if blockchain.IsBurnable(log.SrcAddress) {
+		if len(log.BurnFees) < 1 {
+			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "at least 1 burn fees (src)")
+			return srcAmount, dstAmount, nil
+		}
+		srcAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
+		if err != nil {
+			return srcAmount, dstAmount, err
+		}
+
+		if blockchain.IsBurnable(log.DestAddress) {
+			if len(log.BurnFees) < 2 {
+				logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "2 burn fees (src-dst)")
+				return srcAmount, dstAmount, nil
+			}
+			dstAmount, err = is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[1].Amount)
+			if err != nil {
+				return srcAmount, dstAmount, err
+			}
+			return srcAmount, dstAmount, nil
+		}
+		return srcAmount, dstAmount, nil
+	}
+
+	if blockchain.IsBurnable(log.DestAddress) {
+		if len(log.BurnFees) < 1 {
+			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "at least 1 burn fees (dst)")
+			return srcAmount, dstAmount, nil
+		}
+		dstAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
+		if err != nil {
+			return srcAmount, dstAmount, err
+		}
+		return srcAmount, dstAmount, nil
+	}
+
+	return srcAmount, dstAmount, nil
+}
+
 func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error) {
+	logger := is.sugar.With(
+		"func", "tradelogs/storage/InfluxStorage.tradeLogToPoint",
+		"txHash", log.TransactionHash.String(),
+	)
 	var points []*client.Point
 	var walletAddr ethereum.Address
 	if len(log.WalletFees) > 0 {
@@ -298,25 +274,23 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	}
 
 	tags := map[string]string{
-		logschema.BlockNumber.String(): strconv.FormatUint(log.BlockNumber, 10),
-		logschema.TxHash.String():      log.TransactionHash.String(),
-		logschema.UserAddr.String():    log.UserAddress.String(),
+
+		logschema.UserAddr.String(): log.UserAddress.String(),
 
 		logschema.SrcAddr.String():        log.SrcAddress.String(),
 		logschema.DstAddr.String():        log.DestAddress.String(),
 		logschema.IntegrationApp.String(): log.IntegrationApp,
 		logschema.WalletAddress.String():  walletAddr.String(),
+		logschema.LogIndex.String():       strconv.FormatUint(uint64(log.Index), 10),
 
 		logschema.Country.String(): log.Country,
-		logschema.IP.String():      log.IP,
 
-		logschema.EthUSDProvider.String(): log.ETHUSDProvider,
 		logschema.LogIndex.String():       strconv.FormatUint(uint64(log.Index), 10),
 		logschema.SrcReserveAddr.String(): log.SrcReserveAddress.String(),
 		logschema.DstReserveAddr.String(): log.DstReserveAddress.String(),
 	}
 
-	ethReceivalAmount, err := is.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)
+	ethAmount, err := is.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)
 	if err != nil {
 		return nil, err
 	}
@@ -331,87 +305,44 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		return nil, err
 	}
 
-	var ethAmount float64
-
-	if log.SrcAddress == blockchain.ETHAddr {
-		ethAmount = srcAmount
-	} else if log.DestAddress == blockchain.ETHAddr {
-		ethAmount = dstAmount
-	} else {
-		ethAmount = ethReceivalAmount
+	srcBurnAmount, dstBurnAmount, err := is.getBurnAmount(log)
+	if err != nil {
+		return nil, err
 	}
-
 	fields := map[string]interface{}{
 
-		logschema.SrcAmount.String():  srcAmount,
-		logschema.DstAmount.String():  dstAmount,
-		logschema.EthUSDRate.String(): log.ETHUSDRate,
+		logschema.SrcAmount.String():        srcAmount,
+		logschema.DstAmount.String():        dstAmount,
+		logschema.EthUSDRate.String():       log.ETHUSDRate,
+		logschema.SourceBurnAmount.String(): srcBurnAmount,
+		logschema.DestBurnAmount.String():   dstBurnAmount,
 
-		logschema.EthAmount.String(): ethAmount,
+		logschema.EthAmount.String():      ethAmount,
+		logschema.BlockNumber.String():    int64(log.BlockNumber),
+		logschema.TxHash.String():         log.TransactionHash.String(),
+		logschema.IP.String():             log.IP,
+		logschema.EthUSDProvider.String(): log.ETHUSDProvider,
 	}
-
+	// build walletFeePoint
+	for _, walletFee := range log.WalletFees {
+		amount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, walletFee.Amount)
+		if err != nil {
+			return nil, err
+		}
+		if walletFee.ReserveAddress == log.SrcReserveAddress {
+			fields[logschema.SourceWalletFeeAmount.String()] = amount
+		} else if walletFee.ReserveAddress == log.DstReserveAddress {
+			fields[logschema.DestWalletFeeAmount.String()] = amount
+		} else {
+			logger.Warnw("unexpected wallet fees with unrecognized reserve address", "wallet fee", walletFee)
+		}
+	}
 	tradePoint, err := client.NewPoint(tradeLogMeasurementName, tags, fields, log.Timestamp)
 	if err != nil {
 		return nil, err
 	}
 
 	points = append(points, tradePoint)
-
-	// build burnFeePoint
-	for _, burn := range log.BurnFees {
-		tags := map[string]string{
-			burnschema.TxHash.String():        log.TransactionHash.String(),
-			burnschema.ReserveAddr.String():   burn.ReserveAddress.String(),
-			burnschema.LogIndex.String():      strconv.FormatUint(uint64(burn.Index), 10),
-			burnschema.TradeLogIndex.String(): strconv.FormatUint(uint64(log.Index), 10),
-			burnschema.WalletAddress.String(): walletAddr.String(),
-			burnschema.Country.String():       log.Country,
-		}
-
-		burnAmount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, burn.Amount)
-		if err != nil {
-			return nil, err
-		}
-
-		fields := map[string]interface{}{
-			burnschema.Amount.String(): burnAmount,
-		}
-
-		burnPoint, err := client.NewPoint(burnFeesMeasurementName, tags, fields, log.Timestamp)
-		if err != nil {
-			return nil, err
-		}
-
-		points = append(points, burnPoint)
-	}
-
-	// build walletFeePoint
-	for _, walletFee := range log.WalletFees {
-		tags := map[string]string{
-			walletschema.TxHash.String():        log.TransactionHash.String(),
-			walletschema.ReserveAddr.String():   walletFee.ReserveAddress.String(),
-			walletschema.WalletAddr.String():    walletFee.WalletAddress.String(),
-			walletschema.LogIndex.String():      strconv.FormatUint(uint64(walletFee.Index), 10),
-			walletschema.TradeLogIndex.String(): strconv.FormatUint(uint64(log.Index), 10),
-			walletschema.Country.String():       log.Country,
-		}
-
-		amount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, walletFee.Amount)
-		if err != nil {
-			return nil, err
-		}
-
-		fields := map[string]interface{}{
-			walletschema.Amount.String(): amount,
-		}
-
-		walletFeePoint, err := client.NewPoint(walletMeasurementName, tags, fields, log.Timestamp)
-		if err != nil {
-			return nil, err
-		}
-
-		points = append(points, walletFeePoint)
-	}
 
 	firstTradePoint, err := is.assembleFirstTradePoint(log)
 	if err != nil {

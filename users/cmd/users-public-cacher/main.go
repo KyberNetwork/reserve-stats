@@ -62,7 +62,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	redisCacheClient, err := rediscache.NewClientFromContext(c)
+	redisCacheClient, err := libredis.NewClientFromContext(c)
 	if err != nil {
 		return err
 	}

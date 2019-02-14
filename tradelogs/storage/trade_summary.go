@@ -55,7 +55,7 @@ func (is *InfluxStorage) GetTradeSummary(from, to time.Time, timezone int8) (map
 	burnFeeQuery := fmt.Sprintf("SELECT total_burn_fee FROM %s WHERE %s ", burnFeeMName, timeFilter)
 	logger.Debugw("getting total burn fee", "query", burnFeeQuery)
 
-	if response, err = is.QueryDB(is.influxClient, burnFeeQuery); err != nil {
+	if response, err = influxdb.QueryDB(is.influxClient, burnFeeQuery, is.dbName); err != nil {
 		return nil, err
 	}
 

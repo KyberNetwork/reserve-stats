@@ -67,13 +67,21 @@ func (rc *RedisCacher) cacheAllKycedUsers() error {
 	}
 	logger.Debugw("addresses from postgres", "addresses", addresses)
 
+	pipe := rc.redisClient.Pipeline()
+	defer func() {
+		if _, err := pipe.Exec(); err != nil {
+			logger.Errorw("pipeline exec error", "error", err.Error())
+		}
+	}()
 	for _, address := range addresses {
 		user := common.UserResponse{
 			KYCed: true,
 		}
-		rc.saveToCache(address, user, 0)
+		if err := rc.saveToCache(pipe, address, user, 0); err != nil {
+			return err
+		}
 	}
-	return nil
+	return err
 }
 
 func (rc *RedisCacher) cacheRichUser() error {
@@ -99,6 +107,12 @@ func (rc *RedisCacher) cacheRichUser() error {
 		return nil
 	}
 
+	pipe := rc.redisClient.Pipeline()
+	defer func() {
+		if _, err := pipe.Exec(); err != nil {
+			logger.Errorw("pipeline exec error", "error", err.Error())
+		}
+	}()
 	for _, serie := range res[0].Series {
 		userAddress := serie.Tags[logSchema.UserAddr.String()]
 		// check kyced
@@ -125,32 +139,48 @@ func (rc *RedisCacher) cacheRichUser() error {
 		}
 
 		// save to cache with 1 hour
-		rc.saveToCache(userAddress, user, expireTime)
+		if err := rc.saveToCache(pipe, userAddress, user, expireTime); err != nil {
+			return err
+		}
 	}
-	return nil
+
+	return err
 }
 
-func (rc *RedisCacher) saveToCache(key string, value common.UserResponse, expireTime time.Duration) error {
+func (rc *RedisCacher) saveToCache(pipeline redis.Pipeliner, key string, value common.UserResponse, expireTime time.Duration) error {
 	data, err := json.Marshal(value)
 	if err != nil {
 		rc.sugar.Debugw("Cannot marshal value", "error", err)
 		return err
 	}
-	if err := rc.redisClient.Set(key, data, expireTime).Err(); err != nil {
+
+	if err := pipeline.Set(key, data, expireTime).Err(); err != nil {
 		rc.sugar.Debugw("set cache to redis error", "error", err)
 		return err
 	}
+
 	rc.sugar.Debugw("save data to cache succes", "key", key, "value", value)
 	return nil
 }
 
 func (rc *RedisCacher) isKyced(userAddress string) (bool, error) {
-	if err := rc.redisClient.Get(userAddress).Err(); err != nil {
+	var (
+		user common.UserResponse
+	)
+	data := rc.redisClient.Get(userAddress)
+	if err := data.Err(); err != nil {
 		if err == redis.Nil {
 			return false, nil
 		}
 		rc.sugar.Debugw("get data from redis failed", "address", userAddress, "error", err.Error())
 		return false, err
 	}
-	return true, nil
+	userBytes, err := data.Bytes()
+	if err != nil {
+		return false, err
+	}
+	if err := json.Unmarshal(userBytes, &user); err != nil {
+		return false, err
+	}
+	return user.KYCed, nil
 }

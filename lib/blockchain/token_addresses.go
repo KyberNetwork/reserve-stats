@@ -22,4 +22,7 @@ var (
 
 	// BQXAddr is ETHOS/BQX token address
 	BQXAddr = common.HexToAddress("0x5af2be193a6abca9c8817001f45744777db30756")
+
+	// PTAddr is Promotion Token address
+	PTAddr = common.HexToAddress("0x094c875704c14783049ddf8136e298b3a099c446")
 )

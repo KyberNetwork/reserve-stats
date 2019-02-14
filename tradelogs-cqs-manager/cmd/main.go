@@ -1,13 +1,17 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+
+	"github.com/influxdata/influxdb/client/v2"
+	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs-cqs-manager/cq"
-	"github.com/urfave/cli"
 )
 
 const (
@@ -17,6 +21,9 @@ const (
 
 	executeCqFlag = "execute-cq"
 )
+
+//CQs map its name to its cq
+var CQs map[string]cq.ContinuousQuery
 
 func main() {
 	app := libapp.NewApp()
@@ -51,15 +58,38 @@ func main() {
 }
 
 func listAllCqs() error {
+	for cq := range CQs {
+		fmt.Printf(cq)
+	}
 	return nil
 }
 
-func dropCq(cq string) error {
-	return nil
+func dropCq(c client.Client, sugar *zap.SugaredLogger, cqName string) error {
+	var (
+		logger = sugar.With(
+			"func", "tradelogs-cq-manager/cq/DropACQ",
+		)
+	)
+	cq, exist := CQs[cqName]
+	if !exist {
+		logger.Debugw("cq name does not exist", "name", cqName)
+		return nil
+	}
+	return cq.Drop(c, sugar)
 }
 
-func executeCq(cq string) error {
-	return nil
+func executeCq(c client.Client, sugar *zap.SugaredLogger, cqName string) error {
+	var (
+		logger = sugar.With(
+			"func", "tradelogs-cq-manager/cq/DropACQ",
+		)
+	)
+	cq, exist := CQs[cqName]
+	if !exist {
+		logger.Debugw("cq name does not exist", "name", cqName)
+		return nil
+	}
+	return cq.Execute(c, sugar)
 }
 
 func run(c *cli.Context) error {
@@ -77,7 +107,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	sugar.Info("influxClient: ", influxClient)
+	sugar.Info("initialized influxClient successfully: ", influxClient)
 
 	if c.Bool(listAllCqsFlag) {
 		if err := listAllCqs(); err != nil {
@@ -87,15 +117,15 @@ func run(c *cli.Context) error {
 
 	if c.String(dropCqFlag) != "" {
 		cqToDrop := c.String(dropCqFlag)
-		if err := dropCq(cqToDrop); err != nil {
+		if err := dropCq(influxClient, sugar, cqToDrop); err != nil {
 			return err
 		}
 	}
 
 	if c.String(executeCqFlag) != "" {
 		cqToExecute := c.String(executeCqFlag)
-		if err := executeCq(cqToExecute); err != nil {
-			return err	
+		if err := executeCq(influxClient, sugar, cqToExecute); err != nil {
+			return err
 		}
 	}
 

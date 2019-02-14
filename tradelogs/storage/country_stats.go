@@ -31,7 +31,7 @@ func (is *InfluxStorage) GetCountryStats(countryCode string, from, to time.Time,
 
 	logger.Debugw("get country stats", "query", cmd)
 
-	response, err := is.queryDB(is.influxClient, cmd)
+	response, err := influxdb.QueryDB(is.influxClient, cmd, is.dbName)
 	if err != nil {
 		return nil, err
 	}

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
@@ -44,7 +45,7 @@ func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq st
 		fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339), freq)
 
 	logger.Debugw("GetAggregatedWalletFee", "query", q)
-	res, err := is.queryDB(is.influxClient, q)
+	res, err := influxdb.QueryDB(is.influxClient, q, is.dbName)
 	if err != nil {
 		logger.Error(fmt.Sprintf("cannot query wallet fee from influx: %s", err.Error()))
 		return result, err

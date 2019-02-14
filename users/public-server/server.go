@@ -11,8 +11,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/users/common"
-	userhttp "github.com/KyberNetwork/reserve-stats/users/http"
 	"github.com/KyberNetwork/tokenrate"
 )
 
@@ -38,7 +38,7 @@ func NewServer(sugar *zap.SugaredLogger, host string, rateProvider tokenrate.ETH
 		sugar:        sugar,
 		r:            r,
 		host:         host,
-		rateProvider: userhttp.NewCachedRateProvider(sugar, rateProvider, time.Hour),
+		rateProvider: httputil.NewCachedRateProvider(sugar, rateProvider, time.Hour),
 		storage:      storage,
 	}
 }

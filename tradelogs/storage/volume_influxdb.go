@@ -61,7 +61,7 @@ func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token ethere
 
 	logger.Debugw("query rendered", "query", cmd)
 
-	response, err := is.queryDB(is.influxClient, cmd)
+	response, err := influxdb.QueryDB(is.influxClient, cmd, is.dbName)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (is *InfluxStorage) GetAssetVolume(token ethereum.Address, fromTime, toTime
 	)
 
 	logger.Debugw("get asset volume query rendered", "query", cmd)
-	response, err := is.queryDB(is.influxClient, cmd)
+	response, err := influxdb.QueryDB(is.influxClient, cmd, is.dbName)
 
 	if err != nil {
 		return result, err

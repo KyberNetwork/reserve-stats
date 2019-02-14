@@ -7,6 +7,7 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/KyberNetwork/reserve-stats/lib/app"
+	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	rediscache "github.com/KyberNetwork/reserve-stats/lib/redis"
@@ -15,7 +16,7 @@ import (
 )
 
 func main() {
-	app := app.NewApp()
+	app := libapp.NewApp()
 	app.Name = "User stat public service"
 	app.Usage = "Return user stat information from cache"
 	app.Action = run
@@ -42,14 +43,14 @@ func run(c *cli.Context) error {
 	sugar := logger.Sugar()
 	sugar.Info("Run user stats public service")
 
-	cachedClient, err := rediscache.NewClientFromContext(c)
+	redisClient, err := rediscache.NewClientFromContext(c)
 	if err != nil {
 		return err
 	}
 
-	sugar.Debugw("initiate redis client", "client", cachedClient)
+	sugar.Debugw("initiate redis client", "client", redisClient)
 
-	publicServer := server.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), coingecko.New(), cachedClient)
+	publicServer := server.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), coingecko.New(), redisClient)
 
 	return publicServer.Run()
 }

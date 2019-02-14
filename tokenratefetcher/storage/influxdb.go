@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tokenratefetcher/common"
 	schema "github.com/KyberNetwork/reserve-stats/tokenratefetcher/storage/schema/tokenrate"
 	"github.com/influxdata/influxdb/client/v2"
@@ -33,25 +34,8 @@ func NewInfluxStorage(cl client.Client, dbName string, sugar *zap.SugaredLogger)
 	return &is, nil
 }
 
-// queryDB convenience function to query the database
-func (is *InfluxStorage) queryDB(cmd string) (res []client.Result, err error) {
-	q := client.Query{
-		Command:  cmd,
-		Database: is.dbName,
-	}
-	if response, err := is.influxClient.Query(q); err == nil {
-		if response.Error() != nil {
-			return res, response.Error()
-		}
-		res = response.Results
-	} else {
-		return res, err
-	}
-	return res, nil
-}
-
 func (is *InfluxStorage) createDB() error {
-	_, err := is.queryDB(fmt.Sprintf("CREATE DATABASE %s", is.dbName))
+	_, err := influxdb.QueryDB(is.influxClient, fmt.Sprintf("CREATE DATABASE %s", is.dbName), is.dbName)
 	return err
 }
 

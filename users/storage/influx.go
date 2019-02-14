@@ -27,23 +27,6 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 	return storage, nil
 }
 
-// queryDB convenience function to query the database
-func (inf *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.Result, err error) {
-	q := client.Query{
-		Command:  cmd,
-		Database: inf.dbName,
-	}
-	if response, err := clnt.Query(q); err == nil {
-		if response.Error() != nil {
-			return res, response.Error()
-		}
-		res = response.Results
-	} else {
-		return res, err
-	}
-	return res, nil
-}
-
 //IsExceedDailyLimit return if add address trade over daily limit or not
 func (inf *InfluxStorage) IsExceedDailyLimit(address string, dailyLimit float64) (bool, error) {
 	var (
@@ -54,7 +37,7 @@ FROM trades WHERE user_addr='%s' AND time <= now() AND time >= (now()-24h))`,
 		err             error
 	)
 
-	res, err := inf.queryDB(inf.influxClient, query)
+	res, err := influxdb.QueryDB(inf.influxClient, query, inf.dbName)
 	if err != nil {
 		inf.sugar.Debugw("error from query", "error", err)
 		return false, err

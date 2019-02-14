@@ -22,7 +22,7 @@ func (is *InfluxStorage) GetIntegrationVolume(fromTime, toTime time.Time) (map[u
 	cmd := fmt.Sprintf("SELECT kyber_swap_volume, non_kyber_swap_volume FROM %s WHERE %s", tradelogcq.IntegrationVolumeMeasurement, timeFilter)
 	logger.Debugw("query rendered", "query", cmd)
 
-	response, err := is.queryDB(is.influxClient, cmd)
+	response, err := influxdb.QueryDB(is.influxClient, cmd, is.dbName)
 	if err != nil {
 		return nil, err
 	}

@@ -25,7 +25,7 @@ func NewServer(sugar *zap.SugaredLogger, rateProvider tokenrate.ETHUSDRateProvid
 	r := gin.Default()
 	return &Server{
 		sugar:         sugar,
-		rateProvider:  NewCachedRateProvider(sugar, rateProvider, time.Hour),
+		rateProvider:  httputil.NewCachedRateProvider(sugar, rateProvider, time.Hour),
 		storage:       storage,
 		r:             r,
 		host:          host,

@@ -8,7 +8,7 @@ import (
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	rediscache "github.com/KyberNetwork/reserve-stats/lib/redis"
+	libredis "github.com/KyberNetwork/reserve-stats/lib/redis"
 	"github.com/KyberNetwork/reserve-stats/users/cacher"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 )
@@ -25,7 +25,7 @@ func main() {
 	app.Version = "0.1"
 
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
-	app.Flags = append(app.Flags, rediscache.NewCliFlags()...)
+	app.Flags = append(app.Flags, libredis.NewCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {

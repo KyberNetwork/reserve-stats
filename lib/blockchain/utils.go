@@ -11,6 +11,7 @@ var notBurnTokens = map[ethereum.Address]struct{}{
 	ETHAddr:  {},
 	WETHAddr: {},
 	KCCAddr:  {},
+	PTAddr:   {},
 }
 
 // floatToBigInt converts a float to a big int with specific decimal

@@ -30,7 +30,7 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 		return nil, fmt.Errorf("invalid burn fee frequency %s", freq)
 	}
 
-	const queryTmpl = `SELECT sum_amount,src_rsv_addr,dst_rsv_addr FROM "{{.Measurement}}" WHERE '{{.From }}' <= time AND time <= '{{.To}}' AND (src_rsv_addr!='' OR dst_rsv_addr!='')` +
+	const queryTmpl = `SELECT sum_amount,src_rsv_addr,dst_rsv_addr FROM "{{.Measurement}}" WHERE '{{.From }}' <= time AND time <= '{{.To}}' ` +
 		`{{if len .Addrs}}AND ({{range $index, $element := .Addrs}}"src_rsv_addr" = '{{$element}}' OR "dst_rsv_addr" = '{{$element}}' {{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
 
 	logger.Debugw("before rendering query statement from template", "query_tempalte", queryTmpl)

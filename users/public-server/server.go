@@ -16,13 +16,18 @@ import (
 	"github.com/KyberNetwork/tokenrate"
 )
 
+const (
+	richPrefix  = "rich"
+	kycedPrefix = "kyced"
+)
+
 //Server is server to serve api
 type Server struct {
 	sugar        *zap.SugaredLogger
 	r            *gin.Engine
 	host         string
 	rateProvider tokenrate.ETHUSDRateProvider
-	storage      *redis.Client
+	redisClient  *redis.Client
 }
 
 //UserQuery is query for user info
@@ -39,8 +44,43 @@ func NewServer(sugar *zap.SugaredLogger, host string, rateProvider tokenrate.ETH
 		r:            r,
 		host:         host,
 		rateProvider: httputil.NewCachedRateProvider(sugar, rateProvider, time.Hour),
-		storage:      storage,
+		redisClient:  storage,
 	}
+}
+
+func (s *Server) getUserFromRedis(userAddress string) (common.UserResponse, error) {
+	var (
+		user common.UserResponse
+	)
+	// try to get from rich users
+	data := s.redisClient.Get(fmt.Sprintf("%s:%s", richPrefix, userAddress))
+	if data.Err() == nil {
+		userBytes, err := data.Bytes()
+		if err != nil {
+			return user, err
+		}
+		err = json.Unmarshal(userBytes, &user)
+		return user, err
+	}
+	if data.Err() != redis.Nil {
+		return user, data.Err()
+	}
+
+	// if not exist as rich user, try to get from kyced users
+	data = s.redisClient.Get(fmt.Sprintf("%s:%s", kycedPrefix, userAddress))
+	if data.Err() == nil {
+		userBytes, err := data.Bytes()
+		if err != nil {
+			return user, err
+		}
+		err = json.Unmarshal(userBytes, &user)
+		return user, err
+	}
+	if data.Err() != redis.Nil {
+		return user, data.Err()
+	}
+
+	return user, nil
 }
 
 func (s *Server) getUsers(c *gin.Context) {
@@ -61,15 +101,13 @@ func (s *Server) getUsers(c *gin.Context) {
 
 	logger.Info("query", "user query", query)
 
-	user := s.storage.Get(query.Address)
-	if user.Err() == nil {
-		userBytes, err := user.Bytes()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		err = json.Unmarshal(userBytes, &userResponse)
-		logger.Debugw("user get from redis", "user", userResponse)
+	userResponse, err := s.getUserFromRedis(query.Address)
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed  to get usd rate: %s", err.Error())},
+		)
+		return
 	}
 
 	rate, err := s.rateProvider.USDRate(time.Now())

@@ -16,8 +16,10 @@ import (
 )
 
 const (
-	influxDB   = "trade_logs"
-	expireTime = time.Hour
+	influxDB    = "trade_logs"
+	expireTime  = time.Hour
+	richPrefix  = "rich"
+	kycedPrefix = "kyced"
 )
 
 //RedisCacher is instance for redis cache
@@ -77,7 +79,7 @@ func (rc *RedisCacher) cacheAllKycedUsers() error {
 		user := common.UserResponse{
 			KYCed: true,
 		}
-		if err := rc.saveToCache(pipe, address, user, 0); err != nil {
+		if err := rc.saveToCache(pipe, fmt.Sprintf("%s:%s", kycedPrefix, address), user, 0); err != nil {
 			return err
 		}
 	}
@@ -116,7 +118,7 @@ func (rc *RedisCacher) cacheRichUser() error {
 	for _, serie := range res[0].Series {
 		userAddress := serie.Tags[logSchema.UserAddr.String()]
 		// check kyced
-		kyced, err := rc.isKyced(userAddress)
+		kyced, err := rc.isKyced(fmt.Sprintf("%s:%s", kycedPrefix, userAddress))
 		if err != nil {
 			return err
 		}
@@ -139,7 +141,7 @@ func (rc *RedisCacher) cacheRichUser() error {
 		}
 
 		// save to cache with 1 hour
-		if err := rc.saveToCache(pipe, userAddress, user, expireTime); err != nil {
+		if err := rc.saveToCache(pipe, fmt.Sprintf("%s:%s", richPrefix, userAddress), user, expireTime); err != nil {
 			return err
 		}
 	}

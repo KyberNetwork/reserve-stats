@@ -71,7 +71,5 @@ func run(c *cli.Context) error {
 
 	redisCacher := cacher.NewRedisCacher(sugar, userDB, influxDBClient, redisCacheClient)
 
-	redisCacher.CacheUserInfo()
-
-	return nil
+	return redisCacher.CacheUserInfo()
 }

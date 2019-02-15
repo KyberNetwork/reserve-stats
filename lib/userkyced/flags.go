@@ -10,9 +10,7 @@ import (
 )
 
 const (
-	userKycedURL            = "user-kyc-url"
-	userKycedSigningKeyFlag = "user-kyc-signing-key"
-	userKycedKeyIDFlag      = "user-kyc-key-id"
+	userKycedURL = "user-kyc-url"
 )
 
 // NewCliFlags returns cli flags to configure a user kyc status client.
@@ -22,18 +20,6 @@ func NewCliFlags() []cli.Flag {
 			Name:   userKycedURL,
 			Usage:  "user kyced API URL. If this doesn't support, fallback to default PosGres DB for kyced checking",
 			EnvVar: "USER_KYCED_URL",
-			Value:  "",
-		},
-		cli.StringFlag{
-			Name:   userKycedSigningKeyFlag,
-			Usage:  "user profile Signing Key",
-			EnvVar: "USER_KYCED_SIGNING_KEY",
-			Value:  "",
-		},
-		cli.StringFlag{
-			Name:   userKycedKeyIDFlag,
-			Usage:  "user profile Signing Key ID",
-			EnvVar: "USER_KYCED_KEY_ID",
 			Value:  "",
 		},
 	}
@@ -51,9 +37,6 @@ func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, er
 	if err != nil {
 		return nil, fmt.Errorf("user kyced url: %s", err.Error())
 	}
-	signingKey := c.String(userKycedSigningKeyFlag)
 
-	keyID := c.String(userKycedKeyIDFlag)
-
-	return NewClient(sugar, userURL, signingKey, keyID)
+	return NewClient(sugar, userURL)
 }

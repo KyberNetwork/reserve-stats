@@ -9,18 +9,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 // Client is the the implementation to query user kyced status info.
 type Client struct {
-	sugar        *zap.SugaredLogger
-	client       *http.Client
-	url          string
-	signingKey   string
-	signingKeyID string
+	sugar  *zap.SugaredLogger
+	client *http.Client
+	url    string
 }
 
 func (c *Client) newRequest(method, endpoint string, params map[string]string) (*http.Request, error) {
@@ -47,23 +44,17 @@ func (c *Client) newRequest(method, endpoint string, params map[string]string) (
 	}
 	req.URL.RawQuery = q.Encode()
 
-	req, err = httputil.Sign(req, c.signingKeyID, c.signingKey)
-	if err != nil {
-		return nil, err
-	}
 	logger.Debugw("User Kyced HTTP request created", "host", req.URL.Host, "raw query", req.URL.RawQuery)
 	return req, nil
 }
 
 // NewClient creates a new user kyc lookup client instance.
-func NewClient(sugar *zap.SugaredLogger, url, signingKey, signingKeyID string) (*Client, error) {
+func NewClient(sugar *zap.SugaredLogger, url string) (*Client, error) {
 	const timeout = time.Minute
 	client := &http.Client{Timeout: timeout}
 	return &Client{sugar: sugar,
-		url:          url,
-		client:       client,
-		signingKey:   signingKey,
-		signingKeyID: signingKeyID,
+		url:    url,
+		client: client,
 	}, nil
 }
 

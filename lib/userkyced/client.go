@@ -80,13 +80,10 @@ func (c *Client) IsKYCedAtTime(addr ethereum.Address, timePoint time.Time) (bool
 	defer rsp.Body.Close()
 
 	if rsp.StatusCode != http.StatusOK {
-		return result.Kyced, fmt.Errorf("unexpected return code: %d", rsp.StatusCode)
+		return result.Kyced, fmt.Errorf("unexpected return code: %d, reason : %v", rsp.StatusCode, result.Reason)
 	}
 	if err = json.NewDecoder(rsp.Body).Decode(&result); err != nil {
 		return result.Kyced, err
-	}
-	if !result.Success {
-		return result.Kyced, fmt.Errorf("failed to get user profile, reason : %v", result.Reason)
 	}
 	return result.Kyced, nil
 }

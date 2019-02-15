@@ -67,8 +67,7 @@ func (s *Server) isKyced(c *gin.Context) {
 	c.JSON(
 		http.StatusOK,
 		gin.H{
-			"kyced":   kyced,
-			"success": true,
+			"kyced": kyced,
 		},
 	)
 }

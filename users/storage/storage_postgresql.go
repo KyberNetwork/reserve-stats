@@ -166,7 +166,7 @@ func (udb *UserDB) IsKYCedAtTime(userAddr string, ts time.Time) (bool, error) {
 		)
 		result uint64
 	)
-	stmt := fmt.Sprintf(`SELECT COUNT(1) FROM "%s" WHERE address = $1 AND timestamp < $2`, addressesTableName)
+	stmt := fmt.Sprintf(`SELECT COUNT(1) FROM "%s" WHERE address = $1 AND timestamp <= $2`, addressesTableName)
 	logger = logger.With("query", stmt)
 	if err := udb.db.Get(&result, stmt, strings.ToLower(userAddr), ts.UTC()); err != nil {
 		return false, err

@@ -1,6 +1,7 @@
 package userkyced
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-ozzo/ozzo-validation"
@@ -12,6 +13,9 @@ import (
 const (
 	userKycedURL = "user-kyc-url"
 )
+
+//ErrNoClient is returned when there is no client to return
+var ErrNoClient = errors.New("There is no client. The URL might be empty")
 
 // NewCliFlags returns cli flags to configure a user kyc status client.
 func NewCliFlags() []cli.Flag {
@@ -29,7 +33,7 @@ func NewCliFlags() []cli.Flag {
 func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, error) {
 	userURL := c.String(userKycedURL)
 	if userURL == "" {
-		return nil, nil
+		return nil, ErrNoClient
 	}
 	err := validation.Validate(userURL,
 		is.URL,

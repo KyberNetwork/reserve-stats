@@ -191,21 +191,18 @@ func run(c *cli.Context) error {
 		return err
 	}
 	userKycedClient, err := userkyced.NewClientFromContext(sugar, c)
-	if err != nil {
-		return err
-	}
-	if userKycedClient != nil {
-		sugar.Info("User kyced checker URL provided. check KYCed status from userKYCed client")
-		kycChecker = userKycedClient
-
-	} else {
+	if err == userkyced.ErrNoClient {
 		sugar.Info("User kyced checker URL is not provided. Use default postGres instead")
 		db, err := libapp.NewDBFromContext(c)
 		if err != nil {
 			return err
 		}
-
 		kycChecker = storage.NewUserKYCChecker(sugar, db)
+	} else if err != nil {
+		return err
+	} else {
+		sugar.Info("User kyced checker URL provided. check KYCed status from userKYCed client")
+		kycChecker = userKycedClient
 	}
 
 	tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)

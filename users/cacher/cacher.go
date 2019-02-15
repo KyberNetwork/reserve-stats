@@ -21,6 +21,8 @@ const (
 	kycedPrefix = "kyced"
 )
 
+var kycedAddresses map[string]int
+
 //RedisCacher is instance for redis cache
 type RedisCacher struct {
 	sugar          *zap.SugaredLogger
@@ -58,9 +60,10 @@ func (rc *RedisCacher) CacheUserInfo() error {
 func (rc *RedisCacher) cacheAllKycedUsers() error {
 	var (
 		logger    = rc.sugar.With("func", "user/cacher/cacheAllKycedUsers")
-		addresses []string
 		err       error
+		addresses []string
 	)
+	kycedAddresses = make(map[string]int)
 	// read all address from addresses table in postgres
 	if addresses, err = rc.postgresDB.GetAllAddresses(); err != nil {
 		logger.Errorw("error from query postgres db", "error", err.Error())
@@ -70,12 +73,15 @@ func (rc *RedisCacher) cacheAllKycedUsers() error {
 
 	pipe := rc.redisClient.Pipeline()
 	for _, address := range addresses {
+		// push to redis
 		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", kycedPrefix, address), 0); err != nil {
 			if dErr := pipe.Discard(); dErr != nil {
 				err = fmt.Errorf("%s - %s", dErr.Error(), err.Error())
 			}
 			return err
 		}
+		// push to mem
+		kycedAddresses[address] = 1
 	}
 	_, err = pipe.Exec()
 	return err
@@ -108,10 +114,7 @@ func (rc *RedisCacher) cacheRichUser() error {
 	for _, serie := range res[0].Series {
 		userAddress := serie.Tags[logSchema.UserAddr.String()]
 		// check kyced
-		kyced, err := rc.isKyced(fmt.Sprintf("%s:%s", kycedPrefix, userAddress))
-		if err != nil {
-			return err
-		}
+		_, kyced := kycedAddresses[userAddress]
 
 		// check rich
 		userTradeAmount, err := influxdb.GetFloat64FromInterface(serie.Values[0][1])
@@ -150,15 +153,4 @@ func (rc *RedisCacher) pushToPipeline(pipeline redis.Pipeliner, key string, expi
 
 	rc.sugar.Debugw("save data to cache succes", "key", key)
 	return nil
-}
-
-func (rc *RedisCacher) isKyced(key string) (bool, error) {
-	data := rc.redisClient.Get(key)
-	if data.Err() != nil {
-		if data.Err() == redis.Nil {
-			return false, nil
-		}
-		return false, data.Err()
-	}
-	return true, nil
 }

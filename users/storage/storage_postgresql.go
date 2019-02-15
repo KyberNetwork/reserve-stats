@@ -144,16 +144,6 @@ WHERE user_id IN (SELECT id AS user_id FROM "%s" WHERE email = $1)
 	return err
 }
 
-// IsKYCed returns true when given address is found in database,
-// means that user is already KYCed.
-func (udb *UserDB) IsKYCed(address string) (bool, error) {
-	var count int
-	if err := udb.db.Get(&count, fmt.Sprintf(`SELECT COUNT(1) FROM "%s" WHERE address = $1`, addressesTableName), address); err != nil {
-		return false, err
-	}
-	return count > 0, nil
-}
-
 //GetAllAddresses return all user address info from addresses table
 func (udb *UserDB) GetAllAddresses() ([]string, error) {
 	var result []string

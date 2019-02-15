@@ -91,13 +91,10 @@ func TestMain(m *testing.M) {
 	if testStorage, err = newTestInfluxStorage("test_log_db"); err != nil {
 		log.Fatal("get unexpected error when create storage", "err", err.Error())
 	}
-	defer func() {
-		if err = testStorage.tearDown(); err != nil {
-			log.Fatal(err)
-		}
-	}()
 
 	ret := m.Run()
-
+	if err = testStorage.tearDown(); err != nil {
+		log.Fatal(err)
+	}
 	os.Exit(ret)
 }

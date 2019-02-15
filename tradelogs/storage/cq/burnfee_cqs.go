@@ -41,8 +41,8 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	srcBurnfeeDayCqs, err := cq.NewContinuousQuery(
 		"src_burn_amount_day",
 		dbName,
-		hourResampleInterval,
-		hourResampleFor,
+		dayResampleInterval,
+		dayResampleFor,
 		"SELECT SUM(src_burn_amount) as sum_amount INTO burn_fee_day FROM trades GROUP BY src_rsv_addr",
 		"1d",
 		[]string{},
@@ -56,8 +56,8 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	dstBurnfeedstDayCqs, err := cq.NewContinuousQuery(
 		"dst_burn_amount_day",
 		dbName,
-		hourResampleInterval,
-		hourResampleFor,
+		dayResampleInterval,
+		dayResampleFor,
 		"SELECT SUM(dst_burn_amount) as sum_amount INTO burn_fee_day FROM trades GROUP BY dst_rsv_addr",
 		"1d",
 		[]string{},

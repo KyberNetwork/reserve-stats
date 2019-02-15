@@ -35,7 +35,7 @@ func CreateWalletFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	}
 	result = append(result, dstWalletFeeHourCqs)
 	srcWalletFeeDayCqs, err := cq.NewContinuousQuery(
-		"wallet_fee_day",
+		"src_wallet_fee_day",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
@@ -48,7 +48,7 @@ func CreateWalletFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	}
 	result = append(result, srcWalletFeeDayCqs)
 	dstWalletFeeDayCqs, err := cq.NewContinuousQuery(
-		"wallet_fee_day",
+		"dst_wallet_fee_day",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,

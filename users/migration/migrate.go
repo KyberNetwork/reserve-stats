@@ -1,7 +1,6 @@
 package migration
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 
@@ -9,6 +8,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/boltutil"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
+	// "github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/boltdb/bolt"
 	"github.com/jmoiron/sqlx"
 )
@@ -41,12 +41,12 @@ func NewDBMigration(sugar *zap.SugaredLogger, dbPath string, postgres *sqlx.DB) 
 	if err != nil {
 		return nil, err
 	}
-
 	// initiate postgres for migration
 	var schema = fmt.Sprintf(`
 CREATE TABLE IF NOT EXISTS "%[1]s" (
   id    SERIAL PRIMARY KEY,
-  email text NOT NULL UNIQUE
+  email text NOT NULL UNIQUE,
+  last_updated TIMESTAMP NOT NULL
 );
 CREATE TABLE IF NOT EXISTS "%[2]s" (
   id        SERIAL PRIMARY KEY,
@@ -71,6 +71,51 @@ CREATE TABLE IF NOT EXISTS "%[2]s" (
 	return storage, err
 }
 
+//InsertOrUpdate insert or update userData from a record
+func (dbm *DBMigration) InsertOrUpdate(address, email, usersTableName, addressTableName string, timestamp uint64) error {
+	var (
+		logger = dbm.sugar.With(
+			"func", "users/migrate.InserOrUpdate",
+			"email", email,
+		)
+		stmt string
+	)
+
+	tx, err := dbm.postgresdb.Beginx()
+	if err != nil {
+		return err
+	}
+
+	defer pgsql.CommitOrRollback(tx, logger, &err)
+	// timepoint := timeutil.TimestampMsToTime(timestamp)
+	stmt = fmt.Sprintf(`WITH u AS (
+  INSERT INTO "%[1]s" (email, last_updated)
+    VALUES ($1, NOW())
+    ON CONFLICT ON CONSTRAINT %[1]s_email_key
+      DO UPDATE SET last_updated = NOW() RETURNING id
+),
+     a AS (
+       SELECT $2::text            AS address,
+              $3::double precision AS timestamp
+     )
+INSERT
+INTO "%[2]s"(address, timestamp, user_id)
+SELECT a.address, to_timestamp(a.timestamp / 1000), u.id
+FROM u NATURAL JOIN a
+ON CONFLICT ON CONSTRAINT %[2]s_address_key DO UPDATE SET timestamp = EXCLUDED.timestamp, user_id = EXCLUDED.user_id 
+`,
+		usersTableName,
+		addressTableName)
+	logger.Debugw("upsert email and Ethereum addresses",
+		"stmt", stmt)
+	_, err = tx.Exec(stmt,
+		email,
+		address,
+		int64(timestamp),
+	)
+	return err
+}
+
 //Migrate read data from bolt database file and input into postgres database
 func (dbm *DBMigration) Migrate(usersTableName, addressTableName string) error {
 	var logger = dbm.sugar.With("func", "users/migration/DBMigration.Migrate")
@@ -87,7 +132,7 @@ func (dbm *DBMigration) Migrate(usersTableName, addressTableName string) error {
 
 		logger.Debugw("starting migration process from legacy BoltDB to PostgreSQL")
 		var count = 0
-		usersBucket.ForEach(func(k, v []byte) error {
+		if err := usersBucket.ForEach(func(k, v []byte) error {
 			count++
 			var (
 				email   = string(v)
@@ -95,71 +140,15 @@ func (dbm *DBMigration) Migrate(usersTableName, addressTableName string) error {
 				logger  = logger.With("email", email, "address", address, "count", count)
 			)
 
-			logger.Debugw("inserting to users table")
-			userID, eErr := dbm.insertIntoUserTable(usersTableName, email)
-			if eErr != nil {
-				return eErr
-			}
-
 			timestampByte := addressesBucket.Get(k)
 			timestamp := boltutil.BytesToUint64(timestampByte)
-
-			logger.Infow("inserting to addresses table")
-			return dbm.insertAddress(addressTableName, address, timestamp, userID)
-		})
+			logger.Debugw("inserting to users table")
+			return dbm.InsertOrUpdate(address, email, usersTableName, addressTableName, timestamp)
+		}); err != nil {
+			return err
+		}
 
 		logger.Infow("migration completed", "count", count)
 		return nil
 	})
-}
-
-//insertIntoUserTable insert email into
-func (dbm *DBMigration) insertIntoUserTable(tableName string, email string) (int, error) {
-	var (
-		logger = dbm.sugar.With(
-			"func", "users/migration/DBMigration.insertIntoUserTable",
-			"email", email,
-		)
-		userID int
-	)
-	ptx, err := dbm.postgresdb.Beginx()
-	if err != nil {
-		return 0, err
-	}
-
-	defer pgsql.CommitOrRollback(ptx, logger, &err)
-
-	err = ptx.Get(&userID, fmt.Sprintf(`SELECT id FROM "%s" WHERE email = $1;`, tableName), email)
-	if err == sql.ErrNoRows {
-		logger.Debugw("user does not exist, creating")
-		row := ptx.QueryRowx(`INSERT INTO users (email) VALUES ($1) RETURNING id;`, email)
-		if err = row.Scan(&userID); err != nil {
-			return 0, err
-		}
-	} else if err != nil {
-		return 0, err
-	}
-
-	logger.Debugw("user already exists, skipping")
-
-	return userID, nil
-}
-
-//insertAddress insert address into address table
-func (dbm *DBMigration) insertAddress(tableName, address string, timestamp uint64, userID int) error {
-	ptx, err := dbm.postgresdb.Beginx()
-
-	defer pgsql.CommitOrRollback(ptx, dbm.sugar, &err)
-
-	_, err = ptx.Exec(fmt.Sprintf(`
-INSERT INTO "%s" (address, timestamp, user_id)
-VALUES ($1, (TO_TIMESTAMP($2::double precision/1000)), $3);
-`, tableName),
-		address,
-		timestamp,
-		userID)
-	if err != nil {
-		return err
-	}
-	return err
 }

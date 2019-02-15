@@ -2,6 +2,9 @@ package common
 
 import "math/big"
 
+//DefaultDB is default db for user postgres database
+const DefaultDB = "users"
+
 var (
 	nonKYCCap = &UserCap{
 		DailyLimit: 15000.0,

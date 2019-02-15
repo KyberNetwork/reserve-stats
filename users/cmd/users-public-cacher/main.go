@@ -10,11 +10,12 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	libredis "github.com/KyberNetwork/reserve-stats/lib/redis"
 	"github.com/KyberNetwork/reserve-stats/users/cacher"
+	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 )
 
 const (
-	defaultDB = "reserve_stats"
+	defaultDB = "users"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 	app.Action = run
 	app.Version = "0.1"
 
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
 	app.Flags = append(app.Flags, libredis.NewCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 

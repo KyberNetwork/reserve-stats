@@ -2,8 +2,8 @@ package server
 
 import (
 	"fmt"
+	"math/big"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -48,46 +48,15 @@ func NewServer(sugar *zap.SugaredLogger, host string, rateProvider tokenrate.ETH
 	}
 }
 
-func fromInterfaceToUser(data []interface{}) (common.UserResponse, error) {
-	if len(data) != 2 {
-		return common.UserResponse{}, fmt.Errorf("data len should be 2: %d", len(data))
+func (s *Server) getUserByKey(prefix, userAddress string) (bool, error) {
+	data := s.redisClient.Get(fmt.Sprintf("%s:%s", prefix, userAddress))
+	if data.Err() != nil {
+		if data.Err() == redis.Nil {
+			return false, nil
+		}
+		return false, data.Err()
 	}
-	kyced, ok := data[0].(string)
-	if !ok {
-		return common.UserResponse{}, fmt.Errorf("kyced value shoud be string: %v", data[0])
-	}
-	kycInt, err := strconv.ParseInt(kyced, 10, 64)
-	if err != nil {
-		return common.UserResponse{}, err
-	}
-	rich, ok := data[1].(string)
-	if !ok {
-		return common.UserResponse{}, fmt.Errorf("rich should be string: %v", data[1])
-	}
-	richInt, err := strconv.ParseInt(rich, 10, 64)
-	if err != nil {
-		return common.UserResponse{}, err
-	}
-	return common.UserResponse{
-		KYCed: kycInt == 1,
-		Rich:  richInt == 1,
-	}, nil
-}
-
-func (s *Server) getUserFromRedis(userAddress string) (common.UserResponse, error) {
-	// try to get from rich users
-	data, err := s.redisClient.HMGet(fmt.Sprintf("%s:%s", richPrefix, userAddress), kycedPrefix, richPrefix).Result()
-	if err == nil && data[0] != nil {
-		return fromInterfaceToUser(data)
-	}
-
-	// if not exist as rich user, try to get from kyced users
-	data, err = s.redisClient.HMGet(fmt.Sprintf("%s:%s", kycedPrefix, userAddress), kycedPrefix, richPrefix).Result()
-	if err == nil && data[0] != nil {
-		return fromInterfaceToUser(data)
-	}
-
-	return common.UserResponse{}, nil
+	return true, nil
 }
 
 func (s *Server) getUsers(c *gin.Context) {
@@ -95,8 +64,10 @@ func (s *Server) getUsers(c *gin.Context) {
 		logger = s.sugar.With(
 			"func", "users-public-stats/Server.getUser",
 		)
-		query        userQuery
-		userResponse common.UserResponse
+		query       userQuery
+		kyced, rich bool
+		cap         *big.Int
+		err         error
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -108,13 +79,20 @@ func (s *Server) getUsers(c *gin.Context) {
 
 	logger.Info("query", "user query", query)
 
-	userResponse, err := s.getUserFromRedis(query.Address)
+	kyced, err = s.getUserByKey(kycedPrefix, query.Address)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
-			gin.H{"error": fmt.Sprintf("failed  to get user: %s", err.Error())},
+			gin.H{"error": err.Error()},
 		)
-		return
+	}
+
+	rich, err = s.getUserByKey(richPrefix, query.Address)
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": err.Error()},
+		)
 	}
 
 	rate, err := s.rateProvider.USDRate(time.Now())
@@ -125,17 +103,22 @@ func (s *Server) getUsers(c *gin.Context) {
 		)
 		return
 	}
-	if userResponse.KYCed {
+
+	if kyced {
 		kycedCap := common.NewUserCap(true)
-		userResponse.Cap = blockchain.EthToWei(kycedCap.TxLimit / rate)
+		cap = blockchain.EthToWei(kycedCap.TxLimit / rate)
 	} else {
 		nonKycedCap := common.NewUserCap(false)
-		userResponse.Cap = blockchain.EthToWei(nonKycedCap.TxLimit / rate)
+		cap = blockchain.EthToWei(nonKycedCap.TxLimit / rate)
 	}
 
 	c.JSON(
 		http.StatusOK,
-		userResponse,
+		common.UserResponse{
+			Cap:   cap,
+			KYCed: kyced,
+			Rich:  rich,
+		},
 	)
 }
 

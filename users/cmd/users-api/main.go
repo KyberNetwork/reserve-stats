@@ -10,6 +10,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	usercommon "github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/reserve-stats/users/http"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 	"github.com/KyberNetwork/tokenrate/coingecko"
@@ -24,7 +25,7 @@ func main() {
 	app.Action = run
 	app.Version = "0.0.1"
 
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(usercommon.DefaultDB)...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.UsersPort)...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	if err := app.Run(os.Args); err != nil {

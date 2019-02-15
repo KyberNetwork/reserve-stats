@@ -2,7 +2,6 @@ package cacher
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -71,10 +70,7 @@ func (rc *RedisCacher) cacheAllKycedUsers() error {
 
 	pipe := rc.redisClient.Pipeline()
 	for _, address := range addresses {
-		user := common.UserResponse{
-			KYCed: true,
-		}
-		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", kycedPrefix, address), user, 0); err != nil {
+		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", kycedPrefix, address), 0); err != nil {
 			if dErr := pipe.Discard(); dErr != nil {
 				err = fmt.Errorf("%s - %s", dErr.Error(), err.Error())
 			}
@@ -129,13 +125,9 @@ func (rc *RedisCacher) cacheRichUser() error {
 			// if user is not rich then it is already cached before
 			continue
 		}
-		user := common.UserResponse{
-			Rich:  true,
-			KYCed: kyced,
-		}
 
 		// save to cache with 1 hour
-		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", richPrefix, userAddress), user, expireTime); err != nil {
+		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", richPrefix, userAddress), expireTime); err != nil {
 			if dErr := pipe.Discard(); dErr != nil {
 				err = fmt.Errorf("%s - %s", dErr.Error(), err.Error())
 			}
@@ -150,41 +142,23 @@ func (rc *RedisCacher) cacheRichUser() error {
 	return err
 }
 
-func (rc *RedisCacher) pushToPipeline(pipeline redis.Pipeliner, key string, value common.UserResponse, expireTime time.Duration) error {
-	data := map[string]interface{}{
-		kycedPrefix: value.KYCed,
-		richPrefix:  value.Rich,
-	}
-
-	if err := pipeline.HMSet(key, data).Err(); err != nil {
+func (rc *RedisCacher) pushToPipeline(pipeline redis.Pipeliner, key string, expireTime time.Duration) error {
+	if err := pipeline.Set(key, 1, expireTime).Err(); err != nil {
 		rc.sugar.Debugw("set cache to redis error", "error", err)
 		return err
 	}
 
-	rc.sugar.Debugw("save data to cache succes", "key", key, "value", value)
+	rc.sugar.Debugw("save data to cache succes", "key", key)
 	return nil
 }
 
 func (rc *RedisCacher) isKyced(key string) (bool, error) {
-	data, err := rc.redisClient.HMGet(key, kycedPrefix).Result()
-	if err != nil {
-		return false, err
+	data := rc.redisClient.Get(key)
+	if data.Err() != nil {
+		if data.Err() == redis.Nil {
+			return false, nil
+		}
+		return false, data.Err()
 	}
-	if len(data) != 1 {
-		return false, fmt.Errorf("cached return wrong len of data, expect 1, actual %d", len(data))
-	}
-	// if the key does not exist return false
-	if data[0] == nil {
-		return false, nil
-	}
-	kyced, ok := data[0].(string)
-	if !ok {
-		return false, fmt.Errorf("kyced value return from cached is not correct type, expected bool: %v", data[0])
-	}
-	kycInt, err := strconv.ParseInt(kyced, 10, 64)
-	if err != nil {
-		return false, err
-	}
-
-	return kycInt == 1, nil
+	return true, nil
 }

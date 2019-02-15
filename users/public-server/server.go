@@ -1,9 +1,9 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -48,39 +48,46 @@ func NewServer(sugar *zap.SugaredLogger, host string, rateProvider tokenrate.ETH
 	}
 }
 
-func (s *Server) getUserFromRedis(userAddress string) (common.UserResponse, error) {
-	var (
-		user common.UserResponse
-	)
-	// try to get from rich users
-	data := s.redisClient.Get(fmt.Sprintf("%s:%s", richPrefix, userAddress))
-	if data.Err() == nil {
-		userBytes, err := data.Bytes()
-		if err != nil {
-			return user, err
-		}
-		err = json.Unmarshal(userBytes, &user)
-		return user, err
+func fromInterfaceToUser(data []interface{}) (common.UserResponse, error) {
+	if len(data) != 2 {
+		return common.UserResponse{}, fmt.Errorf("data len should be 2: %d", len(data))
 	}
-	if data.Err() != redis.Nil {
-		return user, data.Err()
+	kyced, ok := data[0].(string)
+	if !ok {
+		return common.UserResponse{}, fmt.Errorf("kyced value shoud be string: %v", data[0])
+	}
+	kycInt, err := strconv.ParseInt(kyced, 10, 64)
+	if err != nil {
+		return common.UserResponse{}, err
+	}
+	rich, ok := data[1].(string)
+	if !ok {
+		return common.UserResponse{}, fmt.Errorf("rich should be string: %v", data[1])
+	}
+	richInt, err := strconv.ParseInt(rich, 10, 64)
+	if err != nil {
+		return common.UserResponse{}, err
+	}
+	return common.UserResponse{
+		KYCed: kycInt == 1,
+		Rich:  richInt == 1,
+	}, nil
+}
+
+func (s *Server) getUserFromRedis(userAddress string) (common.UserResponse, error) {
+	// try to get from rich users
+	data, err := s.redisClient.HMGet(fmt.Sprintf("%s:%s", richPrefix, userAddress), kycedPrefix, richPrefix).Result()
+	if err == nil && data[0] != nil {
+		return fromInterfaceToUser(data)
 	}
 
 	// if not exist as rich user, try to get from kyced users
-	data = s.redisClient.Get(fmt.Sprintf("%s:%s", kycedPrefix, userAddress))
-	if data.Err() == nil {
-		userBytes, err := data.Bytes()
-		if err != nil {
-			return user, err
-		}
-		err = json.Unmarshal(userBytes, &user)
-		return user, err
-	}
-	if data.Err() != redis.Nil {
-		return user, data.Err()
+	data, err = s.redisClient.HMGet(fmt.Sprintf("%s:%s", kycedPrefix, userAddress), kycedPrefix, richPrefix).Result()
+	if err == nil && data[0] != nil {
+		return fromInterfaceToUser(data)
 	}
 
-	return user, nil
+	return common.UserResponse{}, nil
 }
 
 func (s *Server) getUsers(c *gin.Context) {
@@ -105,7 +112,7 @@ func (s *Server) getUsers(c *gin.Context) {
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
-			gin.H{"error": fmt.Sprintf("failed  to get usd rate: %s", err.Error())},
+			gin.H{"error": fmt.Sprintf("failed  to get user: %s", err.Error())},
 		)
 		return
 	}

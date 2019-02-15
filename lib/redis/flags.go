@@ -50,6 +50,7 @@ func NewClientFromContext(c *cli.Context) (*redis.Client, error) {
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     redisEndpoint,
 		Password: redisPassword,
+		DB:       c.Int(redisDBFlag),
 	})
 	_, err := redisClient.Ping().Result()
 	return redisClient, err

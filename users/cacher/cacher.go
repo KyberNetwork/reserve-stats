@@ -1,8 +1,8 @@
 package cacher
 
 import (
-	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -70,19 +70,18 @@ func (rc *RedisCacher) cacheAllKycedUsers() error {
 	logger.Debugw("addresses from postgres", "addresses", addresses)
 
 	pipe := rc.redisClient.Pipeline()
-	defer func() {
-		if _, err := pipe.Exec(); err != nil {
-			logger.Errorw("pipeline exec error", "error", err.Error())
-		}
-	}()
 	for _, address := range addresses {
 		user := common.UserResponse{
 			KYCed: true,
 		}
-		if err := rc.saveToCache(pipe, fmt.Sprintf("%s:%s", kycedPrefix, address), user, 0); err != nil {
+		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", kycedPrefix, address), user, 0); err != nil {
+			if dErr := pipe.Discard(); dErr != nil {
+				err = fmt.Errorf("%s - %s", dErr.Error(), err.Error())
+			}
 			return err
 		}
 	}
+	_, err = pipe.Exec()
 	return err
 }
 
@@ -90,10 +89,10 @@ func (rc *RedisCacher) cacheRichUser() error {
 	var (
 		logger = rc.sugar.With("func", "user/cacher/cacheRichUser")
 	)
+
 	// read total trade 24h
 	query := fmt.Sprintf(`SELECT SUM(amount) as daily_fiat_amount FROM 
-	(SELECT %s*%s as amount FROM trades WHERE time >= (now()-24h))
-	GROUP BY user_addr`, logSchema.EthAmount.String(), logSchema.EthUSDRate.String())
+	(SELECT %s*%s as amount FROM trades WHERE time >= (now()-24h)) GROUP BY user_addr`, logSchema.EthAmount.String(), logSchema.EthUSDRate.String())
 
 	logger.Debugw("query", "query 24h trades", query)
 
@@ -110,11 +109,6 @@ func (rc *RedisCacher) cacheRichUser() error {
 	}
 
 	pipe := rc.redisClient.Pipeline()
-	defer func() {
-		if _, err := pipe.Exec(); err != nil {
-			logger.Errorw("pipeline exec error", "error", err.Error())
-		}
-	}()
 	for _, serie := range res[0].Series {
 		userAddress := serie.Tags[logSchema.UserAddr.String()]
 		// check kyced
@@ -141,22 +135,28 @@ func (rc *RedisCacher) cacheRichUser() error {
 		}
 
 		// save to cache with 1 hour
-		if err := rc.saveToCache(pipe, fmt.Sprintf("%s:%s", richPrefix, userAddress), user, expireTime); err != nil {
+		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", richPrefix, userAddress), user, expireTime); err != nil {
+			if dErr := pipe.Discard(); dErr != nil {
+				err = fmt.Errorf("%s - %s", dErr.Error(), err.Error())
+			}
 			return err
 		}
+	}
+
+	if _, err := pipe.Exec(); err != nil {
+		return err
 	}
 
 	return err
 }
 
-func (rc *RedisCacher) saveToCache(pipeline redis.Pipeliner, key string, value common.UserResponse, expireTime time.Duration) error {
-	data, err := json.Marshal(value)
-	if err != nil {
-		rc.sugar.Debugw("Cannot marshal value", "error", err)
-		return err
+func (rc *RedisCacher) pushToPipeline(pipeline redis.Pipeliner, key string, value common.UserResponse, expireTime time.Duration) error {
+	data := map[string]interface{}{
+		kycedPrefix: value.KYCed,
+		richPrefix:  value.Rich,
 	}
 
-	if err := pipeline.Set(key, data, expireTime).Err(); err != nil {
+	if err := pipeline.HMSet(key, data).Err(); err != nil {
 		rc.sugar.Debugw("set cache to redis error", "error", err)
 		return err
 	}
@@ -165,24 +165,26 @@ func (rc *RedisCacher) saveToCache(pipeline redis.Pipeliner, key string, value c
 	return nil
 }
 
-func (rc *RedisCacher) isKyced(userAddress string) (bool, error) {
-	var (
-		user common.UserResponse
-	)
-	data := rc.redisClient.Get(userAddress)
-	if err := data.Err(); err != nil {
-		if err == redis.Nil {
-			return false, nil
-		}
-		rc.sugar.Debugw("get data from redis failed", "address", userAddress, "error", err.Error())
-		return false, err
-	}
-	userBytes, err := data.Bytes()
+func (rc *RedisCacher) isKyced(key string) (bool, error) {
+	data, err := rc.redisClient.HMGet(key, kycedPrefix).Result()
 	if err != nil {
 		return false, err
 	}
-	if err := json.Unmarshal(userBytes, &user); err != nil {
+	if len(data) != 1 {
+		return false, fmt.Errorf("cached return wrong len of data, expect 1, actual %d", len(data))
+	}
+	// if the key does not exist return false
+	if data[0] == nil {
+		return false, nil
+	}
+	kyced, ok := data[0].(string)
+	if !ok {
+		return false, fmt.Errorf("kyced value return from cached is not correct type, expected bool: %v", data[0])
+	}
+	kycInt, err := strconv.ParseInt(kyced, 10, 64)
+	if err != nil {
 		return false, err
 	}
-	return user.KYCed, nil
+
+	return kycInt == 1, nil
 }

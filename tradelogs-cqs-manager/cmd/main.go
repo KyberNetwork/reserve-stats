@@ -57,9 +57,26 @@ func main() {
 	}
 }
 
-func listAllCqs() error {
-	for cq := range CQs {
-		fmt.Printf(cq)
+func listAllCqs(influxClient client.Client, sugar *zap.SugaredLogger) error {
+	var (
+		logger = sugar.With(
+			"func", "tradelogs-cq-manager/listAllCqs",
+		)
+	)
+	q := fmt.Sprintf("SHOW CONTINUOUS QUERIES")
+	res, err := influxdb.QueryDB(influxClient, q, "")
+	if err != nil {
+		return err
+	}
+	// cqs map cq name to cq query
+	cqs := make(map[string]string)
+	for _, serie := range res[0].Series {
+		for _, value := range serie.Values {
+			cqName := value[0].(string)
+			cqQuery := value[1].(string)
+			cqs[cqName] = cqQuery
+			fmt.Printf("%s\n", cqName)
+		}
 	}
 	return nil
 }
@@ -110,7 +127,7 @@ func run(c *cli.Context) error {
 	sugar.Info("initialized influxClient successfully: ", influxClient)
 
 	if c.Bool(listAllCqsFlag) {
-		if err := listAllCqs(); err != nil {
+		if err := listAllCqs(influxClient, sugar); err != nil {
 			return err
 		}
 	}

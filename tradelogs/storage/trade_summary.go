@@ -34,7 +34,7 @@ func (is *InfluxStorage) GetTradeSummary(from, to time.Time, timezone int8) (map
 		usd_per_trade,unique_addresses,new_unique_addresses,kyced FROM %s WHERE %s`, measurement, timeFilter)
 	logger.Debugw("getting trade summary", "query", tradeLogQuery)
 
-	response, err := is.queryDB(is.influxClient, tradeLogQuery)
+	response, err := influxdb.QueryDB(is.influxClient, tradeLogQuery, is.dbName)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (is *InfluxStorage) GetTradeSummary(from, to time.Time, timezone int8) (map
 	burnFeeQuery := fmt.Sprintf("SELECT total_burn_fee FROM %s WHERE %s ", burnFeeMName, timeFilter)
 	logger.Debugw("getting total burn fee", "query", burnFeeQuery)
 
-	if response, err = is.queryDB(is.influxClient, burnFeeQuery); err != nil {
+	if response, err = influxdb.QueryDB(is.influxClient, burnFeeQuery, is.dbName); err != nil {
 		return nil, err
 	}
 

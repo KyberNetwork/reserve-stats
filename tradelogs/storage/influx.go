@@ -95,7 +95,7 @@ func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 func (is InfluxStorage) LastBlock() (int64, error) {
 	q := fmt.Sprintf(`SELECT "block_number","eth_amount" from "trades" ORDER BY time DESC limit 1`)
 
-	res, err := is.queryDB(is.influxClient, q)
+	res, err := influxdb.QueryDB(is.influxClient, q, is.dbName)
 	if err != nil {
 		return 0, err
 	}
@@ -164,7 +164,7 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 	)
 	logger.Debug("prepared query statement", "query", q)
 
-	res, err := is.queryDB(is.influxClient, q)
+	res, err := influxdb.QueryDB(is.influxClient, q, is.dbName)
 	if err != nil {
 		return nil, err
 	}
@@ -192,25 +192,8 @@ func (is *InfluxStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, e
 
 // createDB creates the database will be used for storing trade logs measurements.
 func (is *InfluxStorage) createDB() error {
-	_, err := is.queryDB(is.influxClient, fmt.Sprintf("CREATE DATABASE %s", is.dbName))
+	_, err := influxdb.QueryDB(is.influxClient, fmt.Sprintf("CREATE DATABASE %s", is.dbName), is.dbName)
 	return err
-}
-
-// queryDB convenience function to query the database
-func (is *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.Result, err error) {
-	q := client.Query{
-		Command:  cmd,
-		Database: is.dbName,
-	}
-	if response, err := clnt.Query(q); err == nil {
-		if response.Error() != nil {
-			return res, response.Error()
-		}
-		res = response.Results
-	} else {
-		return res, err
-	}
-	return res, nil
 }
 
 //getBurnAmount return the burn amount in float for src and
@@ -411,7 +394,7 @@ func (is *InfluxStorage) assembleFirstTradePoint(logItem common.TradeLog) (*clie
 
 func (is *InfluxStorage) userTraded(addr ethereum.Address) (bool, error) {
 	q := fmt.Sprintf("SELECT traded FROM first_trades WHERE user_addr='%s'", addr.String())
-	response, err := is.queryDB(is.influxClient, q)
+	response, err := influxdb.QueryDB(is.influxClient, q, is.dbName)
 	if err != nil {
 		return false, err
 	}

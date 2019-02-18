@@ -88,12 +88,6 @@ func TestUserHTTPServer(t *testing.T) {
 	var (
 		tests = []httputil.HTTPTestCase{
 			{
-				Msg:      "empty db",
-				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
-				Method:   http.MethodGet,
-				Assert:   expectSuccess,
-			},
-			{
 				Msg:      "email is not valid",
 				Endpoint: requestEndpoint,
 				Method:   http.MethodPost,
@@ -213,18 +207,6 @@ func TestUserHTTPServer(t *testing.T) {
 				Assert: expectSuccess,
 			},
 			{
-				Msg:      "user is not kyced",
-				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, nonKycAddress),
-				Method:   http.MethodGet,
-				Assert:   expectNonKYCed,
-			},
-			{
-				Msg:      "user is kyced",
-				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
-				Method:   http.MethodGet,
-				Assert:   expectKYCed,
-			},
-			{
 				Msg:      "user remove address",
 				Endpoint: requestEndpoint,
 				Method:   http.MethodPost,
@@ -239,18 +221,6 @@ func TestUserHTTPServer(t *testing.T) {
 						]
 					}`),
 				Assert: expectSuccess,
-			},
-			{
-				Msg:      "address is removed",
-				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
-				Method:   http.MethodGet,
-				Assert:   expectNonKYCed,
-			},
-			{
-				Msg:      "address have not trade, rich is false",
-				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
-				Method:   http.MethodGet,
-				Assert:   expectRichStatus,
 			},
 		}
 	)

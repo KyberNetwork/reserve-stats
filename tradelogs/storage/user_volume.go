@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 
@@ -37,7 +38,7 @@ func (is *InfluxStorage) GetUserVolume(userAddress ethereum.Address, from, to ti
 
 	logger.Debug(q)
 
-	res, err := is.queryDB(is.influxClient, q)
+	res, err := influxdb.QueryDB(is.influxClient, q, is.dbName)
 	if err != nil {
 		logger.Error(fmt.Sprintf("cannot query user volume from influx: %s", err.Error()))
 		return result, err

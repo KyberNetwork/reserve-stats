@@ -24,4 +24,7 @@ const (
 
 	//AppName is the port number for Integration Address to AppName API
 	AppName HTTPPort = 8007
+
+	//UsersPublicPort is the port number for user stats public service
+	UsersPublicPort HTTPPort = 8008
 )

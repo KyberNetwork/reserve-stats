@@ -18,3 +18,9 @@ services:
       POSTGRES_PASSWORD: reserve_stats
     ports:
       - '127.0.0.1:5432:5432'
+  redis:
+    image: 'redis:5.0.2-alpine'
+    volumes:
+      - './data/redis:/var/lib/redis/'
+    ports:
+      - '127.0.0.1:6379:6379' 

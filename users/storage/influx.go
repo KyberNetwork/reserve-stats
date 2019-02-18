@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
 )
@@ -25,23 +27,6 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 	return storage, nil
 }
 
-// queryDB convenience function to query the database
-func (inf *InfluxStorage) queryDB(clnt client.Client, cmd string) (res []client.Result, err error) {
-	q := client.Query{
-		Command:  cmd,
-		Database: inf.dbName,
-	}
-	if response, err := clnt.Query(q); err == nil {
-		if response.Error() != nil {
-			return res, response.Error()
-		}
-		res = response.Results
-	} else {
-		return res, err
-	}
-	return res, nil
-}
-
 //IsExceedDailyLimit return if add address trade over daily limit or not
 func (inf *InfluxStorage) IsExceedDailyLimit(address string, dailyLimit float64) (bool, error) {
 	var (
@@ -49,10 +34,10 @@ func (inf *InfluxStorage) IsExceedDailyLimit(address string, dailyLimit float64)
 FROM trades WHERE user_addr='%s' AND time <= now() AND time >= (now()-24h))`,
 			address)
 		userTradeAmount float64
-		ok              bool
+		err             error
 	)
 
-	res, err := inf.queryDB(inf.influxClient, query)
+	res, err := influxdb.QueryDB(inf.influxClient, query, inf.dbName)
 	if err != nil {
 		inf.sugar.Debugw("error from query", "error", err)
 		return false, err
@@ -64,9 +49,9 @@ FROM trades WHERE user_addr='%s' AND time <= now() AND time >= (now()-24h))`,
 		return false, nil
 	}
 
-	userTradeAmount, ok = (res[0].Series[0].Values[0][1]).(float64)
-	if !ok {
-		inf.sugar.Debugw("values second should be float", "value", res[0].Series[0].Values[0][1])
+	userTradeAmount, err = influxdb.GetFloat64FromInterface(res[0].Series[0].Values[0][1])
+	if err != nil {
+		inf.sugar.Debugw("values second should be float", "value", res[0].Series[0].Values[0][1], "error", err.Error())
 		return false, errors.New("trade amount values is not a float")
 	}
 

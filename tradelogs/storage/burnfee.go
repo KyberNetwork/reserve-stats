@@ -8,6 +8,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
@@ -61,7 +62,7 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 
 	logger.Debugw("rendered query statement", "rendered_template", queryStmtBuf.String())
 
-	res, err := is.queryDB(is.influxClient, queryStmtBuf.String())
+	res, err := influxdb.QueryDB(is.influxClient, queryStmtBuf.String(), is.dbName)
 	if err != nil {
 		return nil, err
 	}

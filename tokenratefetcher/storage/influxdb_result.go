@@ -16,7 +16,7 @@ func (is *InfluxStorage) LastTimePoint(providerName, tokenID, currencyID string)
 		schema.Rate.String(),
 		measurementName,
 	)
-	res, err := is.queryDB(stmt)
+	res, err := influxdb.QueryDB(is.influxClient, stmt, is.dbName)
 	if err != nil {
 		return time.Time{}, nil
 	}

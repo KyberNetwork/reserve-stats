@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
@@ -27,7 +28,7 @@ func (is *InfluxStorage) GetUserList(fromTime, toTime time.Time, timezone int8) 
 
 	logger.Debug(q)
 
-	res, err := is.queryDB(is.influxClient, q)
+	res, err := influxdb.QueryDB(is.influxClient, q, is.dbName)
 	if err != nil {
 		return result, err
 	}

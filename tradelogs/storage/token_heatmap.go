@@ -36,7 +36,7 @@ func (is *InfluxStorage) GetTokenHeatmap(asset ethereum.Address, from, to time.T
 
 	// logger.Debug(tradeQuery)
 
-	// tradeResponse, err := is.queryDB(is.influxClient, tradeQuery)
+	// tradeResponse, err := influxdb.QueryDB(is.influxClient, tradeQuery, is.dbName)
 	// if err != nil {
 	// 	return result, err
 	// }
@@ -71,7 +71,7 @@ func (is *InfluxStorage) GetTokenHeatmap(asset ethereum.Address, from, to time.T
 
 	logger.Debug(volumeQuery)
 
-	volumeResponse, err := is.queryDB(is.influxClient, volumeQuery)
+	volumeResponse, err := influxdb.QueryDB(is.influxClient, volumeQuery, is.dbName)
 	if err != nil {
 		return result, err
 	}

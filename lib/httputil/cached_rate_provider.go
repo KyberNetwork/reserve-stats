@@ -1,4 +1,4 @@
-package http
+package httputil
 
 import (
 	"sync"
@@ -8,15 +8,17 @@ import (
 	"go.uber.org/zap"
 )
 
-func newCachedRateProvider(sugar *zap.SugaredLogger, provider tokenrate.ETHUSDRateProvider, timeout time.Duration) *cachedRateProvider {
-	return &cachedRateProvider{
+//NewCachedRateProvider return cached provider for eth usd rate
+func NewCachedRateProvider(sugar *zap.SugaredLogger, provider tokenrate.ETHUSDRateProvider, timeout time.Duration) *CachedRateProvider {
+	return &CachedRateProvider{
 		sugar:    sugar,
 		timeout:  timeout,
 		provider: provider,
 	}
 }
 
-type cachedRateProvider struct {
+//CachedRateProvider is cached provider for eth usd rate
+type CachedRateProvider struct {
 	sugar    *zap.SugaredLogger
 	timeout  time.Duration
 	provider tokenrate.ETHUSDRateProvider
@@ -26,7 +28,7 @@ type cachedRateProvider struct {
 	cachedTime time.Time
 }
 
-func (crp *cachedRateProvider) isCacheExpired() bool {
+func (crp *CachedRateProvider) isCacheExpired() bool {
 	now := time.Now()
 	expired := now.Sub(crp.cachedTime) > crp.timeout
 	if expired {
@@ -39,7 +41,8 @@ func (crp *cachedRateProvider) isCacheExpired() bool {
 	return expired
 }
 
-func (crp *cachedRateProvider) USDRate(timestamp time.Time) (float64, error) {
+//USDRate return usd rate
+func (crp *CachedRateProvider) USDRate(timestamp time.Time) (float64, error) {
 	logger := crp.sugar.With(
 		"func", "users/http/cachedRateProvider.USDRate",
 		"timestamp", timestamp,
@@ -70,6 +73,7 @@ func (crp *cachedRateProvider) USDRate(timestamp time.Time) (float64, error) {
 	return crp.cachedRate, nil
 }
 
-func (crp *cachedRateProvider) Name() string {
+//Name return the original provider name
+func (crp *CachedRateProvider) Name() string {
 	return crp.provider.Name()
 }

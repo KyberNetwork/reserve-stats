@@ -3,10 +3,12 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"log"
 	"os"
 	"testing"
+
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/influxdata/influxdb/client/v2"
@@ -48,7 +50,7 @@ func newTestInfluxStorage(db string) (*InfluxStorage, error) {
 
 // tearDown remove the database that storing trade logs measurements.
 func (is *InfluxStorage) tearDown() error {
-	_, err := is.queryDB(is.influxClient, fmt.Sprintf("DROP DATABASE %s", is.dbName))
+	_, err := influxdb.QueryDB(is.influxClient, fmt.Sprintf("DROP DATABASE %s", is.dbName), is.dbName)
 	return err
 }
 

@@ -32,7 +32,7 @@ func (is *InfluxStorage) GetWalletStats(from, to time.Time, walletAddr string, t
 
 	logger.Debug(query)
 
-	response, err := is.queryDB(is.influxClient, query)
+	response, err := influxdb.QueryDB(is.influxClient, query, is.dbName)
 	if err != nil {
 		return result, err
 	}

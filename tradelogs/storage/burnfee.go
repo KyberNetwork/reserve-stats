@@ -34,7 +34,7 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 		return nil, fmt.Errorf("invalid burn fee frequency %s", freq)
 	}
 
-	var queryTmpl = `SELECT {{.SumAmount}},{{.SrcReserveAddr}},{{.DstReseveAddr}} FROM "{{.Measurement}}" WHERE '{{.From }}' <= time AND time <= '{{.To}}' ` +
+	var queryTmpl = `SELECT {{.SumAmount}},{{.SrcReserveAddr}},{{.DstReserveAddr}} FROM "{{.Measurement}}" WHERE '{{.From }}' <= time AND time <= '{{.To}}' ` +
 		`{{if len .Addrs}}AND ({{range $index, $element := .Addrs}}` +
 		logSchema.SrcReserveAddr.String() + ` = '{{$element}}' OR ` + logSchema.DstReserveAddr.String() + ` = '{{$element}}' {{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
 

@@ -28,7 +28,7 @@ func (is *InfluxStorage) GetCountryStats(countryCode string, from, to time.Time,
 
 	queryTmpl := `SELECT {{.ETHPerTrade}}, {{.TotalETHVolume}}, {{.TotalTrade}}, {{.TotalUSDAmount}}, {{.USDPerTrade}},
 		 {{.UniqueAddresses}}, {{.NewUniqueAddresses}}, {{.KYCedAddresses}}, {{.TotalBurnFee}} FROM 
-		 {{.MeasurementName}} WHERE {{.TimeFilter}} AND {{.countryFilter}}`
+		 {{.MeasurementName}} WHERE {{.TimeFilter}} AND {{.CountryFilter}}`
 
 	tmpl, err := template.New("countryStatsTemplate").Parse(queryTmpl)
 	if err != nil {
@@ -67,7 +67,7 @@ func (is *InfluxStorage) GetCountryStats(countryCode string, from, to time.Time,
 
 	logger.Debugw("get country stats", "query", queryStmtBuf.String())
 
-	response, err := influxdb.QueryDB(is.influxClient, cmd, is.dbName)
+	response, err := influxdb.QueryDB(is.influxClient, queryStmtBuf.String(), is.dbName)
 	if err != nil {
 		return nil, err
 	}

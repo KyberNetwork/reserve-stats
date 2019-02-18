@@ -112,7 +112,7 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, volCqs)
 
-	totalBurnFeeTemplate := `SELECT SUM(.SrcBurnAmount)+SUM(.DstBurnAmount) AS {{.TotalBurnFee}} 
+	totalBurnFeeTemplate := `SELECT SUM({{.SrcBurnAmount}})+SUM({{.DstBurnAmount}}) AS {{.TotalBurnFee}} 
 	INTO {{.BurnFeeSummaryMeasurement}} FROM {{.TradeMeasurementName}}`
 
 	tmpl, err = template.New("totalBurnFee").Parse(totalBurnFeeTemplate)

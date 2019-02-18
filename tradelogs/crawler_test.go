@@ -153,4 +153,28 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		}
 	}
 	assert.True(t, found, "transaction %s not found", sampleTxHash)
+
+	// block: 7000184
+	// tx: 0xbda96c208fee7812f463f1fff515a1c70d9148ffe8b40a91db419a10074d4cc1
+	// conversion : ETH-GTO
+	// ethAmount must equal to : 749378067533693720
+	tradeLogs, err = c.GetTradeLogs(big.NewInt(7000184), big.NewInt(7000184), time.Minute)
+	require.NoError(t, err)
+	require.Len(t, tradeLogs, 1)
+	for _, tradeLog := range tradeLogs {
+		assertTradeLog(t, tradeLog)
+	}
+	sampleTxHash = "0xbda96c208fee7812f463f1fff515a1c70d9148ffe8b40a91db419a10074d4cc1"
+	found = false
+	for _, tradeLog := range tradeLogs {
+		if tradeLog.TransactionHash == ethereum.HexToHash(sampleTxHash) {
+			found = true
+			assert.Equal(t,
+				big.NewInt(749378067533693720),
+				tradeLog.EthAmount,
+				"trade log's ETH amount must equal to the 749378067533693720")
+		}
+	}
+	assert.True(t, found, "transaction %s not found", sampleTxHash)
+
 }

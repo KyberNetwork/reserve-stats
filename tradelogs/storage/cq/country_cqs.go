@@ -287,12 +287,39 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, kyced)
 
+	totalBurnFeeTemplate := `SELECT SUM({{.SrcBurnAmount}})+SUM({{.DstBurnAmount}}) AS {{.TotalBurnFee}} INTO 
+	{{.CountryStatMeasurement}} FROM {{.TradeMeasurementName}} GROUP BY {{.Country}}`
+
+	tmpl, err = template.New("totalBurnFee").Parse(totalBurnFeeTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	var totalBurnFeeQueryBuf bytes.Buffer
+	if err = tmpl.Execute(&totalBurnFeeQueryBuf, struct {
+		SrcBurnAmount          string
+		DstBurnAmount          string
+		TotalBurnFee           string
+		CountryStatMeasurement string
+		TradeMeasurementName   string
+		Country                string
+	}{
+		SrcBurnAmount:          logSchema.SourceBurnAmount.String(),
+		DstBurnAmount:          logSchema.DestBurnAmount.String(),
+		TotalBurnFee:           countryStatSchema.TotalBurnFee.String(),
+		CountryStatMeasurement: common.CountryStatsMeasurementName,
+		TradeMeasurementName:   common.TradeLogMeasurementName,
+		Country:                logSchema.Country.String(),
+	}); err != nil {
+		return nil, err
+	}
+
 	totalBurnFeeCqs, err := libcq.NewContinuousQuery(
 		"country_total_burn_fee",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(src_burn_amount)+SUM(dst_burn_amount) AS total_burn_fee INTO country_stats FROM trades GROUP BY country",
+		totalBurnFeeQueryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)

@@ -112,12 +112,36 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, volCqs)
 
+	totalBurnFeeTemplate := `SELECT SUM(.SrcBurnAmount)+SUM(.DstBurnAmount) AS {{.TotalBurnFee}} 
+	INTO {{.BurnFeeSummaryMeasurement}} FROM {{.TradeMeasurementName}}`
+
+	tmpl, err = template.New("totalBurnFee").Parse(totalBurnFeeTemplate)
+	if err != nil {
+		return nil, err
+	}
+	var totalBurnFeeBuf bytes.Buffer
+	if err = tmpl.Execute(&totalBurnFeeBuf, struct {
+		SrcBurnAmount             string
+		DstBurnAmount             string
+		TotalBurnFee              string
+		BurnFeeSummaryMeasurement string
+		TradeMeasurementName      string
+	}{
+		SrcBurnAmount:             logSchema.SourceBurnAmount.String(),
+		DstBurnAmount:             logSchema.DestBurnAmount.String(),
+		TotalBurnFee:              tradeSumSchema.TotalBurnFee.String(),
+		BurnFeeSummaryMeasurement: common.BurnFeeSummaryMeasurement,
+		TradeMeasurementName:      common.TradeLogMeasurementName,
+	}); err != nil {
+		return nil, err
+	}
+
 	totalBurnFeeCqs, err := libcq.NewContinuousQuery(
 		"summary_total_burn_fee",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(src_burn_amount)+SUM(dst_burn_amount) AS total_burn_fee INTO burn_fee_summary FROM trades",
+		totalBurnFeeBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)

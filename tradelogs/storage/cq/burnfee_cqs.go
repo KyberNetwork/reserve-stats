@@ -1,7 +1,12 @@
 package cq
 
 import (
+	"bytes"
+	"text/template"
+
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 )
 
 const (
@@ -11,17 +16,50 @@ const (
 	HourMeasurement = "burn_fee_hour"
 )
 
+func executeBurnFeeTemplate(templateString, measurementName, burnAmount, address string) (string, error) {
+	tmpl, err := template.New("burnFee").Parse(templateString)
+	if err != nil {
+		return "", err
+	}
+	var queryBuf bytes.Buffer
+	if err = tmpl.Execute(&queryBuf, struct {
+		BurnAmount           string
+		MeasurementName      string
+		TradeMeasurementName string
+		Address              string
+	}{
+		BurnAmount:           burnAmount,
+		MeasurementName:      measurementName,
+		TradeMeasurementName: common.TradeLogMeasurementName,
+		Address:              address,
+	}); err != nil {
+		return "", err
+	}
+	return queryBuf.String(), nil
+}
+
 // CreateBurnFeeCqs return a set of cqs required for burnfee aggregation
 func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	var (
 		result []*cq.ContinuousQuery
 	)
+
+	queryTmpl := `SELECT SUM({{.BurnAmount}}) as sum_amount INTO {{.MeasurementName}} 
+	FROM {{.TradeMeasurementName}} GROUP BY {{.Address}}`
+
+	queryString, err := executeBurnFeeTemplate(queryTmpl, logSchema.SourceBurnAmount.String(),
+		HourMeasurement, logSchema.SrcReserveAddr.String())
+
+	if err != nil {
+		return nil, err
+	}
+
 	srcBurnfeeHourCqs, err := cq.NewContinuousQuery(
 		"src_burn_amount_hour",
 		dbName,
 		hourResampleInterval,
 		hourResampleFor,
-		"SELECT SUM(src_burn_amount) as sum_amount INTO burn_fee_hour FROM trades GROUP BY src_rsv_addr",
+		queryString,
 		"1h",
 		[]string{},
 	)
@@ -31,12 +69,19 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	}
 	result = append(result, srcBurnfeeHourCqs)
 
+	queryString, err = executeBurnFeeTemplate(queryTmpl, logSchema.DestBurnAmount.String(),
+		HourMeasurement, logSchema.DstReserveAddr.String())
+
+	if err != nil {
+		return nil, err
+	}
+
 	dstBurnfeedstHourCqs, err := cq.NewContinuousQuery(
 		"dst_burn_amount_hour",
 		dbName,
 		hourResampleInterval,
 		hourResampleFor,
-		"SELECT SUM(dst_burn_amount) as sum_amount INTO burn_fee_hour FROM trades GROUP BY dst_rsv_addr",
+		queryString,
 		"1h",
 		[]string{},
 	)
@@ -45,12 +90,19 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		return nil, err
 	}
 	result = append(result, dstBurnfeedstHourCqs)
+
+	queryString, err = executeBurnFeeTemplate(queryTmpl, logSchema.SourceBurnAmount.String(),
+		DayMeasurement, logSchema.SrcReserveAddr.String())
+
+	if err != nil {
+		return nil, err
+	}
 	srcBurnfeeDayCqs, err := cq.NewContinuousQuery(
 		"src_burn_amount_day",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(src_burn_amount) as sum_amount INTO burn_fee_day FROM trades GROUP BY src_rsv_addr",
+		queryString,
 		"1d",
 		[]string{},
 	)
@@ -60,12 +112,18 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	}
 	result = append(result, srcBurnfeeDayCqs)
 
+	queryString, err = executeBurnFeeTemplate(queryTmpl, logSchema.DestBurnAmount.String(),
+		DayMeasurement, logSchema.DstReserveAddr.String())
+
+	if err != nil {
+		return nil, err
+	}
 	dstBurnfeedstDayCqs, err := cq.NewContinuousQuery(
 		"dst_burn_amount_day",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(dst_burn_amount) as sum_amount INTO burn_fee_day FROM trades GROUP BY dst_rsv_addr",
+		queryString,
 		"1d",
 		[]string{},
 	)

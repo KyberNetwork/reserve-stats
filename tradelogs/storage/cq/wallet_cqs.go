@@ -204,25 +204,27 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	}
 	result = append(result, newUnqAddressCq)
 
-	totalBurnFeeCqTemplate := `SELECT SUM({{.BurnFeeAmount}}) AS {{.TotalBurnFee}} INTO {{.WalletStatsMeasurementName}} ` +
-		`FROM {{.BurnFeeMeasurementName}} GROUP BY {{.WalletAddr}}`
+	totalBurnFeeCqTemplate := `SELECT SUM({{.SrcBurnAmount}})+SUM({{.DstBurnAmount}}) AS {{.TotalBurnFee}} INTO 
+	{{.WalletStatsMeasurementName}} FROM {{.TradeMeasurementName}} GROUP BY {{.WalletAddr}}`
 	tmpl, err = template.New("walletStatsQuery").Parse(totalBurnFeeCqTemplate)
 	if err != nil {
 		return nil, err
 	}
 	var totalBurnFeeQueryBuf bytes.Buffer
 	if err = tmpl.Execute(&totalBurnFeeQueryBuf, struct {
-		BurnFeeAmount              string
+		SrcBurnAmount              string
+		DstBurnAmount              string
 		TotalBurnFee               string
 		WalletStatsMeasurementName string
-		BurnFeeMeasurementName     string
+		TradeMeasurementName       string
 		WalletAddr                 string
 	}{
-		BurnFeeAmount:              "",
+		SrcBurnAmount:              logSchema.SourceBurnAmount.String(),
+		DstBurnAmount:              logSchema.DestBurnAmount.String(),
 		TotalBurnFee:               walletStatSchema.TotalBurnFee.String(),
 		WalletStatsMeasurementName: common.WalletStatsMeasurement,
-		BurnFeeMeasurementName:     common.BurnFeeMeasurementName,
-		WalletAddr:                 "",
+		TradeMeasurementName:       common.TradeLogMeasurementName,
+		WalletAddr:                 logSchema.WalletAddress.String(),
 	}); err != nil {
 		return nil, err
 	}
@@ -232,7 +234,7 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(src_burn_amount) + SUM(dst_burn_amount) AS total_burn_fee INTO wallet_stats FROM trades GROUP BY wallet_addr",
+		totalBurnFeeQueryBuf.String(),
 		"1d",
 		supportedTimeZone(),
 	)

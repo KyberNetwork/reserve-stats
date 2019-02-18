@@ -4,9 +4,9 @@ package burnfeevolume
 
 import "strconv"
 
-const _FieldName_name = "timereserve_addrsum_amount"
+const _FieldName_name = "timesrc_reserve_addrdst_reserve_addrsum_amount"
 
-var _FieldName_index = [...]uint8{0, 4, 16, 26}
+var _FieldName_index = [...]uint8{0, 4, 20, 36, 46}
 
 func (i FieldName) String() string {
 	if i < 0 || i >= FieldName(len(_FieldName_index)-1) {

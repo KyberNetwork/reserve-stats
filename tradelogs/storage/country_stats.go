@@ -1,8 +1,10 @@
 package storage
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"text/template"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
@@ -24,24 +26,52 @@ func (is *InfluxStorage) GetCountryStats(countryCode string, from, to time.Time,
 	)
 	measurementName = getMeasurementName(measurementName, timezone)
 
-	cmd := fmt.Sprintf(
-		`SELECT %[1]s, %[2]s, %[3]s, %[4]s, %[5]s, %[6]s, %[7]s, %[8]s, %[9]s FROM %[10]s WHERE %[11]s AND %[12]s`,
-		countryStatSchema.ETHPerTrade.String(),
-		countryStatSchema.TotalETHVolume.String(),
-		countryStatSchema.TotalTrade.String(),
-		countryStatSchema.TotalUSDAmount.String(),
-		countryStatSchema.USDPerTrade.String(),
-		countryStatSchema.UniqueAddresses.String(),
-		countryStatSchema.NewUniqueAddresses.String(),
-		countryStatSchema.KYCedAddresses.String(),
-		countryStatSchema.TotalBurnFee.String(),
-		measurementName,
-		timeFilter,
-		countryFilter)
+	queryTmpl := `SELECT {{.ETHPerTrade}}, {{.TotalETHVolume}}, {{.TotalTrade}}, {{.TotalUSDAmount}}, {{.USDPerTrade}},
+		 {{.UniqueAddresses}}, {{.NewUniqueAddresses}}, {{.KYCedAddresses}}, {{.TotalBurnFee}} FROM 
+		 {{.MeasurementName}} WHERE {{.TimeFilter}} AND {{.countryFilter}}`
 
-	logger.Debugw("get country stats", "query", cmd)
+	tmpl, err := template.New("countryStatsTemplate").Parse(queryTmpl)
+	if err != nil {
+		return nil, err
+	}
+	var queryStmtBuf bytes.Buffer
+	if err = tmpl.Execute(&queryStmtBuf, struct {
+		ETHPerTrade        string
+		TotalETHVolume     string
+		TotalTrade         string
+		TotalUSDAmount     string
+		USDPerTrade        string
+		UniqueAddresses    string
+		NewUniqueAddresses string
+		KYCedAddresses     string
+		TotalBurnFee       string
+		MeasurementName    string
+		TimeFilter         string
+		CountryFilter      string
+	}{
+		ETHPerTrade:        countryStatSchema.ETHPerTrade.String(),
+		TotalETHVolume:     countryStatSchema.TotalETHVolume.String(),
+		TotalTrade:         countryStatSchema.TotalTrade.String(),
+		TotalUSDAmount:     countryStatSchema.TotalUSDAmount.String(),
+		USDPerTrade:        countryStatSchema.USDPerTrade.String(),
+		UniqueAddresses:    countryStatSchema.UniqueAddresses.String(),
+		NewUniqueAddresses: countryStatSchema.NewUniqueAddresses.String(),
+		KYCedAddresses:     countryStatSchema.KYCedAddresses.String(),
+		TotalBurnFee:       countryStatSchema.TotalBurnFee.String(),
+		MeasurementName:    measurementName,
+		TimeFilter:         timeFilter,
+		CountryFilter:      countryFilter,
+	}); err != nil {
+		return nil, err
+	}
 
+	logger.Debugw("get country stats", "query", queryStmtBuf.String())
+
+<<<<<<< HEAD
 	response, err := influxdb.QueryDB(is.influxClient, cmd, is.dbName)
+=======
+	response, err := is.queryDB(is.influxClient, queryStmtBuf.String())
+>>>>>>> 638a45a... update burnfee and walletfee schema
 	if err != nil {
 		return nil, err
 	}

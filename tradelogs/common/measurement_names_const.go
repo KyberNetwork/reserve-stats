@@ -7,10 +7,6 @@ const (
 	UnknownCountry = "UNKNOWN"
 	//TradeLogMeasurementName is the measurement for trade log
 	TradeLogMeasurementName = "trades"
-	//BurnFeeMeasurementName is the measurement for burn fee
-	BurnFeeMeasurementName = "burn_fees"
-	//WalletMeasurementName is the measurement for wallet fee
-	WalletMeasurementName = "wallet_fees"
 	//FirstTradedMeasurementName is the measurement name for first traded records
 	FirstTradedMeasurementName = "first_trades"
 	//CountryStatsMeasurementName is the measurement name for country stat records

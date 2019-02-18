@@ -30,15 +30,15 @@ func (is *InfluxStorage) rowToAggregatedBurnFee(row []interface{}, idxs map[burn
 	if err != nil {
 		return ts, burnFee, reserve, err
 	}
-	if row[2] != nil && row[3] != nil {
+	if row[idxs[burnVolumeSchema.SrcReserveAddr]] != nil && row[idxs[burnVolumeSchema.DstReserveAddr]] != nil {
 		panic("Logic fault : there should not be a record with both source and dest reserve address")
-	} else if row[2] != nil {
-		reserve, err = influxdb.GetAddressFromInterface(row[2])
+	} else if row[idxs[burnVolumeSchema.SrcReserveAddr]] != nil {
+		reserve, err = influxdb.GetAddressFromInterface(row[idxs[burnVolumeSchema.SrcReserveAddr]])
 		if err != nil {
 			return ts, burnFee, reserve, err
 		}
-	} else if row[3] != nil {
-		reserve, err = influxdb.GetAddressFromInterface(row[3])
+	} else if row[idxs[burnVolumeSchema.DstReserveAddr]] != nil {
+		reserve, err = influxdb.GetAddressFromInterface(row[idxs[burnVolumeSchema.DstReserveAddr]])
 		if err != nil {
 			return ts, burnFee, reserve, err
 		}

@@ -16,6 +16,7 @@ includes:
   - tradelogs/wallet_stats
   - tradelogs/country_stats
   - users/users
+  - users/public_user_endpoint
   - users/user_list
   - users/user_volume
   - price-analytics-data/price_analytics_data

@@ -191,8 +191,8 @@ func run(c *cli.Context) error {
 		return err
 	}
 	userKycedClient, err := userkyced.NewClientFromContext(sugar, c)
-	if err == userkyced.ErrNoClient {
-		sugar.Info("User kyced checker URL is not provided. Use default postGres instead")
+	if err == userkyced.ErrNoClientURL {
+		sugar.Info("User kyced checker URL is not provided. Use default Postgres instead")
 		db, err := libapp.NewDBFromContext(c)
 		if err != nil {
 			return err

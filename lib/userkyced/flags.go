@@ -14,15 +14,15 @@ const (
 	userKycedURL = "user-kyc-url"
 )
 
-//ErrNoClient is returned when there is no client to return
-var ErrNoClient = errors.New("There is no client. The URL might be empty")
+//ErrNoClientURL is returned when there is no client to return
+var ErrNoClientURL = errors.New("the client URL is empty")
 
 // NewCliFlags returns cli flags to configure a user kyc status client.
 func NewCliFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:   userKycedURL,
-			Usage:  "user kyced API URL. If this doesn't support, fallback to default PosGres DB for kyced checking",
+			Usage:  "user kyced API URL. If this doesn't support, fallback to default Postgres DB for kyced checking",
 			EnvVar: "USER_KYCED_URL",
 			Value:  "",
 		},
@@ -33,7 +33,7 @@ func NewCliFlags() []cli.Flag {
 func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, error) {
 	userURL := c.String(userKycedURL)
 	if userURL == "" {
-		return nil, ErrNoClient
+		return nil, ErrNoClientURL
 	}
 	err := validation.Validate(userURL,
 		is.URL,

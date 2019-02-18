@@ -12,7 +12,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	burnVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee_volume"
-	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
@@ -36,7 +35,7 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 
 	var queryTmpl = `SELECT {{.SumAmount}},{{.SrcReserveAddr}},{{.DstReserveAddr}} FROM "{{.Measurement}}" WHERE '{{.From }}' <= time AND time <= '{{.To}}' ` +
 		`{{if len .Addrs}}AND ({{range $index, $element := .Addrs}}` +
-		logSchema.SrcReserveAddr.String() + ` = '{{$element}}' OR ` + logSchema.DstReserveAddr.String() + ` = '{{$element}}' {{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
+		burnVolumeSchema.SrcReserveAddr.String() + ` = '{{$element}}' OR ` + burnVolumeSchema.DstReserveAddr.String() + ` = '{{$element}}' {{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
 
 	logger.Debugw("before rendering query statement from template", "query_tempalte", queryTmpl)
 	tmpl, err := template.New("queryStmt").Parse(queryTmpl)

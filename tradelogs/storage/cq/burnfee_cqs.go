@@ -16,7 +16,7 @@ const (
 	HourMeasurement = "burn_fee_hour"
 )
 
-func executeBurnFeeTemplate(templateString, measurementName, burnAmount, address string) (string, error) {
+func executeBurnFeeTemplate(templateString, burnAmount, measurementName, address string) (string, error) {
 	tmpl, err := template.New("burnFee").Parse(templateString)
 	if err != nil {
 		return "", err

@@ -67,11 +67,7 @@ func (is *InfluxStorage) GetCountryStats(countryCode string, from, to time.Time,
 
 	logger.Debugw("get country stats", "query", queryStmtBuf.String())
 
-<<<<<<< HEAD
 	response, err := influxdb.QueryDB(is.influxClient, cmd, is.dbName)
-=======
-	response, err := is.queryDB(is.influxClient, queryStmtBuf.String())
->>>>>>> 638a45a... update burnfee and walletfee schema
 	if err != nil {
 		return nil, err
 	}

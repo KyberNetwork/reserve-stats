@@ -46,9 +46,8 @@ require (
 	github.com/lib/pq v1.0.0
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-sqlite3 v1.9.0 // indirect
-	github.com/onsi/gomega v1.4.2 // indirect
-	github.com/opentracing/opentracing-go v1.0.2 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.2 // indirect
+	github.com/opentracing/opentracing-go v1.0.2 // indirect
 	github.com/openzipkin/zipkin-go v0.1.5 // indirect
 	github.com/oschwald/geoip2-golang v1.2.1
 	github.com/oschwald/maxminddb-golang v1.3.0 // indirect
@@ -83,11 +82,6 @@ require (
 	github.com/urfave/cli v1.20.0
 	go.opencensus.io v0.19.0 // indirect
 	go.uber.org/zap v1.9.1
-	golang.org/x/crypto v0.0.0-20190131182504-b8fe1690c613 // indirect
-	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f
-	golang.org/x/tools v0.0.0-20190205050122-7f7074d5bcfd // indirect
-	google.golang.org/appengine v1.2.0 // indirect
-	golang.org/x/sync v0.0.0-20181108010431-42b317875d0f
 	go4.org v0.0.0-20190218023631-ce4c26f7be8e // indirect
 	golang.org/x/build v0.0.0-20190215225244-0261b66eb045 // indirect
 	golang.org/x/exp v0.0.0-20190212162250-21964bba6549 // indirect

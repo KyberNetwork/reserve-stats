@@ -112,26 +112,6 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, volCqs)
 
-	totalBurnFeeCqsTemplate := "SELECT SUM({{.BurnFeeAmount}}) AS {{.TotalBurnFee}} INTO {{.BurnFeeSummaryMeasurementName}} FROM {{.BurnFeeMeasurementName}}"
-	tmpl, err = template.New("uniqueAddr").Parse(totalBurnFeeCqsTemplate)
-	if err != nil {
-		return nil, err
-	}
-	var totalBurnFeeQueryBuf bytes.Buffer
-	if err = tmpl.Execute(&totalBurnFeeQueryBuf, struct {
-		BurnFeeAmount                 string
-		TotalBurnFee                  string
-		BurnFeeSummaryMeasurementName string
-		BurnFeeMeasurementName        string
-	}{
-		BurnFeeAmount:                 burnSchema.Amount.String(),
-		TotalBurnFee:                  tradeSumSchema.TotalBurnFee.String(),
-		BurnFeeSummaryMeasurementName: common.BurnFeeSummaryMeasurement,
-		BurnFeeMeasurementName:        common.BurnFeeMeasurementName,
-	}); err != nil {
-		return nil, err
-	}
-
 	totalBurnFeeCqs, err := libcq.NewContinuousQuery(
 		"summary_total_burn_fee",
 		dbName,

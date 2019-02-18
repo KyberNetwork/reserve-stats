@@ -10,22 +10,23 @@ import (
 	burnVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee_volume"
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 	volSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/volume"
+	walletFeeVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfee_volume"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
-func (is *InfluxStorage) rowToAggregatedBurnFee(value []interface{}, idxs map[burnVolumeSchema.FieldName]int) (time.Time, float64, ethereum.Address, error) {
+func (is *InfluxStorage) rowToAggregatedBurnFee(row []interface{}, idxs map[burnVolumeSchema.FieldName]int) (time.Time, float64, ethereum.Address, error) {
 	var (
 		ts      time.Time
 		burnFee float64
 		reserve ethereum.Address
 	)
 
-	ts, err := influxdb.GetTimeFromInterface(value[idxs[burnVolumeSchema.Time]])
+	ts, err := influxdb.GetTimeFromInterface(row[idxs[burnVolumeSchema.Time]])
 	if err != nil {
 		return ts, burnFee, reserve, err
 	}
 
-	burnFee, err = influxdb.GetFloat64FromInterface(value[idxs[burnVolumeSchema.SumAmount]])
+	burnFee, err = influxdb.GetFloat64FromInterface(row[idxs[burnVolumeSchema.SumAmount]])
 	if err != nil {
 		return ts, burnFee, reserve, err
 	}

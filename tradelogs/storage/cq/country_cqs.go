@@ -287,29 +287,6 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	}
 	result = append(result, kyced)
 
-	totalBurnFeeCqsTemplate := "SELECT SUM({{.BurnFeeAmount}}) AS {{.TotalBurnFee}} INTO {{.CountryStatsMeasurementName}} " +
-		"FROM {{.BurnFeeMeasurementName}} GROUP BY {{.Country}}"
-
-	tmpl, err = template.New("kyced").Parse(totalBurnFeeCqsTemplate)
-	if err != nil {
-		return nil, err
-	}
-	var totalBurnFeeCqsQueryBuf bytes.Buffer
-	if err = tmpl.Execute(&totalBurnFeeCqsQueryBuf, struct {
-		BurnFeeAmount               string
-		TotalBurnFee                string
-		CountryStatsMeasurementName string
-		BurnFeeMeasurementName      string
-		Country                     string
-	}{
-		BurnFeeAmount:               burnschema.Amount.String(),
-		TotalBurnFee:                countryStatSchema.TotalBurnFee.String(),
-		CountryStatsMeasurementName: common.CountryStatsMeasurementName,
-		BurnFeeMeasurementName:      common.BurnFeeMeasurementName,
-		Country:                     burnschema.Country.String(),
-	}); err != nil {
-		return nil, err
-	}
 	totalBurnFeeCqs, err := libcq.NewContinuousQuery(
 		"country_total_burn_fee",
 		dbName,

@@ -1,41 +1,8 @@
 package cq
 
 import (
-	"bytes"
-	"text/template"
-
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
-	walletFeeVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfee_volume"
 )
-
-func executeWalletFeeQueryTemplate(templateString, cqMeasurementName string) (string, error) {
-	tmpl, err := template.New("walletFeeQuery").Parse(templateString)
-	if err != nil {
-		return "", err
-	}
-	var queryBuf bytes.Buffer
-	if err := tmpl.Execute(&queryBuf, struct {
-		WalletAmount               string
-		WalletSumAmount            string
-		WalletFeeCQMeasurementName string
-		WalletFeeMeasurementName   string
-		ReserveAddr                string
-		WalletAddr                 string
-	}{
-		WalletAmount:                 logSchema.Amount.String(),
-		WalletSumAmount:              walletFeeVolumeSchema.SumAmount.String(),
-		WalletFeeHourMeasurementName: common.WalletFeeVolumeMeasurementHour,
-		WalletFeeDayMeasurementName:  common.WalletFeeVolumeMeasurementDay,
-		WalletFeeMeasurementName:     common.WalletMeasurementName,
-		ReserveAddr:                  logSchema.ReserveAddr.String(),
-		WalletAddr:                   logSchema.WalletAddr.String(),
-	}); err != nil {
-		return "", err
-	}
-	return queryBuf.String(), nil
-}
 
 // CreateWalletFeeCqs return a set of cqs required for burnfee aggregation
 func CreateWalletFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {

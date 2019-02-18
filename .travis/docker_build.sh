@@ -28,7 +28,7 @@ build_docs() {
 case "$build_part" in
     1)
         build reserverates reserve-rates-api reserve-rates-crawler
-        build users users-api
+        build users users-api users-public-cacher users-public-stats
         build gateway gateway
         build burnedfees burned-fees-crawler
         ;;

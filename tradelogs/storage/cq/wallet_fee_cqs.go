@@ -16,13 +16,13 @@ func executeWalletFeeTemplate(templateString, walletFeeAmount, measurementName, 
 	}
 	var queryBuf bytes.Buffer
 	if err = tmpl.Execute(&queryBuf, struct {
-		BurnAmount           string
+		WalletFeeAmount      string
 		MeasurementName      string
 		TradeMeasurementName string
 		ReserveAddress       string
 		WalletAddress        string
 	}{
-		BurnAmount:           walletFeeAmount,
+		WalletFeeAmount:      walletFeeAmount,
 		MeasurementName:      measurementName,
 		TradeMeasurementName: common.TradeLogMeasurementName,
 		ReserveAddress:       reserveAddr,
@@ -39,7 +39,7 @@ func CreateWalletFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		result []*cq.ContinuousQuery
 	)
 	queryTmpl := `SELECT SUM({{.WalletFeeAmount}}) as sum_amount INTO {{.MeasurementName}} 
-	FROM {{.TradeMeasurementName}} WHERE {{.ReserveAddress}} != '' GROUP BY {{.ReserveAddress, .WalletAddress}}`
+	FROM {{.TradeMeasurementName}} WHERE {{.ReserveAddress}} != '' GROUP BY {{.ReserveAddress}}, {{.WalletAddress}}`
 
 	queryString, err := executeWalletFeeTemplate(queryTmpl, logSchema.SourceWalletFeeAmount.String(),
 		common.WalletFeeVolumeMeasurementHour, logSchema.SrcReserveAddr.String())

@@ -14,7 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
 
-	"github.com/KyberNetwork/reserve-stats/app-names"
+	appname "github.com/KyberNetwork/reserve-stats/app-names"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
@@ -137,7 +137,7 @@ func fillEtherReceival(tradeLog common.TradeLog, logItem types.Log) (common.Trad
 	if err != nil {
 		return tradeLog, err
 	}
-	tradeLog.SrcReserveAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
+	tradeLog.EthReceiverSender = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
 	tradeLog.EthAmount = amount.Big()
 	return tradeLog, nil
 }

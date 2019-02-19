@@ -98,6 +98,8 @@ func assembleTradeLogsReserveAddr(log common.TradeLog, sugar *zap.SugaredLogger)
 			log.SrcReserveAddress = log.WalletFees[0].ReserveAddress
 			log.DstReserveAddress = log.WalletFees[1].ReserveAddress
 		}
+	} else if !blockchain.IsZeroAddress(log.EthReceiverSender) {
+		log.SrcReserveAddress = log.EthReceiverSender
 	}
 	return log
 }

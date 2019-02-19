@@ -23,35 +23,35 @@ func executeCountryVolumeTemplate(templateString, amountType, amountTypeAddr str
 		return "", err
 	}
 	if err = tmpl.Execute(&queryBuf, struct {
-		AmountType              string
-		TokenVolume             string
-		ETHAmount               string
-		ETHVolume               string
-		USDVolume               string
-		HeatMapMeasurementName  string
-		ETHUSDRate              string
-		TradeLogMeasurementName string
-		SrcAddr                 string
-		ETHTokenAddr            string
-		DstAddr                 string
-		WETHTokenAddr           string
-		AmountTypeAddr          string
-		Country                 string
+		AmountType                    string
+		TokenVolume                   string
+		ETHAmount                     string
+		ETHVolume                     string
+		USDVolume                     string
+		VolumeCountryStatsMeasurement string
+		ETHUSDRate                    string
+		TradeLogMeasurementName       string
+		SrcAddr                       string
+		ETHTokenAddr                  string
+		DstAddr                       string
+		WETHTokenAddr                 string
+		AmountTypeAddr                string
+		Country                       string
 	}{
-		AmountType:              amountType,
-		TokenVolume:             heatMapSchema.TokenVolume.String(),
-		ETHAmount:               logSchema.EthAmount.String(),
-		ETHVolume:               heatMapSchema.ETHVolume.String(),
-		USDVolume:               heatMapSchema.USDVolume.String(),
-		HeatMapMeasurementName:  common.HeatMapMeasurement,
-		ETHUSDRate:              logSchema.EthUSDRate.String(),
-		TradeLogMeasurementName: common.TradeLogMeasurementName,
-		SrcAddr:                 logSchema.SrcAddr.String(),
-		ETHTokenAddr:            core.ETHToken.Address,
-		DstAddr:                 logSchema.DstAddr.String(),
-		WETHTokenAddr:           core.WETHToken.Address,
-		AmountTypeAddr:          amountTypeAddr,
-		Country:                 logSchema.Country.String(),
+		AmountType:                    amountType,
+		TokenVolume:                   heatMapSchema.TokenVolume.String(),
+		ETHAmount:                     logSchema.EthAmount.String(),
+		ETHVolume:                     heatMapSchema.ETHVolume.String(),
+		USDVolume:                     heatMapSchema.USDVolume.String(),
+		VolumeCountryStatsMeasurement: common.VolumeCountryStatsMeasurement,
+		ETHUSDRate:                    logSchema.EthUSDRate.String(),
+		TradeLogMeasurementName:       common.TradeLogMeasurementName,
+		SrcAddr:                       logSchema.SrcAddr.String(),
+		ETHTokenAddr:                  core.ETHToken.Address,
+		DstAddr:                       logSchema.DstAddr.String(),
+		WETHTokenAddr:                 core.WETHToken.Address,
+		AmountTypeAddr:                amountTypeAddr,
+		Country:                       logSchema.Country.String(),
 	}); err != nil {
 		return "", err
 	}
@@ -201,7 +201,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	result = append(result, newUnqAddressCq)
 
 	assetVolCqsTemplate := `SELECT SUM({{.AmountType}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, ` +
-		`SUM(usd_amount) AS {{.USDVolume}} INTO {{.HeatMapMeasurementName}} FROM ` +
+		`SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeCountryStatsMeasurement}} FROM ` +
 		`(SELECT {{.AmountType}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM ` +
 		`{{.TradeLogMeasurementName}} WHERE (({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') ` +
 		`OR ({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}'))) GROUP BY {{.AmountTypeAddr}}, {{.Country}}`

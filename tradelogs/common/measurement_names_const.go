@@ -23,8 +23,8 @@ const (
 	TradeSummaryMeasurement = "trade_summary"
 	//BurnFeeSummaryMeasurement is the measurement to store burnfee summary
 	BurnFeeSummaryMeasurement = "burn_fee_summary"
-	//HeatMapMeasurement is the measurement to store country heatmap stats
-	HeatMapMeasurement = "volume_country_stats"
+	//VolumeCountryStatsMeasurement is the measurement to store country heatmap stats
+	VolumeCountryStatsMeasurement = "volume_country_stats"
 	//WalletStatsMeasurement is the measurement name to which wallet stats is stored
 	WalletStatsMeasurement = "wallet_stats"
 	//WalletFeeVolumeMeasurementDay is the measurement to which wallet fee volume daily is stored

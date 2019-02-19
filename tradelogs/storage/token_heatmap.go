@@ -19,7 +19,7 @@ func (is *InfluxStorage) GetTokenHeatmap(asset ethereum.Address, from, to time.T
 		tokenAddr = asset.Hex()
 	)
 
-	measurementName := getMeasurementName(common.HeatMapMeasurement, timezone)
+	measurementName := getMeasurementName(common.VolumeCountryStatsMeasurement, timezone)
 
 	logger := is.sugar.With(
 		"func", "tradelogs/storage/InfluxStorage.GetTokenHeatmap",

@@ -2,7 +2,6 @@ package cq
 
 import (
 	"bytes"
-	"log"
 	"text/template"
 
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
@@ -39,12 +38,10 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	)
 
 	queryTmpl := `SELECT SUM({{.BurnAmount}}) as sum_amount INTO {{.MeasurementName}} 
-	FROM {{.TradeMeasurementName}} GROUP BY {{.Address}}`
+	FROM {{.TradeMeasurementName}} WHERE {{.Address}} != '' GROUP BY {{.Address}}`
 
 	queryString, err := executeBurnFeeTemplate(queryTmpl, logSchema.SourceBurnAmount.String(),
 		common.BurnFeeVolumeHourMeasurement, logSchema.SrcReserveAddr.String())
-
-	log.Print(queryString)
 
 	if err != nil {
 		return nil, err
@@ -72,8 +69,6 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		return nil, err
 	}
 
-	log.Print(queryString)
-
 	dstBurnfeedstHourCqs, err := cq.NewContinuousQuery(
 		"dst_burn_amount_hour",
 		dbName,
@@ -96,8 +91,6 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		return nil, err
 	}
 
-	log.Print(queryString)
-
 	srcBurnfeeDayCqs, err := cq.NewContinuousQuery(
 		"src_burn_amount_day",
 		dbName,
@@ -119,8 +112,6 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	log.Print(queryString)
 
 	dstBurnfeedstDayCqs, err := cq.NewContinuousQuery(
 		"dst_burn_amount_day",

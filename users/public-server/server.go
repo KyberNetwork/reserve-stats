@@ -79,6 +79,7 @@ func (s *Server) getUsers(c *gin.Context) {
 			http.StatusBadRequest,
 			gin.H{"error": err.Error()},
 		)
+		return
 	}
 
 	logger.Info("query", "user query", query)
@@ -89,6 +90,7 @@ func (s *Server) getUsers(c *gin.Context) {
 			http.StatusInternalServerError,
 			gin.H{"error": err.Error()},
 		)
+		return
 	}
 
 	rich, err = s.getUserByKey(richPrefix, query.Address)
@@ -97,6 +99,7 @@ func (s *Server) getUsers(c *gin.Context) {
 			http.StatusInternalServerError,
 			gin.H{"error": err.Error()},
 		)
+		return
 	}
 
 	rate, err := s.rateProvider.USDRate(time.Now())

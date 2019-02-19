@@ -10,18 +10,18 @@ const (
 	//SumAmount is the enumerated field for log index
 	SumAmount // sum_amount
 	//SrcReserveAddress is the enumerated field for reserve Address
-	SrcReserveAddress //src_reserve_addr
+	SrcReserveAddress //src_rsv_addr
 	//DstReserveAddress is the enumerated field for reserve Address
-	DstReserveAddress //dst_reserve_addr
+	DstReserveAddress //dst_rsv_addr
 	//WalletAddress is t he enumerated field for wallet Address
 	WalletAddress //wallet_addr
 )
 
 //walletFeeVolumeFields translates the stringer of walletfeevolume fields into its enumerated form
 var walletFeeVolumeFields = map[string]FieldName{
-	"time":             Time,
-	"sum_amount":       SumAmount,
-	"wallet_addr":      WalletAddress,
-	"src_reserve_addr": SrcReserveAddress,
-	"dst_reserve_addr": DstReserveAddress,
+	"time":         Time,
+	"sum_amount":   SumAmount,
+	"wallet_addr":  WalletAddress,
+	"src_rsv_addr": SrcReserveAddress,
+	"dst_rsv_addr": DstReserveAddress,
 }

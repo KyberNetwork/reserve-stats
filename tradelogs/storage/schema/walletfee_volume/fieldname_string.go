@@ -4,9 +4,9 @@ package walletfeevolume
 
 import "strconv"
 
-const _FieldName_name = "timesum_amountsrc_reserve_addrdst_reserve_addrwallet_addr"
+const _FieldName_name = "timesum_amountsrc_rsv_addrdst_rsv_addrwallet_addr"
 
-var _FieldName_index = [...]uint8{0, 4, 14, 30, 46, 57}
+var _FieldName_index = [...]uint8{0, 4, 14, 26, 38, 49}
 
 func (i FieldName) String() string {
 	if i < 0 || i >= FieldName(len(_FieldName_index)-1) {

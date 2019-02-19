@@ -2,18 +2,12 @@ package cq
 
 import (
 	"bytes"
+	"log"
 	"text/template"
 
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
-)
-
-const (
-	// DayMeasurement is the measure to store aggregatedBurnFee in Day Frequency
-	DayMeasurement = "burn_fee_day"
-	// HourMeasurement is the measure to store aggregatedBurnFee in Hour Frequency
-	HourMeasurement = "burn_fee_hour"
 )
 
 func executeBurnFeeTemplate(templateString, burnAmount, measurementName, address string) (string, error) {
@@ -48,7 +42,9 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	FROM {{.TradeMeasurementName}} GROUP BY {{.Address}}`
 
 	queryString, err := executeBurnFeeTemplate(queryTmpl, logSchema.SourceBurnAmount.String(),
-		HourMeasurement, logSchema.SrcReserveAddr.String())
+		common.BurnFeeVolumeHourMeasurement, logSchema.SrcReserveAddr.String())
+
+	log.Print(queryString)
 
 	if err != nil {
 		return nil, err
@@ -70,11 +66,13 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	result = append(result, srcBurnfeeHourCqs)
 
 	queryString, err = executeBurnFeeTemplate(queryTmpl, logSchema.DestBurnAmount.String(),
-		HourMeasurement, logSchema.DstReserveAddr.String())
+		common.BurnFeeVolumeHourMeasurement, logSchema.DstReserveAddr.String())
 
 	if err != nil {
 		return nil, err
 	}
+
+	log.Print(queryString)
 
 	dstBurnfeedstHourCqs, err := cq.NewContinuousQuery(
 		"dst_burn_amount_hour",
@@ -92,11 +90,14 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	result = append(result, dstBurnfeedstHourCqs)
 
 	queryString, err = executeBurnFeeTemplate(queryTmpl, logSchema.SourceBurnAmount.String(),
-		DayMeasurement, logSchema.SrcReserveAddr.String())
+		common.BurnFeeVolumeDayMeasurement, logSchema.SrcReserveAddr.String())
 
 	if err != nil {
 		return nil, err
 	}
+
+	log.Print(queryString)
+
 	srcBurnfeeDayCqs, err := cq.NewContinuousQuery(
 		"src_burn_amount_day",
 		dbName,
@@ -113,11 +114,14 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	result = append(result, srcBurnfeeDayCqs)
 
 	queryString, err = executeBurnFeeTemplate(queryTmpl, logSchema.DestBurnAmount.String(),
-		DayMeasurement, logSchema.DstReserveAddr.String())
+		common.BurnFeeVolumeDayMeasurement, logSchema.DstReserveAddr.String())
 
 	if err != nil {
 		return nil, err
 	}
+
+	log.Print(queryString)
+
 	dstBurnfeedstDayCqs, err := cq.NewContinuousQuery(
 		"dst_burn_amount_day",
 		dbName,

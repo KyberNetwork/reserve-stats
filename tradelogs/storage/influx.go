@@ -245,11 +245,35 @@ func (is *InfluxStorage) getBurnAmount(log common.TradeLog) (float64, float64, e
 	return srcAmount, dstAmount, nil
 }
 
-func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error) {
-	logger := is.sugar.With(
-		"func", "tradelogs/storage/InfluxStorage.tradeLogToPoint",
-		"txHash", log.TransactionHash.String(),
+func (is *InfluxStorage) getWalletFeeAmount(log common.TradeLog) (float64, float64, error) {
+	var (
+		logger = is.sugar.With(
+			"func", "tradelogs/storage/getWalletFeeAmount",
+			"log", log,
+		)
+		dstAmount    float64
+		srcAmount    float64
+		srcAmountSet bool
 	)
+	for _, walletFee := range log.WalletFees {
+		amount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, walletFee.Amount)
+		if err != nil {
+			return dstAmount, srcAmount, err
+		}
+
+		if walletFee.ReserveAddress == log.SrcReserveAddress && !srcAmountSet {
+			srcAmount = amount
+			srcAmountSet = true
+		} else if walletFee.ReserveAddress == log.DstReserveAddress {
+			dstAmount = amount
+		} else {
+			logger.Warnw("unexpected wallet fees with unrecognized reserve address", "wallet fee", walletFee)
+		}
+	}
+	return srcAmount, dstAmount, nil
+}
+
+func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error) {
 	var points []*client.Point
 	var walletAddr ethereum.Address
 	if len(log.WalletFees) > 0 {
@@ -292,6 +316,11 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	if err != nil {
 		return nil, err
 	}
+
+	srcWalletFee, dstWalletFee, err := is.getWalletFeeAmount(log)
+	if err != nil {
+		return nil, err
+	}
 	fields := map[string]interface{}{
 
 		logschema.SrcAmount.String():        srcAmount,
@@ -300,25 +329,13 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.SourceBurnAmount.String(): srcBurnAmount,
 		logschema.DestBurnAmount.String():   dstBurnAmount,
 
-		logschema.EthAmount.String():      ethAmount,
-		logschema.BlockNumber.String():    int64(log.BlockNumber),
-		logschema.TxHash.String():         log.TransactionHash.String(),
-		logschema.IP.String():             log.IP,
-		logschema.EthUSDProvider.String(): log.ETHUSDProvider,
-	}
-	// build walletFeePoint
-	for _, walletFee := range log.WalletFees {
-		amount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, walletFee.Amount)
-		if err != nil {
-			return nil, err
-		}
-		if walletFee.ReserveAddress == log.SrcReserveAddress {
-			fields[logschema.SourceWalletFeeAmount.String()] = amount
-		} else if walletFee.ReserveAddress == log.DstReserveAddress {
-			fields[logschema.DestWalletFeeAmount.String()] = amount
-		} else {
-			logger.Warnw("unexpected wallet fees with unrecognized reserve address", "wallet fee", walletFee)
-		}
+		logschema.EthAmount.String():             ethAmount,
+		logschema.BlockNumber.String():           int64(log.BlockNumber),
+		logschema.TxHash.String():                log.TransactionHash.String(),
+		logschema.IP.String():                    log.IP,
+		logschema.EthUSDProvider.String():        log.ETHUSDProvider,
+		logschema.SourceWalletFeeAmount.String(): srcWalletFee,
+		logschema.DestWalletFeeAmount.String():   dstWalletFee,
 	}
 	tradePoint, err := client.NewPoint(tradeLogMeasurementName, tags, fields, log.Timestamp)
 	if err != nil {

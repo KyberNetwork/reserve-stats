@@ -8,6 +8,8 @@ import (
 
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 )
 
 const (
@@ -239,7 +241,7 @@ func (cq *ContinuousQuery) Drop(c client.Client, sugar *zap.SugaredLogger) error
 			}
 		}
 		sugar.Debugw("Drop cq", "cq name", name)
-		if _, err := cq.queryDB(c, fmt.Sprintf("DROP CONTINUOUS QUERY %s ON %s", name, cq.Database)); err != nil {
+		if _, err := influxdb.QueryDB(c, fmt.Sprintf("DROP CONTINUOUS QUERY %s ON %s", name, cq.Database), cq.Database); err != nil {
 			return err
 		}
 	}
@@ -258,21 +260,4 @@ func DropACQs(c client.Client, sugar *zap.SugaredLogger, cqName string) error {
 		logger.Debugw("cq name does not exist", "name", cqName)
 	}
 	return cq.Drop(c, sugar)
-}
-
-// queryDB convenience function to query the database
-func (cq *ContinuousQuery) queryDB(c client.Client, cmd string) (res []client.Result, err error) {
-	q := client.Query{
-		Command:  cmd,
-		Database: cq.Database,
-	}
-	if response, err := c.Query(q); err == nil {
-		if response.Error() != nil {
-			return res, response.Error()
-		}
-		res = response.Results
-	} else {
-		return res, err
-	}
-	return res, nil
 }

@@ -57,27 +57,49 @@ func main() {
 	}
 }
 
-func listAllCqs(influxClient client.Client, sugar *zap.SugaredLogger) error {
+func getallCqs(influxClient client.Client, sugar *zap.SugaredLogger) (map[string]cq.ContinuousQuery, error) {
 	var (
 		logger = sugar.With(
 			"func", "tradelogs-cq-manager/listAllCqs",
 		)
+		cqs = make(map[string]cq.ContinuousQuery)
 	)
 	q := fmt.Sprintf("SHOW CONTINUOUS QUERIES")
 	res, err := influxdb.QueryDB(influxClient, q, "")
 	if err != nil {
-		return err
+		logger.Debugw("influx query run error", "error", err)
+		return cqs, err
 	}
+
 	// cqs map cq name to cq query
-	cqs := make(map[string]string)
 	for _, serie := range res[0].Series {
 		for _, value := range serie.Values {
 			cqName := value[0].(string)
 			cqQuery := value[1].(string)
-			cqs[cqName] = cqQuery
-			fmt.Printf("%s\n", cqName)
+			cqs[cqName] = cq.ContinuousQuery{
+				Name:     cqName,
+				Database: serie.Name,
+				Query:    cqQuery,
+			}
 		}
 	}
+	return cqs, nil
+}
+
+func listAllCqs(influxClient client.Client, sugar *zap.SugaredLogger) error {
+	var (
+		logger = sugar.With(
+			"func", "tradelogs-cq-manager/listaAllCqs",
+		)
+	)
+	cqs, err := getallCqs(influxClient, sugar)
+	if err != nil {
+		return err
+	}
+	for cqName := range cqs {
+		fmt.Println(cqName)
+	}
+	logger.Debug("list all cq complete")
 	return nil
 }
 
@@ -87,7 +109,11 @@ func dropCq(c client.Client, sugar *zap.SugaredLogger, cqName string) error {
 			"func", "tradelogs-cq-manager/cq/DropACQ",
 		)
 	)
-	cq, exist := CQs[cqName]
+	cqs, err := getallCqs(c, sugar)
+	if err != nil {
+		return err
+	}
+	cq, exist := cqs[cqName]
 	if !exist {
 		logger.Debugw("cq name does not exist", "name", cqName)
 		return nil

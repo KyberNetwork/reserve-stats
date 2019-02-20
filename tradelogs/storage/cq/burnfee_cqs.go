@@ -14,7 +14,7 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		dbName,
 		hourResampleInterval,
 		hourResampleFor,
-		"SELECT SUM(src_burn_amount) as sum_amount INTO burn_fee_hour FROM trades GROUP BY src_rsv_addr",
+		"SELECT SUM(src_burn_amount) as sum_amount INTO burn_fee_hour FROM trades GROUP BY src_rsv_addr WHERE src_rsv_addr!='0x0000000000000000000000000000000000000000'",
 		"1h",
 		[]string{},
 	)
@@ -29,7 +29,7 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		dbName,
 		hourResampleInterval,
 		hourResampleFor,
-		"SELECT SUM(dst_burn_amount) as sum_amount INTO burn_fee_hour FROM trades GROUP BY dst_rsv_addr",
+		"SELECT SUM(dst_burn_amount) as sum_amount INTO burn_fee_hour FROM trades GROUP BY dst_rsv_addr WHERE dst_rsv_addr!='0x0000000000000000000000000000000000000000'",
 		"1h",
 		[]string{},
 	)
@@ -43,7 +43,7 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(src_burn_amount) as sum_amount INTO burn_fee_day FROM trades GROUP BY src_rsv_addr",
+		"SELECT SUM(src_burn_amount) as sum_amount INTO burn_fee_day FROM trades GROUP BY src_rsv_addr WHERE src_rsv_addr!='0x0000000000000000000000000000000000000000'",
 		"1d",
 		[]string{},
 	)
@@ -58,7 +58,7 @@ func CreateBurnFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(dst_burn_amount) as sum_amount INTO burn_fee_day FROM trades GROUP BY dst_rsv_addr",
+		"SELECT SUM(dst_burn_amount) as sum_amount INTO burn_fee_day FROM trades GROUP BY dst_rsv_addr WHERE dst_rsv_addr!='0x0000000000000000000000000000000000000000'",
 		"1d",
 		[]string{},
 	)

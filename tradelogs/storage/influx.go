@@ -8,6 +8,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	kycedschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/kyced"
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/influxdata/influxdb/client/v2"
@@ -447,16 +448,16 @@ func (is *InfluxStorage) assembleKYCPoint(logItem common.TradeLog) (*client.Poin
 
 	logger.Debugw("user has been kyced")
 	tags := map[string]string{
-		"user_addr": logItem.UserAddress.Hex(),
-		"country":   logItem.Country,
+		kycedschema.UserAddress.String(): logItem.UserAddress.Hex(),
+		kycedschema.Country.String():     logItem.Country,
 	}
 
 	for _, walletFee := range logItem.WalletFees {
-		tags["wallet_addr"] = walletFee.WalletAddress.Hex()
+		tags[kycedschema.WalletAddress.String()] = walletFee.WalletAddress.Hex()
 	}
 
 	fields := map[string]interface{}{
-		"kyced": true,
+		kycedschema.KYCed.String(): true,
 	}
 
 	point, err := client.NewPoint("kyced", tags, fields, logItem.Timestamp)

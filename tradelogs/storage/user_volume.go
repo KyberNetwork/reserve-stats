@@ -8,7 +8,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-
+	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
+	volSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/volume"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
@@ -26,15 +27,21 @@ func (is *InfluxStorage) GetUserVolume(userAddress ethereum.Address, from, to ti
 
 	switch strings.ToLower(freq) {
 	case day:
-		measurement = "user_volume_day"
+		measurement = common.UserVolumeDayMeasurementName
 	case hour:
-		measurement = "user_volume_hour"
+		measurement = common.UserVolumeHourMeasurementName
 	}
 
 	q := fmt.Sprintf(`
-		SELECT eth_volume, usd_volume from "%s"
-		WHERE user_addr = '%s' AND time >= '%s' AND time <= '%s'
-	`, measurement, userAddr, from.UTC().Format(time.RFC3339), to.UTC().Format(time.RFC3339))
+		SELECT %[1]s, %[2]s from "%[3]s"
+		WHERE %[4]s = '%[5]s' AND time >= '%[6]s' AND time <= '%[7]s'`,
+		volSchema.ETHVolume.String(),
+		volSchema.USDVolume.String(),
+		measurement,
+		logSchema.UserAddr.String(),
+		userAddr,
+		from.UTC().Format(time.RFC3339),
+		to.UTC().Format(time.RFC3339))
 
 	logger.Debug(q)
 
@@ -47,9 +54,12 @@ func (is *InfluxStorage) GetUserVolume(userAddress ethereum.Address, from, to ti
 	if len(res[0].Series) == 0 {
 		return result, nil
 	}
-
+	idxs, err := volSchema.NewFieldsRegistrar(res[0].Series[0].Columns)
+	if err != nil {
+		return result, err
+	}
 	for _, row := range res[0].Series[0].Values {
-		ts, ethAmount, usdAmount, err := is.rowToAggregatedUserVolume(row)
+		ts, ethAmount, usdAmount, err := is.rowToAggregatedUserVolume(row, idxs)
 		if err != nil {
 			return nil, err
 		}

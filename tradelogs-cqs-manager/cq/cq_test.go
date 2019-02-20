@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -276,7 +277,7 @@ func TestContinuousQuery_Execute(t *testing.T) {
 	err = cq.Execute(c, sugar)
 	require.NoError(t, err)
 
-	resp, err := cq.queryDB(c, "SHOW measurements")
+	resp, err := influxdb.QueryDB(c, "SHOW measurements", cq.Database)
 	require.NoError(t, err)
 	if len(resp[0].Series) == 0 {
 		t.Error("expect valid result, got empty result")

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/influxdata/influxdb/client/v2"
 )
 
@@ -25,7 +26,7 @@ func setupTestInfluxClient() (client.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, err := queryDB(influxClient, fmt.Sprintf("CREATE DATABASE %s", testDBName), testDBName); err != nil {
+	if _, err := influxdb.QueryDB(influxClient, fmt.Sprintf("CREATE DATABASE %s", testDBName), testDBName); err != nil {
 		return nil, err
 	}
 	if err := addTestData(influxClient); err != nil {
@@ -62,21 +63,4 @@ func addTestData(c client.Client) error {
 		bp.AddPoint(pt)
 	}
 	return c.Write(bp)
-}
-
-// queryDB convenience function to query the database
-func queryDB(clnt client.Client, cmd, dbName string) (res []client.Result, err error) {
-	q := client.Query{
-		Command:  cmd,
-		Database: dbName,
-	}
-	if response, err := clnt.Query(q); err == nil {
-		if response.Error() != nil {
-			return res, response.Error()
-		}
-		res = response.Results
-	} else {
-		return res, err
-	}
-	return res, nil
 }

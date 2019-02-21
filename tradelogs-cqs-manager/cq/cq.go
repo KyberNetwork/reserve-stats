@@ -170,7 +170,7 @@ func (cq *ContinuousQuery) GetCurrentCQs(c client.Client, sugar *zap.SugaredLogg
 		qr     = "SHOW CONTINUOUS QUERIES"
 		result = make(map[string]string)
 	)
-	resp, err := queryDB(c, qr, cq.Database)
+	resp, err := influxdb.QueryDB(c, qr, cq.Database)
 	if err != nil {
 		return result, err
 	}
@@ -203,7 +203,7 @@ func (cq *ContinuousQuery) Deploy(c client.Client, sugar *zap.SugaredLogger) err
 	for _, query := range cq.queries {
 		sugar.Debugw("Executing Query", "query", query)
 
-		_, err := queryDB(c, query, cq.Database)
+		_, err := influxdb.QueryDB(c, query, cq.Database)
 		if err != nil {
 			return err
 		}
@@ -216,7 +216,7 @@ func (cq *ContinuousQuery) Deploy(c client.Client, sugar *zap.SugaredLogger) err
 func (cq *ContinuousQuery) Execute(c client.Client, sugar *zap.SugaredLogger) error {
 	for _, query := range cq.historicalQueries {
 		sugar.Debugw("Executing Query", "query", query)
-		_, err := queryDB(c, query, cq.Database)
+		_, err := influxdb.QueryDB(c, query, cq.Database)
 		if err != nil {
 			return err
 		}

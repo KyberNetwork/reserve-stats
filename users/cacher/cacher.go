@@ -74,7 +74,7 @@ func (rc *RedisCacher) cacheAllKycedUsers() error {
 	pipe := rc.redisClient.Pipeline()
 	for _, address := range addresses {
 		// push to redis
-		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", kycedPrefix, address), 0); err != nil {
+		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", kycedPrefix, address), expireTime); err != nil {
 			if dErr := pipe.Discard(); dErr != nil {
 				err = fmt.Errorf("%s - %s", dErr.Error(), err.Error())
 			}

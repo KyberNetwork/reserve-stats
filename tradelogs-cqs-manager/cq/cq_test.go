@@ -136,7 +136,7 @@ func TestContinuousQuery_Deploy(t *testing.T) {
 	c, sugar, err := setupTest()
 	//tear down
 	defer func() {
-		if _, err := queryDB(c, fmt.Sprintf("DROP DATABASE %s", testDBName), testDBName); err != nil {
+		if _, err := influxdb.QueryDB(c, fmt.Sprintf("DROP DATABASE %s", testDBName), testDBName); err != nil {
 			t.Error(err)
 		}
 	}()
@@ -260,7 +260,7 @@ func TestContinuousQuery_Execute(t *testing.T) {
 	c, sugar, err := setupTest()
 	//tear down
 	defer func() {
-		if _, err := queryDB(c, fmt.Sprintf("DROP DATABASE %s", testDBName), testDBName); err != nil {
+		if _, err := influxdb.QueryDB(c, fmt.Sprintf("DROP DATABASE %s", testDBName), testDBName); err != nil {
 			t.Error(err)
 		}
 	}()

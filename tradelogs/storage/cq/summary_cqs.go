@@ -58,8 +58,8 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 
 	volCqsTemplate := "SELECT SUM({{.ETHAmount}}) AS {{.TotalETHVolume}}, SUM({{.FiatAmount}}) AS {{.TotalUSDAmount}}, COUNT({{.ETHAmount}}) AS {{.TotalTrade}}, " +
 		"MEAN({{.FiatAmount}}) AS {{.USDPerTrade}}, MEAN({{.ETHAmount}}) AS {{.ETHPerTrade}} INTO {{.TradeSummaryMeasurementName}} " +
-		"FROM (SELECT {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS {{.FiatAmount}} FROM {{.TradeLogMeasurementName}} WHERE " +
-		"({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') OR ({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}'))"
+		"FROM (SELECT {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS {{.FiatAmount}} FROM {{.TradeLogMeasurementName}} " +
+		"WHERE (" + ethwethExcludingTemp + "))"
 	tmpl, err = template.New("uniqueAddr").Parse(volCqsTemplate)
 	if err != nil {
 		return nil, err

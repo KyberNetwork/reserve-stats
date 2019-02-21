@@ -3,9 +3,12 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/tradelogs/kycupdater"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
@@ -14,12 +17,13 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
 )
 
 const (
-	defaultDB = "reserve_stats"
+	defaultDB = "users"
 )
+
+var defaultFromTime = time.Date(2018, 01, 01, 0, 0, 0, 0, time.UTC) // 2018-01-01
 
 func main() {
 	app := libapp.NewApp()
@@ -46,16 +50,27 @@ func run(c *cli.Context) error {
 	}
 	defer logger.Sync()
 	sugar := logger.Sugar()
+
 	fromTime, err := timeutil.FromTimeFromContext(c)
-	if err != nil {
+	if err == timeutil.ErrEmptyFlag {
+		sugar.Infof("no from time provided, using default: %s", defaultFromTime)
+		fromTime, err = defaultFromTime, nil
+
+	} else if err != nil {
 		return err
 	}
+
 	toTime, err := timeutil.ToTimeFromContext(c)
-	if err != nil {
+	if err == timeutil.ErrEmptyFlag {
+		now := time.Now()
+		sugar.Infof("no from time provided, using now: %s", now.String())
+		toTime, err = now, nil
+	} else if err != nil {
 		return err
 	}
-	worker := workers.NewKYCUpdateJob(c, fromTime, toTime)
-	if err := worker.Execute(sugar); err != nil {
+
+	updater := kycupdater.NewKYCUpdateJob(c, fromTime, toTime)
+	if err := updater.Execute(sugar); err != nil {
 		return err
 	}
 

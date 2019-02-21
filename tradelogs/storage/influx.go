@@ -27,7 +27,7 @@ type InfluxStorage struct {
 	dbName               string
 	influxClient         client.Client
 	tokenAmountFormatter blockchain.TokenAmountFormatterInterface
-	kycChecker           kycChecker
+	kycChecker           KycChecker
 
 	// traded stored traded addresses to use in a single SaveTradeLogs
 	traded map[ethereum.Address]struct{}
@@ -35,7 +35,7 @@ type InfluxStorage struct {
 
 // NewInfluxStorage init an instance of InfluxStorage
 func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient client.Client,
-	tokenAmountFormatter blockchain.TokenAmountFormatterInterface, kycChecker kycChecker) (*InfluxStorage, error) {
+	tokenAmountFormatter blockchain.TokenAmountFormatterInterface, kycChecker KycChecker) (*InfluxStorage, error) {
 	storage := &InfluxStorage{
 		sugar:                sugar,
 		dbName:               dbName,
@@ -436,7 +436,7 @@ func (is *InfluxStorage) assembleKYCPoint(logItem common.TradeLog) (*client.Poin
 		"country", logItem.Country,
 	)
 
-	kyced, err := is.kycChecker.IsKYCed(logItem.UserAddress, logItem.Timestamp)
+	kyced, err := is.kycChecker.IsKYCedAtTime(logItem.UserAddress, logItem.Timestamp)
 	if err != nil {
 		return nil, err
 	}

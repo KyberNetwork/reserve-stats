@@ -3,6 +3,7 @@ package appnames
 import (
 	"fmt"
 
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/urfave/cli"
@@ -29,7 +30,7 @@ func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, er
 	appNameURL := c.String(appNameURLFlag)
 
 	if appNameURL == "" {
-		return nil, nil
+		return nil, httputil.ErrNoClientURL
 	}
 
 	err := validation.Validate(appNameURL,

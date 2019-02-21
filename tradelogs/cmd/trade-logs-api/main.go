@@ -54,26 +54,20 @@ func main() {
 
 		var options []http.ServerOption
 		addrToAppName, err := appnames.NewClientFromContext(sugar, c)
-		if err != nil {
+		if (err != nil) && (err != httputil.ErrNoClientURL) {
 			return err
-		}
-		if addrToAppName != nil {
+		} else if err == nil {
 			options = append(options, http.WithApplicationNames(addrToAppName))
-		}
-		addrToAppName, err = appnames.NewClientFromContext(sugar, c)
-		if err != nil {
-			return err
 		}
 
 		userClient, err := userprofile.NewClientFromContext(sugar, c)
-		if err != nil {
+		if (err != nil) && (err != httputil.ErrNoClientURL) {
 			return err
-		}
-
-		cachedUserClient := userprofile.NewCachedClientFromContext(userClient, c)
-		if cachedUserClient != nil {
+		} else if err == nil {
+			cachedUserClient := userprofile.NewCachedClientFromContext(userClient, c)
 			options = append(options, http.WithUserProfile(cachedUserClient))
 		}
+
 		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c),
 			sugar, options...)
 		err = api.Start()

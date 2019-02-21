@@ -3,6 +3,7 @@ package userprofile
 import (
 	"fmt"
 
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/urfave/cli"
@@ -42,7 +43,7 @@ func NewCliFlags() []cli.Flag {
 func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, error) {
 	userURL := c.String(userprofileURLFlag)
 	if userURL == "" {
-		return nil, nil
+		return nil, httputil.ErrNoClientURL
 	}
 	err := validation.Validate(userURL,
 		is.URL,
@@ -62,9 +63,6 @@ func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, er
 
 // NewCachedClientFromContext return new cached client from cli flags
 func NewCachedClientFromContext(client *Client, c *cli.Context) *CachedClient {
-	if client == nil {
-		return nil
-	}
 	maxCacheSize := c.Int64(maxUserCacheFlag)
 	return NewCachedClient(client, maxCacheSize)
 }

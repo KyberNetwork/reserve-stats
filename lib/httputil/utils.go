@@ -1,8 +1,13 @@
 package httputil
 
 import (
+	"errors"
+
 	"github.com/gin-gonic/gin"
 )
+
+//ErrNoClientURL is returned when there is no client to return
+var ErrNoClientURL = errors.New("the client URL is empty")
 
 //MiddlewareHandler handle middleware error
 func MiddlewareHandler(c *gin.Context) {

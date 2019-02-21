@@ -15,6 +15,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
 	userkyced "github.com/KyberNetwork/reserve-stats/lib/userkyced"
@@ -191,7 +192,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 	userKycedClient, err := userkyced.NewClientFromContext(sugar, c)
-	if err == userkyced.ErrNoClientURL {
+	if err == httputil.ErrNoClientURL {
 		sugar.Info("User kyced checker URL is not provided. Use default Postgres instead")
 		db, err := libapp.NewDBFromContext(c)
 		if err != nil {

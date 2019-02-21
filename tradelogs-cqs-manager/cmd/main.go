@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	"github.com/KyberNetwork/reserve-stats/tradelogs-cqs-manager/cq"
 )
 
 const (
@@ -21,9 +22,6 @@ const (
 
 	executeCqFlag = "execute-cq"
 )
-
-//CQs map its name to its cq
-var CQs map[string]cq.ContinuousQuery
 
 func main() {
 	app := libapp.NewApp()
@@ -57,6 +55,13 @@ func main() {
 	}
 }
 
+func extractActualQuery(query string) (string, error) {
+	begin := strings.Index(query, "BEGIN")
+	end := strings.Index(query, "END")
+	actualQuery := query[begin+len("BEGIN") : end]
+	return actualQuery, nil
+}
+
 func getallCqs(influxClient client.Client, sugar *zap.SugaredLogger) (map[string]cq.ContinuousQuery, error) {
 	var (
 		logger = sugar.With(
@@ -76,10 +81,14 @@ func getallCqs(influxClient client.Client, sugar *zap.SugaredLogger) (map[string
 		for _, value := range serie.Values {
 			cqName := value[0].(string)
 			cqQuery := value[1].(string)
+			actualQuery, err := extractActualQuery(cqQuery)
+			if err != nil {
+				return cqs, err
+			}
 			cqs[cqName] = cq.ContinuousQuery{
 				Name:     cqName,
 				Database: serie.Name,
-				Query:    cqQuery,
+				Query:    actualQuery,
 			}
 		}
 	}
@@ -127,12 +136,21 @@ func executeCq(c client.Client, sugar *zap.SugaredLogger, cqName string) error {
 			"func", "tradelogs-cq-manager/cq/DropACQ",
 		)
 	)
-	cq, exist := CQs[cqName]
+	cqs, err := getallCqs(c, sugar)
+	if err != nil {
+		return err
+	}
+	cq, exist := cqs[cqName]
 	if !exist {
 		logger.Debugw("cq name does not exist", "name", cqName)
 		return nil
 	}
-	return cq.Execute(c, sugar)
+
+	//execute cq
+	logger.Debugw("execute a cq", "cq", cq.Name)
+	_, err = influxdb.QueryDB(c, cq.Query, cq.Database)
+	logger.Debugw("cq query", "query", cq.Query)
+	return err
 }
 
 func run(c *cli.Context) error {

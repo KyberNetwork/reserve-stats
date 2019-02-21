@@ -15,8 +15,6 @@ import (
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
 )
 
-const ()
-
 func main() {
 	app := libapp.NewApp()
 	app.Name = "Trade Logs cqs manager"

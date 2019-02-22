@@ -108,8 +108,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		`COUNT({{.ETHAmount}}) AS {{.TotalTrade}}, MEAN(usd_amount) AS {{.USDPerTrade}}, ` +
 		`MEAN({{.ETHAmount}}) AS {{.ETHPerTrade}} INTO {{.CountryStatsMeasurementName}} FROM ` +
 		`(SELECT {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} ` +
-		`WHERE ({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') ` +
-		`OR ({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}')) GROUP BY {{.Country}}`
+		`WHERE (` + ethWETHExcludingTemp + `)) GROUP BY {{.Country}}`
 
 	tmpl, err = template.New("volCqs").Parse(volCqsTemplate)
 	if err != nil {
@@ -203,8 +202,7 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	assetVolCqsTemplate := `SELECT SUM({{.AmountType}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, ` +
 		`SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeCountryStatsMeasurement}} FROM ` +
 		`(SELECT {{.AmountType}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM ` +
-		`{{.TradeLogMeasurementName}} WHERE (({{.SrcAddr}}!='{{.ETHTokenAddr}}' AND {{.DstAddr}}!='{{.WETHTokenAddr}}') ` +
-		`OR ({{.SrcAddr}}!='{{.WETHTokenAddr}}' AND {{.DstAddr}}!='{{.ETHTokenAddr}}'))) GROUP BY {{.AmountTypeAddr}}, {{.Country}}`
+		`{{.TradeLogMeasurementName}} WHERE (` + ethWETHExcludingTemp + `)) GROUP BY {{.AmountTypeAddr}}, {{.Country}}`
 
 	queryString, err := executeCountryVolumeTemplate(assetVolCqsTemplate, logSchema.DstAmount.String(),
 		logSchema.DstAddr.String())

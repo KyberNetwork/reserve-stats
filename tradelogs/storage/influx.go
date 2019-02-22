@@ -301,7 +301,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	if !blockchain.IsZeroAddress(log.DstReserveAddress) {
 		tags[logschema.DstReserveAddr.String()] = log.DstReserveAddress.String()
 	}
-	if !blockchain.IsZeroAddress(log.WalletAddress) {
+	if !blockchain.IsZeroAddress(walletAddr) {
 		tags[logschema.WalletAddress.String()] = walletAddr.String()
 	}
 

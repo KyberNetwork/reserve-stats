@@ -8,14 +8,13 @@ import (
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 
-	"github.com/KyberNetwork/reserve-stats/tradelogs/kycupdater"
-
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/kycupdater"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
 )
 

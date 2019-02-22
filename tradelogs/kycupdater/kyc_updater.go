@@ -1,15 +1,17 @@
-package workers
+package kycupdater
 
 import (
 	"time"
+
+	"github.com/influxdata/influxdb/client/v2"
+	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
-	"github.com/urfave/cli"
-	"go.uber.org/zap"
 )
 
 // KYCUpdateJob describe a
@@ -34,9 +36,12 @@ func (ku *KYCUpdateJob) Execute(sugar *zap.SugaredLogger) error {
 }
 
 func (ku *KYCUpdateJob) update(sugar *zap.SugaredLogger) error {
-	logger := sugar.With(
-		"from", ku.from.String(),
-		"to", ku.to.String(),
+	var (
+		step   = time.Hour * 24 * 30 // 30 days
+		logger = sugar.With(
+			"from", ku.from.String(),
+			"to", ku.to.String(),
+		)
 	)
 	logger.Debugw("getting trade logs from DB")
 	c := ku.c
@@ -61,10 +66,49 @@ func (ku *KYCUpdateJob) update(sugar *zap.SugaredLogger) error {
 		tokenAmountFormatter,
 		kycChecker,
 	)
-	tradeLogs, err := influxStorage.LoadTradeLogs(ku.from, ku.to)
+
 	if err != nil {
 		return err
 	}
-	logger.Debugw("saving trade logs from DB", "n. trade logs", len(tradeLogs))
-	return influxStorage.SaveTradeLogs(tradeLogs)
+
+	for ts := ku.from; ku.to.After(ts); ts = ts.Add(step) {
+		var (
+			point     *client.Point
+			kycPoints []*client.Point
+			bp        client.BatchPoints
+		)
+		logger.Infow("updating KYC information",
+			"step_from", ts,
+			"step_to", ts.Add(step),
+		)
+
+		tradeLogs, err := influxStorage.LoadTradeLogs(ts, ts.Add(step))
+		if err != nil {
+			return err
+		}
+
+		for _, logItem := range tradeLogs {
+			if point, err = influxStorage.AssembleKYCPoint(logItem); err != nil {
+				return err
+			}
+			kycPoints = append(kycPoints, point)
+		}
+
+		bp, err = client.NewBatchPoints(client.BatchPointsConfig{
+			Database:  common.DatabaseName,
+			Precision: "s",
+		})
+		if err != nil {
+			return err
+		}
+
+		for _, p := range kycPoints {
+			bp.AddPoint(p)
+		}
+
+		if err = influxClient.Write(bp); err != nil {
+			return err
+		}
+	}
+	return nil
 }

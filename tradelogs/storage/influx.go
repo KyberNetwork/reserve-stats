@@ -360,7 +360,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		points = append(points, firstTradePoint)
 	}
 
-	kycedPoint, err := is.assembleKYCPoint(log)
+	kycedPoint, err := is.AssembleKYCPoint(log)
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +430,8 @@ func (is *InfluxStorage) userTraded(addr ethereum.Address) (bool, error) {
 	return true, nil
 }
 
-func (is *InfluxStorage) assembleKYCPoint(logItem common.TradeLog) (*client.Point, error) {
+// AssembleKYCPoint constructs kyced InfluxDB data point from given trade log.
+func (is *InfluxStorage) AssembleKYCPoint(logItem common.TradeLog) (*client.Point, error) {
 	var logger = is.sugar.With(
 		"func", "tradelogs/storage/InfluxStorage.assembleKYCPoint",
 		"timestamp", logItem.Timestamp.String(),

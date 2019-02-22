@@ -22,7 +22,7 @@ const (
 	rsvVolTemplate = `SELECT SUM({{.AmountType}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, SUM(usd_amount) AS {{.USDVolume}} ` +
 		`INTO {{.MeasurementName}} FROM ` +
 		`(SELECT {{.AmountType}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} ` +
-		` WHERE(` + ethwethExcludingTemp + `) AND {{.RsvAddressType}}!='') GROUP BY {{.AddressType}},{{.RsvAddressType}}`
+		` WHERE(` + ethWETHExcludingTemp + `) AND {{.RsvAddressType}}!='') GROUP BY {{.AddressType}},{{.RsvAddressType}}`
 )
 
 func supportedTimeZone() []string {
@@ -84,7 +84,7 @@ func CreateAssetVolumeCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 	assetVolCqsTemplate := `SELECT SUM({{.AmountType}}) AS {{.TokenVolume}}, SUM({{.ETHAmount}}) AS {{.ETHVolume}}, ` +
 		`SUM(usd_amount) AS {{.USDVolume}} INTO {{.VolumeCqMeasurement}}  ` +
 		`FROM (SELECT {{.AmountType}}, {{.ETHAmount}}, {{.ETHAmount}}*{{.ETHUSDRate}} AS usd_amount FROM {{.TradeLogMeasurementName}} ` +
-		`WHERE (` + ethwethExcludingTemp + `)) GROUP BY {{.AmountTypeAddr}}`
+		`WHERE (` + ethWETHExcludingTemp + `)) GROUP BY {{.AmountTypeAddr}}`
 
 	queryString, err := executeAssetVolumeTemplate(assetVolCqsTemplate, logSchema.DstAmount.String(),
 		common.VolumeHourMeasurementName, logSchema.DstAddr.String())

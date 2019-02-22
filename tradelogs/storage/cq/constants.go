@@ -5,5 +5,5 @@ const (
 	hourResampleFor      = "3h"
 	dayResampleInterval  = "1h"
 	dayResampleFor       = "2d"
-	ethwethExcludingTemp = `({{.SrcAddr}}!='{{.ETHTokenAddr}}' OR {{.DstAddr}}!='{{.WETHTokenAddr}}') AND ({{.SrcAddr}}!='{{.WETHTokenAddr}}' OR {{.DstAddr}}!='{{.ETHTokenAddr}}')`
+	ethWETHExcludingTemp = `({{.SrcAddr}}!='{{.ETHTokenAddr}}' OR {{.DstAddr}}!='{{.WETHTokenAddr}}') AND ({{.SrcAddr}}!='{{.WETHTokenAddr}}' OR {{.DstAddr}}!='{{.ETHTokenAddr}}')`
 )

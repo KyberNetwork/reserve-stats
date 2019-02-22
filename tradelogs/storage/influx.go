@@ -288,7 +288,6 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.SrcAddr.String():        log.SrcAddress.String(),
 		logschema.DstAddr.String():        log.DestAddress.String(),
 		logschema.IntegrationApp.String(): log.IntegrationApp,
-		logschema.WalletAddress.String():  walletAddr.String(),
 		logschema.LogIndex.String():       strconv.FormatUint(uint64(log.Index), 10),
 
 		logschema.Country.String(): log.Country,
@@ -301,6 +300,9 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 	}
 	if !blockchain.IsZeroAddress(log.DstReserveAddress) {
 		tags[logschema.DstReserveAddr.String()] = log.DstReserveAddress.String()
+	}
+	if !blockchain.IsZeroAddress(log.WalletAddress) {
+		tags[logschema.WalletAddress.String()] = walletAddr.String()
 	}
 
 	ethAmount, err := is.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)

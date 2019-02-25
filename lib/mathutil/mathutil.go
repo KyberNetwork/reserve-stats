@@ -1,15 +1,15 @@
 package mathutil
 
-// MintInt64 returns the minimum number between two given params.
-func MintInt64(a, b int64) int64 {
+// MinInt64 returns the minimum number between two given params.
+func MinInt64(a, b int64) int64 {
 	if a < b {
 		return a
 	}
 	return b
 }
 
-// MintUint64 returns the minimum number between two given params.
-func MintUint64(a, b uint64) uint64 {
+// MinUint64 returns the minimum number between two given params.
+func MinUint64(a, b uint64) uint64 {
 	if a < b {
 		return a
 	}

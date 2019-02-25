@@ -89,7 +89,7 @@ func main() {
 			EnvVar: "SHARD_DURATION",
 			Value:  defaultShardDuration,
 		},
-		libapp.NewEthereumNodeFlags(),
+		blockchain.NewEthereumNodeFlags(),
 	)
 	app.Flags = append(app.Flags, core.NewCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
@@ -118,7 +118,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	ethClient, err := libapp.NewEthereumClientFromFlag(c)
+	ethClient, err := blockchain.NewEthereumClientFromFlag(c)
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
 )
@@ -165,7 +166,7 @@ func (cq *ContinuousQuery) GetCurrentCQs(c client.Client, sugar *zap.SugaredLogg
 		qr     = "SHOW CONTINUOUS QUERIES"
 		result = make(map[string]string)
 	)
-	resp, err := queryDB(c, qr, cq.Database)
+	resp, err := influxdb.QueryDB(c, qr, cq.Database)
 	if err != nil {
 		return result, err
 	}
@@ -198,7 +199,7 @@ func (cq *ContinuousQuery) Deploy(c client.Client, sugar *zap.SugaredLogger) err
 	for _, query := range cq.queries {
 		sugar.Debugw("Executing Query", "query", query)
 
-		_, err := queryDB(c, query, cq.Database)
+		_, err := influxdb.QueryDB(c, query, cq.Database)
 		if err != nil {
 			return err
 		}
@@ -211,7 +212,7 @@ func (cq *ContinuousQuery) Deploy(c client.Client, sugar *zap.SugaredLogger) err
 func (cq *ContinuousQuery) Execute(c client.Client, sugar *zap.SugaredLogger) error {
 	for _, query := range cq.historicalQueries {
 		sugar.Debugw("Executing Query", "query", query)
-		_, err := queryDB(c, query, cq.Database)
+		_, err := influxdb.QueryDB(c, query, cq.Database)
 		if err != nil {
 			return err
 		}
@@ -236,26 +237,9 @@ func (cq *ContinuousQuery) Drop(c client.Client, sugar *zap.SugaredLogger) error
 			}
 		}
 		sugar.Debugw("Drop cq", "cq name", name)
-		if _, err := cq.queryDB(c, fmt.Sprintf("DROP CONTINUOUS QUERY %s ON %s", name, cq.Database)); err != nil {
+		if _, err := influxdb.QueryDB(c, fmt.Sprintf("DROP CONTINUOUS QUERY %s ON %s", name, cq.Database), cq.Database); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-// queryDB convenience function to query the database
-func (cq *ContinuousQuery) queryDB(c client.Client, cmd string) (res []client.Result, err error) {
-	q := client.Query{
-		Command:  cmd,
-		Database: cq.Database,
-	}
-	if response, err := c.Query(q); err == nil {
-		if response.Error() != nil {
-			return res, response.Error()
-		}
-		res = response.Results
-	} else {
-		return res, err
-	}
-	return res, nil
 }

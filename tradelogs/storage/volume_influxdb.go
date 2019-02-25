@@ -6,10 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
+	volSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/volume"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	influxModel "github.com/influxdata/influxdb/models"
 )
@@ -43,26 +44,37 @@ func getMeasurementName(baseMeasurement string, timezone int8) string {
 
 // GetReserveVolume returns the volume of a specific asset(token) from a reserve
 // between a period and with desired frequency
-func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.Token,
+func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token ethereum.Address,
 	fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
 	var (
 		rsvAddrHex   = rsvAddr.Hex()
-		tokenAddrHex = ethereum.HexToAddress(token.Address).Hex()
-		logger       = is.sugar.With("reserve Address", rsvAddr.Hex(), "func", "tradelogs/storage/InfluxStorage.GetReserveVolume", "token Address", token.Address, "from", fromTime, "to", toTime)
+		tokenAddrHex = token.Hex()
+		logger       = is.sugar.With("reserve Address", rsvAddr.Hex(), "func", "tradelogs/storage/InfluxStorage.GetReserveVolume", "token Address", token.Hex(), "from", fromTime, "to", toTime)
 	)
 	mName, ok := rsvMeasurementName[strings.ToLower(frequency)]
 	if !ok {
 		return nil, fmt.Errorf("frequency %s is not supported", frequency)
 	}
 
-	addrFilter := fmt.Sprintf("((dst_addr='%s' OR src_addr='%s') AND (dst_rsv_addr='%s' OR src_rsv_addr='%s'))", tokenAddrHex, tokenAddrHex, rsvAddrHex, rsvAddrHex)
+	addrFilter := fmt.Sprintf("((%[1]s='%[2]s' OR %[3]s='%[4]s') AND (%[5]s='%[6]s' OR %[7]s='%[8]s'))",
+		logSchema.DstAddr.String(),
+		tokenAddrHex,
+		logSchema.SrcAddr.String(),
+		tokenAddrHex,
+		logSchema.DstReserveAddr.String(),
+		rsvAddrHex,
+		logSchema.SrcReserveAddr.String(),
+		rsvAddrHex)
 	timeFilter := fmt.Sprintf("(time >='%s' AND time <= '%s')", fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
-	cmd := fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, SUM(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s) FILL(none)",
-		tokenVolumeField, ethVolumeField, fiatVolumeField, mName, timeFilter, addrFilter, frequency)
+	cmd := fmt.Sprintf("SELECT SUM(%[1]s) AS %[1]s, SUM(%[2]s) AS %[2]s, SUM(%[3]s) AS %[3]s FROM %[4]s WHERE %[5]s AND %[6]s GROUP BY time(1%[7]s) FILL(none)",
+		volSchema.TokenVolume.String(),
+		volSchema.ETHVolume.String(),
+		volSchema.USDVolume.String(),
+		mName, timeFilter, addrFilter, frequency)
 
 	logger.Debugw("query rendered", "query", cmd)
 
-	response, err := is.queryDB(is.influxClient, cmd)
+	response, err := influxdb.QueryDB(is.influxClient, cmd, is.dbName)
 	if err != nil {
 		return nil, err
 	}
@@ -73,12 +85,12 @@ func (is *InfluxStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.T
 }
 
 // GetAssetVolume returns the volume of a specific assset(token) between a period and with desired frequency
-func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime time.Time,
+func (is *InfluxStorage) GetAssetVolume(token ethereum.Address, fromTime, toTime time.Time,
 	frequency string) (map[uint64]*common.VolumeStats, error) {
 	var (
 		logger = is.sugar.With(
 			"func", "tradelogs/storage/InfluxStorage.GetAssetVolume",
-			"token", token.Address,
+			"token", token.Hex(),
 			"from", fromTime,
 			"to", toTime,
 		)
@@ -90,15 +102,18 @@ func (is *InfluxStorage) GetAssetVolume(token core.Token, fromTime, toTime time.
 	}
 
 	var (
-		tokenAddr  = ethereum.HexToAddress(token.Address).Hex()
+		tokenAddr  = token.Hex()
 		timeFilter = fmt.Sprintf("(time >='%s' AND time <= '%s')", fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
 		addrFilter = fmt.Sprintf("(dst_addr='%s' OR src_addr='%s')", tokenAddr, tokenAddr)
-		cmd        = fmt.Sprintf("SELECT SUM(token_volume) as %s, SUM(eth_volume) as %s, sum(usd_volume) as %s FROM %s WHERE %s AND %s GROUP BY time(1%s) fill(none)",
-			tokenVolumeField, ethVolumeField, fiatVolumeField, mName, timeFilter, addrFilter, frequency)
+		cmd        = fmt.Sprintf("SELECT SUM(%[1]s) AS %[1]s, SUM(%[2]s) AS %[2]s, SUM(%[3]s) AS %[3]s FROM %[4]s WHERE %[5]s AND %[6]s GROUP BY time(1%[7]s) FILL(none)",
+			volSchema.TokenVolume.String(),
+			volSchema.ETHVolume.String(),
+			volSchema.USDVolume.String(),
+			mName, timeFilter, addrFilter, frequency)
 	)
 
 	logger.Debugw("get asset volume query rendered", "query", cmd)
-	response, err := is.queryDB(is.influxClient, cmd)
+	response, err := influxdb.QueryDB(is.influxClient, cmd, is.dbName)
 
 	if err != nil {
 		return result, err
@@ -115,8 +130,12 @@ func convertQueryResultToVolume(row influxModel.Row) (map[uint64]*common.VolumeS
 	if len(row.Values) == 0 {
 		return nil, nil
 	}
+	idxs, err := volSchema.NewFieldsRegistrar(row.Columns)
+	if err != nil {
+		return result, err
+	}
 	for _, v := range row.Values {
-		ts, vol, err := convertRowValueToVolume(v)
+		ts, vol, err := convertRowValueToVolume(v, idxs)
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +144,7 @@ func convertQueryResultToVolume(row influxModel.Row) (map[uint64]*common.VolumeS
 	return result, nil
 }
 
-func convertRowValueToVolume(v []interface{}) (uint64, *common.VolumeStats, error) {
+func convertRowValueToVolume(v []interface{}, idxs volSchema.FieldsRegistrar) (uint64, *common.VolumeStats, error) {
 	// number of fields in record result
 	// - time
 	// - token_volume
@@ -135,7 +154,7 @@ func convertRowValueToVolume(v []interface{}) (uint64, *common.VolumeStats, erro
 		return 0, nil, errors.New("value fields is empty")
 	}
 
-	timestampString, ok := v[0].(string)
+	timestampString, ok := v[idxs[volSchema.Time]].(string)
 	if !ok {
 		return 0, nil, errCantConvert
 	}
@@ -144,15 +163,15 @@ func convertRowValueToVolume(v []interface{}) (uint64, *common.VolumeStats, erro
 		return 0, nil, err
 	}
 	tsUint64 := timeutil.TimeToTimestampMs(ts)
-	volume, err := influxdb.GetFloat64FromInterface(v[1])
+	volume, err := influxdb.GetFloat64FromInterface(v[idxs[volSchema.TokenVolume]])
 	if err != nil {
 		return 0, nil, err
 	}
-	ethVolume, err := influxdb.GetFloat64FromInterface(v[2])
+	ethVolume, err := influxdb.GetFloat64FromInterface(v[idxs[volSchema.ETHVolume]])
 	if err != nil {
 		return 0, nil, err
 	}
-	usdVolume, err := influxdb.GetFloat64FromInterface(v[3])
+	usdVolume, err := influxdb.GetFloat64FromInterface(v[idxs[volSchema.USDVolume]])
 	if err != nil {
 		return 0, nil, err
 	}

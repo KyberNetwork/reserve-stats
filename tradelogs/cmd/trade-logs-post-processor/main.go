@@ -31,23 +31,6 @@ func main() {
 	}
 }
 
-// queryDB convenience function to query the database
-func queryDB(clnt client.Client, cmd string) (res []client.Result, err error) {
-	q := client.Query{
-		Command:  cmd,
-		Database: storage.TradeLogsDatabase,
-	}
-	if response, err := clnt.Query(q); err == nil {
-		if response.Error() != nil {
-			return res, response.Error()
-		}
-		res = response.Results
-	} else {
-		return res, err
-	}
-	return res, nil
-}
-
 func fromInfluxResultToMap(res []client.Result, sugar *zap.SugaredLogger, tagKeys string) (map[string]storage.ReserveVolume, error) {
 	var (
 		result = make(map[string]storage.ReserveVolume)
@@ -100,14 +83,14 @@ func run(c *cli.Context) error {
 	// get first timestamp from db
 	q := fmt.Sprintf(`SELECT eth_volume from %s ORDER BY DESC LIMIT 1`, storage.ReportMeasurement)
 	sugar.Info(q)
-	res, err := queryDB(influxClient, q)
+	res, err := influxdb.QueryDB(influxClient, q, storage.TradeLogsDatabase)
 	if err != nil {
 		return err
 	}
 	sugar.Info(fmt.Sprintf("%+v", res))
 	if len(res) != 1 || len(res[0].Series) != 1 || len(res[0].Series[0].Values) < 1 || len(res[0].Series[0].Values[0]) != 2 {
 		q = fmt.Sprintf(`SELECT eth_amount FROM trades ORDER BY ASC LIMIT 1`)
-		res, err := queryDB(influxClient, q)
+		res, err := influxdb.QueryDB(influxClient, q, storage.TradeLogsDatabase)
 		if err != nil {
 			return err
 		}
@@ -144,7 +127,7 @@ func run(c *cli.Context) error {
 
 		sugar.Debug("src query ", query)
 
-		res, err := queryDB(influxClient, query)
+		res, err := influxdb.QueryDB(influxClient, query, storage.TradeLogsDatabase)
 		if err != nil {
 			return err
 		}
@@ -164,7 +147,7 @@ func run(c *cli.Context) error {
 
 		sugar.Debug("dst query ", query)
 
-		res, err = queryDB(influxClient, query)
+		res, err = influxdb.QueryDB(influxClient, query, storage.TradeLogsDatabase)
 		if err != nil {
 			return err
 		}
@@ -197,7 +180,7 @@ func run(c *cli.Context) error {
 
 		sugar.Debug("query ", query)
 
-		_, err = queryDB(influxClient, query)
+		_, err = influxdb.QueryDB(influxClient, query, storage.TradeLogsDatabase)
 		if err != nil {
 			return err
 		}
@@ -210,7 +193,7 @@ func run(c *cli.Context) error {
 
 		sugar.Debug("query ", query)
 
-		_, err = queryDB(influxClient, query)
+		_, err = influxdb.QueryDB(influxClient, query, storage.TradeLogsDatabase)
 		if err != nil {
 			return err
 		}
@@ -226,7 +209,7 @@ func run(c *cli.Context) error {
 		)
 		sugar.Debug("query ", query)
 
-		_, err = queryDB(influxClient, query)
+		_, err = influxdb.QueryDB(influxClient, query, storage.TradeLogsDatabase)
 		if err != nil {
 			return err
 		}

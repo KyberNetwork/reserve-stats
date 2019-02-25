@@ -1,37 +1,129 @@
 package cq
 
-import "github.com/KyberNetwork/reserve-stats/lib/cq"
+import (
+	"bytes"
+	"text/template"
+
+	"github.com/KyberNetwork/reserve-stats/lib/cq"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
+)
+
+func executeWalletFeeTemplate(templateString, walletFeeAmount, measurementName, reserveAddr string) (string, error) {
+	tmpl, err := template.New("burnFee").Parse(templateString)
+	if err != nil {
+		return "", err
+	}
+	var queryBuf bytes.Buffer
+	if err = tmpl.Execute(&queryBuf, struct {
+		WalletFeeAmount      string
+		MeasurementName      string
+		TradeMeasurementName string
+		ReserveAddress       string
+		WalletAddress        string
+	}{
+		WalletFeeAmount:      walletFeeAmount,
+		MeasurementName:      measurementName,
+		TradeMeasurementName: common.TradeLogMeasurementName,
+		ReserveAddress:       reserveAddr,
+		WalletAddress:        logSchema.WalletAddress.String(),
+	}); err != nil {
+		return "", err
+	}
+	return queryBuf.String(), nil
+}
 
 // CreateWalletFeeCqs return a set of cqs required for burnfee aggregation
 func CreateWalletFeeCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 	var (
 		result []*cq.ContinuousQuery
 	)
-	walletFeeHourCqs, err := cq.NewContinuousQuery(
-		"wallet_fee_hour",
+	queryTmpl := `SELECT SUM({{.WalletFeeAmount}}) as sum_amount INTO {{.MeasurementName}} 
+	FROM {{.TradeMeasurementName}} WHERE {{.ReserveAddress}} != '' GROUP BY {{.ReserveAddress}}, {{.WalletAddress}}`
+
+	queryString, err := executeWalletFeeTemplate(queryTmpl, logSchema.SourceWalletFeeAmount.String(),
+		common.WalletFeeVolumeMeasurementHour, logSchema.SrcReserveAddr.String())
+
+	if err != nil {
+		return nil, err
+	}
+
+	srcWalletFeeHourCqs, err := cq.NewContinuousQuery(
+		"src_wallet_fee_hour",
 		dbName,
 		hourResampleInterval,
 		hourResampleFor,
-		"SELECT SUM(amount) as sum_amount INTO wallet_fee_hour FROM wallet_fees GROUP BY reserve_addr, wallet_addr",
+		queryString,
 		"1h",
 		[]string{},
 	)
 	if err != nil {
 		return nil, err
 	}
-	result = append(result, walletFeeHourCqs)
-	walletFeeDayCqs, err := cq.NewContinuousQuery(
-		"wallet_fee_day",
+	result = append(result, srcWalletFeeHourCqs)
+
+	queryString, err = executeWalletFeeTemplate(queryTmpl, logSchema.DestWalletFeeAmount.String(),
+		common.WalletFeeVolumeMeasurementHour, logSchema.DstReserveAddr.String())
+
+	if err != nil {
+		return nil, err
+	}
+
+	dstWalletFeeHourCqs, err := cq.NewContinuousQuery(
+		"dst_wallet_fee_hour",
+		dbName,
+		hourResampleInterval,
+		hourResampleFor,
+		queryString,
+		"1h",
+		[]string{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, dstWalletFeeHourCqs)
+
+	queryString, err = executeWalletFeeTemplate(queryTmpl, logSchema.SourceWalletFeeAmount.String(),
+		common.WalletFeeVolumeMeasurementDay, logSchema.SrcReserveAddr.String())
+
+	if err != nil {
+		return nil, err
+	}
+
+	srcWalletFeeDayCqs, err := cq.NewContinuousQuery(
+		"src_wallet_fee_day",
 		dbName,
 		dayResampleInterval,
 		dayResampleFor,
-		"SELECT SUM(amount) as sum_amount INTO wallet_fee_day FROM wallet_fees GROUP BY reserve_addr, wallet_addr",
+		queryString,
 		"1d",
 		[]string{},
 	)
 	if err != nil {
 		return nil, err
 	}
-	result = append(result, walletFeeDayCqs)
+	result = append(result, srcWalletFeeDayCqs)
+
+	queryString, err = executeWalletFeeTemplate(queryTmpl, logSchema.DestWalletFeeAmount.String(),
+		common.WalletFeeVolumeMeasurementDay, logSchema.DstReserveAddr.String())
+
+	if err != nil {
+		return nil, err
+	}
+
+	dstWalletFeeDayCqs, err := cq.NewContinuousQuery(
+		"dst_wallet_fee_day",
+		dbName,
+		dayResampleInterval,
+		dayResampleFor,
+		queryString,
+		"1d",
+		[]string{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, dstWalletFeeDayCqs)
+
 	return result, nil
 }

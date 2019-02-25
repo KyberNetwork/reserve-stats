@@ -6,7 +6,6 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/app-names"
 	lipappnames "github.com/KyberNetwork/reserve-stats/lib/appnames"
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
@@ -21,15 +20,13 @@ const (
 )
 
 // NewServer returns an instance of HttpApi to serve trade logs.
-func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, sett core.Interface,
-	options ...ServerOption) *Server {
+func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, options ...ServerOption) *Server {
 	var (
 		logger = sugar.With("func", "tradelogs/http/NewServer")
 		sv     = &Server{
-			storage:     storage,
-			host:        host,
-			sugar:       sugar,
-			coreSetting: sett,
+			storage: storage,
+			host:    host,
+			sugar:   sugar,
 		}
 	)
 
@@ -72,7 +69,6 @@ type Server struct {
 	storage          storage.Interface
 	host             string
 	sugar            *zap.SugaredLogger
-	coreSetting      core.Interface
 	getAddrToAppName func() (map[ethereum.Address]string, error)
 	getUserProfile   func(ethereum.Address) (userprofile.UserProfile, error)
 }

@@ -4,17 +4,15 @@ import (
 	"log"
 	"os"
 
-	"github.com/urfave/cli"
-
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/appnames"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/http"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	"github.com/urfave/cli"
 )
 
 func main() {
@@ -34,12 +32,6 @@ func main() {
 		defer logger.Sync()
 
 		sugar := logger.Sugar()
-		coreClient, err := core.NewClientFromContext(sugar, c)
-		if err != nil {
-			return err
-		}
-
-		coreCachedClient := core.NewCachedClient(coreClient)
 		tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
 		if err != nil {
 			return err
@@ -83,8 +75,7 @@ func main() {
 			options = append(options, http.WithUserProfile(cachedUserClient))
 		}
 		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c),
-			sugar, coreCachedClient,
-			options...)
+			sugar, options...)
 		err = api.Start()
 		if err != nil {
 			return err
@@ -99,8 +90,7 @@ func main() {
 
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.TradeLogsPort)...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
-	app.Flags = append(app.Flags, core.NewCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewEthereumNodeFlags())
+	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, appnames.NewCliFlags()...)
 	app.Flags = append(app.Flags, userprofile.NewCliFlags()...)
 

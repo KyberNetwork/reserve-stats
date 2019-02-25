@@ -5,26 +5,25 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	heatMapSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/heatmap"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 //GetTokenHeatmap return list ordered country by asset volume
-func (is *InfluxStorage) GetTokenHeatmap(asset core.Token, from, to time.Time, timezone int8) (map[string]common.Heatmap, error) {
+func (is *InfluxStorage) GetTokenHeatmap(asset ethereum.Address, from, to time.Time, timezone int8) (map[string]common.Heatmap, error) {
 	var (
-		err             error
-		result          = make(map[string]common.Heatmap)
-		tokenAddr       = ethereum.HexToAddress(asset.Address).Hex()
-		measurementName = "volume_country_stats"
+		err       error
+		result    = make(map[string]common.Heatmap)
+		tokenAddr = asset.Hex()
 	)
 
-	measurementName = getMeasurementName(measurementName, timezone)
+	measurementName := getMeasurementName(common.VolumeCountryStatsMeasurement, timezone)
 
 	logger := is.sugar.With(
 		"func", "tradelogs/storage/InfluxStorage.GetTokenHeatmap",
-		"asset", asset.ID,
+		"asset", asset.Hex(),
 		"from", from,
 		"to", to,
 	)
@@ -37,7 +36,7 @@ func (is *InfluxStorage) GetTokenHeatmap(asset core.Token, from, to time.Time, t
 
 	// logger.Debug(tradeQuery)
 
-	// tradeResponse, err := is.queryDB(is.influxClient, tradeQuery)
+	// tradeResponse, err := influxdb.QueryDB(is.influxClient, tradeQuery, is.dbName)
 	// if err != nil {
 	// 	return result, err
 	// }
@@ -66,13 +65,23 @@ func (is *InfluxStorage) GetTokenHeatmap(asset core.Token, from, to time.Time, t
 	// }
 
 	volumeQuery := fmt.Sprintf(`
-	SELECT SUM(eth_volume) as eth_volume, SUM(token_volume) as token_volume, SUM(usd_volume) as usd_volume from %s
-	WHERE (dst_addr='%s' or src_addr='%s') and (time >= '%s' AND time <= '%s') GROUP BY country
-	`, measurementName, tokenAddr, tokenAddr, from.UTC().Format(time.RFC3339), to.UTC().Format(time.RFC3339))
+	SELECT SUM(%[1]s) as %[1]s, SUM(%[2]s) as %[2]s, SUM(%[3]s) as %[3]s from %[4]s
+	WHERE (%[5]s='%[6]s' or %[7]s='%[6]s') and (time >= '%[8]s' AND time <= '%[9]s') GROUP BY %[10]s`,
+		heatMapSchema.ETHVolume.String(),
+		heatMapSchema.TokenVolume.String(),
+		heatMapSchema.USDVolume.String(),
+		measurementName,
+		heatMapSchema.DstAddress.String(),
+		tokenAddr,
+		heatMapSchema.SrcAddress.String(),
+		from.UTC().Format(time.RFC3339),
+		to.UTC().Format(time.RFC3339),
+		heatMapSchema.Country.String(),
+	)
 
 	logger.Debug(volumeQuery)
 
-	volumeResponse, err := is.queryDB(is.influxClient, volumeQuery)
+	volumeResponse, err := influxdb.QueryDB(is.influxClient, volumeQuery, is.dbName)
 	if err != nil {
 		return result, err
 	}
@@ -82,19 +91,23 @@ func (is *InfluxStorage) GetTokenHeatmap(asset core.Token, from, to time.Time, t
 			logger.Debug(s.Values)
 			return result, errors.New("values field is invalid in len")
 		}
-		country := s.Tags["country"]
+		idxs, err := heatMapSchema.NewFieldsRegistrar(s.Columns)
+		if err != nil {
+			return result, err
+		}
+		country := s.Tags[heatMapSchema.Country.String()]
 		if country == "" {
 			country = "unknown"
 		}
-		ethVolume, err := influxdb.GetFloat64FromInterface(s.Values[0][1])
+		ethVolume, err := influxdb.GetFloat64FromInterface(s.Values[0][idxs[heatMapSchema.ETHVolume]])
 		if err != nil {
 			return result, err
 		}
-		tokenVolume, err := influxdb.GetFloat64FromInterface(s.Values[0][2])
+		tokenVolume, err := influxdb.GetFloat64FromInterface(s.Values[0][idxs[heatMapSchema.TokenVolume]])
 		if err != nil {
 			return result, err
 		}
-		usdVolume, err := influxdb.GetFloat64FromInterface(s.Values[0][3])
+		usdVolume, err := influxdb.GetFloat64FromInterface(s.Values[0][idxs[heatMapSchema.USDVolume]])
 		if err != nil {
 			return result, err
 		}

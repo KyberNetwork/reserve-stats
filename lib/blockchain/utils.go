@@ -11,6 +11,7 @@ var notBurnTokens = map[ethereum.Address]struct{}{
 	ETHAddr:  {},
 	WETHAddr: {},
 	KCCAddr:  {},
+	PTAddr:   {},
 }
 
 // floatToBigInt converts a float to a big int with specific decimal
@@ -36,4 +37,9 @@ func EthToWei(n float64) *big.Int {
 func IsBurnable(token ethereum.Address) bool {
 	_, notBurn := notBurnTokens[token]
 	return !notBurn
+}
+
+//IsZeroAddress return if address is zero
+func IsZeroAddress(address ethereum.Address) bool {
+	return address.Hex() == "0x0000000000000000000000000000000000000000"
 }

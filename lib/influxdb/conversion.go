@@ -12,6 +12,9 @@ import (
 // GetAddressFromInterface converts given value to ethereum address.
 func GetAddressFromInterface(value interface{}) (common.Address, error) {
 	var address common.Address
+	if value == nil {
+		return common.Address{}, nil
+	}
 	s, ok := value.(string)
 	if !ok {
 		return address, fmt.Errorf("invalid address value %v", value)

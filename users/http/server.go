@@ -1,19 +1,22 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/KyberNetwork/tokenrate"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"              // import custom validator functions
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
-	"github.com/KyberNetwork/tokenrate"
 	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 //NewServer return new server instance
@@ -23,7 +26,7 @@ func NewServer(sugar *zap.SugaredLogger, rateProvider tokenrate.ETHUSDRateProvid
 	r := gin.Default()
 	return &Server{
 		sugar:         sugar,
-		rateProvider:  newCachedRateProvider(sugar, rateProvider, time.Hour),
+		rateProvider:  httputil.NewCachedRateProvider(sugar, rateProvider, time.Hour),
 		storage:       storage,
 		r:             r,
 		host:          host,
@@ -41,8 +44,40 @@ type Server struct {
 	influxStorage *storage.InfluxStorage
 }
 
+type userQuery struct {
+	UserAddr  string `form:"address" binding:"isAddress"`
+	TimeStamp uint64 `form:"time" binding:"required"`
+}
+
+func (s *Server) isKyced(c *gin.Context) {
+	var query userQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		httputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
+	kyced, err := s.storage.IsKYCedAtTime(query.UserAddr, timeutil.TimestampMsToTime(query.TimeStamp))
+	if err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			fmt.Errorf("failed to check kyc status: %s", err.Error()),
+		)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		gin.H{
+			"kyced": kyced,
+		},
+	)
+}
+
 //getTransactionLimit returns cap limit of a user.
 func (s *Server) getTransactionLimit(c *gin.Context) {
+	var logger = s.sugar.With(
+		"func", "users/http/Server.getTransactionLimit",
+	)
+
 	address := c.Query("address")
 	if !ethereum.IsHexAddress(address) {
 		httputil.ResponseFailure(
@@ -52,7 +87,10 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 		)
 		return
 	}
-	kyced, err := s.storage.IsKYCed(address)
+
+	logger = logger.With("address", address)
+
+	kyced, err := s.storage.IsKYCedAtTime(address, time.Now())
 	if err != nil {
 		httputil.ResponseFailure(
 			c,
@@ -77,10 +115,12 @@ func (s *Server) getTransactionLimit(c *gin.Context) {
 	txLimit := blockchain.EthToWei(uc.TxLimit / rate)
 	rich, err := s.influxStorage.IsExceedDailyLimit(address, uc.DailyLimit)
 	if err != nil {
+		var errMsg = "could not retrieve user volume"
+		logger.Errorw(errMsg, "err", err.Error())
 		httputil.ResponseFailure(
 			c,
 			http.StatusInternalServerError,
-			err,
+			errors.New(errMsg),
 		)
 		return
 	}
@@ -121,6 +161,7 @@ func (s *Server) createOrUpdate(c *gin.Context) {
 
 func (s *Server) register() {
 	s.r.GET("/users", s.getTransactionLimit)
+	s.r.GET("/kyced", s.isKyced)
 	s.r.POST("/users", s.createOrUpdate)
 }
 

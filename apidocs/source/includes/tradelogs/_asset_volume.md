@@ -1,7 +1,7 @@
 ## Asset volume
 
 ```shell
-curl -X GET "http://gateway.local/asset-volume?asset=ETH&from=1541548800000&to=1541635199999&freq=d"
+curl -X GET "http://gateway.local/asset-volume?asset=0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee&from=1541548800000&to=1541635199999&freq=d"
 ```
 
 > the above command returns JSON structure like this:
@@ -29,7 +29,7 @@ This endpoint return the volume of a specific token in a time range **from** a p
 
 Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
-asset | string | true | null | 
+asset | string | true | null | address of token to get asset volume for 
 from | integer | false | one hour before present | from stamp to get asset volume
 to | integer | false | now | endpoint timestamp to get asset volume
 freq | string | false | h | frequency of aggregation (d for day, and h for hour)

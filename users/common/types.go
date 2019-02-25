@@ -1,5 +1,10 @@
 package common
 
+import "math/big"
+
+//DefaultDB is default db for user postgres database
+const DefaultDB = "users"
+
 var (
 	nonKYCCap = &UserCap{
 		DailyLimit: 15000.0,
@@ -17,6 +22,13 @@ type Info struct {
 	Address string `json:"address" binding:"required,isAddress"`
 	//Timestamp return timestamp of adding address
 	Timestamp int64 `json:"timestamp" binding:"required"`
+}
+
+//UserResponse is reponse to user api
+type UserResponse struct {
+	Cap   *big.Int `json:"cap"`
+	KYCed bool     `json:"kyced"`
+	Rich  bool     `json:"rich"`
 }
 
 //UserData user data post through post request to store in stats database

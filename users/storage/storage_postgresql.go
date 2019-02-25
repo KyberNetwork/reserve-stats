@@ -1,12 +1,17 @@
 package storage
 
 import (
-	"database/sql"
 	"fmt"
+	"strings"
+	"time"
 
-	"github.com/KyberNetwork/reserve-stats/users/common"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
+	"github.com/KyberNetwork/reserve-stats/users/common"
 )
 
 const (
@@ -28,13 +33,15 @@ func (udb *UserDB) DeleteAllTables() error {
 
 //NewDB open a new database connection
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*UserDB, error) {
-	const schemaFmt = `
-CREATE TABLE IF NOT EXISTS "%s" (
-  id    SERIAL PRIMARY KEY,
-  email text NOT NULL UNIQUE
+	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%s"
+(
+  id           SERIAL PRIMARY KEY,
+  email        text      NOT NULL UNIQUE,
+  last_updated TIMESTAMP NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "%s" (
+CREATE TABLE IF NOT EXISTS "%s"
+(
   id        SERIAL PRIMARY KEY,
   address   text      NOT NULL UNIQUE,
   timestamp TIMESTAMP NOT NULL,
@@ -48,15 +55,13 @@ CREATE TABLE IF NOT EXISTS "%s" (
 		return nil, err
 	}
 
+	defer pgsql.CommitOrRollback(tx, logger, &err)
+
 	logger.Debug("initializing database schema")
 	if _, err = tx.Exec(fmt.Sprintf(schemaFmt, usersTableName, addressesTableName)); err != nil {
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
-
-	if err = tx.Commit(); err != nil {
-		return nil, err
-	}
 
 	return &UserDB{
 		sugar: sugar,
@@ -73,66 +78,101 @@ func (udb *UserDB) Close() error {
 func (udb *UserDB) CreateOrUpdate(userData common.UserData) error {
 	var (
 		logger = udb.sugar.With(
-			"func", "users/storage.NewDB",
+			"func", "users/storage.CreateOrUpdate",
 			"email", userData.Email,
 		)
-		userID int
+		stmt       string
+		addresses  []string
+		timestamps []int64
 	)
+
+	for _, ui := range userData.UserInfo {
+		address := ethereum.HexToAddress(ui.Address)
+		addresses = append(addresses, address.Hex())
+	}
+	for _, ui := range userData.UserInfo {
+		timestamps = append(timestamps, ui.Timestamp)
+	}
 
 	tx, err := udb.db.Beginx()
 	if err != nil {
 		return err
 	}
 
-	err = tx.Get(&userID, fmt.Sprintf(`SELECT id FROM "%s" WHERE email = $1;`, usersTableName), userData.Email)
-	if err == sql.ErrNoRows {
-		logger.Debug("user does not exist, creating")
-		row := tx.QueryRowx(`INSERT INTO users (email) VALUES ($1) RETURNING id;`, userData.Email)
-		if err = row.Scan(&userID); err != nil {
-			return err
-		}
-		logger = logger.With("user_id", userID)
-		logger.Debug("user is created")
-	} else if err != nil {
-		return err
-	} else {
-		logger = logger.With("user_id", userID)
-		logger.Debug("user already exists")
-	}
+	defer pgsql.CommitOrRollback(tx, logger, &err)
 
-	// client will submit all registered addresses every time
-	_, err = tx.Exec(fmt.Sprintf(`
-	DELETE FROM "%s" WHERE user_id = $1
-`, addressesTableName), userID)
+	stmt = fmt.Sprintf(`WITH u AS (
+  INSERT INTO "%s" (email, last_updated)
+    VALUES ($1, NOW())
+    ON CONFLICT ON CONSTRAINT users_email_key
+      DO UPDATE SET last_updated = NOW() RETURNING id
+),
+     a AS (
+       SELECT unnest($2::text[])             AS address,
+              unnest($3::double precision[]) AS timestamp
+     )
+INSERT
+INTO "%s"(address, timestamp, user_id)
+SELECT a.address, to_timestamp(a.timestamp / 1000), u.id
+FROM u NATURAL JOIN a
+ON CONFLICT ON CONSTRAINT addresses_address_key DO UPDATE SET timestamp = EXCLUDED.timestamp, user_id = EXCLUDED.user_id
+`,
+		usersTableName,
+		addressesTableName)
+	logger.Debugw("upsert email and Ethereum addresses",
+		"stmt", stmt)
+	_, err = tx.Exec(stmt,
+		userData.Email,
+		pq.StringArray(addresses),
+		pq.Int64Array(timestamps),
+	)
 	if err != nil {
 		return err
 	}
-	for _, info := range userData.UserInfo {
-		logger.Debugw("updating user address",
-			"address", info.Address,
-			"timestamp", info.Timestamp,
-		)
-		_, err = tx.Exec(fmt.Sprintf(`
-INSERT INTO "%s" (address, timestamp, user_id)
-VALUES ($1, (TO_TIMESTAMP($2::double precision/1000)), $3);
-`, addressesTableName),
-			info.Address,
-			info.Timestamp,
-			userID)
-		if err != nil {
-			return err
-		}
-	}
 
-	return tx.Commit()
+	logger.Debugw("delete removed Ethereum addresses",
+		"stmt", stmt)
+	stmt = fmt.Sprintf(`DELETE
+FROM "%s"
+WHERE user_id IN (SELECT id AS user_id FROM "%s" WHERE email = $1)
+ AND address NOT IN (SELECT unnest($2::text[]) as address)
+`,
+		addressesTableName,
+		usersTableName)
+	_, err = tx.Exec(stmt,
+		userData.Email,
+		pq.StringArray(addresses))
+	if err != nil {
+		return err
+	}
+	return err
 }
 
-//IsKYCed returns true when given address is found in database,
-// means that user is already KYCed.
-func (udb *UserDB) IsKYCed(address string) (bool, error) {
-	var count int
-	if err := udb.db.Get(&count, fmt.Sprintf(`SELECT COUNT(1) FROM "%s" WHERE address = $1`, addressesTableName), address); err != nil {
+//GetAllAddresses return all user address info from addresses table
+func (udb *UserDB) GetAllAddresses() ([]string, error) {
+	var result []string
+	if err := udb.db.Select(&result, fmt.Sprintf(`SELECT address FROM "%s"`, addressesTableName)); err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+//IsKYCedAtTime returns true when given address is found in database before a given timestamp,
+// means that user is already KYCed before that time
+func (udb *UserDB) IsKYCedAtTime(userAddr string, ts time.Time) (bool, error) {
+	var (
+		logger = udb.sugar.With(
+			"func", "users/storage/UserDB.IsKYCedAtTime",
+			"user_addr", userAddr,
+			"timestamp", ts.String(),
+		)
+		result uint64
+	)
+	stmt := fmt.Sprintf(`SELECT COUNT(1) FROM "%s" WHERE address = $1 AND timestamp <= $2`, addressesTableName)
+	logger = logger.With("query", stmt)
+	if err := udb.db.Get(&result, stmt, strings.ToLower(userAddr), ts.UTC()); err != nil {
 		return false, err
 	}
-	return count > 0, nil
+	logger.Debugw("got result from database", "result", result)
+	return result != 0, nil
 }

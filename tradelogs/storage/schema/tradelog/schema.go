@@ -11,8 +11,6 @@ const (
 	BlockNumber //block_number
 	//TxHash is enumerated field name for tradeLog.TxHash
 	TxHash //tx_hash
-	//EthReceivalSender is enumerated field name for TradeLog.EtherReceivalSender
-	EthReceivalSender //eth_receival_sender
 	//UserAddr is enumerated field name for TradeLog.UserAddr
 	UserAddr //user_addr
 	//SrcAddr is enumerated field name for TradeLog.SrcAddr
@@ -29,8 +27,6 @@ const (
 	DstReserveAddr // dst_rsv_addr
 	//SrcReserveAddr is enumerated field for source reserve Address
 	SrcReserveAddr // src_rsv_addr
-	//EthReceivalAmount is the enumerated field for ETHReceivalAmount
-	EthReceivalAmount // eth_receival_amount
 	//SrcAmount is the enumerated field for source amount
 	SrcAmount //src_amount
 	//DstAmount is the enumerated field for source amount
@@ -47,29 +43,39 @@ const (
 	WalletAddress //wallet_addr
 	//LogIndex is the index of the log in that block
 	LogIndex //log_index
+	//SourceBurnAmount is the name of burnFee amount  for source rsv
+	SourceBurnAmount //src_burn_amount
+	//DestBurnAmount is the name of burnFee amount for dst rsv
+	DestBurnAmount //dst_burn_amount
+	//SourceWalletFeeAmount is the name of wallet fee Amount for source rsv
+	SourceWalletFeeAmount //src_wallet_fee_amount
+	//DestWalletFeeAmount is the name of dest wallet fee Amount for dest rsv
+	DestWalletFeeAmount //dst_wallet_fee_amount
 )
 
 //tradeLogSchemaFields translates the stringer of reserveRate fields into its enumerated form
 var tradeLogSchemaFields = map[string]FieldName{
-	"time":                Time,
-	"block_number":        BlockNumber,
-	"tx_hash":             TxHash,
-	"eth_receival_sender": EthReceivalSender,
-	"user_addr":           UserAddr,
-	"src_addr":            SrcAddr,
-	"dst_addr":            DstAddr,
-	"country":             Country,
-	"ip":                  IP,
-	"eth_rate_provider":   EthUSDProvider,
-	"dst_rsv_addr":        DstReserveAddr,
-	"src_rsv_addr":        SrcReserveAddr,
-	"eth_receival_amount": EthReceivalAmount,
-	"src_amount":          SrcAmount,
-	"dst_amount":          DstAmount,
-	"eth_usd_rate":        EthUSDRate,
-	"eth_amount":          EthAmount,
-	"fiat_amount":         FiatAmount,
-	"log_index":           LogIndex,
-	"integration_app":     IntegrationApp,
-	"wallet_addr":         WalletAddress,
+	"time":                  Time,
+	"block_number":          BlockNumber,
+	"tx_hash":               TxHash,
+	"user_addr":             UserAddr,
+	"src_addr":              SrcAddr,
+	"dst_addr":              DstAddr,
+	"country":               Country,
+	"ip":                    IP,
+	"eth_rate_provider":     EthUSDProvider,
+	"dst_rsv_addr":          DstReserveAddr,
+	"src_rsv_addr":          SrcReserveAddr,
+	"src_amount":            SrcAmount,
+	"dst_amount":            DstAmount,
+	"eth_usd_rate":          EthUSDRate,
+	"eth_amount":            EthAmount,
+	"fiat_amount":           FiatAmount,
+	"log_index":             LogIndex,
+	"integration_app":       IntegrationApp,
+	"wallet_addr":           WalletAddress,
+	"src_burn_amount":       SourceBurnAmount,
+	"dst_burn_amount":       DestBurnAmount,
+	"src_wallet_fee_amount": SourceWalletFeeAmount,
+	"dst_wallet_fee_amount": DestWalletFeeAmount,
 }

@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/tokenrate"
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
@@ -66,25 +67,8 @@ func (ef *ETHUSDRateFetcher) FetchRates(blockNumber uint64, timestamp time.Time)
 
 // createDB creates the database will be used for storing trade logs measurements.
 func (ef *ETHUSDRateFetcher) createDB() error {
-	_, err := ef.queryDB(ef.influxClient, fmt.Sprintf("CREATE DATABASE %s", ef.dbName))
+	_, err := influxdb.QueryDB(ef.influxClient, fmt.Sprintf("CREATE DATABASE %s", ef.dbName), ef.dbName)
 	return err
-}
-
-// queryDB convenience function to query the database
-func (ef *ETHUSDRateFetcher) queryDB(clnt client.Client, cmd string) (res []client.Result, err error) {
-	q := client.Query{
-		Command:  cmd,
-		Database: ef.dbName,
-	}
-	if response, err := clnt.Query(q); err == nil {
-		if response.Error() != nil {
-			return res, response.Error()
-		}
-		res = response.Results
-	} else {
-		return res, err
-	}
-	return res, nil
 }
 
 //SaveTokenRate into influx

@@ -2,11 +2,10 @@ package workers
 
 import (
 	"errors"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"sync"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
@@ -26,6 +25,7 @@ type FetcherJob struct {
 	block    uint64
 	attempts int
 	addrs    []string
+	crawler  *crawler.ReserveRatesCrawler
 }
 
 // NewFetcherJob return an instance of FetcherJob
@@ -37,6 +37,7 @@ func NewFetcherJob(c *cli.Context, order int, block uint64, addrs []string, atte
 		attempts: attempts,
 		addrs:    addrs,
 	}
+
 }
 
 // retry the given fn function for attempts time with sleep duration between before returns an error.
@@ -60,18 +61,17 @@ func retry(fn func(*zap.SugaredLogger) (map[string]map[string]common.ReserveRate
 }
 
 func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (map[string]map[string]common.ReserveRateEntry, error) {
-
-	client, err := app.NewEthereumClientFromFlag(fj.c)
+	client, err := blockchain.NewEthereumClientFromFlag(fj.c)
 	if err != nil {
 		return nil, err
 	}
 
-	coreClient, err := core.NewClientFromContext(sugar, fj.c)
+	symbolResolver, err := blockchain.NewTokenSymbolFromContext(fj.c)
 	if err != nil {
 		return nil, err
 	}
 
-	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, fj.addrs, client, coreClient)
+	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, fj.addrs, client, symbolResolver)
 	if err != nil {
 		return nil, err
 	}

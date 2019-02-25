@@ -41,11 +41,11 @@ func (c *mockCore) ToWei(ethereum.Address, float64) (*big.Int, error) {
 	return nil, nil
 }
 
-func (s *mockStorage) GetReserveVolume(rsvAddr ethereum.Address, token core.Token, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
+func (s *mockStorage) GetReserveVolume(rsvAddr ethereum.Address, token ethereum.Address, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
 	return nil, nil
 }
 
-func (s *mockStorage) GetAssetVolume(token core.Token, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
+func (s *mockStorage) GetAssetVolume(token ethereum.Address, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
 	from := timeutil.TimeToTimestampMs(fromTime)
 	to := timeutil.TimeToTimestampMs(toTime)
 	var (
@@ -71,7 +71,7 @@ func TestAssetVolumeHttp(t *testing.T) {
 		invalidFrom = "xxxx"
 		validTo     = 1539302400000
 		// mock core only return ETH, KNC is not in the list of mock core's clients
-		validAsset               = "ETH"
+		validAsset               = core.ETHToken.Address
 		invalidAsset             = "KNC"
 		invalidFromInputEndpoint = fmt.Sprintf("%s?from=%s&to=%d&asset=%s&freq=%s", endpoint, invalidFrom, validTo, validAsset, freq)
 		invalidAssetEndpoint     = fmt.Sprintf("%s?from=%s&to=%d&asset=%s&freq=%s", endpoint, invalidFrom, validTo, invalidAsset, freq)

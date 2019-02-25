@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/priceanalytics/common"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
@@ -48,6 +49,8 @@ CREATE TABLE IF NOT EXISTS "%s" (
 		return nil, err
 	}
 
+	defer pgsql.CommitOrRollback(tx, logger, &err)
+
 	logger.Debug("initializing database schema")
 
 	if _, err = tx.Exec(fmt.Sprintf(schemaFmt,
@@ -55,10 +58,6 @@ CREATE TABLE IF NOT EXISTS "%s" (
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
-
-	if err = tx.Commit(); err != nil {
-		return nil, err
-	}
 
 	return &PriceAnalyticDB{
 		sugar: sugar,
@@ -85,6 +84,9 @@ func (pad *PriceAnalyticDB) UpdatePriceAnalytic(data common.PriceAnalytic) error
 		logger.Debug(err.Error())
 		return err
 	}
+
+	defer pgsql.CommitOrRollback(tx, logger, &err)
+
 	// insert into price_analytics
 	row := tx.QueryRowx(`INSERT INTO price_analytics (timestamp, block_expiration) 
 	VALUES ((TO_TIMESTAMP($1::double precision/1000)), $2) RETURNING id;`, data.Timestamp, data.BlockExpiration)
@@ -114,7 +116,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		}
 	}
 
-	return tx.Commit()
+	return err
 }
 
 // GetPriceAnalytic get price analytic data to return to api

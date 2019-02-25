@@ -8,13 +8,16 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	burnVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee_volume"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 var freqToMeasurement = map[string]string{
-	"h": "burn_fee_hour",
-	"d": "burn_fee_day",
+	"h": common.BurnFeeVolumeHourMeasurement,
+	"d": common.BurnFeeVolumeDayMeasurement,
 }
 
 // GetAggregatedBurnFee get aggregated burn fee in a time range given the reserve address
@@ -30,8 +33,9 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 		return nil, fmt.Errorf("invalid burn fee frequency %s", freq)
 	}
 
-	const queryTmpl = `SELECT sum_amount, reserve_addr FROM "{{.Measurement}}" WHERE '{{.From }}' <= time AND time <= '{{.To}}' ` +
-		`{{if len .Addrs}}AND ({{range $index, $element := .Addrs}}"reserve_addr" = '{{$element}}'{{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
+	var queryTmpl = `SELECT {{.SumAmount}},{{.SrcReserveAddr}},{{.DstReserveAddr}} FROM "{{.Measurement}}" WHERE '{{.From }}' <= time AND time <= '{{.To}}' ` +
+		`{{if len .Addrs}}AND ({{range $index, $element := .Addrs}}` +
+		burnVolumeSchema.SrcReserveAddr.String() + ` = '{{$element}}' OR ` + burnVolumeSchema.DstReserveAddr.String() + ` = '{{$element}}' {{if ne $index $.AddrsLastIndex}} OR {{end}}{{end}}){{end}}`
 
 	logger.Debugw("before rendering query statement from template", "query_tempalte", queryTmpl)
 	tmpl, err := template.New("queryStmt").Parse(queryTmpl)
@@ -44,12 +48,18 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 		addrsStrs = append(addrsStrs, rsvAddr.Hex())
 	}
 	if err = tmpl.Execute(&queryStmtBuf, struct {
+		SumAmount      string
+		SrcReserveAddr string
+		DstReserveAddr string
 		Measurement    string
 		From           string
 		To             string
 		Addrs          []string
 		AddrsLastIndex int
 	}{
+		SumAmount:      burnVolumeSchema.SumAmount.String(),
+		SrcReserveAddr: burnVolumeSchema.SrcReserveAddr.String(),
+		DstReserveAddr: burnVolumeSchema.DstReserveAddr.String(),
 		Measurement:    measurement,
 		From:           from.Format(time.RFC3339),
 		To:             to.Format(time.RFC3339),
@@ -61,7 +71,7 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 
 	logger.Debugw("rendered query statement", "rendered_template", queryStmtBuf.String())
 
-	res, err := is.queryDB(is.influxClient, queryStmtBuf.String())
+	res, err := influxdb.QueryDB(is.influxClient, queryStmtBuf.String(), is.dbName)
 	if err != nil {
 		return nil, err
 	}
@@ -73,8 +83,12 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 
 	result := make(map[ethereum.Address]map[string]float64)
 
-	for _, row := range res[0].Series[0].Values {
-		ts, amount, reserve, err := is.rowToAggregatedBurnFee(row)
+	idxs, err := burnVolumeSchema.NewFieldsRegistrar(res[0].Series[0].Columns)
+	if err != nil {
+		return nil, err
+	}
+	for _, value := range res[0].Series[0].Values {
+		ts, amount, reserve, err := is.rowToAggregatedBurnFee(value, idxs)
 		if err != nil {
 			return nil, err
 		}
@@ -85,7 +99,8 @@ func (is *InfluxStorage) GetAggregatedBurnFee(from, to time.Time, freq string, r
 		if !ok {
 			result[reserve] = make(map[string]float64)
 		}
-		result[reserve][key] = amount
+		//if the reserve is already there, that mean it already has either src_amount/dest_amount previously. Sum them up.
+		result[reserve][key] = result[reserve][key] + amount
 	}
 
 	return result, nil

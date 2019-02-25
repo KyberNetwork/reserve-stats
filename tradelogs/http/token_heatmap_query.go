@@ -3,14 +3,14 @@ package http
 import (
 	"net/http"
 
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 )
 
 type tokenHeatmapQuery struct {
 	httputil.TimeRangeQuery
-	Asset    string `form:"asset" binding:"required"`
+	Asset    string `form:"asset" binding:"required,isAddress"`
 	Timezone int8   `form:"timezone" binding:"isSupportedTimezone"`
 }
 
@@ -36,11 +36,7 @@ func (sv *Server) getTokenHeatMap(c *gin.Context) {
 		return
 	}
 
-	asset, err := core.LookupToken(sv.coreSetting, query.Asset)
-	if err != nil {
-		httputil.ResponseFailure(c, http.StatusBadRequest, err)
-		return
-	}
+	asset := common.HexToAddress(query.Asset)
 
 	heatmap, err := sv.storage.GetTokenHeatmap(asset, from, to, query.Timezone)
 	if err != nil {

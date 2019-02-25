@@ -2,9 +2,11 @@ package migration
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"testing"
 
+	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/boltdb/bolt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
@@ -57,7 +59,8 @@ func newTestMigrateDB() (*DBMigration, error) {
 	var schema = fmt.Sprintf(`
 CREATE TABLE IF NOT EXISTS "%[1]s" (
   id    SERIAL PRIMARY KEY,
-  email text NOT NULL UNIQUE
+  email text NOT NULL UNIQUE,
+  last_updated TIMESTAMP NOT NULL
 );
 CREATE TABLE IF NOT EXISTS "%[2]s" (
   id        SERIAL PRIMARY KEY,
@@ -72,13 +75,12 @@ CREATE TABLE IF NOT EXISTS "%[2]s" (
 		return nil, err
 	}
 
+	defer pgsql.CommitOrRollback(tx, sugar, &err)
+
 	if _, err = tx.Exec(schema); err != nil {
 		return nil, err
 	}
 
-	if err = tx.Commit(); err != nil {
-		return nil, err
-	}
 	return &DBMigration{sugar, boltDB, postgres}, nil
 }
 

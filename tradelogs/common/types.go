@@ -30,18 +30,25 @@ type TradeLog struct {
 	BlockNumber     uint64        `json:"block_number"`
 	TransactionHash ethereum.Hash `json:"tx_hash"`
 
-	EtherReceivalSender ethereum.Address `json:"eth_receival_sender"`
-	EtherReceivalAmount *big.Int         `json:"eth_receival_amount"`
+	EthAmount *big.Int `json:"eth_amount"`
 
-	UserAddress ethereum.Address `json:"user_addr"`
-	SrcAddress  ethereum.Address `json:"src_addr"`
-	DestAddress ethereum.Address `json:"dst_addr"`
-	SrcAmount   *big.Int         `json:"src_amount"`
-	DestAmount  *big.Int         `json:"dst_amount"`
-	FiatAmount  float64          `json:"fiat_amount"`
+	UserAddress       ethereum.Address `json:"user_addr"`
+	SrcAddress        ethereum.Address `json:"src_addr"`
+	DestAddress       ethereum.Address `json:"dst_addr"`
+	SrcReserveAddress ethereum.Address `json:"src_reserve_addr"`
+	DstReserveAddress ethereum.Address `json:"dst_reserve_addr"`
+	SrcAmount         *big.Int         `json:"src_amount"`
+	DestAmount        *big.Int         `json:"dst_amount"`
+	FiatAmount        float64          `json:"fiat_amount"`
+	WalletAddress     ethereum.Address `json:"wallet_addr"`
 
-	BurnFees       []BurnFee   `json:"burn_fees"`
-	WalletFees     []WalletFee `json:"wallet_fees"`
+	SrcBurnAmount      float64 `json:"src_burn_amount"`
+	DstBurnAmount      float64 `json:"dst_burn_amount"`
+	SrcWalletFeeAmount float64 `json:"src_wallet_fee_amount"`
+	DstWalletFeeAmount float64 `json:"dst_wallet_fee_amount"`
+
+	BurnFees       []BurnFee   `json:"-"`
+	WalletFees     []WalletFee `json:"-"`
 	IntegrationApp string      `json:"integration_app"`
 
 	IP      string `json:"ip"`

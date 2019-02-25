@@ -5,14 +5,15 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
-	"github.com/KyberNetwork/reserve-stats/users/storage"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
+	"github.com/KyberNetwork/reserve-stats/users/storage"
 )
 
 const (
@@ -86,12 +87,6 @@ func TestUserHTTPServer(t *testing.T) {
 
 	var (
 		tests = []httputil.HTTPTestCase{
-			{
-				Msg:      "empty db",
-				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
-				Method:   http.MethodGet,
-				Assert:   expectSuccess,
-			},
 			{
 				Msg:      "email is not valid",
 				Endpoint: requestEndpoint,
@@ -209,20 +204,7 @@ func TestUserHTTPServer(t *testing.T) {
     }
   ]
 }`),
-				// TODO: should not return 500
-				Assert: expectInternalServerError,
-			},
-			{
-				Msg:      "user is not kyced",
-				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, nonKycAddress),
-				Method:   http.MethodGet,
-				Assert:   expectNonKYCed,
-			},
-			{
-				Msg:      "user is kyced",
-				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
-				Method:   http.MethodGet,
-				Assert:   expectKYCed,
+				Assert: expectSuccess,
 			},
 			{
 				Msg:      "user remove address",
@@ -230,7 +212,7 @@ func TestUserHTTPServer(t *testing.T) {
 				Method:   http.MethodPost,
 				Body: []byte(`
 					{
-						"email": "test@gmail.com",
+						"email": "test2@gmail.com",
 						"user_info": [
 							{
 								"address": "0x2ea6200a999f4c6c982be525f8dc294f14f4cb08",
@@ -239,18 +221,6 @@ func TestUserHTTPServer(t *testing.T) {
 						]
 					}`),
 				Assert: expectSuccess,
-			},
-			{
-				Msg:      "address is removed",
-				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
-				Method:   http.MethodGet,
-				Assert:   expectNonKYCed,
-			},
-			{
-				Msg:      "address have not trade, rich is false",
-				Endpoint: fmt.Sprintf("%s?address=%s", requestEndpoint, queryAddress),
-				Method:   http.MethodGet,
-				Assert:   expectRichStatus,
 			},
 		}
 	)

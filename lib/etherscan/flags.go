@@ -1,8 +1,9 @@
-package etherscanclient
+package etherscan
 
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/nanmu42/etherscan-api"
 	"github.com/urfave/cli"
@@ -15,17 +16,17 @@ const (
 	etherscanRequestPerSecond = "etherscan-requests-per-second"
 )
 
-//NewCliFlags return cli flags to configure cex client
+// NewCliFlags returns cli flags for Etherscan client.
 func NewCliFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:   etherscanAPIKeyFlag,
-			Usage:  "api key for etherscan client",
+			Usage:  "Etherscan API Key",
 			EnvVar: "ETHERSCAN_API_KEY",
 		},
 		cli.StringFlag{
 			Name:   etherscanNetworkFlag,
-			Usage:  "network for etherscan client, value: api-ropsten, api-rinkedby, etc",
+			Usage:  "Etherscan Network to operate on, valid choices: api, api-ropsten, api-kovan, api-rinkeby, api-tobalaba",
 			EnvVar: "ETHERSCAN_NETWORK",
 			Value:  string(etherscan.Mainnet),
 		},
@@ -44,17 +45,23 @@ func limitRate(limiter *rate.Limiter) func(module, action string, param map[stri
 	}
 }
 
-//NewEtherscanClientFromContext return etherscan client
+// NewEtherscanClientFromContext returns Ethereum client from flag variable, or error if occurs
 func NewEtherscanClientFromContext(c *cli.Context) (*etherscan.Client, error) {
 	apiKey := c.String(etherscanAPIKeyFlag)
 	network := c.String(etherscanNetworkFlag)
-	client := etherscan.New(etherscan.Network(network), apiKey)
 	rps := c.Float64(etherscanRequestPerSecond)
 	if rps <= 0 {
 		return nil, errors.New("rate limit must be more than 0")
 	}
 	//Etherscan doesn't  allow burst,  i.e: 5 request per second  really mean 1 request per 0.2  second
 	limiter := rate.NewLimiter(rate.Limit(rps), 1)
-	client.BeforeRequest = limitRate(limiter)
-	return client, nil
+
+	switch etherscan.Network(network) {
+	case etherscan.Mainnet, etherscan.Ropsten, etherscan.Kovan, etherscan.Tobalaba:
+		client := etherscan.New(etherscan.Network(network), apiKey)
+		client.BeforeRequest = limitRate(limiter)
+		return client, nil
+	default:
+		return nil, fmt.Errorf("unknown network: %s", network)
+	}
 }

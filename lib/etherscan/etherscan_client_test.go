@@ -1,4 +1,4 @@
-package etherscanclient
+package etherscan
 
 import (
 	"fmt"

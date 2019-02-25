@@ -11,6 +11,8 @@ import (
 const (
 	binanceAPIKeyFlag    = "binance-api-key"
 	binanceSecretKeyFlag = "binance-secret-key"
+	huobiAPIKeyFlag      = "huobi-api-key"
+	huobiSecretKeyFlag   = "huobi-secret-key"
 	etherscanAPIKeyFlag  = "etherscan-api-key"
 	etherscanNetworkFlag = "etherscan-network"
 )
@@ -29,13 +31,23 @@ func NewCliFlags() []cli.Flag {
 			EnvVar: "BINANCE_SECRET_KEY",
 		},
 		cli.StringFlag{
+			Name:   huobiAPIKeyFlag,
+			Usage:  "API key for huobi client",
+			EnvVar: "HUOBI_API_KEY",
+		},
+		cli.StringFlag{
+			Name:   huobiSecretKeyFlag,
+			Usage:  "secret key for huobi client",
+			EnvVar: "HUOBI_SECRET_KEY",
+		},
+		cli.StringFlag{
 			Name:   etherscanAPIKeyFlag,
 			Usage:  "api key for etherscan client",
 			EnvVar: "ETHERSCAN_API_KEY",
 		},
 		cli.StringFlag{
 			Name:   etherscanNetworkFlag,
-			Usage:  "network for etherscan client",
+			Usage:  "network for etherscan client, value: api-ropsten, api-rinkedby, etc",
 			EnvVar: "ETHERSCAN_NETWORK",
 			Value:  string(etherscan.Mainnet),
 		},
@@ -61,10 +73,21 @@ func NewBinanceClientFromContext(c *cli.Context) (*binance.Client, error) {
 }
 
 //NewHuobiClientFromContext return huobi client
-//TODO: write our own huobi client because we will need to get withdraw history from
-// unofficial api
-func NewHuobiClientFromContext(c *cli.Context) {
+func NewHuobiClientFromContext(c *cli.Context) (*HuobiClient, error) {
+	var (
+		apiKey, secretKey string
+	)
+	if c.String(huobiAPIKeyFlag) == "" {
+		return nil, fmt.Errorf("cannot create binance client, lack of api key")
+	}
+	apiKey = c.String(huobiAPIKeyFlag)
 
+	if c.String(huobiSecretKeyFlag) == "" {
+		return nil, fmt.Errorf("cannot create binance client, lack of secret key")
+	}
+
+	secretKey = c.String(huobiSecretKeyFlag)
+	return NewHuobiClient(apiKey, secretKey), nil
 }
 
 //NewEtherscanClientFromContext return etherscan client

@@ -8,8 +8,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	libcq "github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
-	volSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/volume"
+	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/tradelog"
+	volSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/volume"
 )
 
 const (

@@ -1,4 +1,4 @@
-package storage
+package influxstorage
 
 import (
 	"fmt"
@@ -8,8 +8,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
-	volSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/volume"
+	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/tradelog"
+	volSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/volume"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 

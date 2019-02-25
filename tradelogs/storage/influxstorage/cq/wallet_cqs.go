@@ -7,10 +7,10 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	firstTradedSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/first_traded"
-	kycedschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/kyced"
-	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
-	walletStatSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletstats"
+	firstTradedSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/first_traded"
+	kycedschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/kyced"
+	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/tradelog"
+	walletStatSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/walletstats"
 )
 
 func executeWalletStatsTemplate(templateString string) (string, error) {

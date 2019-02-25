@@ -1,4 +1,4 @@
-package storage
+package influxstorage
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	burnVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee_volume"
+	burnVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/burnfee_volume"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 

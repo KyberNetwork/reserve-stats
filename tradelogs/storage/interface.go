@@ -7,10 +7,14 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
-// Interface represent a storage for TradeLogs data
-type Interface interface {
+// SaveInterface represent a storage save method for TradeLog data
+type SaveInterface interface {
 	LastBlock() (int64, error)
 	SaveTradeLogs(logs []common.TradeLog) error
+}
+
+// Interface represent a storage for TradeLogs data
+type Interface interface {
 	LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error)
 	GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[ethereum.Address]map[string]float64, error)
 	GetAssetVolume(token ethereum.Address, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error)

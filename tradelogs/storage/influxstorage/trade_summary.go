@@ -1,4 +1,4 @@
-package storage
+package influxstorage
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	tradeSumSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/trade_summary"
+	tradeSumSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/trade_summary"
 	influxModel "github.com/influxdata/influxdb/models"
 )
 

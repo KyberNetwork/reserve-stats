@@ -11,7 +11,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	storage "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage"
 )
 
 // KYCUpdateJob describe a

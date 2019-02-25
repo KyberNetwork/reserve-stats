@@ -1,4 +1,4 @@
-package storage
+package influxstorage
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	heatMapSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/heatmap"
+	heatMapSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/heatmap"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 

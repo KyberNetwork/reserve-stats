@@ -1,4 +1,4 @@
-package storage
+package influxstorage
 
 import (
 	"fmt"
@@ -7,10 +7,10 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	burnVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/burnfee_volume"
-	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
-	volSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/volume"
-	walletFeeVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfee_volume"
+	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/tradelog"
+	burnVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/burnfee_volume"
+	volSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/volume"
+	walletFeeVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/walletfee_volume"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 

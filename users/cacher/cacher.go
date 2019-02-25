@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/go-redis/redis"
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
@@ -74,7 +75,8 @@ func (rc *RedisCacher) cacheAllKycedUsers() error {
 	pipe := rc.redisClient.Pipeline()
 	for _, address := range addresses {
 		// push to redis
-		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", kycedPrefix, address), expireTime); err != nil {
+		addressHex := ethereum.HexToAddress(address).Hex()
+		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", kycedPrefix, addressHex), expireTime); err != nil {
 			if dErr := pipe.Discard(); dErr != nil {
 				err = fmt.Errorf("%s - %s", dErr.Error(), err.Error())
 			}

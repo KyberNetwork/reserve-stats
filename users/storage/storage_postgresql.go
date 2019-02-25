@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
@@ -86,7 +87,8 @@ func (udb *UserDB) CreateOrUpdate(userData common.UserData) error {
 	)
 
 	for _, ui := range userData.UserInfo {
-		addresses = append(addresses, ui.Address)
+		address := ethereum.HexToAddress(ui.Address)
+		addresses = append(addresses, address.Hex())
 	}
 	for _, ui := range userData.UserInfo {
 		timestamps = append(timestamps, ui.Timestamp)

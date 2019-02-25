@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"go.uber.org/zap"
@@ -84,7 +85,9 @@ func (s *Server) getUsers(c *gin.Context) {
 
 	logger.Info("query", "user query", query)
 
-	kyced, err = s.getUserByKey(kycedPrefix, query.Address)
+	address := ethereum.HexToAddress(query.Address)
+
+	kyced, err = s.getUserByKey(kycedPrefix, address.Hex())
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,

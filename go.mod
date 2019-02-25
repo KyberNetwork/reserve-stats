@@ -3,8 +3,10 @@ module github.com/KyberNetwork/reserve-stats
 require (
 	github.com/Knetic/govaluate v3.0.0+incompatible // indirect
 	github.com/KyberNetwork/tokenrate v0.0.0-20181015045844-27abfb84ae1c
+	github.com/adshao/go-binance v0.0.0-20181012004556-e9a4ac01ca48
 	github.com/aristanetworks/goarista v0.0.0-20181002214814-33151c4543a7 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
+	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/boltdb/bolt v1.3.1
 	github.com/btcsuite/btcd v0.0.0-20181013004428-67e573d211ac // indirect
 	github.com/casbin/casbin v1.7.0
@@ -22,6 +24,7 @@ require (
 	github.com/go-sql-driver/mysql v1.4.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
+	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.0 // indirect
 	github.com/huin/goupnp v1.0.0 // indirect
 	github.com/influxdata/influxdb v1.6.3
@@ -32,6 +35,7 @@ require (
 	github.com/lib/pq v1.0.0
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-sqlite3 v1.9.0 // indirect
+	github.com/nanmu42/etherscan-api v1.0.4
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
 	github.com/oschwald/geoip2-golang v1.2.1

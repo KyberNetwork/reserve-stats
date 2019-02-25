@@ -10,9 +10,12 @@ import (
 	"github.com/nanmu42/etherscan-api"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 func TestBinanceClient(t *testing.T) {
+	testutil.SkipExternal(t)
 	binanceAPIKey, ok := os.LookupEnv("BINANCE_API_KEY")
 	assert.True(t, ok, "binance api key is not set")
 
@@ -26,6 +29,7 @@ func TestBinanceClient(t *testing.T) {
 }
 
 func TestHuobiClient(t *testing.T) {
+	testutil.SkipExternal(t)
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		t.Fatal(err)
@@ -47,6 +51,7 @@ func TestHuobiClient(t *testing.T) {
 }
 
 func TestEtherScanClient(t *testing.T) {
+	testutil.SkipExternal(t)
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		t.Fatal(err)

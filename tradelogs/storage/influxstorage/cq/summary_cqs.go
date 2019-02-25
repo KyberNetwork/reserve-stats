@@ -7,10 +7,10 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	libcq "github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	firstTradedSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/first_traded"
-	kycedschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/kyced"
-	tradeSumSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/trade_summary"
-	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
+	firstTradedSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/first_traded"
+	kycedschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/kyced"
+	tradeSumSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/trade_summary"
+	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/tradelog"
 )
 
 // CreateSummaryCqs return a set of cqs required for trade Summary aggregation

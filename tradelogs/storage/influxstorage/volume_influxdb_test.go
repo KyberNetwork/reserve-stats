@@ -1,4 +1,4 @@
-package storage
+package influxstorage
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
+	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/cq"
 )
 
 func aggregationTestData(is *InfluxStorage) error {

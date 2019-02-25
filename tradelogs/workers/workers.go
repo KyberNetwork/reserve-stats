@@ -128,11 +128,11 @@ type Pool struct {
 	mutex                 *sync.Mutex
 	lastCompletedJobOrder int  // Keep the order of the last completed job
 	failed                bool // mark as failed, all subsequent persistent storage will be passed
-	storage               storage.Interface
+	storage               storage.SaveInterface
 }
 
 // NewPool returns a pool of workers to handle jobs concurrently
-func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface) *Pool {
+func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.SaveInterface) *Pool {
 	var p = &Pool{
 		sugar:                 sugar,
 		jobCh:                 make(chan job),

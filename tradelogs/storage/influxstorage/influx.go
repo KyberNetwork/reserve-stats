@@ -1,4 +1,4 @@
-package storage
+package influxstorage
 
 import (
 	"fmt"
@@ -8,8 +8,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	kycedschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/kyced"
-	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
+	kycedschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/kyced"
+	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/tradelog"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"

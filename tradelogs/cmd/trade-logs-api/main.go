@@ -11,7 +11,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/http"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	storage "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage"
 	"github.com/urfave/cli"
 )
 

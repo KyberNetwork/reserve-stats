@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"sort"
 	"strings"
@@ -39,13 +40,14 @@ func NewHuobiClient(apiKey, secretKey string, sugar *zap.SugaredLogger) *Client 
 	}
 }
 
-func (hc *Client) sign(msg string) string {
+func (hc *Client) sign(msg string) (string, error) {
 	mac := hmac.New(sha256.New, []byte(hc.SecretKey))
 	if _, err := mac.Write([]byte(msg)); err != nil {
 		hc.sugar.Errorw("encode message error", "error", err.Error())
+		return "", err
 	}
 	result := base64.StdEncoding.EncodeToString(mac.Sum(nil))
-	return result
+	return result, nil
 }
 
 func (hc *Client) fillRequest(req *http.Request, signNeeded bool) {
@@ -59,7 +61,11 @@ func (hc *Client) fillRequest(req *http.Request, signNeeded bool) {
 		hostname := req.URL.Hostname()
 		path := req.URL.Path
 		payload := strings.Join([]string{method, hostname, path, auth}, "\n")
-		q.Set("Signature", hc.sign(payload))
+		signature, err := hc.sign(payload)
+		if err != nil {
+			log.Fatal(err)
+		}
+		q.Set("Signature", signature)
 		req.URL.RawQuery = q.Encode()
 	}
 }

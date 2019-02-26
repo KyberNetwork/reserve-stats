@@ -10,7 +10,7 @@ import (
 )
 
 func TestBinanceClient(t *testing.T) {
-	// testutil.SkipExternal(t)
+	testutil.SkipExternal(t)
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		t.Fatal(err)

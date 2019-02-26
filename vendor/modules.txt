@@ -3,14 +3,10 @@ github.com/Knetic/govaluate
 # github.com/KyberNetwork/tokenrate v0.0.0-20181015045844-27abfb84ae1c
 github.com/KyberNetwork/tokenrate
 github.com/KyberNetwork/tokenrate/coingecko
-# github.com/adshao/go-binance v0.0.0-20181012004556-e9a4ac01ca48
-github.com/adshao/go-binance
 # github.com/aristanetworks/goarista v0.0.0-20181002214814-33151c4543a7
 github.com/aristanetworks/goarista/monotime
 # github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
 github.com/asaskevich/govalidator
-# github.com/bitly/go-simplejson v0.5.0
-github.com/bitly/go-simplejson
 # github.com/boltdb/bolt v1.3.1
 github.com/boltdb/bolt
 # github.com/btcsuite/btcd v0.0.0-20181013004428-67e573d211ac
@@ -89,8 +85,6 @@ github.com/golang/protobuf/proto
 github.com/golang/snappy
 # github.com/google/uuid v1.0.0
 github.com/google/uuid
-# github.com/gorilla/websocket v1.4.0
-github.com/gorilla/websocket
 # github.com/influxdata/influxdb v1.6.3
 github.com/influxdata/influxdb/client/v2
 github.com/influxdata/influxdb/models

@@ -2,10 +2,11 @@ package externalclient
 
 import (
 	"fmt"
+	"log"
 
-	"github.com/adshao/go-binance"
 	"github.com/nanmu42/etherscan-api"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 )
 
 const (
@@ -55,7 +56,7 @@ func NewCliFlags() []cli.Flag {
 }
 
 //NewBinanceClientFromContext return binance client
-func NewBinanceClientFromContext(c *cli.Context) (*binance.Client, error) {
+func NewBinanceClientFromContext(c *cli.Context) (*BinanceClient, error) {
 	var (
 		apiKey, secretKey string
 	)
@@ -67,9 +68,16 @@ func NewBinanceClientFromContext(c *cli.Context) (*binance.Client, error) {
 	if c.String(binanceSecretKeyFlag) == "" {
 		return nil, fmt.Errorf("cannot create binance client, lack of secret key")
 	}
-
 	secretKey = c.String(binanceSecretKeyFlag)
-	return binance.NewClient(apiKey, secretKey), nil
+
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer logger.Sync()
+	sugar := logger.Sugar()
+
+	return NewBinanceClient(apiKey, secretKey, sugar), nil
 }
 
 //NewHuobiClientFromContext return huobi client
@@ -85,9 +93,16 @@ func NewHuobiClientFromContext(c *cli.Context) (*HuobiClient, error) {
 	if c.String(huobiSecretKeyFlag) == "" {
 		return nil, fmt.Errorf("cannot create binance client, lack of secret key")
 	}
-
 	secretKey = c.String(huobiSecretKeyFlag)
-	return NewHuobiClient(apiKey, secretKey), nil
+
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer logger.Sync()
+	sugar := logger.Sugar()
+
+	return NewHuobiClient(apiKey, secretKey, sugar), nil
 }
 
 //NewEtherscanClientFromContext return etherscan client

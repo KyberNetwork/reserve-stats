@@ -8,12 +8,20 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
+
+	"go.uber.org/zap"
+)
+
+const (
+	//HuobiEndpoint is base on
+	HuobiEndpoint = "https://api.huobi.pro"
+	//HuobiWithdrawHistoryEndpointPrefix is prefix endpoint specifically for withdraw history
+	HuobiWithdrawHistoryEndpointPrefix = "https://www.hbg.com/-/x/pro"
 )
 
 //HuobiClient represent a huobi client for
@@ -21,26 +29,15 @@ import (
 type HuobiClient struct {
 	APIKey    string
 	SecretKey string
+	sugar     *zap.SugaredLogger
 }
-
-//Account represent a huobi account
-type Account struct {
-	ID     int    `json:"id"`
-	Type   string `json:"type"`
-	State  string `json:"state"`
-	UserID string `json:"user-id"`
-}
-
-const (
-	//HuobiEndpoint is base on
-	HuobiEndpoint = "https://api.huobi.pro"
-)
 
 //NewHuobiClient return a new HuobiClient instance
-func NewHuobiClient(apiKey, secretKey string) *HuobiClient {
+func NewHuobiClient(apiKey, secretKey string, sugar *zap.SugaredLogger) *HuobiClient {
 	return &HuobiClient{
 		APIKey:    apiKey,
 		SecretKey: secretKey,
+		sugar:     sugar,
 	}
 }
 
@@ -48,7 +45,7 @@ func NewHuobiClient(apiKey, secretKey string) *HuobiClient {
 func (hc *HuobiClient) Sign(msg string) string {
 	mac := hmac.New(sha256.New, []byte(hc.SecretKey))
 	if _, err := mac.Write([]byte(msg)); err != nil {
-		log.Printf("Encode message error: %s", err.Error())
+		hc.sugar.Errorw("Encode message error", "error", err.Error())
 	}
 	result := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 	return result
@@ -76,7 +73,9 @@ func (hc *HuobiClient) fillRequest(req *http.Request, signNeeded bool) {
 
 func (hc *HuobiClient) sendRequest(method, requestURL string, params map[string]string,
 	signNeeded bool) ([]byte, error) {
-
+	var (
+		logger = hc.sugar.With("func", "huobi_client/sendRequest")
+	)
 	client := &http.Client{
 		Timeout: time.Duration(30 * time.Second),
 	}
@@ -95,7 +94,7 @@ func (hc *HuobiClient) sendRequest(method, requestURL string, params map[string]
 
 	q := req.URL.Query()
 	if signNeeded {
-		timestamp := fmt.Sprintf("%s", time.Now().Format("2006-01-02T15:04:05"))
+		timestamp := fmt.Sprintf("%s", time.Now().UTC().Format("2006-01-02T15:04:05"))
 		params["SignatureMethod"] = "HmacSHA256"
 		params["SignatureVersion"] = "2"
 		params["AccessKeyId"] = hc.APIKey
@@ -119,10 +118,13 @@ func (hc *HuobiClient) sendRequest(method, requestURL string, params map[string]
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			log.Printf("Response body close error: %s", cErr.Error())
+			logger.Error("Response body close error", "error", cErr.Error())
 		}
 	}()
 	switch resp.StatusCode {
+	case 404:
+		err = errors.New("api not found")
+		break
 	case 429:
 		err = errors.New("breaking Huobi request rate limit")
 		break
@@ -139,13 +141,59 @@ func (hc *HuobiClient) sendRequest(method, requestURL string, params map[string]
 //GetAccounts return list of accounts in huobi
 func (hc *HuobiClient) GetAccounts() ([]Account, error) {
 	var (
-		result []Account
+		result AccountResponse
 	)
 	endpoint := fmt.Sprintf("%s/v1/account/accounts", HuobiEndpoint)
 	res, err := hc.sendRequest(
 		"GET",
 		endpoint,
 		map[string]string{},
+		true,
+	)
+	if err != nil {
+		return result.Data, err
+	}
+	err = json.Unmarshal(res, &result)
+	return result.Data, err
+}
+
+//GetTradeHistory return trade history of an account
+func (hc *HuobiClient) GetTradeHistory(symbol, startDate, endDate string) (HuobiTradeHistoryList, error) {
+	var (
+		result HuobiTradeHistoryList
+	)
+	endpoint := fmt.Sprintf("%s/v1/order/orders", HuobiEndpoint)
+	res, err := hc.sendRequest(
+		"GET",
+		endpoint,
+		map[string]string{
+			"states":     "filled",
+			"symbol":     strings.ToLower(symbol),
+			"start-date": startDate,
+			"endDate":    endDate,
+		},
+		true,
+	)
+	if err != nil {
+		return result, err
+	}
+	err = json.Unmarshal(res, &result)
+	return result, err
+}
+
+//GetWithdrawHistory return withdraw history of an account
+func (hc *HuobiClient) GetWithdrawHistory() (HuobiWithdrawHistoryList, error) {
+	var (
+		result HuobiWithdrawHistoryList
+	)
+	endpoint := fmt.Sprintf("%s/v1/query/finances/", HuobiEndpoint)
+	res, err := hc.sendRequest(
+		"GET",
+		endpoint,
+		map[string]string{
+			"types": "withdraw-group",
+			"size":  "20",
+		},
 		true,
 	)
 	if err != nil {

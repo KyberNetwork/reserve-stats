@@ -13,7 +13,7 @@ import (
 )
 
 func TestBinanceClient(t *testing.T) {
-	// testutil.SkipExternal(t)
+	testutil.SkipExternal(t)
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		t.Fatal(err)
@@ -32,12 +32,10 @@ func TestBinanceClient(t *testing.T) {
 	assetDetail, err := binanceClient.GetAssetDetail()
 	assert.Nil(t, err, "binance client get asset detail error: %s", err)
 	assert.NotNil(t, assetDetail, "asset detail should not be nil")
-	// sugar.Info(assetDetail)
 
 	tradeHistory, err := binanceClient.GetTradeHistory("KNCETH", 0)
 	assert.Nil(t, err, "binance client get asset detail error: %s", err)
 	assert.NotNil(t, tradeHistory, "asset detail should not be nil")
-	// sugar.Info(tradeHistory)
 
 	withdrawHistory, err := binanceClient.GetWithdrawalHistory(0, currentTimePoint())
 	assert.Nil(t, err, "binance client get asset detail error: %s", err)
@@ -45,7 +43,7 @@ func TestBinanceClient(t *testing.T) {
 }
 
 func TestHuobiClient(t *testing.T) {
-	// testutil.SkipExternal(t)
+	testutil.SkipExternal(t)
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		t.Fatal(err)
@@ -94,6 +92,7 @@ func TestEtherScanClient(t *testing.T) {
 	etherscanClient := etherscan.New(etherscan.Network("api"), etherscanAPIKey)
 	totalSupply, err := etherscanClient.EtherTotalSupply()
 	assert.Nil(t, err, fmt.Sprintf("get total supply of ether error: %s", err))
+	assert.NotZero(t, totalSupply)
 
 	//get list normal trade
 	testAddress := "0x2c1ba59d6f58433fb1eaee7d20b26ed83bda51a3" //random address

@@ -1,4 +1,4 @@
-package externalclient
+package huobi
 
 import (
 	"crypto/hmac"
@@ -20,39 +20,36 @@ import (
 const (
 	//HuobiEndpoint is base on
 	HuobiEndpoint = "https://api.huobi.pro"
-	//HuobiWithdrawHistoryEndpointPrefix is prefix endpoint specifically for withdraw history
-	HuobiWithdrawHistoryEndpointPrefix = "https://www.hbg.com/-/x/pro"
 )
 
-//HuobiClient represent a huobi client for
+//Client represent a huobi client for
 //calling to huobi endpoint
-type HuobiClient struct {
+type Client struct {
 	APIKey    string
 	SecretKey string
 	sugar     *zap.SugaredLogger
 }
 
 //NewHuobiClient return a new HuobiClient instance
-func NewHuobiClient(apiKey, secretKey string, sugar *zap.SugaredLogger) *HuobiClient {
-	return &HuobiClient{
+func NewHuobiClient(apiKey, secretKey string, sugar *zap.SugaredLogger) *Client {
+	return &Client{
 		APIKey:    apiKey,
 		SecretKey: secretKey,
 		sugar:     sugar,
 	}
 }
 
-//Sign return sign of request
-func (hc *HuobiClient) Sign(msg string) string {
+func (hc *Client) sign(msg string) string {
 	mac := hmac.New(sha256.New, []byte(hc.SecretKey))
 	if _, err := mac.Write([]byte(msg)); err != nil {
-		hc.sugar.Errorw("Encode message error", "error", err.Error())
+		hc.sugar.Errorw("encode message error", "error", err.Error())
 	}
 	result := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 	return result
 }
 
-func (hc *HuobiClient) fillRequest(req *http.Request, signNeeded bool) {
-	if req.Method == "POST" || req.Method == "PUT" || req.Method == "DELETE" {
+func (hc *Client) fillRequest(req *http.Request, signNeeded bool) {
+	if req.Method == http.MethodPost || req.Method == http.MethodPut || req.Method == http.MethodDelete {
 		req.Header.Add("Content-Type", "application/json")
 	} else {
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -66,12 +63,12 @@ func (hc *HuobiClient) fillRequest(req *http.Request, signNeeded bool) {
 		hostname := req.URL.Hostname()
 		path := req.URL.Path
 		payload := strings.Join([]string{method, hostname, path, auth}, "\n")
-		sig.Set("Signature", hc.Sign(payload))
+		sig.Set("Signature", hc.sign(payload))
 		req.URL.RawQuery = q.Encode() + "&" + sig.Encode()
 	}
 }
 
-func (hc *HuobiClient) sendRequest(method, requestURL string, params map[string]string,
+func (hc *Client) sendRequest(method, requestURL string, params map[string]string,
 	signNeeded bool) ([]byte, error) {
 	var (
 		logger = hc.sugar.With("func", "huobi_client/sendRequest")
@@ -87,7 +84,7 @@ func (hc *HuobiClient) sendRequest(method, requestURL string, params map[string]
 	if err != nil {
 		return nil, err
 	}
-	if method == "POST" {
+	if method == http.MethodPost {
 		req.Body = ioutil.NopCloser(strings.NewReader(string(reqBody)))
 	}
 	req.Header.Add("Accept", "application/json")
@@ -118,7 +115,7 @@ func (hc *HuobiClient) sendRequest(method, requestURL string, params map[string]
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
-			logger.Error("Response body close error", "error", cErr.Error())
+			logger.Error("response body close error", "error", cErr.Error())
 		}
 	}()
 	switch resp.StatusCode {
@@ -139,13 +136,13 @@ func (hc *HuobiClient) sendRequest(method, requestURL string, params map[string]
 }
 
 //GetAccounts return list of accounts in huobi
-func (hc *HuobiClient) GetAccounts() ([]Account, error) {
+func (hc *Client) GetAccounts() ([]Account, error) {
 	var (
 		result AccountResponse
 	)
 	endpoint := fmt.Sprintf("%s/v1/account/accounts", HuobiEndpoint)
 	res, err := hc.sendRequest(
-		"GET",
+		http.MethodGet,
 		endpoint,
 		map[string]string{},
 		true,
@@ -158,19 +155,19 @@ func (hc *HuobiClient) GetAccounts() ([]Account, error) {
 }
 
 //GetTradeHistory return trade history of an account
-func (hc *HuobiClient) GetTradeHistory(symbol, startDate, endDate string) (HuobiTradeHistoryList, error) {
+func (hc *Client) GetTradeHistory(symbol string, startDate, endDate time.Time) (TradeHistoryList, error) {
 	var (
-		result HuobiTradeHistoryList
+		result TradeHistoryList
 	)
 	endpoint := fmt.Sprintf("%s/v1/order/orders", HuobiEndpoint)
 	res, err := hc.sendRequest(
-		"GET",
+		http.MethodGet,
 		endpoint,
 		map[string]string{
 			"states":     "filled",
 			"symbol":     strings.ToLower(symbol),
-			"start-date": startDate,
-			"endDate":    endDate,
+			"start-date": startDate.Format("2016-06-09"),
+			"endDate":    endDate.Format("2018-03-08"),
 		},
 		true,
 	)
@@ -182,13 +179,13 @@ func (hc *HuobiClient) GetTradeHistory(symbol, startDate, endDate string) (Huobi
 }
 
 //GetWithdrawHistory return withdraw history of an account
-func (hc *HuobiClient) GetWithdrawHistory() (HuobiWithdrawHistoryList, error) {
+func (hc *Client) GetWithdrawHistory() (WithdrawHistoryList, error) {
 	var (
-		result HuobiWithdrawHistoryList
+		result WithdrawHistoryList
 	)
 	endpoint := fmt.Sprintf("%s/v1/query/finances/", HuobiEndpoint)
 	res, err := hc.sendRequest(
-		"GET",
+		http.MethodGet,
 		endpoint,
 		map[string]string{
 			"types": "withdraw-group",

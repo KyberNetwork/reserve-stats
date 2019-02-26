@@ -1,4 +1,4 @@
-package externalclient
+package binance
 
 import (
 	"crypto/hmac"
@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -14,30 +15,32 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
 	endpointPrefix = "https://api.binance.com"
 )
 
-//BinanceClient represent a binance api client
-type BinanceClient struct {
+//Client represent a binance api client
+type Client struct {
 	APIKey    string
 	SecretKey string
 	sugar     *zap.SugaredLogger
 }
 
 //NewBinanceClient return a new client for binance api
-func NewBinanceClient(apiKey, secretKey string, sugar *zap.SugaredLogger) *BinanceClient {
-	return &BinanceClient{
+func NewBinanceClient(apiKey, secretKey string, sugar *zap.SugaredLogger) *Client {
+	return &Client{
 		APIKey:    apiKey,
 		SecretKey: secretKey,
 		sugar:     sugar,
 	}
 }
 
-func (bc *BinanceClient) fillRequest(req *http.Request, signNeeded bool, timepoint uint64) {
-	if req.Method == "POST" || req.Method == "PUT" || req.Method == "DELETE" {
+func (bc *Client) fillRequest(req *http.Request, signNeeded bool, timepoint uint64) {
+	if req.Method == http.MethodPost || req.Method == http.MethodPut || req.Method == http.MethodDelete {
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 		req.Header.Add("User-Agent", "binance/go")
 	}
@@ -48,25 +51,26 @@ func (bc *BinanceClient) fillRequest(req *http.Request, signNeeded bool, timepoi
 		req.Header.Set("X-MBX-APIKEY", bc.APIKey)
 		q.Set("timestamp", fmt.Sprintf("%d", int64(timepoint)))
 		q.Set("recvWindow", "5000")
-		sig.Set("signature", bc.Sign(q.Encode()))
+		signature, err := bc.sign(q.Encode())
+		if err != nil {
+			log.Fatal(err)
+		}
+		q.Set("signature", signature)
 		req.URL.RawQuery = q.Encode() + "&" + sig.Encode()
 	}
 }
 
 //Sign key for authenticated api
-func (bc *BinanceClient) Sign(msg string) string {
-	var (
-		logger = bc.sugar.With("func", "binance_client/Sign")
-	)
+func (bc *Client) sign(msg string) (string, error) {
 	mac := hmac.New(sha256.New, []byte(bc.SecretKey))
 	if _, err := mac.Write([]byte(msg)); err != nil {
-		logger.Errorw("Encode message error", "error", err.Error())
+		return "", fmt.Errorf("encode message error: %s", err.Error())
 	}
 	result := ethereum.Bytes2Hex(mac.Sum(nil))
-	return result
+	return result, nil
 }
 
-func (bc *BinanceClient) sendRequest(method, endpoint string, params map[string]string, signNeeded bool,
+func (bc *Client) sendRequest(method, endpoint string, params map[string]string, signNeeded bool,
 	timepoint uint64) ([]byte, error) {
 
 	var (
@@ -115,34 +119,30 @@ func (bc *BinanceClient) sendRequest(method, endpoint string, params map[string]
 		respBody, err = ioutil.ReadAll(resp.Body)
 		break
 	default:
-		var response BinanceResponse
+		var response APIResponse
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			break
 		}
-		err = fmt.Errorf("Binance return with code: %d - %s", resp.StatusCode, response.Msg)
+		err = fmt.Errorf("binance return with code: %d - %s", resp.StatusCode, response.Msg)
 	}
 	return respBody, err
 }
 
-func currentTimePoint() uint64 {
-	return uint64(time.Now().UnixNano() / int64(time.Millisecond))
-}
-
 //GetTradeHistory return history of trading on binance
-func (bc *BinanceClient) GetTradeHistory(symbol string, fromID int64) ([]BinanceTradeHistory, error) {
+func (bc *Client) GetTradeHistory(symbol string, fromID int64) ([]TradeHistory, error) {
 	var (
-		result []BinanceTradeHistory
+		result []TradeHistory
 	)
 	endpoint := fmt.Sprintf("%s/api/v3/myTrades", endpointPrefix)
 	res, err := bc.sendRequest(
-		"GET",
+		http.MethodGet,
 		endpoint,
 		map[string]string{
 			"symbol": symbol,
 			"fromId": strconv.FormatInt(fromID, 10),
 		},
 		true,
-		currentTimePoint(),
+		timeutil.UnixMilliSecond(),
 	)
 	if err != nil {
 		return result, err
@@ -152,17 +152,17 @@ func (bc *BinanceClient) GetTradeHistory(symbol string, fromID int64) ([]Binance
 }
 
 //GetAssetDetail return detail of asset
-func (bc *BinanceClient) GetAssetDetail() (AssetDetailResponse, error) {
+func (bc *Client) GetAssetDetail() (AssetDetailResponse, error) {
 	var (
 		result AssetDetailResponse
 	)
 	endpoint := fmt.Sprintf("%s/wapi/v3/assetDetail.html", endpointPrefix)
 	res, err := bc.sendRequest(
-		"GET",
+		http.MethodGet,
 		endpoint,
 		map[string]string{},
 		true,
-		currentTimePoint(),
+		timeutil.UnixMilliSecond(),
 	)
 	if err != nil {
 		return result, err
@@ -172,20 +172,20 @@ func (bc *BinanceClient) GetAssetDetail() (AssetDetailResponse, error) {
 }
 
 //GetWithdrawalHistory return withdrawal history of an account
-func (bc *BinanceClient) GetWithdrawalHistory(fromTime, toTime uint64) (BinanceWithdrawHistoryList, error) {
+func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHistoryList, error) {
 	var (
-		result BinanceWithdrawHistoryList
+		result WithdrawHistoryList
 	)
 	endpoint := fmt.Sprintf("%s/wapi/v3/withdrawHistory.html", endpointPrefix)
 	res, err := bc.sendRequest(
-		"GET",
+		http.MethodGet,
 		endpoint,
 		map[string]string{
-			"startTime": strconv.FormatUint(fromTime, 10),
-			"endTime":   strconv.FormatUint(toTime, 10),
+			"startTime": strconv.FormatUint(timeutil.TimeToTimestampMs(fromTime), 10),
+			"endTime":   strconv.FormatUint(timeutil.TimeToTimestampMs(toTime), 10),
 		},
 		true,
-		currentTimePoint(),
+		timeutil.UnixMilliSecond(),
 	)
 	if err != nil {
 		return result, err

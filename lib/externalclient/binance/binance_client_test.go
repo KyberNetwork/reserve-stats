@@ -3,16 +3,14 @@ package binance
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
-
-	"github.com/KyberNetwork/reserve-stats/lib/testutil"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 func TestBinanceClient(t *testing.T) {
-	testutil.SkipExternal(t)
+	// testutil.SkipExternal(t)
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		t.Fatal(err)
@@ -31,12 +29,15 @@ func TestBinanceClient(t *testing.T) {
 	assetDetail, err := binanceClient.GetAssetDetail()
 	assert.Nil(t, err, "binance client get asset detail error: %s", err)
 	assert.NotNil(t, assetDetail, "asset detail should not be nil")
+	sugar.Info(assetDetail)
 
 	tradeHistory, err := binanceClient.GetTradeHistory("KNCETH", 0)
 	assert.Nil(t, err, "binance client get asset detail error: %s", err)
 	assert.NotNil(t, tradeHistory, "asset detail should not be nil")
 
-	withdrawHistory, err := binanceClient.GetWithdrawalHistory(0, timeutil.UnixMilliSecond())
+	fromTime := time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
+	toTime := time.Now()
+	withdrawHistory, err := binanceClient.GetWithdrawalHistory(fromTime, toTime)
 	assert.Nil(t, err, "binance client get asset detail error: %s", err)
 	assert.NotNil(t, withdrawHistory, "asset detail should not be nil")
 }

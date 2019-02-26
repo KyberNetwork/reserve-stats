@@ -55,7 +55,7 @@ func (bc *Client) fillRequest(req *http.Request, signNeeded bool, timepoint uint
 		if err != nil {
 			log.Fatal(err)
 		}
-		q.Set("signature", signature)
+		sig.Set("signature", signature)
 		req.URL.RawQuery = q.Encode() + "&" + sig.Encode()
 	}
 }
@@ -84,7 +84,6 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Accept", "application/json")
 
 	q := req.URL.Query()
 	for k, v := range params {
@@ -167,6 +166,7 @@ func (bc *Client) GetAssetDetail() (AssetDetailResponse, error) {
 	if err != nil {
 		return result, err
 	}
+	log.Printf("%s", res)
 	err = json.Unmarshal(res, &result)
 	return result, err
 }

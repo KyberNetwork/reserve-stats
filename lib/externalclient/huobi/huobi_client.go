@@ -1,6 +1,7 @@
 package huobi
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
@@ -9,7 +10,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -51,20 +51,16 @@ func (hc *Client) sign(msg string) string {
 func (hc *Client) fillRequest(req *http.Request, signNeeded bool) {
 	if req.Method == http.MethodPost || req.Method == http.MethodPut || req.Method == http.MethodDelete {
 		req.Header.Add("Content-Type", "application/json")
-	} else {
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	}
 	if signNeeded {
 		q := req.URL.Query()
-		sig := url.Values{}
-
 		method := req.Method
 		auth := q.Encode()
 		hostname := req.URL.Hostname()
 		path := req.URL.Path
 		payload := strings.Join([]string{method, hostname, path, auth}, "\n")
-		sig.Set("Signature", hc.sign(payload))
-		req.URL.RawQuery = q.Encode() + "&" + sig.Encode()
+		q.Set("Signature", hc.sign(payload))
+		req.URL.RawQuery = q.Encode()
 	}
 }
 
@@ -80,12 +76,9 @@ func (hc *Client) sendRequest(method, requestURL string, params map[string]strin
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest(method, requestURL, nil)
+	req, err := http.NewRequest(method, requestURL, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, err
-	}
-	if method == http.MethodPost {
-		req.Body = ioutil.NopCloser(strings.NewReader(string(reqBody)))
 	}
 	req.Header.Add("Accept", "application/json")
 

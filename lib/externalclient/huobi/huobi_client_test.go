@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
-
-	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 func TestHuobiClient(t *testing.T) {
-	testutil.SkipExternal(t)
+	// testutil.SkipExternal(t)
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		t.Fatal(err)
@@ -32,14 +31,16 @@ func TestHuobiClient(t *testing.T) {
 	assert.NotNil(t, accounts, "get accounts nil")
 
 	//fixed timestamp for test
-	startDate := "2018-01-01"
-	endDate := "2019-03-08"
+	startDate := time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
+	endDate := time.Date(2019, time.February, 1, 0, 0, 0, 0, time.UTC)
 
 	tradeHistory, err := huobiClient.GetTradeHistory("bixeth", startDate, endDate)
 	assert.Nil(t, err, fmt.Sprintf("get history error: %v", err))
 	assert.NotNil(t, tradeHistory, "trade history is nil")
+	sugar.Info(tradeHistory)
 
 	withdrawHistory, err := huobiClient.GetWithdrawHistory()
 	assert.Nil(t, err)
 	assert.NotNil(t, withdrawHistory)
+	sugar.Info(withdrawHistory)
 }

@@ -8,12 +8,10 @@ import (
 	"github.com/nanmu42/etherscan-api"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
-
-	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 func TestEtherScanClient(t *testing.T) {
-	testutil.SkipExternal(t)
+	// testutil.SkipExternal(t)
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		t.Fatal(err)
@@ -30,6 +28,7 @@ func TestEtherScanClient(t *testing.T) {
 	totalSupply, err := etherscanClient.EtherTotalSupply()
 	assert.Nil(t, err, fmt.Sprintf("get total supply of ether error: %s", err))
 	assert.NotZero(t, totalSupply)
+	sugar.Info(totalSupply)
 
 	//get list normal trade
 	testAddress := "0x2c1ba59d6f58433fb1eaee7d20b26ed83bda51a3" //random address

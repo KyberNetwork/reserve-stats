@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -45,7 +46,7 @@ func (bc *Client) fillRequest(req *http.Request, signNeeded bool, timepoint time
 	req.Header.Add("Accept", "application/json")
 	if signNeeded {
 		q := req.URL.Query()
-		// sig := url.Values{}
+		sig := url.Values{}
 		req.Header.Set("X-MBX-APIKEY", bc.APIKey)
 		q.Set("timestamp", fmt.Sprintf("%d", timeutil.TimeToTimestampMs(timepoint)))
 		q.Set("recvWindow", "5000")
@@ -53,12 +54,11 @@ func (bc *Client) fillRequest(req *http.Request, signNeeded bool, timepoint time
 		if err != nil {
 			return err
 		}
-		q.Set("signature", signature)
+		sig.Set("signature", signature)
 		// Using separated values map for signature to ensure it is at the end
 		// of the query. This is required for /wapi apis from binance without
 		// any damn documentation about it!!!
-		// req.URL.RawQuery = q.Encode() + "&" + sig.Encode()
-		req.URL.RawQuery = q.Encode()
+		req.URL.RawQuery = q.Encode() + "&" + sig.Encode()
 	}
 	return nil
 }

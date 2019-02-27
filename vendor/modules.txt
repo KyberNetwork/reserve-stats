@@ -105,6 +105,8 @@ github.com/mattn/go-isatty
 github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.1
 github.com/modern-go/reflect2
+# github.com/nanmu42/etherscan-api v1.0.4
+github.com/nanmu42/etherscan-api
 # github.com/oschwald/geoip2-golang v1.2.1
 github.com/oschwald/geoip2-golang
 # github.com/oschwald/maxminddb-golang v1.3.0

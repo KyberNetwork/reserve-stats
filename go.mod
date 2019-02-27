@@ -32,6 +32,7 @@ require (
 	github.com/lib/pq v1.0.0
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-sqlite3 v1.9.0 // indirect
+	github.com/nanmu42/etherscan-api v1.0.4
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
 	github.com/oschwald/geoip2-golang v1.2.1

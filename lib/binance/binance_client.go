@@ -37,7 +37,7 @@ func NewBinanceClient(apiKey, secretKey string, sugar *zap.SugaredLogger) *Clien
 	}
 }
 
-func (bc *Client) fillRequest(req *http.Request, signNeeded bool, timepoint uint64) error {
+func (bc *Client) fillRequest(req *http.Request, signNeeded bool, timepoint time.Time) error {
 	if req.Method == http.MethodPost || req.Method == http.MethodPut || req.Method == http.MethodDelete {
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 		req.Header.Add("User-Agent", "binance/go")
@@ -47,7 +47,7 @@ func (bc *Client) fillRequest(req *http.Request, signNeeded bool, timepoint uint
 		q := req.URL.Query()
 		// sig := url.Values{}
 		req.Header.Set("X-MBX-APIKEY", bc.APIKey)
-		q.Set("timestamp", fmt.Sprintf("%d", int64(timepoint)))
+		q.Set("timestamp", fmt.Sprintf("%d", timeutil.TimeToTimestampMs(timepoint)))
 		q.Set("recvWindow", "5000")
 		signature, err := bc.sign(q.Encode())
 		if err != nil {
@@ -74,7 +74,7 @@ func (bc *Client) sign(msg string) (string, error) {
 }
 
 func (bc *Client) sendRequest(method, endpoint string, params map[string]string, signNeeded bool,
-	timepoint uint64) ([]byte, error) {
+	timepoint time.Time) ([]byte, error) {
 
 	var (
 		respBody []byte
@@ -147,7 +147,7 @@ func (bc *Client) GetTradeHistory(symbol string, fromID int64) ([]TradeHistory, 
 			"fromId": strconv.FormatInt(fromID, 10),
 		},
 		true,
-		timeutil.UnixMilliSecond(),
+		time.Now(),
 	)
 	if err != nil {
 		return result, err
@@ -167,7 +167,7 @@ func (bc *Client) GetAssetDetail() (AssetDetailResponse, error) {
 		endpoint,
 		map[string]string{},
 		true,
-		timeutil.UnixMilliSecond(),
+		time.Now(),
 	)
 	if err != nil {
 		return result, err
@@ -190,7 +190,7 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 			"endTime":   strconv.FormatUint(timeutil.TimeToTimestampMs(toTime), 10),
 		},
 		true,
-		timeutil.UnixMilliSecond(),
+		time.Now(),
 	)
 	if err != nil {
 		return result, err

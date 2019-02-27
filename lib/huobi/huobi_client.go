@@ -19,7 +19,7 @@ import (
 
 const (
 	//HuobiEndpoint is base on
-	HuobiEndpoint = "https://api.huobi.pro"
+	huobiEndpoint = "https://api.huobi.pro"
 )
 
 //Client represent a huobi client for
@@ -135,7 +135,7 @@ func (hc *Client) GetAccounts() ([]Account, error) {
 	var (
 		result AccountResponse
 	)
-	endpoint := fmt.Sprintf("%s/v1/account/accounts", HuobiEndpoint)
+	endpoint := fmt.Sprintf("%s/v1/account/accounts", huobiEndpoint)
 	res, err := hc.sendRequest(
 		http.MethodGet,
 		endpoint,
@@ -154,7 +154,7 @@ func (hc *Client) GetTradeHistory(symbol string, startDate, endDate time.Time) (
 	var (
 		result TradeHistoryList
 	)
-	endpoint := fmt.Sprintf("%s/v1/order/orders", HuobiEndpoint)
+	endpoint := fmt.Sprintf("%s/v1/order/orders", huobiEndpoint)
 	res, err := hc.sendRequest(
 		http.MethodGet,
 		endpoint,
@@ -178,7 +178,7 @@ func (hc *Client) GetWithdrawHistory(currency string, fromID uint64) (WithdrawHi
 	var (
 		result WithdrawHistoryList
 	)
-	endpoint := fmt.Sprintf("%s/v1/query/deposit-withdraw", HuobiEndpoint)
+	endpoint := fmt.Sprintf("%s/v1/query/deposit-withdraw", huobiEndpoint)
 	res, err := hc.sendRequest(
 		http.MethodGet,
 		endpoint,

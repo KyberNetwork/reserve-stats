@@ -66,14 +66,14 @@ func getSampleTradeLogs(dataPath string) ([]common.TradeLog, error) {
 }
 
 func TestSaveTradeLogs(t *testing.T) {
-	tradeLogs, err := getSampleTradeLogs("testdata/trade_logs.json")
+	tradeLogs, err := getSampleTradeLogs("../testdata/trade_logs.json")
 	if err = testStorage.SaveTradeLogs(tradeLogs); err != nil {
 		t.Error("get unexpected error when save trade logs", "err", err.Error())
 	}
 }
 
 func TestSaveFirstTradeLogs(t *testing.T) {
-	tradeLogs, err := getSampleTradeLogs("testdata/trade_logs.json")
+	tradeLogs, err := getSampleTradeLogs("../testdata/trade_logs.json")
 	if err = testStorage.SaveTradeLogs(tradeLogs); err != nil {
 		t.Error("get unexpected error when save trade logs", "err", err.Error())
 	}

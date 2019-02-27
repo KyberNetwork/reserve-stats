@@ -7,9 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
-	"net/url"
 	"strconv"
 	"time"
 
@@ -39,7 +37,7 @@ func NewBinanceClient(apiKey, secretKey string, sugar *zap.SugaredLogger) *Clien
 	}
 }
 
-func (bc *Client) fillRequest(req *http.Request, signNeeded bool, timepoint uint64) {
+func (bc *Client) fillRequest(req *http.Request, signNeeded bool, timepoint uint64) error {
 	if req.Method == http.MethodPost || req.Method == http.MethodPut || req.Method == http.MethodDelete {
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 		req.Header.Add("User-Agent", "binance/go")
@@ -47,17 +45,22 @@ func (bc *Client) fillRequest(req *http.Request, signNeeded bool, timepoint uint
 	req.Header.Add("Accept", "application/json")
 	if signNeeded {
 		q := req.URL.Query()
-		sig := url.Values{}
+		// sig := url.Values{}
 		req.Header.Set("X-MBX-APIKEY", bc.APIKey)
 		q.Set("timestamp", fmt.Sprintf("%d", int64(timepoint)))
 		q.Set("recvWindow", "5000")
 		signature, err := bc.sign(q.Encode())
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
-		sig.Set("signature", signature)
-		req.URL.RawQuery = q.Encode() + "&" + sig.Encode()
+		q.Set("signature", signature)
+		// Using separated values map for signature to ensure it is at the end
+		// of the query. This is required for /wapi apis from binance without
+		// any damn documentation about it!!!
+		// req.URL.RawQuery = q.Encode() + "&" + sig.Encode()
+		req.URL.RawQuery = q.Encode()
 	}
+	return nil
 }
 
 //Sign key for authenticated api
@@ -90,7 +93,9 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 		q.Add(k, v)
 	}
 	req.URL.RawQuery = q.Encode()
-	bc.fillRequest(req, signNeeded, timepoint)
+	if err := bc.fillRequest(req, signNeeded, timepoint); err != nil {
+		return respBody, err
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -120,6 +125,7 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 	default:
 		var response APIResponse
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			logger.Errorw("request body decode error", "error", err)
 			break
 		}
 		err = fmt.Errorf("binance return with code: %d - %s", resp.StatusCode, response.Msg)
@@ -166,7 +172,6 @@ func (bc *Client) GetAssetDetail() (AssetDetailResponse, error) {
 	if err != nil {
 		return result, err
 	}
-	log.Printf("%s", res)
 	err = json.Unmarshal(res, &result)
 	return result, err
 }

@@ -9,9 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
-	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -50,7 +49,7 @@ func (hc *Client) sign(msg string) (string, error) {
 	return result, nil
 }
 
-func (hc *Client) fillRequest(req *http.Request, signNeeded bool) {
+func (hc *Client) fillRequest(req *http.Request, signNeeded bool) error {
 	if req.Method == http.MethodPost || req.Method == http.MethodPut || req.Method == http.MethodDelete {
 		req.Header.Add("Content-Type", "application/json")
 	}
@@ -63,11 +62,12 @@ func (hc *Client) fillRequest(req *http.Request, signNeeded bool) {
 		payload := strings.Join([]string{method, hostname, path, auth}, "\n")
 		signature, err := hc.sign(payload)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		q.Set("Signature", signature)
 		req.URL.RawQuery = q.Encode()
 	}
+	return nil
 }
 
 func (hc *Client) sendRequest(method, requestURL string, params map[string]string,
@@ -96,18 +96,14 @@ func (hc *Client) sendRequest(method, requestURL string, params map[string]strin
 		params["AccessKeyId"] = hc.APIKey
 		params["Timestamp"] = timestamp
 	}
-	var sortedParams []string
-	for k := range params {
-		sortedParams = append(sortedParams, k)
-	}
-	sort.Strings(sortedParams)
-	for _, k := range sortedParams {
-		q.Add(k, params[k])
+	for k, v := range params {
+		q.Add(k, v)
 	}
 	req.URL.RawQuery = q.Encode()
-
-	hc.fillRequest(req, signNeeded)
 	var respBody []byte
+	if err := hc.fillRequest(req, signNeeded); err != nil {
+		return respBody, err
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return respBody, err
@@ -165,8 +161,8 @@ func (hc *Client) GetTradeHistory(symbol string, startDate, endDate time.Time) (
 		map[string]string{
 			"states":     "filled",
 			"symbol":     strings.ToLower(symbol),
-			"start-date": startDate.Format("2016-06-09"),
-			"endDate":    endDate.Format("2018-03-08"),
+			"start-date": startDate.Format("2006-01-02"),
+			"end-date":   endDate.Format("2006-01-02"),
 		},
 		true,
 	)
@@ -178,17 +174,19 @@ func (hc *Client) GetTradeHistory(symbol string, startDate, endDate time.Time) (
 }
 
 //GetWithdrawHistory return withdraw history of an account
-func (hc *Client) GetWithdrawHistory() (WithdrawHistoryList, error) {
+func (hc *Client) GetWithdrawHistory(currency string, fromID uint64) (WithdrawHistoryList, error) {
 	var (
 		result WithdrawHistoryList
 	)
-	endpoint := fmt.Sprintf("%s/v1/query/finances/", HuobiEndpoint)
+	endpoint := fmt.Sprintf("%s/v1/query/deposit-withdraw", HuobiEndpoint)
 	res, err := hc.sendRequest(
 		http.MethodGet,
 		endpoint,
 		map[string]string{
-			"types": "withdraw-group",
-			"size":  "20",
+			"type":     "withdraw",
+			"size":     "20",
+			"from":     strconv.FormatUint(fromID, 10),
+			"currency": strings.ToLower(currency),
 		},
 		true,
 	)

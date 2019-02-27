@@ -26,13 +26,13 @@ func TestEtherScanClient(t *testing.T) {
 
 	etherscanClient := etherscan.New(etherscan.Network("api"), etherscanAPIKey)
 	totalSupply, err := etherscanClient.EtherTotalSupply()
-	assert.Nil(t, err, fmt.Sprintf("get total supply of ether error: %s", err))
+	assert.NoError(t, err, fmt.Sprintf("get total supply of ether error: %s", err))
 	assert.NotZero(t, totalSupply)
 	sugar.Info(totalSupply)
 
 	//get list normal trade
 	testAddress := "0x2c1ba59d6f58433fb1eaee7d20b26ed83bda51a3" //random address
 	normalTxs, err := etherscanClient.NormalTxByAddress(testAddress, nil, nil, 1, 10, true)
-	assert.Nil(t, err, fmt.Sprintf("get normal tx error: %v", err))
-	assert.NotNil(t, normalTxs, "get normal txs failed")
+	assert.NoError(t, err, fmt.Sprintf("get normal tx error: %v", err))
+	assert.NotEmpty(t, normalTxs, "get normal txs failed")
 }

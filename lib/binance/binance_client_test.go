@@ -34,13 +34,11 @@ func TestBinanceClient(t *testing.T) {
 	assert.NotEmpty(t, assetDetail, "asset detail should not be nil")
 	// sugar.Info(assetDetail)
 
-	tradeHistory, err := binanceClient.GetTradeHistory("KNCETH", 0)
-	assert.NoError(t, err, "binance client get asset detail error: %s", err)
-	assert.NotEmpty(t, tradeHistory, "asset detail should not be nil")
+	_, err = binanceClient.GetTradeHistory("KNCETH", 0)
+	assert.NoError(t, err, "binance client get trade history error: %s", err)
 
 	fromTime := time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
 	toTime := time.Now()
-	withdrawHistory, err := binanceClient.GetWithdrawalHistory(fromTime, toTime)
-	assert.NoError(t, err, "binance client get asset detail error: %s", err)
-	assert.NotEmpty(t, withdrawHistory, "asset detail should not be nil")
+	_, err = binanceClient.GetWithdrawalHistory(fromTime, toTime)
+	assert.NoError(t, err, "binance client get withdraw history error: %s", err)
 }

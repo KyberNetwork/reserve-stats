@@ -37,13 +37,9 @@ func TestHuobiClient(t *testing.T) {
 	startDate := time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
 	endDate := time.Date(2019, time.February, 1, 0, 0, 0, 0, time.UTC)
 
-	tradeHistory, err := huobiClient.GetTradeHistory("bixeth", startDate, endDate)
+	_, err = huobiClient.GetTradeHistory("bixeth", startDate, endDate)
 	assert.NoError(t, err, fmt.Sprintf("get history error: %v", err))
-	assert.NotEmpty(t, tradeHistory, "trade history is nil")
-	sugar.Info(tradeHistory)
 
-	withdrawHistory, err := huobiClient.GetWithdrawHistory("ETH", 0)
+	_, err = huobiClient.GetWithdrawHistory("ETH", 0)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, withdrawHistory)
-	sugar.Info(withdrawHistory)
 }

@@ -2,7 +2,6 @@ package huobi
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -30,7 +29,7 @@ func NewCliFlags() []cli.Flag {
 }
 
 //NewHuobiClientFromContext return huobi client
-func NewHuobiClientFromContext(c *cli.Context) (*Client, error) {
+func NewHuobiClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, error) {
 	var (
 		apiKey, secretKey string
 	)
@@ -43,13 +42,6 @@ func NewHuobiClientFromContext(c *cli.Context) (*Client, error) {
 		return nil, fmt.Errorf("cannot create binance client, lack of secret key")
 	}
 	secretKey = c.String(huobiSecretKeyFlag)
-
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
 
 	return NewHuobiClient(apiKey, secretKey, sugar), nil
 }

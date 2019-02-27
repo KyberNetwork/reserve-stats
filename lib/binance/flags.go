@@ -1,8 +1,7 @@
 package binance
 
 import (
-	"fmt"
-	"log"
+	"errors"
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -30,26 +29,19 @@ func NewCliFlags() []cli.Flag {
 }
 
 //NewBinanceClientFromContext return binance client
-func NewBinanceClientFromContext(c *cli.Context) (*Client, error) {
+func NewBinanceClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, error) {
 	var (
 		apiKey, secretKey string
 	)
 	if c.String(binanceAPIKeyFlag) == "" {
-		return nil, fmt.Errorf("cannot create binance client, lack of api key")
+		return nil, errors.New("cannot create binance client, lack of api key")
 	}
 	apiKey = c.String(binanceAPIKeyFlag)
 
 	if c.String(binanceSecretKeyFlag) == "" {
-		return nil, fmt.Errorf("cannot create binance client, lack of secret key")
+		return nil, errors.New("cannot create binance client, lack of secret key")
 	}
 	secretKey = c.String(binanceSecretKeyFlag)
-
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
 
 	return NewBinanceClient(apiKey, secretKey, sugar), nil
 }

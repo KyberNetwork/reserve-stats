@@ -3,9 +3,10 @@ package blockchain
 import (
 	"context"
 	"errors"
-	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"strings"
 	"sync"
+
+	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -100,6 +101,18 @@ func (t *TokenSymbol) Symbol(address common.Address) (string, error) {
 	symbol = strings.ToUpper(symbol)
 	t.cachedSymbol.Store(address, symbol)
 	return symbol, nil
+}
+
+//Name return name of token
+func (t *TokenSymbol) Name(address common.Address) (string, error) {
+	tokenContract, err := contracts.NewERC20(address, t.ethClient)
+	if err != nil {
+		return "", err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	callOpts := &bind.CallOpts{Context: ctx}
+	return tokenContract.Name(callOpts)
 }
 
 var getSymbolFns = []func(common.Address, bind.ContractBackend) (string, error){

@@ -4,77 +4,73 @@ import (
 	"testing"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+	// "github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"go.uber.org/zap"
 )
 
 func TestGetNextDayBlock(t *testing.T) {
 	var (
-		lastResolve   int64 = 6255278
-		expectedBlock int64 = 6261438
-		start               = timeutil.TimestampMsToTime(uint64(1535806920000))
-		end                 = timeutil.TimestampMsToTime(uint64(1536386520000))
+		lastResolve   uint64 = 6255278
+		expectedBlock uint64 = 6261438
+		start                = timeutil.TimestampMsToTime(uint64(1535806920000))
+		end                  = timeutil.TimestampMsToTime(uint64(1536386520000))
 	)
 	logger, err := zap.NewDevelopment()
-	if err != nil {
-		t.Fatalf("can't create logger")
-	}
+	require.NoError(t, err)
 	sugar := logger.Sugar()
 
 	ethClient, err := ethclient.Dial("https://mainnet.infura.io/")
-	if err != nil {
-		sugar.Fatalw("can't create ethClient", "error", err)
-	}
+	require.NoError(t, err)
+
 	blkTimeRsv, err := blockchain.NewBlockTimeResolver(sugar, ethClient)
-	if err != nil {
-		sugar.Fatalw("can't create blocktime resolver", "error", err)
-	}
+	require.NoError(t, err)
+
 	lbResolver := NewLastBlockResolver(ethClient, blkTimeRsv, start, end, sugar)
-	lbResolver.lastResolvedBlock = lastResolve
-	lbResolver.lastResolvedTimeStamp, err = lbResolver.resolver.Resolve(uint64(lastResolve))
-	if err != nil {
-		t.Fatalf("can't resolve")
+
+	lastResolvedTimeStamp, err := lbResolver.resolver.Resolve(uint64(lastResolve))
+	require.NoError(t, err)
+	lbResolver.lastResolvedBlockInfo = BlockInfo{
+		Block:     lastResolve,
+		Timestamp: lastResolvedTimeStamp,
 	}
-	nextblock, nextTime, err := lbResolver.getNextDayBlock()
-	if err != nil {
-		t.Fatalf("can't find next d ay block")
-	}
-	sugar.Debugw("result", "next block", nextblock, "next time", nextTime.String())
-	if nextblock != expectedBlock {
-		sugar.Errorw("Wrong result", "expected", expectedBlock, "result", nextblock)
-		t.Fail()
-	}
+	require.NoError(t, err)
+
+	nextBlockInfo, err := lbResolver.getNextDayBlock()
+	require.NoError(t, err)
+
+	sugar.Debugw("result", "next block", nextBlockInfo.Block, "next time", nextBlockInfo.Timestamp.String())
+	assert.Equal(t, expectedBlock, nextBlockInfo.Block)
 }
 
 func TestLastBlockDaily(t *testing.T) {
-	testutil.SkipExternal(t)
+	// testutil.SkipExternal(t)
 	var (
 		start        = timeutil.TimestampMsToTime(uint64(1535806920000))
 		end          = timeutil.TimestampMsToTime(uint64(1535954520000))
 		errCh        = make(chan error)
-		blCh         = make(chan int64, 10)
-		resultsBlock = []int64{}
-		expectBlocks = []int64{6255278, 6261305, 6267192}
+		blCh         = make(chan BlockInfo)
+		resultsBlock = []uint64{}
+		expectBlocks = []uint64{6255278, 6261305, 6267192}
 		tobreak      = false
 	)
 	logger, err := zap.NewDevelopment()
-	if err != nil {
-		t.Fatalf("can't create logger")
-	}
+	require.NoError(t, err)
+
 	sugar := logger.Sugar()
 
 	ethClient, err := ethclient.Dial("https://mainnet.infura.io/")
-	if err != nil {
-		sugar.Fatalw("can't create ethClient", "error", err)
-	}
+	require.NoError(t, err)
+
 	blkTimeRsv, err := blockchain.NewBlockTimeResolver(sugar, ethClient)
-	if err != nil {
-		sugar.Fatalw("can't create blocktime resolver", "error", err)
-	}
+	require.NoError(t, err)
+
 	lbResolver := NewLastBlockResolver(ethClient, blkTimeRsv, start, end, sugar)
 	go lbResolver.FetchLastBlock(errCh, blCh)
 	for {
@@ -86,20 +82,11 @@ func TestLastBlockDaily(t *testing.T) {
 				sugar.Fatalw("error in fetching")
 			}
 		case block := <-blCh:
-			resultsBlock = append(resultsBlock, block)
+			resultsBlock = append(resultsBlock, block.Block)
 		}
 		if tobreak {
 			break
 		}
 	}
-	if len(resultsBlock) != len(expectBlocks) {
-		sugar.Errorw("wrong result", "expected", expectBlocks, "result", resultsBlock)
-		t.Fail()
-	}
-	for i, rb := range resultsBlock {
-		if expectBlocks[i] != rb {
-			sugar.Errorw("wrong result", "expected", expectBlocks, "result", resultsBlock)
-			t.Fail()
-		}
-	}
+	assert.Equal(t, resultsBlock, expectBlocks)
 }

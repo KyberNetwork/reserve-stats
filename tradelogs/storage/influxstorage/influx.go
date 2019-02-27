@@ -51,7 +51,7 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 // SaveTradeLogs persist trade logs to DB
 func (is *InfluxStorage) SaveTradeLogs(logs []common.TradeLog) error {
 	logger := is.sugar.With(
-		"func", "tradelogs/storage/InfluxStorage.SaveTradeLogs",
+		"func", "tradelogs/storage/influxstorage/InfluxStorage.SaveTradeLogs",
 	)
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  is.dbName,

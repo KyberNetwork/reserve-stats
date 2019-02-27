@@ -20,6 +20,7 @@ require (
 	github.com/gin-contrib/zap v0.0.0-20180827024651-a4f331736217
 	github.com/gin-gonic/gin v1.3.0
 	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
+	github.com/go-pg/pg v8.0.1+incompatible
 	github.com/go-redis/redis v6.15.1+incompatible
 	github.com/go-sql-driver/mysql v1.4.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
@@ -29,6 +30,7 @@ require (
 	github.com/huin/goupnp v1.0.0 // indirect
 	github.com/influxdata/influxdb v1.6.3
 	github.com/jackpal/go-nat-pmp v1.0.1 // indirect
+	github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a // indirect
 	github.com/jinzhu/now v0.0.0-20181116074157-8ec929ed50c3
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
 	github.com/karalabe/hid v0.0.0-20180420081245-2b4488a37358 // indirect
@@ -61,6 +63,7 @@ require (
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/urfave/cli.v1 v1.20.0 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
+	mellium.im/sasl v0.2.1 // indirect
 )
 
 replace github.com/ethereum/go-ethereum => github.com/favadi/go-ethereum v1.8.16-fork

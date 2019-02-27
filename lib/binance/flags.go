@@ -28,8 +28,8 @@ func NewCliFlags() []cli.Flag {
 	}
 }
 
-//NewBinanceClientFromContext return binance client
-func NewBinanceClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, error) {
+//NewClientFromContext return binance client
+func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, error) {
 	var (
 		apiKey, secretKey string
 	)
@@ -43,5 +43,5 @@ func NewBinanceClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Cli
 	}
 	secretKey = c.String(binanceSecretKeyFlag)
 
-	return NewBinanceClient(apiKey, secretKey, sugar), nil
+	return NewBinance(apiKey, secretKey, sugar), nil
 }

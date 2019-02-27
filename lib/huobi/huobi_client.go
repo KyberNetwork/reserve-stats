@@ -30,8 +30,8 @@ type Client struct {
 	sugar     *zap.SugaredLogger
 }
 
-//NewHuobiClient return a new HuobiClient instance
-func NewHuobiClient(apiKey, secretKey string, sugar *zap.SugaredLogger) *Client {
+//NewClient return a new HuobiClient instance
+func NewClient(apiKey, secretKey string, sugar *zap.SugaredLogger) *Client {
 	return &Client{
 		APIKey:    apiKey,
 		SecretKey: secretKey,

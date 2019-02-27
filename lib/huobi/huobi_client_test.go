@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
@@ -23,15 +22,18 @@ func TestHuobiClient(t *testing.T) {
 	sugar := logger.Sugar()
 
 	huobiAPIKey, ok := os.LookupEnv("HUOBI_API_KEY")
-	require.True(t, ok, "huobi api key is not set")
+	if !ok {
+		t.Skip("Huobi API key is not available")
+	}
 
 	huobiSecretKey, ok := os.LookupEnv("HUOBI_SECRET_KEY")
-	require.True(t, ok, "huobi secret key is not set")
+	if !ok {
+		t.Skip("Huobi secret key is not available")
+	}
 
-	huobiClient := NewHuobiClient(huobiAPIKey, huobiSecretKey, sugar)
-	accounts, err := huobiClient.GetAccounts()
+	huobiClient := NewClient(huobiAPIKey, huobiSecretKey, sugar)
+	_, err = huobiClient.GetAccounts()
 	assert.NoError(t, err, fmt.Sprintf("get account fee error: %s", err))
-	assert.NotEmpty(t, accounts, "get accounts nil")
 
 	//fixed timestamp for test
 	startDate := time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)

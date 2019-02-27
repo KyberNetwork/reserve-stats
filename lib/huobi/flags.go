@@ -28,8 +28,8 @@ func NewCliFlags() []cli.Flag {
 	}
 }
 
-//NewHuobiClientFromContext return huobi client
-func NewHuobiClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, error) {
+// NewClientFromContext return huobi client
+func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, error) {
 	var (
 		apiKey, secretKey string
 	)
@@ -43,5 +43,5 @@ func NewHuobiClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Clien
 	}
 	secretKey = c.String(huobiSecretKeyFlag)
 
-	return NewHuobiClient(apiKey, secretKey, sugar), nil
+	return NewClient(apiKey, secretKey, sugar), nil
 }

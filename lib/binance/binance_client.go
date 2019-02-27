@@ -29,8 +29,8 @@ type Client struct {
 	sugar     *zap.SugaredLogger
 }
 
-//NewBinanceClient return a new client for binance api
-func NewBinanceClient(apiKey, secretKey string, sugar *zap.SugaredLogger) *Client {
+//NewBinance return a new client for binance api
+func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger) *Client {
 	return &Client{
 		APIKey:    apiKey,
 		SecretKey: secretKey,

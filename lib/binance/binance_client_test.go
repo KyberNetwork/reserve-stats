@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
@@ -22,12 +21,16 @@ func TestBinanceClient(t *testing.T) {
 	sugar := logger.Sugar()
 
 	binanceAPIKey, ok := os.LookupEnv("BINANCE_API_KEY")
-	require.True(t, ok, "binance api key is not set")
+	if !ok {
+		t.Skip("Binance API key is not available")
+	}
 
 	binanceSecretKey, ok := os.LookupEnv("BINANCE_SECRET_KEY")
-	require.True(t, ok, "binance secret key is not set")
+	if !ok {
+		t.Skip("Binance secret key is not available")
+	}
 
-	binanceClient := NewBinanceClient(binanceAPIKey, binanceSecretKey, sugar)
+	binanceClient := NewBinance(binanceAPIKey, binanceSecretKey, sugar)
 
 	assetDetail, err := binanceClient.GetAssetDetail()
 	assert.NoError(t, err, "binance client get asset detail error: %s", err)

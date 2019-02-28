@@ -49,3 +49,8 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*ListedTokenDB, error) {
 		db:    db,
 	}, nil
 }
+
+//CreateOrUpdate add or edit an record in the tokens table
+func (ltd *ListedTokenDB) CreateOrUpdate() error {
+	return nil
+}

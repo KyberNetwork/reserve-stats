@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -11,9 +12,14 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
+
+	"github.com/KyberNetwork/tokenrate"
+	"github.com/KyberNetwork/tokenrate/coingecko"
 	"github.com/ethereum/go-ethereum"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 )
 
 const (
@@ -25,8 +31,8 @@ const (
 	attemptsFlag    = "attempts"
 	defaultAttempts = 3
 
-	delayFlag        = "delay"
-	defaultDelayTime = time.Minute
+	retryDelayFlag        = "retry-delay"
+	defaultRetryDelayTime = 5 * time.Minute
 
 	durationFlag         = "duration"
 	shardDurationFlag    = "shard-duration"
@@ -35,8 +41,8 @@ const (
 
 func main() {
 	app := libapp.NewApp()
-	app.Name = "reserve-rates-crawler"
-	app.Usage = "get the rates of all configured reserves at a certain block"
+	app.Name = "accounting-reserve-rates-fetcher"
+	app.Usage = "get the rates of all configured reserves at the last block of a day"
 	app.Action = run
 
 	app.Flags = append(app.Flags,
@@ -46,33 +52,16 @@ func main() {
 			Usage:  "list of reserve contract addresses. Example: --addresses={\"0x1111\",\"0x222\"}",
 		},
 		cli.IntFlag{
-			Name:   maxWorkerFlag,
-			Usage:  "The maximum number of worker to fetch rates",
-			EnvVar: "MAX_WORKERS",
-			Value:  defaultMaxWorker,
-		},
-		cli.IntFlag{
 			Name:   attemptsFlag,
 			Usage:  "The number of attempt to query rates from blockchain",
 			EnvVar: "ATTEMPTS",
 			Value:  defaultAttempts,
 		},
 		cli.DurationFlag{
-			Name:   delayFlag,
-			Usage:  "The duration to put worker pools into sleep after each batch requets",
+			Name:   retryDelayFlag,
+			Usage:  "The duration to put worker pools into sleep after each batch request",
 			EnvVar: "DELAY",
-			Value:  defaultDelayTime,
-		},
-		cli.DurationFlag{
-			Name:   durationFlag,
-			Usage:  "The duration of a reserve rates before considered expired",
-			EnvVar: "DURATION",
-		},
-		cli.DurationFlag{
-			Name:   shardDurationFlag,
-			Usage:  "The shard duration of a reserve rates",
-			EnvVar: "SHARD_DURATION",
-			Value:  defaultShardDuration,
+			Value:  defaultRetryDelayTime,
 		},
 		blockchain.NewEthereumNodeFlags(),
 	)
@@ -82,12 +71,57 @@ func main() {
 	}
 }
 
+func retryFetchTokenRate(maxAttempt int,
+	sugar *zap.SugaredLogger,
+	rsvRateCrawler *crawler.ReserveRatesCrawler,
+	block uint64,
+	retryInterval time.Duration) (map[string]map[string]rsvRateCommon.ReserveRateEntry, error) {
+	var (
+		result map[string]map[string]rsvRateCommon.ReserveRateEntry
+		err    error
+		logger = sugar.With("function", "main/retryFetchTokenRate", "block", block)
+	)
+
+	for i := 0; i < maxAttempt; i++ {
+		result, err = rsvRateCrawler.GetReserveRates(block)
+		if err == nil {
+			return result, nil
+		}
+		logger.Debugw("failed to fetch reserve rate", "attempt", i, "error", err)
+		time.Sleep(retryInterval)
+	}
+
+	return nil, err
+}
+
+func retryFetchETHUSDRate(maxAttempt int,
+	sugar *zap.SugaredLogger,
+	fetcher tokenrate.ETHUSDRateProvider,
+	timestamp time.Time,
+	retryInterval time.Duration) (float64, error) {
+	var (
+		result float64
+		err    error
+		logger = sugar.With("function", "main/retryFetchTokenRate", "time", timestamp.String())
+	)
+
+	for i := 0; i < maxAttempt; i++ {
+		result, err = fetcher.USDRate(timestamp)
+		if err == nil {
+			return result, nil
+		}
+		logger.Debugw("failed to fetch ETH-USD rate", "attempt", i, "error", err)
+		time.Sleep(retryInterval)
+	}
+
+	return result, err
+}
 func run(c *cli.Context) error {
 	var (
 		err            error
 		lastBlockErrCh = make(chan error)
 		rateErrChn     = make(chan error)
-		lastBlockBlCh  = make(chan int64)
+		lastBlockBlCh  = make(chan lastblockdaily.BlockInfo)
 		wg             = &sync.WaitGroup{}
 	)
 
@@ -110,18 +144,19 @@ func run(c *cli.Context) error {
 
 	fromDate, err := timeutil.FromTimeFromContext(c)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot get from date, err: %v", err)
 	}
 
 	toDate, err := timeutil.ToTimeFromContext(c)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot get to date, err: %v", err)
 	}
 
 	attempts := c.Int(attemptsFlag)
-	delayTime := c.Duration(delayFlag)
+	retryDelayTime := c.Duration(retryDelayFlag)
 
 	addrs := c.StringSlice(addressesFlag)
+	//TODO: remove this for production server
 	if len(addrs) == 0 {
 		addr := contracts.InternalReserveAddress().MustGetOneFromContext(c)
 		addrs = append(addrs, addr.Hex())
@@ -129,7 +164,17 @@ func run(c *cli.Context) error {
 	}
 
 	symbolResolver, err := blockchain.NewTokenSymbolFromContext(c)
+	if err != nil {
+		return fmt.Errorf("cannot create symbol Resolver, err: %v", err)
+	}
+
 	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, addrs, ethClient, symbolResolver)
+	if err != nil {
+		return fmt.Errorf("cannot rate crawler, err: %v", err)
+	}
+
+	cgk := coingecko.New()
+
 	lastBlockResolver := lastblockdaily.NewLastBlockResolver(ethClient, blockTimeResolver, fromDate, toDate, sugar)
 	go lastBlockResolver.FetchLastBlock(lastBlockErrCh, lastBlockBlCh)
 
@@ -147,30 +192,22 @@ func run(c *cli.Context) error {
 			if err != nil {
 				return err
 			}
-		case block := <-lastBlockBlCh:
+		case blockInfo := <-lastBlockBlCh:
 			wg.Add(1)
 
-			go func(errCh chan error, block int64, attempts int) {
+			go func(errCh chan error, blockInfo lastblockdaily.BlockInfo, attempts int) {
 				defer wg.Done()
-				var toBreak bool
-				for {
-					rates, err := ratesCrawler.GetReserveRates(uint64(block))
-					if err != nil {
-						sugar.Debugw("failed to fetch rates", "error", err, "attempt left", attempts)
-						if attempts == 0 {
-							errCh <- err
-							toBreak = true
-						} else {
-							attempts--
-							time.Sleep(delayTime)
-						}
-					}
-					if (err == nil) || (toBreak) {
-						sugar.Debugw("rate result", "block", block, "rates", rates)
-						break
-					}
+				rates, rateErr := retryFetchTokenRate(attempts, sugar, ratesCrawler, blockInfo.Block, retryDelayTime)
+				if rateErr != nil {
+					errCh <- rateErr
 				}
-			}(rateErrChn, block, attempts)
+				//TODO: parallel this
+				ethUSDRate, err := retryFetchETHUSDRate(attempts, sugar, cgk, blockInfo.Timestamp, retryDelayTime)
+				if err != nil {
+					errCh <- err
+				}
+				sugar.Debugw("rate result", "block", blockInfo.Block, "rates", rates, "eth_usd_rate", ethUSDRate)
+			}(rateErrChn, blockInfo, attempts)
 		}
 	}
 }

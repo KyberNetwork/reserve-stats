@@ -17,10 +17,7 @@ import (
 func isEthereumAddress(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
 	field reflect.Value, _ reflect.Type, _ reflect.Kind, _ string) bool {
 	address := field.String()
-	if err := validation.Validate(address, validation.Required); err != nil {
-		return false
-	}
-	if !common.IsHexAddress(address) {
+	if len(address) != 0 && !common.IsHexAddress(address) {
 		return false
 	}
 	return true

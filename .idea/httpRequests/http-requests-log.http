@@ -1,13 +1,189 @@
-POST http://127.0.0.1:8009/addresses
+GET http://127.0.0.1:8009/addresses
+
+<> 2019-02-28T054638.404.txt
+
+###
+
+GET http://127.0.0.1:8009/addresses/2
+
+<> 2019-02-28T054633.404.json
+
+###
+
+PUT http://127.0.0.1:8009/addresses/2
 Content-Type: application/json
 
 {
-  "address": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
+  "address": "0x63825c174ab367968EC60f061753D3bbD36A0D80",
   "type": "reserve",
-  "description": "main reserve"
+  "description": "this is OK"
 }
 
-<> 2019-02-26T054651.201.json
+###
+
+PUT http://127.0.0.1:8009/addresses/2
+Content-Type: application/json
+
+{
+  "address": "0x63825c174ab367968EC60f061753D3bbD36A0D80",
+  "type": "reserve 2",
+  "description": "this is OK"
+}
+
+<> 2019-02-28T054612.400.json
+
+###
+
+PUT http://127.0.0.1:8009/addresses/2
+Content-Type: application/json
+
+{
+  "address": "0x63825c174ab367968EC60f061753D3bbD36A0D80",
+  "type": "reserve 2",
+  "description": "this is OK"
+}
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T053313.200.json
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T053257.200.json
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T053246.200.json
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T053209.200.json
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T053146.200.json
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T052906.200.json
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T052854.200.json
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T052831.200.json
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T052702.200.json
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T052418.200.json
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T052412.200.json
+
+###
+
+PUT http://127.0.0.1:8009/addresses/1
+Content-Type: application/json
+
+{
+  "address": "0x63825c174ab367968EC60f061753D3bbD36A0D80",
+  "type": "reserve",
+  "description": "this is OK"
+}
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T052359.200.json
+
+###
+
+PUT http://127.0.0.1:8009/addresses/1
+Content-Type: application/json
+
+{
+  "address": "0x63825c174ab367968EC60f061753D3bbD36A0D80",
+  "type": "pricing_operator",
+  "description": "this is OK"
+}
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T052320.200.json
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T052157.200.json
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T052147.500.json
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T051825.500.json
 
 ###
 
@@ -20,7 +196,19 @@ Content-Type: application/json
   "description": ""
 }
 
-<> 2019-02-26T054621.201.json
+<> 2019-02-28T051823.201.json
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T051819.404.json
+
+###
+
+GET http://127.0.0.1:8009/addresses/1
+
+<> 2019-02-28T051752.500.json
 
 ###
 
@@ -33,174 +221,7 @@ Content-Type: application/json
   "description": ""
 }
 
-<> 2019-02-26T054605.500.json
-
-###
-
-POST http://127.0.0.1:8009/addresses
-Content-Type: application/json
-
-{
-  "address": "0x63825c174ab367968EC60f061753D3bbD36A0D80",
-  "type": "pricing_operator",
-  "description": ""
-}
-
-<> 2019-02-26T052808.400.json
-
-###
-
-POST http://127.0.0.1:8009/addresses
-Content-Type: application/json
-
-{
-  "address": "0x63825c174ab367968EC60f061753D3bbD36A0D80",
-  "type": "pricing_operator",
-  "description": ""
-}
-
-<> 2019-02-26T052733.400.json
-
-###
-
-POST http://127.0.0.1:8009/addresses
-Content-Type: application/json
-
-{
-  "address": "0x63825c174ab367968EC60f061753D3bbD36A0D80",
-  "type": "reserve",
-  "description": "main"
-}
-
-<> 2019-02-26T052629.400.json
-
-###
-
-POST http://127.0.0.1:8009/addresses
-Content-Type: application/json
-
-{
-  "address": "0x63825c174ab367968ec60f061753d3bbd36a0d81",
-  "type": "reserve",
-  "description": "main reserve"
-}
-
-<> 2019-02-26T052351.400.json
-
-###
-
-POST http://127.0.0.1:8009/addresses
-Content-Type: application/json
-
-{
-  "address": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
-  "type": "reserve",
-  "description": "main reserve"
-}
-
-<> 2019-02-26T052229.201.json
-
-###
-
-POST http://127.0.0.1:8009/addresses
-
-<> 2019-02-26T052139.400.json
-
-###
-
-GET http://127.0.0.1:8008:/users?address=0x000566b53e028d21e104e4320de61c2314ef4064
-
-<> 2019-02-15T034809.200.json
-
-###
-
-GET http://127.0.0.1:8008:/users?address=0x000566b53e028d21e104e4320de61c2314ef4064
-
-<> 2019-02-15T034626.200.json
-
-###
-
-GET http://127.0.0.1:8008:/users?address=0x63825c174ab367968ec60f061753d3bbd36a0d8f
-
-<> 2019-02-15T034548.200.json
-
-###
-
-GET http://127.0.0.1:8008:/users?address=0x63825c174ab367968ec60f061753d3bbd36a0d8f
-
-<> 2019-02-15T034546.200.json
-
-###
-
-GET http://127.0.0.1:8008:/users?address=0x63825c174ab367968ec60f061753d3bbd36a0d8f
-
-<> 2019-02-15T034545.200.json
-
-###
-
-GET http://127.0.0.1:8008:/users?address=0x63825c174ab367968ec60f061753d3bbd36a0d8f
-
-<> 2019-02-15T034544.200.json
-
-###
-
-GET http://127.0.0.1:8008:/users?address=0x63825c174ab367968ec60f061753d3bbd36a0d8f
-
-<> 2019-02-15T034542.200.json
-
-###
-
-GET http://127.0.0.1:8004/trade-logs
-
-<> 2019-02-14T032758.200.json
-
-###
-
-GET http://127.0.0.1:8004/country-stats?country=HK
-
-<> 2019-02-14T032225.200.json
-
-###
-
-GET http://127.0.0.1:8004/country-stats?country=HK
-
-<> 2019-02-14T032129.200.json
-
-###
-
-GET http://127.0.0.1:8004/country-stats?country=unknown
-
-<> 2019-02-14T032118.400.json
-
-###
-
-GET http://127.0.0.1:8004/country-stats?country=Unknown
-
-<> 2019-02-14T032110.400.json
-
-###
-
-GET http://127.0.0.1:8004/country-stats?country=""
-
-<> 2019-02-14T032106.400.json
-
-###
-
-GET http://127.0.0.1:8004/country-stats?country=VN
-
-<> 2019-02-14T032100.200.json
-
-###
-
-GET http://127.0.0.1:8004/country-stats
-
-<> 2019-02-14T032054.400.json
-
-###
-
-GET http://127.0.0.1:8004:country-stats
-
-<> 2019-02-14T032051.404.txt
+<> 2019-02-28T051748.409.json
 
 ###
 

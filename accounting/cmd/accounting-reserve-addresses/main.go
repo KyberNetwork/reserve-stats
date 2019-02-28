@@ -57,12 +57,12 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	st, err := postgresql.NewStorage(sugar, db)
+	st, err := postgresql.NewStorage(sugar, db, resolv)
 	if err != nil {
 		return err
 	}
 
-	s := http.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), st, resolv)
+	s := http.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), st)
 
 	return s.Run()
 }

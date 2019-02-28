@@ -33,7 +33,7 @@ func (r *EtherscanContractTimestampResolver) Resolve(address common.Address) (ti
 	if err != nil {
 		// etherscan package does not export error for this, have to compare error message
 		if err.Error() == "etherscan server: No transactions found" {
-			return time.Time{}, ErrNotAvailble
+			return time.Time{}, ErrNotAvailable
 		}
 	}
 	logger.Debugw("got transactions from Etherscan", "txs", len(txs))
@@ -42,7 +42,7 @@ func (r *EtherscanContractTimestampResolver) Resolve(address common.Address) (ti
 	// message "etherscan server: No transactions found" if no transaction found for given address.
 	// Following codes should never be reached, just add for safe guard for implementation changes.
 	if len(txs) == 0 {
-		return time.Time{}, ErrNotAvailble
+		return time.Time{}, ErrNotAvailable
 	}
 
 	firstTx := txs[0]
@@ -50,7 +50,7 @@ func (r *EtherscanContractTimestampResolver) Resolve(address common.Address) (ti
 
 	// first transaction is not a contract creation transaction, given address is not a contract.
 	if len(firstTx.ContractAddress) == 0 {
-		return time.Time{}, ErrNotAvailble
+		return time.Time{}, ErrNotAvailable
 	}
 
 	return firstTx.TimeStamp.Time(), nil

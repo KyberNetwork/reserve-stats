@@ -1,7 +1,6 @@
 package http
 
 import (
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -14,19 +13,18 @@ type Server struct {
 	r       *gin.Engine
 	host    string
 	storage storage.Interface
-	resolv  blockchain.ContractTimestampResolver
 }
 
 // NewServer creates a new instance of Server from given parameters.
-func NewServer(sugar *zap.SugaredLogger, host string, storage storage.Interface, resolv blockchain.ContractTimestampResolver) *Server {
+func NewServer(sugar *zap.SugaredLogger, host string, storage storage.Interface) *Server {
 	r := gin.Default()
-	return &Server{sugar: sugar, r: r, host: host, storage: storage, resolv: resolv}
+	return &Server{sugar: sugar, r: r, host: host, storage: storage}
 }
 
 func (s *Server) register() {
 	s.r.POST("/addresses", s.create)
 	s.r.GET("/addresses/:id", s.get)
-	s.r.PUT("/addresses/:id", nil)
+	s.r.PUT("/addresses/:id", s.update)
 }
 
 func (s *Server) Run() error {

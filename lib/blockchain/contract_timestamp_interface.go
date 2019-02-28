@@ -9,7 +9,7 @@ import (
 
 // ErrNotAvailable is returning when Resolve found out that given address
 // does not have any transaction or not a contract.
-var ErrNotAvailble = errors.New("address is not a contract, or does not exist")
+var ErrNotAvailable = errors.New("address is not a contract, or does not exist")
 
 // ContractTimestampResolverInterface is the common interface of contract
 // creation timestamp resolver.

@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/storage"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 )
@@ -26,7 +24,6 @@ func (s *Server) create(c *gin.Context) {
 	var (
 		logger = s.sugar.With("func", "accounting/reserve-addresses/http/*Server.create")
 		input  createInput
-		ts     time.Time
 	)
 
 	err := c.ShouldBindJSON(&input)
@@ -49,18 +46,6 @@ func (s *Server) create(c *gin.Context) {
 
 	address := ethereum.HexToAddress(input.Address)
 
-	if ts, err = s.resolv.Resolve(address); err == blockchain.ErrNotAvailble {
-		logger.Infow("address creation time is not available", "err", err.Error())
-		err = nil
-	} else if err != nil {
-		httputil.ResponseFailure(
-			c,
-			http.StatusBadRequest,
-			err,
-		)
-		return
-	}
-
 	addressType, ok := common.IsValidAddressType(input.Type)
 	if !ok {
 		httputil.ResponseFailure(
@@ -71,7 +56,7 @@ func (s *Server) create(c *gin.Context) {
 		return
 	}
 
-	id, err := s.storage.Create(address, addressType, input.Description, ts)
+	id, err := s.storage.Create(address, addressType, input.Description)
 	if err == storage.ErrExists {
 		httputil.ResponseFailure(
 			c,
@@ -90,20 +75,28 @@ func (s *Server) create(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 
+// getIDParam gets and validates the id parameter from given context.
+func getIDParam(c *gin.Context) (uint64, error) {
+	idVal := c.Param("id")
+	id, err := strconv.ParseUint(idVal, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid id: %s", idVal)
+	}
+	return id, nil
+}
+
 func (s *Server) get(c *gin.Context) {
 	var (
 		logger = s.sugar.With("func", "accounting/reserve-addresses/http/*Server.get")
 	)
 
-	idVal := c.Param("id")
-	id, err := strconv.ParseUint(idVal, 10, 64)
+	id, err := getIDParam(c)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,
 			http.StatusBadRequest,
-			fmt.Errorf("invalid id: %s", idVal),
+			err,
 		)
-		return
 	}
 
 	logger = logger.With("id", id)
@@ -128,4 +121,78 @@ func (s *Server) get(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, ra)
+}
+
+type updateInput struct {
+	Address     string  `json:"address" binding:"isAddress"`
+	Type        *string `json:"type"`
+	Description string  `json:"description"`
+}
+
+func (s *Server) update(c *gin.Context) {
+	var (
+		logger      = s.sugar.With("func", "accounting/reserve-addresses/http/*Server.update")
+		input       updateInput
+		addressType *common.AddressType
+	)
+
+	id, err := getIDParam(c)
+	if err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusBadRequest,
+			err,
+		)
+	}
+
+	logger = logger.With("id", id)
+
+	if err = c.ShouldBindJSON(&input); err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusBadRequest,
+			err,
+		)
+		return
+	}
+
+	if input.Type != nil {
+		validType, ok := common.IsValidAddressType(*input.Type)
+		if !ok {
+			httputil.ResponseFailure(
+				c,
+				http.StatusBadRequest,
+				fmt.Errorf("invalid type %s", *input.Type),
+			)
+			return
+		}
+		addressType = &validType
+	}
+
+	logger = logger.With(
+		"address", input.Address,
+		"type", input.Type,
+		"description", input.Description,
+	)
+
+	logger.Debug("updating reserve address")
+
+	address := ethereum.HexToAddress(input.Address)
+
+	if err = s.storage.Update(id, address, addressType, input.Description); err == storage.ErrNotExists {
+		httputil.ResponseFailure(
+			c,
+			http.StatusNotFound,
+			err,
+		)
+		return
+	} else if err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+	c.Status(http.StatusNoContent)
 }

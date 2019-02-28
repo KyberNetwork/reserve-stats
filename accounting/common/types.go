@@ -1,6 +1,8 @@
 package common
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -9,6 +11,24 @@ import (
 // AddressType is type of an address.
 //go:generate stringer -type=AddressType -linecomment
 type AddressType int
+
+func (i *AddressType) UnmarshalJSON(input []byte) error {
+	var val string
+	if err := json.Unmarshal(input, &val); err != nil {
+		return err
+	}
+
+	typ, ok := validAddressTypes[val]
+	if !ok {
+		return fmt.Errorf("invalid address type: '%s'", string(input))
+	}
+	*i = typ
+	return nil
+}
+
+func (i *AddressType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(i.String())
+}
 
 const (
 	// Reserve is address of KyberNetwork's reserve contract.
@@ -44,5 +64,5 @@ type ReserveAddress struct {
 	Address     ethereum.Address `json:"address"`
 	Type        AddressType      `json:"type"`
 	Description string           `json:"description"`
-	Timestamp   time.Time        `json:"timestamp"`
+	Timestamp   *time.Time       `json:"timestamp,omitempty"`
 }

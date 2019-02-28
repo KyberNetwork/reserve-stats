@@ -25,18 +25,11 @@ import (
 const (
 	addressesFlag = "addresses"
 
-	maxWorkerFlag    = "max-workers"
-	defaultMaxWorker = 4
-
 	attemptsFlag    = "attempts"
 	defaultAttempts = 3
 
 	retryDelayFlag        = "retry-delay"
 	defaultRetryDelayTime = 5 * time.Minute
-
-	durationFlag         = "duration"
-	shardDurationFlag    = "shard-duration"
-	defaultShardDuration = time.Hour * 24
 )
 
 func main() {

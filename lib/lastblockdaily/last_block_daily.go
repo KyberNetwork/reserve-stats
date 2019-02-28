@@ -47,7 +47,7 @@ func NewLastBlockResolver(client *ethclient.Client, resolver *blockchain.BlockTi
 	}
 }
 
-// getNextDayblock return the block that is definitely belong to the next day
+// getNextDayBlock return the block that is definitely belong to the next day
 // of lastResolvedBlock
 func (lbr *LastBlockResolver) getNextDayBlock() (BlockInfo, error) {
 	var (
@@ -92,6 +92,7 @@ func (lbr *LastBlockResolver) getLatestETHBlock() (BlockInfo, error) {
 	}, nil
 }
 
+// isLastBlock check if the block is the last block of the expectedNextBlockTime's day.
 func (lbr *LastBlockResolver) isLastBlock(blockNum uint64, expectedNextBlockTime time.Time) (bool, time.Time, error) {
 	thisBlockTime, err := lbr.resolver.Resolve(uint64(blockNum))
 	if err != nil {

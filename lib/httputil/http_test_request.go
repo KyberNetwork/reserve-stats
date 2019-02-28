@@ -44,11 +44,6 @@ func RunHTTPTestCase(t *testing.T, tc HTTPTestCase, handler http.Handler) {
 func AssertCode(code int) AssertFn {
 	return func(t *testing.T, resp *httptest.ResponseRecorder) {
 		t.Helper()
-
-		println("__DEBUG_ME")
-		println(resp.Code)
-		println(code)
-
 		if resp.Code != code {
 			t.Fatalf("wrong return code, expected: %d, got %d", code, resp.Code)
 		}

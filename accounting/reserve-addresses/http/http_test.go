@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,6 +25,7 @@ import (
 var (
 	tdb *sqlx.DB
 	ts  *Server
+	tst *postgresql.Storage
 	tts time.Time
 )
 
@@ -116,7 +119,61 @@ WHERE id = $1`, addr.ID)
 	}
 }
 
+func TestReserveAddressesGet(t *testing.T) {
+	var (
+		testAddress     = ethereum.HexToAddress("0x78bf540f3198bc64599ac46b1b43c8012957bdf2e4b2871403a332f7b995da98")
+		testDescription = "test pricing operator"
+		now             = time.Now()
+	)
+
+	t.Log("creating a test reserve address")
+	id, err := tst.Create(testAddress, common.PricingOperator, testDescription, now.UTC())
+	require.NoError(t, err)
+
+	var tests = []httputil.HTTPTestCase{
+		{
+			Msg:      "get a existing reserve address",
+			Endpoint: fmt.Sprintf("/addresses/%d", id),
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusOK, resp.Code)
+				var addr = &common.ReserveAddress{}
+				err := json.NewDecoder(resp.Body).Decode(addr)
+				require.NoError(t, err)
+				assert.Equal(t, id, addr.ID)
+				assert.Equal(t, testAddress, addr.Address)
+				assert.Equal(t, common.PricingOperator, addr.Type)
+				assert.Equal(t, testDescription, addr.Description)
+				assert.Equal(t, now.UTC().Unix(), addr.Timestamp.Unix())
+			},
+		},
+		{
+			Msg:      "get an non existing address",
+			Endpoint: fmt.Sprintf("/addresses/%d", id+100),
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusNotFound, resp.Code)
+			},
+		},
+		{
+			Msg:      "get an invalid id",
+			Endpoint: fmt.Sprintf("/addresses/%s", "invalid-id"),
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusBadRequest, resp.Code)
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, ts.r) })
+	}
+}
 func TestMain(m *testing.M) {
+	var err error
 	tts = time.Now().UTC()
 	resolv := blockchain.NewMockContractTimestampResolver(tts)
 
@@ -124,17 +181,17 @@ func TestMain(m *testing.M) {
 
 	_, tdb = testutil.MustNewDevelopmentDB()
 
-	st, err := postgresql.NewStorage(sugar, tdb)
+	tst, err = postgresql.NewStorage(sugar, tdb)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	ts = NewServer(sugar, "", st, resolv)
+	ts = NewServer(sugar, "", tst, resolv)
 	ts.register()
 
 	ret := m.Run()
 
-	if err = st.DeleteAllTables(); err != nil {
+	if err = tst.DeleteAllTables(); err != nil {
 		log.Fatal(err)
 	}
 

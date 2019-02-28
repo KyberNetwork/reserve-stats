@@ -1,12 +1,16 @@
 package postgresql
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/storage"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 )
@@ -69,7 +73,45 @@ VALUES ($1, $2, $3, $4, NOW()) RETURNING id`
 
 	err := s.db.Get(&id, fmt.Sprintf(insertFmt, addressesTableName), params...)
 	if err != nil {
-		return 0, err
+		// check if return error is a known pq error
+		pErr, ok := err.(*pq.Error)
+		if !ok {
+			return 0, err
+		}
+
+		// https://www.postgresql.org/docs/9.3/errcodes-appendix.html
+		// 23505: unique_violation
+		if pErr.Code == "23505" {
+			return 0, storage.ErrExists
+		}
+
+		return 0, pErr
 	}
 	return id, err
+}
+
+// Get returns the stored reserve address with matching id.
+func (s *Storage) Get(id uint64) (*common.ReserveAddress, error) {
+	var (
+		logger = s.sugar.With("func", "accounting/reserve-addresses/storage/postgresql/Storage.Get",
+			"id", id,
+		)
+		addr      = &ReserveAddress{}
+		queryStmt = `SELECT id, address, type, description, timestamp
+FROM addresses
+WHERE id = $1`
+	)
+
+	if err := s.db.Get(addr, queryStmt, id); err == sql.ErrNoRows {
+		logger.Infow("no record found in database")
+		return nil, storage.ErrNotExists
+	} else if err != nil {
+		return nil, err
+	}
+
+	ra, err := addr.Common()
+	if err != nil {
+		return nil, err
+	}
+	return ra, nil
 }

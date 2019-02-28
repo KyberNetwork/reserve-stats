@@ -3,13 +3,14 @@ package http
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
-	"github.com/lib/pq"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
@@ -71,36 +72,60 @@ func (s *Server) create(c *gin.Context) {
 	}
 
 	id, err := s.storage.Create(address, addressType, input.Description, ts)
-	if err != nil {
-		// check if return error is a known pq error
-		pErr, ok := err.(*pq.Error)
-		if !ok {
-			httputil.ResponseFailure(
-				c,
-				http.StatusInternalServerError,
-				err,
-			)
-			return
-		}
-
-		// https://www.postgresql.org/docs/9.3/errcodes-appendix.html
-		// 23505: unique_violation
-		if pErr.Code == "23505" {
-			httputil.ResponseFailure(
-				c,
-				http.StatusConflict,
-				pErr,
-			)
-			return
-		}
-
-		// unknown pq error
+	if err == storage.ErrExists {
+		httputil.ResponseFailure(
+			c,
+			http.StatusConflict,
+			err,
+		)
+		return
+	} else if err != nil {
 		httputil.ResponseFailure(
 			c,
 			http.StatusInternalServerError,
-			pErr,
+			err,
 		)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"id": id})
+}
+
+func (s *Server) get(c *gin.Context) {
+	var (
+		logger = s.sugar.With("func", "accounting/reserve-addresses/http/*Server.get")
+	)
+
+	idVal := c.Param("id")
+	id, err := strconv.ParseUint(idVal, 10, 64)
+	if err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusBadRequest,
+			fmt.Errorf("invalid id: %s", idVal),
+		)
+		return
+	}
+
+	logger = logger.With("id", id)
+	logger.Debug("querying reserve address from database")
+
+	ra, err := s.storage.Get(id)
+	if err == storage.ErrNotExists {
+		httputil.ResponseFailure(
+			c,
+			http.StatusNotFound,
+			err,
+		)
+		return
+	}
+	if err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, ra)
 }

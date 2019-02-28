@@ -252,7 +252,7 @@ func (_SanityRates *SanityRatesCallerSession) GetOperators() ([]common.Address, 
 
 // GetSanityRate is a free data retrieval call binding the contract method 0xa58092b7.
 //
-// Solidity: function getSanityRate(src address, dest address) constant returns(uint256)
+// Solidity: function getSanityRate(address src, address dest) constant returns(uint256)
 func (_SanityRates *SanityRatesCaller) GetSanityRate(opts *bind.CallOpts, src common.Address, dest common.Address) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -264,14 +264,14 @@ func (_SanityRates *SanityRatesCaller) GetSanityRate(opts *bind.CallOpts, src co
 
 // GetSanityRate is a free data retrieval call binding the contract method 0xa58092b7.
 //
-// Solidity: function getSanityRate(src address, dest address) constant returns(uint256)
+// Solidity: function getSanityRate(address src, address dest) constant returns(uint256)
 func (_SanityRates *SanityRatesSession) GetSanityRate(src common.Address, dest common.Address) (*big.Int, error) {
 	return _SanityRates.Contract.GetSanityRate(&_SanityRates.CallOpts, src, dest)
 }
 
 // GetSanityRate is a free data retrieval call binding the contract method 0xa58092b7.
 //
-// Solidity: function getSanityRate(src address, dest address) constant returns(uint256)
+// Solidity: function getSanityRate(address src, address dest) constant returns(uint256)
 func (_SanityRates *SanityRatesCallerSession) GetSanityRate(src common.Address, dest common.Address) (*big.Int, error) {
 	return _SanityRates.Contract.GetSanityRate(&_SanityRates.CallOpts, src, dest)
 }
@@ -304,7 +304,7 @@ func (_SanityRates *SanityRatesCallerSession) PendingAdmin() (common.Address, er
 
 // ReasonableDiffInBps is a free data retrieval call binding the contract method 0x5463a2e4.
 //
-// Solidity: function reasonableDiffInBps( address) constant returns(uint256)
+// Solidity: function reasonableDiffInBps(address ) constant returns(uint256)
 func (_SanityRates *SanityRatesCaller) ReasonableDiffInBps(opts *bind.CallOpts, arg0 common.Address) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -316,21 +316,21 @@ func (_SanityRates *SanityRatesCaller) ReasonableDiffInBps(opts *bind.CallOpts, 
 
 // ReasonableDiffInBps is a free data retrieval call binding the contract method 0x5463a2e4.
 //
-// Solidity: function reasonableDiffInBps( address) constant returns(uint256)
+// Solidity: function reasonableDiffInBps(address ) constant returns(uint256)
 func (_SanityRates *SanityRatesSession) ReasonableDiffInBps(arg0 common.Address) (*big.Int, error) {
 	return _SanityRates.Contract.ReasonableDiffInBps(&_SanityRates.CallOpts, arg0)
 }
 
 // ReasonableDiffInBps is a free data retrieval call binding the contract method 0x5463a2e4.
 //
-// Solidity: function reasonableDiffInBps( address) constant returns(uint256)
+// Solidity: function reasonableDiffInBps(address ) constant returns(uint256)
 func (_SanityRates *SanityRatesCallerSession) ReasonableDiffInBps(arg0 common.Address) (*big.Int, error) {
 	return _SanityRates.Contract.ReasonableDiffInBps(&_SanityRates.CallOpts, arg0)
 }
 
 // TokenRate is a free data retrieval call binding the contract method 0xc57fbf90.
 //
-// Solidity: function tokenRate( address) constant returns(uint256)
+// Solidity: function tokenRate(address ) constant returns(uint256)
 func (_SanityRates *SanityRatesCaller) TokenRate(opts *bind.CallOpts, arg0 common.Address) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -342,56 +342,56 @@ func (_SanityRates *SanityRatesCaller) TokenRate(opts *bind.CallOpts, arg0 commo
 
 // TokenRate is a free data retrieval call binding the contract method 0xc57fbf90.
 //
-// Solidity: function tokenRate( address) constant returns(uint256)
+// Solidity: function tokenRate(address ) constant returns(uint256)
 func (_SanityRates *SanityRatesSession) TokenRate(arg0 common.Address) (*big.Int, error) {
 	return _SanityRates.Contract.TokenRate(&_SanityRates.CallOpts, arg0)
 }
 
 // TokenRate is a free data retrieval call binding the contract method 0xc57fbf90.
 //
-// Solidity: function tokenRate( address) constant returns(uint256)
+// Solidity: function tokenRate(address ) constant returns(uint256)
 func (_SanityRates *SanityRatesCallerSession) TokenRate(arg0 common.Address) (*big.Int, error) {
 	return _SanityRates.Contract.TokenRate(&_SanityRates.CallOpts, arg0)
 }
 
 // AddAlerter is a paid mutator transaction binding the contract method 0x408ee7fe.
 //
-// Solidity: function addAlerter(newAlerter address) returns()
+// Solidity: function addAlerter(address newAlerter) returns()
 func (_SanityRates *SanityRatesTransactor) AddAlerter(opts *bind.TransactOpts, newAlerter common.Address) (*types.Transaction, error) {
 	return _SanityRates.contract.Transact(opts, "addAlerter", newAlerter)
 }
 
 // AddAlerter is a paid mutator transaction binding the contract method 0x408ee7fe.
 //
-// Solidity: function addAlerter(newAlerter address) returns()
+// Solidity: function addAlerter(address newAlerter) returns()
 func (_SanityRates *SanityRatesSession) AddAlerter(newAlerter common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.AddAlerter(&_SanityRates.TransactOpts, newAlerter)
 }
 
 // AddAlerter is a paid mutator transaction binding the contract method 0x408ee7fe.
 //
-// Solidity: function addAlerter(newAlerter address) returns()
+// Solidity: function addAlerter(address newAlerter) returns()
 func (_SanityRates *SanityRatesTransactorSession) AddAlerter(newAlerter common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.AddAlerter(&_SanityRates.TransactOpts, newAlerter)
 }
 
 // AddOperator is a paid mutator transaction binding the contract method 0x9870d7fe.
 //
-// Solidity: function addOperator(newOperator address) returns()
+// Solidity: function addOperator(address newOperator) returns()
 func (_SanityRates *SanityRatesTransactor) AddOperator(opts *bind.TransactOpts, newOperator common.Address) (*types.Transaction, error) {
 	return _SanityRates.contract.Transact(opts, "addOperator", newOperator)
 }
 
 // AddOperator is a paid mutator transaction binding the contract method 0x9870d7fe.
 //
-// Solidity: function addOperator(newOperator address) returns()
+// Solidity: function addOperator(address newOperator) returns()
 func (_SanityRates *SanityRatesSession) AddOperator(newOperator common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.AddOperator(&_SanityRates.TransactOpts, newOperator)
 }
 
 // AddOperator is a paid mutator transaction binding the contract method 0x9870d7fe.
 //
-// Solidity: function addOperator(newOperator address) returns()
+// Solidity: function addOperator(address newOperator) returns()
 func (_SanityRates *SanityRatesTransactorSession) AddOperator(newOperator common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.AddOperator(&_SanityRates.TransactOpts, newOperator)
 }
@@ -419,168 +419,168 @@ func (_SanityRates *SanityRatesTransactorSession) ClaimAdmin() (*types.Transacti
 
 // RemoveAlerter is a paid mutator transaction binding the contract method 0x01a12fd3.
 //
-// Solidity: function removeAlerter(alerter address) returns()
+// Solidity: function removeAlerter(address alerter) returns()
 func (_SanityRates *SanityRatesTransactor) RemoveAlerter(opts *bind.TransactOpts, alerter common.Address) (*types.Transaction, error) {
 	return _SanityRates.contract.Transact(opts, "removeAlerter", alerter)
 }
 
 // RemoveAlerter is a paid mutator transaction binding the contract method 0x01a12fd3.
 //
-// Solidity: function removeAlerter(alerter address) returns()
+// Solidity: function removeAlerter(address alerter) returns()
 func (_SanityRates *SanityRatesSession) RemoveAlerter(alerter common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.RemoveAlerter(&_SanityRates.TransactOpts, alerter)
 }
 
 // RemoveAlerter is a paid mutator transaction binding the contract method 0x01a12fd3.
 //
-// Solidity: function removeAlerter(alerter address) returns()
+// Solidity: function removeAlerter(address alerter) returns()
 func (_SanityRates *SanityRatesTransactorSession) RemoveAlerter(alerter common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.RemoveAlerter(&_SanityRates.TransactOpts, alerter)
 }
 
 // RemoveOperator is a paid mutator transaction binding the contract method 0xac8a584a.
 //
-// Solidity: function removeOperator(operator address) returns()
+// Solidity: function removeOperator(address operator) returns()
 func (_SanityRates *SanityRatesTransactor) RemoveOperator(opts *bind.TransactOpts, operator common.Address) (*types.Transaction, error) {
 	return _SanityRates.contract.Transact(opts, "removeOperator", operator)
 }
 
 // RemoveOperator is a paid mutator transaction binding the contract method 0xac8a584a.
 //
-// Solidity: function removeOperator(operator address) returns()
+// Solidity: function removeOperator(address operator) returns()
 func (_SanityRates *SanityRatesSession) RemoveOperator(operator common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.RemoveOperator(&_SanityRates.TransactOpts, operator)
 }
 
 // RemoveOperator is a paid mutator transaction binding the contract method 0xac8a584a.
 //
-// Solidity: function removeOperator(operator address) returns()
+// Solidity: function removeOperator(address operator) returns()
 func (_SanityRates *SanityRatesTransactorSession) RemoveOperator(operator common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.RemoveOperator(&_SanityRates.TransactOpts, operator)
 }
 
 // SetReasonableDiff is a paid mutator transaction binding the contract method 0x5c53ec59.
 //
-// Solidity: function setReasonableDiff(srcs address[], diff uint256[]) returns()
+// Solidity: function setReasonableDiff(address[] srcs, uint256[] diff) returns()
 func (_SanityRates *SanityRatesTransactor) SetReasonableDiff(opts *bind.TransactOpts, srcs []common.Address, diff []*big.Int) (*types.Transaction, error) {
 	return _SanityRates.contract.Transact(opts, "setReasonableDiff", srcs, diff)
 }
 
 // SetReasonableDiff is a paid mutator transaction binding the contract method 0x5c53ec59.
 //
-// Solidity: function setReasonableDiff(srcs address[], diff uint256[]) returns()
+// Solidity: function setReasonableDiff(address[] srcs, uint256[] diff) returns()
 func (_SanityRates *SanityRatesSession) SetReasonableDiff(srcs []common.Address, diff []*big.Int) (*types.Transaction, error) {
 	return _SanityRates.Contract.SetReasonableDiff(&_SanityRates.TransactOpts, srcs, diff)
 }
 
 // SetReasonableDiff is a paid mutator transaction binding the contract method 0x5c53ec59.
 //
-// Solidity: function setReasonableDiff(srcs address[], diff uint256[]) returns()
+// Solidity: function setReasonableDiff(address[] srcs, uint256[] diff) returns()
 func (_SanityRates *SanityRatesTransactorSession) SetReasonableDiff(srcs []common.Address, diff []*big.Int) (*types.Transaction, error) {
 	return _SanityRates.Contract.SetReasonableDiff(&_SanityRates.TransactOpts, srcs, diff)
 }
 
 // SetSanityRates is a paid mutator transaction binding the contract method 0xf5db370f.
 //
-// Solidity: function setSanityRates(srcs address[], rates uint256[]) returns()
+// Solidity: function setSanityRates(address[] srcs, uint256[] rates) returns()
 func (_SanityRates *SanityRatesTransactor) SetSanityRates(opts *bind.TransactOpts, srcs []common.Address, rates []*big.Int) (*types.Transaction, error) {
 	return _SanityRates.contract.Transact(opts, "setSanityRates", srcs, rates)
 }
 
 // SetSanityRates is a paid mutator transaction binding the contract method 0xf5db370f.
 //
-// Solidity: function setSanityRates(srcs address[], rates uint256[]) returns()
+// Solidity: function setSanityRates(address[] srcs, uint256[] rates) returns()
 func (_SanityRates *SanityRatesSession) SetSanityRates(srcs []common.Address, rates []*big.Int) (*types.Transaction, error) {
 	return _SanityRates.Contract.SetSanityRates(&_SanityRates.TransactOpts, srcs, rates)
 }
 
 // SetSanityRates is a paid mutator transaction binding the contract method 0xf5db370f.
 //
-// Solidity: function setSanityRates(srcs address[], rates uint256[]) returns()
+// Solidity: function setSanityRates(address[] srcs, uint256[] rates) returns()
 func (_SanityRates *SanityRatesTransactorSession) SetSanityRates(srcs []common.Address, rates []*big.Int) (*types.Transaction, error) {
 	return _SanityRates.Contract.SetSanityRates(&_SanityRates.TransactOpts, srcs, rates)
 }
 
 // TransferAdmin is a paid mutator transaction binding the contract method 0x75829def.
 //
-// Solidity: function transferAdmin(newAdmin address) returns()
+// Solidity: function transferAdmin(address newAdmin) returns()
 func (_SanityRates *SanityRatesTransactor) TransferAdmin(opts *bind.TransactOpts, newAdmin common.Address) (*types.Transaction, error) {
 	return _SanityRates.contract.Transact(opts, "transferAdmin", newAdmin)
 }
 
 // TransferAdmin is a paid mutator transaction binding the contract method 0x75829def.
 //
-// Solidity: function transferAdmin(newAdmin address) returns()
+// Solidity: function transferAdmin(address newAdmin) returns()
 func (_SanityRates *SanityRatesSession) TransferAdmin(newAdmin common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.TransferAdmin(&_SanityRates.TransactOpts, newAdmin)
 }
 
 // TransferAdmin is a paid mutator transaction binding the contract method 0x75829def.
 //
-// Solidity: function transferAdmin(newAdmin address) returns()
+// Solidity: function transferAdmin(address newAdmin) returns()
 func (_SanityRates *SanityRatesTransactorSession) TransferAdmin(newAdmin common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.TransferAdmin(&_SanityRates.TransactOpts, newAdmin)
 }
 
 // TransferAdminQuickly is a paid mutator transaction binding the contract method 0x7acc8678.
 //
-// Solidity: function transferAdminQuickly(newAdmin address) returns()
+// Solidity: function transferAdminQuickly(address newAdmin) returns()
 func (_SanityRates *SanityRatesTransactor) TransferAdminQuickly(opts *bind.TransactOpts, newAdmin common.Address) (*types.Transaction, error) {
 	return _SanityRates.contract.Transact(opts, "transferAdminQuickly", newAdmin)
 }
 
 // TransferAdminQuickly is a paid mutator transaction binding the contract method 0x7acc8678.
 //
-// Solidity: function transferAdminQuickly(newAdmin address) returns()
+// Solidity: function transferAdminQuickly(address newAdmin) returns()
 func (_SanityRates *SanityRatesSession) TransferAdminQuickly(newAdmin common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.TransferAdminQuickly(&_SanityRates.TransactOpts, newAdmin)
 }
 
 // TransferAdminQuickly is a paid mutator transaction binding the contract method 0x7acc8678.
 //
-// Solidity: function transferAdminQuickly(newAdmin address) returns()
+// Solidity: function transferAdminQuickly(address newAdmin) returns()
 func (_SanityRates *SanityRatesTransactorSession) TransferAdminQuickly(newAdmin common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.TransferAdminQuickly(&_SanityRates.TransactOpts, newAdmin)
 }
 
 // WithdrawEther is a paid mutator transaction binding the contract method 0xce56c454.
 //
-// Solidity: function withdrawEther(amount uint256, sendTo address) returns()
+// Solidity: function withdrawEther(uint256 amount, address sendTo) returns()
 func (_SanityRates *SanityRatesTransactor) WithdrawEther(opts *bind.TransactOpts, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _SanityRates.contract.Transact(opts, "withdrawEther", amount, sendTo)
 }
 
 // WithdrawEther is a paid mutator transaction binding the contract method 0xce56c454.
 //
-// Solidity: function withdrawEther(amount uint256, sendTo address) returns()
+// Solidity: function withdrawEther(uint256 amount, address sendTo) returns()
 func (_SanityRates *SanityRatesSession) WithdrawEther(amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.WithdrawEther(&_SanityRates.TransactOpts, amount, sendTo)
 }
 
 // WithdrawEther is a paid mutator transaction binding the contract method 0xce56c454.
 //
-// Solidity: function withdrawEther(amount uint256, sendTo address) returns()
+// Solidity: function withdrawEther(uint256 amount, address sendTo) returns()
 func (_SanityRates *SanityRatesTransactorSession) WithdrawEther(amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.WithdrawEther(&_SanityRates.TransactOpts, amount, sendTo)
 }
 
 // WithdrawToken is a paid mutator transaction binding the contract method 0x3ccdbb28.
 //
-// Solidity: function withdrawToken(token address, amount uint256, sendTo address) returns()
+// Solidity: function withdrawToken(address token, uint256 amount, address sendTo) returns()
 func (_SanityRates *SanityRatesTransactor) WithdrawToken(opts *bind.TransactOpts, token common.Address, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _SanityRates.contract.Transact(opts, "withdrawToken", token, amount, sendTo)
 }
 
 // WithdrawToken is a paid mutator transaction binding the contract method 0x3ccdbb28.
 //
-// Solidity: function withdrawToken(token address, amount uint256, sendTo address) returns()
+// Solidity: function withdrawToken(address token, uint256 amount, address sendTo) returns()
 func (_SanityRates *SanityRatesSession) WithdrawToken(token common.Address, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.WithdrawToken(&_SanityRates.TransactOpts, token, amount, sendTo)
 }
 
 // WithdrawToken is a paid mutator transaction binding the contract method 0x3ccdbb28.
 //
-// Solidity: function withdrawToken(token address, amount uint256, sendTo address) returns()
+// Solidity: function withdrawToken(address token, uint256 amount, address sendTo) returns()
 func (_SanityRates *SanityRatesTransactorSession) WithdrawToken(token common.Address, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _SanityRates.Contract.WithdrawToken(&_SanityRates.TransactOpts, token, amount, sendTo)
 }
@@ -661,7 +661,7 @@ type SanityRatesAdminClaimed struct {
 
 // FilterAdminClaimed is a free log retrieval operation binding the contract event 0x65da1cfc2c2e81576ad96afb24a581f8e109b7a403b35cbd3243a1c99efdb9ed.
 //
-// Solidity: e AdminClaimed(newAdmin address, previousAdmin address)
+// Solidity: event AdminClaimed(address newAdmin, address previousAdmin)
 func (_SanityRates *SanityRatesFilterer) FilterAdminClaimed(opts *bind.FilterOpts) (*SanityRatesAdminClaimedIterator, error) {
 
 	logs, sub, err := _SanityRates.contract.FilterLogs(opts, "AdminClaimed")
@@ -673,7 +673,7 @@ func (_SanityRates *SanityRatesFilterer) FilterAdminClaimed(opts *bind.FilterOpt
 
 // WatchAdminClaimed is a free log subscription operation binding the contract event 0x65da1cfc2c2e81576ad96afb24a581f8e109b7a403b35cbd3243a1c99efdb9ed.
 //
-// Solidity: e AdminClaimed(newAdmin address, previousAdmin address)
+// Solidity: event AdminClaimed(address newAdmin, address previousAdmin)
 func (_SanityRates *SanityRatesFilterer) WatchAdminClaimed(opts *bind.WatchOpts, sink chan<- *SanityRatesAdminClaimed) (event.Subscription, error) {
 
 	logs, sub, err := _SanityRates.contract.WatchLogs(opts, "AdminClaimed")
@@ -784,7 +784,7 @@ type SanityRatesAlerterAdded struct {
 
 // FilterAlerterAdded is a free log retrieval operation binding the contract event 0x5611bf3e417d124f97bf2c788843ea8bb502b66079fbee02158ef30b172cb762.
 //
-// Solidity: e AlerterAdded(newAlerter address, isAdd bool)
+// Solidity: event AlerterAdded(address newAlerter, bool isAdd)
 func (_SanityRates *SanityRatesFilterer) FilterAlerterAdded(opts *bind.FilterOpts) (*SanityRatesAlerterAddedIterator, error) {
 
 	logs, sub, err := _SanityRates.contract.FilterLogs(opts, "AlerterAdded")
@@ -796,7 +796,7 @@ func (_SanityRates *SanityRatesFilterer) FilterAlerterAdded(opts *bind.FilterOpt
 
 // WatchAlerterAdded is a free log subscription operation binding the contract event 0x5611bf3e417d124f97bf2c788843ea8bb502b66079fbee02158ef30b172cb762.
 //
-// Solidity: e AlerterAdded(newAlerter address, isAdd bool)
+// Solidity: event AlerterAdded(address newAlerter, bool isAdd)
 func (_SanityRates *SanityRatesFilterer) WatchAlerterAdded(opts *bind.WatchOpts, sink chan<- *SanityRatesAlerterAdded) (event.Subscription, error) {
 
 	logs, sub, err := _SanityRates.contract.WatchLogs(opts, "AlerterAdded")
@@ -907,7 +907,7 @@ type SanityRatesEtherWithdraw struct {
 
 // FilterEtherWithdraw is a free log retrieval operation binding the contract event 0xec47e7ed86c86774d1a72c19f35c639911393fe7c1a34031fdbd260890da90de.
 //
-// Solidity: e EtherWithdraw(amount uint256, sendTo address)
+// Solidity: event EtherWithdraw(uint256 amount, address sendTo)
 func (_SanityRates *SanityRatesFilterer) FilterEtherWithdraw(opts *bind.FilterOpts) (*SanityRatesEtherWithdrawIterator, error) {
 
 	logs, sub, err := _SanityRates.contract.FilterLogs(opts, "EtherWithdraw")
@@ -919,7 +919,7 @@ func (_SanityRates *SanityRatesFilterer) FilterEtherWithdraw(opts *bind.FilterOp
 
 // WatchEtherWithdraw is a free log subscription operation binding the contract event 0xec47e7ed86c86774d1a72c19f35c639911393fe7c1a34031fdbd260890da90de.
 //
-// Solidity: e EtherWithdraw(amount uint256, sendTo address)
+// Solidity: event EtherWithdraw(uint256 amount, address sendTo)
 func (_SanityRates *SanityRatesFilterer) WatchEtherWithdraw(opts *bind.WatchOpts, sink chan<- *SanityRatesEtherWithdraw) (event.Subscription, error) {
 
 	logs, sub, err := _SanityRates.contract.WatchLogs(opts, "EtherWithdraw")
@@ -1030,7 +1030,7 @@ type SanityRatesOperatorAdded struct {
 
 // FilterOperatorAdded is a free log retrieval operation binding the contract event 0x091a7a4b85135fdd7e8dbc18b12fabe5cc191ea867aa3c2e1a24a102af61d58b.
 //
-// Solidity: e OperatorAdded(newOperator address, isAdd bool)
+// Solidity: event OperatorAdded(address newOperator, bool isAdd)
 func (_SanityRates *SanityRatesFilterer) FilterOperatorAdded(opts *bind.FilterOpts) (*SanityRatesOperatorAddedIterator, error) {
 
 	logs, sub, err := _SanityRates.contract.FilterLogs(opts, "OperatorAdded")
@@ -1042,7 +1042,7 @@ func (_SanityRates *SanityRatesFilterer) FilterOperatorAdded(opts *bind.FilterOp
 
 // WatchOperatorAdded is a free log subscription operation binding the contract event 0x091a7a4b85135fdd7e8dbc18b12fabe5cc191ea867aa3c2e1a24a102af61d58b.
 //
-// Solidity: e OperatorAdded(newOperator address, isAdd bool)
+// Solidity: event OperatorAdded(address newOperator, bool isAdd)
 func (_SanityRates *SanityRatesFilterer) WatchOperatorAdded(opts *bind.WatchOpts, sink chan<- *SanityRatesOperatorAdded) (event.Subscription, error) {
 
 	logs, sub, err := _SanityRates.contract.WatchLogs(opts, "OperatorAdded")
@@ -1154,7 +1154,7 @@ type SanityRatesTokenWithdraw struct {
 
 // FilterTokenWithdraw is a free log retrieval operation binding the contract event 0x72cb8a894ddb372ceec3d2a7648d86f17d5a15caae0e986c53109b8a9a9385e6.
 //
-// Solidity: e TokenWithdraw(token address, amount uint256, sendTo address)
+// Solidity: event TokenWithdraw(address token, uint256 amount, address sendTo)
 func (_SanityRates *SanityRatesFilterer) FilterTokenWithdraw(opts *bind.FilterOpts) (*SanityRatesTokenWithdrawIterator, error) {
 
 	logs, sub, err := _SanityRates.contract.FilterLogs(opts, "TokenWithdraw")
@@ -1166,7 +1166,7 @@ func (_SanityRates *SanityRatesFilterer) FilterTokenWithdraw(opts *bind.FilterOp
 
 // WatchTokenWithdraw is a free log subscription operation binding the contract event 0x72cb8a894ddb372ceec3d2a7648d86f17d5a15caae0e986c53109b8a9a9385e6.
 //
-// Solidity: e TokenWithdraw(token address, amount uint256, sendTo address)
+// Solidity: event TokenWithdraw(address token, uint256 amount, address sendTo)
 func (_SanityRates *SanityRatesFilterer) WatchTokenWithdraw(opts *bind.WatchOpts, sink chan<- *SanityRatesTokenWithdraw) (event.Subscription, error) {
 
 	logs, sub, err := _SanityRates.contract.WatchLogs(opts, "TokenWithdraw")
@@ -1276,7 +1276,7 @@ type SanityRatesTransferAdminPending struct {
 
 // FilterTransferAdminPending is a free log retrieval operation binding the contract event 0x3b81caf78fa51ecbc8acb482fd7012a277b428d9b80f9d156e8a54107496cc40.
 //
-// Solidity: e TransferAdminPending(pendingAdmin address)
+// Solidity: event TransferAdminPending(address pendingAdmin)
 func (_SanityRates *SanityRatesFilterer) FilterTransferAdminPending(opts *bind.FilterOpts) (*SanityRatesTransferAdminPendingIterator, error) {
 
 	logs, sub, err := _SanityRates.contract.FilterLogs(opts, "TransferAdminPending")
@@ -1288,7 +1288,7 @@ func (_SanityRates *SanityRatesFilterer) FilterTransferAdminPending(opts *bind.F
 
 // WatchTransferAdminPending is a free log subscription operation binding the contract event 0x3b81caf78fa51ecbc8acb482fd7012a277b428d9b80f9d156e8a54107496cc40.
 //
-// Solidity: e TransferAdminPending(pendingAdmin address)
+// Solidity: event TransferAdminPending(address pendingAdmin)
 func (_SanityRates *SanityRatesFilterer) WatchTransferAdminPending(opts *bind.WatchOpts, sink chan<- *SanityRatesTransferAdminPending) (event.Subscription, error) {
 
 	logs, sub, err := _SanityRates.contract.WatchLogs(opts, "TransferAdminPending")

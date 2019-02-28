@@ -8,11 +8,12 @@ import (
 	"os"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
@@ -22,21 +23,6 @@ const (
 	blockFlag           = "block"
 	reserveAddresesFlag = "reserve-address"
 )
-
-//OldListedToken is information of an old token
-type OldListedToken struct {
-	Address   string `json:"address"`
-	Timestamp uint64 `json:"timestamp"`
-}
-
-//ListedToken represent a token listed in reserve
-type ListedToken struct {
-	Address   string           `json:"address"`
-	Symbol    string           `json:"symbol"`
-	Name      string           `json:"name"`
-	Timestamp uint64           `json:"timestamp"`
-	Old       []OldListedToken `json:"old,omitempty"`
-}
 
 func main() {
 	app := libapp.NewApp()
@@ -64,7 +50,7 @@ func main() {
 func run(c *cli.Context) error {
 	var (
 		block       *big.Int
-		reserveAddr common.Address
+		reserveAddr ethereum.Address
 	)
 	logger, err := libapp.NewLogger(c)
 	if err != nil {
@@ -84,7 +70,7 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("reserve address is required")
 	}
 	reserveAddrStr := c.String(reserveAddresesFlag)
-	reserveAddr = common.HexToAddress(reserveAddrStr)
+	reserveAddr = ethereum.HexToAddress(reserveAddrStr)
 
 	ethClient, err := blockchain.NewEthereumClientFromFlag(c)
 	if err != nil {
@@ -98,11 +84,11 @@ func run(c *cli.Context) error {
 	return getListedToken(ethClient, block, reserveAddr, tokenSymbol, sugar)
 }
 
-func getListedToken(ethClient *ethclient.Client, block *big.Int, reserveAddr common.Address,
+func getListedToken(ethClient *ethclient.Client, block *big.Int, reserveAddr ethereum.Address,
 	tokenSymbol *blockchain.TokenSymbol, sugar *zap.SugaredLogger) error {
 	var (
 		logger = sugar.With("func", "accounting/cmd/accounting-listed-token-fetcher")
-		result []ListedToken
+		result []common.ListedToken
 	)
 	// step 1: get conversionRatesContract address
 	logger.Infow("reserve address", "reserve", reserveAddr)
@@ -133,14 +119,14 @@ func getListedToken(ethClient *ethclient.Client, block *big.Int, reserveAddr com
 		if err != nil {
 			return err
 		}
-		result = append(result, ListedToken{
+		result = append(result, common.ListedToken{
 			Address: v.Hex(),
 			Symbol:  symbol,
 			Name:    name,
 		})
 	}
 	resultJSON, _ := json.Marshal(result)
-	log.Printf("%s", resultJSON)
+	logger.Debugw("listed token json response", "value", string(resultJSON))
 	// step 3: use api etherscan to get first transaction timstamp
 	//TODO: wait for favadi task to finish
 	return nil

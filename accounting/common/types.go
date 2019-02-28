@@ -114,3 +114,18 @@ func (r *ReserveAddress) UnmarshalJSON(data []byte) error {
 	r.Description = decoded.Description
 	return nil
 }
+
+//OldListedToken is information of an old token
+type OldListedToken struct {
+	Address   string `json:"address"`
+	Timestamp uint64 `json:"timestamp"`
+}
+
+//ListedToken represent a token listed in reserve
+type ListedToken struct {
+	Address   string           `json:"address"`
+	Symbol    string           `json:"symbol"`
+	Name      string           `json:"name"`
+	Timestamp uint64           `json:"timestamp"`
+	Old       []OldListedToken `json:"old,omitempty"`
+}

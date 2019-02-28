@@ -25,10 +25,15 @@ var cachedSymbols = map[deployment.Deployment]map[common.Address]string{
 	},
 }
 
+var cachedName = map[common.Address]string{
+	common.HexToAddress("0x86Fa049857E0209aa7D9e616F7eb3b3B78ECfdb0"): "EOS Token", // special case for EOS cos it does not return name in name function
+}
+
 // TokenSymbol is a helper to convert token amount from/to wei
 type TokenSymbol struct {
 	ethClient    bind.ContractBackend // eth client
 	cachedSymbol sync.Map
+	cachedName   sync.Map
 }
 
 // TokenSymbolOption is the option to configure TokenSymbol constructor.
@@ -51,6 +56,10 @@ func NewTokenSymbol(client bind.ContractBackend, options ...TokenSymbolOption) *
 
 	for _, option := range options {
 		option(ts)
+	}
+
+	for k, v := range cachedName {
+		ts.cachedName.Store(k, v)
 	}
 
 	return ts
@@ -105,7 +114,28 @@ func (t *TokenSymbol) Symbol(address common.Address) (string, error) {
 
 //Name return name of token
 func (t *TokenSymbol) Name(address common.Address) (string, error) {
-	tokenContract, err := contracts.NewERC20(address, t.ethClient)
+	var (
+		name string
+		err  error
+	)
+	if val, ok := t.cachedName.Load(address); ok {
+		if name, ok = val.(string); !ok {
+			return "", errors.New("invalid token name stored in cached symbol")
+		}
+		return name, nil
+	}
+	name, err = getName1(address, t.ethClient)
+	if err != nil && strings.Contains(err.Error(), "abi: cannot marshal") {
+		name, err = getName2(address, t.ethClient)
+	}
+	if err != nil {
+		t.cachedName.Store(address, name)
+	}
+	return name, err
+}
+
+func getName1(address common.Address, ethClient bind.ContractBackend) (string, error) {
+	tokenContract, err := contracts.NewERC20(address, ethClient)
 	if err != nil {
 		return "", err
 	}
@@ -113,6 +143,18 @@ func (t *TokenSymbol) Name(address common.Address) (string, error) {
 	defer cancel()
 	callOpts := &bind.CallOpts{Context: ctx}
 	return tokenContract.Name(callOpts)
+}
+
+func getName2(address common.Address, ethClient bind.ContractBackend) (string, error) {
+	tokenContractType2, err := contracts.NewERC20Type2(address, ethClient)
+	if err != nil {
+		return "", err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	callOpts := &bind.CallOpts{Context: ctx}
+	name2, err := tokenContractType2.Name(callOpts)
+	return bytes32ToString(name2), nil
 }
 
 var getSymbolFns = []func(common.Address, bind.ContractBackend) (string, error){

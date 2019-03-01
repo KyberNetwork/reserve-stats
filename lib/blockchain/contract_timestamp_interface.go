@@ -11,7 +11,7 @@ import (
 // does not have any transaction or not a contract.
 var ErrNotAvailable = errors.New("address is not a contract, or does not exist")
 
-// ContractTimestampResolverInterface is the common interface of contract
+// ContractTimestampResolver is the common interface of contract
 // creation timestamp resolver.
 type ContractTimestampResolver interface {
 	// Resolve returns creation time of given address.

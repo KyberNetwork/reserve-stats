@@ -139,15 +139,16 @@ FROM addresses`
 	}
 
 	for _, r := range stored {
-		if result, err := r.Common(); err != nil {
+		result, err := r.Common()
+		if err != nil {
 			return nil, err
-		} else {
-			results = append(results, result)
 		}
+		results = append(results, result)
 	}
 	return results, nil
 }
 
+// Update updates the reserve address with given information. If given data is zero, it won't be updated to database.
 func (s *Storage) Update(id uint64, address ethereum.Address, addressType *common.AddressType, description string) error {
 	var (
 		logger = s.sugar.With("func", "accounting/reserve-addresses/storage/postgresql/Storage.Update",
@@ -202,8 +203,8 @@ WHERE id = $5 RETURNING id;`
 	params = append(params, id)
 
 	logger.Debug("updating reserve address record in database")
-	var updatedId uint64
-	if err = s.db.Get(&updatedId, queryStmt, params...); err == sql.ErrNoRows {
+	var updatedID uint64
+	if err = s.db.Get(&updatedID, queryStmt, params...); err == sql.ErrNoRows {
 		return storage.ErrNotExists
 	} else if err != nil {
 		return err

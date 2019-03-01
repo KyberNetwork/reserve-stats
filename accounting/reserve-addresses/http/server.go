@@ -28,6 +28,7 @@ func (s *Server) register() {
 	s.r.PUT("/addresses/:id", s.update)
 }
 
+// Run starts the HTTP server and runs in foreground until terminate by user.
 func (s *Server) Run() error {
 	s.register()
 	return s.r.Run(s.host)

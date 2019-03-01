@@ -14,6 +14,8 @@ import (
 //go:generate stringer -type=AddressType -linecomment
 type AddressType int
 
+// UnmarshalJSON implements json.Unmarshal interface, allows AddressType to be decoded from string.
+// example: "reserve" --> common.Reserve
 func (i *AddressType) UnmarshalJSON(input []byte) error {
 	var val string
 	if err := json.Unmarshal(input, &val); err != nil {
@@ -28,6 +30,8 @@ func (i *AddressType) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
+// MarshalJSON implements json.Marshal interface, allows AddressType to be encoded to json string.
+// example: common.Reserve --> "reserve"
 func (i *AddressType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(i.String())
 }

@@ -40,7 +40,7 @@ func RunHTTPTestCase(t *testing.T, tc HTTPTestCase, handler http.Handler) {
 	tc.Assert(t, resp)
 }
 
-// AssertErrorCode asserts that the response matched the expected error code.
+// AssertCode asserts that the response matched the expected error code.
 func AssertCode(code int) AssertFn {
 	return func(t *testing.T, resp *httptest.ResponseRecorder) {
 		t.Helper()

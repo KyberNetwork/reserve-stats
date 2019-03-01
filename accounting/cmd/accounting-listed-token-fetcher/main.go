@@ -125,9 +125,13 @@ func getListedToken(ethClient *ethclient.Client, block *big.Int, reserveAddr eth
 			Name:    name,
 		})
 	}
-	resultJSON, _ := json.Marshal(result)
-	logger.Debugw("listed token json response", "value", string(resultJSON))
-	// step 3: use api etherscan to get first transaction timstamp
+	resultJSON, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+	// currently print out to cli, save to storage later
+	log.Printf("%s", resultJSON)
+	// step 3: use api etherscan to get first transaction timestamp
 	//TODO: wait for favadi task to finish
 	return nil
 }

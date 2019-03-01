@@ -3,6 +3,7 @@ package blockchain
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -125,10 +126,18 @@ func (t *TokenSymbol) Name(address common.Address) (string, error) {
 		return name, nil
 	}
 	name, err = getName1(address, t.ethClient)
-	if err != nil && strings.Contains(err.Error(), "abi: cannot marshal") {
-		name, err = getName2(address, t.ethClient)
-	}
 	if err != nil {
+		err1 := err
+		name, err = getName2(address, t.ethClient)
+		if err != nil {
+			// combine 2 errors if we cannot get name
+			err = fmt.Errorf("%v + %v", err1, err)
+		} else if name == "" {
+			// if we cannot get name then return first error
+			err = err1
+		}
+	}
+	if err == nil {
 		t.cachedName.Store(address, name)
 	}
 	return name, err

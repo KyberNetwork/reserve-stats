@@ -1,0 +1,39 @@
+CREATE TABLE IF NOT EXISTS reserves
+(
+	id serial NOT NULL,
+	address TEXT NOT NULL UNIQUE,
+	CONSTRAINT reserves_pk PRIMARY KEY(id)
+) ;
+
+CREATE TABLE IF NOT EXISTS tokens
+(
+	id serial NOT NULL,
+	symbol TEXT NOT NULL UNIQUE,
+	CONSTRAINT tokens_pk PRIMARY KEY(id)
+);
+
+CREATE TABLE IF NOT EXISTS bases
+(
+	id serial NOT NULL,
+	symbol TEXT NOT NULL UNIQUE,
+	CONSTRAINT bases_pk PRIMARY KEY(id)
+);
+
+CREATE TABLE IF NOT EXISTS rates
+(
+	id serial NOT NULL,
+	time serial NOT NULL,
+	token_ID serial NOT NULL,
+    base_ID serial NOT NULL,
+	block integer NOT NULL,
+	buy_reserve_rate float8 NOT NULL,
+	sell_reserve_rate float8 NOT NULL,
+	reserve_ID integer NOT NULL,
+	CONSTRAINT rates_pk PRIMARY KEY(id),
+	CONSTRAINT rates_fk_token_id FOREIGN KEY(token_ID) REFERENCES tokens(id),
+    CONSTRAINT rates_fk_base_id FOREIGN KEY(base_ID) REFERENCES bases(id),
+	CONSTRAINT rates_fk_reseve_id FOREIGN KEY(reserve_ID) REFERENCES reserves(id)
+);
+
+
+

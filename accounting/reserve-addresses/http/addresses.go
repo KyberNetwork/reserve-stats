@@ -123,6 +123,24 @@ func (s *Server) get(c *gin.Context) {
 	c.JSON(http.StatusOK, ra)
 }
 
+func (s *Server) getAll(c *gin.Context) {
+	addrs, err := s.storage.GetAll()
+	if err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+
+	if addrs == nil {
+		addrs = []*common.ReserveAddress{}
+	}
+
+	c.JSON(http.StatusOK, addrs)
+}
+
 type updateInput struct {
 	Address     string  `json:"address" binding:"isAddress"`
 	Type        *string `json:"type"`

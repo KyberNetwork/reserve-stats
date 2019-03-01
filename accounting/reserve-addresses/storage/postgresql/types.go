@@ -2,7 +2,6 @@ package postgresql
 
 import (
 	"fmt"
-	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/lib/pq"
@@ -26,16 +25,11 @@ func (ra *ReserveAddress) Common() (*common.ReserveAddress, error) {
 		return nil, fmt.Errorf("unknown type: %s", ra.Type)
 	}
 
-	var ts *time.Time
-	if ra.Timestamp.Valid {
-		ts = &ra.Timestamp.Time
-	}
-
 	return &common.ReserveAddress{
 		ID:          ra.ID,
 		Address:     ethereum.HexToAddress(ra.Address),
 		Type:        addressType,
 		Description: ra.Description,
-		Timestamp:   ts,
+		Timestamp:   ra.Timestamp.Time,
 	}, nil
 }

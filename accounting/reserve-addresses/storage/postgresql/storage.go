@@ -122,6 +122,32 @@ WHERE id = $1`
 	return ra, nil
 }
 
+// GetAll returns all stored reserve addresses in database.
+// It returns no error if there is nothing in database.
+func (s *Storage) GetAll() ([]*common.ReserveAddress, error) {
+	var (
+		logger    = s.sugar.With("func", "accounting/reserve-addresses/storage/postgresql/Storage.GetAll")
+		stored    []*ReserveAddress
+		results   []*common.ReserveAddress
+		queryStmt = `SELECT id, address, type, description, timestamp
+FROM addresses`
+	)
+
+	logger.Debug("querying all stored reserve addresses")
+	if err := s.db.Select(&stored, queryStmt); err != nil {
+		return nil, err
+	}
+
+	for _, r := range stored {
+		if result, err := r.Common(); err != nil {
+			return nil, err
+		} else {
+			results = append(results, result)
+		}
+	}
+	return results, nil
+}
+
 func (s *Storage) Update(id uint64, address ethereum.Address, addressType *common.AddressType, description string) error {
 	var (
 		logger = s.sugar.With("func", "accounting/reserve-addresses/storage/postgresql/Storage.Update",

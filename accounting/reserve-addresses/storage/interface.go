@@ -10,5 +10,6 @@ import (
 type Interface interface {
 	Create(address ethereum.Address, addressType common.AddressType, description string) (uint64, error)
 	Get(id uint64) (*common.ReserveAddress, error)
+	GetAll() ([]*common.ReserveAddress, error)
 	Update(id uint64, address ethereum.Address, addressType *common.AddressType, description string) error
 }

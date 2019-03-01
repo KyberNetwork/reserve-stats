@@ -29,6 +29,101 @@ var (
 	tts time.Time
 )
 
+func TestReserveAddressGetAll(t *testing.T) {
+	var tests = []httputil.HTTPTestCase{
+		{
+			Msg:      "get a existing reserve address",
+			Endpoint: "/addresses",
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusOK, resp.Code)
+
+				var addrs []*common.ReserveAddress
+				err := json.NewDecoder(resp.Body).Decode(&addrs)
+				require.NoError(t, err)
+				require.Len(t, addrs, 0)
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, ts.r) })
+	}
+
+	var (
+		testAddress1     = ethereum.HexToAddress("0x02Fe82F4e23e670DB6FE97e657c885D54F0cE0b9")
+		testDescription1 = "this is a test reserve 1"
+
+		testAddress2     = ethereum.HexToAddress("0x02Fe82F4e23e670DB6FE97e657c885D54F0cE0b0")
+		testDescription2 = "this is a test pricing operator 2"
+	)
+
+	t.Log("creating a test reserve address")
+	id1, err := tst.Create(testAddress1, common.Reserve, testDescription1)
+	require.NoError(t, err)
+
+	tests = []httputil.HTTPTestCase{
+		{
+			Msg:      "get a existing reserve address",
+			Endpoint: "/addresses",
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusOK, resp.Code)
+
+				var addrs []*common.ReserveAddress
+				err := json.NewDecoder(resp.Body).Decode(&addrs)
+				require.NoError(t, err)
+				require.Len(t, addrs, 1)
+				assert.Equal(t, id1, addrs[0].ID)
+				assert.Equal(t, testAddress1, addrs[0].Address)
+				assert.Equal(t, common.Reserve, addrs[0].Type)
+				assert.Equal(t, testDescription1, addrs[0].Description)
+				assert.Equal(t, tts.UTC().Unix(), addrs[0].Timestamp.Unix())
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, ts.r) })
+	}
+
+	t.Log("creating a test reserve address")
+	id2, err := tst.Create(testAddress2, common.PricingOperator, testDescription2)
+	require.NoError(t, err)
+
+	tests = []httputil.HTTPTestCase{
+		{
+			Msg:      "get a existing reserve address",
+			Endpoint: "/addresses",
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusOK, resp.Code)
+
+				var addrs []*common.ReserveAddress
+				err := json.NewDecoder(resp.Body).Decode(&addrs)
+				require.NoError(t, err)
+				require.Len(t, addrs, 2)
+
+				assert.Equal(t, id1, addrs[0].ID)
+				assert.Equal(t, testAddress1, addrs[0].Address)
+				assert.Equal(t, common.Reserve, addrs[0].Type)
+				assert.Equal(t, testDescription1, addrs[0].Description)
+				assert.Equal(t, tts.UTC().Unix(), addrs[0].Timestamp.Unix())
+
+				assert.Equal(t, id2, addrs[1].ID)
+				assert.Equal(t, testAddress2, addrs[1].Address)
+				assert.Equal(t, common.PricingOperator, addrs[1].Type)
+				assert.Equal(t, testDescription2, addrs[1].Description)
+				assert.Equal(t, tts.UTC().Unix(), addrs[1].Timestamp.Unix())
+
+			},
+		},
+	}
+}
+
 func TestReserveAddressesCreate(t *testing.T) {
 	var tests = []httputil.HTTPTestCase{
 		{
@@ -121,7 +216,7 @@ WHERE id = $1`, addr.ID)
 
 func TestReserveAddressesGet(t *testing.T) {
 	var (
-		testAddress     = ethereum.HexToAddress("0x78bf540f3198bc64599ac46b1b43c8012957bdf2e4b2871403a332f7b995da98")
+		testAddress     = ethereum.HexToAddress("0x31cF5d400653cbBa0C4874eE0E034BD800763c04")
 		testDescription = "test pricing operator"
 	)
 

@@ -24,6 +24,7 @@ func NewServer(sugar *zap.SugaredLogger, host string, storage storage.Interface)
 func (s *Server) register() {
 	s.r.POST("/addresses", s.create)
 	s.r.GET("/addresses/:id", s.get)
+	s.r.GET("/addresses", s.getAll)
 	s.r.PUT("/addresses/:id", s.update)
 }
 

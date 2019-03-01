@@ -6,6 +6,8 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 // AddressType is type of an address.
@@ -64,5 +66,47 @@ type ReserveAddress struct {
 	Address     ethereum.Address `json:"address"`
 	Type        AddressType      `json:"type"`
 	Description string           `json:"description"`
-	Timestamp   *time.Time       `json:"timestamp,omitempty"`
+	Timestamp   time.Time        `json:"timestamp"`
+}
+
+// MarshalJSON implements custom JSON marshaller for ReserveAddress to
+// format timestamp in unix millis instead of RFC3339.
+func (r *ReserveAddress) MarshalJSON() ([]byte, error) {
+	type AliasReserveAddress ReserveAddress
+
+	var ts *uint64
+	if !r.Timestamp.IsZero() {
+		millis := timeutil.TimeToTimestampMs(r.Timestamp)
+		ts = &millis
+	}
+
+	return json.Marshal(struct {
+		Timestamp *uint64 `json:"timestamp,omitempty"`
+		*AliasReserveAddress
+	}{
+		AliasReserveAddress: (*AliasReserveAddress)(r),
+		Timestamp:           ts,
+	})
+}
+
+// UnmarshalJSON implements custom JSON unmarshaller for ReserveAddress to
+// format timestamp in unix millis instead of RFC3339.
+func (r *ReserveAddress) UnmarshalJSON(data []byte) error {
+	type AliasReserveAddress ReserveAddress
+	decoded := new(struct {
+		Timestamp *uint64 `json:"timestamp,omitempty"`
+		AliasReserveAddress
+	})
+
+	if err := json.Unmarshal(data, decoded); err != nil {
+		return err
+	}
+	if decoded.Timestamp != nil {
+		r.Timestamp = timeutil.TimestampMsToTime(*decoded.Timestamp)
+	}
+	r.ID = decoded.ID
+	r.Address = decoded.Address
+	r.Type = decoded.Type
+	r.Description = decoded.Description
+	return nil
 }

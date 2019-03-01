@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	// "github.com/KyberNetwork/reserve-stats/lib/testutil"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 
 	"github.com/ethereum/go-ethereum"
@@ -50,7 +50,7 @@ func TestGetNextDayBlock(t *testing.T) {
 }
 
 func TestLastBlockDaily(t *testing.T) {
-	// testutil.SkipExternal(t)
+	testutil.SkipExternal(t)
 	var (
 		start        = timeutil.TimestampMsToTime(uint64(1535806920000))
 		end          = timeutil.TimestampMsToTime(uint64(1535954520000))

@@ -1,15 +1,18 @@
 package huobi
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
+	"golang.org/x/time/rate"
 )
 
 const (
-	huobiAPIKeyFlag    = "huobi-api-key"
-	huobiSecretKeyFlag = "huobi-secret-key"
+	huobiAPIKeyFlag       = "huobi-api-key"
+	huobiSecretKeyFlag    = "huobi-secret-key"
+	huobiRequestPerSecond = "huobi-requests-per-second"
 )
 
 //NewCliFlags return cli flags to configure cex client
@@ -25,6 +28,12 @@ func NewCliFlags() []cli.Flag {
 			Usage:  "secret key for huobi client",
 			EnvVar: "HUOBI_SECRET_KEY",
 		},
+		cli.Float64Flag{
+			Name:   huobiRequestPerSecond,
+			Usage:  "huobi request limit per second, default to 10 which huobi's normal rate limit (100 request per 10 sec)",
+			EnvVar: "HUOBI_REQUEST_PER_SEC",
+			Value:  10,
+		},
 	}
 }
 
@@ -34,14 +43,21 @@ func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, er
 		apiKey, secretKey string
 	)
 	if c.String(huobiAPIKeyFlag) == "" {
-		return nil, fmt.Errorf("cannot create binance client, lack of api key")
+		return nil, fmt.Errorf("cannot create huobi client, lack of api key")
 	}
 	apiKey = c.String(huobiAPIKeyFlag)
 
 	if c.String(huobiSecretKeyFlag) == "" {
-		return nil, fmt.Errorf("cannot create binance client, lack of secret key")
+		return nil, fmt.Errorf("cannot create huobi client, lack of secret key")
 	}
 	secretKey = c.String(huobiSecretKeyFlag)
 
-	return NewClient(apiKey, secretKey, sugar), nil
+	rps := c.Float64(huobiRequestPerSecond)
+	if rps <= 0 {
+		return nil, errors.New("request per second must be more than 0")
+	}
+
+	limiter := rate.NewLimiter(rate.Limit(rps), 1)
+
+	return NewClient(apiKey, secretKey, sugar, limiter), nil
 }

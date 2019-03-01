@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+	"golang.org/x/time/rate"
 
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
@@ -30,8 +31,9 @@ func TestHuobiClient(t *testing.T) {
 	if !ok {
 		t.Skip("Huobi secret key is not available")
 	}
+	limiter := rate.NewLimiter(rate.Limit(5.0), 1)
 
-	huobiClient := NewClient(huobiAPIKey, huobiSecretKey, sugar)
+	huobiClient := NewClient(huobiAPIKey, huobiSecretKey, sugar, limiter)
 	_, err = huobiClient.GetAccounts()
 	assert.NoError(t, err, fmt.Sprintf("get account fee error: %s", err))
 

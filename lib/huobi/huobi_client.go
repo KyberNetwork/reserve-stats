@@ -2,6 +2,7 @@ package huobi
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -25,17 +27,19 @@ const (
 //Client represent a huobi client for
 //calling to huobi endpoint
 type Client struct {
-	APIKey    string
-	SecretKey string
-	sugar     *zap.SugaredLogger
+	APIKey      string
+	SecretKey   string
+	sugar       *zap.SugaredLogger
+	rateLimiter *rate.Limiter
 }
 
 //NewClient return a new HuobiClient instance
-func NewClient(apiKey, secretKey string, sugar *zap.SugaredLogger) *Client {
+func NewClient(apiKey, secretKey string, sugar *zap.SugaredLogger, limiter *rate.Limiter) *Client {
 	return &Client{
-		APIKey:    apiKey,
-		SecretKey: secretKey,
-		sugar:     sugar,
+		APIKey:      apiKey,
+		SecretKey:   secretKey,
+		sugar:       sugar,
+		rateLimiter: limiter,
 	}
 }
 
@@ -89,6 +93,8 @@ func (hc *Client) sendRequest(method, requestURL string, params map[string]strin
 	req.Header.Add("Accept", "application/json")
 
 	q := req.URL.Query()
+	//Wait before sign
+	hc.rateLimiter.Wait(context.Background())
 	if signNeeded {
 		timestamp := fmt.Sprintf("%s", time.Now().UTC().Format("2006-01-02T15:04:05"))
 		params["SignatureMethod"] = "HmacSHA256"

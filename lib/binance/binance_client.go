@@ -1,6 +1,7 @@
 package binance
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/json"
@@ -14,6 +15,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
+	"golang.org/x/time/rate"
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
@@ -24,17 +26,19 @@ const (
 
 //Client represent a binance api client
 type Client struct {
-	APIKey    string
-	SecretKey string
-	sugar     *zap.SugaredLogger
+	APIKey      string
+	SecretKey   string
+	sugar       *zap.SugaredLogger
+	rateLimiter *rate.Limiter
 }
 
 //NewBinance return a new client for binance api
-func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger) *Client {
+func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, limiter *rate.Limiter) *Client {
 	return &Client{
-		APIKey:    apiKey,
-		SecretKey: secretKey,
-		sugar:     sugar,
+		APIKey:      apiKey,
+		SecretKey:   secretKey,
+		sugar:       sugar,
+		rateLimiter: limiter,
 	}
 }
 
@@ -138,6 +142,10 @@ func (bc *Client) GetTradeHistory(symbol string, fromID int64) ([]TradeHistory, 
 	var (
 		result []TradeHistory
 	)
+	const weight = 5
+	//Wait before creating the request to avoid timestamp request outside the recWindow
+	bc.rateLimiter.WaitN(context.Background(), weight)
+
 	endpoint := fmt.Sprintf("%s/api/v3/myTrades", endpointPrefix)
 	res, err := bc.sendRequest(
 		http.MethodGet,
@@ -161,6 +169,10 @@ func (bc *Client) GetAssetDetail() (AssetDetailResponse, error) {
 	var (
 		result AssetDetailResponse
 	)
+	const weight = 1
+	//Wait before creating the request to avoid timestamp request outside the recWindow
+	bc.rateLimiter.WaitN(context.Background(), weight)
+
 	endpoint := fmt.Sprintf("%s/wapi/v3/assetDetail.html", endpointPrefix)
 	res, err := bc.sendRequest(
 		http.MethodGet,
@@ -181,6 +193,10 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 	var (
 		result WithdrawHistoryList
 	)
+	const weight = 1
+	//Wait before creating the request to avoid timestamp request outside the recWindow
+	bc.rateLimiter.WaitN(context.Background(), weight)
+
 	endpoint := fmt.Sprintf("%s/wapi/v3/withdrawHistory.html", endpointPrefix)
 	res, err := bc.sendRequest(
 		http.MethodGet,

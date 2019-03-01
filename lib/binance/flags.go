@@ -5,11 +5,13 @@ import (
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
+	"golang.org/x/time/rate"
 )
 
 const (
-	binanceAPIKeyFlag    = "binance-api-key"
-	binanceSecretKeyFlag = "binance-secret-key"
+	binanceAPIKeyFlag       = "binance-api-key"
+	binanceSecretKeyFlag    = "binance-secret-key"
+	binanceRequestPerSecond = "binance-requests-per-second"
 )
 
 //NewCliFlags return cli flags to configure cex client
@@ -24,6 +26,12 @@ func NewCliFlags() []cli.Flag {
 			Name:   binanceSecretKeyFlag,
 			Usage:  "secret key for binance client",
 			EnvVar: "BINANCE_SECRET_KEY",
+		},
+		cli.Float64Flag{
+			Name:   binanceRequestPerSecond,
+			Usage:  "binance request limit per second, default to 1200 which etherscan's normal rate limit",
+			EnvVar: "BINANCE_REQUEST_PER_SEC",
+			Value:  1200,
 		},
 	}
 }
@@ -42,6 +50,11 @@ func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, er
 		return nil, errors.New("cannot create binance client, lack of secret key")
 	}
 	secretKey = c.String(binanceSecretKeyFlag)
+	rps := c.Float64(binanceRequestPerSecond)
+	if rps <= 0 {
+		return nil, errors.New("rate limit must be more than 0")
+	}
 
-	return NewBinance(apiKey, secretKey, sugar), nil
+	limiter := rate.NewLimiter(rate.Limit(rps), 1)
+	return NewBinance(apiKey, secretKey, sugar, limiter), nil
 }

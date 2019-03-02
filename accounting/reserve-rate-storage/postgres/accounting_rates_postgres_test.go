@@ -37,12 +37,14 @@ func TestSaveAccountingRates(t *testing.T) {
 	db, err := sqlx.Connect("postgres", "host=127.0.0.1 port=5432 user=reserve_stats password=reserve_stats dbname=reserve_stats sslmode=disable")
 	require.NoError(t, err)
 
-	arrs, err := NewDB(sugar, db, "test_rsv_table", "test_token_table", "test_bases_table", "test_rates_table")
+	arrs, err := NewDB(sugar, db, "test_rsv_table", "test_token_table", "test_bases_table", "test_rates_table", "test_usd_table")
 	defer func() {
 		// arrs.TearDown()
 		arrs.Close()
 	}()
 	require.NoError(t, err)
 	err = arrs.UpdateRatesRecords(blockInfo, rsvRates)
+	require.NoError(t, err)
+	err = arrs.UpdateETHUSDPrice(blockInfo, 0.1)
 	require.NoError(t, err)
 }

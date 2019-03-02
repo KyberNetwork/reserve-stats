@@ -17,6 +17,7 @@ const (
 	tokenTableName   = "tokens"
 	baseTableName    = "bases"
 	rateTableName    = "rates"
+	usdTableName     = "usds"
 )
 
 type RatesStorage struct {
@@ -64,6 +65,15 @@ CREATE TABLE IF NOT EXISTS %[4]s
     CONSTRAINT %[4]s_fk_base_id FOREIGN KEY(base_id) REFERENCES %[3]s(id),
 	CONSTRAINT %[4]s_fk_reseve_id FOREIGN KEY(reserve_id) REFERENCES %[1]s(id)
 );
+
+CREATE TABLE IF NOT EXISTS %[5]s
+(
+	id serial NOT NULL,
+	time TIMESTAMP NOT NULL,
+	block integer NOT NULL,
+	rate float8 NOT NULL,
+	CONSTRAINT %[5]s_pk PRIMARY KEY(id)
+);
 `
 	var (
 		logger     = sugar.With("func", "reserverates/storage/postgres")
@@ -76,14 +86,14 @@ CREATE TABLE IF NOT EXISTS %[4]s
 	}
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 	if len(customTableNames) > 0 {
-		if len(customTableNames) != 4 {
-			return nil, fmt.Errorf("expect 4 tables name [reserve,token,base,rates], got %v", customTableNames)
+		if len(customTableNames) != 5 {
+			return nil, fmt.Errorf("expect 5 tables name [reserve,token,base,rates], got %v", customTableNames)
 		}
 		tableNames = customTableNames
 	} else {
-		tableNames = []string{reserveTableName, tokenTableName, baseTableName, rateTableName}
+		tableNames = []string{reserveTableName, tokenTableName, baseTableName, rateTableName, usdTableName}
 	}
-	query := fmt.Sprintf(schemaFMT, tableNames[0], tableNames[1], tableNames[2], tableNames[3])
+	query := fmt.Sprintf(schemaFMT, tableNames[0], tableNames[1], tableNames[2], tableNames[3], tableNames[4])
 	logger.Debugw("initializing database schema", "query", query)
 
 	if _, err = tx.Exec(query); err != nil {
@@ -119,7 +129,10 @@ func (rdb *RatesStorage) TearDown() error {
 
 //Close close DB connection
 func (rdb *RatesStorage) Close() error {
-	return rdb.db.Close()
+	if rdb.db != nil {
+		return rdb.db.Close()
+	}
+	return nil
 }
 
 //getTokenBase from pair return token and base from base-token pair
@@ -139,23 +152,23 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, 
 	)
 	const updateStmt = `
 	WITH
+rs AS(
+	INSERT INTO %[1]s(address)
+	VALUES ($1)
+ 	ON CONFLICT ON CONSTRAINT %[1]s_address_key DO UPDATE SET address=EXCLUDED.address RETURNING %[1]s.id
+),
 tk AS (
-	INSERT INTO %[1]s(symbol)
-	VALUES($1)
-	ON CONFLICT ON CONSTRAINT %[1]s_symbol_key DO UPDATE SET symbol=EXCLUDED.symbol RETURNING %[1]s.id
+	INSERT INTO %[2]s(symbol)
+	VALUES($2)
+	ON CONFLICT ON CONSTRAINT %[2]s_symbol_key DO UPDATE SET symbol=EXCLUDED.symbol RETURNING %[2]s.id
 ),
 bs AS( 
- 	INSERT INTO %[2]s(symbol) 
- 	VALUES($2) 
- 	ON CONFLICT ON CONSTRAINT %[2]s_symbol_key DO UPDATE SET symbol=EXCLUDED.symbol RETURNING %[2]s.id
-),
-rs AS(
-	INSERT INTO %[3]s(address)
-	VALUES ($3)
- 	ON CONFLICT ON CONSTRAINT %[3]s_address_key DO UPDATE SET address=EXCLUDED.address RETURNING %[3]s.id
+ 	INSERT INTO %[3]s(symbol) 
+ 	VALUES($3) 
+ 	ON CONFLICT ON CONSTRAINT %[3]s_symbol_key DO UPDATE SET symbol=EXCLUDED.symbol RETURNING %[3]s.id
 )
 
-INSERT INTO %[4]s(time, "token_id", "base_id", block, buy_reserve_rate, sell_reserve_rate, "reserve_id")
+INSERT INTO %[4]s(time, token_id, base_id, block, buy_reserve_rate, sell_reserve_rate, reserve_id)
 VALUES (
 	$4, 
 	(SELECT id FROM tk),
@@ -166,9 +179,9 @@ VALUES (
 	(SELECT id FROM rs)
 	);`
 	query := fmt.Sprintf(updateStmt,
+		rdb.tableNames[0],
 		rdb.tableNames[1],
 		rdb.tableNames[2],
-		rdb.tableNames[0],
 		rdb.tableNames[3],
 	)
 
@@ -185,9 +198,9 @@ VALUES (
 				return err
 			}
 			_, err = tx.Exec(query,
+				rsvAddr,
 				token,
 				base,
-				rsvAddr,
 				blockInfo.Timestamp,
 				blockInfo.Block,
 				rate.BuyReserveRate,
@@ -198,5 +211,39 @@ VALUES (
 			}
 		}
 	}
+	return err
+}
+
+//UpdateETHUSDPrice store the ETHUSD rate at that blockInfo
+func (rdb *RatesStorage) UpdateETHUSDPrice(blockInfo lastblockdaily.BlockInfo, ethusdRate float64) error {
+	var logger = rdb.sugar.With(
+		"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
+		"block_number", blockInfo.Block,
+		"timestamp", blockInfo.Timestamp.String(),
+	)
+	const updateStmt = `INSERT INTO %[1]s(time, block, rate)
+	VALUES ( 
+		$1,
+		$2, 
+		$3);`
+	query := fmt.Sprintf(updateStmt,
+		rdb.tableNames[4],
+	)
+
+	logger.Debugw("updating eth-usdrates...", "query", query)
+	tx, err := rdb.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer pgsql.CommitOrRollback(tx, rdb.sugar, &err)
+	_, err = tx.Exec(query,
+		blockInfo.Timestamp,
+		blockInfo.Block,
+		ethusdRate,
+	)
+	if err != nil {
+		return err
+	}
+
 	return err
 }

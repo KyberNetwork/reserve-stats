@@ -3,13 +3,17 @@ package postgres
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 
+	storage "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate-storage"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
+	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 const (
@@ -20,6 +24,7 @@ const (
 	usdTableName     = "usds"
 )
 
+//RatesStorage defines the object to store rates
 type RatesStorage struct {
 	sugar      *zap.SugaredLogger
 	db         *sqlx.DB
@@ -27,7 +32,7 @@ type RatesStorage struct {
 }
 
 // NewDB return the Ratestorage instance. User must call ratestorage.Close() before exit.
-// tableNames is a list of 4 string for 4 tablename[reserve,token,base, rate]. It can be optional
+// tableNames is a list of 5 string for 5 tablename[reserve,token,base, rate,usdrate]. It can be optional
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, customTableNames ...string) (*RatesStorage, error) {
 	const schemaFMT = `CREATE TABLE IF NOT EXISTS %[1]s
 (
@@ -144,6 +149,7 @@ func getTokenBaseFromPair(pair string) (string, string, error) {
 	return ids[1], ids[0], nil
 }
 
+//UpdateRatesRecords update mutiple rate records from a block with mutiple reserve address into the DB
 func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, rateRecords map[string]map[string]common.ReserveRateEntry) error {
 	var logger = rdb.sugar.With(
 		"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
@@ -212,6 +218,72 @@ VALUES (
 		}
 	}
 	return err
+}
+
+//GetRates return the reserve rates in a period of times
+func (rdb *RatesStorage) GetRates(reservers []ethereum.Address, from time.Time, to time.Time) (map[string]storage.AccountingReserveRates, error) {
+	var (
+		result    = make(map[string]storage.AccountingReserveRates)
+		rowData   = ratesFromDB{}
+		rsvsAddrs = []string{}
+		logger    = rdb.sugar.With(
+			"func", "reserverates/storage/postgres/RateStorage.GetRates",
+			"from", from.String(),
+			"to", to.String(),
+			"reservers", reservers,
+		)
+	)
+	const (
+		selectStmt = `SELECT rt.time as time, tk.symbol as token, bs.symbol as base, rt.buy_reserve_rate as buy_rate, rs.address as reserve
+		FROM %[1]s AS rt LEFT JOIN %[2]s AS tk ON rt.token_id = tk.id
+		LEFT JOIN %[3]s AS bs ON rt.base_id=bs.id 
+		LEFT JOIN %[4]s AS rs ON rt.reserve_id=rs.id
+		WHERE  time>=$1 AND time<$2 AND rs.address IN (SELECT unnest($3::text[]));`
+		shortForm = "2006-01-02"
+	)
+	for _, rsv := range reservers {
+		rsvsAddrs = append(rsvsAddrs, rsv.Hex())
+	}
+	query := fmt.Sprintf(selectStmt,
+		rdb.tableNames[3],
+		rdb.tableNames[1],
+		rdb.tableNames[2],
+		rdb.tableNames[0],
+	)
+	logger.Debugw("Querrying rate...", "query", query)
+
+	rows, err := rdb.db.Queryx(query, from, to, pq.StringArray(rsvsAddrs))
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		if err := rows.StructScan(&rowData); err != nil {
+			return nil, err
+		}
+		if _, ok := result[rowData.Reserve]; !ok {
+			result[rowData.Reserve] = map[time.Time]map[string]map[string]float64{
+				rowData.Time: map[string]map[string]float64{
+					rowData.Base: map[string]float64{
+						rowData.Token: rowData.BuyRate,
+					},
+				},
+			}
+		}
+		if _, ok := result[rowData.Reserve][rowData.Time]; !ok {
+			result[rowData.Reserve][rowData.Time] = map[string]map[string]float64{
+				rowData.Base: map[string]float64{
+					rowData.Token: rowData.BuyRate,
+				},
+			}
+		}
+		if _, ok := result[rowData.Reserve][rowData.Time][rowData.Base]; !ok {
+			result[rowData.Reserve][rowData.Time][rowData.Base] = map[string]float64{
+				rowData.Token: rowData.BuyRate,
+			}
+		}
+		result[rowData.Reserve][rowData.Time][rowData.Base][rowData.Token] = rowData.BuyRate
+	}
+	return result, nil
 }
 
 //UpdateETHUSDPrice store the ETHUSD rate at that blockInfo

@@ -1,9 +1,11 @@
 package postgres
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/require"
@@ -13,15 +15,15 @@ import (
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 )
 
-func TestSaveAccountingRates(t *testing.T) {
+func TestSaveAndGetAccountingRates(t *testing.T) {
 	var (
 		blockInfo = lastblockdaily.BlockInfo{
-			Block:     uint64(1000),
+			Block:     uint64(3000),
 			Timestamp: time.Now(),
 		}
 		rateRecord = common.ReserveRateEntry{
-			BuyReserveRate:  0.1,
-			SellReserveRate: 0.2,
+			BuyReserveRate:  0.4,
+			SellReserveRate: 0.5,
 		}
 		aRsvRate = map[string]common.ReserveRateEntry{
 			"ETH-KNC": rateRecord,
@@ -39,7 +41,7 @@ func TestSaveAccountingRates(t *testing.T) {
 
 	arrs, err := NewDB(sugar, db, "test_rsv_table", "test_token_table", "test_bases_table", "test_rates_table", "test_usd_table")
 	defer func() {
-		// arrs.TearDown()
+		arrs.TearDown()
 		arrs.Close()
 	}()
 	require.NoError(t, err)
@@ -47,4 +49,14 @@ func TestSaveAccountingRates(t *testing.T) {
 	require.NoError(t, err)
 	err = arrs.UpdateETHUSDPrice(blockInfo, 0.1)
 	require.NoError(t, err)
+
+	result, err := arrs.GetRates(
+		[]ethereum.Address{ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")},
+		time.Now().AddDate(0, 0, -2),
+		time.Now().AddDate(0, 0, 2))
+	require.NoError(t, err)
+	sugar.Debugw("query completed", "result", result)
+	jsonData, err := json.Marshal(result)
+	require.NoError(t, err)
+	sugar.Debugf("Result json is %s", jsonData)
 }

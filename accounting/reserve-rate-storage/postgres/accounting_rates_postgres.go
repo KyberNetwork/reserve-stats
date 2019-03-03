@@ -68,7 +68,8 @@ CREATE TABLE IF NOT EXISTS %[4]s
 	CONSTRAINT %[4]s_pk PRIMARY KEY(id),
 	CONSTRAINT %[4]s_fk_token_id FOREIGN KEY(token_id) REFERENCES %[2]s(id),
     CONSTRAINT %[4]s_fk_base_id FOREIGN KEY(base_id) REFERENCES %[3]s(id),
-	CONSTRAINT %[4]s_fk_reseve_id FOREIGN KEY(reserve_id) REFERENCES %[1]s(id)
+	CONSTRAINT %[4]s_fk_reseve_id FOREIGN KEY(reserve_id) REFERENCES %[1]s(id),
+	CONSTRAINT %[4]s_no_duplicate UNIQUE(token_id,base_id,block,reserve_id)
 );
 
 CREATE TABLE IF NOT EXISTS %[5]s
@@ -115,7 +116,7 @@ CREATE TABLE IF NOT EXISTS %[5]s
 //TearDown removes all the tables
 func (rdb *RatesStorage) TearDown() error {
 	const dropFMT = `
-	DROP TABLE %[1]s,%[2]s,%[3]s,%[4]s;
+	DROP TABLE %[1]s,%[2]s,%[3]s,%[4]s,%[5]s;
 	`
 	tx, err := rdb.db.Beginx()
 	if err != nil {
@@ -127,6 +128,7 @@ func (rdb *RatesStorage) TearDown() error {
 		rdb.tableNames[1],
 		rdb.tableNames[2],
 		rdb.tableNames[3],
+		rdb.tableNames[4],
 	)
 	_, err = tx.Exec(query)
 	return err
@@ -183,7 +185,8 @@ VALUES (
 	$6, 
 	$7, 
 	(SELECT id FROM rs)
-	);`
+	)
+ON CONFLICT ON CONSTRAINT %[4]s_no_duplicate DO NOTHING;`
 	query := fmt.Sprintf(updateStmt,
 		rdb.tableNames[0],
 		rdb.tableNames[1],
@@ -239,7 +242,6 @@ func (rdb *RatesStorage) GetRates(reservers []ethereum.Address, from time.Time, 
 		LEFT JOIN %[3]s AS bs ON rt.base_id=bs.id 
 		LEFT JOIN %[4]s AS rs ON rt.reserve_id=rs.id
 		WHERE  time>=$1 AND time<$2 AND rs.address IN (SELECT unnest($3::text[]));`
-		shortForm = "2006-01-02"
 	)
 	for _, rsv := range reservers {
 		rsvsAddrs = append(rsvsAddrs, rsv.Hex())

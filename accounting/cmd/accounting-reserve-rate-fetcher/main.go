@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	rrpostgres "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate-storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
@@ -30,6 +31,7 @@ const (
 
 	retryDelayFlag        = "retry-delay"
 	defaultRetryDelayTime = 5 * time.Minute
+	defaultPostGresDB     = "reserve_stats"
 )
 
 func main() {
@@ -58,6 +60,7 @@ func main() {
 		},
 		blockchain.NewEthereumNodeFlags(),
 	)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostGresDB)...)
 	app.Flags = append(app.Flags, timeutil.NewTimeRangeCliFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -165,6 +168,16 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("cannot rate crawler, err: %v", err)
 	}
 
+	db, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	ratesStorage, err := rrpostgres.NewDB(sugar, db)
+	if err != nil {
+		return err
+	}
+	defer ratesStorage.Close()
 	cgk := coingecko.New()
 
 	lastBlockResolver := lastblockdaily.NewLastBlockResolver(ethClient, blockTimeResolver, fromDate, toDate, sugar)
@@ -198,7 +211,12 @@ func run(c *cli.Context) error {
 				if err != nil {
 					errCh <- err
 				}
-				sugar.Debugw("rate result", "block", blockInfo.Block, "rates", rates, "eth_usd_rate", ethUSDRate)
+				if err = ratesStorage.UpdateRatesRecords(blockInfo, rates); err != nil {
+					errCh <- err
+				}
+				if err = ratesStorage.UpdateETHUSDPrice(blockInfo, ethUSDRate); err != nil {
+					errCh <- err
+				}
 			}(rateErrChn, blockInfo, attempts)
 		}
 	}

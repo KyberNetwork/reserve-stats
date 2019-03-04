@@ -28,7 +28,7 @@ const (
 type Client struct {
 	APIKey      string
 	SecretKey   string
-	sugar       *zap.SugaredLogger
+	Sugar       *zap.SugaredLogger
 	rateLimiter Limiter
 }
 
@@ -47,7 +47,7 @@ func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...O
 	clnt := &Client{
 		APIKey:    apiKey,
 		SecretKey: secretKey,
-		sugar:     sugar,
+		Sugar:     sugar,
 	}
 	for _, opt := range options {
 		opt(clnt)
@@ -111,7 +111,7 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 
 	var (
 		respBody []byte
-		logger   = bc.sugar.With("func", "binance_client/sendRequest")
+		logger   = bc.Sugar.With("func", "binance_client/sendRequest")
 	)
 	client := &http.Client{
 		Timeout: time.Duration(30 * time.Second),
@@ -167,7 +167,8 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 }
 
 //GetTradeHistory return history of trading on binance
-func (bc *Client) GetTradeHistory(symbol string, fromID int64) ([]TradeHistory, error) {
+//if fromID = -1 then function will not put fromId as a param
+func (bc *Client) GetTradeHistory(symbol string, fromID int64, fromTime, toTime time.Time) ([]TradeHistory, error) {
 	var (
 		result []TradeHistory
 	)
@@ -178,13 +179,26 @@ func (bc *Client) GetTradeHistory(symbol string, fromID int64) ([]TradeHistory, 
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v3/myTrades", endpointPrefix)
+	params := map[string]string{
+		"symbol": symbol,
+	}
+
+	if fromID != -1 {
+		params["fromId"] = strconv.FormatInt(fromID, 10)
+	}
+
+	if !fromTime.IsZero() {
+		params["startTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(fromTime), 10)
+	}
+
+	if !toTime.IsZero() {
+		params["endTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(toTime), 10)
+	}
+
 	res, err := bc.sendRequest(
 		http.MethodGet,
 		endpoint,
-		map[string]string{
-			"symbol": symbol,
-			"fromId": strconv.FormatInt(fromID, 10),
-		},
+		params,
 		true,
 		time.Now(),
 	)
@@ -241,6 +255,26 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 			"endTime":   strconv.FormatUint(timeutil.TimeToTimestampMs(toTime), 10),
 		},
 		true,
+		time.Now(),
+	)
+	if err != nil {
+		return result, err
+	}
+	err = json.Unmarshal(res, &result)
+	return result, err
+}
+
+//GetExchangeInfo return exchange info
+func (bc *Client) GetExchangeInfo() (ExchangeInfo, error) {
+	var (
+		result ExchangeInfo
+	)
+	endpoint := fmt.Sprintf("%s/api/v1/exchangeInfo", endpointPrefix)
+	res, err := bc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		map[string]string{},
+		false,
 		time.Now(),
 	)
 	if err != nil {

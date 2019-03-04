@@ -30,7 +30,7 @@ func NewCliFlags() []cli.Flag {
 		cli.Float64Flag{
 			Name:   binanceRequestPerSecond,
 			Usage:  "binance request limit per second, default to 1200 which etherscan's normal rate limit",
-			EnvVar: "BINANCE_REQUEST_PER_SEC",
+			EnvVar: "BINANCE_REQUESTS_PER_SECOND",
 			Value:  1200,
 		},
 	}
@@ -52,7 +52,7 @@ func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, er
 	secretKey = c.String(binanceSecretKeyFlag)
 	rps := c.Float64(binanceRequestPerSecond)
 	if rps <= 0 {
-		return nil, errors.New("rate limit must be more than 0")
+		return nil, errors.New("rate limit must be greater than 0")
 	}
 
 	limiter := rate.NewLimiter(rate.Limit(rps), 1)

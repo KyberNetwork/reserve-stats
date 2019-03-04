@@ -31,7 +31,7 @@ func NewCliFlags() []cli.Flag {
 		cli.Float64Flag{
 			Name:   huobiRequestPerSecond,
 			Usage:  "huobi request limit per second, default to 10 which huobi's normal rate limit (100 request per 10 sec)",
-			EnvVar: "HUOBI_REQUEST_PER_SEC",
+			EnvVar: "HUOBI_REQUESTS_PER_SECOND",
 			Value:  10,
 		},
 	}
@@ -54,7 +54,7 @@ func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, er
 
 	rps := c.Float64(huobiRequestPerSecond)
 	if rps <= 0 {
-		return nil, errors.New("request per second must be more than 0")
+		return nil, errors.New("request per second must be greater than 0")
 	}
 
 	limiter := rate.NewLimiter(rate.Limit(rps), 1)

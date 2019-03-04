@@ -5,10 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
-
-	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 func TestBinanceClient(t *testing.T) {

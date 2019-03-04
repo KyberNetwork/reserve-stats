@@ -2,6 +2,7 @@ package huobi
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -25,18 +27,39 @@ const (
 //Client represent a huobi client for
 //calling to huobi endpoint
 type Client struct {
-	APIKey    string
-	SecretKey string
-	sugar     *zap.SugaredLogger
+	APIKey      string
+	SecretKey   string
+	sugar       *zap.SugaredLogger
+	rateLimiter Limiter
+}
+
+//Option sets the initialization behavior for binance instance
+type Option func(cl *Client)
+
+//WithRateLimiter alter ratelimiter of binance client
+func WithRateLimiter(limiter Limiter) Option {
+	return func(cl *Client) {
+		cl.rateLimiter = limiter
+	}
 }
 
 //NewClient return a new HuobiClient instance
-func NewClient(apiKey, secretKey string, sugar *zap.SugaredLogger) *Client {
-	return &Client{
+func NewClient(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...Option) *Client {
+	clnt := &Client{
 		APIKey:    apiKey,
 		SecretKey: secretKey,
 		sugar:     sugar,
 	}
+	for _, opt := range options {
+		opt(clnt)
+	}
+	//Set Default rate limiter to the limit spefified by https://github.com/huobiapi/API_Docs_en/wiki/Request_Process
+	if clnt.rateLimiter == nil {
+		const huobiDefaultRateLimit = 10
+		clnt.rateLimiter = rate.NewLimiter(rate.Limit(huobiDefaultRateLimit), 1)
+	}
+	return clnt
+
 }
 
 func (hc *Client) sign(msg string) (string, error) {
@@ -89,6 +112,10 @@ func (hc *Client) sendRequest(method, requestURL string, params map[string]strin
 	req.Header.Add("Accept", "application/json")
 
 	q := req.URL.Query()
+	//Wait before sign
+	if err := hc.rateLimiter.WaitN(context.Background(), 1); err != nil {
+		return []byte{}, err
+	}
 	if signNeeded {
 		timestamp := fmt.Sprintf("%s", time.Now().UTC().Format("2006-01-02T15:04:05"))
 		params["SignatureMethod"] = "HmacSHA256"

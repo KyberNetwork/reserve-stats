@@ -269,6 +269,12 @@ func (bc *Client) GetExchangeInfo() (ExchangeInfo, error) {
 	var (
 		result ExchangeInfo
 	)
+	const weight = 1
+	//Wait before creating the request to avoid timestamp request outside the recWindow
+	if err := bc.rateLimiter.WaitN(context.Background(), weight); err != nil {
+		return result, err
+	}
+
 	endpoint := fmt.Sprintf("%s/api/v1/exchangeInfo", endpointPrefix)
 	res, err := bc.sendRequest(
 		http.MethodGet,

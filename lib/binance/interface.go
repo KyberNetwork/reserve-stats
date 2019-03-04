@@ -10,7 +10,7 @@ type Interface interface {
 	GetWithdrawHistory(fromTime, toTime uint64) (WithdrawHistoryList, error)
 }
 
-//BinanceLimiter define an inteface for binance Limiter action
-type BinanceLimiter interface {
+//Limiter define an inteface for binance Limiter action
+type Limiter interface {
 	WaitN(context.Context, int) error
 }

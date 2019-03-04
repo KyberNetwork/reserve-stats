@@ -29,14 +29,14 @@ type Client struct {
 	APIKey      string
 	SecretKey   string
 	sugar       *zap.SugaredLogger
-	rateLimiter BinanceLimiter
+	rateLimiter Limiter
 }
 
 //Option sets the initialization behavior for binance instance
 type Option func(cl *Client)
 
 //WithRateLimiter alter ratelimiter of binance client
-func WithRateLimiter(limiter BinanceLimiter) Option {
+func WithRateLimiter(limiter Limiter) Option {
 	return func(cl *Client) {
 		cl.rateLimiter = limiter
 	}

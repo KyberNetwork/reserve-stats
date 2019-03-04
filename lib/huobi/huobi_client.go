@@ -30,17 +30,36 @@ type Client struct {
 	APIKey      string
 	SecretKey   string
 	sugar       *zap.SugaredLogger
-	rateLimiter *rate.Limiter
+	rateLimiter Limiter
+}
+
+//Option sets the initialization behavior for binance instance
+type Option func(cl *Client)
+
+//WithRateLimiter alter ratelimiter of binance client
+func WithRateLimiter(limiter Limiter) Option {
+	return func(cl *Client) {
+		cl.rateLimiter = limiter
+	}
 }
 
 //NewClient return a new HuobiClient instance
-func NewClient(apiKey, secretKey string, sugar *zap.SugaredLogger, limiter *rate.Limiter) *Client {
-	return &Client{
-		APIKey:      apiKey,
-		SecretKey:   secretKey,
-		sugar:       sugar,
-		rateLimiter: limiter,
+func NewClient(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...Option) *Client {
+	clnt := &Client{
+		APIKey:    apiKey,
+		SecretKey: secretKey,
+		sugar:     sugar,
 	}
+	for _, opt := range options {
+		opt(clnt)
+	}
+	//Set Default rate limiter to the limit spefified by https://github.com/huobiapi/API_Docs_en/wiki/Request_Process
+	if clnt.rateLimiter == nil {
+		const huobiDefaultRateLimit = 10
+		clnt.rateLimiter = rate.NewLimiter(rate.Limit(huobiDefaultRateLimit), 1)
+	}
+	return clnt
+
 }
 
 func (hc *Client) sign(msg string) (string, error) {
@@ -94,7 +113,9 @@ func (hc *Client) sendRequest(method, requestURL string, params map[string]strin
 
 	q := req.URL.Query()
 	//Wait before sign
-	hc.rateLimiter.Wait(context.Background())
+	if err := hc.rateLimiter.WaitN(context.Background(), 1); err != nil {
+		return []byte{}, err
+	}
 	if signNeeded {
 		timestamp := fmt.Sprintf("%s", time.Now().UTC().Format("2006-01-02T15:04:05"))
 		params["SignatureMethod"] = "HmacSHA256"

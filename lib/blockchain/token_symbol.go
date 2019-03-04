@@ -3,9 +3,10 @@ package blockchain
 import (
 	"context"
 	"errors"
-	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"strings"
 	"sync"
+
+	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"

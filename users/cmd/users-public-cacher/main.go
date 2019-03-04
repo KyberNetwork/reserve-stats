@@ -17,7 +17,7 @@ import (
 
 const (
 	expireTimeFlag    = "expire-time"
-	defaultExpireTime = 3600 // second
+	defaultExpireTime = 3600 // 1 hour
 )
 
 func main() {

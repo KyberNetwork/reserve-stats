@@ -29,17 +29,36 @@ type Client struct {
 	APIKey      string
 	SecretKey   string
 	sugar       *zap.SugaredLogger
-	rateLimiter *rate.Limiter
+	rateLimiter BinanceLimiter
+}
+
+//Option sets the initialization behavior for binance instance
+type Option func(cl *Client)
+
+//WithRateLimiter alter ratelimiter of binance client
+func WithRateLimiter(limiter BinanceLimiter) Option {
+	return func(cl *Client) {
+		cl.rateLimiter = limiter
+	}
 }
 
 //NewBinance return a new client for binance api
-func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, limiter *rate.Limiter) *Client {
-	return &Client{
-		APIKey:      apiKey,
-		SecretKey:   secretKey,
-		sugar:       sugar,
-		rateLimiter: limiter,
+func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...Option) *Client {
+	clnt := &Client{
+		APIKey:    apiKey,
+		SecretKey: secretKey,
+		sugar:     sugar,
 	}
+	for _, opt := range options {
+		opt(clnt)
+	}
+	//Set Default rate limiter to the limit spefified by https://api.binance.com/api/v1/exchangeInfo
+	if clnt.rateLimiter == nil {
+		const binanceDefaultRateLimit = 20
+
+		clnt.rateLimiter = rate.NewLimiter(rate.Limit(binanceDefaultRateLimit), 1)
+	}
+	return clnt
 }
 
 func (bc *Client) fillRequest(req *http.Request, signNeeded bool, timepoint time.Time) error {
@@ -144,7 +163,9 @@ func (bc *Client) GetTradeHistory(symbol string, fromID int64) ([]TradeHistory, 
 	)
 	const weight = 5
 	//Wait before creating the request to avoid timestamp request outside the recWindow
-	bc.rateLimiter.WaitN(context.Background(), weight)
+	if err := bc.rateLimiter.WaitN(context.Background(), weight); err != nil {
+		return result, err
+	}
 
 	endpoint := fmt.Sprintf("%s/api/v3/myTrades", endpointPrefix)
 	res, err := bc.sendRequest(
@@ -171,7 +192,9 @@ func (bc *Client) GetAssetDetail() (AssetDetailResponse, error) {
 	)
 	const weight = 1
 	//Wait before creating the request to avoid timestamp request outside the recWindow
-	bc.rateLimiter.WaitN(context.Background(), weight)
+	if err := bc.rateLimiter.WaitN(context.Background(), weight); err != nil {
+		return result, err
+	}
 
 	endpoint := fmt.Sprintf("%s/wapi/v3/assetDetail.html", endpointPrefix)
 	res, err := bc.sendRequest(
@@ -195,7 +218,9 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 	)
 	const weight = 1
 	//Wait before creating the request to avoid timestamp request outside the recWindow
-	bc.rateLimiter.WaitN(context.Background(), weight)
+	if err := bc.rateLimiter.WaitN(context.Background(), weight); err != nil {
+		return result, err
+	}
 
 	endpoint := fmt.Sprintf("%s/wapi/v3/withdrawHistory.html", endpointPrefix)
 	res, err := bc.sendRequest(

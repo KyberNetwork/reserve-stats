@@ -56,5 +56,5 @@ func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, er
 	}
 
 	limiter := rate.NewLimiter(rate.Limit(rps), 1)
-	return NewBinance(apiKey, secretKey, sugar, limiter), nil
+	return NewBinance(apiKey, secretKey, sugar, WithRateLimiter(limiter)), nil
 }

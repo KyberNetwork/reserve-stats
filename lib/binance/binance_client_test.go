@@ -5,11 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
-	"golang.org/x/time/rate"
-
-	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 func TestBinanceClient(t *testing.T) {
@@ -31,9 +29,7 @@ func TestBinanceClient(t *testing.T) {
 		t.Skip("Binance secret key is not available")
 	}
 
-	limiter := rate.NewLimiter(rate.Limit(1200.0), 1)
-
-	binanceClient := NewBinance(binanceAPIKey, binanceSecretKey, sugar, limiter)
+	binanceClient := NewBinance(binanceAPIKey, binanceSecretKey, sugar)
 
 	assetDetail, err := binanceClient.GetAssetDetail()
 	assert.NoError(t, err, "binance client get asset detail error: %s", err)

@@ -29,35 +29,39 @@ type RedisCacher struct {
 	postgresDB     *storage.UserDB
 	influxDBClient client.Client
 	redisClient    *redis.Client
-	kycedCap       *common.UserCap
-	nonKycedCap    *common.UserCap
+	expiration     time.Duration
+
+	kycedCap    *common.UserCap
+	nonKycedCap *common.UserCap
 }
 
 //NewRedisCacher returns a new redis cacher instance
 func NewRedisCacher(sugar *zap.SugaredLogger, postgresDB *storage.UserDB,
-	influxDBClient client.Client, redisClient *redis.Client) *RedisCacher {
+	influxDBClient client.Client, redisClient *redis.Client, expiration time.Duration) *RedisCacher {
 	return &RedisCacher{
 		sugar:          sugar,
 		postgresDB:     postgresDB,
 		influxDBClient: influxDBClient,
 		redisClient:    redisClient,
-		kycedCap:       common.NewUserCap(true),
-		nonKycedCap:    common.NewUserCap(false),
+		expiration:     expiration,
+
+		kycedCap:    common.NewUserCap(true),
+		nonKycedCap: common.NewUserCap(false),
 	}
 }
 
 //CacheUserInfo save user info to redis cache
-func (rc *RedisCacher) CacheUserInfo(expireTime time.Duration) error {
-	if err := rc.cacheAllKycedUsers(expireTime); err != nil {
+func (rc *RedisCacher) CacheUserInfo() error {
+	if err := rc.cacheAllKycedUsers(); err != nil {
 		return err
 	}
-	if err := rc.cacheRichUser(expireTime); err != nil {
+	if err := rc.cacheRichUser(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (rc *RedisCacher) cacheAllKycedUsers(expireTime time.Duration) error {
+func (rc *RedisCacher) cacheAllKycedUsers() error {
 	var (
 		logger    = rc.sugar.With("func", "user/cacher/cacheAllKycedUsers")
 		err       error
@@ -75,7 +79,7 @@ func (rc *RedisCacher) cacheAllKycedUsers(expireTime time.Duration) error {
 	for _, address := range addresses {
 		// push to redis
 		addressHex := ethereum.HexToAddress(address).Hex()
-		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", kycedPrefix, addressHex), expireTime); err != nil {
+		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", kycedPrefix, addressHex), rc.expiration); err != nil {
 			if dErr := pipe.Discard(); dErr != nil {
 				err = fmt.Errorf("%s - %s", dErr.Error(), err.Error())
 			}
@@ -88,7 +92,7 @@ func (rc *RedisCacher) cacheAllKycedUsers(expireTime time.Duration) error {
 	return err
 }
 
-func (rc *RedisCacher) cacheRichUser(expireTime time.Duration) error {
+func (rc *RedisCacher) cacheRichUser() error {
 	var (
 		logger = rc.sugar.With("func", "user/cacher/cacheRichUser")
 	)
@@ -131,7 +135,7 @@ func (rc *RedisCacher) cacheRichUser(expireTime time.Duration) error {
 		}
 
 		// save to cache with 1 hour
-		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", richPrefix, userAddress), expireTime); err != nil {
+		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", richPrefix, userAddress), rc.expiration); err != nil {
 			if dErr := pipe.Discard(); dErr != nil {
 				err = fmt.Errorf("%s - %s", dErr.Error(), err.Error())
 			}

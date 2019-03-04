@@ -16,7 +16,6 @@ import (
 )
 
 const (
-	defaultDB         = "users"
 	expireTimeFlag    = "expire-time"
 	defaultExpireTime = 3600 // second
 )
@@ -84,7 +83,7 @@ func run(c *cli.Context) error {
 
 	sugar.Debugw("Initiated redis cached", "cache", redisCacheClient)
 
-	redisCacher := cacher.NewRedisCacher(sugar, userDB, influxDBClient, redisCacheClient)
+	redisCacher := cacher.NewRedisCacher(sugar, userDB, influxDBClient, redisCacheClient, expireTime)
 
-	return redisCacher.CacheUserInfo(expireTime)
+	return redisCacher.CacheUserInfo()
 }

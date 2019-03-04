@@ -17,7 +17,6 @@ import (
 
 const (
 	influxDB    = "trade_logs"
-	expireTime  = time.Hour
 	richPrefix  = "rich"
 	kycedPrefix = "kyced"
 )
@@ -48,17 +47,17 @@ func NewRedisCacher(sugar *zap.SugaredLogger, postgresDB *storage.UserDB,
 }
 
 //CacheUserInfo save user info to redis cache
-func (rc *RedisCacher) CacheUserInfo() error {
-	if err := rc.cacheAllKycedUsers(); err != nil {
+func (rc *RedisCacher) CacheUserInfo(expireTime time.Duration) error {
+	if err := rc.cacheAllKycedUsers(expireTime); err != nil {
 		return err
 	}
-	if err := rc.cacheRichUser(); err != nil {
+	if err := rc.cacheRichUser(expireTime); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (rc *RedisCacher) cacheAllKycedUsers() error {
+func (rc *RedisCacher) cacheAllKycedUsers(expireTime time.Duration) error {
 	var (
 		logger    = rc.sugar.With("func", "user/cacher/cacheAllKycedUsers")
 		err       error
@@ -89,7 +88,7 @@ func (rc *RedisCacher) cacheAllKycedUsers() error {
 	return err
 }
 
-func (rc *RedisCacher) cacheRichUser() error {
+func (rc *RedisCacher) cacheRichUser(expireTime time.Duration) error {
 	var (
 		logger = rc.sugar.With("func", "user/cacher/cacheRichUser")
 	)

@@ -281,8 +281,8 @@ func (rdb *RatesStorage) GetRates(reservers []ethereum.Address, from time.Time, 
 		}
 		if _, ok := result[rowData.Reserve]; !ok {
 			result[rowData.Reserve] = map[time.Time]map[string]map[string]float64{
-				rowData.Time: map[string]map[string]float64{
-					rowData.Base: map[string]float64{
+				rowData.Time: {
+					rowData.Base: {
 						rowData.Token: rowData.BuyRate,
 					},
 				},
@@ -290,7 +290,7 @@ func (rdb *RatesStorage) GetRates(reservers []ethereum.Address, from time.Time, 
 		}
 		if _, ok := result[rowData.Reserve][rowData.Time]; !ok {
 			result[rowData.Reserve][rowData.Time] = map[string]map[string]float64{
-				rowData.Base: map[string]float64{
+				rowData.Base: {
 					rowData.Token: rowData.BuyRate,
 				},
 			}

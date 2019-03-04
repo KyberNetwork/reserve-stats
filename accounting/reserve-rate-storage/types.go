@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-//AccountingReserveRate is a struct to hold the rate as defined.
+//AccountingReserveRates is a struct to hold the rate as defined.
 //it holds infomation as followed example
 // {
 //     "2018-10-15"{

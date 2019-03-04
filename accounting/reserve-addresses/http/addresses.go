@@ -16,7 +16,7 @@ import (
 
 type createInput struct {
 	Address     string `json:"address" binding:"required,isAddress"`
-	Type        string `json:"type"`
+	Type        string `json:"type" binding:"required"`
 	Description string `json:"description"`
 }
 

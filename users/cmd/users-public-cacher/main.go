@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
 	"github.com/urfave/cli"
 
@@ -15,7 +16,8 @@ import (
 )
 
 const (
-	defaultDB = "users"
+	expireTimeFlag    = "expire-time"
+	defaultExpireTime = 3600 // 1 hour
 )
 
 func main() {
@@ -28,6 +30,14 @@ func main() {
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
 	app.Flags = append(app.Flags, libredis.NewCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
+	app.Flags = append(app.Flags,
+		cli.IntFlag{
+			Name:   expireTimeFlag,
+			Usage:  "Time to expire redis cache, count by second",
+			EnvVar: "EXPIRE_TIME",
+			Value:  defaultExpireTime,
+		},
+	)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -68,9 +78,12 @@ func run(c *cli.Context) error {
 		return err
 	}
 
+	expireTimeSecond := c.Int64(expireTimeFlag)
+	expireTime := time.Duration(expireTimeSecond) * time.Second
+
 	sugar.Debugw("Initiated redis cached", "cache", redisCacheClient)
 
-	redisCacher := cacher.NewRedisCacher(sugar, userDB, influxDBClient, redisCacheClient)
+	redisCacher := cacher.NewRedisCacher(sugar, userDB, influxDBClient, redisCacheClient, expireTime)
 
 	return redisCacher.CacheUserInfo()
 }

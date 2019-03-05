@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/urfave/cli"
 
@@ -43,8 +43,10 @@ func NewCliFlags() []cli.Flag {
 
 // NewClientFromContext returns new core client from cli flags.
 func NewClientFromContext(c *cli.Context) (client.Client, error) {
-	var err error
-	var influxClient client.Client
+	var (
+		err          error
+		influxClient client.Client
+	)
 
 	endpoint := c.String(influxdbEndpointFlag)
 	err = validation.Validate(endpoint,

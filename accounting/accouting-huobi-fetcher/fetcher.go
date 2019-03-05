@@ -25,13 +25,12 @@ func NewFetcher(sugar *zap.SugaredLogger, client huobi.Interface) *Fetcher {
 	}
 }
 
-func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time, wg *sync.WaitGroup, tradeHistory *sync.Map) error {
+func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time, tradeHistory *sync.Map) error {
 	var (
 		startTime = from
 		endTime   = to
 		result    []huobi.TradeHistory
 	)
-	defer wg.Done()
 	for {
 		tradeHistoriesResponse, err := fc.client.GetTradeHistory(symbol, startTime, endTime)
 		if err != nil {
@@ -42,8 +41,11 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time, 
 			break
 		}
 		result = append(result, tradeHistoriesResponse.Data...)
-		lastTrade := tradeHistoriesResponse.Data[len(tradeHistoriesResponse.Data)-1]
-		startTime = timeutil.TimestampMsToTime(lastTrade.CreateAt + 1)
+		lastTrade := tradeHistoriesResponse.Data[0]
+		startTime = timeutil.Midnight(timeutil.TimestampMsToTime(lastTrade.CreateAt)).AddDate(0, 0, 1)
+		if endTime.Before(startTime) {
+			break
+		}
 	}
 	if len(result) != 0 {
 		tradeHistory.Store(symbol, result)
@@ -52,11 +54,17 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time, 
 }
 
 //GetTradeHistory return all trade history between from-to and
-func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string]huobi.TradeHistoryList, error) {
+func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.TradeHistory, error) {
 	var (
-		result      = make(map[string]huobi.TradeHistoryList)
+		logger = fc.sugar.With(
+			"func", "accounting/accounting-huobi-fetcher/GetTradeHistory",
+			"from", from,
+			"to", to,
+		)
+		result      = make(map[string][]huobi.TradeHistory)
 		fetchResult = sync.Map{}
 		assertError error
+		fetchErr    error
 	)
 
 	symbols, err := fc.client.GetSymbolsPair()
@@ -68,20 +76,27 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string]huobi.TradeHi
 		wg.Add(1)
 		go func(symbol string) {
 			defer wg.Done()
-			fc.getTradeHistoryWithSymbol(symbol, from, to, wg, &fetchResult)
+			err := fc.getTradeHistoryWithSymbol(symbol, from, to, &fetchResult)
+			if err != nil {
+				fetchErr = err
+			}
+			logger.Debugw("Fetching done", "symbol", symbol, "error", err, "time", time.Now())
 		}(sym.SymBol)
 	}
 	wg.Wait()
 
+	if fetchErr != nil {
+		return nil, fetchErr
+	}
 	fetchResult.Range(func(key, value interface{}) bool {
 		symbol, ok := key.(string)
 		if !ok {
-			assertError = fmt.Errorf("cannot assert key (value: %v) of map result to symbol (string)", key)
+			assertError = fmt.Errorf("cannot assert key (value: %v) of map result to symbol", key)
 			return false
 		}
-		historyList, ok := value.(huobi.TradeHistoryList)
+		historyList, ok := value.([]huobi.TradeHistory)
 		if !ok {
-			assertError = fmt.Errorf("cannot assert key (value: %v) of map result to symbol (string)", key)
+			assertError = fmt.Errorf("cannot assert value (value: %v) of map result to TradeHistoryList", historyList)
 			return false
 		}
 		result[symbol] = historyList

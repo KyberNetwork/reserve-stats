@@ -20,11 +20,11 @@ type TradeHistory struct {
 	AccountID       int64  `json:"account-id"`
 	Amount          string `json:"amount"`
 	Price           string `json:"price"`
-	CreateAt        uint64 `json:"create-at"`
+	CreateAt        uint64 `json:"created-at"`
 	Type            string `json:"type"`
 	FieldAmount     string `json:"field-amount"`
 	FieldCashAmount string `json:"field-cash-amount"`
-	FieldFee        string `json:"field-fee"`
+	FieldFee        string `json:"field-fees"`
 	FinishedAt      uint64 `json:"finished-at"`
 	UserID          int64  `json:"user-id"`
 	Source          string `json:"source"`

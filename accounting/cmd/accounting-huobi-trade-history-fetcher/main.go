@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -43,13 +44,13 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	from, err := timeutil.FromTimeFromContext(c)
+	from, err := timeutil.FromTimeMillisFRomContext(c)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot get from time: %v", err)
 	}
-	to, err := timeutil.ToTimeFromContext(c)
+	to, err := timeutil.ToTimeMillisFRomContext(c)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot get to time: %v", err)
 	}
 
 	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient)

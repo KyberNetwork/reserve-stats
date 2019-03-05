@@ -53,7 +53,7 @@ func NewEtherscanClientFromContext(c *cli.Context) (*etherscan.Client, error) {
 	if rps <= 0 {
 		return nil, errors.New("rate limit must be more than 0")
 	}
-
+	//Etherscan doesn't  allow burst,  i.e: 5 request per second  really mean 1 request per 0.2  second
 	limiter := rate.NewLimiter(rate.Limit(rps), 1)
 	client.BeforeRequest = limitRate(limiter)
 	return client, nil

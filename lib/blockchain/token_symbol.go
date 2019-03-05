@@ -3,7 +3,6 @@ package blockchain
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 
@@ -113,34 +112,41 @@ func (t *TokenSymbol) Symbol(address common.Address) (string, error) {
 	return symbol, nil
 }
 
+var getNameFns = []func(common.Address, bind.ContractBackend) (string, error){
+	getName1,
+	getName2,
+}
+
 //Name return name of token
 func (t *TokenSymbol) Name(address common.Address) (string, error) {
 	var (
-		name string
-		err  error
+		name, result string
+		err          error
 	)
 	if val, ok := t.cachedName.Load(address); ok {
-		if name, ok = val.(string); !ok {
+		if result, ok = val.(string); !ok {
 			return "", errors.New("invalid token name stored in cached symbol")
 		}
-		return name, nil
+		return result, nil
 	}
-	name, err = getName1(address, t.ethClient)
-	if err != nil {
-		err1 := err
-		name, err = getName2(address, t.ethClient)
-		if err != nil {
-			// combine 2 errors if we cannot get name
-			err = fmt.Errorf("%v + %v", err1, err)
-		} else if name == "" {
-			// if we cannot get name then return first error
-			err = err1
-		}
+	wg := sync.WaitGroup{}
+	for _, getNameFn := range getNameFns {
+		wg.Add(1)
+		go func(fn func(common.Address, bind.ContractBackend) (string, error)) {
+			defer wg.Done()
+			name, err = fn(address, t.ethClient)
+			if result == "" && name != "" {
+				result = name
+			}
+		}(getNameFn)
 	}
-	if err == nil {
-		t.cachedName.Store(address, name)
+	wg.Wait()
+
+	if result != "" {
+		t.cachedName.Store(address, result)
 	}
-	return name, err
+
+	return result, err
 }
 
 func getName1(address common.Address, ethClient bind.ContractBackend) (string, error) {

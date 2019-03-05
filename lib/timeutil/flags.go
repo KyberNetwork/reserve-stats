@@ -8,8 +8,10 @@ import (
 )
 
 const (
-	toTimeFlag   = "to"
-	fromTimeFlag = "from"
+	toTimeFlag         = "to"
+	fromTimeFlag       = "from"
+	fromMillisTimeFlag = "from-millis"
+	toMillisTimeFlag   = "to-millis"
 )
 
 //ErrEmptyFlag is the error returned when empty flag
@@ -49,4 +51,38 @@ func FromTimeFromContext(c *cli.Context) (time.Time, error) {
 //ToTimeFromContext return to time from context. Return err=ErrEmptyFlag to indicate daemon Mode if it's not provide
 func ToTimeFromContext(c *cli.Context) (time.Time, error) {
 	return timeFlagFromContext(c, toTimeFlag)
+}
+
+func millisTimeFlagFromContext(c *cli.Context, flag string) (time.Time, error) {
+	timeUint := c.Uint64(flag)
+	if timeUint == 0 {
+		return time.Time{}, ErrEmptyFlag
+	}
+	return TimestampMsToTime(timeUint), nil
+}
+
+//FromTimeMillisFRomContext return from time from context. Return err=ErrEmptyFlag if no flag is provided
+func FromTimeMillisFRomContext(c *cli.Context) (time.Time, error) {
+	return millisTimeFlagFromContext(c, fromMillisTimeFlag)
+}
+
+//ToTimeMillisFRomContext return from time from context. Return err=ErrEmptyFlag if no flag is provided
+func ToTimeMillisFRomContext(c *cli.Context) (time.Time, error) {
+	return millisTimeFlagFromContext(c, toMillisTimeFlag)
+}
+
+//NewMilliTimeRangeCliFlags return clit flags to input from/to time in millisecond from terminal
+func NewMilliTimeRangeCliFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.Uint64Flag{
+			Name:   fromMillisTimeFlag,
+			Usage:  "From timestamp(millisecond) to query from",
+			EnvVar: "FROM_MILLIS",
+		},
+		cli.Uint64Flag{
+			Name:   toMillisTimeFlag,
+			Usage:  "To timestamp(millisecond) to query to",
+			EnvVar: "TO_MILLIS",
+		},
+	}
 }

@@ -61,6 +61,16 @@ func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...O
 	return clnt
 }
 
+//waitN mimic the leaky bucket algorithm to wait for n drop
+func (bc *Client) waitN(n int) error {
+	for i := 0; i < n; i++ {
+		if err := bc.rateLimiter.WaitN(context.Background(), 1); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (bc *Client) fillRequest(req *http.Request, signNeeded bool, timepoint time.Time) error {
 	if req.Method == http.MethodPost || req.Method == http.MethodPut || req.Method == http.MethodDelete {
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -163,11 +173,8 @@ func (bc *Client) GetTradeHistory(symbol string, fromID int64) ([]TradeHistory, 
 	)
 	const weight = 5
 	//Wait before creating the request to avoid timestamp request outside the recWindow
-	//Mimic  the leaky bucket algorithm to wait for 5  drop
-	for i := 0; i < weight; i++ {
-		if err := bc.rateLimiter.WaitN(context.Background(), 1); err != nil {
-			return result, err
-		}
+	if err := bc.waitN(weight); err != nil {
+		return result, err
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v3/myTrades", endpointPrefix)
@@ -195,7 +202,7 @@ func (bc *Client) GetAssetDetail() (AssetDetailResponse, error) {
 	)
 	const weight = 1
 	//Wait before creating the request to avoid timestamp request outside the recWindow
-	if err := bc.rateLimiter.WaitN(context.Background(), weight); err != nil {
+	if err := bc.waitN(weight); err != nil {
 		return result, err
 	}
 
@@ -221,7 +228,7 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 	)
 	const weight = 1
 	//Wait before creating the request to avoid timestamp request outside the recWindow
-	if err := bc.rateLimiter.WaitN(context.Background(), weight); err != nil {
+	if err := bc.waitN(weight); err != nil {
 		return result, err
 	}
 

@@ -9,6 +9,7 @@ import (
 type Interface interface {
 	GetTradeHistory(symbol string, startDate, endDate time.Time) (TradeHistoryList, error)
 	GetWithdrawHistory(currency string, fromID uint64) (WithdrawHistoryList, error)
+	GetSymbolsPair() ([]Symbol, error)
 }
 
 //Limiter define an inteface for huobi Limiter action

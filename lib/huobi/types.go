@@ -65,3 +65,19 @@ type WithdrawHistory struct {
 type WithdrawHistoryList struct {
 	Data []WithdrawHistory `json:"data"`
 }
+
+//SymbolsReply hold huobi's reply data and status
+type SymbolsReply struct {
+	Status string   `json:"status"`
+	Data   []Symbol `json:"data"`
+}
+
+//Symbol struct hold huobi's reply.
+type Symbol struct {
+	Base            string `json:"base-currency"`
+	Quote           string `json:"quote-currency"`
+	PricePrecision  int    `json:"price-precision"`
+	AmountPrecision int    `json:"amount-precision"`
+	SymBolPartition string `json:"symbol-partition"`
+	SymBol          string `json:"symbol"`
+}

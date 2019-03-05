@@ -223,3 +223,28 @@ func (hc *Client) GetWithdrawHistory(currency string, fromID uint64) (WithdrawHi
 	err = json.Unmarshal(res, &result)
 	return result, err
 }
+
+//GetSymbolsPair return list of pairs for Huobi's data
+func (hc *Client) GetSymbolsPair() ([]Symbol, error) {
+	var (
+		symbolReply SymbolsReply
+	)
+	endpoint := fmt.Sprintf("%s/v1/common/symbols", huobiEndpoint)
+	res, err := hc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		nil,
+		false,
+	)
+	if err != nil {
+		return symbolReply.Data, err
+	}
+	err = json.Unmarshal(res, &symbolReply)
+	if err != nil {
+		return symbolReply.Data, err
+	}
+	if symbolReply.Status != "ok" {
+		return symbolReply.Data, fmt.Errorf("unexpected reply status %s", symbolReply.Status)
+	}
+	return symbolReply.Data, nil
+}

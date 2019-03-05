@@ -47,7 +47,7 @@ func TestEtherScanClientWithRateLimiter(t *testing.T) {
 	//at rps =6 etherscan will return 403 for some requests.
 	t.Skip()
 	var (
-		rps = 6
+		rps = 5
 		wg  = &sync.WaitGroup{}
 	)
 	logger, err := zap.NewDevelopment()
@@ -72,6 +72,7 @@ func TestEtherScanClientWithRateLimiter(t *testing.T) {
 			defer wg.Done()
 			_, err := etherscanClient.EtherTotalSupply()
 			sugar.Debugw("finshed a request", "request_number", index, "finish_time", time.Now(), "error", err)
+			assert.NoError(t, err, fmt.Sprintf("got error: %v", err))
 		}(i)
 	}
 	wg.Wait()

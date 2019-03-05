@@ -30,9 +30,9 @@ func NewCliFlags() []cli.Flag {
 		},
 		cli.Float64Flag{
 			Name:   huobiRequestPerSecond,
-			Usage:  "huobi request limit per second, default to 10 which huobi's normal rate limit (100 request per 10 sec)",
+			Usage:  "huobi request limit per second, default to 8 which huobi's tested rate limit",
 			EnvVar: "HUOBI_REQUESTS_PER_SECOND",
-			Value:  10,
+			Value:  8,
 		},
 	}
 }

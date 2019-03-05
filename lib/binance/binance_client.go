@@ -163,8 +163,11 @@ func (bc *Client) GetTradeHistory(symbol string, fromID int64) ([]TradeHistory, 
 	)
 	const weight = 5
 	//Wait before creating the request to avoid timestamp request outside the recWindow
-	if err := bc.rateLimiter.WaitN(context.Background(), weight); err != nil {
-		return result, err
+	//Mimic  the leaky bucket algorithm to wait for 5  drop
+	for i := 0; i < weight; i++ {
+		if err := bc.rateLimiter.WaitN(context.Background(), 1); err != nil {
+			return result, err
+		}
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v3/myTrades", endpointPrefix)

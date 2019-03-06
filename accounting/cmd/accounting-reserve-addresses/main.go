@@ -13,7 +13,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 )
 
 func main() {
@@ -26,7 +25,6 @@ func main() {
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AccountingReserveAddressPort)...)
 	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
-	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}

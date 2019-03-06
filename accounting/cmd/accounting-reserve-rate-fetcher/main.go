@@ -41,7 +41,7 @@ func main() {
 	app.Flags = append(app.Flags,
 		cli.StringSliceFlag{
 			Name:   addressesFlag,
-			EnvVar: "RESERVE_ADDRESSES",
+			EnvVar: "ADDRESSES",
 			Usage:  "list of reserve contract addresses. Example: --addresses={\"0x1111\",\"0x222\"}",
 		},
 		cli.IntFlag{
@@ -53,7 +53,7 @@ func main() {
 		cli.DurationFlag{
 			Name:   retryDelayFlag,
 			Usage:  "The duration to put worker pools into sleep after each batch request",
-			EnvVar: "DELAY",
+			EnvVar: "RETRY_DELAY",
 			Value:  defaultRetryDelayTime,
 		},
 		blockchain.NewEthereumNodeFlags(),

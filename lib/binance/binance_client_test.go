@@ -55,8 +55,8 @@ func TestBinanceClientWithLimiter(t *testing.T) {
 	//Alter these number to test binance's behaviour
 	t.Skip()
 	var (
-		rps     = 10.0
-		limiter = rate.NewLimiter(rate.Limit(rps), 1)
+		rps     = 20.0
+		limiter = rate.NewLimiter(rate.Limit(rps), 5)
 		wg      = &sync.WaitGroup{}
 	)
 	logger, err := zap.NewDevelopment()

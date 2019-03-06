@@ -31,7 +31,7 @@ func NewCliFlags() []cli.Flag {
 			Name:   binanceRequestPerSecond,
 			Usage:  "binance request limit per second, default to 20 which etherscan's normal rate limit",
 			EnvVar: "BINANCE_REQUESTS_PER_SECOND",
-			Value:  20,
+			Value:  10,
 		},
 	}
 }

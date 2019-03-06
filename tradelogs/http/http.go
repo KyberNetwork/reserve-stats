@@ -6,6 +6,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/app-names"
 	lipappnames "github.com/KyberNetwork/reserve-stats/lib/appnames"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
@@ -20,13 +21,18 @@ const (
 )
 
 // NewServer returns an instance of HttpApi to serve trade logs.
-func NewServer(storage storage.Interface, host string, sugar *zap.SugaredLogger, options ...ServerOption) *Server {
+func NewServer(
+	storage storage.Interface,
+	host string,
+	sugar *zap.SugaredLogger,
+	symbolResolver blockchain.TokenSymbolResolver, options ...ServerOption) *Server {
 	var (
 		logger = sugar.With("func", "tradelogs/http/NewServer")
 		sv     = &Server{
-			storage: storage,
-			host:    host,
-			sugar:   sugar,
+			storage:        storage,
+			host:           host,
+			sugar:          sugar,
+			symbolResolver: symbolResolver,
 		}
 	)
 
@@ -71,6 +77,7 @@ type Server struct {
 	sugar            *zap.SugaredLogger
 	getAddrToAppName func() (map[ethereum.Address]string, error)
 	getUserProfile   func(ethereum.Address) (userprofile.UserProfile, error)
+	symbolResolver   blockchain.TokenSymbolResolver
 }
 
 type burnFeeQuery struct {
@@ -105,7 +112,6 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 		)
 		return
 	}
-
 	addrToAppName, err := sv.getAddrToAppName()
 	if err != nil {
 		libhttputil.ResponseFailure(
@@ -115,7 +121,9 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 		)
 		return
 	}
+
 	for i, log := range tradeLogs {
+		// get user profile
 		up, err := sv.getUserProfile(tradeLogs[i].UserAddress)
 		if err != nil {
 			sv.sugar.Errorw(err.Error(), "fromTime", fromTime, "toTime", toTime)
@@ -133,6 +141,33 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 			if avai {
 				tradeLogs[i].IntegrationApp = name
 			}
+		}
+
+		// resolve token symbol
+		if !blockchain.IsZeroAddress(log.SrcAddress) {
+			srcSymbol, err := sv.symbolResolver.Symbol(log.SrcAddress)
+			if err != nil {
+				libhttputil.ResponseFailure(
+					c,
+					http.StatusInternalServerError,
+					err,
+				)
+				return
+			}
+			tradeLogs[i].SrcSymbol = srcSymbol
+		}
+
+		if !blockchain.IsZeroAddress(log.DestAddress) {
+			dstSymbol, err := sv.symbolResolver.Symbol(log.DestAddress)
+			if err != nil {
+				libhttputil.ResponseFailure(
+					c,
+					http.StatusInternalServerError,
+					err,
+				)
+				return
+			}
+			tradeLogs[i].DestSymbol = dstSymbol
 		}
 	}
 

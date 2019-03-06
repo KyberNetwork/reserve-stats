@@ -32,9 +32,12 @@ type TradeLog struct {
 
 	EthAmount *big.Int `json:"eth_amount"`
 
+	SrcAddress  ethereum.Address `json:"src_addr"`
+	SrcSymbol   string           `json:"src_symbol,omitempty"`
+	DestAddress ethereum.Address `json:"dst_addr"`
+	DestSymbol  string           `json:"dst_symbol,omitempty"`
+
 	UserAddress       ethereum.Address `json:"user_addr"`
-	SrcAddress        ethereum.Address `json:"src_addr"`
-	DestAddress       ethereum.Address `json:"dst_addr"`
 	SrcReserveAddress ethereum.Address `json:"src_reserve_addr"`
 	DstReserveAddress ethereum.Address `json:"dst_reserve_addr"`
 	SrcAmount         *big.Int         `json:"src_amount"`

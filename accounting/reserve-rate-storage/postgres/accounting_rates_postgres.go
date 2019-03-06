@@ -155,7 +155,7 @@ func (rdb *RatesStorage) Close() error {
 func getTokenBaseFromPair(pair string) (string, string, error) {
 	ids := strings.Split(strings.TrimSpace(pair), "-")
 	if len(ids) != 2 {
-		return "", "", fmt.Errorf("Pair %s is malformed. Expected token_base, got", pair)
+		return "", "", fmt.Errorf("Pair %s is malformed. Expected base-token, got", pair)
 	}
 	return ids[1], ids[0], nil
 }
@@ -241,7 +241,7 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, 
 }
 
 //GetRates return the reserve rates in a period of times
-func (rdb *RatesStorage) GetRates(reservers []ethereum.Address, from time.Time, to time.Time) (map[string]storage.AccountingReserveRates, error) {
+func (rdb *RatesStorage) GetRates(reserves []ethereum.Address, from, to time.Time) (map[string]storage.AccountingReserveRates, error) {
 	var (
 		result    = make(map[string]storage.AccountingReserveRates)
 		rowData   = ratesFromDB{}
@@ -250,7 +250,7 @@ func (rdb *RatesStorage) GetRates(reservers []ethereum.Address, from time.Time, 
 			"func", "reserverates/storage/postgres/RateStorage.GetRates",
 			"from", from.String(),
 			"to", to.String(),
-			"reservers", reservers,
+			"reservers", reserves,
 		)
 	)
 	const (
@@ -260,7 +260,7 @@ func (rdb *RatesStorage) GetRates(reservers []ethereum.Address, from time.Time, 
 		LEFT JOIN %[4]s AS rs ON rt.reserve_id=rs.id
 		WHERE  time>=$1 AND time<$2 AND rs.address IN (SELECT unnest($3::text[]));`
 	)
-	for _, rsv := range reservers {
+	for _, rsv := range reserves {
 		rsvsAddrs = append(rsvsAddrs, rsv.Hex())
 	}
 	query := fmt.Sprintf(selectStmt,

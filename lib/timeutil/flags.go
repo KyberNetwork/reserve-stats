@@ -61,13 +61,13 @@ func millisTimeFlagFromContext(c *cli.Context, flag string) (time.Time, error) {
 	return TimestampMsToTime(timeUint), nil
 }
 
-//FromTimeMillisFRomContext return from time from context. Return err=ErrEmptyFlag if no flag is provided
-func FromTimeMillisFRomContext(c *cli.Context) (time.Time, error) {
+//FromTimeMillisFromContext return from time from context. Return err=ErrEmptyFlag if no flag is provided
+func FromTimeMillisFromContext(c *cli.Context) (time.Time, error) {
 	return millisTimeFlagFromContext(c, fromMillisTimeFlag)
 }
 
-//ToTimeMillisFRomContext return from time from context. Return err=ErrEmptyFlag if no flag is provided
-func ToTimeMillisFRomContext(c *cli.Context) (time.Time, error) {
+//ToTimeMillisFromContext return from time from context. Return err=ErrEmptyFlag if no flag is provided
+func ToTimeMillisFromContext(c *cli.Context) (time.Time, error) {
 	return millisTimeFlagFromContext(c, toMillisTimeFlag)
 }
 

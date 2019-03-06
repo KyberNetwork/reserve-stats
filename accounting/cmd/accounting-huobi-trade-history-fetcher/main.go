@@ -19,7 +19,7 @@ const (
 	retryDelayFlag    = "retry-delay"
 	maxAttemptFlag    = "max-attempts"
 	defaultMaxAttempt = 3
-	defaultretryDelay = time.Second
+	defaultRetryDelay = time.Second
 )
 
 func main() {
@@ -39,7 +39,7 @@ func main() {
 			Name:   retryDelayFlag,
 			Usage:  "The duration to put fetcher job to sleep after each fail attempt",
 			EnvVar: "RETRY_DELAY",
-			Value:  defaultretryDelay,
+			Value:  defaultRetryDelay,
 		},
 	)
 	app.Flags = append(app.Flags, huobi.NewCliFlags()...)
@@ -66,11 +66,11 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	from, err := timeutil.FromTimeMillisFRomContext(c)
+	from, err := timeutil.FromTimeMillisFromContext(c)
 	if err != nil {
 		return fmt.Errorf("cannot get from time: %v", err)
 	}
-	to, err := timeutil.ToTimeMillisFRomContext(c)
+	to, err := timeutil.ToTimeMillisFromContext(c)
 	if err != nil {
 		return fmt.Errorf("cannot get to time: %v", err)
 	}

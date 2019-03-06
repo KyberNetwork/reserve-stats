@@ -55,7 +55,7 @@ func TestBinanceClientWithLimiter(t *testing.T) {
 	//Alter these number to test binance's behaviour
 	t.Skip()
 	var (
-		rps     = 20.0
+		rps     = 10.0
 		limiter = rate.NewLimiter(rate.Limit(rps), 1)
 		wg      = &sync.WaitGroup{}
 	)
@@ -77,12 +77,13 @@ func TestBinanceClientWithLimiter(t *testing.T) {
 	}
 
 	binanceClient := NewBinance(binanceAPIKey, binanceSecretKey, sugar, WithRateLimiter(limiter))
-
-	for i := 0; i < 100; i++ {
+	startTime := time.Time{}
+	endTime := time.Time{}
+	for i := 0; i < 500; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			_, err = binanceClient.GetTradeHistory("KNCETH", 0)
+			_, err = binanceClient.GetTradeHistory("KNCETH", 0, startTime, endTime)
 			if err != nil {
 				panic(err)
 			}

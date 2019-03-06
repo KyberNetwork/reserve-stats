@@ -54,7 +54,7 @@ func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...O
 	}
 	//Set Default rate limiter to the limit spefified by https://api.binance.com/api/v1/exchangeInfo
 	if clnt.rateLimiter == nil {
-		const binanceDefaultRateLimit = 20
+		const binanceDefaultRateLimit = 10
 
 		clnt.rateLimiter = rate.NewLimiter(rate.Limit(binanceDefaultRateLimit), 1)
 	}

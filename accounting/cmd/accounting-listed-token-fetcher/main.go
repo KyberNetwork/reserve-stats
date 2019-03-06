@@ -110,6 +110,8 @@ func getListedToken(ethClient *ethclient.Client, block *big.Int, reserveAddr eth
 	if err != nil {
 		return err
 	}
+	// map to check if token already exist
+	existedToken := make(map[string]bool)
 	for _, v := range listedTokens {
 		symbol, err := tokenSymbol.Symbol(v)
 		if err != nil {
@@ -119,6 +121,14 @@ func getListedToken(ethClient *ethclient.Client, block *big.Int, reserveAddr eth
 		if err != nil {
 			return err
 		}
+		//TODO: get timestamp from ContractTimestampResolver
+		// check if symbol already exist
+		if exist := existedToken[symbol]; exist {
+			// check which is old token
+		} else {
+			existedToken[symbol] = true
+		}
+
 		result = append(result, common.ListedToken{
 			Address: v.Hex(),
 			Symbol:  symbol,

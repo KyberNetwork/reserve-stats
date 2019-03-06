@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	huobiFetcher "github.com/KyberNetwork/reserve-stats/accounting/accouting-huobi-fetcher"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
@@ -14,12 +15,33 @@ import (
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 )
 
+const (
+	retryDelayFlag    = "retry-delay"
+	maxAttemptFlag    = "max-attempts"
+	defaultMaxAttempt = 3
+	defaultretryDelay = time.Second
+)
+
 func main() {
 	app := libapp.NewApp()
 	app.Name = "Huobi Fetcher"
 	app.Usage = "Huobi Fetcher  Reserve Addresses Manager"
 	app.Action = run
 	app.Version = "0.0.1"
+	app.Flags = append(app.Flags,
+		cli.IntFlag{
+			Name:   maxAttemptFlag,
+			Usage:  "The maximum number of attempts to retry fetching data",
+			EnvVar: "MAX_ATTEMPTS",
+			Value:  defaultMaxAttempt,
+		},
+		cli.DurationFlag{
+			Name:   retryDelayFlag,
+			Usage:  "The duration to put fetcher job to sleep after each fail attempt",
+			EnvVar: "RETRY_DELAY",
+			Value:  defaultretryDelay,
+		},
+	)
 	app.Flags = append(app.Flags, huobi.NewCliFlags()...)
 	app.Flags = append(app.Flags, timeutil.NewMilliTimeRangeCliFlags()...)
 	if err := app.Run(os.Args); err != nil {
@@ -52,8 +74,10 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("cannot get to time: %v", err)
 	}
+	retryDelay := c.Duration(retryDelayFlag)
+	maxAttempts := c.Int(maxAttemptFlag)
 
-	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient)
+	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts)
 	data, err := fetcher.GetTradeHistory(from, to)
 	sugar.Debugw("fetched done", "error", err, "data", data)
 	return nil

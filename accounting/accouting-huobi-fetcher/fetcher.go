@@ -13,16 +13,35 @@ import (
 
 //Fetcher is the struct to fetch/store Data from huobi
 type Fetcher struct {
-	sugar  *zap.SugaredLogger
-	client huobi.Interface
+	sugar      *zap.SugaredLogger
+	client     huobi.Interface
+	retryDelay time.Duration
+	attempt    int
 }
 
 //NewFetcher return a fetcher object
-func NewFetcher(sugar *zap.SugaredLogger, client huobi.Interface) *Fetcher {
+func NewFetcher(sugar *zap.SugaredLogger, client huobi.Interface, retryDelay time.Duration, attempt int) *Fetcher {
 	return &Fetcher{
-		sugar:  sugar,
-		client: client,
+		sugar:      sugar,
+		client:     client,
+		retryDelay: retryDelay,
+		attempt:    attempt,
 	}
+}
+
+func retry(fn func(string, time.Time, time.Time) (huobi.TradeHistoryList, error), symbol string, startTime, endTime time.Time, attempt int, retryDelay time.Duration) (huobi.TradeHistoryList, error) {
+	var (
+		result huobi.TradeHistoryList
+		err    error
+	)
+	for i := 0; i < attempt; i++ {
+		result, err = fn(symbol, startTime, endTime)
+		if err == nil {
+			return result, nil
+		}
+		time.Sleep(retryDelay)
+	}
+	return result, err
 }
 
 func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time, tradeHistory *sync.Map) error {
@@ -32,7 +51,7 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time, 
 		result    []huobi.TradeHistory
 	)
 	for {
-		tradeHistoriesResponse, err := fc.client.GetTradeHistory(symbol, startTime, endTime)
+		tradeHistoriesResponse, err := retry(fc.client.GetTradeHistory, symbol, startTime, endTime, fc.attempt, fc.retryDelay)
 		if err != nil {
 			return err
 		}

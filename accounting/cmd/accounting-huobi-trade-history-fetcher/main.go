@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	huobiFetcher "github.com/KyberNetwork/reserve-stats/accounting/accouting-huobi-fetcher"
+	huobiFetcher "github.com/KyberNetwork/reserve-stats/accounting/huobi/fetcher"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 

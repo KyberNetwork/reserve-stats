@@ -37,6 +37,7 @@ type LastBlockResolver struct {
 	start        time.Time
 	end          time.Time
 	lastResolved BlockInfo
+	avgBlockTime time.Duration
 }
 
 // NewLastBlockResolver return a new instance of lastBlock resolver
@@ -48,6 +49,7 @@ func NewLastBlockResolver(client *ethclient.Client, resolver *blockchain.BlockTi
 		end:          end,
 		lastResolved: BlockInfo{Timestamp: start},
 		sugar:        sugar,
+		avgBlockTime: avgBlock,
 	}
 }
 
@@ -114,14 +116,8 @@ func nextDayBlock(
 			return BlockInfo{}, err
 		}
 
-		// estimated block is older than start time, trying newer block
-		if nextTimestamp.Before(current) {
-			next += blockStep
-			continue
-		}
-
-		// estimated block is in the same day as start, trying newer block
-		if isSameDay(current, nextTimestamp) {
+		// estimated block is older than start time or in the same day as start, trying newer block
+		if nextTimestamp.Before(current) || isSameDay(current, nextTimestamp) {
 			next += blockStep
 			continue
 		}
@@ -135,7 +131,6 @@ func nextDayBlock(
 
 		// estimated block is newer than next day of start, trying older block
 		next -= blockStep
-		continue
 	}
 }
 
@@ -143,6 +138,9 @@ func nextDayBlock(
 // belongs to next day of lastResolvedBlockInfo, and do binary search between this block and lastResolvedBlockInfo
 // until found the last block of the day.
 func (lbr *LastBlockResolver) Next() (uint64, error) {
+	if isSameDay(lbr.lastResolved.Timestamp, lbr.end) {
+		return 0, ethereum.NotFound
+	}
 	var (
 		logger = lbr.sugar.With(
 			"func", "lib/lastblockdaily/LastBlockResolver.Next",
@@ -161,7 +159,6 @@ func (lbr *LastBlockResolver) Next() (uint64, error) {
 		if end, err = nextDayBlock(lbr.sugar, lbr.resolver, lbr.start, start); err != nil {
 			return 0, err
 		}
-
 	} else {
 		// last resolved block is last block of the day d1
 		// search for last block of the day d1 + 1
@@ -187,10 +184,6 @@ func (lbr *LastBlockResolver) Next() (uint64, error) {
 	)
 
 	logger.Debug("getting next last block of the day")
-
-	if isSameDay(start.Timestamp, lbr.end) {
-		return 0, ethereum.NotFound
-	}
 
 	lastBlock, err := lbr.searchLastBlock(start, end)
 	if err != nil {

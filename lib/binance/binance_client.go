@@ -54,21 +54,21 @@ func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...O
 	}
 	//Set Default rate limiter to the limit spefified by https://api.binance.com/api/v1/exchangeInfo
 	if clnt.rateLimiter == nil {
-		const binanceDefaultRateLimit = 10
+		const binanceDefaultRateLimit = 20
 
-		clnt.rateLimiter = rate.NewLimiter(rate.Limit(binanceDefaultRateLimit), 1)
+		clnt.rateLimiter = rate.NewLimiter(rate.Limit(binanceDefaultRateLimit), 5)
 	}
 	return clnt
 }
 
 //waitN mimic the leaky bucket algorithm to wait for n drop
 func (bc *Client) waitN(n int) error {
-	for i := 0; i < n; i++ {
-		if err := bc.rateLimiter.WaitN(context.Background(), 1); err != nil {
-			return err
-		}
-	}
-	return nil
+	// for i := 0; i < n; i++ {
+	// 	if err := bc.rateLimiter.WaitN(context.Background(), 1); err != nil {
+	// 		return err
+	// 	}
+	// }
+	return bc.rateLimiter.WaitN(context.Background(), n)
 }
 
 func (bc *Client) fillRequest(req *http.Request, signNeeded bool, timepoint time.Time) error {

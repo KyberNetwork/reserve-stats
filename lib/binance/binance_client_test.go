@@ -79,7 +79,7 @@ func TestBinanceClientWithLimiter(t *testing.T) {
 	binanceClient := NewBinance(binanceAPIKey, binanceSecretKey, sugar, WithRateLimiter(limiter))
 	startTime := time.Time{}
 	endTime := time.Time{}
-	for i := 0; i < 500; i++ {
+	for i := 0; i < 200; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
@@ -89,6 +89,16 @@ func TestBinanceClientWithLimiter(t *testing.T) {
 			}
 			assert.NoError(t, err, "binance client get trade history error: %s", err)
 		}(i)
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			_, err = binanceClient.GetWithdrawalHistory(startTime, endTime)
+			if err != nil {
+				panic(err)
+			}
+			assert.NoError(t, err, "binance client get withdrawal history error: %s", err)
+		}(i)
+
 	}
 	wg.Wait()
 }

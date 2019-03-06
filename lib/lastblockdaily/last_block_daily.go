@@ -1,191 +1,263 @@
 package lastblockdaily
 
 import (
-	"context"
+	"fmt"
 	"time"
+
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	"go.uber.org/zap"
 )
 
 const (
-	// this is the block number on 30th JAN 2018.
-	firstBlockEver      = 5000000
-	firstBlockTimestamp = 1517319693000
-	// TODO  :  make this dynamic
-	avgBlockSeconds = 15 * time.Second
-	blockStep       = 200
+	// average block time, use for estimation.
+	avgBlock = 15 * time.Second
+	// blockStep is the number of blocks we try until find last block of the day. There
+	// i assumption that a day never has less than blockStep number of blocks.
+	blockStep = 200
+)
+
+var (
+	firstBlock = BlockInfo{
+		Block: 5000000,
+		// Jan-30-2018 01:41:33 PM +UTC
+		Timestamp: timeutil.TimestampMsToTime(1517319693000),
+	}
 )
 
 // LastBlockResolver return daily last block between two timestamp
 type LastBlockResolver struct {
-	client                *ethclient.Client
-	resolver              *blockchain.BlockTimeResolver
-	start                 time.Time
-	end                   time.Time
-	lastResolvedBlockInfo BlockInfo
-	sugar                 *zap.SugaredLogger
+	sugar        *zap.SugaredLogger
+	client       *ethclient.Client
+	resolver     *blockchain.BlockTimeResolver
+	start        time.Time
+	end          time.Time
+	lastResolved BlockInfo
+	avgBlockTime time.Duration
 }
 
 // NewLastBlockResolver return a new instance of lastBlock resolver
 func NewLastBlockResolver(client *ethclient.Client, resolver *blockchain.BlockTimeResolver, start, end time.Time, sugar *zap.SugaredLogger) *LastBlockResolver {
-
 	return &LastBlockResolver{
-		client:   client,
-		resolver: resolver,
-		start:    start,
-		end:      end,
-		lastResolvedBlockInfo: BlockInfo{
-			Block:     firstBlockEver,
-			Timestamp: timeutil.TimestampMsToTime(uint64(firstBlockTimestamp)).UTC(),
-		},
-		sugar: sugar,
+		client:       client,
+		resolver:     resolver,
+		start:        start,
+		end:          end,
+		lastResolved: BlockInfo{Timestamp: start},
+		sugar:        sugar,
+		avgBlockTime: avgBlock,
 	}
 }
 
-// getNextDayBlock return the block that is definitely belong to the next day
-// of lastResolvedBlock
-func (lbr *LastBlockResolver) getNextDayBlock() (BlockInfo, error) {
+// isSameDay returns true if both t1 an t2 are in a same day in UTC timezone.
+func isSameDay(t1, t2 time.Time) bool {
+	t1, t2 = t1.UTC(), t2.UTC()
+	midnight1 := timeutil.Midnight(t1)
+	midnight2 := timeutil.Midnight(t2)
+	return midnight1.Equal(midnight2)
+}
+
+// isNextDay returns true if t2 is chronologically in the next day of t1 in UTC timezone.
+func isNextDay(t1, t2 time.Time) bool {
+	t1, t2 = t1.UTC(), t2.UTC()
+	midnight1 := timeutil.Midnight(t1)
+	midnight2 := timeutil.Midnight(t2)
+	if midnight1.AddDate(0, 0, 1).Equal(midnight2) {
+		return true
+	}
+	return false
+}
+
+func nextDay(t time.Time) time.Time {
+	return t.AddDate(0, 0, 1)
+}
+
+// nextDayBlock returns a Ethereum block number in the next day of given timestamp.
+// The known block info if provided will be used for estimation.
+func nextDayBlock(
+	sugar *zap.SugaredLogger,
+	resolver blockchain.BlockTimeResolverInterface,
+	current time.Time,
+	known BlockInfo) (BlockInfo, error) {
 	var (
-		blockTime time.Time
-		err       error
-		result    BlockInfo
+		logger = sugar.With(
+			"func", "lib/lastblockdaily/nextDayBlock",
+		)
+		next uint64
 	)
-	estimate := lbr.lastResolvedBlockInfo.Block + uint64(24*time.Hour.Seconds()/avgBlockSeconds.Seconds()) + blockStep
-	for {
-		blockTime, err = lbr.resolver.Resolve(uint64(estimate))
 
-		if err != nil {
-			return result, err
-		}
-		lbr.sugar.Debugw("getting next day block", "block", estimate, "block_time:", blockTime.String())
-
-		if timeutil.Midnight(blockTime) == timeutil.Midnight(lbr.lastResolvedBlockInfo.Timestamp).AddDate(0, 0, 1) {
-			estimate += blockStep
-			continue
-		} else if timeutil.Midnight(lbr.lastResolvedBlockInfo.Timestamp).AddDate(0, 0, 2).Before(timeutil.Midnight(blockTime)) {
-			estimate -= blockStep
-			continue
-		}
-		break
+	if known.Block == 0 {
+		known = firstBlock
 	}
-	return BlockInfo{
-		Block:     estimate,
-		Timestamp: blockTime,
-	}, nil
+
+	logger = logger.With(
+		"known_block", known.Block,
+		"known_block_time", known.Timestamp.String(),
+	)
+
+	if current.Before(known.Timestamp) {
+		return BlockInfo{}, fmt.Errorf("start time is too old: requested=%s, oldest supported:%s",
+			current.String(),
+			firstBlock.Timestamp.String())
+	}
+
+	// estimate approximate block gap between firstBlockEver and start time.
+	estimatedBlocks := uint64(nextDay(current).Sub(known.Timestamp) / avgBlock)
+	logger.Debugw("estimated number of blocks gap", "estimated_blocks", estimatedBlocks)
+
+	next = known.Block + estimatedBlocks
+	for {
+		nextTimestamp, err := resolver.Resolve(next)
+		if err != nil {
+			return BlockInfo{}, err
+		}
+
+		// estimated block is older than start time or in the same day as start, trying newer block
+		if nextTimestamp.Before(current) || isSameDay(current, nextTimestamp) {
+			next += blockStep
+			continue
+		}
+
+		if isNextDay(current, nextTimestamp) {
+			return BlockInfo{
+				Block:     next,
+				Timestamp: nextTimestamp,
+			}, nil
+		}
+
+		// estimated block is newer than next day of start, trying older block
+		next -= blockStep
+	}
 }
 
-func (lbr *LastBlockResolver) getLatestETHBlock() (BlockInfo, error) {
-	timeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	header, err := lbr.client.HeaderByNumber(timeout, nil)
+// Next returns next last block number of the day from lastResolvedBlockInfo. The resolver works by find a block that
+// belongs to next day of lastResolvedBlockInfo, and do binary search between this block and lastResolvedBlockInfo
+// until found the last block of the day.
+// return ethereum.NotFound
+func (lbr *LastBlockResolver) Next() (BlockInfo, error) {
+	if isSameDay(lbr.lastResolved.Timestamp, lbr.end) {
+		return BlockInfo{}, ethereum.NotFound
+	}
+	var (
+		logger = lbr.sugar.With(
+			"func", "lib/lastblockdaily/LastBlockResolver.Next",
+		)
+		start BlockInfo
+		end   BlockInfo
+		err   error
+	)
+
+	if lbr.lastResolved.Block == 0 {
+		// no last block of the day resolved, starts searching with:
+		// - from: first ever block timestamp
+		// - to: next day of configured start timestamp
+		start = firstBlock
+
+		if end, err = nextDayBlock(lbr.sugar, lbr.resolver, lbr.start, start); err != nil {
+			return BlockInfo{}, err
+		}
+	} else {
+		// last resolved block is last block of the day d1
+		// search for last block of the day d1 + 1
+		//   - from: last resolved + 1 block timestamp (in d1 + 1 day)
+		//   - to: next day block of resolved + 1 (in d1 + 2 day)
+		start = BlockInfo{Block: lbr.lastResolved.Block + 1}
+		var startTime time.Time
+		startTime, err = lbr.resolver.Resolve(start.Block)
+		if err != nil {
+			return BlockInfo{}, err
+		}
+		start.Timestamp = startTime
+
+		if end, err = nextDayBlock(lbr.sugar, lbr.resolver, start.Timestamp, start); err != nil {
+			return BlockInfo{}, err
+		}
+	}
+
+	logger = logger.With(
+		"start", start.Block,
+		"start_time", start.Timestamp.String(),
+		"stop", lbr.end.String(),
+	)
+
+	logger.Debug("getting next last block of the day")
+
+	lastBlock, err := lbr.searchLastBlock(start, end)
 	if err != nil {
 		return BlockInfo{}, err
 	}
-	return BlockInfo{
-		Block:     header.Number.Uint64(),
-		Timestamp: time.Unix(header.Time.Int64(), 0).UTC(),
-	}, nil
+	lbr.lastResolved = lastBlock
+	return lastBlock, nil
 }
 
-// isLastBlock check if the block is the last block of the expectedNextBlockTime's day.
-func (lbr *LastBlockResolver) isLastBlock(blockNum uint64, expectedNextBlockTime time.Time) (bool, time.Time, error) {
-	thisBlockTime, err := lbr.resolver.Resolve(uint64(blockNum))
+// isLastBlock check if the block is the last block of the day.
+func (lbr *LastBlockResolver) isLastBlock(block BlockInfo) (bool, error) {
+	nextBlockTimestamp, err := lbr.resolver.Resolve(block.Block + 1)
 	if err != nil {
-		return false, thisBlockTime, err
+		return false, err
 	}
 
-	if timeutil.Midnight(thisBlockTime).AddDate(0, 0, 1) != timeutil.Midnight(expectedNextBlockTime) {
-		return false, thisBlockTime, nil
+	if isNextDay(block.Timestamp, nextBlockTimestamp) {
+		return true, nil
 	}
-	nextBlockTime, err := lbr.resolver.Resolve(uint64(blockNum + 1))
-	if err != nil {
-		return false, nextBlockTime, err
-	}
-	if timeutil.Midnight(nextBlockTime) == timeutil.Midnight(expectedNextBlockTime) {
-		return true, thisBlockTime, nil
-	}
-	return false, thisBlockTime, nil
+
+	return false, nil
 }
 
-func (lbr *LastBlockResolver) binSearch(start, end BlockInfo, expectedNextBlockTime time.Time) (BlockInfo, error) {
-	lbr.sugar.Debugw("searching for last block...", "start", start.Block, "end", end.Block, "start_time", start.Timestamp.String(), "end_time", end.Timestamp.String())
+// searchLastBlock returns the last block of the day before end block.
+func (lbr *LastBlockResolver) searchLastBlock(start, end BlockInfo) (BlockInfo, error) {
+	var logger = lbr.sugar.With(
+		"func", "lib/lastblockdaily.LastBlockResolver.searchLastBlock",
+		"start", start.Block,
+		"start_time", start.Timestamp.String(),
+		"end", end.Block,
+		"end_time", end.Timestamp.String(),
+	)
+
+	if start.Block == end.Block || end.Block-start.Block == 1 {
+		logger.Infow("found last block of the day",
+			"block", start.Block,
+			"block_time", start.Timestamp,
+		)
+		return start, nil
+	}
 
 	midBlockNum := (start.Block + end.Block) / 2
-	isLastBlock, midBlockTime, err := lbr.isLastBlock(midBlockNum, expectedNextBlockTime)
+	midBlockTimestamp, err := lbr.resolver.Resolve(midBlockNum)
 	if err != nil {
-		return BlockInfo{}, nil
+		return BlockInfo{}, err
 	}
-	midBlockInfo := BlockInfo{
+
+	mid := BlockInfo{
 		Block:     midBlockNum,
-		Timestamp: midBlockTime,
+		Timestamp: midBlockTimestamp,
 	}
-	if isLastBlock {
-		lbr.sugar.Debugw("found last block of the day", "time", midBlockTime.String(), "block number:", midBlockNum)
-		return midBlockInfo, nil
+
+	logger = logger.With("mid", mid.Block, "mid_time", mid.Timestamp.String())
+	logger.Debugw("searching for last block...")
+
+	if isSameDay(mid.Timestamp, end.Timestamp) {
+		return lbr.searchLastBlock(start, mid)
 	}
-	if expectedNextBlockTime.Before(midBlockTime) {
-		return lbr.binSearch(start, midBlockInfo, expectedNextBlockTime)
-	}
-	return lbr.binSearch(midBlockInfo, end, expectedNextBlockTime)
+	return lbr.searchLastBlock(mid, end)
 }
 
-//FetchLastBlock continuously push lastBlock of days between start/end
-//Will return ethereum.NotFound error if the block is already lastBlock of Ethereum
-func (lbr *LastBlockResolver) FetchLastBlock(errCh chan error, queue chan BlockInfo) {
-	lbr.start = timeutil.Midnight(lbr.start.UTC())
-	lbr.end = timeutil.Midnight(lbr.end.UTC())
+// Run push the result/ error into channels
+func (lbr *LastBlockResolver) Run(resultChn chan BlockInfo, errChn chan error) {
 	var (
-		toResolve      = lbr.start
-		endBlockInfo   BlockInfo
-		startBlockInfo BlockInfo
-		err            error
+		lastBlockInfo BlockInfo
+		err           error
 	)
 	for {
-		startBlockInfo = lbr.lastResolvedBlockInfo
-		lbr.sugar.Debugw("Last block resolve",
-			"last resolved timestamp", startBlockInfo.Timestamp.String(),
-			"last block +1 day timestamp", timeutil.Midnight(lbr.lastResolvedBlockInfo.Timestamp).AddDate(0, 0, 1).String(),
-			"to resolve", toResolve.String(),
-		)
-
-		if timeutil.Midnight(lbr.lastResolvedBlockInfo.Timestamp).AddDate(0, 0, 1) == timeutil.Midnight(toResolve) {
-			lbr.sugar.Debugw("calculating next block")
-			// if the last Resolve is yesterday of toResolve, estimate the next day block
-			endBlockInfo, err = lbr.getNextDayBlock()
-			if err != nil {
-				errCh <- err
-				return
-			}
-			lbr.sugar.Debugw("next block to solve", "to resolve", toResolve.String())
-
-		} else {
-			//if it is unknown, get Latest ETH Block
-			endBlockInfo, err = lbr.getLatestETHBlock()
-			if err != nil {
-				errCh <- err
-				return
-			}
-			if endBlockInfo.Timestamp.Before(toResolve) {
-				errCh <- ethereum.NotFound
-				return
-			}
-		}
-		nextBlockInfo, err := lbr.binSearch(startBlockInfo, endBlockInfo, toResolve.AddDate(0, 0, 1))
+		lastBlockInfo, err = lbr.Next()
 		if err != nil {
-			errCh <- err
-			return
+			errChn <- err
+			break
 		}
-		queue <- nextBlockInfo
-		lbr.lastResolvedBlockInfo = nextBlockInfo
-		if timeutil.Midnight(lbr.lastResolvedBlockInfo.Timestamp) == timeutil.Midnight(lbr.end) {
-			errCh <- ethereum.NotFound
-			return
-		}
-		toResolve = toResolve.AddDate(0, 0, 1)
+		resultChn <- lastBlockInfo
 	}
 }

@@ -169,7 +169,7 @@ func run(c *cli.Context) error {
 	cgk := coingecko.New()
 
 	lastBlockResolver := lastblockdaily.NewLastBlockResolver(ethClient, blockTimeResolver, fromDate, toDate, sugar)
-	go lastBlockResolver.FetchLastBlock(lastBlockErrCh, lastBlockBlCh)
+	go lastBlockResolver.Run(lastBlockBlCh, lastBlockErrCh)
 
 	for {
 		select {

@@ -5,5 +5,7 @@ package lastblockdaily
 // different day as its timestamp.
 type Interface interface {
 	// Next yields the next last block of the day.
-	Next() (blockNumber uint64, err error)
+	Next() (blockInfo BlockInfo, err error)
+	// Run push the result/ error into channels
+	Run(chan BlockInfo, chan error)
 }

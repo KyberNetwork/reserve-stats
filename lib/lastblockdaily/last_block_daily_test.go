@@ -87,13 +87,13 @@ func TestNext(t *testing.T) {
 
 	var results []uint64
 	for {
-		var lastBlock uint64
+		var lastBlock BlockInfo
 		lastBlock, err = lbResolver.Next()
 		if err != nil {
 			require.Equal(t, err, ethereum.NotFound)
 			break
 		} else {
-			results = append(results, lastBlock)
+			results = append(results, lastBlock.Block)
 		}
 	}
 	assert.Equal(t, expectBlocks, results)

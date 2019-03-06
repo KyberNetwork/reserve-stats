@@ -137,9 +137,10 @@ func nextDayBlock(
 // Next returns next last block number of the day from lastResolvedBlockInfo. The resolver works by find a block that
 // belongs to next day of lastResolvedBlockInfo, and do binary search between this block and lastResolvedBlockInfo
 // until found the last block of the day.
-func (lbr *LastBlockResolver) Next() (uint64, error) {
+// return ethereum.NotFound
+func (lbr *LastBlockResolver) Next() (BlockInfo, error) {
 	if isSameDay(lbr.lastResolved.Timestamp, lbr.end) {
-		return 0, ethereum.NotFound
+		return BlockInfo{}, ethereum.NotFound
 	}
 	var (
 		logger = lbr.sugar.With(
@@ -157,7 +158,7 @@ func (lbr *LastBlockResolver) Next() (uint64, error) {
 		start = firstBlock
 
 		if end, err = nextDayBlock(lbr.sugar, lbr.resolver, lbr.start, start); err != nil {
-			return 0, err
+			return BlockInfo{}, err
 		}
 	} else {
 		// last resolved block is last block of the day d1
@@ -168,12 +169,12 @@ func (lbr *LastBlockResolver) Next() (uint64, error) {
 		var startTime time.Time
 		startTime, err = lbr.resolver.Resolve(start.Block)
 		if err != nil {
-			return 0, err
+			return BlockInfo{}, err
 		}
 		start.Timestamp = startTime
 
 		if end, err = nextDayBlock(lbr.sugar, lbr.resolver, start.Timestamp, start); err != nil {
-			return 0, err
+			return BlockInfo{}, err
 		}
 	}
 
@@ -187,10 +188,10 @@ func (lbr *LastBlockResolver) Next() (uint64, error) {
 
 	lastBlock, err := lbr.searchLastBlock(start, end)
 	if err != nil {
-		return 0, err
+		return BlockInfo{}, err
 	}
 	lbr.lastResolved = lastBlock
-	return lastBlock.Block, nil
+	return lastBlock, nil
 }
 
 // isLastBlock check if the block is the last block of the day.
@@ -243,4 +244,20 @@ func (lbr *LastBlockResolver) searchLastBlock(start, end BlockInfo) (BlockInfo, 
 		return lbr.searchLastBlock(start, mid)
 	}
 	return lbr.searchLastBlock(mid, end)
+}
+
+// Run push the result/ error into channels
+func (lbr *LastBlockResolver) Run(resultChn chan BlockInfo, errChn chan error) {
+	var (
+		lastBlockInfo BlockInfo
+		err           error
+	)
+	for {
+		lastBlockInfo, err = lbr.Next()
+		if err != nil {
+			errChn <- err
+			break
+		}
+		resultChn <- lastBlockInfo
+	}
 }

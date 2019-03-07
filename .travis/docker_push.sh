@@ -17,13 +17,19 @@ push() {
     done
 }
 
+push_file() {
+    local config_file="$1"
+    local modules=($(sed -e 's/ .*$//' "$config_file"))
+    push "${modules[@]}"
+}
+
 echo "$docker_password" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
 case "$build_part" in
     1)
-        push reserve-rates-api reserve-rates-crawler users-api users-public-cacher users-public-stats gateway burned-fees-crawler
+        push_file build_part_1
         ;;
     2)
-        push trade-logs-api trade-logs-crawler trade-logs-post-processor price-analytics-api token-rate-fetcher
+        push_file build_part_2
         ;;
 esac

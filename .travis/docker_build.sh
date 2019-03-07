@@ -16,8 +16,16 @@ build() {
     for service in "${@:2}"; do
         docker build -f "docker-files/Dockerfile.$service" -t "kybernetwork/kyber-stats-$service:$TRAVIS_COMMIT" .
     done
-
 }
+
+# build_file loads and builds the configuration from given file
+build_file() {
+    local config_file="$1"
+    while read -r line; do
+        build $line
+    done < "$config_file"
+}
+
 
 build_docs() {
     pushd ./apidocs
@@ -27,18 +35,19 @@ build_docs() {
 
 case "$build_part" in
     1)
-        build reserverates reserve-rates-api reserve-rates-crawler
-        build users users-api users-public-cacher users-public-stats
-        build gateway gateway
-        build burnedfees burned-fees-crawler
+        build_file .travis/build_part_1
         ;;
     2)
-        build tradelogs trade-logs-api trade-logs-crawler trade-logs-post-processor
-        build priceanalytics price-analytics-api
-        build tokenratefetcher token-rate-fetcher
+        build_file .travis/build_part_2
         ;;
     *)
-        exclude_pattern="github.com/KyberNetwork/reserve-stats/\(reserverates\|users\|gateway\|burnedfees\|tradelogs\|priceanalytics\|tokenratefetcher\)"
+        # find list of modules that already build in above step
+        modules=($(sed -e 's/ .*$//' .travis/build_part_*))
+        # join module arrays with \|
+        exclude_pattern=$(printf '\|%s' "${modules[@]}")
+        # remove leading \|
+        exclude_pattern=${exclude_pattern:2}
+        exclude_pattern=$(printf 'github.com/KyberNetwork/reserve-stats/\(%s\)' "$exclude_pattern")
         gometalinter --config="$gometalinter_path" --exclude "$exclude_pattern" ./...
         go test -v -race -mod=vendor $(go list -mod=vendor ./... | grep -v "$exclude_pattern")
 

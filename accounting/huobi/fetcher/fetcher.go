@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 //Fetcher is the struct to fetch/store Data from huobi
@@ -44,7 +45,7 @@ func retry(fn func(string, time.Time, time.Time) (huobi.TradeHistoryList, error)
 	return result, err
 }
 
-func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time, tradeHistory *sync.Map) error {
+func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time) ([]huobi.TradeHistory, error) {
 	var (
 		startTime = from
 		endTime   = to
@@ -53,7 +54,7 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time, 
 	for {
 		tradeHistoriesResponse, err := retry(fc.client.GetTradeHistory, symbol, startTime, endTime, fc.attempt, fc.retryDelay)
 		if err != nil {
-			return err
+			return result, err
 		}
 		// while result != empty, get trades latest time to toTime
 		if len(tradeHistoriesResponse.Data) == 0 {
@@ -66,10 +67,8 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time, 
 			break
 		}
 	}
-	if len(result) != 0 {
-		tradeHistory.Store(symbol, result)
-	}
-	return nil
+
+	return result, nil
 }
 
 //GetTradeHistory return all trade history between from-to and
@@ -84,25 +83,31 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 		fetchResult = sync.Map{}
 		assertError error
 		fetchErr    error
+		errGroup    errgroup.Group
 	)
 
 	symbols, err := fc.client.GetSymbolsPair()
 	if err != nil {
 		return result, err
 	}
-	wg := &sync.WaitGroup{}
 	for _, sym := range symbols {
-		wg.Add(1)
-		go func(symbol string) {
-			defer wg.Done()
-			err := fc.getTradeHistoryWithSymbol(symbol, from, to, &fetchResult)
-			if err != nil {
-				fetchErr = err
-			}
-			logger.Debugw("Fetching done", "symbol", symbol, "error", err, "time", time.Now())
-		}(sym.SymBol)
+		errGroup.Go(
+			func(symbol string) func() error {
+				return func() error {
+					singleResult, err := fc.getTradeHistoryWithSymbol(symbol, from, to)
+					if err != nil {
+						return err
+					}
+					if len(singleResult) > 0 {
+						fetchResult.Store(symbol, singleResult)
+					}
+					logger.Debugw("Fetching done", "symbol", symbol, "error", err, "time", time.Now())
+					return nil
+				}
+			}(sym.SymBol),
+		)
 	}
-	wg.Wait()
+	errGroup.Wait()
 
 	if fetchErr != nil {
 		return nil, fetchErr

@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -128,4 +129,44 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 		return true
 	})
 	return result, assertError
+}
+
+//GetAndStoreTradeHistory fetch all trade between from..to and store it in DB instead of output it from memory
+func (fc *Fetcher) GetAndStoreTradeHistory(from, to time.Time) error {
+	var (
+		logger = fc.sugar.With(
+			"func", "accounting/accounting-huobi-fetcher/GetTradeHistory",
+			"from", from,
+			"to", to,
+		)
+		errGroup errgroup.Group
+	)
+	if fc.db == nil {
+		return errors.New("fetcher does not come with db engine")
+	}
+	symbols, err := fc.client.GetSymbolsPair()
+	if err != nil {
+		return err
+	}
+	for _, sym := range symbols {
+		errGroup.Go(
+			func(symbol string) func() error {
+				return func() error {
+					singleResult, err := fc.getTradeHistoryWithSymbol(symbol, from, to)
+					if err != nil {
+						return err
+					}
+					for _, result := range singleResult {
+						if err := fc.db.UpdateTradeHistory(result); err != nil {
+							return err
+						}
+					}
+					logger.Debugw("Fetching done", "symbol", symbol, "error", err, "time", time.Now())
+					return nil
+				}
+			}(sym.SymBol),
+		)
+	}
+
+	return errGroup.Wait()
 }

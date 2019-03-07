@@ -20,5 +20,6 @@ data/
 */cmd/cmd
 */cmd/*/*
 !*/cmd/*/*.go
+!*/cmd/*/*.md
 tokeninfo/cmd/output.json
 apidocs/build

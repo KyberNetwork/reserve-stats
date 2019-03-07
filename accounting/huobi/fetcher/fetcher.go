@@ -82,7 +82,6 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 		result      = make(map[string][]huobi.TradeHistory)
 		fetchResult = sync.Map{}
 		assertError error
-		fetchErr    error
 		errGroup    errgroup.Group
 	)
 
@@ -109,8 +108,8 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 	}
 	errGroup.Wait()
 
-	if fetchErr != nil {
-		return nil, fetchErr
+	if err := errGroup.Wait(); err != nil {
+		return result, nil
 	}
 	fetchResult.Range(func(key, value interface{}) bool {
 		symbol, ok := key.(string)

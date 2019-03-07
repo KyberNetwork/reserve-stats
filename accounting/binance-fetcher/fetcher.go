@@ -29,8 +29,8 @@ func (f *Fetcher) getTradeHistoryForOneSymBol(fromTime, toTime time.Time, symbol
 	tradeHistories *sync.Map, wg *sync.WaitGroup) error {
 	var (
 		logger = f.sugar.With("func", "accounting/binance-fetcher.getTradeHistoryForOneSymbol")
+		result = []binance.TradeHistory{}
 	)
-	result := []binance.TradeHistory{}
 	startTime := fromTime
 	endTime := toTime
 	defer wg.Done()

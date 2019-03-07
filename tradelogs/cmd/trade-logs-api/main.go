@@ -74,8 +74,14 @@ func main() {
 		if cachedUserClient != nil {
 			options = append(options, http.WithUserProfile(cachedUserClient))
 		}
+
+		symbolResolver, err := blockchain.NewTokenSymbolFromContext(c)
+		if err != nil {
+			return err
+		}
+
 		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c),
-			sugar, options...)
+			sugar, symbolResolver, options...)
 		err = api.Start()
 		if err != nil {
 			return err

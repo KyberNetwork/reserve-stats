@@ -9,6 +9,7 @@ import (
 	"github.com/urfave/cli"
 
 	huobiFetcher "github.com/KyberNetwork/reserve-stats/accounting/huobi/fetcher"
+	postgres "github.com/KyberNetwork/reserve-stats/accounting/huobi/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -19,6 +20,7 @@ const (
 	maxAttemptFlag    = "max-attempts"
 	defaultMaxAttempt = 3
 	defaultRetryDelay = time.Second
+	defaultPostGresDB = "reserve_stats"
 )
 
 func main() {
@@ -43,6 +45,7 @@ func main() {
 	)
 	app.Flags = append(app.Flags, huobi.NewCliFlags()...)
 	app.Flags = append(app.Flags, timeutil.NewMilliTimeRangeCliFlags()...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostGresDB)...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -76,8 +79,19 @@ func run(c *cli.Context) error {
 	retryDelay := c.Duration(retryDelayFlag)
 	maxAttempts := c.Int(maxAttemptFlag)
 
-	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts)
-	data, err := fetcher.GetTradeHistory(from, to)
-	sugar.Debugw("fetched done", "error", err, "data", data)
+	db, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return fmt.Errorf("cannot create db from flags: %v", err)
+	}
+
+	hdb, err := postgres.NewDB(sugar, db)
+	if err != nil {
+		return fmt.Errorf("cannot create huobi database instance: %v", err)
+
+	}
+
+	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts, hdb)
+	err = fetcher.GetAndStoreTradeHistory(from, to)
+	sugar.Debugw("fetched done", "error", err)
 	return nil
 }

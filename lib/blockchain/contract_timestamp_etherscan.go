@@ -50,6 +50,7 @@ func (r *EtherscanContractTimestampResolver) Resolve(address common.Address) (ti
 
 	// first transaction is not a contract creation transaction, given address is not a contract.
 	if len(firstTx.ContractAddress) == 0 {
+		logger.Errorw("Contract does not exist", "contract", address.Hex())
 		return time.Time{}, ErrNotAvailable
 	}
 

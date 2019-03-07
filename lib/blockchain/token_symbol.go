@@ -3,6 +3,7 @@ package blockchain
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -29,19 +30,19 @@ var cachedName = map[common.Address]string{
 	common.HexToAddress("0x86Fa049857E0209aa7D9e616F7eb3b3B78ECfdb0"): "EOS Token", // special case for EOS cos it does not return name in name function
 }
 
-// TokenSymbol is a helper to convert token amount from/to wei
-type TokenSymbol struct {
+// TokenInfoGetter is a helper to get token info
+type TokenInfoGetter struct {
 	ethClient    bind.ContractBackend // eth client
 	cachedSymbol sync.Map
 	cachedName   sync.Map
 }
 
 // TokenSymbolOption is the option to configure TokenSymbol constructor.
-type TokenSymbolOption func(*TokenSymbol)
+type TokenSymbolOption func(*TokenInfoGetter)
 
 // TokenSymbolWithSymbols configures TokenSymbol constructor to use a predefined cached symbol mapping.
 func TokenSymbolWithSymbols(symbols map[common.Address]string) TokenSymbolOption {
-	return func(ts *TokenSymbol) {
+	return func(ts *TokenInfoGetter) {
 		for k, v := range symbols {
 			ts.cachedSymbol.Store(k, v)
 		}
@@ -49,8 +50,8 @@ func TokenSymbolWithSymbols(symbols map[common.Address]string) TokenSymbolOption
 }
 
 // NewTokenSymbol returns a new TokenSymbol instance.
-func NewTokenSymbol(client bind.ContractBackend, options ...TokenSymbolOption) *TokenSymbol {
-	ts := &TokenSymbol{
+func NewTokenSymbol(client bind.ContractBackend, options ...TokenSymbolOption) *TokenInfoGetter {
+	ts := &TokenInfoGetter{
 		ethClient: client,
 	}
 
@@ -65,8 +66,8 @@ func NewTokenSymbol(client bind.ContractBackend, options ...TokenSymbolOption) *
 	return ts
 }
 
-// NewTokenSymbolFromContext return new instance of TokenSymbol
-func NewTokenSymbolFromContext(c *cli.Context) (*TokenSymbol, error) {
+// NewTokenInfoGetterFromContext return new instance of TokenInfoGetter
+func NewTokenInfoGetterFromContext(c *cli.Context) (*TokenInfoGetter, error) {
 	var options []TokenSymbolOption
 	client, err := NewEthereumClientFromFlag(c)
 	if err != nil {
@@ -83,7 +84,7 @@ func NewTokenSymbolFromContext(c *cli.Context) (*TokenSymbol, error) {
 }
 
 // Symbol return symbol of a token
-func (t *TokenSymbol) Symbol(address common.Address) (string, error) {
+func (t *TokenInfoGetter) Symbol(address common.Address) (string, error) {
 	var (
 		symbol string
 		err    error
@@ -118,35 +119,36 @@ var getNameFns = []func(common.Address, bind.ContractBackend) (string, error){
 }
 
 //Name return name of token
-func (t *TokenSymbol) Name(address common.Address) (string, error) {
+func (t *TokenInfoGetter) Name(address common.Address) (string, error) {
 	var (
-		name, result string
-		err          error
+		name string
+		err  error
 	)
 	if val, ok := t.cachedName.Load(address); ok {
-		if result, ok = val.(string); !ok {
+		if name, ok = val.(string); !ok {
 			return "", errors.New("invalid token name stored in cached symbol")
 		}
-		return result, nil
-	}
-	wg := sync.WaitGroup{}
-	for _, getNameFn := range getNameFns {
-		wg.Add(1)
-		go func(fn func(common.Address, bind.ContractBackend) (string, error)) {
-			defer wg.Done()
-			name, err = fn(address, t.ethClient)
-			if result == "" && name != "" {
-				result = name
-			}
-		}(getNameFn)
-	}
-	wg.Wait()
-
-	if result != "" {
-		t.cachedName.Store(address, result)
+		return name, nil
 	}
 
-	return result, err
+	name, err = getName1(address, t.ethClient)
+	if err != nil {
+		err1 := err
+		name, err = getName2(address, t.ethClient)
+		if err != nil {
+			// combine 2 errors if we cannot get name
+			err = fmt.Errorf("%v + %v", err1, err)
+		} else if name == "" {
+			// if we cannot get name then return first error
+			err = err1
+		}
+	}
+
+	if err == nil {
+		t.cachedName.Store(address, name)
+	}
+
+	return name, err
 }
 
 func getName1(address common.Address, ethClient bind.ContractBackend) (string, error) {

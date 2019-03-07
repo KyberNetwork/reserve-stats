@@ -156,7 +156,7 @@ func run(c *cli.Context) error {
 		sugar.Infow("using internal reserve address as user does not input any", "address", addr.Hex())
 	}
 
-	symbolResolver, err := blockchain.NewTokenSymbolFromContext(c)
+	symbolResolver, err := blockchain.NewTokenInfoGetterFromContext(c)
 	if err != nil {
 		return fmt.Errorf("cannot create symbol Resolver, err: %v", err)
 	}

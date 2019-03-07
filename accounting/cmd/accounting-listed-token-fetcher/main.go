@@ -1,27 +1,23 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
 	"os"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
-	"go.uber.org/zap"
 
-	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	listedtoken "github.com/KyberNetwork/reserve-stats/accounting/listed-token-fetcher"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/contracts"
+	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
 )
 
 const (
-	blockFlag           = "block"
-	reserveAddresesFlag = "reserve-address"
+	blockFlag          = "block"
+	reserveAddressFlag = "reserve-address"
 )
 
 func main() {
@@ -36,12 +32,13 @@ func main() {
 			Usage:  "block to get listed token",
 		},
 		cli.StringFlag{
-			Name:   reserveAddresesFlag,
+			Name:   reserveAddressFlag,
 			EnvVar: "RESERVE_ADDRESS",
 			Usage:  "reserve address to get listed token",
 		},
 	)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
+	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -66,82 +63,30 @@ func run(c *cli.Context) error {
 			return err
 		}
 	}
-	if c.String(reserveAddresesFlag) == "" {
+	if c.String(reserveAddressFlag) == "" {
 		return fmt.Errorf("reserve address is required")
 	}
-	reserveAddrStr := c.String(reserveAddresesFlag)
+	reserveAddrStr := c.String(reserveAddressFlag)
 	reserveAddr = ethereum.HexToAddress(reserveAddrStr)
 
 	ethClient, err := blockchain.NewEthereumClientFromFlag(c)
 	if err != nil {
 		return err
 	}
-	tokenSymbol, err := blockchain.NewTokenSymbolFromContext(c)
+
+	tokenSymbol, err := blockchain.NewTokenInfoGetterFromContext(c)
 	if err != nil {
 		return err
 	}
 
-	return getListedToken(ethClient, block, reserveAddr, tokenSymbol, sugar)
-}
+	etherscanClient, err := etherscan.NewEtherscanClientFromContext(c)
+	if err != nil {
+		return err
+	}
 
-func getListedToken(ethClient *ethclient.Client, block *big.Int, reserveAddr ethereum.Address,
-	tokenSymbol *blockchain.TokenSymbol, sugar *zap.SugaredLogger) error {
-	var (
-		logger = sugar.With("func", "accounting/cmd/accounting-listed-token-fetcher")
-		result []common.ListedToken
-	)
-	// step 1: get conversionRatesContract address
-	logger.Infow("reserve address", "reserve", reserveAddr)
-	reserveContractClient, err := contracts.NewReserve(reserveAddr, ethClient)
-	if err != nil {
-		return err
-	}
-	callOpts := &bind.CallOpts{BlockNumber: block}
-	conversionRatesContract, err := reserveContractClient.ConversionRatesContract(callOpts)
-	if err != nil {
-		return err
-	}
-	// step 2: get listedTokens from conversionRatesContract
-	conversionRateContractClient, err := contracts.NewConversionRates(conversionRatesContract, ethClient)
-	if err != nil {
-		return err
-	}
-	listedTokens, err := conversionRateContractClient.GetListedTokens(callOpts)
-	if err != nil {
-		return err
-	}
-	// map to check if token already exist
-	existedToken := make(map[string]bool)
-	for _, v := range listedTokens {
-		symbol, err := tokenSymbol.Symbol(v)
-		if err != nil {
-			return err
-		}
-		name, err := tokenSymbol.Name(v)
-		if err != nil {
-			return err
-		}
-		//TODO: get timestamp from ContractTimestampResolver
-		// check if symbol already exist
-		if exist := existedToken[symbol]; exist {
-			// check which is old token
-		} else {
-			existedToken[symbol] = true
-		}
+	resolv := blockchain.NewEtherscanContractTimestampResolver(sugar, etherscanClient)
 
-		result = append(result, common.ListedToken{
-			Address: v.Hex(),
-			Symbol:  symbol,
-			Name:    name,
-		})
-	}
-	resultJSON, err := json.Marshal(result)
-	if err != nil {
-		return err
-	}
-	// currently print out to cli, save to storage later
-	log.Printf("%s", resultJSON)
-	// step 3: use api etherscan to get first transaction timestamp
-	//TODO: wait for favadi task to finish
-	return nil
+	fetcher := listedtoken.NewListedTokenFetcher(ethClient, resolv, sugar)
+
+	return fetcher.GetListedToken(block, reserveAddr, tokenSymbol)
 }

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	rrpostgres "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate-storage/postgres"
+	rrpostgres "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"

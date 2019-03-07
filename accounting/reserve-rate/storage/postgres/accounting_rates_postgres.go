@@ -9,7 +9,7 @@ import (
 	"github.com/lib/pq"
 	"go.uber.org/zap"
 
-	storage "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate-storage"
+	storage "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
@@ -160,24 +160,95 @@ func getTokenBaseFromPair(pair string) (string, string, error) {
 	return ids[1], ids[0], nil
 }
 
-//UpdateRatesRecords update mutiple rate records from a block with mutiple reserve address into the DB
-func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, rateRecords map[string]map[string]common.ReserveRateEntry) error {
-	var logger = rdb.sugar.With(
-		"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
-		"block_number", blockInfo.Block,
-		"timestamp", blockInfo.Timestamp.String(),
-	)
-	const (
-		rsvStmt = `INSERT INTO %[1]s(address)
+func (rdb *RatesStorage) updateRsvAddrs(rsvs map[string]bool) error {
+	const rsvStmt = `INSERT INTO %[1]s(address)
 	VALUES ($1)
 	ON CONFLICT ON CONSTRAINT %[1]s_address_key DO NOTHING`
-		tkStmt = `INSERT INTO %[1]s(symbol)
+	var logger = rdb.sugar.With(
+		"func", "reserverates/storage/postgres/RateStorage.updateRsvAddr",
+	)
+	tx, err := rdb.db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	query := fmt.Sprintf(rsvStmt, rdb.tableNames[reserveTableName])
+	logger.Debugw("updating rsv...", "query", query)
+
+	defer pgsql.CommitOrRollback(tx, rdb.sugar, &err)
+	for rsvAddr := range rsvs {
+		_, err = tx.Exec(query, rsvAddr)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (rdb *RatesStorage) updateTokens(tokens map[string]bool) error {
+	const tkStmt = `INSERT INTO %[1]s(symbol)
 	VALUES($1)
 	ON CONFLICT ON CONSTRAINT %[1]s_symbol_key DO NOTHING`
-		bsStmt = `INSERT INTO %[1]s(symbol) 
+	var logger = rdb.sugar.With(
+		"func", "reserverates/storage/postgres/RateStorage.updateToken",
+	)
+	tx, err := rdb.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer pgsql.CommitOrRollback(tx, rdb.sugar, &err)
+
+	query := fmt.Sprintf(tkStmt, rdb.tableNames[tokenTableName])
+	logger.Debugw("updating tokens...", "query", query)
+
+	for tk := range tokens {
+		_, err = tx.Exec(query, tk)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (rdb *RatesStorage) updateBases(bases map[string]bool) error {
+	const bsStmt = `INSERT INTO %[1]s(symbol) 
  	VALUES($1) 
 	ON CONFLICT ON CONSTRAINT %[1]s_symbol_key DO NOTHING`
-		rtStmt = `INSERT INTO %[1]s(time, token_id, base_id, block, buy_reserve_rate, sell_reserve_rate, reserve_id)
+	var logger = rdb.sugar.With(
+		"func", "reserverates/storage/postgres/RateStorage.updateBases",
+	)
+	tx, err := rdb.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer pgsql.CommitOrRollback(tx, rdb.sugar, &err)
+
+	query := fmt.Sprintf(bsStmt, rdb.tableNames[baseTableName])
+	logger.Debugw("updating bases...", "query", query)
+
+	for bs := range bases {
+		_, err = tx.Exec(query, bs)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+//UpdateRatesRecords update mutiple rate records from a block with mutiple reserve address into the DB
+func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, rateRecords map[string]map[string]common.ReserveRateEntry) error {
+	var (
+		rsvAddrs = make(map[string]bool)
+		tokens   = make(map[string]bool)
+		bases    = make(map[string]bool)
+		logger   = rdb.sugar.With(
+			"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
+			"block_number", blockInfo.Block,
+			"timestamp", blockInfo.Timestamp.String(),
+		)
+		nRecord = 0
+	)
+	const rtStmt = `INSERT INTO %[1]s(time, token_id, base_id, block, buy_reserve_rate, sell_reserve_rate, reserve_id)
 	VALUES ($1, 
 		(SELECT id FROM %[2]s as tk WHERE tk.symbol= $2),
 		(SELECT id FROM %[3]s as bs WHERE bs.symbol= $3),
@@ -187,41 +258,45 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, 
 		(SELECT id FROM %[4]s as rs WHERE rs.Address= $7)
 	)
 	ON CONFLICT ON CONSTRAINT %[1]s_no_duplicate DO NOTHING;`
-	)
+
+	for rsvAddr, rateRecord := range rateRecords {
+		rsvAddrs[rsvAddr] = true
+		for pair := range rateRecord {
+			token, base, err := getTokenBaseFromPair(pair)
+			if err != nil {
+				return err
+			}
+			tokens[token] = true
+			bases[base] = true
+		}
+	}
+
+	if err := rdb.updateRsvAddrs(rsvAddrs); err != nil {
+		return err
+	}
+
+	if err := rdb.updateTokens(tokens); err != nil {
+		return err
+	}
+
+	if err := rdb.updateBases(bases); err != nil {
+		return err
+	}
+
 	tx, err := rdb.db.Beginx()
 	if err != nil {
 		return err
 	}
+	query := fmt.Sprintf(rtStmt, rdb.tableNames[rateTableName], rdb.tableNames[tokenTableName], rdb.tableNames[baseTableName], rdb.tableNames[reserveTableName])
+	logger.Debugw("updating rates...", "query", query)
 
 	defer pgsql.CommitOrRollback(tx, rdb.sugar, &err)
 	for rsvAddr, rateRecord := range rateRecords {
-		query := fmt.Sprintf(rsvStmt, rdb.tableNames[reserveTableName])
-
-		logger.Debugw("updating rsv...", "query", query)
-		_, err = tx.Exec(query, rsvAddr)
-		if err != nil {
-			return err
-		}
 		for pair, rate := range rateRecord {
 			token, base, err := getTokenBaseFromPair(pair)
 			if err != nil {
 				return err
 			}
-			logger.Debugw("updating base...", "query", query)
-			query = fmt.Sprintf(bsStmt, rdb.tableNames[baseTableName])
-			_, err = tx.Exec(query, base)
-			if err != nil {
-				return err
-			}
-
-			query = fmt.Sprintf(tkStmt, rdb.tableNames[tokenTableName])
-			logger.Debugw("updating token...", "query", query)
-			_, err = tx.Exec(query, token)
-			if err != nil {
-				return err
-			}
-			query = fmt.Sprintf(rtStmt, rdb.tableNames[rateTableName], rdb.tableNames[tokenTableName], rdb.tableNames[baseTableName], rdb.tableNames[reserveTableName])
-			logger.Debugw("updating rates...", "query", query)
 
 			_, err = tx.Exec(query,
 				blockInfo.Timestamp,
@@ -235,8 +310,11 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, 
 			if err != nil {
 				return err
 			}
+			nRecord++
 		}
 	}
+	logger.Debugw("updating rates finished", "total records", nRecord)
+
 	return err
 }
 

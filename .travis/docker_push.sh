@@ -19,17 +19,19 @@ push() {
 
 push_file() {
     local config_file="$1"
-    local modules=($(sed -e 's/ .*$//' "$config_file"))
-    push "${modules[@]}"
+    while read -r line; do
+        services=($line)
+        services=(${services[@]:1})
+        push "${services[@]}"
+    done < "$config_file"
 }
-
 echo "$docker_password" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
 case "$build_part" in
     1)
-        push_file build_part_1
+        push_file .travis/build_part_1
         ;;
     2)
-        push_file build_part_2
+        push_file .travis/build_part_2
         ;;
 esac

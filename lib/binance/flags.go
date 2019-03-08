@@ -5,7 +5,6 @@ import (
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
-	"golang.org/x/time/rate"
 )
 
 const (
@@ -55,6 +54,6 @@ func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, er
 		return nil, errors.New("rate limit must be greater than 0")
 	}
 
-	limiter := rate.NewLimiter(rate.Limit(rps), 5)
+	limiter := NewRateLimiter(rps)
 	return NewBinance(apiKey, secretKey, sugar, WithRateLimiter(limiter)), nil
 }

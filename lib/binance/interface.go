@@ -11,7 +11,7 @@ type Interface interface {
 	GetExchangeInfo() (ExchangeInfo, error)
 }
 
-//Limiter define an inteface for binance Limiter action
+// Limiter is the resource limiter for accessing Binance API.
 type Limiter interface {
 	WaitN(context.Context, int) error
 }

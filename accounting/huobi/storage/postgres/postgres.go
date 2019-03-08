@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
-	pqtypes "github.com/jmoiron/sqlx/types"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
@@ -108,8 +107,6 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trade huobi.TradeHistory) error {
 	if err != nil {
 		return err
 	}
-	dataPQJSON := pqtypes.JSONText(string(data))
-	dataForInput, err := dataPQJSON.Value()
 	if err != nil {
 		return err
 	}
@@ -118,7 +115,7 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trade huobi.TradeHistory) error {
 		trade.ID,
 		timestamp,
 		trade.Symbol,
-		dataForInput,
+		data,
 	)
 	if err != nil {
 		return err

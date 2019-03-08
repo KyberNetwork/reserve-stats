@@ -87,7 +87,6 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 			}(sym.SymBol),
 		)
 	}
-	errGroup.Wait()
 
 	if err := errGroup.Wait(); err != nil {
 		return result, nil

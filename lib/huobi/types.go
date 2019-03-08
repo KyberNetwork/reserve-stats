@@ -102,3 +102,9 @@ const (
 	//StatusError indict that there was error in data reply
 	StatusError //error
 )
+
+//CurrenciesReply hold huobi's reply on currencies endpoint data and status
+type CurrenciesReply struct {
+	Status string   `json:"status"`
+	Data   []string `json:"data"`
+}

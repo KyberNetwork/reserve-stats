@@ -1,0 +1,3 @@
+tradelogs trade-logs-api trade-logs-crawler trade-logs-post-processor
+priceanalytics price-analytics-api
+tokenratefetcher token-rate-fetcher

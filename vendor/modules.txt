@@ -124,8 +124,8 @@ github.com/rjeczalik/notify
 # github.com/rs/cors v1.6.0
 github.com/rs/cors
 # github.com/stretchr/testify v1.3.0
-github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
+github.com/stretchr/testify/assert
 # github.com/syndtr/goleveldb v0.0.0-20181012014443-6b91fda63f2e
 github.com/syndtr/goleveldb/leveldb
 github.com/syndtr/goleveldb/leveldb/errors

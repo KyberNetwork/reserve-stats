@@ -6,13 +6,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/urfave/cli"
-
 	huobiFetcher "github.com/KyberNetwork/reserve-stats/accounting/huobi/fetcher"
 	postgres "github.com/KyberNetwork/reserve-stats/accounting/huobi/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+
+	"github.com/urfave/cli"
 )
 
 const (

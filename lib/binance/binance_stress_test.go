@@ -10,6 +10,7 @@ import (
 )
 
 func TestBinance(t *testing.T) {
+	t.Skip("test disabled as require binance API key pair")
 	var (
 		apiKey    = os.Getenv("BINANCE_API_KEY")
 		secretKey = os.Getenv("BINANCE_SECRET_KEY")
@@ -27,6 +28,7 @@ func TestBinance(t *testing.T) {
 	const requests = 10000
 	var g errgroup.Group
 	for i := 0; i < requests; i++ {
+		i := i
 		g.Go(func() error {
 			i := i
 			if _, err := bn.GetExchangeInfo(); err != nil {

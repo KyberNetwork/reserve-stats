@@ -82,7 +82,6 @@ func (fc *Fetcher) GetWithdrawHistory(fromID uint64) (map[string][]huobi.Withdra
 			}(sym),
 		)
 	}
-	errGroup.Wait()
 
 	if err := errGroup.Wait(); err != nil {
 		return result, nil

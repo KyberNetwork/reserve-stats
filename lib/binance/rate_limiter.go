@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/time/rate"
 )
 
@@ -53,13 +54,22 @@ func NewRateLimiter(hardLimit float64) *RateLimiter {
 func (r *RateLimiter) WaitN(ctx context.Context, n int) error {
 	r.m.Lock()
 	defer r.m.Unlock()
+	errGr := errgroup.Group{}
+	errGr.Go(func() error {
+		if err := r.wafLimiter.Wait(ctx); err != nil {
+			return err
+		}
+		return nil
+	},
+	)
 
-	if err := r.wafLimiter.Wait(ctx); err != nil {
-		return err
-	}
+	errGr.Go(func() error {
+		if err := r.hardLimiter.WaitN(ctx, n); err != nil {
+			return err
+		}
+		return nil
+	},
+	)
 
-	if err := r.hardLimiter.WaitN(ctx, n); err != nil {
-		return err
-	}
-	return nil
+	return errGr.Wait()
 }

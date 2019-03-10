@@ -417,3 +417,22 @@ func (rdb *RatesStorage) UpdateETHUSDPrice(blockInfo lastblockdaily.BlockInfo, e
 
 	return err
 }
+
+//GetLastResolvedBlockInfo return block info of the rate with latest timestamp
+func (rdb *RatesStorage) GetLastResolvedBlockInfo() (lastblockdaily.BlockInfo, error) {
+	const (
+		selectStmt = `SELECT time,block FROM %[1]s WHERE time=
+		(SELECT MAX(time) FROM %[1]s) LIMIT 1`
+	)
+	var (
+		result = lastblockdaily.BlockInfo{}
+		query  = fmt.Sprintf(selectStmt, rdb.tableNames[rateTableName])
+		logger = rdb.sugar.With("func", "accounting/reserve-rate/storage/postgres/accounting_rates_postgres.GetLastResolvedBlockInfo")
+	)
+
+	logger.Debugw("Querrying last resolved block...", "query", query)
+	if err := rdb.db.Get(&result, query); err != nil {
+		return result, err
+	}
+	return result, nil
+}

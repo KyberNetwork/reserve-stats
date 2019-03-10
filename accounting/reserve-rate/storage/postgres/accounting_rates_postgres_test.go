@@ -8,6 +8,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
@@ -59,4 +60,7 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	jsonData, err := json.Marshal(result)
 	require.NoError(t, err)
 	sugar.Debugf("Result json is %s", jsonData)
+	lastBlock, err := arrs.GetLastResolvedBlockInfo()
+	require.NoError(t, err)
+	assert.Equal(t, lastBlock.Block, blockInfo.Block)
 }

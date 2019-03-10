@@ -54,9 +54,9 @@ func TestIsNextDay(t *testing.T) {
 	}
 }
 
-func TestNext(t *testing.T) {
+func TestRun(t *testing.T) {
 	//This test requires a runtime of 70 seconds. Should only be run manually
-	t.Skip()
+	// t.Skip()
 	var (
 		// Saturday, September 1, 2018 1:02:00 PM
 		start = timeutil.TimestampMsToTime(uint64(1535806920000))
@@ -71,6 +71,8 @@ func TestNext(t *testing.T) {
 			6285164, // Sep-06-2018 11:59:41 PM +UTC
 			6291077, // Sep-07-2018 11:59:47 PM +UTC
 		}
+		errCh  = make(chan error)
+		resChn = make(chan BlockInfo)
 	)
 
 	logger, err := zap.NewDevelopment()
@@ -83,17 +85,24 @@ func TestNext(t *testing.T) {
 	blkTimeRsv, err := blockchain.NewBlockTimeResolver(sugar, ethClient)
 	require.NoError(t, err)
 
-	lbResolver := NewLastBlockResolver(ethClient, blkTimeRsv, start, end, sugar)
+	lbResolver := NewLastBlockResolver(ethClient, blkTimeRsv, sugar)
 
-	var results []uint64
+	var (
+		results []uint64
+		toBreak bool
+	)
+	go lbResolver.Run(start, end, resChn, errCh)
+
 	for {
-		var lastBlock BlockInfo
-		lastBlock, err = lbResolver.Next()
-		if err != nil {
+		select {
+		case err := <-errCh:
 			require.Equal(t, err, ethereum.NotFound)
+			toBreak = true
+		case blockInfo := <-resChn:
+			results = append(results, blockInfo.Block)
+		}
+		if toBreak {
 			break
-		} else {
-			results = append(results, lastBlock.Block)
 		}
 	}
 	assert.Equal(t, expectBlocks, results)

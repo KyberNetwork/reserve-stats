@@ -2,7 +2,6 @@ package listedtoken
 
 import (
 	"encoding/json"
-	"log"
 	"math/big"
 	"time"
 
@@ -34,7 +33,7 @@ func NewListedTokenFetcher(ethClient *ethclient.Client, contractTimestampResolve
 	}
 }
 
-func updateListedToken(listedToken []common.ListedToken, symbol, name string, address ethereum.Address, timestamp time.Time) {
+func updateListedToken(listedToken []common.ListedToken, symbol, name string, address ethereum.Address, timestamp time.Time) []common.ListedToken {
 	timestampms := timeutil.TimeToTimestampMs(timestamp)
 	for _, token := range listedToken {
 		if token.Symbol == symbol {
@@ -51,7 +50,7 @@ func updateListedToken(listedToken []common.ListedToken, symbol, name string, ad
 					Timestamp: timestampms,
 				})
 			}
-			return
+			return listedToken
 		}
 	}
 	listedToken = append(listedToken, common.ListedToken{
@@ -60,6 +59,7 @@ func updateListedToken(listedToken []common.ListedToken, symbol, name string, ad
 		Symbol:    symbol,
 		Timestamp: timestampms,
 	})
+	return listedToken
 }
 
 //GetListedToken return listed token for a reserve address
@@ -104,7 +104,7 @@ func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
 		if err != nil {
 			return err
 		}
-		updateListedToken(result, symbol, name, address, timestamp)
+		result = updateListedToken(result, symbol, name, address, timestamp)
 	}
 	resultJSON, err := json.Marshal(result)
 	if err != nil {
@@ -112,6 +112,6 @@ func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
 	}
 
 	// currently print out to cli, save to storage later
-	log.Printf("%s", resultJSON)
+	logger.Debugw("result listed token", "result", string(resultJSON))
 	return nil
 }

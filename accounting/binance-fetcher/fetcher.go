@@ -122,6 +122,25 @@ func (f *Fetcher) GetTradeHistory(fromTime, toTime time.Time) error {
 	return nil
 }
 
+func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (binance.WithdrawHistoryList, error) {
+	var (
+		withdrawHistory binance.WithdrawHistoryList
+		err             error
+		logger          = f.sugar.With(
+			"func", "accounting/binance-fetcher.getWithdrawHistoryWithRetry",
+		)
+	)
+	for attempt := 0; attempt < f.attempt; attempt++ {
+		logger.Debugw("attempt to get withdraw history", "attempt", attempt, "startTime", startTime, "endTime", endTime)
+		withdrawHistory, err = f.client.GetWithdrawalHistory(startTime, endTime)
+		if err == nil {
+			return withdrawHistory, nil
+		}
+		time.Sleep(f.retryDelay)
+	}
+	return withdrawHistory, err
+}
+
 //GetWithdrawHistory get all withdraw history in time range fromTime to toTime
 func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) error {
 	var (
@@ -132,7 +151,7 @@ func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) error {
 	startTime := fromTime
 	endTime := toTime
 	for {
-		withdrawHistory, err := f.client.GetWithdrawalHistory(startTime, endTime)
+		withdrawHistory, err := f.getWithdrawHistoryWithRetry(startTime, endTime)
 		if err != nil {
 			return err
 		}
@@ -140,6 +159,11 @@ func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) error {
 			break
 		}
 		result = append(result, withdrawHistory.WithdrawList...)
+
+		// set start equal to latest withdraw apply time + 1
+		latestWithdraw := len(withdrawHistory.WithdrawList) - 1
+		latestTimeStamp := withdrawHistory.WithdrawList[latestWithdraw].ApplyTime
+		startTime = timeutil.TimestampMsToTime(latestTimeStamp + 1)
 	}
 	// log for test get withdraw history successfully
 	logger.Debugw("withdraw history", "list", result)

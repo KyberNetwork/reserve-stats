@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/urfave/cli"
@@ -67,62 +66,6 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func getTradeHistoryForOneSymBol(binanceClient *binance.Client, fromTime, toTime time.Time, symbol string,
-	tradeHistories *sync.Map, wg *sync.WaitGroup) error {
-	var (
-		logger = binanceClient.Sugar.With("func", "accounting/cmd/accounting-binance-trade-fetcher")
-	)
-	result := []binance.TradeHistory{}
-	startTime := fromTime
-	endTime := toTime
-	defer wg.Done()
-	for {
-		tradeHistoriesResponse, err := binanceClient.GetTradeHistory(symbol, -1, startTime, endTime)
-		if err != nil {
-			return err
-		}
-		// while result != empty, get trades latest time to toTime
-		if len(tradeHistoriesResponse) == 0 {
-			break
-		}
-		logger.Debugw("trade history for", "symbol", symbol, "history", tradeHistoriesResponse)
-		result = append(result, tradeHistoriesResponse...)
-		lastTrade := tradeHistoriesResponse[len(tradeHistoriesResponse)-1]
-		startTime = timeutil.TimestampMsToTime(lastTrade.Time + 1)
-	}
-	if len(result) != 0 {
-		tradeHistories.Store(symbol, result)
-	}
-	return nil
-}
-
-func getTradeHistory(binanceClient *binance.Client, fromTime, toTime time.Time) error {
-	var (
-		tradeHistories sync.Map
-		logger         = binanceClient.Sugar.With("func", "accounting/cmd/accounting-binance-trade-fetcher")
-	)
-	// get list token
-	exchangeInfo, err := binanceClient.GetExchangeInfo()
-	if err != nil {
-		return err
-	}
-	tokenPairs := exchangeInfo.Symbols
-	// get fromTime to toTime
-	wg := sync.WaitGroup{}
-	for _, pairs := range tokenPairs {
-		wg.Add(1)
-		go getTradeHistoryForOneSymBol(binanceClient, fromTime, toTime, pairs.Symbol, &tradeHistories, &wg)
-	}
-	wg.Wait()
-	// log here for test get trade history without persistence storage
-	tradeHistories.Range(func(key, value interface{}) bool {
-		logger.Info("symbol", key, "history", value)
-		return true
-	})
-	// TODO: save to storage
-	return nil
 }
 
 func run(c *cli.Context) error {

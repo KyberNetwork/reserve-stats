@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sync"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/fetcher"
 	rrpostgres "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
@@ -15,10 +16,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
-
 	"github.com/KyberNetwork/tokenrate"
 	"github.com/KyberNetwork/tokenrate/coingecko"
-	"github.com/ethereum/go-ethereum"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
@@ -29,9 +28,12 @@ const (
 	attemptsFlag    = "attempts"
 	defaultAttempts = 3
 
+	sleepTimeFlag    = "sleep-time"
+	defaultSleepTime = 12 * time.Hour
+
 	retryDelayFlag        = "retry-delay"
 	defaultRetryDelayTime = 5 * time.Minute
-	defaultPostGresDB     = "reserve_stats"
+	defaultPostGresDB     = common.DefaultDB
 )
 
 func main() {
@@ -57,6 +59,12 @@ func main() {
 			Usage:  "The duration to put worker pools into sleep after each batch request",
 			EnvVar: "RETRY_DELAY",
 			Value:  defaultRetryDelayTime,
+		},
+		cli.DurationFlag{
+			Name:   sleepTimeFlag,
+			Usage:  "The duration for the process to sleep after latest fetch in daemon mode",
+			EnvVar: "SLEEP_TIME",
+			Value:  defaultSleepTime,
 		},
 		blockchain.NewEthereumNodeFlags(),
 	)
@@ -114,11 +122,10 @@ func retryFetchETHUSDRate(maxAttempt int,
 }
 func run(c *cli.Context) error {
 	var (
-		err            error
-		lastBlockErrCh = make(chan error)
-		rateErrChn     = make(chan error)
-		lastBlockBlCh  = make(chan lastblockdaily.BlockInfo)
-		wg             = &sync.WaitGroup{}
+		options        []fetcher.Option
+		attempts       = c.Int(attemptsFlag)
+		retryDelayTime = c.Duration(retryDelayFlag)
+		sleepTime      = c.Duration(sleepTimeFlag)
 	)
 
 	logger, err := libapp.NewLogger(c)
@@ -137,19 +144,6 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
-	fromDate, err := timeutil.FromTimeFromContext(c)
-	if err != nil {
-		return fmt.Errorf("cannot get from date, err: %v", err)
-	}
-
-	toDate, err := timeutil.ToTimeFromContext(c)
-	if err != nil {
-		return fmt.Errorf("cannot get to date, err: %v", err)
-	}
-
-	attempts := c.Int(attemptsFlag)
-	retryDelayTime := c.Duration(retryDelayFlag)
 
 	addrs := c.StringSlice(addressesFlag)
 	//TODO: remove this for production server
@@ -181,44 +175,21 @@ func run(c *cli.Context) error {
 	defer ratesStorage.Close()
 	cgk := coingecko.New()
 
-	lastBlockResolver := lastblockdaily.NewLastBlockResolver(ethClient, blockTimeResolver, fromDate, toDate, sugar)
-	go lastBlockResolver.Run(lastBlockBlCh, lastBlockErrCh)
+	lastBlockResolver := lastblockdaily.NewLastBlockResolver(ethClient, blockTimeResolver, sugar)
 
-	for {
-		select {
-		case err := <-lastBlockErrCh:
-			if err == ethereum.NotFound {
-				sugar.Info("reached the end date")
-				wg.Wait()
-				sugar.Info("all fetcher jobs are completed")
-				return nil
-			}
-			return err
-		case err := <-rateErrChn:
-			if err != nil {
-				return err
-			}
-		case blockInfo := <-lastBlockBlCh:
-			wg.Add(1)
-
-			go func(errCh chan error, blockInfo lastblockdaily.BlockInfo, attempts int) {
-				defer wg.Done()
-				rates, rateErr := retryFetchTokenRate(attempts, sugar, ratesCrawler, blockInfo.Block, retryDelayTime)
-				if rateErr != nil {
-					errCh <- rateErr
-				}
-				//TODO: parallel this
-				ethUSDRate, err := retryFetchETHUSDRate(attempts, sugar, cgk, blockInfo.Timestamp, retryDelayTime)
-				if err != nil {
-					errCh <- err
-				}
-				if err = ratesStorage.UpdateRatesRecords(blockInfo, rates); err != nil {
-					errCh <- err
-				}
-				if err = ratesStorage.UpdateETHUSDPrice(blockInfo, ethUSDRate); err != nil {
-					errCh <- err
-				}
-			}(rateErrChn, blockInfo, attempts)
-		}
+	fromDate, err := timeutil.FromTimeFromContext(c)
+	if err == nil {
+		options = append(options, fetcher.WithFromTime(fromDate))
 	}
+
+	toDate, err := timeutil.ToTimeFromContext(c)
+	if err == nil {
+		options = append(options, fetcher.WithToTime(toDate))
+	}
+
+	rrfetcher, err := fetcher.NewFetcher(sugar, ratesStorage, ratesCrawler, lastBlockResolver, cgk, retryDelayTime, sleepTime, attempts, options...)
+	if err != nil {
+		return err
+	}
+	return rrfetcher.Run()
 }

@@ -113,11 +113,6 @@ func (t *TokenInfoGetter) Symbol(address common.Address) (string, error) {
 	return symbol, nil
 }
 
-var getNameFns = []func(common.Address, bind.ContractBackend) (string, error){
-	getName1,
-	getName2,
-}
-
 //Name return name of token
 func (t *TokenInfoGetter) Name(address common.Address) (string, error) {
 	var (

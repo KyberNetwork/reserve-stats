@@ -2,6 +2,7 @@ package listedtoken
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -33,32 +34,31 @@ func NewListedTokenFetcher(ethClient *ethclient.Client, contractTimestampResolve
 	}
 }
 
-func updateListedToken(listedToken []common.ListedToken, symbol, name string, address ethereum.Address, timestamp time.Time) []common.ListedToken {
-	timestampms := timeutil.TimeToTimestampMs(timestamp)
-	for _, token := range listedToken {
-		if token.Symbol == symbol {
-			if token.Timestamp > timestampms {
-				token.Old = append(token.Old, common.OldListedToken{
-					Address:   token.Address,
-					Timestamp: token.Timestamp,
-				})
-				token.Address = address.Hex()
-				token.Timestamp = timestampms
-			} else {
-				token.Old = append(token.Old, common.OldListedToken{
-					Address:   address.Hex(),
-					Timestamp: timestampms,
-				})
-			}
-			return listedToken
+func updateListedToken(listedToken map[string]common.ListedToken, symbol, name string, address ethereum.Address, timestamp time.Time) map[string]common.ListedToken {
+	timestamps := timeutil.TimeToTimestampMs(timestamp)
+	key := fmt.Sprintf("%s-%s", symbol, name)
+	if token, existed := listedToken[key]; existed {
+		if token.Timestamp > timestamps {
+			token.Old = append(token.Old, common.OldListedToken{
+				Address:   token.Address,
+				Timestamp: token.Timestamp,
+			})
+			token.Address = address.Hex()
+			token.Timestamp = timestamps
+		} else {
+			token.Old = append(token.Old, common.OldListedToken{
+				Address:   address.Hex(),
+				Timestamp: timestamps,
+			})
 		}
+		return listedToken
 	}
-	listedToken = append(listedToken, common.ListedToken{
+	listedToken[key] = common.ListedToken{
 		Name:      name,
 		Address:   address.Hex(),
 		Symbol:    symbol,
-		Timestamp: timestampms,
-	})
+		Timestamp: timestamps,
+	}
 	return listedToken
 }
 
@@ -67,7 +67,7 @@ func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
 	tokenSymbol *blockchain.TokenInfoGetter) error {
 	var (
 		logger = f.sugar.With("func", "accounting/cmd/accounting-listed-token-fetcher")
-		result []common.ListedToken
+		result = make(map[string]common.ListedToken)
 	)
 	// step 1: get conversionRatesContract address
 	logger.Infow("reserve address", "reserve", reserveAddr)

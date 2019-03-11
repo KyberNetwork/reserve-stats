@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"log"
 	"sync"
 	"time"
 
@@ -10,19 +11,44 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
+const (
+	batchSize         = 100
+	defaultRetryDelay = 2 * time.Minute
+	defaultAttempt    = 4
+)
+
 //Fetcher is a fetcher for get binance data
 type Fetcher struct {
-	sugar  *zap.SugaredLogger
-	client *binance.Client
+	sugar      *zap.SugaredLogger
+	client     *binance.Client
+	retryDelay time.Duration
+	attempt    int
 	//TODO: storage will be add in another PR
 }
 
 //NewFetcher return a new fetcher instance
 func NewFetcher(sugar *zap.SugaredLogger, client *binance.Client) *Fetcher {
 	return &Fetcher{
-		sugar:  sugar,
-		client: client,
+		sugar:      sugar,
+		client:     client,
+		retryDelay: defaultRetryDelay,
+		attempt:    defaultAttempt,
 	}
+}
+
+func (f *Fetcher) getTradeHistoryWithRetry(symbol string, startTime, endTime time.Time) ([]binance.TradeHistory, error) {
+	var (
+		tradeHistoriesResponse []binance.TradeHistory
+		err                    error
+	)
+	for attempt := 0; attempt < f.attempt; attempt++ {
+		tradeHistoriesResponse, err = f.client.GetTradeHistory(symbol, -1, startTime, endTime)
+		if err == nil {
+			return tradeHistoriesResponse, nil
+		}
+		time.Sleep(f.retryDelay)
+	}
+	return tradeHistoriesResponse, err
 }
 
 func (f *Fetcher) getTradeHistoryForOneSymBol(fromTime, toTime time.Time, symbol string,
@@ -35,7 +61,7 @@ func (f *Fetcher) getTradeHistoryForOneSymBol(fromTime, toTime time.Time, symbol
 	endTime := toTime
 	defer wg.Done()
 	for {
-		tradeHistoriesResponse, err := f.client.GetTradeHistory(symbol, -1, startTime, endTime)
+		tradeHistoriesResponse, err := f.getTradeHistoryWithRetry(symbol, startTime, endTime)
 		if err != nil {
 			logger.Debugw("get trade history error", "symbol", symbol, "error", err)
 			return err
@@ -68,12 +94,18 @@ func (f *Fetcher) GetTradeHistory(fromTime, toTime time.Time) error {
 	}
 	tokenPairs := exchangeInfo.Symbols
 	wg := sync.WaitGroup{}
-	for _, pair := range tokenPairs {
-		wg.Add(1)
-		logger.Debugw("token", "pair", pair.Symbol)
-		go f.getTradeHistoryForOneSymBol(fromTime, toTime, pair.Symbol, &tradeHistories, &wg)
+	index := 0
+	for index < len(tokenPairs) {
+		for count := 0; count < batchSize && index+count < len(tokenPairs); count++ {
+			pair := tokenPairs[index+count]
+			log.Println(index + count)
+			wg.Add(1)
+			logger.Debugw("token", "pair", pair.Symbol)
+			go f.getTradeHistoryForOneSymBol(fromTime, toTime, pair.Symbol, &tradeHistories, &wg)
+		}
+		wg.Wait()
+		index += batchSize
 	}
-	wg.Wait()
 
 	// log here for test get trade history without persistence storage
 	tradeHistories.Range(func(key, value interface{}) bool {

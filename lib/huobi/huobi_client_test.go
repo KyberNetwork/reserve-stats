@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+	// "github.com/KyberNetwork/reserve-stats/lib/testutil"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
@@ -15,7 +15,7 @@ import (
 )
 
 func TestHuobiClient(t *testing.T) {
-	testutil.SkipExternal(t)
+	// testutil.SkipExternal(t)
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		t.Fatal(err)
@@ -44,8 +44,9 @@ func TestHuobiClient(t *testing.T) {
 	_, err = huobiClient.GetTradeHistory("bixeth", startDate, endDate)
 	assert.NoError(t, err, fmt.Sprintf("get history error: %v", err))
 
-	_, err = huobiClient.GetWithdrawHistory("ETH", 0)
+	withdrawHistory, err := huobiClient.GetWithdrawHistory("ETH", 0)
 	assert.NoError(t, err)
+	sugar.Infow("withdraw history", "value", withdrawHistory)
 }
 
 func TestHuobiClientWithLimiter(t *testing.T) {

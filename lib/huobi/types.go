@@ -41,24 +41,17 @@ type TradeHistoryList struct {
 
 //WithdrawHistory is history of a withdraw
 type WithdrawHistory struct {
-	ID                uint64  `json:"id"`
-	TransactionID     uint64  `json:"transaction-id"`
-	CreatedAt         uint64  `json:"created-at"`
-	UpdatedAt         uint64  `json:"updated-at"`
-	CandidateCurrency string  `json:"candiate-currency"`
-	Currency          string  `json:"currency"`
-	Type              string  `json:"type"`
-	Direction         string  `json:"direction"`
-	Amount            float64 `json:"amount"`
-	State             string  `json:"state"`
-	Fees              string  `json:"fees"`
-	ErrorCode         string  `json:"error-code"`
-	ErrorMsg          string  `json:"error-msg"`
-	ToAddress         string  `json:"to-address"`
-	ToAddrTag         string  `json:"to-addr-tag"`
-	TxHash            string  `json:"tx-hash"`
-	Chain             string  `json:"chain"`
-	Extra             string  `json:"extra"`
+	ID        uint64  `json:"id"`
+	Type      string  `json:"type"`
+	Currency  string  `json:"currency"`
+	TxHash    string  `json:"tx-hash"`
+	Amount    float64 `json:"amount"`
+	Address   string  `json:"address"`
+	AddrTag   string  `json:"address-tag"`
+	Fee       float64 `json:"fee"`
+	State     string  `json:"state"`
+	CreatedAt uint64  `json:"created-at"`
+	UpdatedAt uint64  `json:"updated-at"`
 }
 
 //WithdrawHistoryList is a list of withdraw history

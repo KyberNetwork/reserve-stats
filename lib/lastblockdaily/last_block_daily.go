@@ -223,9 +223,6 @@ func (lbr *LastBlockResolver) searchLastBlock(start, end BlockInfo) (BlockInfo, 
 		Timestamp: midBlockTimestamp,
 	}
 
-	logger = logger.With("mid", mid.Block, "mid_time", mid.Timestamp.String())
-	logger.Debugw("searching for last block...")
-
 	if isSameDay(mid.Timestamp, end.Timestamp) {
 		return lbr.searchLastBlock(start, mid)
 	}

@@ -41,7 +41,6 @@ func (r *EtherscanContractTimestampResolver) resolveUsingInternalTx(address comm
 	// message "etherscan server: No transactions found" if no transaction found for given address.
 	// Following codes should never be reached, just add for safe guard for implementation changes.
 	if len(txs) == 0 {
-		// fallback check internal tx
 		return time.Time{}, ErrNotAvailable
 	}
 

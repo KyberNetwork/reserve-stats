@@ -1,9 +1,7 @@
 package storage
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"time"
 )
 
@@ -26,22 +24,10 @@ type AccountingReserveRates map[time.Time]map[string]map[string]float64
 
 //MarshalJSON implement custom JSON marshaller for AccountingReserveRate to short form date format
 func (acrr AccountingReserveRates) MarshalJSON() ([]byte, error) {
-	buffer := bytes.NewBufferString("{")
+	var mapResult = make(map[string]map[string]map[string]float64)
 	const shortForm = "2006-01-02"
-
-	length := len(acrr)
-	count := 0
 	for k, v := range acrr {
-		jsonVal, err := json.Marshal(v)
-		if err != nil {
-			return nil, err
-		}
-		buffer.WriteString(fmt.Sprintf("\"%s\":%s", k.Format(shortForm), string(jsonVal)))
-		count++
-		if count < length {
-			buffer.WriteString(",")
-		}
+		mapResult[k.Format(shortForm)] = v
 	}
-	buffer.WriteString("}")
-	return buffer.Bytes(), nil
+	return json.Marshal(mapResult)
 }

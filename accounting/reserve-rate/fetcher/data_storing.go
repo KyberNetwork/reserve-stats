@@ -30,7 +30,7 @@ func (fc *Fetcher) serialDataStore(blockInfo lastblockdaily.BlockInfo, rates map
 	var logger = fc.sugar.With("func", "accounting/reserve-rate/fetcher/fetcher.serialDataStore", "block", blockInfo.Block, "job_order", jobOrder)
 	for {
 		if fc.isFailed() {
-			return fmt.Errorf("Fetcher has failed before job order %d", jobOrder)
+			return fmt.Errorf("fetcher has failed before job order %d", jobOrder)
 		}
 		lastCompleted := fc.getLastCompletedJobOrder()
 		if lastCompleted+1 == jobOrder {

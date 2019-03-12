@@ -29,6 +29,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.0 // indirect
 	github.com/huin/goupnp v1.0.0 // indirect
 	github.com/influxdata/influxdb v1.6.3
+	github.com/influxdata/influxql v0.0.0-20180925231337-1cbfca8e56b6 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.1 // indirect
 	github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a // indirect
 	github.com/jinzhu/now v0.0.0-20181116074157-8ec929ed50c3

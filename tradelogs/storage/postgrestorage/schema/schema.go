@@ -4,8 +4,20 @@ package schema
 const TradeLogsSchema = `
 CREATE TABLE IF NOT EXISTS "users" (
 	id SERIAL PRIMARY KEY,
-	user_address TEXT UNIQUE NOT NULL,
+	address TEXT UNIQUE NOT NULL,
 	timestamp TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS "wallet" (
+	id SERIAL PRIMARY KEY,
+	address TEXT UNIQUE NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "token" (
+	id SERIAL PRIMARY KEY,
+	address TEXT UNIQUE NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "reserve" (
+	id SERIAL PRIMARY KEY,
+	address TEXT UNIQUE NOT NULL
 );
 CREATE TABLE IF NOT EXISTS "tradelogs" (
 	id SERIAL PRIMARY KEY,
@@ -14,14 +26,13 @@ CREATE TABLE IF NOT EXISTS "tradelogs" (
 	tx_hash TEXT,
 	eth_amount FLOAT(32),
 	user_address_id BIGINT NOT NULL REFERENCES users,
-	src_address TEXT,
-	dest_address TEXT,
-	src_reserveaddress TEXT,
-	dst_reserveaddress TEXT,
+	src_address_id BIGINT NOT NULL REFERENCES token,
+	dest_address_id BIGINT NOT NULL REFERENCES token,
+	src_reserveaddress_id BIGINT NOT NULL REFERENCES reserve,
+	dst_reserveaddress_id BIGINT NOT NULL REFERENCES reserve,
 	src_amount FLOAT(32),
 	dest_amount FLOAT(32),
-	fiat_amount FLOAT(32),
-	wallet_address TEXT,
+	wallet_address_id BIGINT NOT NULL REFERENCES wallet,
 	src_burn_amount FLOAT(32),
 	dst_burn_amount FLOAT(32),
 	src_wallet_fee_amount FLOAT(32),

@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -41,7 +40,7 @@ func (c *UserKYCChecker) IsKYCedAtTime(userAddr common.Address, ts time.Time) (b
 
 	stmt := fmt.Sprintf(`SELECT COUNT(1) FROM "%s" WHERE address = $1 AND timestamp <= $2`, addressesTableName)
 	logger = logger.With("query", stmt)
-	if err := c.db.Get(&result, stmt, strings.ToLower(userAddr.Hex()), ts.UTC()); err != nil {
+	if err := c.db.Get(&result, stmt, userAddr.Hex(), ts.UTC()); err != nil {
 		return false, err
 	}
 	logger.Debugw("got result from database", "result", result)

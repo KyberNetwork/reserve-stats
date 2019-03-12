@@ -15,23 +15,23 @@ type AccountResponse struct {
 
 //TradeHistory is a history of a trade in huobi
 type TradeHistory struct {
-	ID              int64  `json:"id"`
-	Symbol          string `json:"symbol"`
-	AccountID       int64  `json:"account-id"`
-	Amount          string `json:"amount"`
-	Price           string `json:"price"`
-	CreateAt        uint64 `json:"created-at"`
-	Type            string `json:"type"`
-	FieldAmount     string `json:"field-amount"`
-	FieldCashAmount string `json:"field-cash-amount"`
-	FieldFee        string `json:"field-fees"`
-	FinishedAt      uint64 `json:"finished-at"`
-	UserID          int64  `json:"user-id"`
-	Source          string `json:"source"`
-	State           string `json:"state"`
-	CanceledAt      uint64 `json:"canceled-at"`
-	Exchange        string `json:"exchange"`
-	Batch           string `json:"batch"`
+	ID              int64  `json:"id,omitempty"`
+	Symbol          string `json:"symbol,omitempty"`
+	AccountID       int64  `json:"account-id,omitempty"`
+	Amount          string `json:"amount,omitempty"`
+	Price           string `json:"price,omitempty"`
+	CreateAt        uint64 `json:"create-at,omitempty"`
+	Type            string `json:"type,omitempty"`
+	FieldAmount     string `json:"field-amount,omitempty"`
+	FieldCashAmount string `json:"field-cash-amount,omitempty"`
+	FieldFees       string `json:"field-fees,omitempty"`
+	FinishedAt      uint64 `json:"finished-at,omitempty"`
+	UserID          int64  `json:"user-id,omitempty"`
+	Source          string `json:"source,omitempty"`
+	State           string `json:"state,omitempty"`
+	CanceledAt      uint64 `json:"canceled-at,omitempty"`
+	Exchange        string `json:"exchange,omitempty"`
+	Batch           string `json:"batch,omitempty"`
 }
 
 //TradeHistoryList is a list of trade history

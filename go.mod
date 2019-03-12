@@ -18,7 +18,7 @@ require (
 	github.com/gin-contrib/zap v0.0.0-20180827024651-a4f331736217
 	github.com/gin-gonic/gin v1.3.0
 	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
-	github.com/go-pg/pg v8.0.1+incompatible
+	github.com/go-pg/pg v8.0.1+incompatible // indirect
 	github.com/go-redis/redis v6.15.1+incompatible
 	github.com/go-sql-driver/mysql v1.4.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect

@@ -20,11 +20,11 @@ type TradeHistory struct {
 	AccountID       int64  `json:"account-id"`
 	Amount          string `json:"amount"`
 	Price           string `json:"price"`
-	CreateAt        uint64 `json:"create-at"`
+	CreateAt        uint64 `json:"created-at"`
 	Type            string `json:"type"`
 	FieldAmount     string `json:"field-amount"`
 	FieldCashAmount string `json:"field-cash-amount"`
-	FieldFee        string `json:"field-fee"`
+	FieldFee        string `json:"field-fees"`
 	FinishedAt      uint64 `json:"finished-at"`
 	UserID          int64  `json:"user-id"`
 	Source          string `json:"source"`
@@ -65,3 +65,40 @@ type WithdrawHistory struct {
 type WithdrawHistoryList struct {
 	Data []WithdrawHistory `json:"data"`
 }
+
+//SymbolsReply hold huobi's reply data and status
+type SymbolsReply struct {
+	Status string   `json:"status"`
+	Data   []Symbol `json:"data"`
+}
+
+//Symbol struct hold huobi's reply.
+type Symbol struct {
+	Base            string `json:"base-currency"`
+	Quote           string `json:"quote-currency"`
+	PricePrecision  int    `json:"price-precision"`
+	AmountPrecision int    `json:"amount-precision"`
+	SymBolPartition string `json:"symbol-partition"`
+	SymBol          string `json:"symbol"`
+}
+
+//ExtrasTradeHistoryParams hold extras params for queries
+//it included: From - type string, the ID of the trade log to query from
+// 			   Size - type string, the limit number of request to return
+//			   Direct - type string, the direction to query extra tradelog
+type ExtrasTradeHistoryParams struct {
+	From   string
+	Size   string
+	Direct string
+}
+
+// ReplyStatus define a list of status code for huobi reply
+//go:generate stringer -type=ReplyStatus -linecomment
+type ReplyStatus int
+
+const (
+	//StatusOK indict that the reply contains correct data
+	StatusOK ReplyStatus = iota //ok
+	//StatusError indict that there was error in data reply
+	StatusError //error
+)

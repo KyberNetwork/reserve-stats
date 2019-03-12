@@ -139,7 +139,7 @@ func (fc *Fetcher) fetch(fromTime, toTime time.Time) error {
 					fc.markAsFailed()
 					errCh <- err
 				}
-				logger.Debugw("A job has fetched succesfully", "job order", jobOrder, "block", blockInfo.Block)
+				logger.Debugw("A job has fetched successfully", "job order", jobOrder, "block", blockInfo.Block)
 			}(rateErrChn, blockInfo, fc.retryAttempts, jobOrder)
 		}
 	}
@@ -155,7 +155,7 @@ func (fc *Fetcher) Run() error {
 	)
 	if fc.toTime.IsZero() {
 		toTime = time.Now()
-		logger.Info("no end time specificied, fetcher run in daemon mode")
+		logger.Info("no end time specified, fetcher run in daemon mode")
 		daemonMode = true
 	}
 	for {
@@ -180,7 +180,7 @@ func retryFetchTokenRate(maxAttempt int,
 	var (
 		result map[string]map[string]rsvRateCommon.ReserveRateEntry
 		err    error
-		logger = sugar.With("function", "main/retryFetchTokenRate", "block", block)
+		logger = sugar.With("function", "accounting/reserve-rate/fetcher/fetcher.retryFetchTokenRate", "block", block)
 	)
 
 	for i := 0; i < maxAttempt; i++ {
@@ -203,7 +203,7 @@ func retryFetchETHUSDRate(maxAttempt int,
 	var (
 		result float64
 		err    error
-		logger = sugar.With("function", "main/retryFetchTokenRate", "time", timestamp.String())
+		logger = sugar.With("function", "accounting/reserve-rate/fetcher/fetcher.retryFetchETHUSDRate", "time", timestamp.String())
 	)
 
 	for i := 0; i < maxAttempt; i++ {

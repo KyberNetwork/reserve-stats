@@ -11,11 +11,11 @@ import (
 	rrpostgres "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
+
 	"github.com/KyberNetwork/tokenrate"
 	"github.com/KyberNetwork/tokenrate/coingecko"
 	"github.com/urfave/cli"
@@ -145,11 +145,8 @@ func run(c *cli.Context) error {
 	}
 
 	addrs := c.StringSlice(addressesFlag)
-	//TODO: remove this for production server
 	if len(addrs) == 0 {
-		addr := contracts.InternalReserveAddress().MustGetOneFromContext(c)
-		addrs = append(addrs, addr.Hex())
-		sugar.Infow("using internal reserve address as user does not input any", "address", addr.Hex())
+		return fmt.Errorf("empty reserve address")
 	}
 
 	symbolResolver, err := blockchain.NewTokenInfoGetterFromContext(c)
@@ -177,18 +174,29 @@ func run(c *cli.Context) error {
 	lastBlockResolver := lastblockdaily.NewLastBlockResolver(ethClient, blockTimeResolver, sugar)
 
 	fromDate, err := timeutil.FromTimeFromContext(c)
-	if err == nil {
+	if err != nil {
+		if err != timeutil.ErrEmptyFlag {
+			return err
+		}
+		sugar.Info("no fromDate provided. Checking permanent storage for the last stored rate")
+	} else {
 		options = append(options, fetcher.WithFromTime(fromDate))
+
 	}
 
 	toDate, err := timeutil.ToTimeFromContext(c)
-	if err == nil {
+	if err != nil {
+		if err != timeutil.ErrEmptyFlag {
+			return err
+		}
+		sugar.Info("no toDate provided. Running in daemon mode")
+	} else {
 		options = append(options, fetcher.WithToTime(toDate))
 	}
 
-	rrfetcher, err := fetcher.NewFetcher(sugar, ratesStorage, ratesCrawler, lastBlockResolver, cgk, retryDelayTime, sleepTime, attempts, options...)
+	rrFetcher, err := fetcher.NewFetcher(sugar, ratesStorage, ratesCrawler, lastBlockResolver, cgk, retryDelayTime, sleepTime, attempts, options...)
 	if err != nil {
 		return err
 	}
-	return rrfetcher.Run()
+	return rrFetcher.Run()
 }

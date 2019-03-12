@@ -10,64 +10,24 @@ import (
 
 // NewDB return the Ratestorage instance. User must call ratestorage.Close() before exit.
 // tableNames is a list of 5 string for 5 tablename[reserve,token,base, rate,usdrate]. It can be optional
-// Example schema is:
-// CREATE TABLE IF NOT EXISTS reserves
-// (
-// 	id serial NOT NULL,
-// 	address TEXT NOT NULL UNIQUE,
-// 	CONSTRAINT reserves_pk PRIMARY KEY(id)
-// ) ;
-// CREATE TABLE IF NOT EXISTS tokens
-// (
-// 	id serial NOT NULL,
-// 	symbol TEXT NOT NULL UNIQUE,
-// 	CONSTRAINT tokens_pk PRIMARY KEY(id)
-// );
-// CREATE TABLE IF NOT EXISTS bases
-// (
-// 	id serial NOT NULL,
-// 	symbol TEXT NOT NULL UNIQUE,
-// 	CONSTRAINT bases_pk PRIMARY KEY(id)
-// );
-// CREATE TABLE IF NOT EXISTS rates
-// (
-// 	id serial NOT NULL,
-// 	time TIMESTAMP NOT NULL,
-// 	token_id serial NOT NULL,
-//     base_id serial NOT NULL,
-// 	block integer NOT NULL,
-// 	buy_reserve_rate float8 NOT NULL,
-// 	sell_reserve_rate float8 NOT NULL,
-// 	reserve_id integer NOT NULL,
-// 	CONSTRAINT rates_pk PRIMARY KEY(id),
-// 	CONSTRAINT rates_fk_token_id FOREIGN KEY(token_id) REFERENCES tokens(id),
-//     CONSTRAINT rates_fk_base_id FOREIGN KEY(base_id) REFERENCES bases(id),
-// 	CONSTRAINT rates_fk_reseve_id FOREIGN KEY(reserve_id) REFERENCES reserves(id),
-// 	CONSTRAINT rates_no_duplicate UNIQUE(token_id,base_id,block,reserve_id)
-// );
-// CREATE TABLE IF NOT EXISTS usds
-// (
-// 	id serial NOT NULL,
-// 	time TIMESTAMP NOT NULL UNIQUE,
-// 	block integer NOT NULL UNIQUE,
-// 	rate float8 NOT NULL,
-// 	CONSTRAINT usds_pk PRIMARY KEY(id)
-// );
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, customTableNames ...string) (*RatesStorage, error) {
-	const schemaFMT = `CREATE TABLE IF NOT EXISTS %[1]s
+	const schemaFMT = `--reserves table definition
+	CREATE TABLE IF NOT EXISTS %[1]s
 (
 	id serial NOT NULL,
 	address TEXT NOT NULL UNIQUE,
 	CONSTRAINT %[1]s_pk PRIMARY KEY(id)
 ) ;
 
+--tokens table definition
 CREATE TABLE IF NOT EXISTS %[2]s
 (
-	id serial NOT NULL,
+id serial NOT NULL,
 	symbol TEXT NOT NULL UNIQUE,
 	CONSTRAINT %[2]s_pk PRIMARY KEY(id)
 );
 
+--bases table definition
 CREATE TABLE IF NOT EXISTS %[3]s
 (
 	id serial NOT NULL,
@@ -75,6 +35,7 @@ CREATE TABLE IF NOT EXISTS %[3]s
 	CONSTRAINT %[3]s_pk PRIMARY KEY(id)
 );
 
+--rates table definition
 CREATE TABLE IF NOT EXISTS %[4]s
 (
 	id serial NOT NULL,
@@ -91,15 +52,25 @@ CREATE TABLE IF NOT EXISTS %[4]s
 	CONSTRAINT %[4]s_fk_reseve_id FOREIGN KEY(reserve_id) REFERENCES %[1]s(id),
 	CONSTRAINT %[4]s_no_duplicate UNIQUE(token_id,base_id,block,reserve_id)
 );
+CREATE INDEX IF NOT EXISTS  %[4]s_time_idx ON %[4]s(time);
 
+--usds table definition
 CREATE TABLE IF NOT EXISTS %[5]s
 (
 	id serial NOT NULL,
 	time TIMESTAMP NOT NULL UNIQUE,
 	block integer NOT NULL UNIQUE,
 	rate float8 NOT NULL,
-	CONSTRAINT %[5]s_pk PRIMARY KEY(id)
+	CONSTRAINT %[5]s_pk PRIMARY KEY(id),
+	CONSTRAINT %[5]s_time_block UNIQUE(time,block)
 );
+CREATE INDEX IF NOT EXISTS %[5]s_time_idx ON %[5]s(time);
+
+CREATE OR REPLACE VIEW rates_view AS 
+	SELECT rt.time as time, tk.symbol as token, bs.symbol as base, rt.buy_reserve_rate as buy_rate, rs.address as reserve
+		FROM %[4]s AS rt LEFT JOIN %[2]s AS tk ON rt.token_id = tk.id
+		LEFT JOIN %[3]s AS bs ON rt.base_id=bs.id 
+		LEFT JOIN %[1]s AS rs ON rt.reserve_id=rs.id;
 `
 	var (
 		logger     = sugar.With("func", "reserverates/storage/postgres")

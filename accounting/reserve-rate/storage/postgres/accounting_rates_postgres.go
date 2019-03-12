@@ -2,18 +2,19 @@ package postgres
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
 
-	storage "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 const (
@@ -34,7 +35,8 @@ type RatesStorage struct {
 //TearDown removes all the tables
 func (rdb *RatesStorage) TearDown() error {
 	const dropFMT = `
-	DROP TABLE %[1]s,%[2]s,%[3]s,%[4]s,%[5]s;
+	DROP VIEW rates_view;
+	DROP TABLE %[1]s,%[2]s,%[3]s,%[4]s,%[5]s CASCADE;
 	`
 	tx, err := rdb.db.Beginx()
 	if err != nil {
@@ -64,7 +66,7 @@ func (rdb *RatesStorage) Close() error {
 func getTokenBaseFromPair(pair string) (string, string, error) {
 	ids := strings.Split(strings.TrimSpace(pair), "-")
 	if len(ids) != 2 {
-		return "", "", fmt.Errorf("Pair %s is malformed. Expected base-token, got", pair)
+		return "", "", fmt.Errorf("pair %s is malformed. Expected base-token, got", pair)
 	}
 	return ids[1], ids[0], nil
 }
@@ -169,14 +171,17 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, 
 	if err != nil {
 		return err
 	}
+	sort.Strings(rsvAddrsArr)
 	if err := rdb.updateRsvAddrs(tx, rsvAddrsArr); err != nil {
 		return err
 	}
 
+	sort.Strings(tokensArr)
 	if err := rdb.updateTokens(tx, tokensArr); err != nil {
 		return err
 	}
 
+	sort.Strings(basesArr)
 	if err := rdb.updateBases(tx, basesArr); err != nil {
 		return err
 	}
@@ -215,33 +220,24 @@ func (rdb *RatesStorage) GetRates(reserves []ethereum.Address, from, to time.Tim
 	var (
 		result    = make(map[string]storage.AccountingReserveRates)
 		rowData   = ratesFromDB{}
-		rsvsAddrs = []string{}
+		rsvsAddrs []string
 		logger    = rdb.sugar.With(
 			"func", "reserverates/storage/postgres/RateStorage.GetRates",
 			"from", from.String(),
 			"to", to.String(),
-			"reservers", reserves,
+			"reserves", reserves,
 		)
 	)
 	const (
-		selectStmt = `SELECT rt.time as time, tk.symbol as token, bs.symbol as base, rt.buy_reserve_rate as buy_rate, rs.address as reserve
-		FROM %[1]s AS rt LEFT JOIN %[2]s AS tk ON rt.token_id = tk.id
-		LEFT JOIN %[3]s AS bs ON rt.base_id=bs.id 
-		LEFT JOIN %[4]s AS rs ON rt.reserve_id=rs.id
-		WHERE  time>=$1 AND time<$2 AND rs.address IN (SELECT unnest($3::text[]));`
+		selectStmt = `SELECT * FROM  rates_view
+		WHERE  time>=$1 AND time<$2 AND reserve IN (SELECT unnest($3::text[]));`
 	)
 	for _, rsv := range reserves {
 		rsvsAddrs = append(rsvsAddrs, rsv.Hex())
 	}
-	query := fmt.Sprintf(selectStmt,
-		rdb.tableNames[rateTableName],
-		rdb.tableNames[tokenTableName],
-		rdb.tableNames[baseTableName],
-		rdb.tableNames[reserveTableName],
-	)
-	logger.Debugw("Querrying rate...", "query", query)
+	logger.Debugw("Querrying rate...", "query", selectStmt)
 
-	rows, err := rdb.db.Queryx(query, from, to, pq.StringArray(rsvsAddrs))
+	rows, err := rdb.db.Queryx(selectStmt, from, to, pq.StringArray(rsvsAddrs))
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +283,7 @@ func (rdb *RatesStorage) UpdateETHUSDPrice(blockInfo lastblockdaily.BlockInfo, e
 		$1,
 		$2, 
 		$3)
-	ON CONFLICT ON CONSTRAINT %[1]s_time_key DO UPDATE SET rate=EXCLUDED.rate;`
+	ON CONFLICT (time,block) DO UPDATE SET rate=EXCLUDED.rate;`
 	query := fmt.Sprintf(updateStmt,
 		rdb.tableNames[usdTableName],
 	)
@@ -317,14 +313,23 @@ func (rdb *RatesStorage) GetLastResolvedBlockInfo() (lastblockdaily.BlockInfo, e
 		(SELECT MAX(time) FROM %[1]s) LIMIT 1`
 	)
 	var (
-		result = lastblockdaily.BlockInfo{}
-		query  = fmt.Sprintf(selectStmt, rdb.tableNames[rateTableName])
-		logger = rdb.sugar.With("func", "accounting/reserve-rate/storage/postgres/accounting_rates_postgres.GetLastResolvedBlockInfo")
+		usdTableResult  = lastblockdaily.BlockInfo{}
+		rateTableResult = lastblockdaily.BlockInfo{}
+		logger          = rdb.sugar.With("func", "accounting/reserve-rate/storage/postgres/accounting_rates_postgres.GetLastResolvedBlockInfo")
 	)
 
-	logger.Debugw("Querrying last resolved block...", "query", query)
-	if err := rdb.db.Get(&result, query); err != nil {
-		return result, err
+	query := fmt.Sprintf(selectStmt, rdb.tableNames[rateTableName])
+	logger.Debugw("Querrying last resolved block from rates table...", "query", query)
+	if err := rdb.db.Get(&rateTableResult, query); err != nil {
+		return rateTableResult, err
 	}
-	return result, nil
+	query = fmt.Sprintf(selectStmt, rdb.tableNames[usdTableName])
+	logger.Debugw("Querrying last resolved block from usd table...", "query", query)
+	if err := rdb.db.Get(&usdTableResult, query); err != nil {
+		return usdTableResult, err
+	}
+	if usdTableResult.Timestamp.Before(rateTableResult.Timestamp) {
+		return usdTableResult, nil
+	}
+	return rateTableResult, nil
 }

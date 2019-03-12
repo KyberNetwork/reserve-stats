@@ -10,17 +10,22 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func retryGetWithdrawal(fn func(string, uint64) (huobi.WithdrawHistoryList, error), symbol string, fromID uint64, attempt int, retryDelay time.Duration) (huobi.WithdrawHistoryList, error) {
+type withdrawalHistoryFetcher func(string, uint64) (huobi.WithdrawHistoryList, error)
+
+func (fc *Fetcher) retryGetWithdrawal(fn withdrawalHistoryFetcher, symbol string, fromID uint64) (huobi.WithdrawHistoryList, error) {
 	var (
 		result huobi.WithdrawHistoryList
 		err    error
+		logger = fc.sugar.With("func", "accounting/huobi/fetcher/withdrawal-history.retryGetWithdrawal")
 	)
-	for i := 0; i < attempt; i++ {
+	for i := 0; i < fc.attempt; i++ {
 		result, err = fn(symbol, fromID)
 		if err == nil {
 			return result, nil
 		}
-		time.Sleep(retryDelay)
+		logger.Debugw("fail to fetch withdrawal history", "error", err, "attempt", i+1)
+
+		time.Sleep(fc.retryDelay)
 	}
 	return result, err
 }
@@ -31,7 +36,7 @@ func (fc *Fetcher) getWithdrawHistoryWithSymbol(symbol string, fromID uint64) ([
 		result     []huobi.WithdrawHistory
 	)
 	for {
-		tradeHistoriesResponse, err := retryGetWithdrawal(fc.client.GetWithdrawHistory, symbol, nextFromID, fc.attempt, fc.retryDelay)
+		tradeHistoriesResponse, err := fc.retryGetWithdrawal(fc.client.GetWithdrawHistory, symbol, nextFromID)
 		if err != nil {
 			return result, err
 		}

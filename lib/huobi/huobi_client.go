@@ -282,7 +282,7 @@ func (hc *Client) GetCurrencies() ([]string, error) {
 	if err != nil {
 		return reply.Data, err
 	}
-	if reply.Status != "ok" {
+	if reply.Status != StatusOK.String() {
 		return reply.Data, fmt.Errorf("unexpected reply status %s", reply.Status)
 	}
 	return reply.Data, nil

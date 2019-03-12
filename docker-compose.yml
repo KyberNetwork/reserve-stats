@@ -23,4 +23,12 @@ services:
     volumes:
       - './data/redis:/var/lib/redis/'
     ports:
-      - '127.0.0.1:6379:6379' 
+      - '127.0.0.1:6379:6379'
+  pgadmin4:
+    image: dpage/pgadmin4
+    ports:
+        - '127.0.0.1:60978:60978'
+    environment:
+        PGADMIN_LISTEN_PORT: 60978
+        PGADMIN_DEFAULT_EMAIL: postgres@localhost
+        PGADMIN_DEFAULT_PASSWORD: secret

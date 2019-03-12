@@ -3,6 +3,7 @@ package postgrestorage
 import (
 	"fmt"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/lib/pq"
 	"strings"
 
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
@@ -22,9 +23,6 @@ type TradeLogDB struct {
 	sugar                *zap.SugaredLogger
 	db                   *sqlx.DB
 	tokenAmountFormatter blockchain.TokenAmountFormatterInterface
-
-	// traded stored traded addresses to use in a single SaveTradeLogs
-	traded map[string]struct{}
 }
 
 //NewTradeLogDB create a new instance of TradeLogDB
@@ -48,7 +46,6 @@ func NewTradeLogDB(sugar *zap.SugaredLogger, db *sqlx.DB, tokenAmountFormatter b
 		sugar:                sugar,
 		db:                   db,
 		tokenAmountFormatter: tokenAmountFormatter,
-		traded:               make(map[string]struct{}),
 	}, err
 }
 
@@ -74,21 +71,108 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 	return result, nil
 }
 
+func (tldb *TradeLogDB) saveReserveAddress(tx *sqlx.Tx, reserveAddressArray []string) error {
+	var logger = tldb.sugar.With(
+		"func", "tradelogs/storage/postgrestorage/TradeLogDB.saveReserveAddress",
+	)
+	query := fmt.Sprintf(insertionAddressTemplate, "reserve")
+	logger.Debugw("updating rsv...", "query", query)
+	_, err := tx.Exec(query, pq.StringArray(reserveAddressArray))
+	return err
+}
+
+func (tldb *TradeLogDB) saveTokens(tx *sqlx.Tx, tokensArray []string) error {
+	var logger = tldb.sugar.With(
+		"func", "tradelogs/storage/postgrestorage/TradeLogDB.saveTokens",
+	)
+	query := fmt.Sprintf(insertionAddressTemplate, "token")
+	logger.Debugw("updating rsv...", "query", query)
+	_, err := tx.Exec(query, pq.StringArray(tokensArray))
+	return err
+}
+
+func (tldb *TradeLogDB) saveWallets(tx *sqlx.Tx, walletAddressArray []string) error {
+	var logger = tldb.sugar.With(
+		"func", "tradelogs/storage/postgrestorage/TradeLogDB.saveWallets",
+	)
+	query := fmt.Sprintf(insertionAddressTemplate, "wallet")
+	logger.Debugw("updating rsv...", "query", query)
+	_, err := tx.Exec(query, pq.StringArray(walletAddressArray))
+	return err
+}
+
 // SaveTradeLogs persist trade logs to DB
 func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) error {
-	logger := tldb.sugar.With(
-		"func", "tradelogs/storage/postgrestorage/TradeLogDB.SaveTradeLogs",
+	var (
+		logger = tldb.sugar.With(
+			"func", "tradelogs/storage/postgrestorage/TradeLogDB.SaveTradeLogs",
+		)
+		reserveAddress      = make(map[string]struct{})
+		reserveAddressArray []string
+		tokens              = make(map[string]struct{})
+		tokensArray         []string
+		walletAddress       = make(map[string]struct{})
+		walletAddressArray  []string
+		records             []*record
 	)
-	tx, err := tldb.db.Beginx()
-	if err != nil {
-		return err
-	}
-	defer pgsql.CommitOrRollback(tx, logger, &err)
 	for _, log := range logs {
 		r, err := tldb.recordFromTradeLog(log)
 		if err != nil {
 			return err
 		}
+		records = append(records, r)
+	}
+
+	for _, r := range records {
+		reserve := r.SrcReserveAddress
+		if _, ok := reserveAddress[reserve]; !ok {
+			reserveAddress[reserve] = struct{}{}
+			reserveAddressArray = append(reserveAddressArray, reserve)
+		}
+		reserve = r.DstReserveAddress
+		if _, ok := reserveAddress[reserve]; !ok {
+			reserveAddress[reserve] = struct{}{}
+			reserveAddressArray = append(reserveAddressArray, reserve)
+		}
+		token := r.SrcAddress
+		if _, ok := tokens[reserve]; !ok {
+			tokens[token] = struct{}{}
+			tokensArray = append(tokensArray, token)
+		}
+		token = r.DestAddress
+		if _, ok := tokens[reserve]; !ok {
+			tokens[token] = struct{}{}
+			tokensArray = append(tokensArray, token)
+		}
+		wallet := r.WalletAddress
+		if _, ok := walletAddress[wallet]; !ok {
+			walletAddress[wallet] = struct{}{}
+			walletAddressArray = append(walletAddressArray, wallet)
+		}
+	}
+
+	tx, err := tldb.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer pgsql.CommitOrRollback(tx, logger, &err)
+
+	err = tldb.saveReserveAddress(tx, reserveAddressArray)
+	if err != nil {
+		return err
+	}
+
+	err = tldb.saveTokens(tx, tokensArray)
+	if err != nil {
+		return err
+	}
+
+	err = tldb.saveWallets(tx, walletAddressArray)
+	if err != nil {
+		return err
+	}
+
+	for _, r := range records {
 		logger.Debugw("Record", "record", r)
 		_, err = tx.NamedExec(insertionUserTemplate, r)
 		if err != nil {
@@ -102,20 +186,25 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) error {
 		}
 	}
 
-	// reset traded map to avoid ever growing size
-	tldb.traded = make(map[string]struct{})
 	return err
 }
 
+const insertionAddressTemplate = `INSERT INTO %[1]s(
+	address
+) VALUES(
+	unnest($1::TEXT[])
+)
+ON CONFLICT ON CONSTRAINT %[1]s_address_key DO NOTHING`
+
 const insertionUserTemplate string = `
 INSERT INTO users(
-	user_address,
+	address,
 	timestamp
 ) VALUES (
 	:user_address,
 	:timestamp
 )
-ON CONFLICT (user_address) 
+ON CONFLICT (address) 
 DO NOTHING;`
 const insertionTradelogsTemplate string = `
 INSERT INTO tradelogs(
@@ -124,13 +213,13 @@ INSERT INTO tradelogs(
  	tx_hash,
  	eth_amount,
  	user_address_id,
- 	src_address,
- 	dest_address,
- 	src_reserveaddress,
- 	dst_reserveaddress,
+ 	src_address_id,
+ 	dest_address_id,
+ 	src_reserveaddress_id,
+ 	dst_reserveaddress_id,
  	src_amount,
  	dest_amount,
- 	wallet_address,
+ 	wallet_address_id,
  	src_burn_amount,
  	dst_burn_amount,
  	src_wallet_fee_amount,
@@ -146,14 +235,14 @@ INSERT INTO tradelogs(
  	:block_number,
  	:tx_hash,
  	:eth_amount,
- 	(SELECT id FROM users WHERE user_address=:user_address),
- 	:src_address,
- 	:dest_address,
- 	:src_reserveaddress,
- 	:dst_reserveaddress,
+ 	(SELECT id FROM users WHERE address=:user_address),
+ 	(SELECT id FROM token WHERE address=:src_address),
+ 	(SELECT id FROM token WHERE address=:dest_address),
+ 	(SELECT id FROM reserve WHERE address=:src_reserveaddress),
+ 	(SELECT id FROM reserve WHERE address=:dst_reserveaddress),
  	:src_amount,
  	:dest_amount,
- 	:wallet_address,
+ 	(SELECT id FROM wallet WHERE address=:wallet_address),
  	:src_burn_amount,
  	:dst_burn_amount,
  	:src_wallet_fee_amount,

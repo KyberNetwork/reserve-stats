@@ -2,9 +2,10 @@ package workers
 
 import (
 	"errors"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"sync"
 	"time"
+
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
@@ -66,7 +67,7 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (map[string]map[string]com
 		return nil, err
 	}
 
-	symbolResolver, err := blockchain.NewTokenSymbolFromContext(fj.c)
+	symbolResolver, err := blockchain.NewTokenInfoGetterFromContext(fj.c)
 	if err != nil {
 		return nil, err
 	}

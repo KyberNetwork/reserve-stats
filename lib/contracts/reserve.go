@@ -200,7 +200,7 @@ func (_Reserve *ReserveCallerSession) Admin() (common.Address, error) {
 
 // ApprovedWithdrawAddresses is a free data retrieval call binding the contract method 0xd7b7024d.
 //
-// Solidity: function approvedWithdrawAddresses( bytes32) constant returns(bool)
+// Solidity: function approvedWithdrawAddresses(bytes32 ) constant returns(bool)
 func (_Reserve *ReserveCaller) ApprovedWithdrawAddresses(opts *bind.CallOpts, arg0 [32]byte) (bool, error) {
 	var (
 		ret0 = new(bool)
@@ -212,14 +212,14 @@ func (_Reserve *ReserveCaller) ApprovedWithdrawAddresses(opts *bind.CallOpts, ar
 
 // ApprovedWithdrawAddresses is a free data retrieval call binding the contract method 0xd7b7024d.
 //
-// Solidity: function approvedWithdrawAddresses( bytes32) constant returns(bool)
+// Solidity: function approvedWithdrawAddresses(bytes32 ) constant returns(bool)
 func (_Reserve *ReserveSession) ApprovedWithdrawAddresses(arg0 [32]byte) (bool, error) {
 	return _Reserve.Contract.ApprovedWithdrawAddresses(&_Reserve.CallOpts, arg0)
 }
 
 // ApprovedWithdrawAddresses is a free data retrieval call binding the contract method 0xd7b7024d.
 //
-// Solidity: function approvedWithdrawAddresses( bytes32) constant returns(bool)
+// Solidity: function approvedWithdrawAddresses(bytes32 ) constant returns(bool)
 func (_Reserve *ReserveCallerSession) ApprovedWithdrawAddresses(arg0 [32]byte) (bool, error) {
 	return _Reserve.Contract.ApprovedWithdrawAddresses(&_Reserve.CallOpts, arg0)
 }
@@ -278,7 +278,7 @@ func (_Reserve *ReserveCallerSession) GetAlerters() ([]common.Address, error) {
 
 // GetBalance is a free data retrieval call binding the contract method 0xf8b2cb4f.
 //
-// Solidity: function getBalance(token address) constant returns(uint256)
+// Solidity: function getBalance(address token) constant returns(uint256)
 func (_Reserve *ReserveCaller) GetBalance(opts *bind.CallOpts, token common.Address) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -290,21 +290,21 @@ func (_Reserve *ReserveCaller) GetBalance(opts *bind.CallOpts, token common.Addr
 
 // GetBalance is a free data retrieval call binding the contract method 0xf8b2cb4f.
 //
-// Solidity: function getBalance(token address) constant returns(uint256)
+// Solidity: function getBalance(address token) constant returns(uint256)
 func (_Reserve *ReserveSession) GetBalance(token common.Address) (*big.Int, error) {
 	return _Reserve.Contract.GetBalance(&_Reserve.CallOpts, token)
 }
 
 // GetBalance is a free data retrieval call binding the contract method 0xf8b2cb4f.
 //
-// Solidity: function getBalance(token address) constant returns(uint256)
+// Solidity: function getBalance(address token) constant returns(uint256)
 func (_Reserve *ReserveCallerSession) GetBalance(token common.Address) (*big.Int, error) {
 	return _Reserve.Contract.GetBalance(&_Reserve.CallOpts, token)
 }
 
 // GetConversionRate is a free data retrieval call binding the contract method 0x7cd44272.
 //
-// Solidity: function getConversionRate(src address, dest address, srcQty uint256, blockNumber uint256) constant returns(uint256)
+// Solidity: function getConversionRate(address src, address dest, uint256 srcQty, uint256 blockNumber) constant returns(uint256)
 func (_Reserve *ReserveCaller) GetConversionRate(opts *bind.CallOpts, src common.Address, dest common.Address, srcQty *big.Int, blockNumber *big.Int) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -316,21 +316,21 @@ func (_Reserve *ReserveCaller) GetConversionRate(opts *bind.CallOpts, src common
 
 // GetConversionRate is a free data retrieval call binding the contract method 0x7cd44272.
 //
-// Solidity: function getConversionRate(src address, dest address, srcQty uint256, blockNumber uint256) constant returns(uint256)
+// Solidity: function getConversionRate(address src, address dest, uint256 srcQty, uint256 blockNumber) constant returns(uint256)
 func (_Reserve *ReserveSession) GetConversionRate(src common.Address, dest common.Address, srcQty *big.Int, blockNumber *big.Int) (*big.Int, error) {
 	return _Reserve.Contract.GetConversionRate(&_Reserve.CallOpts, src, dest, srcQty, blockNumber)
 }
 
 // GetConversionRate is a free data retrieval call binding the contract method 0x7cd44272.
 //
-// Solidity: function getConversionRate(src address, dest address, srcQty uint256, blockNumber uint256) constant returns(uint256)
+// Solidity: function getConversionRate(address src, address dest, uint256 srcQty, uint256 blockNumber) constant returns(uint256)
 func (_Reserve *ReserveCallerSession) GetConversionRate(src common.Address, dest common.Address, srcQty *big.Int, blockNumber *big.Int) (*big.Int, error) {
 	return _Reserve.Contract.GetConversionRate(&_Reserve.CallOpts, src, dest, srcQty, blockNumber)
 }
 
 // GetDestQty is a free data retrieval call binding the contract method 0xfa64dffa.
 //
-// Solidity: function getDestQty(src address, dest address, srcQty uint256, rate uint256) constant returns(uint256)
+// Solidity: function getDestQty(address src, address dest, uint256 srcQty, uint256 rate) constant returns(uint256)
 func (_Reserve *ReserveCaller) GetDestQty(opts *bind.CallOpts, src common.Address, dest common.Address, srcQty *big.Int, rate *big.Int) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -342,14 +342,14 @@ func (_Reserve *ReserveCaller) GetDestQty(opts *bind.CallOpts, src common.Addres
 
 // GetDestQty is a free data retrieval call binding the contract method 0xfa64dffa.
 //
-// Solidity: function getDestQty(src address, dest address, srcQty uint256, rate uint256) constant returns(uint256)
+// Solidity: function getDestQty(address src, address dest, uint256 srcQty, uint256 rate) constant returns(uint256)
 func (_Reserve *ReserveSession) GetDestQty(src common.Address, dest common.Address, srcQty *big.Int, rate *big.Int) (*big.Int, error) {
 	return _Reserve.Contract.GetDestQty(&_Reserve.CallOpts, src, dest, srcQty, rate)
 }
 
 // GetDestQty is a free data retrieval call binding the contract method 0xfa64dffa.
 //
-// Solidity: function getDestQty(src address, dest address, srcQty uint256, rate uint256) constant returns(uint256)
+// Solidity: function getDestQty(address src, address dest, uint256 srcQty, uint256 rate) constant returns(uint256)
 func (_Reserve *ReserveCallerSession) GetDestQty(src common.Address, dest common.Address, srcQty *big.Int, rate *big.Int) (*big.Int, error) {
 	return _Reserve.Contract.GetDestQty(&_Reserve.CallOpts, src, dest, srcQty, rate)
 }
@@ -382,7 +382,7 @@ func (_Reserve *ReserveCallerSession) GetOperators() ([]common.Address, error) {
 
 // GetSrcQty is a free data retrieval call binding the contract method 0xa7fca953.
 //
-// Solidity: function getSrcQty(src address, dest address, dstQty uint256, rate uint256) constant returns(uint256)
+// Solidity: function getSrcQty(address src, address dest, uint256 dstQty, uint256 rate) constant returns(uint256)
 func (_Reserve *ReserveCaller) GetSrcQty(opts *bind.CallOpts, src common.Address, dest common.Address, dstQty *big.Int, rate *big.Int) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -394,14 +394,14 @@ func (_Reserve *ReserveCaller) GetSrcQty(opts *bind.CallOpts, src common.Address
 
 // GetSrcQty is a free data retrieval call binding the contract method 0xa7fca953.
 //
-// Solidity: function getSrcQty(src address, dest address, dstQty uint256, rate uint256) constant returns(uint256)
+// Solidity: function getSrcQty(address src, address dest, uint256 dstQty, uint256 rate) constant returns(uint256)
 func (_Reserve *ReserveSession) GetSrcQty(src common.Address, dest common.Address, dstQty *big.Int, rate *big.Int) (*big.Int, error) {
 	return _Reserve.Contract.GetSrcQty(&_Reserve.CallOpts, src, dest, dstQty, rate)
 }
 
 // GetSrcQty is a free data retrieval call binding the contract method 0xa7fca953.
 //
-// Solidity: function getSrcQty(src address, dest address, dstQty uint256, rate uint256) constant returns(uint256)
+// Solidity: function getSrcQty(address src, address dest, uint256 dstQty, uint256 rate) constant returns(uint256)
 func (_Reserve *ReserveCallerSession) GetSrcQty(src common.Address, dest common.Address, dstQty *big.Int, rate *big.Int) (*big.Int, error) {
 	return _Reserve.Contract.GetSrcQty(&_Reserve.CallOpts, src, dest, dstQty, rate)
 }
@@ -512,63 +512,63 @@ func (_Reserve *ReserveCallerSession) TradeEnabled() (bool, error) {
 
 // AddAlerter is a paid mutator transaction binding the contract method 0x408ee7fe.
 //
-// Solidity: function addAlerter(newAlerter address) returns()
+// Solidity: function addAlerter(address newAlerter) returns()
 func (_Reserve *ReserveTransactor) AddAlerter(opts *bind.TransactOpts, newAlerter common.Address) (*types.Transaction, error) {
 	return _Reserve.contract.Transact(opts, "addAlerter", newAlerter)
 }
 
 // AddAlerter is a paid mutator transaction binding the contract method 0x408ee7fe.
 //
-// Solidity: function addAlerter(newAlerter address) returns()
+// Solidity: function addAlerter(address newAlerter) returns()
 func (_Reserve *ReserveSession) AddAlerter(newAlerter common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.AddAlerter(&_Reserve.TransactOpts, newAlerter)
 }
 
 // AddAlerter is a paid mutator transaction binding the contract method 0x408ee7fe.
 //
-// Solidity: function addAlerter(newAlerter address) returns()
+// Solidity: function addAlerter(address newAlerter) returns()
 func (_Reserve *ReserveTransactorSession) AddAlerter(newAlerter common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.AddAlerter(&_Reserve.TransactOpts, newAlerter)
 }
 
 // AddOperator is a paid mutator transaction binding the contract method 0x9870d7fe.
 //
-// Solidity: function addOperator(newOperator address) returns()
+// Solidity: function addOperator(address newOperator) returns()
 func (_Reserve *ReserveTransactor) AddOperator(opts *bind.TransactOpts, newOperator common.Address) (*types.Transaction, error) {
 	return _Reserve.contract.Transact(opts, "addOperator", newOperator)
 }
 
 // AddOperator is a paid mutator transaction binding the contract method 0x9870d7fe.
 //
-// Solidity: function addOperator(newOperator address) returns()
+// Solidity: function addOperator(address newOperator) returns()
 func (_Reserve *ReserveSession) AddOperator(newOperator common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.AddOperator(&_Reserve.TransactOpts, newOperator)
 }
 
 // AddOperator is a paid mutator transaction binding the contract method 0x9870d7fe.
 //
-// Solidity: function addOperator(newOperator address) returns()
+// Solidity: function addOperator(address newOperator) returns()
 func (_Reserve *ReserveTransactorSession) AddOperator(newOperator common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.AddOperator(&_Reserve.TransactOpts, newOperator)
 }
 
 // ApproveWithdrawAddress is a paid mutator transaction binding the contract method 0x546dc71c.
 //
-// Solidity: function approveWithdrawAddress(token address, addr address, approve bool) returns()
+// Solidity: function approveWithdrawAddress(address token, address addr, bool approve) returns()
 func (_Reserve *ReserveTransactor) ApproveWithdrawAddress(opts *bind.TransactOpts, token common.Address, addr common.Address, approve bool) (*types.Transaction, error) {
 	return _Reserve.contract.Transact(opts, "approveWithdrawAddress", token, addr, approve)
 }
 
 // ApproveWithdrawAddress is a paid mutator transaction binding the contract method 0x546dc71c.
 //
-// Solidity: function approveWithdrawAddress(token address, addr address, approve bool) returns()
+// Solidity: function approveWithdrawAddress(address token, address addr, bool approve) returns()
 func (_Reserve *ReserveSession) ApproveWithdrawAddress(token common.Address, addr common.Address, approve bool) (*types.Transaction, error) {
 	return _Reserve.Contract.ApproveWithdrawAddress(&_Reserve.TransactOpts, token, addr, approve)
 }
 
 // ApproveWithdrawAddress is a paid mutator transaction binding the contract method 0x546dc71c.
 //
-// Solidity: function approveWithdrawAddress(token address, addr address, approve bool) returns()
+// Solidity: function approveWithdrawAddress(address token, address addr, bool approve) returns()
 func (_Reserve *ReserveTransactorSession) ApproveWithdrawAddress(token common.Address, addr common.Address, approve bool) (*types.Transaction, error) {
 	return _Reserve.Contract.ApproveWithdrawAddress(&_Reserve.TransactOpts, token, addr, approve)
 }
@@ -638,189 +638,189 @@ func (_Reserve *ReserveTransactorSession) EnableTrade() (*types.Transaction, err
 
 // RemoveAlerter is a paid mutator transaction binding the contract method 0x01a12fd3.
 //
-// Solidity: function removeAlerter(alerter address) returns()
+// Solidity: function removeAlerter(address alerter) returns()
 func (_Reserve *ReserveTransactor) RemoveAlerter(opts *bind.TransactOpts, alerter common.Address) (*types.Transaction, error) {
 	return _Reserve.contract.Transact(opts, "removeAlerter", alerter)
 }
 
 // RemoveAlerter is a paid mutator transaction binding the contract method 0x01a12fd3.
 //
-// Solidity: function removeAlerter(alerter address) returns()
+// Solidity: function removeAlerter(address alerter) returns()
 func (_Reserve *ReserveSession) RemoveAlerter(alerter common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.RemoveAlerter(&_Reserve.TransactOpts, alerter)
 }
 
 // RemoveAlerter is a paid mutator transaction binding the contract method 0x01a12fd3.
 //
-// Solidity: function removeAlerter(alerter address) returns()
+// Solidity: function removeAlerter(address alerter) returns()
 func (_Reserve *ReserveTransactorSession) RemoveAlerter(alerter common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.RemoveAlerter(&_Reserve.TransactOpts, alerter)
 }
 
 // RemoveOperator is a paid mutator transaction binding the contract method 0xac8a584a.
 //
-// Solidity: function removeOperator(operator address) returns()
+// Solidity: function removeOperator(address operator) returns()
 func (_Reserve *ReserveTransactor) RemoveOperator(opts *bind.TransactOpts, operator common.Address) (*types.Transaction, error) {
 	return _Reserve.contract.Transact(opts, "removeOperator", operator)
 }
 
 // RemoveOperator is a paid mutator transaction binding the contract method 0xac8a584a.
 //
-// Solidity: function removeOperator(operator address) returns()
+// Solidity: function removeOperator(address operator) returns()
 func (_Reserve *ReserveSession) RemoveOperator(operator common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.RemoveOperator(&_Reserve.TransactOpts, operator)
 }
 
 // RemoveOperator is a paid mutator transaction binding the contract method 0xac8a584a.
 //
-// Solidity: function removeOperator(operator address) returns()
+// Solidity: function removeOperator(address operator) returns()
 func (_Reserve *ReserveTransactorSession) RemoveOperator(operator common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.RemoveOperator(&_Reserve.TransactOpts, operator)
 }
 
 // SetContracts is a paid mutator transaction binding the contract method 0xb3066d49.
 //
-// Solidity: function setContracts(_kyberNetwork address, _conversionRates address, _sanityRates address) returns()
+// Solidity: function setContracts(address _kyberNetwork, address _conversionRates, address _sanityRates) returns()
 func (_Reserve *ReserveTransactor) SetContracts(opts *bind.TransactOpts, _kyberNetwork common.Address, _conversionRates common.Address, _sanityRates common.Address) (*types.Transaction, error) {
 	return _Reserve.contract.Transact(opts, "setContracts", _kyberNetwork, _conversionRates, _sanityRates)
 }
 
 // SetContracts is a paid mutator transaction binding the contract method 0xb3066d49.
 //
-// Solidity: function setContracts(_kyberNetwork address, _conversionRates address, _sanityRates address) returns()
+// Solidity: function setContracts(address _kyberNetwork, address _conversionRates, address _sanityRates) returns()
 func (_Reserve *ReserveSession) SetContracts(_kyberNetwork common.Address, _conversionRates common.Address, _sanityRates common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.SetContracts(&_Reserve.TransactOpts, _kyberNetwork, _conversionRates, _sanityRates)
 }
 
 // SetContracts is a paid mutator transaction binding the contract method 0xb3066d49.
 //
-// Solidity: function setContracts(_kyberNetwork address, _conversionRates address, _sanityRates address) returns()
+// Solidity: function setContracts(address _kyberNetwork, address _conversionRates, address _sanityRates) returns()
 func (_Reserve *ReserveTransactorSession) SetContracts(_kyberNetwork common.Address, _conversionRates common.Address, _sanityRates common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.SetContracts(&_Reserve.TransactOpts, _kyberNetwork, _conversionRates, _sanityRates)
 }
 
 // Trade is a paid mutator transaction binding the contract method 0x6cf69811.
 //
-// Solidity: function trade(srcToken address, srcAmount uint256, destToken address, destAddress address, conversionRate uint256, validate bool) returns(bool)
+// Solidity: function trade(address srcToken, uint256 srcAmount, address destToken, address destAddress, uint256 conversionRate, bool validate) returns(bool)
 func (_Reserve *ReserveTransactor) Trade(opts *bind.TransactOpts, srcToken common.Address, srcAmount *big.Int, destToken common.Address, destAddress common.Address, conversionRate *big.Int, validate bool) (*types.Transaction, error) {
 	return _Reserve.contract.Transact(opts, "trade", srcToken, srcAmount, destToken, destAddress, conversionRate, validate)
 }
 
 // Trade is a paid mutator transaction binding the contract method 0x6cf69811.
 //
-// Solidity: function trade(srcToken address, srcAmount uint256, destToken address, destAddress address, conversionRate uint256, validate bool) returns(bool)
+// Solidity: function trade(address srcToken, uint256 srcAmount, address destToken, address destAddress, uint256 conversionRate, bool validate) returns(bool)
 func (_Reserve *ReserveSession) Trade(srcToken common.Address, srcAmount *big.Int, destToken common.Address, destAddress common.Address, conversionRate *big.Int, validate bool) (*types.Transaction, error) {
 	return _Reserve.Contract.Trade(&_Reserve.TransactOpts, srcToken, srcAmount, destToken, destAddress, conversionRate, validate)
 }
 
 // Trade is a paid mutator transaction binding the contract method 0x6cf69811.
 //
-// Solidity: function trade(srcToken address, srcAmount uint256, destToken address, destAddress address, conversionRate uint256, validate bool) returns(bool)
+// Solidity: function trade(address srcToken, uint256 srcAmount, address destToken, address destAddress, uint256 conversionRate, bool validate) returns(bool)
 func (_Reserve *ReserveTransactorSession) Trade(srcToken common.Address, srcAmount *big.Int, destToken common.Address, destAddress common.Address, conversionRate *big.Int, validate bool) (*types.Transaction, error) {
 	return _Reserve.Contract.Trade(&_Reserve.TransactOpts, srcToken, srcAmount, destToken, destAddress, conversionRate, validate)
 }
 
 // TransferAdmin is a paid mutator transaction binding the contract method 0x75829def.
 //
-// Solidity: function transferAdmin(newAdmin address) returns()
+// Solidity: function transferAdmin(address newAdmin) returns()
 func (_Reserve *ReserveTransactor) TransferAdmin(opts *bind.TransactOpts, newAdmin common.Address) (*types.Transaction, error) {
 	return _Reserve.contract.Transact(opts, "transferAdmin", newAdmin)
 }
 
 // TransferAdmin is a paid mutator transaction binding the contract method 0x75829def.
 //
-// Solidity: function transferAdmin(newAdmin address) returns()
+// Solidity: function transferAdmin(address newAdmin) returns()
 func (_Reserve *ReserveSession) TransferAdmin(newAdmin common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.TransferAdmin(&_Reserve.TransactOpts, newAdmin)
 }
 
 // TransferAdmin is a paid mutator transaction binding the contract method 0x75829def.
 //
-// Solidity: function transferAdmin(newAdmin address) returns()
+// Solidity: function transferAdmin(address newAdmin) returns()
 func (_Reserve *ReserveTransactorSession) TransferAdmin(newAdmin common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.TransferAdmin(&_Reserve.TransactOpts, newAdmin)
 }
 
 // TransferAdminQuickly is a paid mutator transaction binding the contract method 0x7acc8678.
 //
-// Solidity: function transferAdminQuickly(newAdmin address) returns()
+// Solidity: function transferAdminQuickly(address newAdmin) returns()
 func (_Reserve *ReserveTransactor) TransferAdminQuickly(opts *bind.TransactOpts, newAdmin common.Address) (*types.Transaction, error) {
 	return _Reserve.contract.Transact(opts, "transferAdminQuickly", newAdmin)
 }
 
 // TransferAdminQuickly is a paid mutator transaction binding the contract method 0x7acc8678.
 //
-// Solidity: function transferAdminQuickly(newAdmin address) returns()
+// Solidity: function transferAdminQuickly(address newAdmin) returns()
 func (_Reserve *ReserveSession) TransferAdminQuickly(newAdmin common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.TransferAdminQuickly(&_Reserve.TransactOpts, newAdmin)
 }
 
 // TransferAdminQuickly is a paid mutator transaction binding the contract method 0x7acc8678.
 //
-// Solidity: function transferAdminQuickly(newAdmin address) returns()
+// Solidity: function transferAdminQuickly(address newAdmin) returns()
 func (_Reserve *ReserveTransactorSession) TransferAdminQuickly(newAdmin common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.TransferAdminQuickly(&_Reserve.TransactOpts, newAdmin)
 }
 
 // Withdraw is a paid mutator transaction binding the contract method 0x69328dec.
 //
-// Solidity: function withdraw(token address, amount uint256, destination address) returns(bool)
+// Solidity: function withdraw(address token, uint256 amount, address destination) returns(bool)
 func (_Reserve *ReserveTransactor) Withdraw(opts *bind.TransactOpts, token common.Address, amount *big.Int, destination common.Address) (*types.Transaction, error) {
 	return _Reserve.contract.Transact(opts, "withdraw", token, amount, destination)
 }
 
 // Withdraw is a paid mutator transaction binding the contract method 0x69328dec.
 //
-// Solidity: function withdraw(token address, amount uint256, destination address) returns(bool)
+// Solidity: function withdraw(address token, uint256 amount, address destination) returns(bool)
 func (_Reserve *ReserveSession) Withdraw(token common.Address, amount *big.Int, destination common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.Withdraw(&_Reserve.TransactOpts, token, amount, destination)
 }
 
 // Withdraw is a paid mutator transaction binding the contract method 0x69328dec.
 //
-// Solidity: function withdraw(token address, amount uint256, destination address) returns(bool)
+// Solidity: function withdraw(address token, uint256 amount, address destination) returns(bool)
 func (_Reserve *ReserveTransactorSession) Withdraw(token common.Address, amount *big.Int, destination common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.Withdraw(&_Reserve.TransactOpts, token, amount, destination)
 }
 
 // WithdrawEther is a paid mutator transaction binding the contract method 0xce56c454.
 //
-// Solidity: function withdrawEther(amount uint256, sendTo address) returns()
+// Solidity: function withdrawEther(uint256 amount, address sendTo) returns()
 func (_Reserve *ReserveTransactor) WithdrawEther(opts *bind.TransactOpts, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _Reserve.contract.Transact(opts, "withdrawEther", amount, sendTo)
 }
 
 // WithdrawEther is a paid mutator transaction binding the contract method 0xce56c454.
 //
-// Solidity: function withdrawEther(amount uint256, sendTo address) returns()
+// Solidity: function withdrawEther(uint256 amount, address sendTo) returns()
 func (_Reserve *ReserveSession) WithdrawEther(amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.WithdrawEther(&_Reserve.TransactOpts, amount, sendTo)
 }
 
 // WithdrawEther is a paid mutator transaction binding the contract method 0xce56c454.
 //
-// Solidity: function withdrawEther(amount uint256, sendTo address) returns()
+// Solidity: function withdrawEther(uint256 amount, address sendTo) returns()
 func (_Reserve *ReserveTransactorSession) WithdrawEther(amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.WithdrawEther(&_Reserve.TransactOpts, amount, sendTo)
 }
 
 // WithdrawToken is a paid mutator transaction binding the contract method 0x3ccdbb28.
 //
-// Solidity: function withdrawToken(token address, amount uint256, sendTo address) returns()
+// Solidity: function withdrawToken(address token, uint256 amount, address sendTo) returns()
 func (_Reserve *ReserveTransactor) WithdrawToken(opts *bind.TransactOpts, token common.Address, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _Reserve.contract.Transact(opts, "withdrawToken", token, amount, sendTo)
 }
 
 // WithdrawToken is a paid mutator transaction binding the contract method 0x3ccdbb28.
 //
-// Solidity: function withdrawToken(token address, amount uint256, sendTo address) returns()
+// Solidity: function withdrawToken(address token, uint256 amount, address sendTo) returns()
 func (_Reserve *ReserveSession) WithdrawToken(token common.Address, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.WithdrawToken(&_Reserve.TransactOpts, token, amount, sendTo)
 }
 
 // WithdrawToken is a paid mutator transaction binding the contract method 0x3ccdbb28.
 //
-// Solidity: function withdrawToken(token address, amount uint256, sendTo address) returns()
+// Solidity: function withdrawToken(address token, uint256 amount, address sendTo) returns()
 func (_Reserve *ReserveTransactorSession) WithdrawToken(token common.Address, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.WithdrawToken(&_Reserve.TransactOpts, token, amount, sendTo)
 }
@@ -901,7 +901,7 @@ type ReserveAdminClaimed struct {
 
 // FilterAdminClaimed is a free log retrieval operation binding the contract event 0x65da1cfc2c2e81576ad96afb24a581f8e109b7a403b35cbd3243a1c99efdb9ed.
 //
-// Solidity: e AdminClaimed(newAdmin address, previousAdmin address)
+// Solidity: event AdminClaimed(address newAdmin, address previousAdmin)
 func (_Reserve *ReserveFilterer) FilterAdminClaimed(opts *bind.FilterOpts) (*ReserveAdminClaimedIterator, error) {
 
 	logs, sub, err := _Reserve.contract.FilterLogs(opts, "AdminClaimed")
@@ -913,7 +913,7 @@ func (_Reserve *ReserveFilterer) FilterAdminClaimed(opts *bind.FilterOpts) (*Res
 
 // WatchAdminClaimed is a free log subscription operation binding the contract event 0x65da1cfc2c2e81576ad96afb24a581f8e109b7a403b35cbd3243a1c99efdb9ed.
 //
-// Solidity: e AdminClaimed(newAdmin address, previousAdmin address)
+// Solidity: event AdminClaimed(address newAdmin, address previousAdmin)
 func (_Reserve *ReserveFilterer) WatchAdminClaimed(opts *bind.WatchOpts, sink chan<- *ReserveAdminClaimed) (event.Subscription, error) {
 
 	logs, sub, err := _Reserve.contract.WatchLogs(opts, "AdminClaimed")
@@ -1024,7 +1024,7 @@ type ReserveAlerterAdded struct {
 
 // FilterAlerterAdded is a free log retrieval operation binding the contract event 0x5611bf3e417d124f97bf2c788843ea8bb502b66079fbee02158ef30b172cb762.
 //
-// Solidity: e AlerterAdded(newAlerter address, isAdd bool)
+// Solidity: event AlerterAdded(address newAlerter, bool isAdd)
 func (_Reserve *ReserveFilterer) FilterAlerterAdded(opts *bind.FilterOpts) (*ReserveAlerterAddedIterator, error) {
 
 	logs, sub, err := _Reserve.contract.FilterLogs(opts, "AlerterAdded")
@@ -1036,7 +1036,7 @@ func (_Reserve *ReserveFilterer) FilterAlerterAdded(opts *bind.FilterOpts) (*Res
 
 // WatchAlerterAdded is a free log subscription operation binding the contract event 0x5611bf3e417d124f97bf2c788843ea8bb502b66079fbee02158ef30b172cb762.
 //
-// Solidity: e AlerterAdded(newAlerter address, isAdd bool)
+// Solidity: event AlerterAdded(address newAlerter, bool isAdd)
 func (_Reserve *ReserveFilterer) WatchAlerterAdded(opts *bind.WatchOpts, sink chan<- *ReserveAlerterAdded) (event.Subscription, error) {
 
 	logs, sub, err := _Reserve.contract.WatchLogs(opts, "AlerterAdded")
@@ -1147,7 +1147,7 @@ type ReserveDepositToken struct {
 
 // FilterDepositToken is a free log retrieval operation binding the contract event 0x2d0c0a8842b9944ece1495eb61121621b5e36bd6af3bba0318c695f525aef79f.
 //
-// Solidity: e DepositToken(token address, amount uint256)
+// Solidity: event DepositToken(address token, uint256 amount)
 func (_Reserve *ReserveFilterer) FilterDepositToken(opts *bind.FilterOpts) (*ReserveDepositTokenIterator, error) {
 
 	logs, sub, err := _Reserve.contract.FilterLogs(opts, "DepositToken")
@@ -1159,7 +1159,7 @@ func (_Reserve *ReserveFilterer) FilterDepositToken(opts *bind.FilterOpts) (*Res
 
 // WatchDepositToken is a free log subscription operation binding the contract event 0x2d0c0a8842b9944ece1495eb61121621b5e36bd6af3bba0318c695f525aef79f.
 //
-// Solidity: e DepositToken(token address, amount uint256)
+// Solidity: event DepositToken(address token, uint256 amount)
 func (_Reserve *ReserveFilterer) WatchDepositToken(opts *bind.WatchOpts, sink chan<- *ReserveDepositToken) (event.Subscription, error) {
 
 	logs, sub, err := _Reserve.contract.WatchLogs(opts, "DepositToken")
@@ -1270,7 +1270,7 @@ type ReserveEtherWithdraw struct {
 
 // FilterEtherWithdraw is a free log retrieval operation binding the contract event 0xec47e7ed86c86774d1a72c19f35c639911393fe7c1a34031fdbd260890da90de.
 //
-// Solidity: e EtherWithdraw(amount uint256, sendTo address)
+// Solidity: event EtherWithdraw(uint256 amount, address sendTo)
 func (_Reserve *ReserveFilterer) FilterEtherWithdraw(opts *bind.FilterOpts) (*ReserveEtherWithdrawIterator, error) {
 
 	logs, sub, err := _Reserve.contract.FilterLogs(opts, "EtherWithdraw")
@@ -1282,7 +1282,7 @@ func (_Reserve *ReserveFilterer) FilterEtherWithdraw(opts *bind.FilterOpts) (*Re
 
 // WatchEtherWithdraw is a free log subscription operation binding the contract event 0xec47e7ed86c86774d1a72c19f35c639911393fe7c1a34031fdbd260890da90de.
 //
-// Solidity: e EtherWithdraw(amount uint256, sendTo address)
+// Solidity: event EtherWithdraw(uint256 amount, address sendTo)
 func (_Reserve *ReserveFilterer) WatchEtherWithdraw(opts *bind.WatchOpts, sink chan<- *ReserveEtherWithdraw) (event.Subscription, error) {
 
 	logs, sub, err := _Reserve.contract.WatchLogs(opts, "EtherWithdraw")
@@ -1393,7 +1393,7 @@ type ReserveOperatorAdded struct {
 
 // FilterOperatorAdded is a free log retrieval operation binding the contract event 0x091a7a4b85135fdd7e8dbc18b12fabe5cc191ea867aa3c2e1a24a102af61d58b.
 //
-// Solidity: e OperatorAdded(newOperator address, isAdd bool)
+// Solidity: event OperatorAdded(address newOperator, bool isAdd)
 func (_Reserve *ReserveFilterer) FilterOperatorAdded(opts *bind.FilterOpts) (*ReserveOperatorAddedIterator, error) {
 
 	logs, sub, err := _Reserve.contract.FilterLogs(opts, "OperatorAdded")
@@ -1405,7 +1405,7 @@ func (_Reserve *ReserveFilterer) FilterOperatorAdded(opts *bind.FilterOpts) (*Re
 
 // WatchOperatorAdded is a free log subscription operation binding the contract event 0x091a7a4b85135fdd7e8dbc18b12fabe5cc191ea867aa3c2e1a24a102af61d58b.
 //
-// Solidity: e OperatorAdded(newOperator address, isAdd bool)
+// Solidity: event OperatorAdded(address newOperator, bool isAdd)
 func (_Reserve *ReserveFilterer) WatchOperatorAdded(opts *bind.WatchOpts, sink chan<- *ReserveOperatorAdded) (event.Subscription, error) {
 
 	logs, sub, err := _Reserve.contract.WatchLogs(opts, "OperatorAdded")
@@ -1517,7 +1517,7 @@ type ReserveSetContractAddresses struct {
 
 // FilterSetContractAddresses is a free log retrieval operation binding the contract event 0x7a85322644a4462d8ff5482d2a841a4d231f8cfb3c9f4a50f66f8b2bd568c31c.
 //
-// Solidity: e SetContractAddresses(network address, rate address, sanity address)
+// Solidity: event SetContractAddresses(address network, address rate, address sanity)
 func (_Reserve *ReserveFilterer) FilterSetContractAddresses(opts *bind.FilterOpts) (*ReserveSetContractAddressesIterator, error) {
 
 	logs, sub, err := _Reserve.contract.FilterLogs(opts, "SetContractAddresses")
@@ -1529,7 +1529,7 @@ func (_Reserve *ReserveFilterer) FilterSetContractAddresses(opts *bind.FilterOpt
 
 // WatchSetContractAddresses is a free log subscription operation binding the contract event 0x7a85322644a4462d8ff5482d2a841a4d231f8cfb3c9f4a50f66f8b2bd568c31c.
 //
-// Solidity: e SetContractAddresses(network address, rate address, sanity address)
+// Solidity: event SetContractAddresses(address network, address rate, address sanity)
 func (_Reserve *ReserveFilterer) WatchSetContractAddresses(opts *bind.WatchOpts, sink chan<- *ReserveSetContractAddresses) (event.Subscription, error) {
 
 	logs, sub, err := _Reserve.contract.WatchLogs(opts, "SetContractAddresses")
@@ -1641,7 +1641,7 @@ type ReserveTokenWithdraw struct {
 
 // FilterTokenWithdraw is a free log retrieval operation binding the contract event 0x72cb8a894ddb372ceec3d2a7648d86f17d5a15caae0e986c53109b8a9a9385e6.
 //
-// Solidity: e TokenWithdraw(token address, amount uint256, sendTo address)
+// Solidity: event TokenWithdraw(address token, uint256 amount, address sendTo)
 func (_Reserve *ReserveFilterer) FilterTokenWithdraw(opts *bind.FilterOpts) (*ReserveTokenWithdrawIterator, error) {
 
 	logs, sub, err := _Reserve.contract.FilterLogs(opts, "TokenWithdraw")
@@ -1653,7 +1653,7 @@ func (_Reserve *ReserveFilterer) FilterTokenWithdraw(opts *bind.FilterOpts) (*Re
 
 // WatchTokenWithdraw is a free log subscription operation binding the contract event 0x72cb8a894ddb372ceec3d2a7648d86f17d5a15caae0e986c53109b8a9a9385e6.
 //
-// Solidity: e TokenWithdraw(token address, amount uint256, sendTo address)
+// Solidity: event TokenWithdraw(address token, uint256 amount, address sendTo)
 func (_Reserve *ReserveFilterer) WatchTokenWithdraw(opts *bind.WatchOpts, sink chan<- *ReserveTokenWithdraw) (event.Subscription, error) {
 
 	logs, sub, err := _Reserve.contract.WatchLogs(opts, "TokenWithdraw")
@@ -1763,7 +1763,7 @@ type ReserveTradeEnabled struct {
 
 // FilterTradeEnabled is a free log retrieval operation binding the contract event 0x7d7f00509dd73ac4449f698ae75ccc797895eff5fa9d446d3df387598a26e735.
 //
-// Solidity: e TradeEnabled(enable bool)
+// Solidity: event TradeEnabled(bool enable)
 func (_Reserve *ReserveFilterer) FilterTradeEnabled(opts *bind.FilterOpts) (*ReserveTradeEnabledIterator, error) {
 
 	logs, sub, err := _Reserve.contract.FilterLogs(opts, "TradeEnabled")
@@ -1775,7 +1775,7 @@ func (_Reserve *ReserveFilterer) FilterTradeEnabled(opts *bind.FilterOpts) (*Res
 
 // WatchTradeEnabled is a free log subscription operation binding the contract event 0x7d7f00509dd73ac4449f698ae75ccc797895eff5fa9d446d3df387598a26e735.
 //
-// Solidity: e TradeEnabled(enable bool)
+// Solidity: event TradeEnabled(bool enable)
 func (_Reserve *ReserveFilterer) WatchTradeEnabled(opts *bind.WatchOpts, sink chan<- *ReserveTradeEnabled) (event.Subscription, error) {
 
 	logs, sub, err := _Reserve.contract.WatchLogs(opts, "TradeEnabled")
@@ -1890,7 +1890,7 @@ type ReserveTradeExecute struct {
 
 // FilterTradeExecute is a free log retrieval operation binding the contract event 0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de.
 //
-// Solidity: e TradeExecute(origin indexed address, src address, srcAmount uint256, destToken address, destAmount uint256, destAddress address)
+// Solidity: event TradeExecute(address indexed origin, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
 func (_Reserve *ReserveFilterer) FilterTradeExecute(opts *bind.FilterOpts, origin []common.Address) (*ReserveTradeExecuteIterator, error) {
 
 	var originRule []interface{}
@@ -1907,7 +1907,7 @@ func (_Reserve *ReserveFilterer) FilterTradeExecute(opts *bind.FilterOpts, origi
 
 // WatchTradeExecute is a free log subscription operation binding the contract event 0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de.
 //
-// Solidity: e TradeExecute(origin indexed address, src address, srcAmount uint256, destToken address, destAmount uint256, destAddress address)
+// Solidity: event TradeExecute(address indexed origin, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
 func (_Reserve *ReserveFilterer) WatchTradeExecute(opts *bind.WatchOpts, sink chan<- *ReserveTradeExecute, origin []common.Address) (event.Subscription, error) {
 
 	var originRule []interface{}
@@ -2022,7 +2022,7 @@ type ReserveTransferAdminPending struct {
 
 // FilterTransferAdminPending is a free log retrieval operation binding the contract event 0x3b81caf78fa51ecbc8acb482fd7012a277b428d9b80f9d156e8a54107496cc40.
 //
-// Solidity: e TransferAdminPending(pendingAdmin address)
+// Solidity: event TransferAdminPending(address pendingAdmin)
 func (_Reserve *ReserveFilterer) FilterTransferAdminPending(opts *bind.FilterOpts) (*ReserveTransferAdminPendingIterator, error) {
 
 	logs, sub, err := _Reserve.contract.FilterLogs(opts, "TransferAdminPending")
@@ -2034,7 +2034,7 @@ func (_Reserve *ReserveFilterer) FilterTransferAdminPending(opts *bind.FilterOpt
 
 // WatchTransferAdminPending is a free log subscription operation binding the contract event 0x3b81caf78fa51ecbc8acb482fd7012a277b428d9b80f9d156e8a54107496cc40.
 //
-// Solidity: e TransferAdminPending(pendingAdmin address)
+// Solidity: event TransferAdminPending(address pendingAdmin)
 func (_Reserve *ReserveFilterer) WatchTransferAdminPending(opts *bind.WatchOpts, sink chan<- *ReserveTransferAdminPending) (event.Subscription, error) {
 
 	logs, sub, err := _Reserve.contract.WatchLogs(opts, "TransferAdminPending")
@@ -2146,7 +2146,7 @@ type ReserveWithdrawAddressApproved struct {
 
 // FilterWithdrawAddressApproved is a free log retrieval operation binding the contract event 0xd5fd5351efae1f4bb760079da9f0ff9589e2c3e216337ca9d39cdff573b245c4.
 //
-// Solidity: e WithdrawAddressApproved(token address, addr address, approve bool)
+// Solidity: event WithdrawAddressApproved(address token, address addr, bool approve)
 func (_Reserve *ReserveFilterer) FilterWithdrawAddressApproved(opts *bind.FilterOpts) (*ReserveWithdrawAddressApprovedIterator, error) {
 
 	logs, sub, err := _Reserve.contract.FilterLogs(opts, "WithdrawAddressApproved")
@@ -2158,7 +2158,7 @@ func (_Reserve *ReserveFilterer) FilterWithdrawAddressApproved(opts *bind.Filter
 
 // WatchWithdrawAddressApproved is a free log subscription operation binding the contract event 0xd5fd5351efae1f4bb760079da9f0ff9589e2c3e216337ca9d39cdff573b245c4.
 //
-// Solidity: e WithdrawAddressApproved(token address, addr address, approve bool)
+// Solidity: event WithdrawAddressApproved(address token, address addr, bool approve)
 func (_Reserve *ReserveFilterer) WatchWithdrawAddressApproved(opts *bind.WatchOpts, sink chan<- *ReserveWithdrawAddressApproved) (event.Subscription, error) {
 
 	logs, sub, err := _Reserve.contract.WatchLogs(opts, "WithdrawAddressApproved")
@@ -2270,7 +2270,7 @@ type ReserveWithdrawFunds struct {
 
 // FilterWithdrawFunds is a free log retrieval operation binding the contract event 0xb67719fc33c1f17d31bf3a698690d62066b1e0bae28fcd3c56cf2c015c2863d6.
 //
-// Solidity: e WithdrawFunds(token address, amount uint256, destination address)
+// Solidity: event WithdrawFunds(address token, uint256 amount, address destination)
 func (_Reserve *ReserveFilterer) FilterWithdrawFunds(opts *bind.FilterOpts) (*ReserveWithdrawFundsIterator, error) {
 
 	logs, sub, err := _Reserve.contract.FilterLogs(opts, "WithdrawFunds")
@@ -2282,7 +2282,7 @@ func (_Reserve *ReserveFilterer) FilterWithdrawFunds(opts *bind.FilterOpts) (*Re
 
 // WatchWithdrawFunds is a free log subscription operation binding the contract event 0xb67719fc33c1f17d31bf3a698690d62066b1e0bae28fcd3c56cf2c015c2863d6.
 //
-// Solidity: e WithdrawFunds(token address, amount uint256, destination address)
+// Solidity: event WithdrawFunds(address token, uint256 amount, address destination)
 func (_Reserve *ReserveFilterer) WatchWithdrawFunds(opts *bind.WatchOpts, sink chan<- *ReserveWithdrawFunds) (event.Subscription, error) {
 
 	logs, sub, err := _Reserve.contract.WatchLogs(opts, "WithdrawFunds")

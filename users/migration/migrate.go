@@ -8,6 +8,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/boltutil"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
+
 	// "github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/boltdb/bolt"
 	"github.com/jmoiron/sqlx"

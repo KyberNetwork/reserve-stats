@@ -174,7 +174,7 @@ func (_Wrapper *WrapperTransactorRaw) Transact(opts *bind.TransactOpts, method s
 
 // GetBalances is a free data retrieval call binding the contract method 0x6a385ae9.
 //
-// Solidity: function getBalances(reserve address, tokens address[]) constant returns(uint256[])
+// Solidity: function getBalances(address reserve, address[] tokens) constant returns(uint256[])
 func (_Wrapper *WrapperCaller) GetBalances(opts *bind.CallOpts, reserve common.Address, tokens []common.Address) ([]*big.Int, error) {
 	var (
 		ret0 = new([]*big.Int)
@@ -186,21 +186,21 @@ func (_Wrapper *WrapperCaller) GetBalances(opts *bind.CallOpts, reserve common.A
 
 // GetBalances is a free data retrieval call binding the contract method 0x6a385ae9.
 //
-// Solidity: function getBalances(reserve address, tokens address[]) constant returns(uint256[])
+// Solidity: function getBalances(address reserve, address[] tokens) constant returns(uint256[])
 func (_Wrapper *WrapperSession) GetBalances(reserve common.Address, tokens []common.Address) ([]*big.Int, error) {
 	return _Wrapper.Contract.GetBalances(&_Wrapper.CallOpts, reserve, tokens)
 }
 
 // GetBalances is a free data retrieval call binding the contract method 0x6a385ae9.
 //
-// Solidity: function getBalances(reserve address, tokens address[]) constant returns(uint256[])
+// Solidity: function getBalances(address reserve, address[] tokens) constant returns(uint256[])
 func (_Wrapper *WrapperCallerSession) GetBalances(reserve common.Address, tokens []common.Address) ([]*big.Int, error) {
 	return _Wrapper.Contract.GetBalances(&_Wrapper.CallOpts, reserve, tokens)
 }
 
 // GetByteFromBytes14 is a free data retrieval call binding the contract method 0xa609f034.
 //
-// Solidity: function getByteFromBytes14(x bytes14, byteInd uint256) constant returns(bytes1)
+// Solidity: function getByteFromBytes14(bytes14 x, uint256 byteInd) constant returns(bytes1)
 func (_Wrapper *WrapperCaller) GetByteFromBytes14(opts *bind.CallOpts, x [14]byte, byteInd *big.Int) ([1]byte, error) {
 	var (
 		ret0 = new([1]byte)
@@ -212,21 +212,21 @@ func (_Wrapper *WrapperCaller) GetByteFromBytes14(opts *bind.CallOpts, x [14]byt
 
 // GetByteFromBytes14 is a free data retrieval call binding the contract method 0xa609f034.
 //
-// Solidity: function getByteFromBytes14(x bytes14, byteInd uint256) constant returns(bytes1)
+// Solidity: function getByteFromBytes14(bytes14 x, uint256 byteInd) constant returns(bytes1)
 func (_Wrapper *WrapperSession) GetByteFromBytes14(x [14]byte, byteInd *big.Int) ([1]byte, error) {
 	return _Wrapper.Contract.GetByteFromBytes14(&_Wrapper.CallOpts, x, byteInd)
 }
 
 // GetByteFromBytes14 is a free data retrieval call binding the contract method 0xa609f034.
 //
-// Solidity: function getByteFromBytes14(x bytes14, byteInd uint256) constant returns(bytes1)
+// Solidity: function getByteFromBytes14(bytes14 x, uint256 byteInd) constant returns(bytes1)
 func (_Wrapper *WrapperCallerSession) GetByteFromBytes14(x [14]byte, byteInd *big.Int) ([1]byte, error) {
 	return _Wrapper.Contract.GetByteFromBytes14(&_Wrapper.CallOpts, x, byteInd)
 }
 
 // GetExpectedRates is a free data retrieval call binding the contract method 0xf1838fe4.
 //
-// Solidity: function getExpectedRates(network address, srcs address[], dests address[], qty uint256[]) constant returns(uint256[], uint256[])
+// Solidity: function getExpectedRates(address network, address[] srcs, address[] dests, uint256[] qty) constant returns(uint256[], uint256[])
 func (_Wrapper *WrapperCaller) GetExpectedRates(opts *bind.CallOpts, network common.Address, srcs []common.Address, dests []common.Address, qty []*big.Int) ([]*big.Int, []*big.Int, error) {
 	var (
 		ret0 = new([]*big.Int)
@@ -242,21 +242,21 @@ func (_Wrapper *WrapperCaller) GetExpectedRates(opts *bind.CallOpts, network com
 
 // GetExpectedRates is a free data retrieval call binding the contract method 0xf1838fe4.
 //
-// Solidity: function getExpectedRates(network address, srcs address[], dests address[], qty uint256[]) constant returns(uint256[], uint256[])
+// Solidity: function getExpectedRates(address network, address[] srcs, address[] dests, uint256[] qty) constant returns(uint256[], uint256[])
 func (_Wrapper *WrapperSession) GetExpectedRates(network common.Address, srcs []common.Address, dests []common.Address, qty []*big.Int) ([]*big.Int, []*big.Int, error) {
 	return _Wrapper.Contract.GetExpectedRates(&_Wrapper.CallOpts, network, srcs, dests, qty)
 }
 
 // GetExpectedRates is a free data retrieval call binding the contract method 0xf1838fe4.
 //
-// Solidity: function getExpectedRates(network address, srcs address[], dests address[], qty uint256[]) constant returns(uint256[], uint256[])
+// Solidity: function getExpectedRates(address network, address[] srcs, address[] dests, uint256[] qty) constant returns(uint256[], uint256[])
 func (_Wrapper *WrapperCallerSession) GetExpectedRates(network common.Address, srcs []common.Address, dests []common.Address, qty []*big.Int) ([]*big.Int, []*big.Int, error) {
 	return _Wrapper.Contract.GetExpectedRates(&_Wrapper.CallOpts, network, srcs, dests, qty)
 }
 
 // GetInt8FromByte is a free data retrieval call binding the contract method 0x67c33c80.
 //
-// Solidity: function getInt8FromByte(x bytes14, byteInd uint256) constant returns(int8)
+// Solidity: function getInt8FromByte(bytes14 x, uint256 byteInd) constant returns(int8)
 func (_Wrapper *WrapperCaller) GetInt8FromByte(opts *bind.CallOpts, x [14]byte, byteInd *big.Int) (int8, error) {
 	var (
 		ret0 = new(int8)
@@ -268,21 +268,21 @@ func (_Wrapper *WrapperCaller) GetInt8FromByte(opts *bind.CallOpts, x [14]byte, 
 
 // GetInt8FromByte is a free data retrieval call binding the contract method 0x67c33c80.
 //
-// Solidity: function getInt8FromByte(x bytes14, byteInd uint256) constant returns(int8)
+// Solidity: function getInt8FromByte(bytes14 x, uint256 byteInd) constant returns(int8)
 func (_Wrapper *WrapperSession) GetInt8FromByte(x [14]byte, byteInd *big.Int) (int8, error) {
 	return _Wrapper.Contract.GetInt8FromByte(&_Wrapper.CallOpts, x, byteInd)
 }
 
 // GetInt8FromByte is a free data retrieval call binding the contract method 0x67c33c80.
 //
-// Solidity: function getInt8FromByte(x bytes14, byteInd uint256) constant returns(int8)
+// Solidity: function getInt8FromByte(bytes14 x, uint256 byteInd) constant returns(int8)
 func (_Wrapper *WrapperCallerSession) GetInt8FromByte(x [14]byte, byteInd *big.Int) (int8, error) {
 	return _Wrapper.Contract.GetInt8FromByte(&_Wrapper.CallOpts, x, byteInd)
 }
 
 // GetReserveRate is a free data retrieval call binding the contract method 0x91eb1c69.
 //
-// Solidity: function getReserveRate(reserve address, srcs address[], dests address[]) constant returns(uint256[], uint256[])
+// Solidity: function getReserveRate(address reserve, address[] srcs, address[] dests) constant returns(uint256[], uint256[])
 func (_Wrapper *WrapperCaller) GetReserveRate(opts *bind.CallOpts, reserve common.Address, srcs []common.Address, dests []common.Address) ([]*big.Int, []*big.Int, error) {
 	var (
 		ret0 = new([]*big.Int)
@@ -298,21 +298,21 @@ func (_Wrapper *WrapperCaller) GetReserveRate(opts *bind.CallOpts, reserve commo
 
 // GetReserveRate is a free data retrieval call binding the contract method 0x91eb1c69.
 //
-// Solidity: function getReserveRate(reserve address, srcs address[], dests address[]) constant returns(uint256[], uint256[])
+// Solidity: function getReserveRate(address reserve, address[] srcs, address[] dests) constant returns(uint256[], uint256[])
 func (_Wrapper *WrapperSession) GetReserveRate(reserve common.Address, srcs []common.Address, dests []common.Address) ([]*big.Int, []*big.Int, error) {
 	return _Wrapper.Contract.GetReserveRate(&_Wrapper.CallOpts, reserve, srcs, dests)
 }
 
 // GetReserveRate is a free data retrieval call binding the contract method 0x91eb1c69.
 //
-// Solidity: function getReserveRate(reserve address, srcs address[], dests address[]) constant returns(uint256[], uint256[])
+// Solidity: function getReserveRate(address reserve, address[] srcs, address[] dests) constant returns(uint256[], uint256[])
 func (_Wrapper *WrapperCallerSession) GetReserveRate(reserve common.Address, srcs []common.Address, dests []common.Address) ([]*big.Int, []*big.Int, error) {
 	return _Wrapper.Contract.GetReserveRate(&_Wrapper.CallOpts, reserve, srcs, dests)
 }
 
 // GetTokenIndicies is a free data retrieval call binding the contract method 0x7c80feff.
 //
-// Solidity: function getTokenIndicies(ratesContract address, tokenList address[]) constant returns(uint256[], uint256[])
+// Solidity: function getTokenIndicies(address ratesContract, address[] tokenList) constant returns(uint256[], uint256[])
 func (_Wrapper *WrapperCaller) GetTokenIndicies(opts *bind.CallOpts, ratesContract common.Address, tokenList []common.Address) ([]*big.Int, []*big.Int, error) {
 	var (
 		ret0 = new([]*big.Int)
@@ -328,21 +328,21 @@ func (_Wrapper *WrapperCaller) GetTokenIndicies(opts *bind.CallOpts, ratesContra
 
 // GetTokenIndicies is a free data retrieval call binding the contract method 0x7c80feff.
 //
-// Solidity: function getTokenIndicies(ratesContract address, tokenList address[]) constant returns(uint256[], uint256[])
+// Solidity: function getTokenIndicies(address ratesContract, address[] tokenList) constant returns(uint256[], uint256[])
 func (_Wrapper *WrapperSession) GetTokenIndicies(ratesContract common.Address, tokenList []common.Address) ([]*big.Int, []*big.Int, error) {
 	return _Wrapper.Contract.GetTokenIndicies(&_Wrapper.CallOpts, ratesContract, tokenList)
 }
 
 // GetTokenIndicies is a free data retrieval call binding the contract method 0x7c80feff.
 //
-// Solidity: function getTokenIndicies(ratesContract address, tokenList address[]) constant returns(uint256[], uint256[])
+// Solidity: function getTokenIndicies(address ratesContract, address[] tokenList) constant returns(uint256[], uint256[])
 func (_Wrapper *WrapperCallerSession) GetTokenIndicies(ratesContract common.Address, tokenList []common.Address) ([]*big.Int, []*big.Int, error) {
 	return _Wrapper.Contract.GetTokenIndicies(&_Wrapper.CallOpts, ratesContract, tokenList)
 }
 
 // GetTokenRates is a free data retrieval call binding the contract method 0xf37f8345.
 //
-// Solidity: function getTokenRates(ratesContract address, tokenList address[]) constant returns(uint256[], uint256[], int8[], int8[], uint256[])
+// Solidity: function getTokenRates(address ratesContract, address[] tokenList) constant returns(uint256[], uint256[], int8[], int8[], uint256[])
 func (_Wrapper *WrapperCaller) GetTokenRates(opts *bind.CallOpts, ratesContract common.Address, tokenList []common.Address) ([]*big.Int, []*big.Int, []int8, []int8, []*big.Int, error) {
 	var (
 		ret0 = new([]*big.Int)
@@ -364,14 +364,14 @@ func (_Wrapper *WrapperCaller) GetTokenRates(opts *bind.CallOpts, ratesContract 
 
 // GetTokenRates is a free data retrieval call binding the contract method 0xf37f8345.
 //
-// Solidity: function getTokenRates(ratesContract address, tokenList address[]) constant returns(uint256[], uint256[], int8[], int8[], uint256[])
+// Solidity: function getTokenRates(address ratesContract, address[] tokenList) constant returns(uint256[], uint256[], int8[], int8[], uint256[])
 func (_Wrapper *WrapperSession) GetTokenRates(ratesContract common.Address, tokenList []common.Address) ([]*big.Int, []*big.Int, []int8, []int8, []*big.Int, error) {
 	return _Wrapper.Contract.GetTokenRates(&_Wrapper.CallOpts, ratesContract, tokenList)
 }
 
 // GetTokenRates is a free data retrieval call binding the contract method 0xf37f8345.
 //
-// Solidity: function getTokenRates(ratesContract address, tokenList address[]) constant returns(uint256[], uint256[], int8[], int8[], uint256[])
+// Solidity: function getTokenRates(address ratesContract, address[] tokenList) constant returns(uint256[], uint256[], int8[], int8[], uint256[])
 func (_Wrapper *WrapperCallerSession) GetTokenRates(ratesContract common.Address, tokenList []common.Address) ([]*big.Int, []*big.Int, []int8, []int8, []*big.Int, error) {
 	return _Wrapper.Contract.GetTokenRates(&_Wrapper.CallOpts, ratesContract, tokenList)
 }

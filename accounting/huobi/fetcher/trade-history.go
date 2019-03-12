@@ -25,7 +25,7 @@ func (fc *Fetcher) retry(fn tradeHistoryFetcher, symbol string, startTime, endTi
 		if err == nil {
 			return result, nil
 		}
-		logger.Debugw("fail to fetch trade history", "error", err, "attempt", i+1)
+		logger.Warnw("fail to fetch trade history", "error", err, "attempt", i+1)
 		time.Sleep(fc.retryDelay)
 	}
 	return result, err

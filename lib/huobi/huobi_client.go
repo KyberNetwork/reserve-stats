@@ -177,20 +177,34 @@ func (hc *Client) GetAccounts() ([]Account, error) {
 }
 
 //GetTradeHistory return trade history of an account
-func (hc *Client) GetTradeHistory(symbol string, startDate, endDate time.Time) (TradeHistoryList, error) {
+//extras  params included fromID for further querrying.
+//details at https://github.com/huobiapi/API_Docs_en/wiki/REST_Reference#get-v1orderorders--get-order-list
+func (hc *Client) GetTradeHistory(symbol string, startDate, endDate time.Time, extras ...ExtrasTradeHistoryParams) (TradeHistoryList, error) {
 	var (
 		result TradeHistoryList
-	)
-	endpoint := fmt.Sprintf("%s/v1/order/orders", huobiEndpoint)
-	res, err := hc.sendRequest(
-		http.MethodGet,
-		endpoint,
-		map[string]string{
+		params = map[string]string{
 			"states":     "filled",
 			"symbol":     strings.ToLower(symbol),
 			"start-date": startDate.Format("2006-01-02"),
 			"end-date":   endDate.Format("2006-01-02"),
-		},
+		}
+	)
+	if len(extras) > 0 {
+		if extras[0].From != "" {
+			params["from"] = extras[0].From
+		}
+		if extras[0].Size != "" {
+			params["size"] = extras[0].Size
+		}
+		if extras[0].Direct != "" {
+			params["direct"] = extras[0].Direct
+		}
+	}
+	endpoint := fmt.Sprintf("%s/v1/order/orders", huobiEndpoint)
+	res, err := hc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		params,
 		true,
 	)
 	if err != nil {
@@ -243,7 +257,7 @@ func (hc *Client) GetSymbolsPair() ([]Symbol, error) {
 	if err != nil {
 		return symbolReply.Data, err
 	}
-	if symbolReply.Status != "ok" {
+	if symbolReply.Status != StatusOK.String() {
 		return symbolReply.Data, fmt.Errorf("unexpected reply status %s", symbolReply.Status)
 	}
 	return symbolReply.Data, nil

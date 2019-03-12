@@ -7,12 +7,11 @@ import (
 	"time"
 
 	huobiFetcher "github.com/KyberNetwork/reserve-stats/accounting/huobi/fetcher"
+	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 
 	"github.com/urfave/cli"
-
-	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 )
 
 const (
@@ -25,7 +24,7 @@ const (
 func main() {
 	app := libapp.NewApp()
 	app.Name = "Huobi Fetcher"
-	app.Usage = "Huobi Fetcher  Reserve Addresses Manager"
+	app.Usage = "Huobi Fetcher for trade logs"
 	app.Action = run
 	app.Version = "0.0.1"
 	app.Flags = append(app.Flags,

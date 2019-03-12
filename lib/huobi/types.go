@@ -81,3 +81,24 @@ type Symbol struct {
 	SymBolPartition string `json:"symbol-partition"`
 	SymBol          string `json:"symbol"`
 }
+
+//ExtrasTradeHistoryParams hold extras params for queries
+//it included: From - type string, the ID of the trade log to query from
+// 			   Size - type string, the limit number of request to return
+//			   Direct - type string, the direction to query extra tradelog
+type ExtrasTradeHistoryParams struct {
+	From   string
+	Size   string
+	Direct string
+}
+
+// ReplyStatus define a list of status code for huobi reply
+//go:generate stringer -type=ReplyStatus -linecomment
+type ReplyStatus int
+
+const (
+	//StatusOK indict that the reply contains correct data
+	StatusOK ReplyStatus = iota //ok
+	//StatusError indict that there was error in data reply
+	StatusError //error
+)

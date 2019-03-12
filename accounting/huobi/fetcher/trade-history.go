@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -11,17 +12,21 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func retry(fn func(string, time.Time, time.Time) (huobi.TradeHistoryList, error), symbol string, startTime, endTime time.Time, attempt int, retryDelay time.Duration) (huobi.TradeHistoryList, error) {
+type tradeHistoryFetcher func(string, time.Time, time.Time, ...huobi.ExtrasTradeHistoryParams) (huobi.TradeHistoryList, error)
+
+func (fc *Fetcher) retry(fn tradeHistoryFetcher, symbol string, startTime, endTime time.Time, extras huobi.ExtrasTradeHistoryParams) (huobi.TradeHistoryList, error) {
 	var (
 		result huobi.TradeHistoryList
 		err    error
+		logger = fc.sugar.With("func", "accounting/huobi/fetcher/trade-history.retry")
 	)
-	for i := 0; i < attempt; i++ {
-		result, err = fn(symbol, startTime, endTime)
+	for i := 0; i < fc.attempt; i++ {
+		result, err = fn(symbol, startTime, endTime, extras)
 		if err == nil {
 			return result, nil
 		}
-		time.Sleep(retryDelay)
+		logger.Debugw("fail to fetch trade history", "error", err, "attempt", i+1)
+		time.Sleep(fc.retryDelay)
 	}
 	return result, err
 }
@@ -31,9 +36,19 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time) 
 		startTime = from
 		endTime   = to
 		result    []huobi.TradeHistory
+		lastID    string
+		extras    huobi.ExtrasTradeHistoryParams
 	)
 	for {
-		tradeHistoriesResponse, err := retry(fc.client.GetTradeHistory, symbol, startTime, endTime, fc.attempt, fc.retryDelay)
+		if lastID != "" {
+			extras = huobi.ExtrasTradeHistoryParams{
+				From:   lastID,
+				Direct: "prev",
+			}
+		} else {
+			extras = huobi.ExtrasTradeHistoryParams{}
+		}
+		tradeHistoriesResponse, err := fc.retry(fc.client.GetTradeHistory, symbol, startTime, endTime, extras)
 		if err != nil {
 			return result, err
 		}
@@ -41,9 +56,16 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time) 
 		if len(tradeHistoriesResponse.Data) == 0 {
 			break
 		}
-		result = append(result, tradeHistoriesResponse.Data...)
+		//huobi returns tradelogs with latest trade in the beginning of the slice
 		lastTrade := tradeHistoriesResponse.Data[0]
-		startTime = timeutil.Midnight(timeutil.TimestampMsToTime(lastTrade.CreateAt)).AddDate(0, 0, 1)
+		if strconv.FormatInt(lastTrade.ID, 10) == lastID {
+			break
+		}
+		lastID = strconv.FormatInt(lastTrade.ID, 10)
+
+		result = append(result, tradeHistoriesResponse.Data...)
+
+		startTime = timeutil.TimestampMsToTime(lastTrade.CreateAt)
 		if endTime.Before(startTime) {
 			break
 		}

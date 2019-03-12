@@ -7,7 +7,7 @@ import (
 
 //Interface is for huobi api client
 type Interface interface {
-	GetTradeHistory(symbol string, startDate, endDate time.Time) (TradeHistoryList, error)
+	GetTradeHistory(symbol string, startDate, endDate time.Time, extras ...ExtrasTradeHistoryParams) (TradeHistoryList, error)
 	GetWithdrawHistory(currency string, fromID uint64) (WithdrawHistoryList, error)
 	GetSymbolsPair() ([]Symbol, error)
 }

@@ -8,6 +8,8 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+
+	"golang.org/x/sync/errgroup"
 )
 
 //Fetcher is a fetcher for get binance data
@@ -47,20 +49,18 @@ func (f *Fetcher) getTradeHistoryWithRetry(symbol string, startTime, endTime tim
 	return tradeHistoriesResponse, err
 }
 
-func (f *Fetcher) getTradeHistoryForOneSymBol(fromTime, toTime time.Time, symbol string,
-	tradeHistories *sync.Map, wg *sync.WaitGroup) error {
+func (f *Fetcher) getTradeHistoryForOneSymBol(fromTime, toTime time.Time, symbol string) ([]binance.TradeHistory, error) {
 	var (
 		logger = f.sugar.With("func", "accounting/binance-fetcher.getTradeHistoryForOneSymbol")
 		result = []binance.TradeHistory{}
 	)
 	startTime := fromTime
 	endTime := toTime
-	defer wg.Done()
 	for {
 		tradeHistoriesResponse, err := f.getTradeHistoryWithRetry(symbol, startTime, endTime)
 		if err != nil {
 			logger.Debugw("get trade history error", "symbol", symbol, "error", err)
-			return err
+			return result, err
 		}
 		// while result != empty, get trades latest time to toTime
 		if len(tradeHistoriesResponse) == 0 {
@@ -71,10 +71,7 @@ func (f *Fetcher) getTradeHistoryForOneSymBol(fromTime, toTime time.Time, symbol
 		lastTrade := tradeHistoriesResponse[len(tradeHistoriesResponse)-1]
 		startTime = timeutil.TimestampMsToTime(lastTrade.Time + 1)
 	}
-	if len(result) != 0 {
-		tradeHistories.Store(symbol, result)
-	}
-	return nil
+	return result, nil
 }
 
 //GetTradeHistory get all trade history from trades for all token
@@ -82,6 +79,7 @@ func (f *Fetcher) GetTradeHistory(fromTime, toTime time.Time) error {
 	var (
 		tradeHistories sync.Map
 		logger         = f.sugar.With("func", "accounting/binance-fetcher.getTradeHistory")
+		errGroup       errgroup.Group
 	)
 	// get list token
 	exchangeInfo, err := f.client.GetExchangeInfo()
@@ -89,16 +87,27 @@ func (f *Fetcher) GetTradeHistory(fromTime, toTime time.Time) error {
 		return err
 	}
 	tokenPairs := exchangeInfo.Symbols
-	wg := sync.WaitGroup{}
 	index := 0
 	for index < len(tokenPairs) {
 		for count := 0; count < f.batchSize && index+count < len(tokenPairs); count++ {
 			pair := tokenPairs[index+count]
-			wg.Add(1)
-			logger.Debugw("token", "pair", pair.Symbol)
-			go f.getTradeHistoryForOneSymBol(fromTime, toTime, pair.Symbol, &tradeHistories, &wg)
+			errGroup.Go(
+				func(pair binance.Symbol) func() error {
+					return func() error {
+						logger.Debugw("token", "pair", pair.Symbol)
+						oneSymbolTradeHistory, err := f.getTradeHistoryForOneSymBol(fromTime, toTime, pair.Symbol)
+						if err != nil {
+							return err
+						}
+						tradeHistories.Store(pair.Symbol, oneSymbolTradeHistory)
+						return nil
+					}
+				}(pair),
+			)
 		}
-		wg.Wait()
+		if err := errGroup.Wait(); err != nil {
+			return err
+		}
 		index += f.batchSize
 	}
 

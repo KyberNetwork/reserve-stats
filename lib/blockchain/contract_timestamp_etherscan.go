@@ -9,6 +9,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+func isNoTransactionError(err error) bool {
+	return err.Error() == "etherscan server: No transactions found"
+}
+
 // EtherscanContractTimestampResolver is an implementation of EtherscanContractTimestampResolver
 // that uses Etherscan API.
 type EtherscanContractTimestampResolver struct {
@@ -31,14 +35,14 @@ func (r *EtherscanContractTimestampResolver) resolveUsingInternalTx(address comm
 	txs, err := r.client.InternalTxByAddress(address.String(), nil, nil, 1, 1, false)
 	if err != nil {
 		// etherscan package does not export error for this, have to compare error message
-		if err.Error() == "etherscan server: No transactions found" {
+		if isNoTransactionError(err) {
 			return time.Time{}, ErrNotAvailable
 		}
 	}
 	logger.Debugw("got transactions from Etherscan", "txs", len(txs))
 
 	// with current implementation of etherscan-api, the client will return an error with
-	// message "etherscan server: No transactions found" if no transaction found for given address.
+	// message errMsg if no transaction found for given address.
 	// Following codes should never be reached, just add for safe guard for implementation changes.
 	if len(txs) == 0 {
 		return time.Time{}, ErrNotAvailable
@@ -67,20 +71,21 @@ func (r *EtherscanContractTimestampResolver) Resolve(address common.Address) (ti
 	txs, err := r.client.NormalTxByAddress(address.String(), nil, nil, 1, 1, false)
 	if err != nil {
 		// etherscan package does not export error for this, have to compare error message
-		if err.Error() == "etherscan server: No transactions found" {
+		if isNoTransactionError(err) {
 			// fallback check internal tx
-			logger.Debugw("fallback calling inernal tx due to error", "error", err.Error())
+			logger.Debugw("fallback calling internal tx due to error", "error", err.Error())
 			contractTimeStamp, err := r.resolveUsingInternalTx(address)
 			if err != nil {
-				return time.Time{}, ErrNotAvailable
+				return time.Time{}, err
 			}
 			return contractTimeStamp, nil
 		}
+		return time.Time{}, err
 	}
 	logger.Debugw("got transactions from Etherscan", "txs", len(txs))
 
 	// with current implementation of etherscan-api, the client will return an error with
-	// message "etherscan server: No transactions found" if no transaction found for given address.
+	// message errMsg if no transaction found for given address.
 	// Following codes should never be reached, just add for safe guard for implementation changes.
 	if len(txs) == 0 {
 		return time.Time{}, ErrNotAvailable
@@ -95,7 +100,7 @@ func (r *EtherscanContractTimestampResolver) Resolve(address common.Address) (ti
 		logger.Debug("fallback calling internal tx due to tx contract address is empty")
 		contractTimeStamp, err := r.resolveUsingInternalTx(address)
 		if err != nil {
-			return time.Time{}, ErrNotAvailable
+			return time.Time{}, err
 		}
 		return contractTimeStamp, nil
 	}

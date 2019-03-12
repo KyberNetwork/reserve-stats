@@ -1,7 +1,6 @@
 package fetcher
 
 import (
-	"log"
 	"sync"
 	"time"
 
@@ -11,28 +10,25 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
-const (
-	batchSize         = 100
-	defaultRetryDelay = 2 * time.Minute
-	defaultAttempt    = 4
-)
-
 //Fetcher is a fetcher for get binance data
 type Fetcher struct {
 	sugar      *zap.SugaredLogger
 	client     *binance.Client
 	retryDelay time.Duration
 	attempt    int
+	batchSize  int
 	//TODO: storage will be add in another PR
 }
 
 //NewFetcher return a new fetcher instance
-func NewFetcher(sugar *zap.SugaredLogger, client *binance.Client) *Fetcher {
+func NewFetcher(sugar *zap.SugaredLogger, client *binance.Client, retryDelay, attempt, batchSize int) *Fetcher {
+	retryDelayTime := time.Duration(retryDelay) * time.Minute
 	return &Fetcher{
 		sugar:      sugar,
 		client:     client,
-		retryDelay: defaultRetryDelay,
-		attempt:    defaultAttempt,
+		retryDelay: retryDelayTime,
+		attempt:    attempt,
+		batchSize:  batchSize,
 	}
 }
 
@@ -96,15 +92,14 @@ func (f *Fetcher) GetTradeHistory(fromTime, toTime time.Time) error {
 	wg := sync.WaitGroup{}
 	index := 0
 	for index < len(tokenPairs) {
-		for count := 0; count < batchSize && index+count < len(tokenPairs); count++ {
+		for count := 0; count < f.batchSize && index+count < len(tokenPairs); count++ {
 			pair := tokenPairs[index+count]
-			log.Println(index + count)
 			wg.Add(1)
 			logger.Debugw("token", "pair", pair.Symbol)
 			go f.getTradeHistoryForOneSymBol(fromTime, toTime, pair.Symbol, &tradeHistories, &wg)
 		}
 		wg.Wait()
-		index += batchSize
+		index += f.batchSize
 	}
 
 	// log here for test get trade history without persistence storage

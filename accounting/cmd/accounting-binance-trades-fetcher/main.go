@@ -14,8 +14,14 @@ import (
 )
 
 const (
-	fromFlag = "from"
-	toFlag   = "to"
+	fromFlag          = "from"
+	toFlag            = "to"
+	retryDelayFlag    = "retry-delay"
+	attemptFlag       = "attempt"
+	batchSizeFlag     = "batch-size"
+	defaultRetryDelay = 2 // minute
+	defaultAttempt    = 4
+	defaultBatchSize  = 100
 )
 
 func main() {
@@ -34,6 +40,24 @@ func main() {
 			Name:   toFlag,
 			Usage:  "To timestamp(millisecond) to get trade history to",
 			EnvVar: "TO",
+		},
+		cli.IntFlag{
+			Name:   retryDelayFlag,
+			Usage:  "delay time when do a retry",
+			EnvVar: "RETRY_DELAY",
+			Value:  defaultRetryDelay,
+		},
+		cli.IntFlag{
+			Name:   attemptFlag,
+			Usage:  "number of time doing retry",
+			EnvVar: "ATTEMPT",
+			Value:  defaultAttempt,
+		},
+		cli.IntFlag{
+			Name:   batchSizeFlag,
+			Usage:  "batch to request to binance",
+			EnvVar: "BATCH_SIZE",
+			Value:  defaultBatchSize,
 		},
 	)
 
@@ -72,7 +96,10 @@ func run(c *cli.Context) error {
 		toTime = timeutil.TimestampMsToTime(c.Uint64(toFlag))
 	}
 
-	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient)
+	retryDelay := c.Int(retryDelayFlag)
+	attempt := c.Int(attemptFlag)
+	batchSize := c.Int(batchSizeFlag)
+	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
 
 	err = binanceFetcher.GetTradeHistory(fromTime, toTime)
 	if err != nil {

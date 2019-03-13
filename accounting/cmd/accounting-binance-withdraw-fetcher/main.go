@@ -81,8 +81,6 @@ func run(c *cli.Context) error {
 
 	if c.Uint64(fromFlag) != 0 {
 		fromTime = timeutil.TimestampMsToTime(c.Uint64(fromFlag))
-	} else {
-		fromTime = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
 	}
 
 	if c.Uint64(toFlag) != 0 {
@@ -96,10 +94,12 @@ func run(c *cli.Context) error {
 	batchSize := c.Int(batchSizeFlag)
 	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
 
-	err = binanceFetcher.GetWithdrawHistory(fromTime, toTime)
+	withdrawHistory, err := binanceFetcher.GetWithdrawHistory(fromTime, toTime)
 	if err != nil {
 		return err
 	}
+
+	sugar.Infow("withdraw history", "value", withdrawHistory)
 
 	return nil
 }

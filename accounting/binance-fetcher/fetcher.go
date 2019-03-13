@@ -162,7 +162,7 @@ func appendResult(result map[string]binance.WithdrawHistory, withdrawList []bina
 }
 
 //GetWithdrawHistory get all withdraw history in time range fromTime to toTime
-func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) error {
+func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) (map[string]binance.WithdrawHistory, error) {
 	var (
 		result = make(map[string]binance.WithdrawHistory)
 		logger = f.sugar.With("func", "accounting/binance-fetcher.GetWithdrawHistory")
@@ -173,7 +173,7 @@ func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) error {
 	for {
 		withdrawHistory, err := f.getWithdrawHistoryWithRetry(startTime, endTime)
 		if err != nil {
-			return err
+			return result, err
 		}
 		// logger.Debugw("withdraw hitory", "value", withdrawHistory.WithdrawList)
 		startTime = appendResult(result, withdrawHistory.WithdrawList)
@@ -186,5 +186,5 @@ func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) error {
 	logger.Debugw("withdraw history", "list", result)
 
 	// TODO: save to storage
-	return nil
+	return result, nil
 }

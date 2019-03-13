@@ -2,15 +2,18 @@ package http
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
+
+//default frame is 1 year =365  days
+var maxTimeFrame = 365 * 24 * time.Hour
 
 // Server is the engine to serve reserve-rate API query
 type Server struct {
@@ -23,7 +26,7 @@ type Server struct {
 func (sv *Server) reserveRates(c *gin.Context) {
 	var (
 		query  httputil.TimeRangeQuery
-		logger = sv.sugar.With("func", "reserverates/http/Server.reserveRates")
+		logger = sv.sugar.With("func", "accouting/reserve-rate/http/Server.reserveRates")
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -34,7 +37,9 @@ func (sv *Server) reserveRates(c *gin.Context) {
 		return
 	}
 
-	_, _, err := query.Validate()
+	from, to, err := query.Validate(
+		httputil.TimeRangeQueryWithMaxTimeFrame(maxTimeFrame),
+	)
 	if err != nil {
 		c.JSON(
 			http.StatusBadRequest,
@@ -43,10 +48,10 @@ func (sv *Server) reserveRates(c *gin.Context) {
 		return
 	}
 
-	logger = logger.With("to", query.To, "from", query.From)
-	logger.Debug("querying reserve rates from database")
+	logger = logger.With("from", from, "to", to)
+	logger.Debug("querying rates from database")
 
-	reserveRate, err := sv.db.GetRates(timeutil.TimestampMsToTime(query.From), timeutil.TimestampMsToTime(query.To))
+	reserveRate, err := sv.db.GetRates(from, to)
 	if err != nil {
 		sv.sugar.Errorw(err.Error(), "query", query)
 		c.JSON(
@@ -56,7 +61,7 @@ func (sv *Server) reserveRates(c *gin.Context) {
 		return
 	}
 
-	ethUsdRate, err := sv.db.GetETHUSDRates(timeutil.TimestampMsToTime(query.From), timeutil.TimestampMsToTime(query.To))
+	ethUsdRate, err := sv.db.GetETHUSDRates(from, to)
 	if err != nil {
 		sv.sugar.Errorw(err.Error(), "query", query)
 		c.JSON(

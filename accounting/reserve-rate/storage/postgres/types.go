@@ -11,3 +11,8 @@ type ratesFromDB struct {
 	BuyRate float64   `db:"buy_rate"`
 	Reserve string    `db:"reserve"`
 }
+
+type usdRateFromDB struct {
+	Time time.Time `db:"time"`
+	Rate float64   `db:"rate"`
+}

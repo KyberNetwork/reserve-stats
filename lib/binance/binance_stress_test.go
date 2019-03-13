@@ -4,8 +4,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -16,12 +17,7 @@ func TestBinance(t *testing.T) {
 		secretKey = os.Getenv("BINANCE_SECRET_KEY")
 	)
 
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 
 	bn := NewBinance(apiKey, secretKey, sugar)
 

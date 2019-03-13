@@ -34,30 +34,30 @@ func NewFetcher(sugar *zap.SugaredLogger, client *binance.Client, retryDelay, at
 	}
 }
 
-func (f *Fetcher) getTradeHistoryWithRetry(symbol string, startTime, endTime time.Time) ([]binance.TradeHistory, error) {
+func (f *Fetcher) getTradeHistoryWithRetry(symbol string, fromID uint64) ([]binance.TradeHistory, error) {
 	var (
 		tradeHistoriesResponse []binance.TradeHistory
 		err                    error
+		logger                 = f.sugar.With("func", "accounting/binance-fetcher/fetcher.getTradeHistoryWithRetry")
 	)
 	for attempt := 0; attempt < f.attempt; attempt++ {
-		tradeHistoriesResponse, err = f.client.GetTradeHistory(symbol, -1, startTime, endTime)
+		tradeHistoriesResponse, err = f.client.GetTradeHistory(symbol, fromID)
 		if err == nil {
 			return tradeHistoriesResponse, nil
 		}
+		logger.Warnw("get trade history failed", "error", err, "attempt", attempt)
 		time.Sleep(f.retryDelay)
 	}
 	return tradeHistoriesResponse, err
 }
 
-func (f *Fetcher) getTradeHistoryForOneSymBol(fromTime, toTime time.Time, symbol string) ([]binance.TradeHistory, error) {
+func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]binance.TradeHistory, error) {
 	var (
 		logger = f.sugar.With("func", "accounting/binance-fetcher.getTradeHistoryForOneSymbol")
 		result = []binance.TradeHistory{}
 	)
-	startTime := fromTime
-	endTime := toTime
 	for {
-		tradeHistoriesResponse, err := f.getTradeHistoryWithRetry(symbol, startTime, endTime)
+		tradeHistoriesResponse, err := f.getTradeHistoryWithRetry(symbol, fromID)
 		if err != nil {
 			logger.Debugw("get trade history error", "symbol", symbol, "error", err)
 			return result, err
@@ -69,22 +69,23 @@ func (f *Fetcher) getTradeHistoryForOneSymBol(fromTime, toTime time.Time, symbol
 		logger.Debugw("trade history for", "symbol", symbol, "history", tradeHistoriesResponse)
 		result = append(result, tradeHistoriesResponse...)
 		lastTrade := tradeHistoriesResponse[len(tradeHistoriesResponse)-1]
-		startTime = timeutil.TimestampMsToTime(lastTrade.Time + 1)
+		fromID = lastTrade.ID + 1
 	}
 	return result, nil
 }
 
 //GetTradeHistory get all trade history from trades for all token
-func (f *Fetcher) GetTradeHistory(fromTime, toTime time.Time) error {
+func (f *Fetcher) GetTradeHistory(fromID uint64) ([]binance.TradeHistory, error) {
 	var (
 		tradeHistories sync.Map
 		logger         = f.sugar.With("func", "accounting/binance-fetcher.getTradeHistory")
 		errGroup       errgroup.Group
+		result         []binance.TradeHistory
 	)
 	// get list token
 	exchangeInfo, err := f.client.GetExchangeInfo()
 	if err != nil {
-		return err
+		return result, err
 	}
 	tokenPairs := exchangeInfo.Symbols
 	index := 0
@@ -95,7 +96,7 @@ func (f *Fetcher) GetTradeHistory(fromTime, toTime time.Time) error {
 				func(pair binance.Symbol) func() error {
 					return func() error {
 						logger.Debugw("token", "pair", pair.Symbol)
-						oneSymbolTradeHistory, err := f.getTradeHistoryForOneSymBol(fromTime, toTime, pair.Symbol)
+						oneSymbolTradeHistory, err := f.getTradeHistoryForOneSymBol(fromID, pair.Symbol)
 						if err != nil {
 							return err
 						}
@@ -108,18 +109,24 @@ func (f *Fetcher) GetTradeHistory(fromTime, toTime time.Time) error {
 			)
 		}
 		if err := errGroup.Wait(); err != nil {
-			return err
+			return result, err
 		}
 		index += f.batchSize
 	}
 
 	// log here for test get trade history without persistence storage
 	tradeHistories.Range(func(key, value interface{}) bool {
-		logger.Info("symbol", key, "history", value)
+		tradeHistory, ok := value.([]binance.TradeHistory)
+		if !ok {
+			return false
+		}
+		if len(tradeHistory) != 0 {
+			result = append(result, tradeHistory...)
+		}
 		return true
 	})
 	// TODO: save to storage
-	return nil
+	return result, nil
 }
 
 func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (binance.WithdrawHistoryList, error) {

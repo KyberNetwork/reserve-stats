@@ -2,12 +2,13 @@ package binance
 
 import (
 	"context"
+	"time"
 )
 
 //Interface is interface for binance api client
 type Interface interface {
-	GetTradeHistory(symbol string, fromID int64) (TradeHistory, error)
-	GetWithdrawHistory(fromTime, toTime uint64) (WithdrawHistoryList, error)
+	GetTradeHistory(symbol string, fromID uint64) (TradeHistory, error)
+	GetWithdrawHistory(fromTime, toTime time.Time) (WithdrawHistoryList, error)
 	GetExchangeInfo() (ExchangeInfo, error)
 }
 

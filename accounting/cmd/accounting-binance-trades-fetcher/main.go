@@ -3,19 +3,16 @@ package main
 import (
 	"log"
 	"os"
-	"time"
 
 	"github.com/urfave/cli"
 
 	fetcher "github.com/KyberNetwork/reserve-stats/accounting/binance-fetcher"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
-	fromFlag          = "from"
-	toFlag            = "to"
+	fromIDFlag        = "from-id"
 	retryDelayFlag    = "retry-delay"
 	attemptFlag       = "attempt"
 	batchSizeFlag     = "batch-size"
@@ -31,16 +28,6 @@ func main() {
 	app.Action = run
 
 	app.Flags = append(app.Flags,
-		cli.Uint64Flag{
-			Name:   fromFlag,
-			Usage:  "From timestamp(millisecond) to get trade history from",
-			EnvVar: "FROM",
-		},
-		cli.Uint64Flag{
-			Name:   toFlag,
-			Usage:  "To timestamp(millisecond) to get trade history to",
-			EnvVar: "TO",
-		},
 		cli.IntFlag{
 			Name:   retryDelayFlag,
 			Usage:  "delay time when do a retry",
@@ -59,6 +46,11 @@ func main() {
 			EnvVar: "BATCH_SIZE",
 			Value:  defaultBatchSize,
 		},
+		cli.Uint64Flag{
+			Name:   fromIDFlag,
+			Usage:  "id to get trade history from",
+			EnvVar: "FROM_ID",
+		},
 	)
 
 	app.Flags = append(app.Flags, binance.NewCliFlags()...)
@@ -69,10 +61,6 @@ func main() {
 }
 
 func run(c *cli.Context) error {
-	var (
-		fromTime, toTime time.Time
-	)
-
 	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
@@ -88,23 +76,19 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	if c.Uint64(fromFlag) != 0 {
-		fromTime = timeutil.TimestampMsToTime(c.Uint64(fromFlag))
-	}
-
-	if c.Uint64(toFlag) != 0 {
-		toTime = timeutil.TimestampMsToTime(c.Uint64(toFlag))
-	}
+	fromID := c.Uint64(fromIDFlag)
 
 	retryDelay := c.Int(retryDelayFlag)
 	attempt := c.Int(attemptFlag)
 	batchSize := c.Int(batchSizeFlag)
 	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
 
-	err = binanceFetcher.GetTradeHistory(fromTime, toTime)
+	tradeHistories, err := binanceFetcher.GetTradeHistory(fromID)
 	if err != nil {
 		return err
 	}
+
+	sugar.Debugw("trade histories", "result", tradeHistories)
 
 	return nil
 }

@@ -10,7 +10,7 @@ type APIResponse struct {
 //TradeHistory return a history of a trade
 type TradeHistory struct {
 	Symbol          string `json:"symbol"`
-	ID              int64  `json:"id"`
+	ID              uint64 `json:"id"`
 	OrderID         int64  `json:"orderId"`
 	Price           string `json:"price"`
 	Quantity        string `json:"qty"`

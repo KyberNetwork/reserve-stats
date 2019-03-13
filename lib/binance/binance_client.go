@@ -27,7 +27,7 @@ const (
 type Client struct {
 	APIKey      string
 	SecretKey   string
-	Sugar       *zap.SugaredLogger
+	sugar       *zap.SugaredLogger
 	rateLimiter Limiter
 }
 
@@ -46,7 +46,7 @@ func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...O
 	clnt := &Client{
 		APIKey:    apiKey,
 		SecretKey: secretKey,
-		Sugar:     sugar,
+		sugar:     sugar,
 	}
 	for _, opt := range options {
 		opt(clnt)
@@ -103,7 +103,7 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 
 	var (
 		respBody []byte
-		logger   = bc.Sugar.With("func", "binance_client/sendRequest")
+		logger   = bc.sugar.With("func", "binance_client/sendRequest")
 	)
 	client := &http.Client{
 		Timeout: time.Duration(30 * time.Second),
@@ -160,7 +160,7 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 
 //GetTradeHistory return history of trading on binance
 //if fromID = -1 then function will not put fromId as a param
-func (bc *Client) GetTradeHistory(symbol string, fromID int64, fromTime, toTime time.Time) ([]TradeHistory, error) {
+func (bc *Client) GetTradeHistory(symbol string, fromID uint64) ([]TradeHistory, error) {
 	var (
 		result []TradeHistory
 	)
@@ -175,17 +175,7 @@ func (bc *Client) GetTradeHistory(symbol string, fromID int64, fromTime, toTime 
 		"symbol": symbol,
 	}
 
-	if fromID != -1 {
-		params["fromId"] = strconv.FormatInt(fromID, 10)
-	}
-
-	if !fromTime.IsZero() {
-		params["startTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(fromTime), 10)
-	}
-
-	if !toTime.IsZero() {
-		params["endTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(toTime), 10)
-	}
+	params["fromId"] = strconv.FormatUint(fromID, 10)
 
 	res, err := bc.sendRequest(
 		http.MethodGet,

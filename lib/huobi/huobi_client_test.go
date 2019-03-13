@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	// "github.com/KyberNetwork/reserve-stats/lib/testutil"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
@@ -15,7 +15,7 @@ import (
 )
 
 func TestHuobiClient(t *testing.T) {
-	// testutil.SkipExternal(t)
+	testutil.SkipExternal(t)
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		t.Fatal(err)

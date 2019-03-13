@@ -22,7 +22,7 @@ type ListedTokenDB struct {
 
 //NewDB open a new database connection an create initiated table if it is not exist
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*ListedTokenDB, error) {
-	const schemaFmt = `CREATE TABLE IF NOT EXIST "%s"
+	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%s"
 (
 	id SERIAL PRIMARY KEY,
 	address text NOT NULL UNIQUE,
@@ -53,19 +53,27 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*ListedTokenDB, error) {
 }
 
 //CreateOrUpdate add or edit an record in the tokens table
-func (ltd *ListedTokenDB) CreateOrUpdate(tokens []common.ListedToken) error {
+func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) error {
 	var (
 		logger = ltd.sugar.With("func", "accounting/lisetdtokenstorage.CreateOrUpdate")
 	)
 	upsertQuery := fmt.Sprintf(`INSERT INTO "%s" (address, symbol, timestamp)
-	VALUES ($1, $2, $3)
-	ON CONFLICT (symbo) DO UPDATE SET address = EXCLUDED.address, timestamp = EXCLUDED.timestamp`,
+	VALUES (
+		$1, 
+		$2, 
+		to_timestamp($3 / 100)
+	)
+	ON CONFLICT (symbol) DO UPDATE SET address = EXCLUDED.address, timestamp = EXCLUDED.timestamp`,
 		tokenTable)
 
-	upsertOldTokenQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address, symbol, timestamp. parent_id)
-	VALUES ($1, $2, $3,
+	upsertOldTokenQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address, symbol, timestamp, parent_id)
+	VALUES (
+		$1, 
+		$2, 
+		to_timestamp($3 /1000),
 		SELECT id FROM "%[1]s" WHERE symbol = $2
-		ON CONFLICT (address) DO NOTHING`,
+	)
+	ON CONFLICT (address) DO NOTHING`,
 		tokenTable)
 
 	logger.Debugw("insert query", "query", upsertQuery)

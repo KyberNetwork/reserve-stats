@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	listedtokenstorage "github.com/KyberNetwork/reserve-stats/accounting/listed_token_storage"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -22,15 +23,17 @@ type Fetcher struct {
 	ethClient                 *ethclient.Client
 	contractTimestampResolver *blockchain.EtherscanContractTimestampResolver
 	sugar                     *zap.SugaredLogger
+	storage                   listedtokenstorage.Interface
 }
 
 //NewListedTokenFetcher return new fetcher for listed token
 func NewListedTokenFetcher(ethClient *ethclient.Client, contractTimestampResolver *blockchain.EtherscanContractTimestampResolver,
-	sugar *zap.SugaredLogger) *Fetcher {
+	sugar *zap.SugaredLogger, storage listedtokenstorage.Interface) *Fetcher {
 	return &Fetcher{
 		ethClient:                 ethClient,
 		contractTimestampResolver: contractTimestampResolver,
 		sugar:                     sugar,
+		storage:                   storage,
 	}
 }
 
@@ -113,5 +116,6 @@ func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
 
 	// currently print out to cli, save to storage later
 	logger.Debugw("result listed token", "result", string(resultJSON))
-	return nil
+
+	return f.storage.CreateOrUpdate(result)
 }

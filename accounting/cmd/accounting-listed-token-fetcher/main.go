@@ -10,14 +10,16 @@ import (
 	"github.com/urfave/cli"
 
 	listedtoken "github.com/KyberNetwork/reserve-stats/accounting/listed-token-fetcher"
+	listedtokenstorage "github.com/KyberNetwork/reserve-stats/accounting/listed_token_storage"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
 )
 
 const (
-	blockFlag          = "block"
-	reserveAddressFlag = "reserve-address"
+	blockFlag           = "block"
+	reserveAddressFlag  = "reserve-address"
+	defaultAccountingDB = "accounting"
 )
 
 func main() {
@@ -39,6 +41,7 @@ func main() {
 	)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultAccountingDB)...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -86,7 +89,16 @@ func run(c *cli.Context) error {
 
 	resolv := blockchain.NewEtherscanContractTimestampResolver(sugar, etherscanClient)
 
-	fetcher := listedtoken.NewListedTokenFetcher(ethClient, resolv, sugar)
+	db, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return err
+	}
+	listedTokenStorage, err := listedtokenstorage.NewDB(sugar, db)
+	if err != nil {
+		return err
+	}
+
+	fetcher := listedtoken.NewListedTokenFetcher(ethClient, resolv, sugar, listedTokenStorage)
 
 	return fetcher.GetListedToken(block, reserveAddr, tokenSymbol)
 }

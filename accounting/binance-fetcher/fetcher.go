@@ -99,7 +99,9 @@ func (f *Fetcher) GetTradeHistory(fromTime, toTime time.Time) error {
 						if err != nil {
 							return err
 						}
-						tradeHistories.Store(pair.Symbol, oneSymbolTradeHistory)
+						if len(oneSymbolTradeHistory) != 0 {
+							tradeHistories.Store(pair.Symbol, oneSymbolTradeHistory)
+						}
 						return nil
 					}
 				}(pair),

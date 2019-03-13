@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
@@ -215,29 +214,54 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, 
 	return err
 }
 
-//GetRates return the reserve rates in a period of times
-func (rdb *RatesStorage) GetRates(reserves []ethereum.Address, from, to time.Time) (map[string]storage.AccountingReserveRates, error) {
+//GetETHUSDRates  return the ETH/USD  rate in  a period of times
+func (rdb *RatesStorage) GetETHUSDRates(from, to time.Time) (storage.AccountingReserveRates, error) {
 	var (
-		result    = make(map[string]storage.AccountingReserveRates)
-		rowData   = ratesFromDB{}
-		rsvsAddrs []string
-		logger    = rdb.sugar.With(
+		result = make(storage.AccountingReserveRates)
+
+		dbResult []usdRateFromDB
+		logger   = rdb.sugar.With(
+			"func", "reserverates/storage/postgres/RateStorage.GetUSDRate",
+			"from", from.String(),
+			"to", to.String(),
+		)
+	)
+	const (
+		selectStmt = `SELECT time,rate FROM %[1]s WHERE time>=$1 AND time <$2`
+	)
+	query := fmt.Sprintf(selectStmt, rdb.tableNames[usdTableName])
+	logger.Debug("Queryingrate...", "query", query)
+	if err := rdb.db.Select(&dbResult, query, from, to); err != nil {
+		return result, err
+	}
+	for _, record := range dbResult {
+		result[record.Time] = map[string]map[string]float64{
+			"USD": {
+				"ETH": record.Rate,
+			},
+		}
+	}
+	return result, nil
+}
+
+//GetRates return the reserve rates in a period of times
+func (rdb *RatesStorage) GetRates(from, to time.Time) (map[string]storage.AccountingReserveRates, error) {
+	var (
+		result  = make(map[string]storage.AccountingReserveRates)
+		rowData = ratesFromDB{}
+		logger  = rdb.sugar.With(
 			"func", "reserverates/storage/postgres/RateStorage.GetRates",
 			"from", from.String(),
 			"to", to.String(),
-			"reserves", reserves,
 		)
 	)
 	const (
 		selectStmt = `SELECT * FROM  rates_view
-		WHERE  time>=$1 AND time<$2 AND reserve IN (SELECT unnest($3::text[]));`
+		WHERE  time>=$1 AND time<$2`
 	)
-	for _, rsv := range reserves {
-		rsvsAddrs = append(rsvsAddrs, rsv.Hex())
-	}
 	logger.Debugw("Querying rate...", "query", selectStmt)
 
-	rows, err := rdb.db.Queryx(selectStmt, from, to, pq.StringArray(rsvsAddrs))
+	rows, err := rdb.db.Queryx(selectStmt, from, to)
 	if err != nil {
 		return nil, err
 	}

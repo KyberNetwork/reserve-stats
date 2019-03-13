@@ -235,7 +235,7 @@ func (rdb *RatesStorage) GetRates(reserves []ethereum.Address, from, to time.Tim
 	for _, rsv := range reserves {
 		rsvsAddrs = append(rsvsAddrs, rsv.Hex())
 	}
-	logger.Debugw("Querrying rate...", "query", selectStmt)
+	logger.Debugw("Querying rate...", "query", selectStmt)
 
 	rows, err := rdb.db.Queryx(selectStmt, from, to, pq.StringArray(rsvsAddrs))
 	if err != nil {
@@ -319,12 +319,12 @@ func (rdb *RatesStorage) GetLastResolvedBlockInfo() (lastblockdaily.BlockInfo, e
 	)
 
 	query := fmt.Sprintf(selectStmt, rdb.tableNames[rateTableName])
-	logger.Debugw("Querrying last resolved block from rates table...", "query", query)
+	logger.Debugw("Querying last resolved block from rates table...", "query", query)
 	if err := rdb.db.Get(&rateTableResult, query); err != nil {
 		return rateTableResult, err
 	}
 	query = fmt.Sprintf(selectStmt, rdb.tableNames[usdTableName])
-	logger.Debugw("Querrying last resolved block from usd table...", "query", query)
+	logger.Debugw("Querying last resolved block from usd table...", "query", query)
 	if err := rdb.db.Get(&usdTableResult, query); err != nil {
 		return usdTableResult, err
 	}

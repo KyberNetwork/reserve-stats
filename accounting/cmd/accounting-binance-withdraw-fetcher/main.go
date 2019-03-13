@@ -14,8 +14,14 @@ import (
 )
 
 const (
-	fromFlag = "from"
-	toFlag   = "to"
+	fromFlag          = "from"
+	toFlag            = "to"
+	retryDelayFlag    = "retry-delay"
+	attemptFlag       = "attempt"
+	batchSizeFlag     = "batch-size"
+	defaultRetryDelay = 2 // minute
+	defaultAttempt    = 4
+	defaultBatchSize  = 100
 )
 
 func main() {
@@ -25,19 +31,28 @@ func main() {
 	app.Action = run
 
 	app.Flags = append(app.Flags,
-		cli.Uint64Flag{
-			Name:   fromFlag,
-			Usage:  "From timestamp(millisecond) to get trade history from",
-			EnvVar: "FROM",
+		cli.IntFlag{
+			Name:   retryDelayFlag,
+			Usage:  "delay time when do a retry",
+			EnvVar: "RETRY_DELAY",
+			Value:  defaultRetryDelay,
 		},
-		cli.Uint64Flag{
-			Name:   toFlag,
-			Usage:  "To timestamp(millisecond) to get trade history to",
-			EnvVar: "TO",
+		cli.IntFlag{
+			Name:   attemptFlag,
+			Usage:  "number of time doing retry",
+			EnvVar: "ATTEMPT",
+			Value:  defaultAttempt,
+		},
+		cli.IntFlag{
+			Name:   batchSizeFlag,
+			Usage:  "batch to request to binance",
+			EnvVar: "BATCH_SIZE",
+			Value:  defaultBatchSize,
 		},
 	)
 
 	app.Flags = append(app.Flags, binance.NewCliFlags()...)
+	app.Flags = append(app.Flags, timeutil.NewMilliTimeRangeCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -66,13 +81,20 @@ func run(c *cli.Context) error {
 
 	if c.Uint64(fromFlag) != 0 {
 		fromTime = timeutil.TimestampMsToTime(c.Uint64(fromFlag))
+	} else {
+		fromTime = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
 	}
 
 	if c.Uint64(toFlag) != 0 {
 		toTime = timeutil.TimestampMsToTime(c.Uint64(toFlag))
+	} else {
+		toTime = time.Now()
 	}
 
-	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient)
+	retryDelay := c.Int(retryDelayFlag)
+	attempt := c.Int(attemptFlag)
+	batchSize := c.Int(batchSizeFlag)
+	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
 
 	err = binanceFetcher.GetWithdrawHistory(fromTime, toTime)
 	if err != nil {

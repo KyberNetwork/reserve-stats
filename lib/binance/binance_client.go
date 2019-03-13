@@ -246,7 +246,7 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 	}
 
 	if !toTime.IsZero() {
-		params["startTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(toTime), 10)
+		params["endTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(toTime), 10)
 	}
 
 	res, err := bc.sendRequest(

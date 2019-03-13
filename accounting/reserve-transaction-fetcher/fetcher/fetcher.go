@@ -99,6 +99,7 @@ func etherscanNormalTxToCommon(tx etherscan.NormalTx) common.NormalTx {
 	}
 }
 
+// NormalTx returns all normal Ethereum transaction of given address between block range.
 func (f *EtherscanTransactionFetcher) NormalTx(addr ethereum.Address, from, to *big.Int) ([]common.NormalTx, error) {
 	fn := newFetchFunction("normal", func(address string, startBlock *int, endBlock *int, page int, offset int) ([]interface{}, error) {
 		normalTxs, err := f.client.NormalTxByAddress(address, startBlock, endBlock, page, offset, false)
@@ -139,6 +140,7 @@ func etherscanInternalTxToCommon(tx etherscan.InternalTx) common.InternalTx {
 	}
 }
 
+// InternalTx returns all internal transaction of given address between block range.
 func (f *EtherscanTransactionFetcher) InternalTx(addr ethereum.Address, from, to *big.Int) ([]common.InternalTx, error) {
 	fn := newFetchFunction("internal", func(address string, startBlock *int, endBlock *int, page int, offset int) ([]interface{}, error) {
 		internalTxs, err := f.client.InternalTxByAddress(address, startBlock, endBlock, page, offset, false)
@@ -180,6 +182,7 @@ func etherscanERC20TransferToCommon(tx etherscan.ERC20Transfer) common.ERC20Tran
 	}
 }
 
+// ERC20Transfer returns all ERC20 transfers of given address between given block range.
 func (f *EtherscanTransactionFetcher) ERC20Transfer(addr ethereum.Address, from, to *big.Int) ([]common.ERC20Transfer, error) {
 	fn := newFetchFunction("transfer", func(address string, startBlock *int, endBlock *int, page int, offset int) ([]interface{}, error) {
 		transfers, err := f.client.ERC20Transfers(nil, &address, startBlock, endBlock, page, offset)

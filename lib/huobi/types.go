@@ -20,7 +20,7 @@ type TradeHistory struct {
 	AccountID       int64  `json:"account-id,omitempty"`
 	Amount          string `json:"amount,omitempty"`
 	Price           string `json:"price,omitempty"`
-	CreateAt        uint64 `json:"create-at,omitempty"`
+	CreatedAt       uint64 `json:"created-at,omitempty"`
 	Type            string `json:"type,omitempty"`
 	FieldAmount     string `json:"field-amount,omitempty"`
 	FieldCashAmount string `json:"field-cash-amount,omitempty"`
@@ -29,7 +29,7 @@ type TradeHistory struct {
 	UserID          int64  `json:"user-id,omitempty"`
 	Source          string `json:"source,omitempty"`
 	State           string `json:"state,omitempty"`
-	CanceledAt      uint64 `json:"canceled-at,omitempty"`
+	CanceledAt      uint64 `json:"canceled-at"`
 	Exchange        string `json:"exchange,omitempty"`
 	Batch           string `json:"batch,omitempty"`
 }

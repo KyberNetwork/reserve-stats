@@ -65,7 +65,7 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time) 
 
 		result = append(result, tradeHistoriesResponse.Data...)
 
-		startTime = timeutil.TimestampMsToTime(lastTrade.CreateAt)
+		startTime = timeutil.TimestampMsToTime(lastTrade.CreatedAt)
 		if endTime.Before(startTime) {
 			break
 		}

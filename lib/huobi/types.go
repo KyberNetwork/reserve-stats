@@ -15,23 +15,23 @@ type AccountResponse struct {
 
 //TradeHistory is a history of a trade in huobi
 type TradeHistory struct {
-	ID              int64  `json:"id"`
-	Symbol          string `json:"symbol"`
-	AccountID       int64  `json:"account-id"`
-	Amount          string `json:"amount"`
-	Price           string `json:"price"`
-	CreateAt        uint64 `json:"created-at"`
-	Type            string `json:"type"`
-	FieldAmount     string `json:"field-amount"`
-	FieldCashAmount string `json:"field-cash-amount"`
-	FieldFee        string `json:"field-fees"`
-	FinishedAt      uint64 `json:"finished-at"`
-	UserID          int64  `json:"user-id"`
-	Source          string `json:"source"`
-	State           string `json:"state"`
+	ID              int64  `json:"id,omitempty"`
+	Symbol          string `json:"symbol,omitempty"`
+	AccountID       int64  `json:"account-id,omitempty"`
+	Amount          string `json:"amount,omitempty"`
+	Price           string `json:"price,omitempty"`
+	CreatedAt       uint64 `json:"created-at,omitempty"`
+	Type            string `json:"type,omitempty"`
+	FieldAmount     string `json:"field-amount,omitempty"`
+	FieldCashAmount string `json:"field-cash-amount,omitempty"`
+	FieldFees       string `json:"field-fees,omitempty"`
+	FinishedAt      uint64 `json:"finished-at,omitempty"`
+	UserID          int64  `json:"user-id,omitempty"`
+	Source          string `json:"source,omitempty"`
+	State           string `json:"state,omitempty"`
 	CanceledAt      uint64 `json:"canceled-at"`
-	Exchange        string `json:"exchange"`
-	Batch           string `json:"batch"`
+	Exchange        string `json:"exchange,omitempty"`
+	Batch           string `json:"batch,omitempty"`
 }
 
 //TradeHistoryList is a list of trade history
@@ -41,24 +41,17 @@ type TradeHistoryList struct {
 
 //WithdrawHistory is history of a withdraw
 type WithdrawHistory struct {
-	ID                uint64  `json:"id"`
-	TransactionID     uint64  `json:"transaction-id"`
-	CreatedAt         uint64  `json:"created-at"`
-	UpdatedAt         uint64  `json:"updated-at"`
-	CandidateCurrency string  `json:"candiate-currency"`
-	Currency          string  `json:"currency"`
-	Type              string  `json:"type"`
-	Direction         string  `json:"direction"`
-	Amount            float64 `json:"amount"`
-	State             string  `json:"state"`
-	Fees              string  `json:"fees"`
-	ErrorCode         string  `json:"error-code"`
-	ErrorMsg          string  `json:"error-msg"`
-	ToAddress         string  `json:"to-address"`
-	ToAddrTag         string  `json:"to-addr-tag"`
-	TxHash            string  `json:"tx-hash"`
-	Chain             string  `json:"chain"`
-	Extra             string  `json:"extra"`
+	ID         uint64  `json:"id"`
+	Type       string  `json:"type"`
+	Currency   string  `json:"currency"`
+	TxHash     string  `json:"tx-hash"`
+	Amount     float64 `json:"amount"`
+	Address    string  `json:"address"`
+	AddressTag string  `json:"address-tag"`
+	Fee        float64 `json:"fee"`
+	State      string  `json:"state"`
+	CreatedAt  uint64  `json:"created-at"`
+	UpdatedAt  uint64  `json:"updated-at"`
 }
 
 //WithdrawHistoryList is a list of withdraw history

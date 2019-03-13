@@ -7,13 +7,18 @@ import (
 
 	rrstorage "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
 	"github.com/KyberNetwork/tokenrate"
 
+	"database/sql"
 	"github.com/ethereum/go-ethereum"
 	"go.uber.org/zap"
 )
+
+//defaultStartingTime for reserve-rate fetcher is on 31-01-2018
+const defaultStartingTime uint64 = 1517356800000
 
 //Fetcher is the struct taking care of fetching reserve-rates for accounting
 type Fetcher struct {
@@ -80,10 +85,14 @@ func NewFetcher(sugar *zap.SugaredLogger,
 	if fetcher.fromTime.IsZero() {
 		sugar.Debugw("empty from time, trying to get from block from db...")
 		fromBlockInfo, err := fetcher.storage.GetLastResolvedBlockInfo()
-		if err != nil {
+		if err == sql.ErrNoRows {
+			fetcher.fromTime = timeutil.TimestampMsToTime(defaultStartingTime)
+			sugar.Debugw("There is no row from DB, running from default from time", "from time", fetcher.fromTime.String())
+		} else if err != nil {
 			return nil, fmt.Errorf("cannot get last resolved block info from db, err: %v", err)
+		} else if err == nil {
+			fetcher.lastBlockResolver.LastResolved = fromBlockInfo
 		}
-		fetcher.lastBlockResolver.LastResolved = fromBlockInfo
 	}
 
 	return fetcher, nil

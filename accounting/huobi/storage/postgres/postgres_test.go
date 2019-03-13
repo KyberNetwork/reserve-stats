@@ -5,10 +5,12 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 func TestSaveAndGetAccountingRates(t *testing.T) {
@@ -42,9 +44,14 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() {
+		hdb.TearDown()
 		hdb.Close()
 	}()
 
 	err = hdb.UpdateTradeHistory(testData)
 	require.NoError(t, err)
+	data, err := hdb.GetTradeHistory(timeutil.TimestampMsToTime(1540793585600), timeutil.TimestampMsToTime(1540793585699))
+	require.NoError(t, err)
+	assert.Equal(t, len(data), 1)
+	assert.Equal(t, testData.FieldAmount, data[0].FieldAmount)
 }

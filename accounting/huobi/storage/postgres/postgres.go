@@ -3,6 +3,7 @@ package postgres
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
@@ -121,4 +122,31 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trade huobi.TradeHistory) error {
 		return err
 	}
 	return err
+}
+
+//GetTradeHistory return tradehistory between from.. to.. in its json []byte form
+func (hdb *HuobiStorage) GetTradeHistory(from, to time.Time) ([]huobi.TradeHistory, error) {
+	var (
+		dbResult [][]byte
+		result   []huobi.TradeHistory
+		logger   = hdb.sugar.With(
+			"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
+			"from", from.String(),
+			"to", to.String(),
+		)
+		tmp huobi.TradeHistory
+	)
+	const selectStmt = `SELECT data FROM %[1]s WHERE time>=$1 AND time<$2`
+	query := fmt.Sprintf(selectStmt, hdb.tableNames[huobiTradesTableName])
+	logger.Debugw("querying trade history...", "query", query)
+	if err := hdb.db.Select(&dbResult, query, from, to); err != nil {
+		return result, err
+	}
+	for _, data := range dbResult {
+		if err := json.Unmarshal(data, &tmp); err != nil {
+			return result, err
+		}
+		result = append(result, tmp)
+	}
+	return result, nil
 }

@@ -136,6 +136,7 @@ func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (bin
 		if err == nil {
 			return withdrawHistory, nil
 		}
+		logger.Warnw("get withdraw history failed", "error", err, "attempt", attempt)
 		time.Sleep(f.retryDelay)
 	}
 	return withdrawHistory, err

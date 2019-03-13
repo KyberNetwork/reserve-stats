@@ -23,7 +23,7 @@ func (fc *Fetcher) retryGetWithdrawal(fn withdrawalHistoryFetcher, symbol string
 		if err == nil {
 			return result, nil
 		}
-		logger.Debugw("fail to fetch withdrawal history", "error", err, "attempt", i+1)
+		logger.Warnw("fail to fetch withdrawal history", "error", err, "attempt", i+1)
 
 		time.Sleep(fc.retryDelay)
 	}
@@ -81,7 +81,7 @@ func (fc *Fetcher) GetWithdrawHistory(fromID uint64) (map[string][]huobi.Withdra
 					if len(singleResult) > 0 {
 						fetchResult.Store(symbol, singleResult)
 					}
-					logger.Debugw("Fetching done", "symbol", symbol, "error", err, "time", time.Now())
+					logger.Infow("Fetching done", "symbol", symbol, "error", err, "time", time.Now())
 					return nil
 				}
 			}(sym),

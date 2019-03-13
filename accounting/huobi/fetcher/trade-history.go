@@ -25,7 +25,7 @@ func (fc *Fetcher) retry(fn tradeHistoryFetcher, symbol string, startTime, endTi
 		if err == nil {
 			return result, nil
 		}
-		logger.Debugw("fail to fetch trade history", "error", err, "attempt", i+1)
+		logger.Warnw("fail to fetch trade history", "error", err, "attempt", i+1)
 		time.Sleep(fc.retryDelay)
 	}
 	return result, err
@@ -103,7 +103,7 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 					if len(singleResult) > 0 {
 						fetchResult.Store(symbol, singleResult)
 					}
-					logger.Debugw("Fetching done", "symbol", symbol, "error", err, "time", time.Now())
+					logger.Infow("Fetching done", "symbol", symbol, "error", err, "time", time.Now())
 					return nil
 				}
 			}(sym.SymBol),

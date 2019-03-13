@@ -14,8 +14,6 @@ import (
 )
 
 const (
-	fromFlag          = "from"
-	toFlag            = "to"
 	retryDelayFlag    = "retry-delay"
 	attemptFlag       = "attempt"
 	batchSizeFlag     = "batch-size"
@@ -62,6 +60,7 @@ func main() {
 func run(c *cli.Context) error {
 	var (
 		fromTime, toTime time.Time
+		err              error
 	)
 
 	logger, err := libapp.NewLogger(c)
@@ -79,13 +78,16 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	if c.Uint64(fromFlag) != 0 {
-		fromTime = timeutil.TimestampMsToTime(c.Uint64(fromFlag))
+	fromTime, err = timeutil.FromTimeMillisFromContext(c)
+	if err != nil {
+		return err
 	}
 
-	if c.Uint64(toFlag) != 0 {
-		toTime = timeutil.TimestampMsToTime(c.Uint64(toFlag))
-	} else {
+	toTime, err = timeutil.ToTimeMillisFromContext(c)
+	if err != nil {
+		return err
+	}
+	if toTime.IsZero() {
 		toTime = time.Now()
 	}
 

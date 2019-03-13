@@ -26,7 +26,8 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*ListedTokenDB, error) {
 (
 	id SERIAL PRIMARY KEY,
 	address text NOT NULL UNIQUE,
-	symbol text NOT NULL UNIQUE,
+	name text NOT NULL,
+	symbol text NOT NULL,
 	timestamp TIMESTAMP NOT NULL,
 	parent_id SERIAL REFERENCES "%s" (id)
 )
@@ -57,27 +58,26 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 	var (
 		logger = ltd.sugar.With("func", "accounting/lisetdtokenstorage.CreateOrUpdate")
 	)
-	upsertQuery := fmt.Sprintf(`INSERT INTO "%s" (address, symbol, timestamp)
+	upsertQuery := fmt.Sprintf(`INSERT INTO "%s" (address, name, symbol, timestamp)
 	VALUES (
 		$1, 
 		$2, 
-		to_timestamp($3 / 100)
-	)
-	ON CONFLICT (symbol) DO UPDATE SET address = EXCLUDED.address, timestamp = EXCLUDED.timestamp`,
-		tokenTable)
-
-	upsertOldTokenQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address, symbol, timestamp, parent_id)
-	VALUES (
-		$1, 
-		$2, 
-		to_timestamp($3 /1000),
-		SELECT id FROM "%[1]s" WHERE symbol = $2
+		$3,
+		to_timestamp($4::double precision / 100)
 	)
 	ON CONFLICT (address) DO NOTHING`,
 		tokenTable)
 
-	logger.Debugw("insert query", "query", upsertQuery)
-	logger.Debugw("insert old query", "query", upsertOldTokenQuery)
+	upsertOldTokenQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address, name, symbol, timestamp, parent_id)
+	VALUES (
+		$1, 
+		$2, 
+		$3,
+		to_timestamp($4::double precision / 1000),
+		SELECT id FROM "%[1]s" WHERE symbol = $2
+	)
+	ON CONFLICT (address) DO NOTHING`,
+		tokenTable)
 
 	tx, err := ltd.db.Beginx()
 	if err != nil {
@@ -88,6 +88,7 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 	for _, token := range tokens {
 		if _, err = tx.Exec(upsertQuery,
 			token.Address,
+			token.Name,
 			token.Symbol,
 			token.Timestamp); err != nil {
 			return err
@@ -97,6 +98,7 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 			for _, oldToken := range token.Old {
 				if _, err = tx.Exec(upsertOldTokenQuery,
 					oldToken.Address,
+					token.Name,
 					token.Symbol,
 					oldToken.Timestamp); err != nil {
 					return err

@@ -239,13 +239,20 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 	}
 
 	endpoint := fmt.Sprintf("%s/wapi/v3/withdrawHistory.html", endpointPrefix)
+
+	params := map[string]string{}
+	if !fromTime.IsZero() {
+		params["startTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(fromTime), 10)
+	}
+
+	if !toTime.IsZero() {
+		params["endTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(toTime), 10)
+	}
+
 	res, err := bc.sendRequest(
 		http.MethodGet,
 		endpoint,
-		map[string]string{
-			"startTime": strconv.FormatUint(timeutil.TimeToTimestampMs(fromTime), 10),
-			"endTime":   strconv.FormatUint(timeutil.TimeToTimestampMs(toTime), 10),
-		},
+		params,
 		true,
 		time.Now(),
 	)

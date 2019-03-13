@@ -121,3 +121,70 @@ func (f *Fetcher) GetTradeHistory(fromTime, toTime time.Time) error {
 	// TODO: save to storage
 	return nil
 }
+
+func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (binance.WithdrawHistoryList, error) {
+	var (
+		withdrawHistory binance.WithdrawHistoryList
+		err             error
+		logger          = f.sugar.With(
+			"func", "accounting/binance-fetcher.getWithdrawHistoryWithRetry",
+		)
+	)
+	for attempt := 0; attempt < f.attempt; attempt++ {
+		logger.Debugw("attempt to get withdraw history", "attempt", attempt, "startTime", startTime, "endTime", endTime)
+		withdrawHistory, err = f.client.GetWithdrawalHistory(startTime, endTime)
+		if err == nil {
+			return withdrawHistory, nil
+		}
+		logger.Warnw("get withdraw history failed", "error", err, "attempt", attempt)
+		time.Sleep(f.retryDelay)
+	}
+	return withdrawHistory, err
+}
+
+func appendResult(result map[string]binance.WithdrawHistory, withdrawList []binance.WithdrawHistory) time.Time {
+	var (
+		startTime time.Time
+	)
+	for _, withdrawHistory := range withdrawList {
+		if _, exist := result[withdrawHistory.ID]; !exist {
+			result[withdrawHistory.ID] = withdrawHistory
+			withdrawHistoryTime := timeutil.TimestampMsToTime(withdrawHistory.ApplyTime)
+			if withdrawHistoryTime.After(startTime) {
+				startTime = withdrawHistoryTime
+			}
+		}
+	}
+	if startTime.IsZero() {
+		startTime = time.Now()
+	}
+	return startTime
+}
+
+//GetWithdrawHistory get all withdraw history in time range fromTime to toTime
+func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) (map[string]binance.WithdrawHistory, error) {
+	var (
+		result = make(map[string]binance.WithdrawHistory)
+		logger = f.sugar.With("func", "accounting/binance-fetcher.GetWithdrawHistory")
+	)
+	logger.Info("Start get withdraw history")
+	startTime := fromTime
+	endTime := toTime
+	for {
+		withdrawHistory, err := f.getWithdrawHistoryWithRetry(startTime, endTime)
+		if err != nil {
+			return result, err
+		}
+		// logger.Debugw("withdraw hitory", "value", withdrawHistory.WithdrawList)
+		startTime = appendResult(result, withdrawHistory.WithdrawList)
+		// result = append(result, withdrawHistory.WithdrawList...)
+		if startTime.After(endTime) {
+			break
+		}
+	}
+	// log for test get withdraw history successfully
+	logger.Debugw("withdraw history", "list", result)
+
+	// TODO: save to storage
+	return result, nil
+}

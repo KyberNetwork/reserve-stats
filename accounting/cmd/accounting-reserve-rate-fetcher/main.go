@@ -13,13 +13,11 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
 
-	"github.com/KyberNetwork/tokenrate"
 	"github.com/KyberNetwork/tokenrate/coingecko"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
-	"go.uber.org/zap"
 )
 
 const (
@@ -75,51 +73,6 @@ func main() {
 	}
 }
 
-func retryFetchTokenRate(maxAttempt int,
-	sugar *zap.SugaredLogger,
-	rsvRateCrawler *crawler.ReserveRatesCrawler,
-	block uint64,
-	retryInterval time.Duration) (map[string]map[string]rsvRateCommon.ReserveRateEntry, error) {
-	var (
-		result map[string]map[string]rsvRateCommon.ReserveRateEntry
-		err    error
-		logger = sugar.With("function", "main/retryFetchTokenRate", "block", block)
-	)
-
-	for i := 0; i < maxAttempt; i++ {
-		result, err = rsvRateCrawler.GetReserveRates(block)
-		if err == nil {
-			return result, nil
-		}
-		logger.Debugw("failed to fetch reserve rate", "attempt", i, "error", err)
-		time.Sleep(retryInterval)
-	}
-
-	return nil, err
-}
-
-func retryFetchETHUSDRate(maxAttempt int,
-	sugar *zap.SugaredLogger,
-	fetcher tokenrate.ETHUSDRateProvider,
-	timestamp time.Time,
-	retryInterval time.Duration) (float64, error) {
-	var (
-		result float64
-		err    error
-		logger = sugar.With("function", "main/retryFetchTokenRate", "time", timestamp.String())
-	)
-
-	for i := 0; i < maxAttempt; i++ {
-		result, err = fetcher.USDRate(timestamp)
-		if err == nil {
-			return result, nil
-		}
-		logger.Debugw("failed to fetch ETH-USD rate", "attempt", i, "error", err)
-		time.Sleep(retryInterval)
-	}
-
-	return result, err
-}
 func run(c *cli.Context) error {
 	var (
 		options        []fetcher.Option
@@ -148,6 +101,12 @@ func run(c *cli.Context) error {
 	addrs := c.StringSlice(addressesFlag)
 	if len(addrs) == 0 {
 		return fmt.Errorf("empty reserve address")
+	}
+
+	for _, addr := range addrs {
+		if !ethereum.IsHexAddress(addr) {
+			return fmt.Errorf("malformed address: %s", addr)
+		}
 	}
 
 	symbolResolver, err := blockchain.NewTokenSymbolFromContext(c)

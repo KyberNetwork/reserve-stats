@@ -54,7 +54,7 @@ func TestBinanceClientWithLimiter(t *testing.T) {
 	t.Skip()
 	var (
 		rps     = 20.0
-		limiter = rate.NewLimiter(rate.Limit(rps), 1)
+		limiter = rate.NewLimiter(rate.Limit(rps), 5)
 		wg      = &sync.WaitGroup{}
 	)
 	logger, err := zap.NewDevelopment()
@@ -75,8 +75,7 @@ func TestBinanceClientWithLimiter(t *testing.T) {
 	}
 
 	binanceClient := NewBinance(binanceAPIKey, binanceSecretKey, sugar, WithRateLimiter(limiter))
-
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 500; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()

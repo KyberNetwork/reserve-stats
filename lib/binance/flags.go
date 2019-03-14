@@ -5,7 +5,6 @@ import (
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
-	"golang.org/x/time/rate"
 )
 
 const (
@@ -31,7 +30,7 @@ func NewCliFlags() []cli.Flag {
 			Name:   binanceRequestPerSecond,
 			Usage:  "binance request limit per second, default to 20 which etherscan's normal rate limit",
 			EnvVar: "BINANCE_REQUESTS_PER_SECOND",
-			Value:  20,
+			Value:  10,
 		},
 	}
 }
@@ -55,6 +54,6 @@ func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, er
 		return nil, errors.New("rate limit must be greater than 0")
 	}
 
-	limiter := rate.NewLimiter(rate.Limit(rps), 1)
+	limiter := NewRateLimiter(rps)
 	return NewBinance(apiKey, secretKey, sugar, WithRateLimiter(limiter)), nil
 }

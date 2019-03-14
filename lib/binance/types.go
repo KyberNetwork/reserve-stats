@@ -10,7 +10,7 @@ type APIResponse struct {
 //TradeHistory return a history of a trade
 type TradeHistory struct {
 	Symbol          string `json:"symbol"`
-	ID              int64  `json:"id"`
+	ID              uint64 `json:"id"`
 	OrderID         int64  `json:"orderId"`
 	Price           string `json:"price"`
 	Quantity        string `json:"qty"`
@@ -50,4 +50,51 @@ type WithdrawHistory struct {
 //WithdrawHistoryList is a list of binance withdraw history
 type WithdrawHistoryList struct {
 	WithdrawList []WithdrawHistory `json:"withdrawList"`
+}
+
+//ExchangeInfo is info of binance
+type ExchangeInfo struct {
+	Timezone   string      `json:"timezone"`
+	ServerTime uint64      `json:"serverTime"`
+	RateLimits []RateLimit `json:"rateLimits"`
+	Symbols    []Symbol    `json:"symbols"`
+}
+
+//RateLimit is a rate limit type
+type RateLimit struct {
+	RateLimitType string `json:"rateLimitType"`
+	Internval     string `json:"interval"`
+	IntervalNum   int    `json:"internvalNum"`
+	Limit         int    `json:"limit"`
+}
+
+//Symbol is token symbol from binance
+type Symbol struct {
+	Symbol              string             `json:"symbol"`
+	Status              string             `json:"status"`
+	BaseAsset           string             `json:"baseAsset"`
+	BaseAssetPrecision  int                `json:"baseAssetPrecision"`
+	QuoteAsset          string             `json:"quoteAsset"`
+	QuoteAssetPrecision int                `json:"quoteAssetPrecision"`
+	OrderTypes          []string           `json:"orderTypes"`
+	IcebergAllowed      bool               `json:"icebergAllowed"`
+	Filters             []SymbolFilterType `json:"filters"`
+}
+
+//SymbolFilterType is a
+type SymbolFilterType struct {
+	FilterType       string `json:"filterType"`
+	MinPrice         string `json:"minPrice,omitempty"`
+	MaxPrice         string `json:"maxPrice,omitempty"`
+	TickSize         string `json:"tickSize,omitempty"`
+	MultiplierUp     string `json:"multiplierUp,omitempty"`
+	MultiplierDown   string `json:"multiplierDown,omitempty"`
+	AvgPriceMins     int    `json:"avgPriceMins,omitempty"`
+	MinQty           string `json:"minQty,omitempty"`
+	MaxQty           string `json:"maxQty,omitempty"`
+	StepSize         string `json:"stepSize,omitempty"`
+	MinNotional      string `json:"minNotional,omitempty"`
+	ApplytoMarket    bool   `json:"applyToMarket,omitempty"`
+	Limit            int    `json:"limit,omitempty"`
+	MaxNumAlgoOrders int    `json:"MaxNumAlgoOrders,omitempty"`
 }

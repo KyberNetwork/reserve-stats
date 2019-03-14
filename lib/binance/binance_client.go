@@ -15,7 +15,6 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
-	"golang.org/x/time/rate"
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
@@ -35,7 +34,7 @@ type Client struct {
 //Option sets the initialization behavior for binance instance
 type Option func(cl *Client)
 
-//WithRateLimiter alter ratelimiter of binance client
+//WithRateLimiter alter rate limiter of binance client
 func WithRateLimiter(limiter Limiter) Option {
 	return func(cl *Client) {
 		cl.rateLimiter = limiter
@@ -54,21 +53,14 @@ func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...O
 	}
 	//Set Default rate limiter to the limit spefified by https://api.binance.com/api/v1/exchangeInfo
 	if clnt.rateLimiter == nil {
-		const binanceDefaultRateLimit = 20
-
-		clnt.rateLimiter = rate.NewLimiter(rate.Limit(binanceDefaultRateLimit), 1)
+		clnt.rateLimiter = NewRateLimiter(defaultHardLimit)
 	}
 	return clnt
 }
 
 //waitN mimic the leaky bucket algorithm to wait for n drop
 func (bc *Client) waitN(n int) error {
-	for i := 0; i < n; i++ {
-		if err := bc.rateLimiter.WaitN(context.Background(), 1); err != nil {
-			return err
-		}
-	}
-	return nil
+	return bc.rateLimiter.WaitN(context.Background(), n)
 }
 
 func (bc *Client) fillRequest(req *http.Request, signNeeded bool, timepoint time.Time) error {
@@ -167,7 +159,8 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 }
 
 //GetTradeHistory return history of trading on binance
-func (bc *Client) GetTradeHistory(symbol string, fromID int64) ([]TradeHistory, error) {
+//if fromID = -1 then function will not put fromId as a param
+func (bc *Client) GetTradeHistory(symbol string, fromID uint64) ([]TradeHistory, error) {
 	var (
 		result []TradeHistory
 	)
@@ -178,13 +171,16 @@ func (bc *Client) GetTradeHistory(symbol string, fromID int64) ([]TradeHistory, 
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v3/myTrades", endpointPrefix)
+	params := map[string]string{
+		"symbol": symbol,
+	}
+
+	params["fromId"] = strconv.FormatUint(fromID, 10)
+
 	res, err := bc.sendRequest(
 		http.MethodGet,
 		endpoint,
-		map[string]string{
-			"symbol": symbol,
-			"fromId": strconv.FormatInt(fromID, 10),
-		},
+		params,
 		true,
 		time.Now(),
 	)
@@ -233,14 +229,47 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 	}
 
 	endpoint := fmt.Sprintf("%s/wapi/v3/withdrawHistory.html", endpointPrefix)
+
+	params := map[string]string{}
+	if !fromTime.IsZero() {
+		params["startTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(fromTime), 10)
+	}
+
+	if !toTime.IsZero() {
+		params["endTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(toTime), 10)
+	}
+
 	res, err := bc.sendRequest(
 		http.MethodGet,
 		endpoint,
-		map[string]string{
-			"startTime": strconv.FormatUint(timeutil.TimeToTimestampMs(fromTime), 10),
-			"endTime":   strconv.FormatUint(timeutil.TimeToTimestampMs(toTime), 10),
-		},
+		params,
 		true,
+		time.Now(),
+	)
+	if err != nil {
+		return result, err
+	}
+	err = json.Unmarshal(res, &result)
+	return result, err
+}
+
+//GetExchangeInfo return exchange info
+func (bc *Client) GetExchangeInfo() (ExchangeInfo, error) {
+	var (
+		result ExchangeInfo
+	)
+	const weight = 1
+	//Wait before creating the request to avoid timestamp request outside the recWindow
+	if err := bc.rateLimiter.WaitN(context.Background(), weight); err != nil {
+		return result, err
+	}
+
+	endpoint := fmt.Sprintf("%s/api/v1/exchangeInfo", endpointPrefix)
+	res, err := bc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		map[string]string{},
+		false,
 		time.Now(),
 	)
 	if err != nil {

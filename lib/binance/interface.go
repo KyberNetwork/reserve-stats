@@ -2,15 +2,17 @@ package binance
 
 import (
 	"context"
+	"time"
 )
 
 //Interface is interface for binance api client
 type Interface interface {
-	GetTradeHistory(symbol string, fromID int64) (TradeHistory, error)
-	GetWithdrawHistory(fromTime, toTime uint64) (WithdrawHistoryList, error)
+	GetTradeHistory(symbol string, fromID uint64) (TradeHistory, error)
+	GetWithdrawHistory(fromTime, toTime time.Time) (WithdrawHistoryList, error)
+	GetExchangeInfo() (ExchangeInfo, error)
 }
 
-//Limiter define an inteface for binance Limiter action
+// Limiter is the resource limiter for accessing Binance API.
 type Limiter interface {
 	WaitN(context.Context, int) error
 }

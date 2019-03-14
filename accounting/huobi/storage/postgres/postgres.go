@@ -124,9 +124,6 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trade huobi.TradeHistory) error {
 		trade.ID,
 		data,
 	)
-	if err != nil {
-		return err
-	}
 	return err
 }
 

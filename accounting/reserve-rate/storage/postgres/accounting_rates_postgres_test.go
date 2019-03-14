@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
@@ -52,7 +51,6 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	require.NoError(t, err)
 
 	result, err := arrs.GetRates(
-		[]ethereum.Address{ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")},
 		time.Now().AddDate(0, 0, -2),
 		time.Now().AddDate(0, 0, 2))
 	require.NoError(t, err)

@@ -6,5 +6,5 @@ import (
 
 //Interface defines a set of interface for huobi storage, which can be implemented by any DB
 type Interface interface {
-	UpdateTradeHistory(trade huobi.TradeHistory) error
+	UpdateTradeHistory(trade []huobi.TradeHistory) error
 }

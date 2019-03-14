@@ -112,10 +112,8 @@ func run(c *cli.Context) error {
 			return err
 		}
 		for _, record := range data {
-			for _, tradeHistory := range record {
-				if err := hdb.UpdateTradeHistory(tradeHistory); err != nil {
-					return err
-				}
+			if err := hdb.UpdateTradeHistory(record); err != nil {
+				return err
 			}
 		}
 		startTime = next

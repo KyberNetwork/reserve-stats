@@ -40,7 +40,7 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	db, err := sqlx.Connect("postgres", "host=127.0.0.1 port=5432 user=reserve_stats password=reserve_stats dbname=reserve_stats sslmode=disable")
 	require.NoError(t, err)
 
-	hdb, err := NewDB(sugar, db, "test_huobi_trades")
+	hdb, err := NewDB(sugar, db, WithTradeTableName("test_huobi_trades"))
 	require.NoError(t, err)
 
 	defer func() {

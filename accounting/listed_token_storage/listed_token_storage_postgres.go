@@ -79,6 +79,8 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 	ON CONFLICT (address) DO NOTHING`,
 		tokenTable)
 
+	logger.Debugw("upsert token", "value", upsertOldTokenQuery)
+
 	tx, err := ltd.db.Beginx()
 	if err != nil {
 		return err
@@ -108,4 +110,19 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 	}
 
 	return err
+}
+
+// GetTokens return all tokens listed
+func (ltd *ListedTokenDB) GetTokens() ([]common.ListedToken, error) {
+	var (
+		logger = ltd.sugar.With(
+			"func",
+			"accounting/listed_token_storage/listedtokenstorage.GetTokens",
+		)
+		result []common.ListedToken
+	)
+	logger.Info("start getting token")
+	getQuery := fmt.Sprintf(`SELECT * FROM `)
+	logger.Debugw("get tokens query", "query", getQuery)
+	return result, nil
 }

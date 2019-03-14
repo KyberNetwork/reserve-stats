@@ -10,20 +10,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 )
 
 const (
-	fromParams      uint64 = 12342082
-	tradeLogsURL           = "127.0.0.1:7000"
-	testAddr               = "127.0.0.1:7001"
-	writeKeyID             = "writekeyID"
-	writeSigningKey        = "fdsr122541"
-	readKeyID              = "readKeyID"
-	readSigningKey         = "xxx123xxx"
+	fromParams      = 12342082
+	tradeLogsURL    = "127.0.0.1:7000"
+	testAddr        = "127.0.0.1:7001"
+	writeKeyID      = "writekeyID"
+	writeSigningKey = "fdsr122541"
+	readKeyID       = "readKeyID"
+	readSigningKey  = "xxx123xxx"
 )
 
 //WrappedRecorded wrap the gin response from proxy server
@@ -103,7 +104,9 @@ func mockServer() error {
 }
 
 func TestReverseProxy(t *testing.T) {
-	go mockServer()
+	go func(t *testing.T) {
+		assert.NoError(t, mockServer())
+	}(t)
 
 	// ping until mock server response
 	ok := make(chan bool)
@@ -154,7 +157,7 @@ func TestReverseProxy(t *testing.T) {
 				if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 					t.Errorf("Reverse proxy not working, %s", err.Error())
 				}
-				assert.Equal(t, result.FromTime, fromParams, "Reverse proxy should receive correct params")
+				assert.Equal(t, result.FromTime, uint64(fromParams), "Reverse proxy should receive correct params")
 			},
 		},
 	}
@@ -201,18 +204,22 @@ func TestReverseProxy(t *testing.T) {
 	}
 
 	for _, tc := range testCaseReadKey {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { runHTTPTestCase(t, tc, testServer.r, readKeyID, readSigningKey) })
 	}
 
 	for _, tc := range testCaseWriteKey {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { runHTTPTestCase(t, tc, testServer.r, writeKeyID, writeSigningKey) })
 	}
 
 	for _, tc := range testsFailedWithoutKey {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { runHTTPTestCase(t, tc, testServer.r, "", "") })
 	}
 
 	for _, tc := range testFailedWhenWriteWithReadKey {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { runHTTPTestCase(t, tc, testServer.r, readKeyID, readSigningKey) })
 	}
 }

@@ -8,11 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 func (s *mockStorage) GetIntegrationVolume(fromTime, toTime time.Time) (map[uint64]*common.IntegrationVolume, error) {
@@ -62,13 +63,7 @@ func (s *mockStorage) GetTokenHeatmap(token ethereum.Address, from, to time.Time
 }
 
 func newTestServer() (*Server, error) {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		return nil, err
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
-
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	return NewServer(
 		&mockStorage{},
 		"",
@@ -118,6 +113,7 @@ func TestTradeLogsRoute(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, router) })
 	}
 }
@@ -209,6 +205,7 @@ func TestBurnFeeRoute(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, router) })
 	}
 }

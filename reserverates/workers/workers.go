@@ -26,7 +26,6 @@ type FetcherJob struct {
 	block    uint64
 	attempts int
 	addrs    []string
-	crawler  *crawler.ReserveRatesCrawler
 }
 
 // NewFetcherJob return an instance of FetcherJob

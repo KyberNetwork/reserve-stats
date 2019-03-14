@@ -7,16 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"go.uber.org/zap"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 func newTestGeoInfo(server *httptest.Server) (*Client, error) {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		return nil, err
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	return NewClient(sugar, server.URL)
 }
 
@@ -40,7 +35,10 @@ func TestGetValidResponse(t *testing.T) {
 			t.Error("Request to wrong endpoint", "result", req.URL.String())
 		}
 		rw.Header().Set("Content-Type", "application/json")
-		rw.Write(js)
+		if _, err = rw.Write(js); err != nil {
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}))
 
 	g, err := newTestGeoInfo(server)
@@ -77,7 +75,10 @@ func TestInvalidResponse(t *testing.T) {
 			t.Error("Request to wrong endpoint", "result", req.URL.String())
 		}
 		rw.Header().Set("Content-Type", "application/json")
-		rw.Write(js)
+		if _, err = rw.Write(js); err != nil {
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}))
 
 	g, err := newTestGeoInfo(server)

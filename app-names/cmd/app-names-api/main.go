@@ -38,13 +38,11 @@ func run(c *cli.Context) error {
 	if err := libapp.Validate(c); err != nil {
 		return err
 	}
-	logger, err := libapp.NewLogger(c)
+	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	defer flush()
 
 	addrToAppname := appNames.NewMapAddrAppName(appNames.WithDataFile(c.String(dataFilePathFlag)))
 

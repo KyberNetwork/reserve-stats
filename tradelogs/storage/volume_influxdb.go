@@ -15,12 +15,6 @@ import (
 	influxModel "github.com/influxdata/influxdb/models"
 )
 
-const (
-	tokenVolumeField = "token_volume"
-	ethVolumeField   = "eth_volume"
-	fiatVolumeField  = "usd_volume"
-)
-
 var (
 	errCantConvert       = errors.New("cannot convert response from influxDB to pre-defined struct")
 	assetMeasurementName = map[string]string{

@@ -7,10 +7,11 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (

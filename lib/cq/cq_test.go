@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 func TestNewContinuousQuery(t *testing.T) {
@@ -123,17 +125,13 @@ func setupTest() (client.Client, *zap.SugaredLogger, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		return nil, nil, err
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	return c, sugar, nil
 }
 
 func TestContinuousQuery_Deploy(t *testing.T) {
 	c, sugar, err := setupTest()
+	require.NoError(t, err)
 	//tear down
 	defer func() {
 		if _, err := influxdb.QueryDB(c, fmt.Sprintf("DROP DATABASE %s", testDBName), testDBName); err != nil {
@@ -179,9 +177,8 @@ func TestContinuousQuery_Deploy(t *testing.T) {
 			t.Errorf("expect cq %s to be dropped, yet it is still there", cqName)
 		}
 	}
-	// TODO: make sure that deploy can be successfully called second time
 
-	cq, err = NewContinuousQuery(
+	_, err = NewContinuousQuery(
 		"test_cq",
 		"test_db_2",
 		"1h",
@@ -191,9 +188,8 @@ func TestContinuousQuery_Deploy(t *testing.T) {
 		[]string{"10m", "20m"},
 	)
 	require.NoError(t, err)
-	// TODO: makes sure that cqs database changed form test_db --> test_db_2
 
-	cq, err = NewContinuousQuery(
+	_, err = NewContinuousQuery(
 		"test_cq",
 		"test_db",
 		"3h",
@@ -203,9 +199,8 @@ func TestContinuousQuery_Deploy(t *testing.T) {
 		[]string{"10m", "20m"},
 	)
 	require.NoError(t, err)
-	// TODO: makes sure that cqs resample every interval changed from 1h --> 3h
 
-	cq, err = NewContinuousQuery(
+	_, err = NewContinuousQuery(
 		"test_cq",
 		"test_db",
 		"1h",
@@ -215,9 +210,8 @@ func TestContinuousQuery_Deploy(t *testing.T) {
 		[]string{"10m", "20m"},
 	)
 	require.NoError(t, err)
-	// TODO: makes sure that cqs resample for interval changed from 2h --> 4h
 
-	cq, err = NewContinuousQuery(
+	_, err = NewContinuousQuery(
 		"test_cq",
 		"test_db",
 		"1h",
@@ -227,9 +221,8 @@ func TestContinuousQuery_Deploy(t *testing.T) {
 		[]string{"10m", "20m"},
 	)
 	require.NoError(t, err)
-	// TODO: makes sure that cqs query updated
 
-	cq, err = NewContinuousQuery(
+	_, err = NewContinuousQuery(
 		"test_cq",
 		"test_db",
 		"1h",
@@ -239,9 +232,8 @@ func TestContinuousQuery_Deploy(t *testing.T) {
 		[]string{"10m", "20m"},
 	)
 	require.NoError(t, err)
-	// TODO: makes sure that cqs time interval changed from 1h --> 2h
 
-	cq, err = NewContinuousQuery(
+	_, err = NewContinuousQuery(
 		"test_cq",
 		"test_db",
 		"1h",
@@ -251,13 +243,11 @@ func TestContinuousQuery_Deploy(t *testing.T) {
 		[]string{"15m", "25m"},
 	)
 	require.NoError(t, err)
-	// TODO: makes sure that cqs offset interval changed from 10, 20 --> 15, 25
-
-	// TODO: refactors above tests to table test format
 }
 
 func TestContinuousQuery_Execute(t *testing.T) {
 	c, sugar, err := setupTest()
+	require.NoError(t, err)
 	//tear down
 	defer func() {
 		if _, err := influxdb.QueryDB(c, fmt.Sprintf("DROP DATABASE %s", testDBName), testDBName); err != nil {
@@ -273,6 +263,7 @@ func TestContinuousQuery_Execute(t *testing.T) {
 		"1m",
 		[]string{"10s", "15s"},
 	)
+	require.NoError(t, err)
 
 	err = cq.Execute(c, sugar)
 	require.NoError(t, err)

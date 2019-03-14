@@ -2,19 +2,21 @@ package http
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
 	"testing"
 	"time"
 
+	"github.com/influxdata/influxdb/client/v2"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
+
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
 	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserverates/storage/influx"
-	"github.com/influxdata/influxdb/client/v2"
-	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -64,11 +66,7 @@ func tearDownTestDB(t *testing.T, influxClient client.Client) {
 func TestHTTPRateServer(t *testing.T) {
 	const requestEndpoint = "reserve-rates"
 
-	logger, err := zap.NewDevelopment()
-	assert.Nil(t, err, "logger should be created")
-
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 
 	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr: testInfluxURL,
@@ -94,6 +92,7 @@ func TestHTTPRateServer(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, server.r) })
 	}
 }

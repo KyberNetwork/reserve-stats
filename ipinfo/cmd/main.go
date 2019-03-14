@@ -4,12 +4,13 @@ import (
 	"log"
 	"os"
 
+	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
+	"github.com/urfave/cli"
+
 	"github.com/KyberNetwork/reserve-stats/ipinfo"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/go-ozzo/ozzo-validation"
-	"github.com/go-ozzo/ozzo-validation/is"
-	"github.com/urfave/cli"
 )
 
 const dataDirFlag = "data-dir"
@@ -43,12 +44,11 @@ func runHTTPServer(c *cli.Context) error {
 		return err
 	}
 
-	logger, err := libapp.NewLogger(c)
+	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	defer flush()
 
 	err = validation.Validate(
 		c.String(httputil.PortFlag),

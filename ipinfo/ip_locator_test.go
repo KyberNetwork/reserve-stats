@@ -4,16 +4,11 @@ import (
 	"net"
 	"testing"
 
-	"go.uber.org/zap"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 func newTestLocator() (*Locator, error) {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		return nil, err
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	return NewLocator(sugar, "testdata")
 }
 

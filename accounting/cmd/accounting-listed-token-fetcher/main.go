@@ -49,12 +49,12 @@ func run(c *cli.Context) error {
 		block       *big.Int
 		reserveAddr ethereum.Address
 	)
-	logger, err := libapp.NewLogger(c)
+	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	defer flush()
+
 	if c.String(blockFlag) == "" {
 		sugar.Info("no block number provided, get listed token from latest block")
 	} else {

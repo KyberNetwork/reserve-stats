@@ -56,7 +56,7 @@ func (c *Client) GetTxInfo(tx string) (ip string, country string, err error) {
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return "", "", err
 	}
-	if response.Success != true {
+	if !response.Success {
 		if response.Err == errNotFoundMsg {
 			c.sugar.Debugw("transaction not found", "tx", tx, "err", response.Err)
 			return "", "", nil

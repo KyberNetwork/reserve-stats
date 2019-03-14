@@ -8,15 +8,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 func aggregationBurnFeeTestData(is *InfluxStorage) error {
-	const (
-		endpoint = "http://127.0.0.1:8086/"
-	)
 	cqs, err := tradelogcq.CreateBurnFeeCqs(is.dbName)
 	if err != nil {
 		return err

@@ -31,13 +31,12 @@ func main() {
 }
 
 func run(c *cli.Context) error {
-	logger, err := libapp.NewLogger(c)
+	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
+	defer flush()
 
-	sugar := logger.Sugar()
 	sugar.Info("Run price analytic module")
 
 	db, err := libapp.NewDBFromContext(c)

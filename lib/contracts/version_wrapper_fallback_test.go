@@ -1,14 +1,15 @@
 package contracts
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/require"
+
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 func TestVersionedWrapperFallback_GetReserveRate(t *testing.T) {
@@ -22,10 +23,7 @@ func TestVersionedWrapperFallback_GetReserveRate(t *testing.T) {
 		ethAddr         = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 	)
 
-	logger, err := zap.NewDevelopment()
-	require.NoError(t, err)
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 
 	client, err := ethclient.Dial(ethNodeURL)
 	require.NoError(t, err)

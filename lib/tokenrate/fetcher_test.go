@@ -4,18 +4,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/tokenrate/coingecko"
 	"github.com/influxdata/influxdb/client/v2"
-	"go.uber.org/zap"
 )
 
 func TestSaveTokenRate(t *testing.T) {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 
 	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr: "http://localhost:8086",

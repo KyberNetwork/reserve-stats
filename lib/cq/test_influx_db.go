@@ -13,7 +13,6 @@ const (
 	testDBName        = "test_db"
 	testMSName        = "test_measurement"
 	nTestRecord       = 100
-	recordInterval    = 1000
 	tags              = "abc"
 	timePrecision     = "s"
 )

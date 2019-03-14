@@ -5,12 +5,13 @@ import (
 	"log"
 	"os"
 
+	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/go-ozzo/ozzo-validation/is"
+	"github.com/urfave/cli"
+
 	"github.com/KyberNetwork/reserve-stats/gateway/http"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/go-ozzo/ozzo-validation"
-	"github.com/go-ozzo/ozzo-validation/is"
-	"github.com/urfave/cli"
 )
 
 const (
@@ -93,7 +94,10 @@ func main() {
 
 func run(c *cli.Context) error {
 	logger, err := libapp.NewLogger(c)
-	defer logger.Sync()
+	if err != nil {
+		return err
+	}
+	defer libapp.NewFlusher(logger)()
 
 	err = validation.Validate(c.String(tradeLogsAPIURLFlag),
 		validation.Required,

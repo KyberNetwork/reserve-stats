@@ -64,14 +64,11 @@ func run(c *cli.Context) error {
 	var (
 		startTime time.Time
 	)
-	logger, err := libapp.NewLogger(c)
+	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-
-	defer logger.Sync()
-
-	sugar := logger.Sugar()
+	defer flush()
 
 	influxClient, err := influxdb.NewClientFromContext(c)
 	if err != nil {

@@ -66,10 +66,7 @@ func isNextDay(t1, t2 time.Time) bool {
 	t1, t2 = t1.UTC(), t2.UTC()
 	midnight1 := timeutil.Midnight(t1)
 	midnight2 := timeutil.Midnight(t2)
-	if midnight1.AddDate(0, 0, 1).Equal(midnight2) {
-		return true
-	}
-	return false
+	return nextDay(midnight1).Equal(midnight2)
 }
 
 func nextDay(t time.Time) time.Time {
@@ -192,20 +189,6 @@ func (lbr *LastBlockResolver) Next() (BlockInfo, error) {
 	}
 	lbr.lastResolved = lastBlock
 	return lastBlock, nil
-}
-
-// isLastBlock check if the block is the last block of the day.
-func (lbr *LastBlockResolver) isLastBlock(block BlockInfo) (bool, error) {
-	nextBlockTimestamp, err := lbr.resolver.Resolve(block.Block + 1)
-	if err != nil {
-		return false, err
-	}
-
-	if isNextDay(block.Timestamp, nextBlockTimestamp) {
-		return true, nil
-	}
-
-	return false, nil
 }
 
 // searchLastBlock returns the last block of the day before end block.

@@ -68,14 +68,14 @@ VALUES ($1, $2, $3, $4, NOW()) RETURNING id`
 	}
 
 	ts, err := s.resolv.Resolve(address)
-	if err == blockchain.ErrNotAvailable {
+	switch err {
+	case blockchain.ErrNotAvailable:
 		logger.Debugw("address contract creation time is not available", "err", err)
-		err = nil
 		params = append(params, nil)
-	} else if err != nil {
-		return 0, err
-	} else {
+	case nil:
 		params = append(params, ts.UTC())
+	default:
+		return 0, err
 	}
 
 	if err = s.db.Get(&id, fmt.Sprintf(insertFmt, addressesTableName), params...); err != nil {
@@ -189,14 +189,14 @@ WHERE id = $5 RETURNING id;`
 
 	// fill timestamp value
 	ts, err := s.resolv.Resolve(address)
-	if err == blockchain.ErrNotAvailable {
+	switch err {
+	case blockchain.ErrNotAvailable:
 		logger.Debugw("address contract creation time is not available", "err", err)
-		err = nil
 		params = append(params, nil)
-	} else if err != nil {
-		return err
-	} else {
+	case nil:
 		params = append(params, ts.UTC())
+	default:
+		return err
 	}
 
 	// fill query condition param

@@ -118,12 +118,11 @@ func run(c *cli.Context) error {
 		wg             = &sync.WaitGroup{}
 	)
 
-	logger, err := libapp.NewLogger(c)
+	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	defer flush()
 
 	ethClient, err := blockchain.NewEthereumClientFromFlag(c)
 	if err != nil {

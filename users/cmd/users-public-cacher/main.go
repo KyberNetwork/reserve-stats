@@ -49,12 +49,12 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	logger, err := libapp.NewLogger(c)
+	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	defer flush()
+
 	sugar.Info("Run user public cacher")
 
 	postgresDB, err := libapp.NewDBFromContext(c)
@@ -66,6 +66,9 @@ func run(c *cli.Context) error {
 		sugar,
 		postgresDB,
 	)
+	if err != nil {
+		return err
+	}
 	sugar.Debugw("Initiated postgres client", "client", userDB)
 
 	influxDBClient, err := influxdb.NewClientFromContext(c)

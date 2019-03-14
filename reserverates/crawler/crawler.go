@@ -2,17 +2,19 @@ package crawler
 
 import (
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"golang.org/x/sync/errgroup"
 	"sync"
+
+	"golang.org/x/sync/errgroup"
+
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"go.uber.org/zap"
 )
 
 // ReserveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
@@ -28,7 +30,7 @@ type ReserveRatesCrawler struct {
 func NewReserveRatesCrawler(
 	sugar *zap.SugaredLogger,
 	addrs []string,
-	client *ethclient.Client,
+	client bind.ContractBackend,
 	symbolResolver blockchain.TokenSymbolResolver) (*ReserveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapperFallback(sugar, client)
 	if err != nil {

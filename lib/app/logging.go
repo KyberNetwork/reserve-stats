@@ -2,10 +2,24 @@ package app
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
+
+type syncer interface {
+	Sync() error
+}
+
+// NewFlusher creates a new syncer from given syncer that log a error message if failed to sync.
+func NewFlusher(s syncer) func() {
+	return func() {
+		if err := s.Sync(); err != nil {
+			log.Printf("failed to flush logger: %s", err.Error())
+		}
+	}
+}
 
 // NewLogger creates a new logger instance.
 // The type of logger instance will be different with different application running modes.
@@ -19,4 +33,18 @@ func NewLogger(c *cli.Context) (*zap.Logger, error) {
 	default:
 		return nil, fmt.Errorf("invalid running mode: %q", mode)
 	}
+}
+
+// NewSugaredLogger creates a new sugared logger and a flush function. The flush function should be
+// called by consumer before quitting application.
+// This function should be use most of the time unless
+// the application requires extensive performance, in this case use NewLogger.
+func NewSugaredLogger(c *cli.Context) (*zap.SugaredLogger, func(), error) {
+	logger, err := NewLogger(c)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	sugar := logger.Sugar()
+	return sugar, NewFlusher(logger), nil
 }

@@ -34,13 +34,11 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	logger, err := app.NewLogger(c)
+	sugar, flusher, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
-
-	sugar := logger.Sugar()
+	defer flusher()
 	sugar.Info("Run user stats public service")
 
 	redisClient, err := libredis.NewClientFromContext(c)

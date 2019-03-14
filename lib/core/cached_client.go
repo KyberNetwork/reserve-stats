@@ -1,9 +1,9 @@
 package core
 
 import (
-	"errors"
-	"github.com/ethereum/go-ethereum/common"
 	"sync"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // CachedClient is the wrapper of Core Client with caching ability.
@@ -37,38 +37,4 @@ func (cc *CachedClient) Tokens() ([]Token, error) {
 		cc.cached[common.HexToAddress(token.Address)] = token
 	}
 	return tokens, nil
-}
-
-// token returns the configured Token from core API.
-// If token not found, trying to purging the cache and
-// retry before returning an error.
-func (cc *CachedClient) token(address common.Address) (Token, error) {
-	logger := cc.sugar.With(
-		"func", "lib/core/CachedClient.Token",
-		"address", address.Hex(),
-	)
-	cc.mu.RLock()
-	token, ok := cc.cached[address]
-	if ok {
-		cc.mu.RUnlock()
-		//logger.Debug("cache hit")
-		return token, nil
-	}
-	cc.mu.RUnlock()
-
-	logger.Debug("cache miss, purging")
-	_, err := cc.Tokens()
-	if err != nil {
-		return Token{}, err
-	}
-
-	cc.mu.RLock()
-	defer cc.mu.RUnlock()
-	token, ok = cc.cached[address]
-	if ok {
-		logger.Debug("cache hit after refreshing")
-		return token, nil
-	}
-	logger.Debug("cache miss after refreshing")
-	return Token{}, errors.New("token not found")
 }

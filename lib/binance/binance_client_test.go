@@ -6,21 +6,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 )
 
 func TestBinanceClient(t *testing.T) {
 	testutil.SkipExternal(t)
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 
 	binanceAPIKey, ok := os.LookupEnv("BINANCE_API_KEY")
 	if !ok {
@@ -57,12 +53,7 @@ func TestBinanceClientWithLimiter(t *testing.T) {
 		limiter = rate.NewLimiter(rate.Limit(rps), 5)
 		wg      = &sync.WaitGroup{}
 	)
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 
 	binanceAPIKey, ok := os.LookupEnv("BINANCE_API_KEY")
 	if !ok {
@@ -79,11 +70,8 @@ func TestBinanceClientWithLimiter(t *testing.T) {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			_, err = binanceClient.GetTradeHistory("KNCETH", 0)
-			if err != nil {
-				panic(err)
-			}
-			assert.NoError(t, err, "binance client get trade history error: %s", err)
+			_, err := binanceClient.GetTradeHistory("KNCETH", 0)
+			require.NoError(t, err, "binance client get trade history error: %s, order=%d", err, i)
 		}(i)
 	}
 	wg.Wait()

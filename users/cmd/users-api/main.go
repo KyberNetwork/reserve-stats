@@ -16,8 +16,6 @@ import (
 	"github.com/KyberNetwork/tokenrate/coingecko"
 )
 
-const defaultDB = "users"
-
 func main() {
 	app := libapp.NewApp()
 	app.Name = "User stat module"
@@ -38,13 +36,12 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	logger, err := libapp.NewLogger(c)
+	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
+	defer flush()
 
-	sugar := logger.Sugar()
 	sugar.Info("Run user module")
 
 	db, err := libapp.NewDBFromContext(c)

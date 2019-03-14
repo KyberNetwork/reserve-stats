@@ -54,7 +54,7 @@ func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time
 	if err != nil {
 		return reserveAddr, err
 	}
-	for index := mathutil.MinUint64(uint64(len(receipt.Logs)-1), uint64(logIndex)); index >= 0; index-- {
+	for index := mathutil.MinUint64(uint64(len(receipt.Logs)-1), uint64(logIndex)); ; index-- {
 		log := receipt.Logs[index]
 		for _, topic := range log.Topics {
 			if topic == ethereum.HexToHash(tradeExecuteEvent) {
@@ -70,7 +70,8 @@ func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time
 }
 
 func assembleTradeLogsReserveAddr(log common.TradeLog, sugar *zap.SugaredLogger) common.TradeLog {
-	if blockchain.IsBurnable(log.SrcAddress) {
+	switch {
+	case blockchain.IsBurnable(log.SrcAddress):
 		if blockchain.IsBurnable(log.DestAddress) {
 			if len(log.BurnFees) == 2 {
 				log.SrcReserveAddress = log.BurnFees[0].ReserveAddress
@@ -85,13 +86,13 @@ func assembleTradeLogsReserveAddr(log common.TradeLog, sugar *zap.SugaredLogger)
 				sugar.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (src)")
 			}
 		}
-	} else if blockchain.IsBurnable(log.DestAddress) {
+	case blockchain.IsBurnable(log.DestAddress):
 		if len(log.BurnFees) == 1 {
 			log.DstReserveAddress = log.BurnFees[0].ReserveAddress
 		} else {
 			sugar.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
 		}
-	} else if len(log.WalletFees) != 0 {
+	case len(log.WalletFees) != 0:
 		if len(log.WalletFees) == 1 {
 			log.SrcReserveAddress = log.WalletFees[0].ReserveAddress
 		} else {
@@ -99,6 +100,7 @@ func assembleTradeLogsReserveAddr(log common.TradeLog, sugar *zap.SugaredLogger)
 			log.DstReserveAddress = log.WalletFees[1].ReserveAddress
 		}
 	}
+
 	return log
 }
 

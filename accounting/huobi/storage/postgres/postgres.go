@@ -16,6 +16,9 @@ const (
 	huobiTradesTableName = "huobi_trades"
 )
 
+//Option define init behaviour for db storage.
+type Option func(*HuobiStorage) error
+
 //HuobiStorage defines the object to store Huobi data
 type HuobiStorage struct {
 	sugar      *zap.SugaredLogger

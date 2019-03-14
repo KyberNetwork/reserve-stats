@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
+	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
@@ -94,15 +95,15 @@ func (hdb *HuobiStorage) Close() error {
 }
 
 //UpdateTradeHistory store the TradeHistory rate at that blockInfo
-func (hdb *HuobiStorage) UpdateTradeHistory(trade huobi.TradeHistory) error {
+func (hdb *HuobiStorage) UpdateTradeHistory(trades []huobi.TradeHistory) error {
 	var (
-		timestamp = timeutil.TimestampMsToTime(trade.CreateAt)
-		logger    = hdb.sugar.With(
+		nTrades = len(trades)
+		logger  = hdb.sugar.With(
 			"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
-			"trade_ID", trade.ID,
-			"timestamp", timestamp,
+			"number of records", nTrades,
 		)
 	)
+
 	const updateStmt = `INSERT INTO %[1]s(id, data)
 	VALUES ( 
 		$1,
@@ -112,18 +113,24 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trade huobi.TradeHistory) error {
 	query := fmt.Sprintf(updateStmt,
 		hdb.tableNames[huobiTradesTableName],
 	)
-	data, err := json.Marshal(trade)
-	if err != nil {
-		return err
-	}
-	if err != nil {
-		return err
-	}
 	logger.Debugw("updating tradeHistory...", "query", query)
-	_, err = hdb.db.Exec(query,
-		trade.ID,
-		data,
-	)
+
+	tx, err := hdb.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer pgsql.CommitOrRollback(tx, logger, &err)
+	for _, trade := range trades {
+		data, err := json.Marshal(trade)
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec(query, trade.ID, data)
+		if err != nil {
+			return err
+		}
+	}
+
 	return err
 }
 

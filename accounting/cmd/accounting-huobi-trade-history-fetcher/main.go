@@ -17,11 +17,13 @@ import (
 )
 
 const (
-	retryDelayFlag    = "retry-delay"
-	maxAttemptFlag    = "max-attempts"
-	defaultMaxAttempt = 3
-	defaultRetryDelay = time.Second
-	defaultPostGresDB = common.DefaultDB
+	retryDelayFlag       = "retry-delay"
+	maxAttemptFlag       = "max-attempts"
+	batchDurationFlag    = "batch-duration"
+	defaultMaxAttempt    = 3
+	defaultRetryDelay    = time.Second
+	defaultPostGresDB    = common.DefaultDB
+	defaultBatchDuration = 90 * 24 * time.Hour
 )
 
 func main() {
@@ -42,6 +44,12 @@ func main() {
 			Usage:  "The duration to put fetcher job to sleep after each fail attempt",
 			EnvVar: "RETRY_DELAY",
 			Value:  defaultRetryDelay,
+		},
+		cli.DurationFlag{
+			Name:   batchDurationFlag,
+			Usage:  "The duration for a batch query. If the duration is too big, the query will require a lot of memory to store. Default is 90 days each batch",
+			EnvVar: "BATCH_DURATION",
+			Value:  defaultBatchDuration,
 		},
 	)
 	app.Flags = append(app.Flags, huobi.NewCliFlags()...)
@@ -92,9 +100,10 @@ func run(c *cli.Context) error {
 	}
 	startTime := from
 	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts)
+	batchDuration := c.Duration(batchDurationFlag)
 	//fetch each day to reduce memory footprint of the fetch and storage
 	for {
-		next := timeutil.Midnight(startTime).AddDate(0, 0, 1)
+		next := timeutil.Midnight(startTime).Add(batchDuration)
 		if to.Before(next) {
 			next = to
 		}

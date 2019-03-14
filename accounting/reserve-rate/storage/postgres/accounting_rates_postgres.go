@@ -189,13 +189,12 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, 
 	logger.Debugw("updating rates...", "query", query)
 	for rsvAddr, rateRecord := range rateRecords {
 		for pair, rate := range rateRecord {
-
 			token, base, err := getTokenBaseFromPair(pair)
 			if err != nil {
 				return err
 			}
 			_, err = tx.Exec(query,
-				blockInfo.Timestamp,
+				blockInfo.Timestamp.UTC(),
 				token,
 				base,
 				blockInfo.Block,
@@ -209,8 +208,8 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, 
 			nRecord++
 		}
 	}
-	logger.Debugw("updating rates finished", "total records", nRecord)
 
+	logger.Debugw("updating rates finished", "total records", nRecord)
 	return err
 }
 
@@ -235,7 +234,7 @@ func (rdb *RatesStorage) GetETHUSDRates(from, to time.Time) (storage.AccountingR
 		return result, err
 	}
 	for _, record := range dbResult {
-		result[record.Time] = map[string]map[string]float64{
+		result[record.Time.UTC()] = map[string]map[string]float64{
 			"USD": {
 				"ETH": record.Rate,
 			},
@@ -261,7 +260,7 @@ func (rdb *RatesStorage) GetRates(from, to time.Time) (map[string]storage.Accoun
 	)
 	logger.Debugw("Querying rate...", "query", selectStmt)
 
-	rows, err := rdb.db.Queryx(selectStmt, from, to)
+	rows, err := rdb.db.Queryx(selectStmt, from.UTC(), to.UTC())
 	if err != nil {
 		return nil, err
 	}
@@ -269,28 +268,31 @@ func (rdb *RatesStorage) GetRates(from, to time.Time) (map[string]storage.Accoun
 		if err := rows.StructScan(&rowData); err != nil {
 			return nil, err
 		}
+
+		timestamp := rowData.Time.UTC()
+
 		if _, ok := result[rowData.Reserve]; !ok {
 			result[rowData.Reserve] = map[time.Time]map[string]map[string]float64{
-				rowData.Time: {
+				timestamp: {
 					rowData.Base: {
 						rowData.Token: rowData.BuyRate,
 					},
 				},
 			}
 		}
-		if _, ok := result[rowData.Reserve][rowData.Time]; !ok {
-			result[rowData.Reserve][rowData.Time] = map[string]map[string]float64{
+		if _, ok := result[rowData.Reserve][timestamp]; !ok {
+			result[rowData.Reserve][timestamp] = map[string]map[string]float64{
 				rowData.Base: {
 					rowData.Token: rowData.BuyRate,
 				},
 			}
 		}
-		if _, ok := result[rowData.Reserve][rowData.Time][rowData.Base]; !ok {
-			result[rowData.Reserve][rowData.Time][rowData.Base] = map[string]float64{
+		if _, ok := result[rowData.Reserve][timestamp][rowData.Base]; !ok {
+			result[rowData.Reserve][timestamp][rowData.Base] = map[string]float64{
 				rowData.Token: rowData.BuyRate,
 			}
 		}
-		result[rowData.Reserve][rowData.Time][rowData.Base][rowData.Token] = rowData.BuyRate
+		result[rowData.Reserve][timestamp][rowData.Base][rowData.Token] = rowData.BuyRate
 	}
 	return result, nil
 }
@@ -319,7 +321,7 @@ func (rdb *RatesStorage) UpdateETHUSDPrice(blockInfo lastblockdaily.BlockInfo, e
 	}
 	defer pgsql.CommitOrRollback(tx, rdb.sugar, &err)
 	_, err = tx.Exec(query,
-		blockInfo.Timestamp,
+		blockInfo.Timestamp.UTC(),
 		blockInfo.Block,
 		ethusdRate,
 	)
@@ -347,11 +349,15 @@ func (rdb *RatesStorage) GetLastResolvedBlockInfo() (lastblockdaily.BlockInfo, e
 	if err := rdb.db.Get(&rateTableResult, query); err != nil {
 		return rateTableResult, err
 	}
+	rateTableResult.Timestamp = rateTableResult.Timestamp.UTC()
+
 	query = fmt.Sprintf(selectStmt, rdb.tableNames[usdTableName])
 	logger.Debugw("Querying last resolved block from usd table...", "query", query)
 	if err := rdb.db.Get(&usdTableResult, query); err != nil {
 		return usdTableResult, err
 	}
+	usdTableResult.Timestamp = usdTableResult.Timestamp.UTC()
+
 	if usdTableResult.Timestamp.Before(rateTableResult.Timestamp) {
 		return usdTableResult, nil
 	}

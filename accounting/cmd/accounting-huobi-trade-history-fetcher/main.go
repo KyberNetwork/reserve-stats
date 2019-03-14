@@ -6,8 +6,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	huobiFetcher "github.com/KyberNetwork/reserve-stats/accounting/huobi/fetcher"
-	postgres "github.com/KyberNetwork/reserve-stats/accounting/huobi/storage/postgres"
+	"github.com/KyberNetwork/reserve-stats/accounting/huobi/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -20,7 +21,7 @@ const (
 	maxAttemptFlag    = "max-attempts"
 	defaultMaxAttempt = 3
 	defaultRetryDelay = time.Second
-	defaultPostGresDB = "reserve_stats"
+	defaultPostGresDB = common.DefaultDB
 )
 
 func main() {
@@ -87,9 +88,29 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("cannot create huobi database instance: %v", err)
 
 	}
-
-	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts, hdb)
-	err = fetcher.GetAndStoreTradeHistory(from, to)
-	sugar.Debugw("fetched done", "error", err)
+	startTime := from
+	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts)
+	//fetch each day to reduce memory footprint of the fetch and storage
+	for {
+		next := timeutil.Midnight(startTime).AddDate(0, 0, 1)
+		if to.Before(next) {
+			next = to
+		}
+		data, err := fetcher.GetTradeHistory(startTime, next)
+		if err != nil {
+			return err
+		}
+		for _, record := range data {
+			for _, tradeHistory := range record {
+				if err := hdb.UpdateTradeHistory(tradeHistory); err != nil {
+					return err
+				}
+			}
+		}
+		startTime = next
+		if !startTime.Before(to) {
+			break
+		}
+	}
 	return nil
 }

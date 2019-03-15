@@ -12,10 +12,6 @@ build() {
     golangci-lint run --config ${golangci_config} -v
     go test -v -race -mod=vendor ./...
     popd
-
-    for service in "${@:2}"; do
-        docker build -f "docker-files/Dockerfile.$service" -t "kybernetwork/kyber-stats-$service:$TRAVIS_COMMIT" .
-    done
 }
 
 # build_file loads and builds the configuration from given file

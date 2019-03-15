@@ -9,6 +9,9 @@ readonly build_part=${BUILD_PART:-}
 push() {
     for service in "${@}"; do
         local docker_repository="kybernetwork/kyber-stats-$service"
+
+        docker build -f "docker-files/Dockerfile.$service" -t "$docker_repository:$TRAVIS_COMMIT" .
+
         docker tag "$docker_repository:$TRAVIS_COMMIT" "$docker_repository:$TRAVIS_BRANCH"
         if [[ -n "$TRAVIS_TAG" ]]; then
             docker tag "$docker_repository:$TRAVIS_COMMIT" "$docker_repository:$TRAVIS_TAG"
@@ -25,6 +28,7 @@ push_file() {
         push "${services[@]}"
     done < "$config_file"
 }
+
 echo "$docker_password" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
 case "$build_part" in

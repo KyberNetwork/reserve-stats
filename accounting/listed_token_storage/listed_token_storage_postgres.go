@@ -120,14 +120,15 @@ func (ltd *ListedTokenDB) GetTokens() ([]common.ListedToken, error) {
 			"accounting/listed_token_storage/listedtokenstorage.GetTokens",
 		)
 		result []common.ListedToken
-		// queryResult []interface{}
 	)
-	logger.Info("start getting token")
+
 	getQuery := fmt.Sprintf(`SELECT address, name, symbol, cast (extract(epoch from timestamp)*1000 as bigint) as timestamp FROM %[1]s`, tokenTable)
 	logger.Debugw("get tokens query", "query", getQuery)
+
 	if err := ltd.db.Select(&result, getQuery); err != nil {
 		logger.Errorw("error query token", "error", err)
 	}
+
 	logger.Debugw("query result from tokens table", "result", result)
 	return result, nil
 }

@@ -22,11 +22,11 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 				AccountID:       3375841,
 				Amount:          "6000.000",
 				Price:           "0.00045",
-				CreateAt:        1540793585678,
+				CreatedAt:       1540793585678,
 				Type:            "buy-limit",
 				FieldAmount:     "6000.000",
 				FieldCashAmount: "2.73336",
-				FieldFee:        "12.00000",
+				FieldFees:       "12.00000",
 				FinishedAt:      1540796135588,
 				UserID:          0,
 				Source:          "web",
@@ -45,7 +45,7 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		td := testData[0]
 		td.ID++
-		td.CreateAt += 100
+		td.CreatedAt += 100
 		testData = append(testData, td)
 	}
 

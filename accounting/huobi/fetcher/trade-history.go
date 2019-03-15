@@ -103,7 +103,7 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 					if len(singleResult) > 0 {
 						fetchResult.Store(symbol, singleResult)
 					}
-					logger.Debugw("Fetching done", "symbol", symbol, "error", err, "time", time.Now())
+					logger.Infow("Fetching done", "symbol", symbol, "error", err, "time", time.Now())
 					return nil
 				}
 			}(sym.SymBol),

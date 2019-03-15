@@ -262,3 +262,28 @@ func (hc *Client) GetSymbolsPair() ([]Symbol, error) {
 	}
 	return symbolReply.Data, nil
 }
+
+//GetCurrencies return list of Currencies supported by Huobi
+func (hc *Client) GetCurrencies() ([]string, error) {
+	var (
+		reply CurrenciesReply
+	)
+	endpoint := fmt.Sprintf("%s/v1/common/currencys", huobiEndpoint)
+	res, err := hc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		nil,
+		false,
+	)
+	if err != nil {
+		return reply.Data, err
+	}
+	err = json.Unmarshal(res, &reply)
+	if err != nil {
+		return reply.Data, err
+	}
+	if reply.Status != StatusOK.String() {
+		return reply.Data, fmt.Errorf("unexpected reply status %s", reply.Status)
+	}
+	return reply.Data, nil
+}

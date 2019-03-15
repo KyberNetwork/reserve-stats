@@ -40,6 +40,14 @@ type HuobiStorage struct {
 
 // NewDB return the HuobiStorage instance. User must call Close() before exit.
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*HuobiStorage, error) {
+	var (
+		logger = sugar.With("func", "reserverates/storage/postgres/NewDB")
+		//set Default table name
+		tableNames = map[string]string{
+			huobiWithdrawalTableName: huobiWithdrawalTableName,
+		}
+	)
+
 	const schemaFMT = `
 	CREATE TABLE IF NOT EXISTS %[1]s
 (
@@ -51,13 +59,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*HuobiStor
 CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s ((data ->> 'created-at'));
 
 `
-	var (
-		logger = sugar.With("func", "reserverates/storage/postgres/NewDB")
-		//set Default table name
-		tableNames = map[string]string{
-			huobiWithdrawalTableName: huobiWithdrawalTableName,
-		}
-	)
+
 	hs := &HuobiStorage{
 		sugar:      sugar,
 		db:         db,

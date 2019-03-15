@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"fmt"
 	"math/big"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -53,6 +54,9 @@ func (f *EtherscanTransactionFetcher) fetch(fn *fetchFn, addr ethereum.Address, 
 
 	if from != nil {
 		logger = logger.With("start_block", from.String())
+		if !from.IsInt64() {
+			return nil, fmt.Errorf("unsupported block: number=%s", from.String())
+		}
 		fromVal := int(from.Int64())
 		startBlock = &fromVal
 	}
@@ -60,7 +64,9 @@ func (f *EtherscanTransactionFetcher) fetch(fn *fetchFn, addr ethereum.Address, 
 	if to != nil {
 		// Ethereum API includes the transactions of to block
 		to.Sub(to, big.NewInt(1))
-
+		if !to.IsInt64() {
+			return nil, fmt.Errorf("unsupported block: number=%s", to.String())
+		}
 		logger = logger.With("endBlock", to.String())
 		toVal := int(to.Int64())
 		endBlock = &toVal

@@ -9,8 +9,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func isNoTransactionError(err error) bool {
-	return err.Error() == "etherscan server: No transactions found"
+// IsEtherscanNotransactionFound returns true if given error represents etherscan no transaction found error.
+func IsEtherscanNotransactionFound(err error) bool {
+	return err != nil && err.Error() == "etherscan server: No transactions found"
 }
 
 // EtherscanContractTimestampResolver is an implementation of EtherscanContractTimestampResolver
@@ -35,7 +36,7 @@ func (r *EtherscanContractTimestampResolver) resolveUsingInternalTx(address comm
 	txs, err := r.client.InternalTxByAddress(address.String(), nil, nil, 1, 1, false)
 	if err != nil {
 		// etherscan package does not export error for this, have to compare error message
-		if isNoTransactionError(err) {
+		if IsEtherscanNotransactionFound(err) {
 			return time.Time{}, ErrNotAvailable
 		}
 	}
@@ -71,7 +72,7 @@ func (r *EtherscanContractTimestampResolver) Resolve(address common.Address) (ti
 	txs, err := r.client.NormalTxByAddress(address.String(), nil, nil, 1, 1, false)
 	if err != nil {
 		// etherscan package does not export error for this, have to compare error message
-		if isNoTransactionError(err) {
+		if IsEtherscanNotransactionFound(err) {
 			// fallback check internal tx
 			logger.Debugw("fallback calling internal tx due to error", "error", err.Error())
 			contractTimeStamp, err := r.resolveUsingInternalTx(address)

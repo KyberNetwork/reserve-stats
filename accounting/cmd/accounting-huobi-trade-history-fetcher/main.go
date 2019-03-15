@@ -101,7 +101,7 @@ func run(c *cli.Context) error {
 	batchDuration := c.Duration(batchDurationFlag)
 	//fetch each day to reduce memory footprint of the fetch and storage
 	for {
-		next := timeutil.Midnight(startTime).Add(batchDuration)
+		next := startTime.Add(batchDuration)
 		if to.Before(next) {
 			next = to
 		}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -65,6 +66,16 @@ func run(c *cli.Context) error {
 	sugar := logger.Sugar()
 
 	addrs := c.StringSlice(addressesFlag)
+	if len(addrs) == 0 {
+		sugar.Info("no address provided")
+		return nil
+	}
+
+	for _, addr := range addrs {
+		if !ethereum.IsHexAddress(addr) {
+			return fmt.Errorf("invalid address provided: address=%s", addr)
+		}
+	}
 
 	fromBlock, err := libapp.ParseBigIntFlag(c, fromBlockFlag)
 	if err != nil {

@@ -3,12 +3,14 @@ package postgres
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
@@ -132,4 +134,31 @@ func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory
 	}
 
 	return err
+}
+
+//GetWithdrawHistory return tradehistory between from.. to.. in its json []byte form
+func (hdb *HuobiStorage) GetWithdrawHistory(from, to time.Time) ([]huobi.WithdrawHistory, error) {
+	var (
+		dbResult [][]byte
+		result   []huobi.WithdrawHistory
+		logger   = hdb.sugar.With(
+			"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
+			"from", from.String(),
+			"to", to.String(),
+		)
+		tmp huobi.WithdrawHistory
+	)
+	const selectStmt = `SELECT data FROM %[1]s WHERE data->>'created-at'>=$1 AND data->>'created-at'<$2`
+	query := fmt.Sprintf(selectStmt, hdb.tableNames[huobiWithdrawalTableName])
+	logger.Debugw("querying trade history...", "query", query)
+	if err := hdb.db.Select(&dbResult, query, timeutil.TimeToTimestampMs(from), timeutil.TimeToTimestampMs(to)); err != nil {
+		return result, err
+	}
+	for _, data := range dbResult {
+		if err := json.Unmarshal(data, &tmp); err != nil {
+			return result, err
+		}
+		result = append(result, tmp)
+	}
+	return result, nil
 }

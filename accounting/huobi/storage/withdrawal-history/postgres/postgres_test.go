@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -9,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 func TestSaveAndGetAccountingRates(t *testing.T) {
@@ -45,4 +47,8 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 
 	err = hdb.UpdateWithdrawHistory(testData)
 	require.NoError(t, err)
+
+	withdrawals, err := hdb.GetWithdrawHistory(timeutil.TimestampMsToTime(1525754125500), timeutil.TimestampMsToTime(1525754125600))
+	require.NoError(t, err)
+	assert.Equal(t, testData, withdrawals)
 }

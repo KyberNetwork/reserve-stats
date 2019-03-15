@@ -1,7 +1,6 @@
 package fetcher
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -107,46 +106,4 @@ func (fc *Fetcher) GetWithdrawHistory(fromID uint64) (map[string][]huobi.Withdra
 		return true
 	})
 	return result, assertError
-}
-
-//GetAndStoreWithdrawHistory get and store all the withdrawal fromID and latest withdrawal
-func (fc *Fetcher) GetAndStoreWithdrawHistory(fromID uint64) error {
-	var (
-		logger = fc.sugar.With(
-			"func", "accounting/accounting-huobi-fetcher/GetWithdrawHistory",
-			"from", fromID,
-		)
-		errGroup errgroup.Group
-	)
-
-	if fc.db == nil {
-		return errors.New("fetcher does not come with db engine")
-	}
-
-	symbols, err := fc.client.GetCurrencies()
-	if err != nil {
-		return err
-	}
-	for _, sym := range symbols {
-		errGroup.Go(
-			func(symbol string) func() error {
-				return func() error {
-					singleResult, err := fc.getWithdrawHistoryWithSymbol(symbol, fromID)
-					if err != nil {
-						return err
-					}
-					for _, res := range singleResult {
-						if err := fc.db.UpdateWithdrawHistory(res); err != nil {
-							return err
-						}
-
-					}
-					logger.Debugw("Fetching done", "symbol", symbol, "error", err, "time", time.Now())
-					return nil
-				}
-			}(sym),
-		)
-	}
-	return errGroup.Wait()
-
 }

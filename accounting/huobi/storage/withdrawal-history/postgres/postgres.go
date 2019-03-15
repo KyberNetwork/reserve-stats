@@ -8,12 +8,26 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 )
 
 const (
 	huobiWithdrawalTableName = "huobi_withdrawal"
 )
+
+//Option define init behaviour for db storage.
+type Option func(*HuobiStorage) error
+
+//WithWithdrawalTableName return Option to set trade table Name
+func WithWithdrawalTableName(name string) Option {
+	return func(hs *HuobiStorage) error {
+		if hs.tableNames == nil {
+			hs.tableNames = make(map[string]string)
+		}
+		hs.tableNames[huobiWithdrawalTableName] = name
+		return nil
+	}
+}
 
 //HuobiStorage defines the object to store Huobi data
 type HuobiStorage struct {
@@ -23,44 +37,44 @@ type HuobiStorage struct {
 }
 
 // NewDB return the HuobiStorage instance. User must call Close() before exit.
-// tableNames is a list of string for tablename[huobitrades]. It can be optional
-func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, customTableNames ...string) (*HuobiStorage, error) {
+func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*HuobiStorage, error) {
 	const schemaFMT = `
 	CREATE TABLE IF NOT EXISTS %[1]s
 (
 	id bigint NOT NULL,
-	time TIMESTAMP NOT NULL,
-	currency TEXT,
 	data JSONB,
 	CONSTRAINT %[1]s_pk PRIMARY KEY(id)
 ) ;
+
+CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s ((data ->> 'created-at'));
+
 `
 	var (
-		logger     = sugar.With("func", "reserverates/storage/postgres/NewDB")
-		tableNames = make(map[string]string)
-	)
-	if len(customTableNames) > 0 {
-		if len(customTableNames) != 1 {
-			return nil, fmt.Errorf("expect 1 tables name [trades], got %v", customTableNames)
+		logger = sugar.With("func", "reserverates/storage/postgres/NewDB")
+		//set Default table name
+		tableNames = map[string]string{
+			huobiWithdrawalTableName: huobiWithdrawalTableName,
 		}
-		tableNames[huobiWithdrawalTableName] = customTableNames[0]
-
-	} else {
-		tableNames[huobiWithdrawalTableName] = huobiWithdrawalTableName
+	)
+	hs := &HuobiStorage{
+		sugar:      sugar,
+		db:         db,
+		tableNames: tableNames,
+	}
+	for _, opt := range options {
+		if err := opt(hs); err != nil {
+			return nil, err
+		}
 	}
 
-	query := fmt.Sprintf(schemaFMT, tableNames[huobiWithdrawalTableName])
+	query := fmt.Sprintf(schemaFMT, hs.tableNames[huobiWithdrawalTableName])
 	logger.Debugw("initializing database schema", "query", query)
 
 	if _, err := db.Exec(query); err != nil {
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
-	return &HuobiStorage{
-		sugar:      sugar,
-		db:         db,
-		tableNames: tableNames,
-	}, nil
+	return hs, nil
 }
 
 //TearDown removes all the tables
@@ -83,42 +97,39 @@ func (hdb *HuobiStorage) Close() error {
 }
 
 //UpdateWithdrawHistory store the WithdrawHistory rate at that blockInfo
-func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraw huobi.WithdrawHistory) error {
+func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory) error {
 	var (
-		timestamp = timeutil.TimestampMsToTime(withdraw.CreatedAt)
-		logger    = hdb.sugar.With(
+		logger = hdb.sugar.With(
 			"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
-			"withdrawal_ID", withdraw.ID,
-			"timestamp", timestamp,
+			"len(withdraws)", len(withdraws),
 		)
 	)
-	const updateStmt = `INSERT INTO %[1]s(id,time, currency, data)
+	const updateStmt = `INSERT INTO %[1]s(id, data)
 	VALUES ( 
 		$1,
-		$2, 
-		$3,
-		$4
+		$2
 	)
 	ON CONFLICT ON CONSTRAINT %[1]s_pk DO NOTHING;`
 	query := fmt.Sprintf(updateStmt,
 		hdb.tableNames[huobiWithdrawalTableName],
 	)
-	data, err := json.Marshal(withdraw)
-	if err != nil {
-		return err
-	}
-	if err != nil {
-		return err
-	}
 	logger.Debugw("updating tradeHistory...", "query", query)
-	_, err = hdb.db.Exec(query,
-		withdraw.ID,
-		timestamp,
-		withdraw.Currency,
-		data,
-	)
+
+	tx, err := hdb.db.Beginx()
 	if err != nil {
 		return err
 	}
+	defer pgsql.CommitOrRollback(tx, logger, &err)
+	for _, withdraw := range withdraws {
+		data, err := json.Marshal(withdraw)
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec(query, withdraw.ID, data)
+		if err != nil {
+			return err
+		}
+	}
+
 	return err
 }

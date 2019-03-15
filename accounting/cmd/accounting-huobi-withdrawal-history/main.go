@@ -1,16 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	huobiFetcher "github.com/KyberNetwork/reserve-stats/accounting/huobi/fetcher"
+	"github.com/KyberNetwork/reserve-stats/accounting/huobi/storage/withdrawal-history/postgres"
+	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 
 	"github.com/urfave/cli"
-
-	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 )
 
 const (
@@ -20,6 +22,7 @@ const (
 	defaultRetryDelay = time.Second
 	fromIDFlag        = "from-id"
 	defaultFromID     = 0
+	defaultPostGresDB = common.DefaultDB
 )
 
 func main() {
@@ -49,6 +52,8 @@ func main() {
 		},
 	)
 	app.Flags = append(app.Flags, huobi.NewCliFlags()...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostGresDB)...)
+
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -70,12 +75,31 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	db, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return fmt.Errorf("cannot create db from flags: %v", err)
+	}
+
+	hdb, err := postgres.NewDB(sugar, db)
+	if err != nil {
+		return fmt.Errorf("cannot create huobi database instance: %v", err)
+
+	}
+
 	fromID := c.Uint64(fromIDFlag)
 	retryDelay := c.Duration(retryDelayFlag)
 	maxAttempts := c.Int(maxAttemptFlag)
 
 	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts)
 	data, err := fetcher.GetWithdrawHistory(fromID)
-	sugar.Debugw("fetched done", "error", err, "data", data)
+	if err != nil {
+		return err
+	}
+	for _, record := range data {
+		if err := hdb.UpdateWithdrawHistory(record); err != nil {
+			return err
+		}
+	}
 	return nil
 }

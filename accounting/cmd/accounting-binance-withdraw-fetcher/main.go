@@ -63,14 +63,13 @@ func run(c *cli.Context) error {
 		err              error
 	)
 
-	logger, err := libapp.NewLogger(c)
+	sugar, flusher, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
 
-	defer logger.Sync()
+	defer flusher()
 
-	sugar := logger.Sugar()
 	sugar.Info("initiate fetcher")
 
 	binanceClient, err := binance.NewClientFromContext(c, sugar)

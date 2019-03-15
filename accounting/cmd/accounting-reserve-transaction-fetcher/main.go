@@ -57,13 +57,12 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	logger, err := libapp.NewLogger(c)
+	sugar, flusher, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
 
-	sugar := logger.Sugar()
+	defer flusher()
 
 	addrs := c.StringSlice(addressesFlag)
 	if len(addrs) == 0 {

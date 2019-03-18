@@ -22,7 +22,7 @@ const (
 	batchDurationFlag    = "batch-duration"
 	defaultMaxAttempt    = 3
 	defaultRetryDelay    = time.Second
-	defaultPostGresDB    = common.DefaultDB
+	defaultPostgresDB    = common.DefaultDB
 	defaultBatchDuration = 90 * 24 * time.Hour
 )
 
@@ -54,7 +54,7 @@ func main() {
 	)
 	app.Flags = append(app.Flags, huobi.NewCliFlags()...)
 	app.Flags = append(app.Flags, timeutil.NewMilliTimeRangeCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostGresDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostgresDB)...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -109,11 +109,16 @@ func run(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
+
+		var trades []huobi.TradeHistory
 		for _, record := range data {
-			if err := hdb.UpdateTradeHistory(record); err != nil {
-				return err
-			}
+			trades = append(trades, record...)
 		}
+
+		if err = hdb.UpdateTradeHistory(trades); err != nil {
+			return err
+		}
+
 		startTime = next
 		if !startTime.Before(to) {
 			break

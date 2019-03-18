@@ -80,16 +80,14 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 			return err
 		}
 
-		if len(token.Old) != 0 {
-			for _, oldToken := range token.Old {
-				if _, err = tx.Exec(upsertQuery,
-					oldToken.Address,
-					token.Name,
-					token.Symbol,
-					oldToken.Timestamp,
-					token.Address); err != nil {
-					return err
-				}
+		for _, oldToken := range token.Old {
+			if _, err = tx.Exec(upsertQuery,
+				oldToken.Address,
+				token.Name,
+				token.Symbol,
+				oldToken.Timestamp,
+				token.Address); err != nil {
+				return err
 			}
 		}
 	}

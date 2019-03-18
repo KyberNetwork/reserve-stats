@@ -98,6 +98,10 @@ func run(c *cli.Context) error {
 		return err
 	}
 
+	defer func(err *error) {
+		*err = listedTokenStorage.Close()
+	}(&err)
+
 	fetcher := listedtoken.NewListedTokenFetcher(ethClient, resolv, sugar)
 
 	listedTokens, err := fetcher.GetListedToken(block, reserveAddr, tokenSymbol)

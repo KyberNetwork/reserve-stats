@@ -1,10 +1,13 @@
 package binancestorage
 
 import (
+	"time"
+
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 )
 
 //Interface is inteface for binance storage
 type Interface interface {
-	UpdateTradeHistory(map[string]binance.TradeHistory) error
+	UpdateTradeHistory([]binance.TradeHistory) error
+	GetTradeHistory(fromTime, toTime time.Time) ([]binance.TradeHistory, error)
 }

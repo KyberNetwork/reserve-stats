@@ -1,11 +1,11 @@
 package postgres
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 

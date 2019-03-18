@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
-	listedtokenstorage "github.com/KyberNetwork/reserve-stats/accounting/listed_token_storage"
+	listedtokenstorage "github.com/KyberNetwork/reserve-stats/accounting/listed-token-storage"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -109,8 +109,7 @@ func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
 		}
 		result = updateListedToken(result, symbol, name, address, timestamp)
 	}
-	resultJSON, err := json.Marshal(result)
-	if err != nil {
+	if _, err = json.Marshal(result); err != nil {
 		return err
 	}
 

@@ -111,7 +111,7 @@ func (ltd *ListedTokenDB) GetTokens() ([]common.ListedToken, error) {
 	var (
 		logger = ltd.sugar.With(
 			"func",
-			"accounting/listed_token_storage/listedtokenstorage.GetTokens",
+			"accounting/listed-token-storage/listedtokenstorage.GetTokens",
 		)
 		result []common.ListedToken
 	)

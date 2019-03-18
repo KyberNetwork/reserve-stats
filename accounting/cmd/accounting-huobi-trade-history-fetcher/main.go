@@ -6,14 +6,14 @@ import (
 	"os"
 	"time"
 
+	"github.com/urfave/cli"
+
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	huobiFetcher "github.com/KyberNetwork/reserve-stats/accounting/huobi/fetcher"
 	"github.com/KyberNetwork/reserve-stats/accounting/huobi/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-
-	"github.com/urfave/cli"
 )
 
 const (
@@ -101,7 +101,7 @@ func run(c *cli.Context) error {
 	startTime := from
 	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts)
 	batchDuration := c.Duration(batchDurationFlag)
-	//fetch each day to reduce memory footprint of the fetch and storage
+	// fetch each day to reduce memory footprint of the fetch and storage
 	for {
 		next := startTime.Add(batchDuration)
 		if to.Before(next) {

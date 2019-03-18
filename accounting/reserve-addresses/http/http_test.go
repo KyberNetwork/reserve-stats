@@ -48,6 +48,7 @@ func TestReserveAddressGetAll(t *testing.T) {
 	}
 
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, ts.r) })
 	}
 
@@ -86,6 +87,7 @@ func TestReserveAddressGetAll(t *testing.T) {
 	}
 
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, ts.r) })
 	}
 
@@ -121,6 +123,10 @@ func TestReserveAddressGetAll(t *testing.T) {
 
 			},
 		},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, ts.r) })
 	}
 }
 
@@ -210,6 +216,7 @@ WHERE id = $1`, addr.ID)
 	}
 
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, ts.r) })
 	}
 }
@@ -263,6 +270,7 @@ func TestReserveAddressesGet(t *testing.T) {
 	}
 
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, ts.r) })
 	}
 }
@@ -390,6 +398,7 @@ WHERE id = $1`, id)
 	}
 
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, ts.r) })
 	}
 }

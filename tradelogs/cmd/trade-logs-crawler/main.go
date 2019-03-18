@@ -173,14 +173,11 @@ func run(c *cli.Context) error {
 		kycChecker storage.KycChecker
 	)
 
-	logger, err := libapp.NewLogger(c)
+	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-
-	defer logger.Sync()
-
-	sugar := logger.Sugar()
+	defer flush()
 
 	influxClient, err := influxdb.NewClientFromContext(c)
 	if err != nil {
@@ -191,18 +188,19 @@ func run(c *cli.Context) error {
 		return err
 	}
 	userKycedClient, err := userkyced.NewClientFromContext(sugar, c)
-	if err == userkyced.ErrNoClientURL {
+	switch err {
+	case userkyced.ErrNoClientURL:
 		sugar.Info("User kyced checker URL is not provided. Use default Postgres instead")
 		db, err := libapp.NewDBFromContext(c)
 		if err != nil {
 			return err
 		}
 		kycChecker = storage.NewUserKYCChecker(sugar, db)
-	} else if err != nil {
-		return err
-	} else {
+	case nil:
 		sugar.Info("User kyced checker URL provided. check KYCed status from userKYCed client")
 		kycChecker = userKycedClient
+	default:
+		return err
 	}
 
 	tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
@@ -251,7 +249,7 @@ func run(c *cli.Context) error {
 
 		go func(fromBlock, toBlock, maxBlocks int64) {
 			var jobOrder = p.GetLastCompleteJobOrder()
-			for i := int64(fromBlock); i < toBlock; i = i + maxBlocks {
+			for i := fromBlock; i < toBlock; i += maxBlocks {
 				jobOrder++
 				p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(mathutil.MinInt64(i+maxBlocks, toBlock)), attempts))
 			}

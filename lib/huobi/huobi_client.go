@@ -99,7 +99,7 @@ func (hc *Client) sendRequest(method, requestURL string, params map[string]strin
 		logger = hc.sugar.With("func", "huobi_client/sendRequest")
 	)
 	client := &http.Client{
-		Timeout: time.Duration(30 * time.Second),
+		Timeout: 30 * time.Second,
 	}
 	reqBody, err := json.Marshal(params)
 	if err != nil {
@@ -117,7 +117,7 @@ func (hc *Client) sendRequest(method, requestURL string, params map[string]strin
 		return []byte{}, err
 	}
 	if signNeeded {
-		timestamp := fmt.Sprintf("%s", time.Now().UTC().Format("2006-01-02T15:04:05"))
+		timestamp := time.Now().UTC().Format("2006-01-02T15:04:05")
 		params["SignatureMethod"] = "HmacSHA256"
 		params["SignatureVersion"] = "2"
 		params["AccessKeyId"] = hc.APIKey
@@ -143,16 +143,12 @@ func (hc *Client) sendRequest(method, requestURL string, params map[string]strin
 	switch resp.StatusCode {
 	case 404:
 		err = errors.New("api not found")
-		break
 	case 429:
 		err = errors.New("breaking Huobi request rate limit")
-		break
 	case 500:
 		err = errors.New("500 from Huobi, its fault")
-		break
 	case 200:
 		respBody, err = ioutil.ReadAll(resp.Body)
-		break
 	}
 	return respBody, err
 }

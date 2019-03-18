@@ -6,12 +6,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/KyberNetwork/reserve-stats/lib/deployment"
-
-	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
+
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
+	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 )
 
 var cachedSymbols = map[deployment.Deployment]map[common.Address]string{
@@ -169,6 +169,9 @@ func getName2(address common.Address, ethClient bind.ContractBackend) (string, e
 	defer cancel()
 	callOpts := &bind.CallOpts{Context: ctx}
 	name2, err := tokenContractType2.Name(callOpts)
+	if err != nil {
+		return "", err
+	}
 	return bytes32ToString(name2), nil
 }
 
@@ -207,7 +210,7 @@ func bytes32ToString(input [32]byte) string {
 		if b == 0 {
 			break
 		}
-		i = i + 1
+		i++
 	}
 	return string(input[:i])
 }

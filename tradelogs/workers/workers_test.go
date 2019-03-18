@@ -2,17 +2,18 @@ package workers
 
 import (
 	"fmt"
-	"log"
 	"math/big"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 type mockStorage struct {
@@ -42,7 +43,7 @@ func (s *mockStorage) SaveTradeLogs(logs []common.TradeLog) error {
 	s.m.Lock()
 	defer s.m.Unlock()
 
-	s.counter = s.counter + 1
+	s.counter++
 	return nil
 }
 
@@ -109,13 +110,7 @@ func (j *mockJob) info() (order int, from, to *big.Int) {
 }
 
 func newTestWorkerPool(maxWorkers int) *Pool {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
-
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	return NewPool(sugar, maxWorkers, newMockStorage())
 }
 

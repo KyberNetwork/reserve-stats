@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"testing"
 
-	"go.uber.org/zap"
-
-	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/boltdb/bolt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 const (
@@ -31,13 +31,7 @@ func (dbm *DBMigration) deleteTable(tableName string) error {
 }
 
 func newTestMigrateDB() (*DBMigration, error) {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		return nil, err
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
-
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		postgresHost,
 		postgresPort,

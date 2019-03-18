@@ -82,7 +82,7 @@ func (c *Client) Tokens() ([]Token, error) {
 		return nil, err
 	}
 
-	if settingsResponse.Success != true {
+	if !settingsResponse.Success {
 		return nil, fmt.Errorf("got an error from server: %s", settingsResponse.Reason)
 	}
 

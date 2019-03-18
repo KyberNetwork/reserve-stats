@@ -4,19 +4,20 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"strconv"
 	"text/template"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	"github.com/KyberNetwork/reserve-stats/reserverates/common"
-	"github.com/KyberNetwork/reserve-stats/reserverates/storage/influx/schema"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	influxClient "github.com/influxdata/influxdb/client/v2"
 	influxModel "github.com/influxdata/influxdb/models"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/KyberNetwork/reserve-stats/reserverates/common"
+	"github.com/KyberNetwork/reserve-stats/reserverates/storage/influx/schema"
 )
 
 const (
@@ -260,13 +261,14 @@ func (rs *RateStorage) UpdateRatesRecords(blockNumber uint64, rateRecords map[st
 			lastFromBlock := lastRates[pair].FromBlock
 			lastToBlock := lastRates[pair].ToBlock
 
-			if lastRate == nil {
+			switch {
+			case lastRate == nil:
 				logger.Debugw("no last rate available",
 					"reserve_addr", rsvAddr,
 					"pair", pair)
 				fromBlock = blockNumber
 				toBlock = 0
-			} else if *lastRate != rate {
+			case *lastRate != rate:
 				logger.Debugw("rate changed, starting new rate group",
 					"reserve_addr", rsvAddr,
 					"last_to_block", lastToBlock,
@@ -276,8 +278,7 @@ func (rs *RateStorage) UpdateRatesRecords(blockNumber uint64, rateRecords map[st
 				)
 				fromBlock = blockNumber
 				toBlock = 0
-
-			} else {
+			default:
 				logger.Debugw("rate is remain the same as last stored record",
 					"reserve_addr", rsvAddr,
 					"last_to_block", lastToBlock,

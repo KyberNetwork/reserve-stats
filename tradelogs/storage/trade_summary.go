@@ -27,7 +27,7 @@ func (is *InfluxStorage) GetTradeSummary(from, to time.Time, timezone int8) (map
 		timeFilter = fmt.Sprintf("(time >='%s' AND time <= '%s')",
 			from.UTC().Format(time.RFC3339),
 			to.UTC().Format(time.RFC3339))
-		results = make(map[uint64]*common.TradeSummary)
+		results map[uint64]*common.TradeSummary
 	)
 	measurement := getMeasurementName(measurementName, timezone)
 

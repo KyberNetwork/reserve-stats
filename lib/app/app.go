@@ -2,9 +2,10 @@ package app
 
 import (
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 
 	"github.com/urfave/cli"
+
+	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 )
 
 const (

@@ -6,11 +6,14 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/influxdata/influxdb/client/v2"
-	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
@@ -18,12 +21,7 @@ import (
 var testStorage *InfluxStorage
 
 func newTestInfluxStorage(db string) (*InfluxStorage, error) {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		return nil, err
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 
 	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr: "http://127.0.0.1:8086",
@@ -67,6 +65,7 @@ func getSampleTradeLogs(dataPath string) ([]common.TradeLog, error) {
 
 func TestSaveTradeLogs(t *testing.T) {
 	tradeLogs, err := getSampleTradeLogs("testdata/trade_logs.json")
+	require.NoError(t, err)
 	if err = testStorage.SaveTradeLogs(tradeLogs); err != nil {
 		t.Error("get unexpected error when save trade logs", "err", err.Error())
 	}
@@ -74,6 +73,7 @@ func TestSaveTradeLogs(t *testing.T) {
 
 func TestSaveFirstTradeLogs(t *testing.T) {
 	tradeLogs, err := getSampleTradeLogs("testdata/trade_logs.json")
+	require.NoError(t, err)
 	if err = testStorage.SaveTradeLogs(tradeLogs); err != nil {
 		t.Error("get unexpected error when save trade logs", "err", err.Error())
 	}

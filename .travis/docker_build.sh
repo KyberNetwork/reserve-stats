@@ -4,18 +4,14 @@
 set -euxo pipefail
 
 readonly build_part=${BUILD_PART:-}
-readonly gometalinter_path=$(readlink -f ./gometalinter.json)
+readonly golangci_config=$(readlink -f .golangci.yml)
 
 build() {
     local build_dir="$1"
     pushd "$build_dir"
-    gometalinter --config="$gometalinter_path" ./...
+    golangci-lint run --config ${golangci_config} -v
     go test -v -race -mod=vendor ./...
     popd
-
-    for service in "${@:2}"; do
-        docker build -f "docker-files/Dockerfile.$service" -t "kybernetwork/kyber-stats-$service:$TRAVIS_COMMIT" .
-    done
 }
 
 # build_file loads and builds the configuration from given file
@@ -48,7 +44,7 @@ case "$build_part" in
         # remove leading \|
         exclude_pattern=${exclude_pattern:2}
         exclude_pattern=$(printf 'github.com/KyberNetwork/reserve-stats/\(%s\)' "$exclude_pattern")
-        gometalinter --config="$gometalinter_path" --exclude "$exclude_pattern" ./...
+        golangci-lint run --config ${golangci_config}  --exclude "$exclude_pattern"
         go test -v -race -mod=vendor $(go list -mod=vendor ./... | grep -v "$exclude_pattern")
 
         if [[ $TRAVIS_BRANCH == 'develop' ]]; then

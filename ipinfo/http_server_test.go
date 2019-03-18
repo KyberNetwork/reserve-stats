@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"go.uber.org/zap"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 type responseNormal struct {
@@ -20,13 +20,8 @@ type responseError struct {
 }
 
 func TestIPLocatorHTTPServer(t *testing.T) {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		t.Error("Get error while create logger", "error", err)
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
-	s, err := NewHTTPServer(sugar, "testdata", string(fmt.Sprintf(":%d", httputil.IPLocatorPort)))
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
+	s, err := NewHTTPServer(sugar, "testdata", fmt.Sprintf(":%d", httputil.IPLocatorPort))
 	if err != nil {
 		t.Error("Could not create HTTP server", "error", err.Error())
 	}
@@ -52,6 +47,7 @@ func TestIPLocatorHTTPServer(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, s.r) })
 	}
 }

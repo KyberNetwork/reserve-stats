@@ -6,13 +6,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 )
 
 // Client is the the implementation to query userprofile info.

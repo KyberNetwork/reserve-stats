@@ -53,13 +53,11 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	logger, err := libapp.NewLogger(c)
+	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
-
-	sugar := logger.Sugar()
+	defer flush()
 
 	huobiClient, err := huobi.NewClientFromContext(c, sugar)
 	if err != nil {

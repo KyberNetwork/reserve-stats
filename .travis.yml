@@ -15,25 +15,20 @@ before_install:
 
 env:
   global:
-    - GOMETALINTER_VERSION=2.0.11
+    - GOLANGCI_LINT_VERSION=1.15.0
     - GO111MODULE=on
-    - PATH=$PATH:${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
 
 matrix:
   include:
     - env:
-      - BUILD_PART: 1
+        - BUILD_PART: 1
     - env:
-      - BUILD_PART: 2
+        - BUILD_PART: 2
     - env:
-      - BUILD_PART: 3
+        - BUILD_PART: 3
 
 install:
-  - ./.travis/gometalinter-install.sh
-
-cache:
-  directories:
-  - ${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
+  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b ${TRAVIS_HOME}/bin v${GOLANGCI_LINT_VERSION}
 
 before_script:
   - psql -c "CREATE DATABASE reserve_stats;" -U postgres
@@ -46,7 +41,11 @@ deploy:
   - provider: script
     script: bash .travis/docker_push.sh
     on:
-      all_branches: true
+      tags: true
+      branch:
+        - develop
+        - staging
+        - master
 
   - provider: s3
     access_key_id: $AWS_ACCESS_KEY_ID

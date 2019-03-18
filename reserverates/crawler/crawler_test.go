@@ -1,15 +1,17 @@
 package crawler
 
 import (
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"reflect"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-stats/lib/contracts"
-	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
 )
 
 const (
@@ -59,11 +61,7 @@ func TestGetReserveRate(t *testing.T) {
 		BuySanityRate:   3.0,
 		SellSanityRate:  4.0,
 	}
-	logger, err := zap.NewDevelopment()
-	assert.Nil(t, err, "logger should be created")
-
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 
 	crawler, err := newTestCrawler(sugar)
 	assert.Nil(t, err, "test crawler should be created")

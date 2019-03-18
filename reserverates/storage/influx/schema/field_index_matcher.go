@@ -19,7 +19,7 @@ func NewFieldsRegistrar(colums []string) (FieldsRegistrar, error) {
 	}
 	//if a field doesn't map to a column, this mean error.
 	if numFields < len(rateSchemaFields) {
-		return nil, errors.New("Not enough columns compared to field name")
+		return nil, errors.New("not enough columns compared to field name")
 	}
 	return result, nil
 }

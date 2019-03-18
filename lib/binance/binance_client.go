@@ -106,7 +106,7 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 		logger   = bc.sugar.With("func", "binance_client/sendRequest")
 	)
 	client := &http.Client{
-		Timeout: time.Duration(30 * time.Second),
+		Timeout: 30 * time.Second,
 	}
 	req, err := http.NewRequest(method, endpoint, nil)
 	if err != nil {
@@ -134,19 +134,14 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 	switch resp.StatusCode {
 	case 429:
 		err = errors.New("breaking binance request rate limit")
-		break
 	case 418:
 		err = errors.New("ip has been auto-banned by binance for continuing to send requests after receiving 429 codes")
-		break
 	case 500:
 		err = errors.New("500 from Binance, its fault")
-		break
 	case 401:
 		err = errors.New("binance api key not valid")
-		break
 	case 200:
 		respBody, err = ioutil.ReadAll(resp.Body)
-		break
 	default:
 		var response APIResponse
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {

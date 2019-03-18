@@ -24,24 +24,27 @@ func newServerCli() *cli.App {
 			return err
 		}
 
-		logger, err := libapp.NewLogger(c)
+		sugar, flusher, err := libapp.NewSugaredLogger(c)
 		if err != nil {
 			return err
 		}
-		defer logger.Sync()
+		defer flusher()
 
 		influxClient, err := influxdb.NewClientFromContext(c)
 		if err != nil {
 			return err
 		}
 
-		rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(logger.Sugar(), influxClient, common.DatabaseName, nil)
+		rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(sugar, influxClient, common.DatabaseName, nil)
 		if err != nil {
 			return err
 		}
 
 		hostStr := httputil.NewHTTPAddressFromContext(c)
-		server, err := http.NewServer(hostStr, rateStorage, logger.Sugar())
+		server, err := http.NewServer(hostStr, rateStorage, sugar)
+		if err != nil {
+			return err
+		}
 		return server.Run()
 	}
 	return app

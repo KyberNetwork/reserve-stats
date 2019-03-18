@@ -25,13 +25,12 @@ func main() {
 			return err
 		}
 
-		logger, err := libapp.NewLogger(c)
+		sugar, flush, err := libapp.NewSugaredLogger(c)
 		if err != nil {
 			return err
 		}
-		defer logger.Sync()
+		defer flush()
 
-		sugar := logger.Sugar()
 		tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
 		if err != nil {
 			return err
@@ -59,10 +58,6 @@ func main() {
 		}
 		if addrToAppName != nil {
 			options = append(options, http.WithApplicationNames(addrToAppName))
-		}
-		addrToAppName, err = appnames.NewClientFromContext(sugar, c)
-		if err != nil {
-			return err
 		}
 
 		userClient, err := userprofile.NewClientFromContext(sugar, c)

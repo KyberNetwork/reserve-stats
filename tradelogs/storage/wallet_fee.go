@@ -37,7 +37,7 @@ func (is *InfluxStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq st
 	case hour:
 		measurement = common.WalletFeeVolumeMeasurementHour
 	default:
-		return nil, fmt.Errorf("Frequency %s is not supported", freq)
+		return nil, fmt.Errorf("frequency %s is not supported", freq)
 	}
 
 	// in cq we will add timezone as time offset interval

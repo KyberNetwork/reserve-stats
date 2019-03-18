@@ -1,18 +1,18 @@
 package fetcher
 
 import (
+	"database/sql"
 	"fmt"
 	"sync"
 	"time"
 
+	"github.com/KyberNetwork/tokenrate"
+
 	rrstorage "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
-	"github.com/KyberNetwork/tokenrate"
 
-	"database/sql"
 	"github.com/ethereum/go-ethereum"
 	"go.uber.org/zap"
 )
@@ -185,20 +185,29 @@ func retryFetchTokenRate(maxAttempt int,
 	sugar *zap.SugaredLogger,
 	rsvRateCrawler *crawler.ReserveRatesCrawler,
 	block uint64,
-	retryInterval time.Duration) (map[string]map[string]rsvRateCommon.ReserveRateEntry, error) {
+	retryInterval time.Duration) (map[string]map[string]float64, error) {
 	var (
-		result map[string]map[string]rsvRateCommon.ReserveRateEntry
+		result = make(map[string]map[string]float64)
 		err    error
 		logger = sugar.With("function", "accounting/reserve-rate/fetcher/fetcher.retryFetchTokenRate", "block", block)
 	)
 
 	for i := 0; i < maxAttempt; i++ {
-		result, err = rsvRateCrawler.GetReserveRates(block)
-		if err == nil {
-			return result, nil
+		// TODO: GetReserveRates might fetch too more data than we need here?
+		rates, err := rsvRateCrawler.GetReserveRates(block)
+		if err != nil {
+			logger.Debugw("failed to fetch reserve rate", "attempt", i, "error", err)
+			time.Sleep(retryInterval)
+			continue
 		}
-		logger.Debugw("failed to fetch reserve rate", "attempt", i, "error", err)
-		time.Sleep(retryInterval)
+		for k1 := range rates {
+			result[k1] = make(map[string]float64)
+			for k2 := range rates[k1] {
+				// TODO: is it really buy reserve rate?
+				result[k1][k2] = rates[k1][k2].BuyReserveRate
+			}
+		}
+		return result, nil
 	}
 
 	return nil, err

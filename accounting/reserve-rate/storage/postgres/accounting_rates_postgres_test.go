@@ -13,7 +13,6 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
-	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 )
 
 func TestRatesStorage(t *testing.T) {
@@ -35,7 +34,7 @@ func TestRatesStorage(t *testing.T) {
 
 	var tests = []struct {
 		block           lastblockdaily.BlockInfo
-		ethRates        map[string]map[string]common.ReserveRateEntry
+		ethRates        map[string]map[string]float64
 		usdRate         float64
 		expectedUSDRate storage.AccountingReserveRates
 		expectedETHRate map[string]storage.AccountingReserveRates
@@ -45,19 +44,13 @@ func TestRatesStorage(t *testing.T) {
 				Block:     uint64(3000),
 				Timestamp: time.Now().Truncate(truncateDuration).UTC(),
 			},
-			ethRates: map[string]map[string]common.ReserveRateEntry{
+			ethRates: map[string]map[string]float64{
 				"0x63825c174ab367968EC60f061753D3bbD36A0D8F": {
-					"ETH-KNC": {
-						BuyReserveRate: 0.4,
-					},
+					"ETH-KNC": 0.4,
 				},
 				"0x818E6FECD516Ecc3849DAf6845e3EC868087B755": {
-					"ETH-KNC": {
-						BuyReserveRate: 0.2,
-					},
-					"ETH-OMG": {
-						BuyReserveRate: 0.3,
-					},
+					"ETH-KNC": 0.2,
+					"ETH-OMG": 0.3,
 				},
 			},
 			usdRate: 0.1,

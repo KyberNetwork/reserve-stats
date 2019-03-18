@@ -98,7 +98,12 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	fetcher := listedtoken.NewListedTokenFetcher(ethClient, resolv, sugar, listedTokenStorage)
+	fetcher := listedtoken.NewListedTokenFetcher(ethClient, resolv, sugar)
 
-	return fetcher.GetListedToken(block, reserveAddr, tokenSymbol)
+	listedTokens, err := fetcher.GetListedToken(block, reserveAddr, tokenSymbol)
+	if err != nil {
+		return err
+	}
+
+	return listedTokenStorage.CreateOrUpdate(listedTokens)
 }

@@ -1,7 +1,6 @@
 package listedtoken
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
@@ -12,7 +11,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
-	listedtokenstorage "github.com/KyberNetwork/reserve-stats/accounting/listed-token-storage"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -23,17 +21,15 @@ type Fetcher struct {
 	ethClient                 *ethclient.Client
 	contractTimestampResolver *blockchain.EtherscanContractTimestampResolver
 	sugar                     *zap.SugaredLogger
-	storage                   listedtokenstorage.Interface
 }
 
 //NewListedTokenFetcher return new fetcher for listed token
 func NewListedTokenFetcher(ethClient *ethclient.Client, contractTimestampResolver *blockchain.EtherscanContractTimestampResolver,
-	sugar *zap.SugaredLogger, storage listedtokenstorage.Interface) *Fetcher {
+	sugar *zap.SugaredLogger) *Fetcher {
 	return &Fetcher{
 		ethClient:                 ethClient,
 		contractTimestampResolver: contractTimestampResolver,
 		sugar:                     sugar,
-		storage:                   storage,
 	}
 }
 
@@ -67,7 +63,7 @@ func updateListedToken(listedToken map[string]common.ListedToken, symbol, name s
 
 //GetListedToken return listed token for a reserve address
 func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
-	tokenSymbol *blockchain.TokenInfoGetter) error {
+	tokenSymbol *blockchain.TokenInfoGetter) (map[string]common.ListedToken, error) {
 	var (
 		logger = f.sugar.With("func", "accounting/cmd/accounting-listed-token-fetcher")
 		result = make(map[string]common.ListedToken)
@@ -76,42 +72,39 @@ func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
 	logger.Infow("reserve address", "reserve", reserveAddr)
 	reserveContractClient, err := contracts.NewReserve(reserveAddr, f.ethClient)
 	if err != nil {
-		return err
+		return result, err
 	}
 	callOpts := &bind.CallOpts{BlockNumber: block}
 	conversionRatesContract, err := reserveContractClient.ConversionRatesContract(callOpts)
 	if err != nil {
-		return err
+		return result, err
 	}
 
 	// step 2: get listedTokens from conversionRatesContract
 	conversionRateContractClient, err := contracts.NewConversionRates(conversionRatesContract, f.ethClient)
 	if err != nil {
-		return err
+		return result, err
 	}
 	listedTokens, err := conversionRateContractClient.GetListedTokens(callOpts)
 	if err != nil {
-		return err
+		return result, err
 	}
 
 	for _, address := range listedTokens {
 		symbol, err := tokenSymbol.Symbol(address)
 		if err != nil {
-			return err
+			return result, err
 		}
 		name, err := tokenSymbol.Name(address)
 		if err != nil {
-			return err
+			return result, err
 		}
 		timestamp, err := f.contractTimestampResolver.Resolve(address)
 		if err != nil {
-			return err
+			return result, err
 		}
 		result = updateListedToken(result, symbol, name, address, timestamp)
 	}
-	if _, err = json.Marshal(result); err != nil {
-		return err
-	}
 
-	return f.storage.CreateOrUpdate(result)
+	return result, nil
 }

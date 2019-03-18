@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 
@@ -43,8 +44,7 @@ CREATE TABLE IF NOT EXISTS %[4]s
 	token_id serial NOT NULL,
     base_id serial NOT NULL,
 	block integer NOT NULL,
-	buy_reserve_rate float8 NOT NULL,
-	sell_reserve_rate float8 NOT NULL,
+	rate float8 NOT NULL,
 	reserve_id integer NOT NULL,
 	CONSTRAINT %[4]s_pk PRIMARY KEY(id),
 	CONSTRAINT %[4]s_fk_token_id FOREIGN KEY(token_id) REFERENCES %[2]s(id),
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS %[5]s
 CREATE INDEX IF NOT EXISTS %[5]s_time_idx ON %[5]s(time);
 
 CREATE OR REPLACE VIEW rates_view AS 
-	SELECT rt.time as time, tk.symbol as token, bs.symbol as base, rt.buy_reserve_rate as buy_rate, rs.address as reserve
+	SELECT rt.time as time, tk.symbol as token, bs.symbol as base, rt.rate as rate, rs.address as reserve
 		FROM %[4]s AS rt LEFT JOIN %[2]s AS tk ON rt.token_id = tk.id
 		LEFT JOIN %[3]s AS bs ON rt.base_id=bs.id 
 		LEFT JOIN %[1]s AS rs ON rt.reserve_id=rs.id;

@@ -13,15 +13,15 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
-	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 )
 
 const (
 	reserveTableName = "reserves"
 	tokenTableName   = "tokens"
-	baseTableName    = "bases"
-	rateTableName    = "rates"
-	usdTableName     = "usds"
+	// TODO: change this to quotes.
+	baseTableName = "bases"
+	rateTableName = "token_rates"
+	usdTableName  = "usd_rates"
 )
 
 //RatesStorage defines the object to store rates
@@ -62,6 +62,9 @@ func (rdb *RatesStorage) Close() error {
 }
 
 //getTokenBase from pair return token and base from base-token pair
+// TODO: parsing the pair string from storage doesn't look right,
+//  as all the database implementations will need to redo it.
+//  Maybe the fetcher should do it before passing to storage?
 func getTokenBaseFromPair(pair string) (string, string, error) {
 	ids := strings.Split(strings.TrimSpace(pair), "-")
 	if len(ids) != 2 {
@@ -116,7 +119,7 @@ func (rdb *RatesStorage) updateBases(tx *sqlx.Tx, bases []string) error {
 }
 
 //UpdateRatesRecords update mutiple rate records from a block with mutiple reserve address into the DB
-func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, rateRecords map[string]map[string]common.ReserveRateEntry) error {
+func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, rateRecords map[string]map[string]float64) error {
 	var (
 		rsvAddrs    = make(map[string]bool)
 		rsvAddrsArr []string
@@ -132,14 +135,13 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, 
 		nRecord = 0
 	)
 
-	const rtStmt = `INSERT INTO %[1]s(time, token_id, base_id, block, buy_reserve_rate, sell_reserve_rate, reserve_id)
+	const rtStmt = `INSERT INTO %[1]s(time, token_id, base_id, block, rate, reserve_id)
 	VALUES ($1, 
 		(SELECT id FROM %[2]s as tk WHERE tk.symbol= $2),
 		(SELECT id FROM %[3]s as bs WHERE bs.symbol= $3),
 		$4, 
 		$5, 
-		$6, 
-		(SELECT id FROM %[4]s as rs WHERE rs.Address= $7)
+		(SELECT id FROM %[4]s as rs WHERE rs.Address= $6)
 	)
 	ON CONFLICT ON CONSTRAINT %[1]s_no_duplicate DO NOTHING;`
 
@@ -198,8 +200,7 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, 
 				token,
 				base,
 				blockInfo.Block,
-				rate.BuyReserveRate,
-				rate.SellReserveRate,
+				rate,
 				rsvAddr,
 			)
 			if err != nil {
@@ -275,7 +276,7 @@ func (rdb *RatesStorage) GetRates(from, to time.Time) (map[string]storage.Accoun
 			result[rowData.Reserve] = map[time.Time]map[string]map[string]float64{
 				timestamp: {
 					rowData.Base: {
-						rowData.Token: rowData.BuyRate,
+						rowData.Token: rowData.Rate,
 					},
 				},
 			}
@@ -283,16 +284,16 @@ func (rdb *RatesStorage) GetRates(from, to time.Time) (map[string]storage.Accoun
 		if _, ok := result[rowData.Reserve][timestamp]; !ok {
 			result[rowData.Reserve][timestamp] = map[string]map[string]float64{
 				rowData.Base: {
-					rowData.Token: rowData.BuyRate,
+					rowData.Token: rowData.Rate,
 				},
 			}
 		}
 		if _, ok := result[rowData.Reserve][timestamp][rowData.Base]; !ok {
 			result[rowData.Reserve][timestamp][rowData.Base] = map[string]float64{
-				rowData.Token: rowData.BuyRate,
+				rowData.Token: rowData.Rate,
 			}
 		}
-		result[rowData.Reserve][timestamp][rowData.Base][rowData.Token] = rowData.BuyRate
+		result[rowData.Reserve][timestamp][rowData.Base][rowData.Token] = rowData.Rate
 	}
 	return result, nil
 }
@@ -356,6 +357,8 @@ func (rdb *RatesStorage) GetLastResolvedBlockInfo() (lastblockdaily.BlockInfo, e
 	if err := rdb.db.Get(&usdTableResult, query); err != nil {
 		return usdTableResult, err
 	}
+	// TODO: this won't work when we add a new reserve address and need to fetch all rates from its creation date.
+	//  In other words, we need to track last inserted data of each reserve.
 	usdTableResult.Timestamp = usdTableResult.Timestamp.UTC()
 
 	if usdTableResult.Timestamp.Before(rateTableResult.Timestamp) {

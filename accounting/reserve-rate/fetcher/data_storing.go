@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
-	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
 )
 
 func (fc *Fetcher) isFailed() bool {
@@ -26,7 +25,7 @@ func (fc *Fetcher) getLastCompletedJobOrder() uint64 {
 	return fc.lastCompletedJobOrder
 }
 
-func (fc *Fetcher) serialDataStore(blockInfo lastblockdaily.BlockInfo, rates map[string]map[string]rsvRateCommon.ReserveRateEntry, ethUSDRate float64, jobOrder uint64) error {
+func (fc *Fetcher) serialDataStore(blockInfo lastblockdaily.BlockInfo, rates map[string]map[string]float64, ethUSDRate float64, jobOrder uint64) error {
 	var logger = fc.sugar.With("func", "accounting/reserve-rate/fetcher/fetcher.serialDataStore", "block", blockInfo.Block, "job_order", jobOrder)
 	for {
 		if fc.isFailed() {

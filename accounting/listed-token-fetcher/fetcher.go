@@ -114,8 +114,5 @@ func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
 		return err
 	}
 
-	// currently print out to cli, save to storage later
-	logger.Debugw("result listed token", "result", string(resultJSON))
-
 	return f.storage.CreateOrUpdate(result)
 }

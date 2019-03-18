@@ -39,6 +39,13 @@ func newListedTokenDB(sugar *zap.SugaredLogger) (*ListedTokenDB, error) {
 	return storage, nil
 }
 
+func teardown(t *testing.T, storage *ListedTokenDB) {
+	err := storage.DeleteTable()
+	assert.NoError(t, err)
+	err = storage.Close()
+	assert.NoError(t, err)
+}
+
 func TestListedTokenStorage(t *testing.T) {
 	logger := testutil.MustNewDevelopmentSugaredLogger()
 	logger.Info("start testing")
@@ -60,6 +67,8 @@ func TestListedTokenStorage(t *testing.T) {
 
 	storage, err := newListedTokenDB(logger)
 	assert.NoError(t, err)
+
+	defer teardown(t, storage)
 
 	err = storage.CreateOrUpdate(listedTokens)
 	assert.NoError(t, err)

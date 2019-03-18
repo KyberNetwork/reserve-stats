@@ -22,27 +22,20 @@ type ListedTokenDB struct {
 
 //NewDB open a new database connection an create initiated table if it is not exist
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*ListedTokenDB, error) {
-	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%s"
+	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%[1]s"
 (
 	id SERIAL PRIMARY KEY,
 	address text NOT NULL UNIQUE,
 	name text NOT NULL,
 	symbol text NOT NULL,
 	timestamp TIMESTAMP NOT NULL,
-	parent_id SERIAL REFERENCES "%s" (id)
+	parent_id SERIAL REFERENCES "%[1]s" (id)
 )
 	`
 	var logger = sugar.With("func", "accounting/storage.NewDB")
 
-	tx, err := db.Beginx()
-	if err != nil {
-		return nil, err
-	}
-
-	defer pgsql.CommitOrRollback(tx, logger, &err)
-
 	logger.Debug("initializing database schema")
-	if _, err = tx.Exec(fmt.Sprintf(schemaFmt, tokenTable, tokenTable)); err != nil {
+	if _, err := db.Exec(fmt.Sprintf(schemaFmt, tokenTable)); err != nil {
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
@@ -74,7 +67,7 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 		$2, 
 		$3,
 		to_timestamp($4::double precision / 1000),
-		(SELECT id FROM "%[1]s" WHERE symbol = $3)
+		(SELECT id FROM "%[1]s" WHERE address = $5)
 	)
 	ON CONFLICT (address) DO NOTHING`,
 		tokenTable)
@@ -102,7 +95,8 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 					oldToken.Address,
 					token.Name,
 					token.Symbol,
-					oldToken.Timestamp); err != nil {
+					oldToken.Timestamp,
+					token.Address); err != nil {
 					return err
 				}
 			}
@@ -131,4 +125,22 @@ func (ltd *ListedTokenDB) GetTokens() ([]common.ListedToken, error) {
 
 	logger.Debugw("query result from tokens table", "result", result)
 	return result, nil
+}
+
+//Close db connection
+func (ltd *ListedTokenDB) Close() error {
+	if ltd.db != nil {
+		return ltd.db.Close()
+	}
+	return nil
+}
+
+//DeleteTable remove tables use for test
+func (ltd *ListedTokenDB) DeleteTable() error {
+	const dropQuery = `DROP TABLE %s;`
+	query := fmt.Sprintf(dropQuery, tokenTable)
+
+	ltd.sugar.Infow("Drop token table", "query", query)
+	_, err := ltd.db.Exec(query)
+	return err
 }

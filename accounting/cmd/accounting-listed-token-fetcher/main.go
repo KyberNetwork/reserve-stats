@@ -9,17 +9,17 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
 
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	listedtoken "github.com/KyberNetwork/reserve-stats/accounting/listed-token-fetcher"
-	listedtokenstorage "github.com/KyberNetwork/reserve-stats/accounting/listed_token_storage"
+	listedtokenstorage "github.com/KyberNetwork/reserve-stats/accounting/listed-token-storage"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
 )
 
 const (
-	blockFlag           = "block"
-	reserveAddressFlag  = "reserve-address"
-	defaultAccountingDB = "accounting"
+	blockFlag          = "block"
+	reserveAddressFlag = "reserve-address"
 )
 
 func main() {
@@ -41,7 +41,7 @@ func main() {
 	)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultAccountingDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}

@@ -44,11 +44,13 @@ func updateListedToken(listedToken map[string]common.ListedToken, symbol, name s
 			})
 			token.Address = address.Hex()
 			token.Timestamp = timestamps
+			listedToken[key] = token
 		} else {
 			token.Old = append(token.Old, common.OldListedToken{
 				Address:   address.Hex(),
 				Timestamp: timestamps,
 			})
+			listedToken[key] = token
 		}
 		return listedToken
 	}

@@ -73,6 +73,7 @@ func TestListedTokenStorage(t *testing.T) {
 	err = storage.CreateOrUpdate(listedTokens)
 	assert.NoError(t, err)
 
-	_, err = storage.GetTokens()
+	storedListedTokens, err := storage.GetTokens()
 	assert.NoError(t, err)
+	assert.Equal(t, listedTokens, storedListedTokens)
 }

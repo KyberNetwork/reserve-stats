@@ -29,7 +29,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*ListedTokenDB, error) {
 	name text NOT NULL,
 	symbol text NOT NULL,
 	timestamp TIMESTAMP NOT NULL,
-	parent_id SERIAL REFERENCES "%[1]s" (id)
+	parent_id INT REFERENCES "%[1]s" (id)
 )
 	`
 	var logger = sugar.With("func", "accounting/storage.NewDB")
@@ -51,17 +51,7 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 	var (
 		logger = ltd.sugar.With("func", "accounting/lisetdtokenstorage.CreateOrUpdate")
 	)
-	upsertQuery := fmt.Sprintf(`INSERT INTO "%s" (address, name, symbol, timestamp)
-	VALUES (
-		$1, 
-		$2, 
-		$3,
-		to_timestamp($4::double precision / 100)
-	)
-	ON CONFLICT (address) DO NOTHING`,
-		tokenTable)
-
-	upsertOldTokenQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address, name, symbol, timestamp, parent_id)
+	upsertQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address, name, symbol, timestamp, parent_id)
 	VALUES (
 		$1, 
 		$2, 
@@ -72,7 +62,7 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 	ON CONFLICT (address) DO NOTHING`,
 		tokenTable)
 
-	logger.Debugw("upsert token", "value", upsertOldTokenQuery)
+	logger.Debugw("upsert token", "value", upsertQuery)
 
 	tx, err := ltd.db.Beginx()
 	if err != nil {
@@ -85,13 +75,14 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 			token.Address,
 			token.Name,
 			token.Symbol,
-			token.Timestamp); err != nil {
+			token.Timestamp,
+			token.Address); err != nil {
 			return err
 		}
 
 		if len(token.Old) != 0 {
 			for _, oldToken := range token.Old {
-				if _, err = tx.Exec(upsertOldTokenQuery,
+				if _, err = tx.Exec(upsertQuery,
 					oldToken.Address,
 					token.Name,
 					token.Symbol,
@@ -107,13 +98,14 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 }
 
 // GetTokens return all tokens listed
-func (ltd *ListedTokenDB) GetTokens() ([]common.ListedToken, error) {
+func (ltd *ListedTokenDB) GetTokens() (map[string]common.ListedToken, error) {
 	var (
 		logger = ltd.sugar.With(
 			"func",
 			"accounting/listed-token-storage/listedtokenstorage.GetTokens",
 		)
-		result []common.ListedToken
+		result       []common.ListedToken
+		listedTokens = make(map[string]common.ListedToken)
 	)
 
 	getQuery := fmt.Sprintf(`SELECT address, name, symbol, cast (extract(epoch from timestamp)*1000 as bigint) as timestamp FROM %[1]s`, tokenTable)
@@ -123,8 +115,38 @@ func (ltd *ListedTokenDB) GetTokens() ([]common.ListedToken, error) {
 		logger.Errorw("error query token", "error", err)
 	}
 
-	logger.Debugw("query result from tokens table", "result", result)
-	return result, nil
+	logger.Debugw("result from listed token", "result", result)
+
+	// Assemble old tokens
+	for _, token := range result {
+		key := fmt.Sprintf("%s-%s", token.Symbol, token.Name)
+		if listedToken, exist := listedTokens[key]; exist {
+			if token.Timestamp < listedToken.Timestamp {
+				listedToken.Old = append(listedToken.Old, common.OldListedToken{
+					Address:   token.Address,
+					Timestamp: token.Timestamp,
+				})
+				listedTokens[key] = listedToken
+			} else {
+				listedToken.Old = append(listedToken.Old, common.OldListedToken{
+					Address:   listedToken.Address,
+					Timestamp: listedToken.Timestamp,
+				})
+				listedToken.Address = token.Address
+				listedToken.Timestamp = token.Timestamp
+				listedTokens[key] = listedToken
+			}
+		} else {
+			listedTokens[key] = common.ListedToken{
+				Address:   token.Address,
+				Name:      token.Name,
+				Symbol:    token.Symbol,
+				Timestamp: token.Timestamp,
+			}
+		}
+	}
+
+	return listedTokens, nil
 }
 
 //Close db connection

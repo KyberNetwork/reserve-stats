@@ -53,10 +53,10 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() {
-		if err := hdb.TearDown(); err != nil {
-			t.Fatalf("teardown error : %v", err)
-		}
-		hdb.Close()
+		err := hdb.TearDown()
+		require.NoError(t, err)
+		err = hdb.Close()
+		require.NoError(t, err)
 	}()
 
 	err = hdb.UpdateTradeHistory(testData)

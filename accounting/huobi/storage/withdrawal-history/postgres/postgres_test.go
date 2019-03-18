@@ -41,8 +41,10 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() {
-		hdb.TearDown()
-		hdb.Close()
+		err := hdb.TearDown()
+		require.NoError(t, err)
+		err = hdb.Close()
+		require.NoError(t, err)
 	}()
 
 	err = hdb.UpdateWithdrawHistory(testData)

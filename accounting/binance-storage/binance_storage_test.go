@@ -11,6 +11,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
@@ -47,7 +48,7 @@ func TestBinanceTradeStorage(t *testing.T) {
 	logger := testutil.MustNewDevelopmentSugaredLogger()
 	logger.Info("test binance trade storage")
 	var testData = []binance.TradeHistory{
-		binance.TradeHistory{
+		{
 			Symbol:          "KNCETH",
 			ID:              574401,
 			OrderID:         5883434,
@@ -60,7 +61,7 @@ func TestBinanceTradeStorage(t *testing.T) {
 			IsMaker:         true,
 			IsBestMatch:     true,
 		},
-		binance.TradeHistory{
+		{
 			Symbol:          "KNCETH",
 			ID:              961633,
 			OrderID:         11488279,
@@ -82,4 +83,12 @@ func TestBinanceTradeStorage(t *testing.T) {
 
 	err = binanceStorage.UpdateTradeHistory(testData)
 	assert.NoError(t, err)
+
+	// test get trade history from database
+	fromTime := timeutil.TimestampMsToTime(1516439513145)
+	toTime := timeutil.TimestampMsToTime(1524570040118)
+
+	tradeHistories, err := binanceStorage.GetTradeHistory(fromTime, toTime)
+	assert.NoError(t, err)
+	assert.Equal(t, testData, tradeHistories)
 }

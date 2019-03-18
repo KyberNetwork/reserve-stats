@@ -7,6 +7,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
@@ -102,10 +103,28 @@ func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) erro
 //GetTradeHistory return trade history from binance storage
 func (bd *BinanceStorage) GetTradeHistory(fromTime, toTime time.Time) ([]binance.TradeHistory, error) {
 	var (
-		logger = bd.sugar.With("func", "account/binance_storage.GetTradeHistory")
-		result []binance.TradeHistory
+		logger   = bd.sugar.With("func", "account/binance_storage.GetTradeHistory")
+		result   []binance.TradeHistory
+		dbResult [][]byte
+		tmp      binance.TradeHistory
 	)
-	logger.Info("Get trade history from binance storage")
+	const selectStmt = `SELECT data FROM %s WHERE data->>'time'>=$1 AND data->>'time'<=$2`
+	query := fmt.Sprintf(selectStmt, binanceTradeTable)
+
+	logger.Debugw("querying trade history...", "query", query)
+
+	from := timeutil.TimeToTimestampMs(fromTime)
+	to := timeutil.TimeToTimestampMs(toTime)
+	if err := bd.db.Select(&dbResult, query, from, to); err != nil {
+		return result, err
+	}
+
+	for _, data := range dbResult {
+		if err := json.Unmarshal(data, &tmp); err != nil {
+			return result, err
+		}
+		result = append(result, tmp)
+	}
 
 	return result, nil
 }

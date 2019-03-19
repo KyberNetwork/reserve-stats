@@ -8,18 +8,20 @@ import (
 	"github.com/urfave/cli"
 
 	fetcher "github.com/KyberNetwork/reserve-stats/accounting/binance-fetcher"
+	binancestorage "github.com/KyberNetwork/reserve-stats/accounting/binance-storage"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
-	retryDelayFlag    = "retry-delay"
-	attemptFlag       = "attempt"
-	batchSizeFlag     = "batch-size"
-	defaultRetryDelay = 2 // minute
-	defaultAttempt    = 4
-	defaultBatchSize  = 100
+	retryDelayFlag       = "retry-delay"
+	attemptFlag          = "attempt"
+	batchSizeFlag        = "batch-size"
+	defaultRetryDelay    = 2 // minute
+	defaultAttempt       = 4
+	defaultBatchSize     = 100
+	binanceWithdrawTable = "binance_withdraws"
 )
 
 func main() {
@@ -95,12 +97,20 @@ func run(c *cli.Context) error {
 	batchSize := c.Int(batchSizeFlag)
 	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
 
+	db, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	binanceStorage, err := binancestorage.NewDB(sugar, db, binanceWithdrawTable, "applyTime", "text")
+	if err != nil {
+		return err
+	}
+
 	withdrawHistory, err := binanceFetcher.GetWithdrawHistory(fromTime, toTime)
 	if err != nil {
 		return err
 	}
 
-	sugar.Infow("withdraw history", "value", withdrawHistory)
-
-	return nil
+	return binanceStorage.UpdateWithdrawHistory(withdrawHistory)
 }

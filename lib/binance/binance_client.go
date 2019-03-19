@@ -27,7 +27,7 @@ const (
 type Client struct {
 	APIKey      string
 	SecretKey   string
-	Sugar       *zap.SugaredLogger
+	sugar       *zap.SugaredLogger
 	rateLimiter Limiter
 }
 
@@ -46,7 +46,7 @@ func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...O
 	clnt := &Client{
 		APIKey:    apiKey,
 		SecretKey: secretKey,
-		Sugar:     sugar,
+		sugar:     sugar,
 	}
 	for _, opt := range options {
 		opt(clnt)
@@ -103,7 +103,7 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 
 	var (
 		respBody []byte
-		logger   = bc.Sugar.With("func", "binance_client/sendRequest")
+		logger   = bc.sugar.With("func", "binance_client/sendRequest")
 	)
 	client := &http.Client{
 		Timeout: 30 * time.Second,

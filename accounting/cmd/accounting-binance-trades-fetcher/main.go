@@ -94,7 +94,9 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	defer binanceStorage.Close()
+	defer func(err *error) {
+		*err = binanceStorage.Close()
+	}(&err)
 
 	tradeHistories, err := binanceFetcher.GetTradeHistory(fromID)
 	if err != nil {
@@ -102,5 +104,8 @@ func run(c *cli.Context) error {
 	}
 	sugar.Debugw("trade histories", "result", tradeHistories)
 
-	return binanceStorage.UpdateTradeHistory(tradeHistories)
+	if err = binanceStorage.UpdateTradeHistory(tradeHistories); err != nil {
+		return err
+	}
+	return err
 }

@@ -8,6 +8,6 @@ import (
 
 //Interface is the storage for withdrawal history
 type Interface interface {
-	UpdateWithdrawHistory(withdraw huobi.WithdrawHistory) error
+	UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory) error
 	GetWithdrawHistory(from, to time.Time) ([]huobi.WithdrawHistory, error)
 }

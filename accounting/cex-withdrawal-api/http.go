@@ -61,9 +61,9 @@ func (sv *Server) get(c *gin.Context) {
 	logger = logger.With("from", from, "to", to, "cex name", query.Cex)
 	logger.Debug("querying rates from database")
 
-	if query.Cex == common.Binance.String() {
+	if query.Cex == common.Huobi.String() {
 		result, err = sv.huobidb.GetWithdrawHistory(from, to)
-	} else if query.Cex == common.Huobi.String() {
+	} else if query.Cex == common.Binance.String() {
 		result, err = sv.binancedb.GetWithdrawHistory(from, to)
 	} else {
 		//should not get here but it's a safe guard

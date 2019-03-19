@@ -10,6 +10,4 @@ import (
 type Interface interface {
 	UpdateTradeHistory([]binance.TradeHistory) error
 	GetTradeHistory(fromTime, toTime time.Time) ([]binance.TradeHistory, error)
-	UpdateWithdrawHistory(map[string]binance.WithdrawHistory) error
-	GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.WithdrawHistory, error)
 }

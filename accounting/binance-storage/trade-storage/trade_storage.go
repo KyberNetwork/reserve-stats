@@ -32,7 +32,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, tableName string) (*BinanceSto
 	  data JSONB,
 	  CONSTRAINT %[1]s_pk PRIMARY KEY(id)
 	);
-	CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s ((data ->> 'time'));
+	CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s ((data ->> '%[2]s'));
 	`
 
 	query := fmt.Sprintf(schemaFmt, tableName)
@@ -42,7 +42,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, tableName string) (*BinanceSto
 		return nil, err
 	}
 
-	logger.Info("binance trades table init successfully")
+	logger.Info("binance table init successfully")
 
 	return &BinanceStorage{
 		sugar:     sugar,
@@ -135,4 +135,33 @@ func (bd *BinanceStorage) GetTradeHistory(fromTime, toTime time.Time) ([]binance
 //UpdateWithdrawHistory save withdraw history to db
 func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.WithdrawHistory) error {
 	return nil
+}
+
+//GetWithdrawHistory return list of withdraw fromTime to toTime
+func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.WithdrawHistory, error) {
+	var (
+		logger   = bd.sugar.With("func", "account/binance_storage.GetTradeHistory")
+		result   []binance.WithdrawHistory
+		dbResult [][]byte
+		tmp      binance.WithdrawHistory
+	)
+	const selectStmt = `SELECT data FROM %s WHERE data->>'applyTime'>=$1 AND data->>'applyTime'<=$2`
+	query := fmt.Sprintf(selectStmt, bd.tableName)
+
+	logger.Debugw("querying trade history...", "query", query)
+
+	from := timeutil.TimeToTimestampMs(fromTime)
+	to := timeutil.TimeToTimestampMs(toTime)
+	if err := bd.db.Select(&dbResult, query, from, to); err != nil {
+		return result, err
+	}
+
+	for _, data := range dbResult {
+		if err := json.Unmarshal(data, &tmp); err != nil {
+			return result, err
+		}
+		result = append(result, tmp)
+	}
+
+	return result, nil
 }

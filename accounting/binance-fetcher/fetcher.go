@@ -19,7 +19,6 @@ type Fetcher struct {
 	retryDelay time.Duration
 	attempt    int
 	batchSize  int
-	//TODO: storage will be add in another PR
 }
 
 //NewFetcher return a new fetcher instance
@@ -125,7 +124,6 @@ func (f *Fetcher) GetTradeHistory(fromID uint64) ([]binance.TradeHistory, error)
 		}
 		return true
 	})
-	// TODO: save to storage
 	return result, nil
 }
 
@@ -182,9 +180,7 @@ func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) (map[string]bin
 		if err != nil {
 			return result, err
 		}
-		// logger.Debugw("withdraw hitory", "value", withdrawHistory.WithdrawList)
 		startTime = appendResult(result, withdrawHistory.WithdrawList)
-		// result = append(result, withdrawHistory.WithdrawList...)
 		if startTime.After(endTime) {
 			break
 		}
@@ -192,6 +188,5 @@ func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) (map[string]bin
 	// log for test get withdraw history successfully
 	logger.Debugw("withdraw history", "list", result)
 
-	// TODO: save to storage
 	return result, nil
 }

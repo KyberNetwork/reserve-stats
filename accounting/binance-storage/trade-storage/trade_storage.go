@@ -131,3 +131,8 @@ func (bd *BinanceStorage) GetTradeHistory(fromTime, toTime time.Time) ([]binance
 
 	return result, nil
 }
+
+//UpdateWithdrawHistory save withdraw history to db
+func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.WithdrawHistory) error {
+	return nil
+}

@@ -9,6 +9,7 @@ import (
 
 	fetcher "github.com/KyberNetwork/reserve-stats/accounting/binance-fetcher"
 	binancestorage "github.com/KyberNetwork/reserve-stats/accounting/binance-storage"
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -53,6 +54,7 @@ func main() {
 
 	app.Flags = append(app.Flags, binance.NewCliFlags()...)
 	app.Flags = append(app.Flags, timeutil.NewMilliTimeRangeCliFlags()...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

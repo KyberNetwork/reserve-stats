@@ -99,7 +99,14 @@ func run(c *cli.Context) error {
 	}
 
 	defer func(err *error) {
-		*err = listedTokenStorage.Close()
+		if err == nil {
+			*err = listedTokenStorage.Close()
+			return
+		}
+		if cErr := listedTokenStorage.Close(); cErr != nil {
+			sugar.Errorf("Close database error", "error", cErr)
+		}
+		sugar.Infow("error fetch listed token", "error", *err)
 	}(&err)
 
 	fetcher := listedtoken.NewListedTokenFetcher(ethClient, resolv, sugar)
@@ -109,5 +116,8 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	return listedTokenStorage.CreateOrUpdate(listedTokens)
+	if err = listedTokenStorage.CreateOrUpdate(listedTokens); err != nil {
+		return err
+	}
+	return err
 }

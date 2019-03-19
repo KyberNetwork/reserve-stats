@@ -61,11 +61,12 @@ func (sv *Server) get(c *gin.Context) {
 	logger = logger.With("from", from, "to", to, "cex name", query.Cex)
 	logger.Debug("querying rates from database")
 
-	if query.Cex == common.Huobi.String() {
+	switch query.Cex {
+	case common.Huobi.String():
 		result, err = sv.huobidb.GetWithdrawHistory(from, to)
-	} else if query.Cex == common.Binance.String() {
+	case common.Binance.String():
 		result, err = sv.binancedb.GetWithdrawHistory(from, to)
-	} else {
+	default:
 		//should not get here but it's a safe guard
 		c.JSON(
 			http.StatusBadRequest,

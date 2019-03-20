@@ -3,18 +3,19 @@ package fetcher
 import (
 	"database/sql"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
 	"github.com/KyberNetwork/tokenrate"
+	ethereum "github.com/ethereum/go-ethereum"
+	ethereumCommon "github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 
 	rrstorage "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
-
-	"github.com/ethereum/go-ethereum"
-	"go.uber.org/zap"
 )
 
 //defaultStartingTime for reserve-rate fetcher is on 31-01-2018
@@ -35,6 +36,7 @@ type Fetcher struct {
 	lastCompletedJobOrder uint64
 	mutex                 *sync.Mutex
 	failed                bool
+	addresses             []string
 }
 
 //Option set the init behaviour of Fetcher
@@ -56,6 +58,23 @@ func WithToTime(to time.Time) Option {
 	}
 }
 
+func (fc *Fetcher) getMinLastResolvedBlockInfo() (lastblockdaily.BlockInfo, error) {
+	var result = lastblockdaily.BlockInfo{
+		Block: math.MaxUint64,
+	}
+	for _, rsv := range fc.addresses {
+
+		fromBlockInfo, err := fc.storage.GetLastResolvedBlockInfo(ethereumCommon.HexToAddress(rsv))
+		if err != nil {
+			return result, err
+		}
+		if fromBlockInfo.Block < result.Block {
+			result = fromBlockInfo
+		}
+	}
+	return result, nil
+}
+
 //NewFetcher return a fetcher with options
 func NewFetcher(sugar *zap.SugaredLogger,
 	storage rrstorage.Interface,
@@ -64,6 +83,7 @@ func NewFetcher(sugar *zap.SugaredLogger,
 	ethusdRate tokenrate.ETHUSDRateProvider,
 	retryDelay, sleepTime time.Duration,
 	retryAttempts int,
+	addrs []string,
 	options ...Option) (*Fetcher, error) {
 
 	fetcher := &Fetcher{
@@ -76,15 +96,16 @@ func NewFetcher(sugar *zap.SugaredLogger,
 		retryAttempts:     retryAttempts,
 		ethUSDRateFetcher: ethusdRate,
 		mutex:             &sync.Mutex{},
+		addresses:         addrs,
 		failed:            false,
 	}
 	for _, opt := range options {
 		opt(fetcher)
 	}
-	//get last crawled blockInfo if fetcher is init without  from tim
+	//get last crawled blockInfo if fetcher is init without  from time
 	if fetcher.fromTime.IsZero() {
 		sugar.Debugw("empty from time, trying to get from block from db...")
-		fromBlockInfo, err := fetcher.storage.GetLastResolvedBlockInfo()
+		fromBlockInfo, err := fetcher.getMinLastResolvedBlockInfo()
 		if err == sql.ErrNoRows {
 			fetcher.fromTime = timeutil.TimestampMsToTime(defaultStartingTime)
 			sugar.Debugw("There is no row from DB, running from default from time", "from time", fetcher.fromTime.String())
@@ -200,11 +221,11 @@ func retryFetchTokenRate(maxAttempt int,
 			time.Sleep(retryInterval)
 			continue
 		}
-		for k1 := range rates {
-			result[k1] = make(map[string]float64)
-			for k2 := range rates[k1] {
+		for reseve := range rates {
+			result[reseve] = make(map[string]float64)
+			for pair := range rates[reseve] {
 				// TODO: is it really buy reserve rate?
-				result[k1][k2] = rates[k1][k2].BuyReserveRate
+				result[reseve][pair] = rates[reseve][pair].BuyReserveRate
 			}
 		}
 		return result, nil
@@ -227,11 +248,14 @@ func retryFetchETHUSDRate(maxAttempt int,
 	for i := 0; i < maxAttempt; i++ {
 		result, err = fetcher.USDRate(timestamp)
 		if err == nil {
-			return result, nil
+			//ETHUSD rate is defined as "how much ETH I have to sell to get one USD"
+			//coingecko return how much USD will I have to sell to get one ETH
+			//Hence we do the inverse here. rate expected to be !=0, if result is 0 it will panic
+			return 1 / result, nil
 		}
 		logger.Debugw("failed to fetch ETH-USD rate", "attempt", i, "error", err)
 		time.Sleep(retryInterval)
 	}
 
-	return result, err
+	return 0, err
 }

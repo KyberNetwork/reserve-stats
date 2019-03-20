@@ -3,16 +3,15 @@ package storage
 import (
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
 )
 
 //Interface defines a set of interface for reserve rate storage, which can be implemented by any DB
 type Interface interface {
-	// TODO: should we merge UpdateETHUSDPrice and UpdateETHUSDPrice?
-	UpdateRatesRecords(lastblockdaily.BlockInfo, map[string]map[string]float64) error
-	UpdateETHUSDPrice(blockInfo lastblockdaily.BlockInfo, ethUSDRate float64) error
-	GetLastResolvedBlockInfo() (lastblockdaily.BlockInfo, error)
-	// TODO: should we merge GetETHUSDRates and GetRates?
+	UpdateRatesRecords(lastblockdaily.BlockInfo, map[string]map[string]float64, float64) error
+	GetLastResolvedBlockInfo(ethereum.Address) (lastblockdaily.BlockInfo, error)
 	GetETHUSDRates(from, to time.Time) (AccountingReserveRates, error)
 	GetRates(from, to time.Time) (map[string]AccountingReserveRates, error)
 }

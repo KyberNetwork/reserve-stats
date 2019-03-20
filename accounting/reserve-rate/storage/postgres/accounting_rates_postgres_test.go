@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
-
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
@@ -21,7 +21,7 @@ func TestRatesStorage(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	_, db := testutil.MustNewDevelopmentDB()
 
-	rs, err := NewDB(sugar, db, "test_rsv_table", "test_token_table", "test_bases_table", "test_rates_table", "test_usd_table")
+	rs, err := NewDB(sugar, db, "test_rsv_table", "test_token_table", "test_quote_table", "test_rates_table", "test_usd_table")
 	require.NoError(t, err)
 
 	defer func(t *testing.T) {
@@ -29,7 +29,7 @@ func TestRatesStorage(t *testing.T) {
 		require.NoError(t, rs.Close())
 	}(t)
 
-	_, err = rs.GetLastResolvedBlockInfo()
+	_, err = rs.GetLastResolvedBlockInfo(ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"))
 	assert.Equal(t, sql.ErrNoRows, err)
 
 	var tests = []struct {
@@ -82,10 +82,7 @@ func TestRatesStorage(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		err = rs.UpdateRatesRecords(tc.block, tc.ethRates)
-		require.NoError(t, err)
-		err = rs.UpdateETHUSDPrice(tc.block, tc.usdRate)
-		require.NoError(t, err)
+		require.NoError(t, rs.UpdateRatesRecords(tc.block, tc.ethRates, tc.usdRate))
 
 		ethRates, err := rs.GetRates(
 			time.Now().AddDate(0, 0, -2),
@@ -101,7 +98,7 @@ func TestRatesStorage(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, tc.expectedUSDRate, usdRate)
 
-		lastBlock, err := rs.GetLastResolvedBlockInfo()
+		lastBlock, err := rs.GetLastResolvedBlockInfo(ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"))
 		assert.Equal(t, lastBlock, tc.block)
 	}
 }

@@ -87,6 +87,16 @@ func run(c *cli.Context) error {
 
 	}
 
+	defer func(err *error) {
+		var cErr error
+		cErr = hdb.Close()
+		if err == nil {
+			err = &cErr
+		} else {
+			sugar.Error("DB closing failed", "error", cErr)
+		}
+	}(&err)
+
 	fromID := c.Uint64(fromIDFlag)
 	retryDelay := c.Duration(retryDelayFlag)
 	maxAttempts := c.Int(maxAttemptFlag)
@@ -96,10 +106,12 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	var records []huobi.WithdrawHistory
+
 	for _, record := range data {
-		if err := hdb.UpdateWithdrawHistory(record); err != nil {
-			return err
-		}
+		records = append(records, record...)
 	}
-	return nil
+
+	err = hdb.UpdateWithdrawHistory(records)
+	return err
 }

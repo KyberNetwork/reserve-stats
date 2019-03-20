@@ -96,7 +96,14 @@ func run(c *cli.Context) error {
 	}
 
 	defer func(err *error) {
-		*err = binanceStorage.Close()
+		if err == nil {
+			*err = binanceStorage.Close()
+			return
+		}
+		if cErr := binanceStorage.Close(); cErr != nil {
+			sugar.Errorf("Close database error", "error", cErr)
+		}
+		sugar.Infow("error fetch listed token", "error", *err)
 	}(&err)
 
 	tradeHistories, err := binanceFetcher.GetTradeHistory(fromID)

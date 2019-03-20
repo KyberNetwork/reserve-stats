@@ -88,10 +88,9 @@ func run(c *cli.Context) error {
 	}
 
 	defer func(err *error) {
-		var cErr error
-		cErr = hdb.Close()
+		cErr := hdb.Close()
 		if err == nil {
-			err = &cErr
+			*err = cErr
 		} else {
 			sugar.Error("DB closing failed", "error", cErr)
 		}

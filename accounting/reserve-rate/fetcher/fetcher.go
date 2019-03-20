@@ -125,7 +125,7 @@ func (fc *Fetcher) fetch(fromTime, toTime time.Time) error {
 		rateErrChn     = make(chan error)
 		lastBlockBlCh  = make(chan lastblockdaily.BlockInfo)
 		wg             = &sync.WaitGroup{}
-		logger         = fc.sugar.With("function", "accounting/reserve-rate/fetcher/fetcher.Fetch()",
+		logger         = fc.sugar.With("func", "accounting/reserve-rate/fetcher/Fetcher.fetch",
 			"from", fromTime.String(),
 			"to", toTime.String())
 		jobOrder = fc.getLastCompletedJobOrder()
@@ -180,7 +180,7 @@ func (fc *Fetcher) Run() error {
 	var (
 		toTime     = fc.toTime
 		fromTime   = fc.fromTime
-		logger     = fc.sugar.With("function", "accounting/reserve-rate/fetcher.Run")
+		logger     = fc.sugar.With("func", "accounting/reserve-rate/Fetcher.Run")
 		daemonMode = false
 	)
 	if fc.toTime.IsZero() {
@@ -210,22 +210,20 @@ func retryFetchTokenRate(maxAttempt int,
 	var (
 		result = make(map[string]map[string]float64)
 		err    error
-		logger = sugar.With("function", "accounting/reserve-rate/fetcher/fetcher.retryFetchTokenRate", "block", block)
+		logger = sugar.With("func", "accounting/reserve-rate/fetcher/retryFetchTokenRate", "block", block)
 	)
 
 	for i := 0; i < maxAttempt; i++ {
-		// TODO: GetReserveRates might fetch too more data than we need here?
 		rates, err := rsvRateCrawler.GetReserveRates(block)
 		if err != nil {
 			logger.Debugw("failed to fetch reserve rate", "attempt", i, "error", err)
 			time.Sleep(retryInterval)
 			continue
 		}
-		for reseve := range rates {
-			result[reseve] = make(map[string]float64)
-			for pair := range rates[reseve] {
-				// TODO: is it really buy reserve rate?
-				result[reseve][pair] = rates[reseve][pair].BuyReserveRate
+		for reserve := range rates {
+			result[reserve] = make(map[string]float64)
+			for pair := range rates[reserve] {
+				result[reserve][pair] = rates[reserve][pair].BuyReserveRate
 			}
 		}
 		return result, nil
@@ -242,7 +240,7 @@ func retryFetchETHUSDRate(maxAttempt int,
 	var (
 		result float64
 		err    error
-		logger = sugar.With("function", "accounting/reserve-rate/fetcher/fetcher.retryFetchETHUSDRate", "time", timestamp.String())
+		logger = sugar.With("func", "accounting/reserve-rate/fetcher/retryFetchETHUSDRate", "time", timestamp.String())
 	)
 
 	for i := 0; i < maxAttempt; i++ {

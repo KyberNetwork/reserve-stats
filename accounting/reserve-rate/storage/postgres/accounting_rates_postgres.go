@@ -62,9 +62,6 @@ func (rdb *RatesStorage) Close() error {
 }
 
 //getTokenQuote from pair return token and quote from quote-token pair
-// TODO: parsing the pair string from storage doesn't look right,
-//  as all the database implementations will need to redo it.
-//  Maybe the fetcher should do it before passing to storage?
 func getTokenQuoteFromPair(pair string) (string, string, error) {
 	ids := strings.Split(strings.TrimSpace(pair), "-")
 	if len(ids) != 2 {
@@ -334,11 +331,11 @@ func (rdb *RatesStorage) updateETHUSDPrice(blockInfo lastblockdaily.BlockInfo, e
 func (rdb *RatesStorage) GetLastResolvedBlockInfo(reserveAddr ethereum.Address) (lastblockdaily.BlockInfo, error) {
 	const (
 		selectStmt = `SELECT time,block FROM %[1]s WHERE time=
-		(SELECT MAX(time) FROM %[1]s) AND reserve_id=(SELECT id FROM %[2]s WHERE %[2]s.address=$1)  LIMIT 1`
+		(SELECT MAX(time) FROM %[1]s) AND reserve_id=(SELECT id FROM %[2]s WHERE %[2]s.address=$1) LIMIT 1`
 	)
 	var (
 		rateTableResult = lastblockdaily.BlockInfo{}
-		logger          = rdb.sugar.With("func", "accounting/reserve-rate/storage/postgres/accounting_rates_postgres.GetLastResolvedBlockInfo")
+		logger          = rdb.sugar.With("func", "accounting/reserve-rate/storage/postgres/RatesStorage.GetLastResolvedBlockInfo")
 	)
 
 	query := fmt.Sprintf(selectStmt, rdb.tableNames[rateTableName], rdb.tableNames[reserveTableName])

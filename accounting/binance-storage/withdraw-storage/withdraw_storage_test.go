@@ -20,10 +20,10 @@ const (
 	postgresUser             = "reserve_stats"
 	postgresPassword         = "reserve_stats"
 	postgresDatabase         = "reserve_stats"
-	binanceWithdrawTableTest = "binance_withdraws"
+	binanceWithdrawTableTest = "binance_withdraws_test"
 )
 
-func newTestDB(sugar *zap.SugaredLogger, tableName, timeIndexField, idType string) (*BinanceStorage, error) {
+func newTestDB(sugar *zap.SugaredLogger, tableName string) (*BinanceStorage, error) {
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		postgresHost,
 		postgresPort,
@@ -35,11 +35,11 @@ func newTestDB(sugar *zap.SugaredLogger, tableName, timeIndexField, idType strin
 	if err != nil {
 		return nil, err
 	}
-	return NewDB(sugar, db, tableName, timeIndexField, idType)
+	return NewDB(sugar, db, tableName)
 }
 
-func teardown(t *testing.T, storage *BinanceStorage, tableName string) {
-	err := storage.DeleteTable(tableName)
+func teardown(t *testing.T, storage *BinanceStorage) {
+	err := storage.DeleteTable()
 	assert.NoError(t, err)
 	err = storage.Close()
 	assert.NoError(t, err)
@@ -91,10 +91,10 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 		}
 	)
 
-	binanceStorage, err := newTestDB(logger, binanceWithdrawTableTest, "applyTime", "text")
+	binanceStorage, err := newTestDB(logger, binanceWithdrawTableTest)
 	assert.NoError(t, err)
 
-	defer teardown(t, binanceStorage, binanceWithdrawTableTest)
+	defer teardown(t, binanceStorage)
 
 	err = binanceStorage.UpdateWithdrawHistory(testData)
 	assert.NoError(t, err)

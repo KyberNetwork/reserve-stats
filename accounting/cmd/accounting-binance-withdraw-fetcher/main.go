@@ -104,7 +104,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	binanceStorage, err := withdrawstorage.NewDB(sugar, db, binanceWithdrawTable, "applyTime", "text")
+	binanceStorage, err := withdrawstorage.NewDB(sugar, db, binanceWithdrawTable)
 	if err != nil {
 		return err
 	}

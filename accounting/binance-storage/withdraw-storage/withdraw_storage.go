@@ -13,32 +13,29 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	binanceWithdrawTable = "binance_withdraws"
-)
-
 //BinanceStorage is storage for binance fetcher including trade history and withdraw history
 type BinanceStorage struct {
-	sugar *zap.SugaredLogger
-	db    *sqlx.DB
+	sugar     *zap.SugaredLogger
+	db        *sqlx.DB
+	tableName string
 }
 
 //NewDB return a new instance of binance storage
-func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, tableName, timeIndexField, idType string) (*BinanceStorage, error) {
+func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, tableName string) (*BinanceStorage, error) {
 	var (
 		logger = sugar.With("func", "accounting/binance-storage/binancestorage.NewDB")
 	)
 
 	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%[1]s"
 	(
-	  id   %[2]s NOT NULL,
+	  id   text NOT NULL,
 	  data JSONB,
 	  CONSTRAINT %[1]s_pk PRIMARY KEY(id)
 	);
-	CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s ((data ->> '%[3]s'));
+	CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s ((data ->> 'applyTime'));
 	`
 
-	query := fmt.Sprintf(schemaFmt, tableName, idType, timeIndexField)
+	query := fmt.Sprintf(schemaFmt, tableName)
 	logger.Debugw("create table query", "query", query)
 
 	if _, err := db.Exec(query); err != nil {
@@ -48,8 +45,9 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, tableName, timeIndexField, idT
 	logger.Info("binance table init successfully")
 
 	return &BinanceStorage{
-		sugar: sugar,
-		db:    db,
+		sugar:     sugar,
+		db:        db,
+		tableName: tableName,
 	}, nil
 }
 
@@ -62,8 +60,8 @@ func (bd *BinanceStorage) Close() error {
 }
 
 //DeleteTable remove trades table
-func (bd *BinanceStorage) DeleteTable(tableName string) error {
-	query := fmt.Sprintf("DROP TABLE %s", tableName)
+func (bd *BinanceStorage) DeleteTable() error {
+	query := fmt.Sprintf("DROP TABLE %s", bd.tableName)
 	if _, err := bd.db.Exec(query); err != nil {
 		return err
 	}
@@ -89,7 +87,7 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories map[string]bin
 
 	defer pgsql.CommitOrRollback(tx, bd.sugar, &err)
 
-	query := fmt.Sprintf(updateQuery, binanceWithdrawTable)
+	query := fmt.Sprintf(updateQuery, bd.tableName)
 	logger.Debugw("query update withdraw history", "query", query)
 
 	for _, withdraw := range withdrawHistories {
@@ -114,7 +112,7 @@ func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) ([]bina
 		tmp      binance.WithdrawHistory
 	)
 	const selectStmt = `SELECT data FROM %s WHERE data->>'applyTime'>=$1 AND data->>'applyTime'<=$2`
-	query := fmt.Sprintf(selectStmt, binanceWithdrawTable)
+	query := fmt.Sprintf(selectStmt, bd.tableName)
 
 	logger.Debugw("querying trade history...", "query", query)
 

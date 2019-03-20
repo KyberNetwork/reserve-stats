@@ -49,7 +49,14 @@ func run(c *cli.Context) error {
 		return err
 	}
 	defer func(err *error) {
-		*err = huobiDb.Close()
+		var cErr error
+		cErr = huobiDb.Close()
+		if err == nil {
+			err = &cErr
+		} else {
+			sugar.Error("DB closing failed", "error", cErr)
+		}
+
 	}(&err)
 	hostStr := httputil.NewHTTPAddressFromContext(c)
 	server, err := http.NewServer(hostStr, huobiDb, nil, sugar)

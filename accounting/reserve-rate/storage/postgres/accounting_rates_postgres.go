@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
@@ -18,10 +19,9 @@ import (
 const (
 	reserveTableName = "reserves"
 	tokenTableName   = "tokens"
-	// TODO: change this to quotes.
-	baseTableName = "bases"
-	rateTableName = "token_rates"
-	usdTableName  = "usd_rates"
+	quoteTableName   = "quotes"
+	rateTableName    = "token_rates"
+	usdTableName     = "usd_rates"
 )
 
 //RatesStorage defines the object to store rates
@@ -44,7 +44,7 @@ func (rdb *RatesStorage) TearDown() error {
 	defer pgsql.CommitOrRollback(tx, rdb.sugar, &err)
 	query := fmt.Sprintf(dropFMT,
 		rdb.tableNames[reserveTableName],
-		rdb.tableNames[baseTableName],
+		rdb.tableNames[quoteTableName],
 		rdb.tableNames[tokenTableName],
 		rdb.tableNames[rateTableName],
 		rdb.tableNames[usdTableName],
@@ -61,14 +61,14 @@ func (rdb *RatesStorage) Close() error {
 	return nil
 }
 
-//getTokenBase from pair return token and base from base-token pair
+//getTokenQuote from pair return token and quote from quote-token pair
 // TODO: parsing the pair string from storage doesn't look right,
 //  as all the database implementations will need to redo it.
 //  Maybe the fetcher should do it before passing to storage?
-func getTokenBaseFromPair(pair string) (string, string, error) {
+func getTokenQuoteFromPair(pair string) (string, string, error) {
 	ids := strings.Split(strings.TrimSpace(pair), "-")
 	if len(ids) != 2 {
-		return "", "", fmt.Errorf("pair %s is malformed. Expected base-token, got", pair)
+		return "", "", fmt.Errorf("pair %s is malformed. Expected quote-token, got", pair)
 	}
 	return ids[1], ids[0], nil
 }
@@ -103,30 +103,30 @@ func (rdb *RatesStorage) updateTokens(tx *sqlx.Tx, tokens []string) error {
 	return err
 }
 
-func (rdb *RatesStorage) updateBases(tx *sqlx.Tx, bases []string) error {
+func (rdb *RatesStorage) updateQuotes(tx *sqlx.Tx, quotes []string) error {
 	const bsStmt = `INSERT INTO %[1]s(symbol) 
 	VALUES(unnest($1::TEXT[]))
 	ON CONFLICT ON CONSTRAINT %[1]s_symbol_key DO NOTHING`
 	var logger = rdb.sugar.With(
-		"func", "reserverates/storage/postgres/RateStorage.updateBases",
+		"func", "reserverates/storage/postgres/RateStorage.updateQuotes",
 	)
 
-	query := fmt.Sprintf(bsStmt, rdb.tableNames[baseTableName])
-	logger.Debugw("updating bases...", "query", query)
+	query := fmt.Sprintf(bsStmt, rdb.tableNames[quoteTableName])
+	logger.Debugw("updating quotes...", "query", query)
 
-	_, err := tx.Exec(query, pq.StringArray(bases))
+	_, err := tx.Exec(query, pq.StringArray(quotes))
 	return err
 }
 
 //UpdateRatesRecords update mutiple rate records from a block with mutiple reserve address into the DB
-func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, rateRecords map[string]map[string]float64) error {
+func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, rateRecords map[string]map[string]float64, ethusdRate float64) error {
 	var (
 		rsvAddrs    = make(map[string]bool)
 		rsvAddrsArr []string
 		tokens      = make(map[string]bool)
 		tokensArr   []string
-		bases       = make(map[string]bool)
-		basesArr    []string
+		quotes      = make(map[string]bool)
+		quotesArr   []string
 		logger      = rdb.sugar.With(
 			"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
 			"block_number", blockInfo.Block,
@@ -135,7 +135,7 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, 
 		nRecord = 0
 	)
 
-	const rtStmt = `INSERT INTO %[1]s(time, token_id, base_id, block, rate, reserve_id)
+	const rtStmt = `INSERT INTO %[1]s(time, token_id, quote_id, block, rate, reserve_id)
 	VALUES ($1, 
 		(SELECT id FROM %[2]s as tk WHERE tk.symbol= $2),
 		(SELECT id FROM %[3]s as bs WHERE bs.symbol= $3),
@@ -151,7 +151,7 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, 
 			rsvAddrsArr = append(rsvAddrsArr, rsvAddr)
 		}
 		for pair := range rateRecord {
-			token, base, err := getTokenBaseFromPair(pair)
+			token, quote, err := getTokenQuoteFromPair(pair)
 			if err != nil {
 				return err
 			}
@@ -160,9 +160,9 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, 
 				tokensArr = append(tokensArr, token)
 			}
 
-			if _, ok := bases[base]; !ok {
-				bases[base] = true
-				basesArr = append(basesArr, base)
+			if _, ok := quotes[quote]; !ok {
+				quotes[quote] = true
+				quotesArr = append(quotesArr, quote)
 			}
 		}
 	}
@@ -172,6 +172,11 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, 
 	if err != nil {
 		return err
 	}
+
+	if err = rdb.updateETHUSDPrice(blockInfo, ethusdRate, tx); err != nil {
+		return err
+	}
+
 	sort.Strings(rsvAddrsArr)
 	if err := rdb.updateRsvAddrs(tx, rsvAddrsArr); err != nil {
 		return err
@@ -182,23 +187,23 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, 
 		return err
 	}
 
-	sort.Strings(basesArr)
-	if err := rdb.updateBases(tx, basesArr); err != nil {
+	sort.Strings(quotesArr)
+	if err := rdb.updateQuotes(tx, quotesArr); err != nil {
 		return err
 	}
 
-	query := fmt.Sprintf(rtStmt, rdb.tableNames[rateTableName], rdb.tableNames[tokenTableName], rdb.tableNames[baseTableName], rdb.tableNames[reserveTableName])
+	query := fmt.Sprintf(rtStmt, rdb.tableNames[rateTableName], rdb.tableNames[tokenTableName], rdb.tableNames[quoteTableName], rdb.tableNames[reserveTableName])
 	logger.Debugw("updating rates...", "query", query)
 	for rsvAddr, rateRecord := range rateRecords {
 		for pair, rate := range rateRecord {
-			token, base, err := getTokenBaseFromPair(pair)
+			token, quote, err := getTokenQuoteFromPair(pair)
 			if err != nil {
 				return err
 			}
 			_, err = tx.Exec(query,
 				blockInfo.Timestamp.UTC(),
 				token,
-				base,
+				quote,
 				blockInfo.Block,
 				rate,
 				rsvAddr,
@@ -275,7 +280,7 @@ func (rdb *RatesStorage) GetRates(from, to time.Time) (map[string]storage.Accoun
 		if _, ok := result[rowData.Reserve]; !ok {
 			result[rowData.Reserve] = map[time.Time]map[string]map[string]float64{
 				timestamp: {
-					rowData.Base: {
+					rowData.Quote: {
 						rowData.Token: rowData.Rate,
 					},
 				},
@@ -283,23 +288,23 @@ func (rdb *RatesStorage) GetRates(from, to time.Time) (map[string]storage.Accoun
 		}
 		if _, ok := result[rowData.Reserve][timestamp]; !ok {
 			result[rowData.Reserve][timestamp] = map[string]map[string]float64{
-				rowData.Base: {
+				rowData.Quote: {
 					rowData.Token: rowData.Rate,
 				},
 			}
 		}
-		if _, ok := result[rowData.Reserve][timestamp][rowData.Base]; !ok {
-			result[rowData.Reserve][timestamp][rowData.Base] = map[string]float64{
+		if _, ok := result[rowData.Reserve][timestamp][rowData.Quote]; !ok {
+			result[rowData.Reserve][timestamp][rowData.Quote] = map[string]float64{
 				rowData.Token: rowData.Rate,
 			}
 		}
-		result[rowData.Reserve][timestamp][rowData.Base][rowData.Token] = rowData.Rate
+		result[rowData.Reserve][timestamp][rowData.Quote][rowData.Token] = rowData.Rate
 	}
 	return result, nil
 }
 
-//UpdateETHUSDPrice store the ETHUSD rate at that blockInfo
-func (rdb *RatesStorage) UpdateETHUSDPrice(blockInfo lastblockdaily.BlockInfo, ethusdRate float64) error {
+//updateETHUSDPrice store the ETHUSD rate at that blockInfo
+func (rdb *RatesStorage) updateETHUSDPrice(blockInfo lastblockdaily.BlockInfo, ethusdRate float64, tx *sqlx.Tx) error {
 	var logger = rdb.sugar.With(
 		"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
 		"block_number", blockInfo.Block,
@@ -316,53 +321,32 @@ func (rdb *RatesStorage) UpdateETHUSDPrice(blockInfo lastblockdaily.BlockInfo, e
 	)
 
 	logger.Debugw("updating eth-usdrates...", "query", query)
-	tx, err := rdb.db.Beginx()
-	if err != nil {
-		return err
-	}
-	defer pgsql.CommitOrRollback(tx, rdb.sugar, &err)
-	_, err = tx.Exec(query,
+	_, err := tx.Exec(query,
 		blockInfo.Timestamp.UTC(),
 		blockInfo.Block,
 		ethusdRate,
 	)
-	if err != nil {
-		return err
-	}
 
 	return err
 }
 
 //GetLastResolvedBlockInfo return block info of the rate with latest timestamp
-func (rdb *RatesStorage) GetLastResolvedBlockInfo() (lastblockdaily.BlockInfo, error) {
+func (rdb *RatesStorage) GetLastResolvedBlockInfo(reserveAddr ethereum.Address) (lastblockdaily.BlockInfo, error) {
 	const (
 		selectStmt = `SELECT time,block FROM %[1]s WHERE time=
-		(SELECT MAX(time) FROM %[1]s) LIMIT 1`
+		(SELECT MAX(time) FROM %[1]s) AND reserve_id=(SELECT id FROM %[2]s WHERE %[2]s.address=$1)  LIMIT 1`
 	)
 	var (
-		usdTableResult  = lastblockdaily.BlockInfo{}
 		rateTableResult = lastblockdaily.BlockInfo{}
 		logger          = rdb.sugar.With("func", "accounting/reserve-rate/storage/postgres/accounting_rates_postgres.GetLastResolvedBlockInfo")
 	)
 
-	query := fmt.Sprintf(selectStmt, rdb.tableNames[rateTableName])
+	query := fmt.Sprintf(selectStmt, rdb.tableNames[rateTableName], rdb.tableNames[reserveTableName])
 	logger.Debugw("Querying last resolved block from rates table...", "query", query)
-	if err := rdb.db.Get(&rateTableResult, query); err != nil {
+	if err := rdb.db.Get(&rateTableResult, query, reserveAddr.Hex()); err != nil {
 		return rateTableResult, err
 	}
 	rateTableResult.Timestamp = rateTableResult.Timestamp.UTC()
 
-	query = fmt.Sprintf(selectStmt, rdb.tableNames[usdTableName])
-	logger.Debugw("Querying last resolved block from usd table...", "query", query)
-	if err := rdb.db.Get(&usdTableResult, query); err != nil {
-		return usdTableResult, err
-	}
-	// TODO: this won't work when we add a new reserve address and need to fetch all rates from its creation date.
-	//  In other words, we need to track last inserted data of each reserve.
-	usdTableResult.Timestamp = usdTableResult.Timestamp.UTC()
-
-	if usdTableResult.Timestamp.Before(rateTableResult.Timestamp) {
-		return usdTableResult, nil
-	}
 	return rateTableResult, nil
 }

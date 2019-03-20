@@ -33,11 +33,7 @@ func (fc *Fetcher) serialDataStore(blockInfo lastblockdaily.BlockInfo, rates map
 		}
 		lastCompleted := fc.getLastCompletedJobOrder()
 		if lastCompleted+1 == jobOrder {
-			if err := fc.storage.UpdateRatesRecords(blockInfo, rates); err != nil {
-				fc.markAsFailed()
-				return err
-			}
-			if err := fc.storage.UpdateETHUSDPrice(blockInfo, ethUSDRate); err != nil {
+			if err := fc.storage.UpdateRatesRecords(blockInfo, rates, ethUSDRate); err != nil {
 				fc.markAsFailed()
 				return err
 			}

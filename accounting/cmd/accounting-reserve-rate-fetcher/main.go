@@ -154,7 +154,7 @@ func run(c *cli.Context) error {
 		options = append(options, fetcher.WithToTime(toDate))
 	}
 
-	rrFetcher, err := fetcher.NewFetcher(sugar, ratesStorage, ratesCrawler, lastBlockResolver, cgk, retryDelayTime, sleepTime, attempts, options...)
+	rrFetcher, err := fetcher.NewFetcher(sugar, ratesStorage, ratesCrawler, lastBlockResolver, cgk, retryDelayTime, sleepTime, attempts, addrs, options...)
 	if err != nil {
 		return err
 	}

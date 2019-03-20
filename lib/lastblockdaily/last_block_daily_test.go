@@ -5,12 +5,11 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
@@ -73,12 +72,8 @@ func TestNext(t *testing.T) {
 		}
 	)
 
-	logger, err := zap.NewDevelopment()
-	require.NoError(t, err)
-	sugar := logger.Sugar()
-
-	ethClient, err := ethclient.Dial("https://mainnet.infura.io/")
-	require.NoError(t, err)
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
+	ethClient := testutil.MustNewDevelopmentwEthereumClient()
 
 	blkTimeRsv, err := blockchain.NewBlockTimeResolver(sugar, ethClient)
 	require.NoError(t, err)

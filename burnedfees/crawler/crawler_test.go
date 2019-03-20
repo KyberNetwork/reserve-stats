@@ -1,20 +1,15 @@
 package crawler
 
 import (
-	"os"
 	"testing"
 
 	"github.com/KyberNetwork/reserve-stats/burnedfees/common"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
-
-const defaultEthereumNode = "https://mainnet.infura.io"
 
 type mockStorage struct{}
 
@@ -32,17 +27,8 @@ func (*mockStorage) LastBlock() (int64, error) {
 
 func TestBurnedFeesCrawlerExecute(t *testing.T) {
 	testutil.SkipExternal(t)
-	logger, err := zap.NewDevelopment()
-	require.Nil(t, err, "logger should be initiated successfully")
-	sugar := logger.Sugar()
-
-	node, ok := os.LookupEnv("ETHEREUM_NODE")
-	if !ok {
-		node = defaultEthereumNode
-	}
-
-	ethClient, err := ethclient.Dial(node)
-	require.NoError(t, err)
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
+	ethClient := testutil.MustNewDevelopmentwEthereumClient()
 
 	burners := []ethereum.Address{ethereum.HexToAddress("0xed4f53268bfdff39b36e8786247ba3a02cf34b04")}
 	crawler := NewBurnedFeesCrawler(sugar, ethClient, newMockStorage(), burners)

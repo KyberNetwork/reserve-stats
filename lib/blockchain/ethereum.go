@@ -3,12 +3,12 @@ package blockchain
 import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
+
+	"github.com/KyberNetwork/reserve-stats/lib/node"
 )
 
 const (
 	ethereumNodeFlag = "ethereum-node"
-	//InfuraEndpoint is url for infura node
-	InfuraEndpoint = "https://mainnet.infura.io"
 )
 
 // NewEthereumNodeFlags returns cli flag for ethereum node url input
@@ -17,7 +17,7 @@ func NewEthereumNodeFlags() cli.Flag {
 		Name:   ethereumNodeFlag,
 		Usage:  "Ethereum Node URL",
 		EnvVar: "ETHEREUM_NODE",
-		Value:  InfuraEndpoint,
+		Value:  node.InfuraEndpoint(),
 	}
 }
 

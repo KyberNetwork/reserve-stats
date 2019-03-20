@@ -33,6 +33,8 @@ func run(c *cli.Context) error {
 	}
 	defer flusher()
 
+	sugar.Info("Run reserve token api")
+
 	// db, err := libapp.NewDBFromContext(c)
 	// if err != nil {
 	// 	return err

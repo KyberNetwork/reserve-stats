@@ -63,7 +63,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	server.Run()
+	err = server.Run()
 	return err
 }
 

@@ -7,7 +7,7 @@ import (
 	"github.com/urfave/cli"
 
 	fetcher "github.com/KyberNetwork/reserve-stats/accounting/binance-fetcher"
-	binancestorage "github.com/KyberNetwork/reserve-stats/accounting/binance-storage"
+	tradestorage "github.com/KyberNetwork/reserve-stats/accounting/binance-storage/trade-storage"
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
@@ -21,6 +21,7 @@ const (
 	defaultRetryDelay = 2 // minute
 	defaultAttempt    = 4
 	defaultBatchSize  = 100
+	tradeTableName    = "binance_trades"
 )
 
 func main() {
@@ -89,7 +90,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	binanceStorage, err := binancestorage.NewDB(sugar, storage)
+	binanceStorage, err := tradestorage.NewDB(sugar, storage, tradeTableName)
 	if err != nil {
 		return err
 	}

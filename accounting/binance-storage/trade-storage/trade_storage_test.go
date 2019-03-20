@@ -1,4 +1,4 @@
-package binancestorage
+package tradestorage
 
 import (
 	"fmt"
@@ -20,6 +20,7 @@ const (
 	postgresUser     = "reserve_stats"
 	postgresPassword = "reserve_stats"
 	postgresDatabase = "reserve_stats"
+	tradeTableTest   = "binance_trade_test"
 )
 
 func newTestDB(sugar *zap.SugaredLogger) (*BinanceStorage, error) {
@@ -34,7 +35,7 @@ func newTestDB(sugar *zap.SugaredLogger) (*BinanceStorage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewDB(sugar, db)
+	return NewDB(sugar, db, tradeTableTest)
 }
 
 func teardown(t *testing.T, storage *BinanceStorage) {

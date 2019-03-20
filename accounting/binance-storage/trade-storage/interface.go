@@ -1,4 +1,4 @@
-package binancestorage
+package tradestorage
 
 import (
 	"time"

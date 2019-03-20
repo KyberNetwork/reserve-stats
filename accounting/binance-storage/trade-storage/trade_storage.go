@@ -131,33 +131,3 @@ func (bd *BinanceStorage) GetTradeHistory(fromTime, toTime time.Time) ([]binance
 
 	return result, nil
 }
-
-//UpdateWithdrawHistory save withdraw history to db
-func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories map[string]binance.WithdrawHistory) error {
-	const updateQuery = `INSERT INTO %[1]s (id, data)
-	VALUES(
-		$1,
-		$2
-	) ON CONFLICT ON CONSTRAINT %[1]s_pk DO NOTHING;
-	`
-
-	tx, err := bd.db.Beginx()
-	if err != nil {
-		return err
-	}
-
-	defer pgsql.CommitOrRollback(tx, bd.sugar, &err)
-
-	for _, withdraw := range withdrawHistories {
-		query := fmt.Sprintf(updateQuery, bd.tableName)
-		withdrawJSON, err := json.Marshal(withdraw)
-		if err != nil {
-			return err
-		}
-		if _, err := tx.Exec(query, withdraw.ID, withdrawJSON); err != nil {
-			return err
-		}
-	}
-
-	return err
-}

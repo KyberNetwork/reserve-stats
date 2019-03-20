@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -13,8 +12,7 @@ import (
 
 func TestTokenAmountFormatter(t *testing.T) {
 	testutil.SkipExternal(t)
-	client, err := ethclient.Dial("https://mainnet.infura.io")
-	require.NoError(t, err)
+	client := testutil.MustNewDevelopmentwEthereumClient()
 	f, err := NewTokenAmountFormatter(client)
 	require.NoError(t, err)
 

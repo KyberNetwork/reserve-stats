@@ -2,15 +2,12 @@ package tradelogs
 
 import (
 	"math/big"
-	"os"
 	"testing"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
@@ -18,8 +15,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
-
-const defaultEthereumNode = "https://mainnet.infura.io"
 
 type mockBroadCastClient struct{}
 
@@ -61,17 +56,8 @@ func assertTradeLog(t *testing.T, tradeLog common.TradeLog) {
 func TestCrawlerGetTradeLogs(t *testing.T) {
 	testutil.SkipExternal(t)
 
-	node, ok := os.LookupEnv("ETHEREUM_NODE")
-	if !ok {
-		node = defaultEthereumNode
-	}
-
-	logger, err := zap.NewDevelopment()
-	require.Nil(t, err, "logger should be initiated successfully")
-	sugar := logger.Sugar()
-
-	client, err := ethclient.Dial(node)
-	require.NoError(t, err)
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
+	client := testutil.MustNewDevelopmentwEthereumClient()
 
 	// v3 contract addresses
 	v3Addresses := []ethereum.Address{

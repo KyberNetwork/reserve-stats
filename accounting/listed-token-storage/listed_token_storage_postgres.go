@@ -10,18 +10,15 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 )
 
-const (
-	tokenTable = "tokens"
-)
-
 //ListedTokenDB is storage for listed token
 type ListedTokenDB struct {
-	sugar *zap.SugaredLogger
-	db    *sqlx.DB
+	sugar     *zap.SugaredLogger
+	db        *sqlx.DB
+	tableName string
 }
 
 //NewDB open a new database connection an create initiated table if it is not exist
-func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*ListedTokenDB, error) {
+func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, tableName string) (*ListedTokenDB, error) {
 	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%[1]s"
 (
 	id SERIAL PRIMARY KEY,
@@ -35,14 +32,15 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*ListedTokenDB, error) {
 	var logger = sugar.With("func", "accounting/storage.NewDB")
 
 	logger.Debug("initializing database schema")
-	if _, err := db.Exec(fmt.Sprintf(schemaFmt, tokenTable)); err != nil {
+	if _, err := db.Exec(fmt.Sprintf(schemaFmt, tableName)); err != nil {
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
 
 	return &ListedTokenDB{
-		sugar: sugar,
-		db:    db,
+		sugar:     sugar,
+		db:        db,
+		tableName: tableName,
 	}, nil
 }
 
@@ -60,7 +58,7 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 		(SELECT id FROM "%[1]s" WHERE address = $5)
 	)
 	ON CONFLICT (address) DO NOTHING`,
-		tokenTable)
+		ltd.tableName)
 
 	logger.Debugw("upsert token", "value", upsertQuery)
 
@@ -106,7 +104,7 @@ func (ltd *ListedTokenDB) GetTokens() (map[string]common.ListedToken, error) {
 		listedTokens = make(map[string]common.ListedToken)
 	)
 
-	getQuery := fmt.Sprintf(`SELECT address, name, symbol, cast (extract(epoch from timestamp)*1000 as bigint) as timestamp FROM %[1]s`, tokenTable)
+	getQuery := fmt.Sprintf(`SELECT address, name, symbol, cast (extract(epoch from timestamp)*1000 as bigint) as timestamp FROM %[1]s`, ltd.tableName)
 	logger.Debugw("get tokens query", "query", getQuery)
 
 	if err := ltd.db.Select(&result, getQuery); err != nil {
@@ -158,7 +156,7 @@ func (ltd *ListedTokenDB) Close() error {
 //DeleteTable remove tables use for test
 func (ltd *ListedTokenDB) DeleteTable() error {
 	const dropQuery = `DROP TABLE %s;`
-	query := fmt.Sprintf(dropQuery, tokenTable)
+	query := fmt.Sprintf(dropQuery, ltd.tableName)
 
 	ltd.sugar.Infow("Drop token table", "query", query)
 	_, err := ltd.db.Exec(query)

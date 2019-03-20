@@ -18,6 +18,7 @@ const (
 	postgresUser     = "reserve_stats"
 	postgresPassword = "reserve_stats"
 	postgresDatabase = "reserve_stats"
+	tokenTableTest   = "tokens_test"
 )
 
 func newListedTokenDB(sugar *zap.SugaredLogger) (*ListedTokenDB, error) {
@@ -32,7 +33,7 @@ func newListedTokenDB(sugar *zap.SugaredLogger) (*ListedTokenDB, error) {
 	if err != nil {
 		return nil, err
 	}
-	storage, err := NewDB(sugar, db)
+	storage, err := NewDB(sugar, db, tokenTableTest)
 	if err != nil {
 		return nil, err
 	}

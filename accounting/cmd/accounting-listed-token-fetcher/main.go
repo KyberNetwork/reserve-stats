@@ -20,6 +20,7 @@ import (
 const (
 	blockFlag          = "block"
 	reserveAddressFlag = "reserve-address"
+	tokenTable         = "tokens"
 )
 
 func main() {
@@ -93,7 +94,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	listedTokenStorage, err := listedtokenstorage.NewDB(sugar, db)
+	listedTokenStorage, err := listedtokenstorage.NewDB(sugar, db, tokenTable)
 	if err != nil {
 		return err
 	}

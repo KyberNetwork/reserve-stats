@@ -81,8 +81,8 @@ func walletFeePostProcessor(influxClient client.Client, sugar *zap.SugaredLogger
 	}
 	logger.Debugw("timestamp", "timestamp", latestTimestamp)
 	query := fmt.Sprintf(`SELECT %[1]s_wallet_fee_amount, %[1]s_rsv_addr as rsv_addr INTO wallet_fee 
-	FROM trades 
-	WHERE %[1]s_rsv_addr != '' AND %[1]s_wallet_fee_amount != 0 AND time >= '%[2]s'`, reserveType, latestTimestamp.Format(time.RFC3339))
+	FROM (SELECT * FROM trades
+	WHERE %[1]s_rsv_addr != '' AND %[1]s_wallet_fee_amount != 0 AND time >= '%[2]s' GROUP BY %[1]s_rsv_addr)`, reserveType, latestTimestamp.Format(time.RFC3339))
 
 	logger.Debugw("query wallet fee amount", "query", query)
 	if _, err := influxdb.QueryDB(influxClient, query, storage.TradeLogsDatabase); err != nil {
@@ -111,9 +111,9 @@ func burnFeePostProcessor(influxClient client.Client, sugar *zap.SugaredLogger, 
 			return err
 		}
 	}
-	query := fmt.Sprintf(`SELECT %[1]s_burn_amount, %[1]s_rsv_addr as rsv_addr INTO burn_fee 
-	FROM trades 
-	WHERE %[1]s_rsv_addr != '' AND %[1]s_burn_amount != 0 AND time >= '%[2]s'`, reserveType, latestTimestamp.Format(time.RFC3339))
+	query := fmt.Sprintf(`SELECT %[1]s_burn_amount INTO burn_fee 
+	FROM (SELECT * FROM trades 
+	WHERE %[1]s_rsv_addr != '' AND %[1]s_burn_amount != 0 AND time >= '%[2]s' GROUP BY %[1]s_rsv_addr AS rsv_addr)`, reserveType, latestTimestamp.Format(time.RFC3339))
 
 	logger.Debugw("query burn fee amount", "query", query)
 	if _, err := influxdb.QueryDB(influxClient, query, storage.TradeLogsDatabase); err != nil {
@@ -153,10 +153,6 @@ func run(c *cli.Context) error {
 			sugar.Debugw("cannot process wallet fee", "err", err)
 			return err
 		}
-	}
-	skip := 2
-	if skip > 1 {
-		return nil
 	}
 
 	// get first timestamp from db

@@ -69,9 +69,10 @@ func (bd *BinanceStorage) DeleteTable() error {
 }
 
 //UpdateWithdrawHistory save withdraw history to db
-func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories map[string]binance.WithdrawHistory) error {
+func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories map[string]binance.WithdrawHistory) (err error) {
 	var (
-		logger = bd.sugar.With("func", "accounting/binance_storage.UpdateWithdrawHistory")
+		logger       = bd.sugar.With("func", "accounting/binance_storage.UpdateWithdrawHistory")
+		withdrawJSON []byte
 	)
 	const updateQuery = `INSERT INTO %[1]s (id, data)
 	VALUES(
@@ -82,7 +83,7 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories map[string]bin
 
 	tx, err := bd.db.Beginx()
 	if err != nil {
-		return err
+		return
 	}
 
 	defer pgsql.CommitOrRollback(tx, bd.sugar, &err)
@@ -91,16 +92,16 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories map[string]bin
 	logger.Debugw("query update withdraw history", "query", query)
 
 	for _, withdraw := range withdrawHistories {
-		withdrawJSON, err := json.Marshal(withdraw)
+		withdrawJSON, err = json.Marshal(withdraw)
 		if err != nil {
-			return err
+			return
 		}
-		if _, err := tx.Exec(query, withdraw.ID, withdrawJSON); err != nil {
-			return err
+		if _, err = tx.Exec(query, withdraw.ID, withdrawJSON); err != nil {
+			return
 		}
 	}
 
-	return err
+	return
 }
 
 //GetWithdrawHistory return list of withdraw fromTime to toTime

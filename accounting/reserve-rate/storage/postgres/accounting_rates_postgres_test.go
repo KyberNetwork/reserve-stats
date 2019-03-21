@@ -99,6 +99,7 @@ func TestRatesStorage(t *testing.T) {
 		assert.Equal(t, tc.expectedUSDRate, usdRate)
 
 		lastBlock, err := rs.GetLastResolvedBlockInfo(ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"))
+		require.NoError(t, err)
 		assert.Equal(t, lastBlock, tc.block)
 	}
 }

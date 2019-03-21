@@ -69,7 +69,7 @@ func (bd *BinanceStorage) DeleteTable() error {
 }
 
 //UpdateTradeHistory save trade history into a postgres db
-func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) error {
+func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err error) {
 	var (
 		logger = bd.sugar.With("func", "accounting/binance_storage.UpdateTradeHistory")
 	)
@@ -89,13 +89,14 @@ func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) erro
 
 	query := fmt.Sprintf(updateQuery, bd.tableName)
 	logger.Debugw("query update trade history", "query", query)
+	tradeJSON := []byte{}
 	for _, trade := range trades {
-		tradeJSON, err := json.Marshal(trade)
+		tradeJSON, err = json.Marshal(trade)
 		if err != nil {
-			return err
+			return
 		}
-		if _, err := tx.Exec(query, trade.ID, tradeJSON); err != nil {
-			return err
+		if _, err = tx.Exec(query, trade.ID, tradeJSON); err != nil {
+			return
 		}
 	}
 

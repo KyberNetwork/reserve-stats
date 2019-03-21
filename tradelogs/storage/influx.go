@@ -262,14 +262,14 @@ func (is *InfluxStorage) getWalletFeeAmount(log common.TradeLog) (float64, float
 			return dstAmount, srcAmount, err
 		}
 
-		if walletFee.ReserveAddress == log.SrcReserveAddress {
-			if !srcAmountSet {
-				srcAmount = amount
-				srcAmountSet = true
-			} else {
-				dstAmount = amount
-			}
-		} else {
+		switch {
+		case walletFee.ReserveAddress == log.SrcReserveAddress && !srcAmountSet:
+			srcAmount = amount
+			// to prevent setting SrcReserveAddress twice when SrcReserveAddress =DstReserveAddress
+			srcAmountSet = true
+		case walletFee.ReserveAddress == log.DstReserveAddress:
+			dstAmount = amount
+		default:
 			logger.Warnw("unexpected wallet fees with unrecognized reserve address", "wallet fee", walletFee)
 		}
 	}

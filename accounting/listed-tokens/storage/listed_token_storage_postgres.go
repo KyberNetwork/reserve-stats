@@ -45,7 +45,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, tableName string) (*ListedToke
 }
 
 //CreateOrUpdate add or edit an record in the tokens table
-func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) error {
+func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) (err error) {
 	var (
 		logger = ltd.sugar.With("func", "accounting/lisetdtokenstorage.CreateOrUpdate")
 	)
@@ -54,7 +54,7 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 		$1, 
 		$2, 
 		$3,
-		to_timestamp($4::double precision / 1000),
+		$4,
 		(SELECT id FROM "%[1]s" WHERE address = $5)
 	)
 	ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id`,
@@ -73,9 +73,9 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 			token.Address,
 			token.Name,
 			token.Symbol,
-			token.Timestamp,
+			token.Timestamp.UTC(),
 			token.Address); err != nil {
-			return err
+			return
 		}
 
 		for _, oldToken := range token.Old {
@@ -83,14 +83,14 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 				oldToken.Address,
 				token.Name,
 				token.Symbol,
-				oldToken.Timestamp,
+				oldToken.Timestamp.UTC(),
 				token.Address); err != nil {
-				return err
+				return
 			}
 		}
 	}
 
-	return err
+	return
 }
 
 // GetTokens return all tokens listed
@@ -104,7 +104,7 @@ func (ltd *ListedTokenDB) GetTokens() (map[string]common.ListedToken, error) {
 		listedTokens = make(map[string]common.ListedToken)
 	)
 
-	getQuery := fmt.Sprintf(`SELECT address, name, symbol, cast (extract(epoch from timestamp)*1000 as bigint) as timestamp FROM %[1]s ORDER BY timestamp DESC`, ltd.tableName)
+	getQuery := fmt.Sprintf(`SELECT address, name, symbol, timestamp FROM %[1]s ORDER BY timestamp DESC`, ltd.tableName)
 	logger.Debugw("get tokens query", "query", getQuery)
 
 	if err := ltd.db.Select(&result, getQuery); err != nil {
@@ -117,19 +117,19 @@ func (ltd *ListedTokenDB) GetTokens() (map[string]common.ListedToken, error) {
 	for _, token := range result {
 		key := fmt.Sprintf("%s-%s", token.Symbol, token.Name)
 		if listedToken, exist := listedTokens[key]; exist {
-			if token.Timestamp < listedToken.Timestamp {
+			if token.Timestamp.Before(listedToken.Timestamp) {
 				listedToken.Old = append(listedToken.Old, common.OldListedToken{
 					Address:   token.Address,
-					Timestamp: token.Timestamp,
+					Timestamp: token.Timestamp.UTC(),
 				})
 				listedTokens[key] = listedToken
 			} else {
 				listedToken.Old = append(listedToken.Old, common.OldListedToken{
 					Address:   listedToken.Address,
-					Timestamp: listedToken.Timestamp,
+					Timestamp: listedToken.Timestamp.UTC(),
 				})
 				listedToken.Address = token.Address
-				listedToken.Timestamp = token.Timestamp
+				listedToken.Timestamp = token.Timestamp.UTC()
 				listedTokens[key] = listedToken
 			}
 		} else {
@@ -137,7 +137,7 @@ func (ltd *ListedTokenDB) GetTokens() (map[string]common.ListedToken, error) {
 				Address:   token.Address,
 				Name:      token.Name,
 				Symbol:    token.Symbol,
-				Timestamp: token.Timestamp,
+				Timestamp: token.Timestamp.UTC(),
 			}
 		}
 	}

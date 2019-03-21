@@ -13,7 +13,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 //Fetcher to get token listed in a reserve
@@ -34,21 +33,20 @@ func NewListedTokenFetcher(ethClient *ethclient.Client, contractTimestampResolve
 }
 
 func updateListedToken(listedToken map[string]common.ListedToken, symbol, name string, address ethereum.Address, timestamp time.Time) map[string]common.ListedToken {
-	timestamps := timeutil.TimeToTimestampMs(timestamp)
 	key := fmt.Sprintf("%s-%s", symbol, name)
 	if token, existed := listedToken[key]; existed {
-		if token.Timestamp > timestamps {
+		if token.Timestamp.After(timestamp) {
 			token.Old = append(token.Old, common.OldListedToken{
 				Address:   token.Address,
 				Timestamp: token.Timestamp,
 			})
 			token.Address = address.Hex()
-			token.Timestamp = timestamps
+			token.Timestamp = timestamp
 			listedToken[key] = token
 		} else {
 			token.Old = append(token.Old, common.OldListedToken{
 				Address:   address.Hex(),
-				Timestamp: timestamps,
+				Timestamp: timestamp,
 			})
 			listedToken[key] = token
 		}
@@ -58,7 +56,7 @@ func updateListedToken(listedToken map[string]common.ListedToken, symbol, name s
 		Name:      name,
 		Address:   address.Hex(),
 		Symbol:    symbol,
-		Timestamp: timestamps,
+		Timestamp: timestamp,
 	}
 	return listedToken
 }

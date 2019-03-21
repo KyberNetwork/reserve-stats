@@ -6,6 +6,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
@@ -57,11 +58,11 @@ func TestListedTokenStorage(t *testing.T) {
 				Address:   "0x1a7a8BD9106F2B8D977E08582DC7d24c723ab0DB",
 				Symbol:    "APPC",
 				Name:      "AppCoins",
-				Timestamp: 1509977454000,
+				Timestamp: timeutil.TimestampMsToTime(1509977454000).UTC(),
 				Old: []common.OldListedToken{
 					{
 						Address:   "0x27054b13b1B798B345b591a4d22e6562d47eA75a",
-						Timestamp: 1507599220000,
+						Timestamp: timeutil.TimestampMsToTime(1507599220000).UTC(),
 					},
 				},
 			},
@@ -71,15 +72,15 @@ func TestListedTokenStorage(t *testing.T) {
 				Address:   "0xdd974D5C2e2928deA5F71b9825b8b646686BD200",
 				Symbol:    "APPC",
 				Name:      "AppCoins",
-				Timestamp: 1509977458000,
+				Timestamp: timeutil.TimestampMsToTime(1509977458000).UTC(),
 				Old: []common.OldListedToken{
 					{
 						Address:   "0x1a7a8BD9106F2B8D977E08582DC7d24c723ab0DB",
-						Timestamp: 1509977454000,
+						Timestamp: timeutil.TimestampMsToTime(1509977454000).UTC(),
 					},
 					{
 						Address:   "0x27054b13b1B798B345b591a4d22e6562d47eA75a",
-						Timestamp: 1507599220000,
+						Timestamp: timeutil.TimestampMsToTime(1507599220000).UTC(),
 					},
 				},
 			},

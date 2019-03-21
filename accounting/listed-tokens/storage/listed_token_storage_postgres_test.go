@@ -1,4 +1,4 @@
-package listedtokenstorage
+package storage
 
 import (
 	"fmt"
@@ -51,25 +51,45 @@ func TestListedTokenStorage(t *testing.T) {
 	logger := testutil.MustNewDevelopmentSugaredLogger()
 	logger.Info("start testing")
 
-	var listedTokens = map[string]common.ListedToken{
-		"APPC-AppCoins": {
-			Address:   "0x1a7a8BD9106F2B8D977E08582DC7d24c723ab0DB",
-			Symbol:    "APPC",
-			Name:      "AppCoins",
-			Timestamp: 1509977454000,
-			Old: []common.OldListedToken{
-				{
-					Address:   "0x27054b13b1B798B345b591a4d22e6562d47eA75a",
-					Timestamp: 1507599220000,
+	var (
+		listedTokens = map[string]common.ListedToken{
+			"APPC-AppCoins": {
+				Address:   "0x1a7a8BD9106F2B8D977E08582DC7d24c723ab0DB",
+				Symbol:    "APPC",
+				Name:      "AppCoins",
+				Timestamp: 1509977454000,
+				Old: []common.OldListedToken{
+					{
+						Address:   "0x27054b13b1B798B345b591a4d22e6562d47eA75a",
+						Timestamp: 1507599220000,
+					},
 				},
 			},
-		},
-	}
+		}
+		listedTokensNew = map[string]common.ListedToken{
+			"APPC-AppCoins": {
+				Address:   "0xdd974D5C2e2928deA5F71b9825b8b646686BD200",
+				Symbol:    "APPC",
+				Name:      "AppCoins",
+				Timestamp: 1509977458000,
+				Old: []common.OldListedToken{
+					{
+						Address:   "0x1a7a8BD9106F2B8D977E08582DC7d24c723ab0DB",
+						Timestamp: 1509977454000,
+					},
+					{
+						Address:   "0x27054b13b1B798B345b591a4d22e6562d47eA75a",
+						Timestamp: 1507599220000,
+					},
+				},
+			},
+		}
+	)
 
 	storage, err := newListedTokenDB(logger)
 	assert.NoError(t, err)
 
-	defer teardown(t, storage)
+	// defer teardown(t, storage)
 
 	err = storage.CreateOrUpdate(listedTokens)
 	assert.NoError(t, err)
@@ -77,4 +97,11 @@ func TestListedTokenStorage(t *testing.T) {
 	storedListedTokens, err := storage.GetTokens()
 	assert.NoError(t, err)
 	assert.Equal(t, listedTokens, storedListedTokens)
+
+	err = storage.CreateOrUpdate(listedTokensNew)
+	assert.NoError(t, err)
+
+	storedNewListedTokens, err := storage.GetTokens()
+	assert.NoError(t, err)
+	assert.Equal(t, listedTokensNew, storedNewListedTokens)
 }

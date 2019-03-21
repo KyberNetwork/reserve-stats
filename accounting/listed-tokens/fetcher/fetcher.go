@@ -1,4 +1,4 @@
-package listedtoken
+package fetcher
 
 import (
 	"fmt"
@@ -74,36 +74,36 @@ func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
 	logger.Infow("reserve address", "reserve", reserveAddr)
 	reserveContractClient, err := contracts.NewReserve(reserveAddr, f.ethClient)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 	callOpts := &bind.CallOpts{BlockNumber: block}
 	conversionRatesContract, err := reserveContractClient.ConversionRatesContract(callOpts)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 
 	// step 2: get listedTokens from conversionRatesContract
 	conversionRateContractClient, err := contracts.NewConversionRates(conversionRatesContract, f.ethClient)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 	listedTokens, err := conversionRateContractClient.GetListedTokens(callOpts)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 
 	for _, address := range listedTokens {
 		symbol, err := tokenSymbol.Symbol(address)
 		if err != nil {
-			return result, err
+			return nil, err
 		}
 		name, err := tokenSymbol.Name(address)
 		if err != nil {
-			return result, err
+			return nil, err
 		}
 		timestamp, err := f.contractTimestampResolver.Resolve(address)
 		if err != nil {
-			return result, err
+			return nil, err
 		}
 		result = updateListedToken(result, symbol, name, address, timestamp)
 	}

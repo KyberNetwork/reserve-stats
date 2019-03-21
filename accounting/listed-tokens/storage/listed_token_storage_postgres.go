@@ -1,4 +1,4 @@
-package listedtokenstorage
+package storage
 
 import (
 	"fmt"
@@ -57,7 +57,7 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) e
 		to_timestamp($4::double precision / 1000),
 		(SELECT id FROM "%[1]s" WHERE address = $5)
 	)
-	ON CONFLICT (address) DO NOTHING`,
+	ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id`,
 		ltd.tableName)
 
 	logger.Debugw("upsert token", "value", upsertQuery)
@@ -104,7 +104,7 @@ func (ltd *ListedTokenDB) GetTokens() (map[string]common.ListedToken, error) {
 		listedTokens = make(map[string]common.ListedToken)
 	)
 
-	getQuery := fmt.Sprintf(`SELECT address, name, symbol, cast (extract(epoch from timestamp)*1000 as bigint) as timestamp FROM %[1]s`, ltd.tableName)
+	getQuery := fmt.Sprintf(`SELECT address, name, symbol, cast (extract(epoch from timestamp)*1000 as bigint) as timestamp FROM %[1]s ORDER BY timestamp DESC`, ltd.tableName)
 	logger.Debugw("get tokens query", "query", getQuery)
 
 	if err := ltd.db.Select(&result, getQuery); err != nil {

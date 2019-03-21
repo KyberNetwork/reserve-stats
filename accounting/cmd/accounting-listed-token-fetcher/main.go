@@ -10,8 +10,8 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
-	listedtoken "github.com/KyberNetwork/reserve-stats/accounting/listed-token-fetcher"
-	listedtokenstorage "github.com/KyberNetwork/reserve-stats/accounting/listed-token-storage"
+	"github.com/KyberNetwork/reserve-stats/accounting/listed-tokens/fetcher"
+	"github.com/KyberNetwork/reserve-stats/accounting/listed-tokens/storage"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
@@ -94,31 +94,23 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	listedTokenStorage, err := listedtokenstorage.NewDB(sugar, db, tokenTable)
+	listedTokenStorage, err := storage.NewDB(sugar, db, tokenTable)
 	if err != nil {
 		return err
 	}
 
-	defer func(err *error) {
-		if err == nil {
-			*err = listedTokenStorage.Close()
-			return
-		}
+	defer func() {
 		if cErr := listedTokenStorage.Close(); cErr != nil {
-			sugar.Errorf("Close database error", "error", cErr)
+			sugar.Errorw("Close database error", "error", cErr)
 		}
-		sugar.Infow("error fetch listed token", "error", *err)
-	}(&err)
+	}()
 
-	fetcher := listedtoken.NewListedTokenFetcher(ethClient, resolv, sugar)
+	fetcher := fetcher.NewListedTokenFetcher(ethClient, resolv, sugar)
 
 	listedTokens, err := fetcher.GetListedToken(block, reserveAddr, tokenSymbol)
 	if err != nil {
 		return err
 	}
 
-	if err = listedTokenStorage.CreateOrUpdate(listedTokens); err != nil {
-		return err
-	}
-	return err
+	return listedTokenStorage.CreateOrUpdate(listedTokens)
 }

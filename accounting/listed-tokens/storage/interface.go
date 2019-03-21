@@ -1,4 +1,4 @@
-package listedtokenstorage
+package storage
 
 import "github.com/KyberNetwork/reserve-stats/accounting/common"
 

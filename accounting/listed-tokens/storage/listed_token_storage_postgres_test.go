@@ -89,7 +89,7 @@ func TestListedTokenStorage(t *testing.T) {
 	storage, err := newListedTokenDB(logger)
 	assert.NoError(t, err)
 
-	// defer teardown(t, storage)
+	defer teardown(t, storage)
 
 	err = storage.CreateOrUpdate(listedTokens)
 	assert.NoError(t, err)

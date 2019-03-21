@@ -106,13 +106,14 @@ func NewFetcher(sugar *zap.SugaredLogger,
 	if fetcher.fromTime.IsZero() {
 		sugar.Debugw("empty from time, trying to get from block from db...")
 		fromBlockInfo, err := fetcher.getMinLastResolvedBlockInfo()
-		if err == sql.ErrNoRows {
+		switch err {
+		case sql.ErrNoRows:
 			fetcher.fromTime = timeutil.TimestampMsToTime(defaultStartingTime)
 			sugar.Debugw("There is no row from DB, running from default from time", "from time", fetcher.fromTime.String())
-		} else if err != nil {
-			return nil, fmt.Errorf("cannot get last resolved block info from db, err: %v", err)
-		} else if err == nil {
+		case nil:
 			fetcher.lastBlockResolver.LastResolved = fromBlockInfo
+		default:
+			return nil, fmt.Errorf("cannot get last resolved block info from db, err: %v", err)
 		}
 	}
 

@@ -4,11 +4,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
+	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
+	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/storage/postgres"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
@@ -71,17 +75,23 @@ func TestRun(t *testing.T) {
 			6291077, // Sep-07-2018 11:59:47 PM +UTC
 		}
 		errCh  = make(chan error)
-		resChn = make(chan BlockInfo)
+		resChn = make(chan common.BlockInfo)
 	)
 
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	ethClient := testutil.MustNewDevelopmentwEthereumClient()
-
+	db, err := sqlx.Connect("postgres", "host=127.0.0.1 port=5432 user=reserve_stats password=reserve_stats dbname=reserve_stats sslmode=disable")
+	require.NoError(t, err)
+	bldb, err := postgres.NewDB(sugar, db, postgres.WithBlockInfoTableName("test_block_info"))
+	require.NoError(t, err)
 	blkTimeRsv, err := blockchain.NewBlockTimeResolver(sugar, ethClient)
 	require.NoError(t, err)
 
-	lbResolver := NewLastBlockResolver(ethClient, blkTimeRsv, sugar)
-
+	lbResolver := NewLastBlockResolver(ethClient, blkTimeRsv, sugar, bldb)
+	defer func() {
+		require.NoError(t, bldb.TearDown())
+		require.NoError(t, bldb.Close())
+	}()
 	var (
 		results []uint64
 		toBreak bool

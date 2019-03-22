@@ -1,16 +1,18 @@
 package lastblockdaily
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
+	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-
-	"go.uber.org/zap"
 )
 
 const (
@@ -22,7 +24,7 @@ const (
 )
 
 var (
-	firstBlock = BlockInfo{
+	firstBlock = common.BlockInfo{
 		Block: 5000000,
 		// Jan-30-2018 01:41:33 PM +UTC
 		Timestamp: timeutil.TimestampMsToTime(1517319693000),
@@ -34,17 +36,19 @@ type LastBlockResolver struct {
 	sugar        *zap.SugaredLogger
 	client       *ethclient.Client
 	resolver     *blockchain.BlockTimeResolver
-	LastResolved BlockInfo
+	LastResolved common.BlockInfo
 	avgBlockTime time.Duration
+	db           storage.Interface
 }
 
 // NewLastBlockResolver return a new instance of lastBlock resolver
-func NewLastBlockResolver(client *ethclient.Client, resolver *blockchain.BlockTimeResolver, sugar *zap.SugaredLogger) *LastBlockResolver {
+func NewLastBlockResolver(client *ethclient.Client, resolver *blockchain.BlockTimeResolver, sugar *zap.SugaredLogger, db storage.Interface) *LastBlockResolver {
 	return &LastBlockResolver{
 		client:       client,
 		resolver:     resolver,
 		sugar:        sugar,
 		avgBlockTime: avgBlock,
+		db:           db,
 	}
 }
 
@@ -74,7 +78,7 @@ func nextDayBlock(
 	sugar *zap.SugaredLogger,
 	resolver blockchain.BlockTimeResolverInterface,
 	current time.Time,
-	known BlockInfo) (BlockInfo, error) {
+	known common.BlockInfo) (common.BlockInfo, error) {
 	var (
 		logger = sugar.With(
 			"func", "lib/lastblockdaily/nextDayBlock",
@@ -92,7 +96,7 @@ func nextDayBlock(
 	)
 
 	if current.Before(known.Timestamp) {
-		return BlockInfo{}, fmt.Errorf("start time is too old: requested=%s, oldest supported:%s",
+		return common.BlockInfo{}, fmt.Errorf("start time is too old: requested=%s, oldest supported:%s",
 			current.String(),
 			firstBlock.Timestamp.String())
 	}
@@ -105,7 +109,7 @@ func nextDayBlock(
 	for {
 		nextTimestamp, err := resolver.Resolve(next)
 		if err != nil {
-			return BlockInfo{}, err
+			return common.BlockInfo{}, err
 		}
 
 		// estimated block is older than start time or in the same day as start, trying newer block
@@ -115,7 +119,7 @@ func nextDayBlock(
 		}
 
 		if isNextDay(current, nextTimestamp) {
-			return BlockInfo{
+			return common.BlockInfo{
 				Block:     next,
 				Timestamp: nextTimestamp,
 			}, nil
@@ -126,39 +130,53 @@ func nextDayBlock(
 	}
 }
 
-// Next returns next last block number of the day from lastResolvedBlockInfo. The resolver works by find a block that
-// belongs to next day of lastResolvedBlockInfo, and do binary search between this block and lastResolvedBlockInfo
+// Next returns next last block number of the day from lastResolvedcommon.BlockInfo. The resolver works by find a block that
+// belongs to next day of lastResolvedcommon.BlockInfo, and do binary search between this block and lastResolvedcommon.BlockInfo
 // until found the last block of the day.
 // return ethereum.NotFound
-func (lbr *LastBlockResolver) Next() (BlockInfo, error) {
+func (lbr *LastBlockResolver) Next() (common.BlockInfo, error) {
 
 	var (
 		logger = lbr.sugar.With(
 			"func", "lib/lastblockdaily/LastBlockResolver.Next",
 		)
-		start BlockInfo
-		end   BlockInfo
+		start common.BlockInfo
+		end   common.BlockInfo
 		err   error
 	)
 
 	if lbr.LastResolved.Block == 0 {
 		// no last block of the day resolved
-		return BlockInfo{}, fmt.Errorf("no last resolved block to call Next()")
+		return common.BlockInfo{}, fmt.Errorf("no last resolved block to call Next()")
 	}
+	//lookin DB first
+	nextDay := timeutil.Midnight(lbr.LastResolved.Timestamp).AddDate(0, 0, 1)
+	blockInfo, err := lbr.db.GetBlockInfo(nextDay)
+	switch err {
+	case sql.ErrNoRows:
+		logger.Debug("no such result in db, proceed forward")
+	case nil:
+		logger.Debug("got result from db, return...")
+		lbr.LastResolved = blockInfo
+		return blockInfo, nil
+	default:
+		return common.BlockInfo{}, err
+	}
+
 	// last resolved block is last block of the day d1
 	// search for last block of the day d1 + 1
 	//   - from: last resolved + 1 block timestamp (in d1 + 1 day)
 	//   - to: next day block of resolved + 1 (in d1 + 2 day)
-	start = BlockInfo{Block: lbr.LastResolved.Block + 1}
+	start = common.BlockInfo{Block: lbr.LastResolved.Block + 1}
 	var startTime time.Time
 	startTime, err = lbr.resolver.Resolve(start.Block)
 	if err != nil {
-		return BlockInfo{}, err
+		return common.BlockInfo{}, err
 	}
 	start.Timestamp = startTime
 
 	if end, err = nextDayBlock(lbr.sugar, lbr.resolver, start.Timestamp, start); err != nil {
-		return BlockInfo{}, err
+		return common.BlockInfo{}, err
 	}
 
 	logger = logger.With(
@@ -171,14 +189,15 @@ func (lbr *LastBlockResolver) Next() (BlockInfo, error) {
 
 	lastBlock, err := lbr.searchLastBlock(start, end)
 	if err != nil {
-		return BlockInfo{}, err
+		return common.BlockInfo{}, err
 	}
+	err = lbr.db.UpdateBlockInfo(lastBlock)
 	lbr.LastResolved = lastBlock
 	return lastBlock, nil
 }
 
 // searchLastBlock returns the last block of the day before end block.
-func (lbr *LastBlockResolver) searchLastBlock(start, end BlockInfo) (BlockInfo, error) {
+func (lbr *LastBlockResolver) searchLastBlock(start, end common.BlockInfo) (common.BlockInfo, error) {
 	var logger = lbr.sugar.With(
 		"func", "lib/lastblockdaily.LastBlockResolver.searchLastBlock",
 		"start", start.Block,
@@ -198,10 +217,10 @@ func (lbr *LastBlockResolver) searchLastBlock(start, end BlockInfo) (BlockInfo, 
 	midBlockNum := (start.Block + end.Block) / 2
 	midBlockTimestamp, err := lbr.resolver.Resolve(midBlockNum)
 	if err != nil {
-		return BlockInfo{}, err
+		return common.BlockInfo{}, err
 	}
 
-	mid := BlockInfo{
+	mid := common.BlockInfo{
 		Block:     midBlockNum,
 		Timestamp: midBlockTimestamp,
 	}
@@ -213,9 +232,9 @@ func (lbr *LastBlockResolver) searchLastBlock(start, end BlockInfo) (BlockInfo, 
 }
 
 // Run push the result/ error into channels
-func (lbr *LastBlockResolver) Run(from, to time.Time, resultChn chan BlockInfo, errChn chan error) {
+func (lbr *LastBlockResolver) Run(from, to time.Time, resultChn chan common.BlockInfo, errChn chan error) {
 	var (
-		lastBlockInfo BlockInfo
+		lastBlockInfo common.BlockInfo
 		err           error
 	)
 	for {
@@ -238,7 +257,7 @@ func (lbr *LastBlockResolver) Run(from, to time.Time, resultChn chan BlockInfo, 
 //Resolve return last block of the day with timeInput
 //Call this function when there is a need to resolve a date that is not Next()
 //  or when there is no know block except for firstBlock (5000000)
-func (lbr *LastBlockResolver) Resolve(date time.Time) (BlockInfo, error) {
+func (lbr *LastBlockResolver) Resolve(date time.Time) (common.BlockInfo, error) {
 	var (
 		start  = firstBlock
 		logger = lbr.sugar.With(
@@ -248,6 +267,17 @@ func (lbr *LastBlockResolver) Resolve(date time.Time) (BlockInfo, error) {
 	)
 	logger.Debug("getting next last block of the day")
 
+	blockInfo, err := lbr.db.GetBlockInfo(date)
+	switch err {
+	case sql.ErrNoRows:
+		logger.Debug("no such result in db, proceed forward")
+	case nil:
+		logger.Debug("got result from db, return...")
+		lbr.LastResolved = blockInfo
+		return blockInfo, nil
+	default:
+		return common.BlockInfo{}, err
+	}
 	//if lastResolvedBlock is available (>0) and is before date, use lastResovled
 	if lbr.LastResolved.Block > start.Block && lbr.LastResolved.Timestamp.Before(date) {
 		start = lbr.LastResolved
@@ -255,13 +285,14 @@ func (lbr *LastBlockResolver) Resolve(date time.Time) (BlockInfo, error) {
 
 	end, err := nextDayBlock(lbr.sugar, lbr.resolver, date, start)
 	if err != nil {
-		return BlockInfo{}, err
+		return common.BlockInfo{}, err
 	}
 
 	lastBlock, err := lbr.searchLastBlock(start, end)
 	if err != nil {
-		return BlockInfo{}, err
+		return common.BlockInfo{}, err
 	}
+	err = lbr.db.UpdateBlockInfo(lastBlock)
 	lbr.LastResolved = lastBlock
-	return lastBlock, nil
+	return lastBlock, err
 }

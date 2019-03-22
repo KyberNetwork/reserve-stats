@@ -117,13 +117,13 @@ func (r *ReserveAddress) UnmarshalJSON(data []byte) error {
 
 //OldListedToken is information of an old token
 type OldListedToken struct {
-	Address   string    `json:"address"`
-	Timestamp time.Time `json:"timestamp"`
+	Address   ethereum.Address `json:"address"`
+	Timestamp time.Time        `json:"timestamp"`
 }
 
 //ListedToken represent a token listed in reserve
 type ListedToken struct {
-	Address   string           `json:"address"`
+	Address   ethereum.Address `json:"address"`
 	Symbol    string           `json:"symbol"`
 	Name      string           `json:"name"`
 	Timestamp time.Time        `json:"timestamp"`

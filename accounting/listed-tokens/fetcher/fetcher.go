@@ -1,9 +1,7 @@
 package fetcher
 
 import (
-	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -32,41 +30,12 @@ func NewListedTokenFetcher(ethClient *ethclient.Client, contractTimestampResolve
 	}
 }
 
-func updateListedToken(listedToken map[string]common.ListedToken, symbol, name string, address ethereum.Address, timestamp time.Time) map[string]common.ListedToken {
-	key := fmt.Sprintf("%s-%s", symbol, name)
-	if token, existed := listedToken[key]; existed {
-		if token.Timestamp.After(timestamp) {
-			token.Old = append(token.Old, common.OldListedToken{
-				Address:   token.Address,
-				Timestamp: token.Timestamp,
-			})
-			token.Address = address.Hex()
-			token.Timestamp = timestamp
-			listedToken[key] = token
-		} else {
-			token.Old = append(token.Old, common.OldListedToken{
-				Address:   address.Hex(),
-				Timestamp: timestamp,
-			})
-			listedToken[key] = token
-		}
-		return listedToken
-	}
-	listedToken[key] = common.ListedToken{
-		Name:      name,
-		Address:   address.Hex(),
-		Symbol:    symbol,
-		Timestamp: timestamp,
-	}
-	return listedToken
-}
-
 //GetListedToken return listed token for a reserve address
 func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
-	tokenSymbol *blockchain.TokenInfoGetter) (map[string]common.ListedToken, error) {
+	tokenSymbol *blockchain.TokenInfoGetter) ([]common.ListedToken, error) {
 	var (
 		logger = f.sugar.With("func", "accounting/cmd/accounting-listed-token-fetcher")
-		result = make(map[string]common.ListedToken)
+		result []common.ListedToken
 	)
 	// step 1: get conversionRatesContract address
 	logger.Infow("reserve address", "reserve", reserveAddr)
@@ -103,7 +72,12 @@ func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
 		if err != nil {
 			return nil, err
 		}
-		result = updateListedToken(result, symbol, name, address, timestamp)
+		result = append(result, common.ListedToken{
+			Address:   address,
+			Symbol:    symbol,
+			Name:      name,
+			Timestamp: timestamp,
+		})
 	}
 
 	return result, nil

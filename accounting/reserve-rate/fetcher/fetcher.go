@@ -1,20 +1,17 @@
 package fetcher
 
 import (
-	"database/sql"
-	"fmt"
-	"math"
 	"sync"
 	"time"
 
 	"github.com/KyberNetwork/tokenrate"
 	ethereum "github.com/ethereum/go-ethereum"
-	ethereumCommon "github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/client"
 	rrstorage "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	lbdCommon "github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
 )
 
@@ -28,52 +25,17 @@ type Fetcher struct {
 	crawler               *crawler.ReserveRatesCrawler
 	ethUSDRateFetcher     tokenrate.ETHUSDRateProvider
 	lastBlockResolver     *lastblockdaily.LastBlockResolver
-	fromTime              time.Time
-	toTime                time.Time
 	sleepTime             time.Duration
 	retryDelayTime        time.Duration
 	retryAttempts         int
 	lastCompletedJobOrder uint64
 	mutex                 *sync.Mutex
 	failed                bool
-	addresses             []string
+	addressClient         *client.Client
 }
 
 //Option set the init behaviour of Fetcher
 type Option func(fc *Fetcher)
-
-//WithFromTime set Fromtime for fetcher with a blockInfo of input timestamp and unknowm blockNumber
-//without this init function Fetcher will
-func WithFromTime(from time.Time) Option {
-	return func(fc *Fetcher) {
-		fc.fromTime = from
-	}
-}
-
-//WithToTime set toblock for fetcher with a blockInfo of inputt timestamp and unknown blockNumber.
-//Without this init function, Fetcher is put into daemon mode
-func WithToTime(to time.Time) Option {
-	return func(fc *Fetcher) {
-		fc.toTime = to
-	}
-}
-
-func (fc *Fetcher) getMinLastResolvedBlockInfo() (lastblockdaily.BlockInfo, error) {
-	var result = lastblockdaily.BlockInfo{
-		Block: math.MaxUint64,
-	}
-	for _, rsv := range fc.addresses {
-
-		fromBlockInfo, err := fc.storage.GetLastResolvedBlockInfo(ethereumCommon.HexToAddress(rsv))
-		if err != nil {
-			return result, err
-		}
-		if fromBlockInfo.Block < result.Block {
-			result = fromBlockInfo
-		}
-	}
-	return result, nil
-}
 
 //NewFetcher return a fetcher with options
 func NewFetcher(sugar *zap.SugaredLogger,
@@ -83,7 +45,6 @@ func NewFetcher(sugar *zap.SugaredLogger,
 	ethusdRate tokenrate.ETHUSDRateProvider,
 	retryDelay, sleepTime time.Duration,
 	retryAttempts int,
-	addrs []string,
 	options ...Option) (*Fetcher, error) {
 
 	fetcher := &Fetcher{
@@ -96,25 +57,10 @@ func NewFetcher(sugar *zap.SugaredLogger,
 		retryAttempts:     retryAttempts,
 		ethUSDRateFetcher: ethusdRate,
 		mutex:             &sync.Mutex{},
-		addresses:         addrs,
 		failed:            false,
 	}
 	for _, opt := range options {
 		opt(fetcher)
-	}
-	//get last crawled blockInfo if fetcher is init without  from time
-	if fetcher.fromTime.IsZero() {
-		sugar.Debugw("empty from time, trying to get from block from db...")
-		fromBlockInfo, err := fetcher.getMinLastResolvedBlockInfo()
-		switch err {
-		case sql.ErrNoRows:
-			fetcher.fromTime = timeutil.TimestampMsToTime(defaultStartingTime)
-			sugar.Debugw("There is no row from DB, running from default from time", "from time", fetcher.fromTime.String())
-		case nil:
-			fetcher.lastBlockResolver.LastResolved = fromBlockInfo
-		default:
-			return nil, fmt.Errorf("cannot get last resolved block info from db, err: %v", err)
-		}
 	}
 
 	return fetcher, nil
@@ -124,7 +70,7 @@ func (fc *Fetcher) fetch(fromTime, toTime time.Time) error {
 	var (
 		lastBlockErrCh = make(chan error)
 		rateErrChn     = make(chan error)
-		lastBlockBlCh  = make(chan lastblockdaily.BlockInfo)
+		lastBlockBlCh  = make(chan lbdCommon.BlockInfo)
 		wg             = &sync.WaitGroup{}
 		logger         = fc.sugar.With("func", "accounting/reserve-rate/fetcher/Fetcher.fetch",
 			"from", fromTime.String(),
@@ -151,7 +97,7 @@ func (fc *Fetcher) fetch(fromTime, toTime time.Time) error {
 		case blockInfo := <-lastBlockBlCh:
 			wg.Add(1)
 			jobOrder++
-			go func(errCh chan error, blockInfo lastblockdaily.BlockInfo, attempts int, jobOrder uint64) {
+			go func(errCh chan error, blockInfo lbdCommon.BlockInfo, attempts int, jobOrder uint64) {
 				defer wg.Done()
 				logger.Debugw("A job has started", "job order", jobOrder, "block", blockInfo.Block)
 
@@ -174,33 +120,6 @@ func (fc *Fetcher) fetch(fromTime, toTime time.Time) error {
 			}(rateErrChn, blockInfo, fc.retryAttempts, jobOrder)
 		}
 	}
-}
-
-//Run start the fetcher
-func (fc *Fetcher) Run() error {
-	var (
-		toTime     = fc.toTime
-		fromTime   = fc.fromTime
-		logger     = fc.sugar.With("func", "accounting/reserve-rate/Fetcher.Run")
-		daemonMode = false
-	)
-	if fc.toTime.IsZero() {
-		toTime = time.Now()
-		logger.Info("no end time specified, fetcher run in daemon mode")
-		daemonMode = true
-	}
-	for {
-		if err := fc.fetch(fromTime, toTime); err != nil {
-			return err
-		}
-		if !daemonMode {
-			break
-		}
-		time.Sleep(fc.sleepTime)
-		fromTime = toTime
-		toTime = time.Now()
-	}
-	return nil
 }
 
 func retryFetchTokenRate(maxAttempt int,

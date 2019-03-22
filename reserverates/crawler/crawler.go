@@ -18,11 +18,11 @@ import (
 )
 
 // ReserveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
-// a set of addresses to crawl rates from and setting object to query for reserve's token settings
+// a set of Addresses to crawl rates from and setting object to query for reserve's token settings
 type ReserveRatesCrawler struct {
 	sugar           *zap.SugaredLogger
 	wrapperContract reserveRateGetter
-	addresses       []ethereum.Address
+	Addresses       []ethereum.Address
 	rtf             reserveTokenFetcherInterface
 }
 
@@ -45,7 +45,7 @@ func NewReserveRatesCrawler(
 	return &ReserveRatesCrawler{
 		sugar:           sugar,
 		wrapperContract: wrpContract,
-		addresses:       ethAddrs,
+		Addresses:       ethAddrs,
 		rtf:             blockchain.NewReserveTokenFetcher(sugar, client, symbolResolver),
 	}, nil
 }
@@ -93,7 +93,7 @@ func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 }
 
 // GetReserveRates returns the map[ReserveAddress]ReserveRates at the given block number.
-// It will only return rates from the set of addresses within its definition.
+// It will only return rates from the set of Addresses within its definition.
 func (rrc *ReserveRatesCrawler) GetReserveRates(block uint64) (map[string]map[string]rsvRateCommon.ReserveRateEntry, error) {
 	var (
 		err    error
@@ -105,11 +105,11 @@ func (rrc *ReserveRatesCrawler) GetReserveRates(block uint64) (map[string]map[st
 	logger := rrc.sugar.With(
 		"func", "reserverates/crawler/ReserveRatesCrawler.GetReserveRates",
 		"block", block,
-		"reserves", len(rrc.addresses),
+		"reserves", len(rrc.Addresses),
 	)
 	logger.Debug("fetching rates for all reserves")
 
-	for _, rsvAddr := range rrc.addresses {
+	for _, rsvAddr := range rrc.Addresses {
 		// copy to local variables to avoid race condition
 		block, rsvAddr := block, rsvAddr
 		g.Go(func() error {

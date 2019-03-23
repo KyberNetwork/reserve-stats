@@ -76,14 +76,15 @@ func (fc *Fetcher) Run() error {
 		}
 		index := 0
 		rsvAddrs := []ethereum.Address{}
-		//rbis is a sorted array of (rsvAddress, block)
+		//rbis is a sorted array of (rsvAddress, timestamp)
 		//For example, rbis is [
+		//						{(NewReseve), 0}
+		//						{(NewReseve2), 0}
 		//						{(KyberReseve), 10},
 		// 						{(MyReseve), 10},
-		//						{(NewReseve), 20}
 		//					   ]
-		//Fetcher will fetch (KyberResreve,MyReserve) from 10 to 20
-		//Then it will fetch (KyberResreve,MyReserve,NewReserve) from 20 to now
+		//Fetcher will fetch (NewReseve,NewReseve2) from 0 to 10
+		//Then it will fetch (NewReseve,NewReseve2,KyberResreve,MyReserve,NewReserve) from 10 to now
 		for index < len(rbis) {
 			rsvAddrs = append(rsvAddrs, rbis[index].address)
 			fromTime = rbis[index].Timestamp

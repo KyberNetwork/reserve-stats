@@ -16,7 +16,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 )
 
-const addressesTableName = "addresses"
+const addressesTableName = "accounting_addresses"
 
 // Storage implements accounting reserve addresses storage.Interface with PostgreSQL as storage engine.
 type Storage struct {
@@ -130,7 +130,7 @@ func (s *Storage) GetAll() ([]*common.ReserveAddress, error) {
 		stored    []*ReserveAddress
 		results   []*common.ReserveAddress
 		queryStmt = `SELECT id, address, type, description, timestamp
-FROM addresses`
+FROM accounting_addresses`
 	)
 
 	logger.Debug("querying all stored reserve addresses")

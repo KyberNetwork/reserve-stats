@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
-	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
+	lbdCommon "github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
@@ -33,14 +33,14 @@ func TestRatesStorage(t *testing.T) {
 	assert.Equal(t, sql.ErrNoRows, err)
 
 	var tests = []struct {
-		block           lastblockdaily.BlockInfo
+		block           lbdCommon.BlockInfo
 		ethRates        map[string]map[string]float64
 		usdRate         float64
 		expectedUSDRate storage.AccountingReserveRates
 		expectedETHRate map[string]storage.AccountingReserveRates
 	}{
 		{
-			block: lastblockdaily.BlockInfo{
+			block: lbdCommon.BlockInfo{
 				Block:     uint64(3000),
 				Timestamp: time.Now().Truncate(truncateDuration).UTC(),
 			},

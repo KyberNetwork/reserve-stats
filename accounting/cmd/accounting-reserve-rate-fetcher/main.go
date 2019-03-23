@@ -6,18 +6,19 @@ import (
 	"os"
 	"time"
 
+	"github.com/KyberNetwork/tokenrate/coingecko"
+	"github.com/urfave/cli"
+
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/client"
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/fetcher"
 	rrpostgres "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
+	lbdpostgres "github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/storage/postgres"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
-
-	"github.com/KyberNetwork/tokenrate/coingecko"
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/urfave/cli"
 )
 
 const (
@@ -32,6 +33,8 @@ const (
 	retryDelayFlag        = "retry-delay"
 	defaultRetryDelayTime = 5 * time.Minute
 	defaultPostGresDB     = common.DefaultDB
+
+	addressServerFlag = "address-server"
 )
 
 func main() {
@@ -64,6 +67,11 @@ func main() {
 			EnvVar: "SLEEP_TIME",
 			Value:  defaultSleepTime,
 		},
+		cli.StringFlag{
+			Name:   addressServerFlag,
+			Usage:  "The address of Reserve Addresses server",
+			EnvVar: "ADDRESS_SERVER",
+		},
 		blockchain.NewEthereumNodeFlags(),
 	)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostGresDB)...)
@@ -75,10 +83,10 @@ func main() {
 
 func run(c *cli.Context) error {
 	var (
-		options        []fetcher.Option
 		attempts       = c.Int(attemptsFlag)
 		retryDelayTime = c.Duration(retryDelayFlag)
 		sleepTime      = c.Duration(sleepTimeFlag)
+		addrs          []string
 	)
 
 	sugar, flush, err := libapp.NewSugaredLogger(c)
@@ -95,17 +103,6 @@ func run(c *cli.Context) error {
 	blockTimeResolver, err := blockchain.NewBlockTimeResolver(sugar, ethClient)
 	if err != nil {
 		return err
-	}
-
-	addrs := c.StringSlice(addressesFlag)
-	if len(addrs) == 0 {
-		return fmt.Errorf("empty reserve address")
-	}
-
-	for _, addr := range addrs {
-		if !ethereum.IsHexAddress(addr) {
-			return fmt.Errorf("malformed address: %s", addr)
-		}
 	}
 
 	symbolResolver, err := blockchain.NewTokenInfoGetterFromContext(c)
@@ -130,30 +127,17 @@ func run(c *cli.Context) error {
 	defer ratesStorage.Close()
 	cgk := coingecko.New()
 
-	lastBlockResolver := lastblockdaily.NewLastBlockResolver(ethClient, blockTimeResolver, sugar)
-
-	fromDate, err := timeutil.FromTimeFromContext(c)
+	lbdDB, err := lbdpostgres.NewDB(sugar, db)
 	if err != nil {
-		if err != timeutil.ErrEmptyFlag {
-			return err
-		}
-		sugar.Info("no fromDate provided. Checking permanent storage for the last stored rate")
-	} else {
-		options = append(options, fetcher.WithFromTime(fromDate))
-
+		return err
 	}
+	lastBlockResolver := lastblockdaily.NewLastBlockResolver(ethClient, blockTimeResolver, sugar, lbdDB)
 
-	toDate, err := timeutil.ToTimeFromContext(c)
+	addressClient, err := client.NewClient(sugar, c.String(addressServerFlag))
 	if err != nil {
-		if err != timeutil.ErrEmptyFlag {
-			return err
-		}
-		sugar.Info("no toDate provided. Running in daemon mode")
-	} else {
-		options = append(options, fetcher.WithToTime(toDate))
+		return err
 	}
-
-	rrFetcher, err := fetcher.NewFetcher(sugar, ratesStorage, ratesCrawler, lastBlockResolver, cgk, retryDelayTime, sleepTime, attempts, addrs, options...)
+	rrFetcher, err := fetcher.NewFetcher(sugar, ratesStorage, ratesCrawler, lastBlockResolver, cgk, retryDelayTime, sleepTime, attempts, addressClient)
 	if err != nil {
 		return err
 	}

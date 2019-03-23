@@ -31,7 +31,7 @@ type Fetcher struct {
 	lastCompletedJobOrder uint64
 	mutex                 *sync.Mutex
 	failed                bool
-	addressClient         *client.Client
+	addressClient         client.Interface
 }
 
 //Option set the init behaviour of Fetcher
@@ -45,6 +45,7 @@ func NewFetcher(sugar *zap.SugaredLogger,
 	ethusdRate tokenrate.ETHUSDRateProvider,
 	retryDelay, sleepTime time.Duration,
 	retryAttempts int,
+	addressClient client.Interface,
 	options ...Option) (*Fetcher, error) {
 
 	fetcher := &Fetcher{
@@ -58,6 +59,7 @@ func NewFetcher(sugar *zap.SugaredLogger,
 		ethUSDRateFetcher: ethusdRate,
 		mutex:             &sync.Mutex{},
 		failed:            false,
+		addressClient:     addressClient,
 	}
 	for _, opt := range options {
 		opt(fetcher)

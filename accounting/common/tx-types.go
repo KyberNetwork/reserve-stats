@@ -3,6 +3,8 @@ package common
 import (
 	"math/big"
 	"time"
+
+	etherscan "github.com/nanmu42/etherscan-api"
 )
 
 // NormalTx holds info from normal tx query.
@@ -45,4 +47,52 @@ type ERC20Transfer struct {
 	Gas             int       `json:"gas,string"`
 	GasUsed         int       `json:"gasUsed,string"`
 	GasPrice        *big.Int  `json:"gasPrice"`
+}
+
+//EtherscanInternalTxToCommon transforms etherScan.InternalTx to accounting's InternalTx
+func EtherscanInternalTxToCommon(tx etherscan.InternalTx) InternalTx {
+	return InternalTx{
+		BlockNumber: tx.BlockNumber,
+		TimeStamp:   tx.TimeStamp.Time(),
+		Hash:        tx.Hash,
+		From:        tx.From,
+		To:          tx.To,
+		Value:       tx.Value.Int(),
+		Gas:         tx.Gas,
+		GasUsed:     tx.GasUsed,
+		IsError:     tx.IsError,
+	}
+}
+
+//EtherscanERC20TransferToCommon transforms etherScan.ERC20Trasnfer to accounting's ERC20Transfer
+func EtherscanERC20TransferToCommon(tx etherscan.ERC20Transfer) ERC20Transfer {
+	return ERC20Transfer{
+		BlockNumber:     tx.BlockNumber,
+		TimeStamp:       tx.TimeStamp.Time(),
+		Hash:            tx.Hash,
+		From:            tx.From,
+		ContractAddress: tx.ContractAddress,
+		To:              tx.To,
+		Value:           tx.Value.Int(),
+		Gas:             tx.Gas,
+		GasUsed:         tx.GasUsed,
+		GasPrice:        tx.GasPrice.Int(),
+	}
+}
+
+//EtherscanNormalTxToCommon transform etherScan.NormalTx to accounting's normalTx
+func EtherscanNormalTxToCommon(tx etherscan.NormalTx) NormalTx {
+	return NormalTx{
+		BlockNumber: tx.BlockNumber,
+		TimeStamp:   tx.TimeStamp.Time(),
+		Hash:        tx.Hash,
+		BlockHash:   tx.BlockHash,
+		From:        tx.From,
+		To:          tx.To,
+		Value:       tx.Value.Int(),
+		Gas:         tx.Gas,
+		GasUsed:     tx.GasUsed,
+		GasPrice:    tx.GasPrice.Int(),
+		IsError:     tx.IsError,
+	}
 }

@@ -5,10 +5,10 @@ import (
 	"math/big"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/nanmu42/etherscan-api"
+	etherscan "github.com/nanmu42/etherscan-api"
 	"go.uber.org/zap"
 
-	"github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/common"
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 )
 
@@ -89,22 +89,6 @@ func (f *EtherscanTransactionFetcher) fetch(fn *fetchFn, addr ethereum.Address, 
 	return results, nil
 }
 
-func etherscanNormalTxToCommon(tx etherscan.NormalTx) common.NormalTx {
-	return common.NormalTx{
-		BlockNumber: tx.BlockNumber,
-		TimeStamp:   tx.TimeStamp.Time(),
-		Hash:        tx.Hash,
-		BlockHash:   tx.BlockHash,
-		From:        tx.From,
-		To:          tx.To,
-		Value:       tx.Value.Int(),
-		Gas:         tx.Gas,
-		GasUsed:     tx.GasUsed,
-		GasPrice:    tx.GasPrice.Int(),
-		IsError:     tx.IsError,
-	}
-}
-
 // NormalTx returns all normal Ethereum transaction of given address between block range.
 func (f *EtherscanTransactionFetcher) NormalTx(addr ethereum.Address, from, to *big.Int) ([]common.NormalTx, error) {
 	fn := newFetchFunction("normal", func(address string, startBlock *int, endBlock *int, page int, offset int) ([]interface{}, error) {
@@ -127,23 +111,9 @@ func (f *EtherscanTransactionFetcher) NormalTx(addr ethereum.Address, from, to *
 	txs := make([]common.NormalTx, len(results))
 	for i, v := range results {
 		tx := v.(etherscan.NormalTx)
-		txs[i] = etherscanNormalTxToCommon(tx)
+		txs[i] = common.EtherscanNormalTxToCommon(tx)
 	}
 	return txs, nil
-}
-
-func etherscanInternalTxToCommon(tx etherscan.InternalTx) common.InternalTx {
-	return common.InternalTx{
-		BlockNumber: tx.BlockNumber,
-		TimeStamp:   tx.TimeStamp.Time(),
-		Hash:        tx.Hash,
-		From:        tx.From,
-		To:          tx.To,
-		Value:       tx.Value.Int(),
-		Gas:         tx.Gas,
-		GasUsed:     tx.GasUsed,
-		IsError:     tx.IsError,
-	}
 }
 
 // InternalTx returns all internal transaction of given address between block range.
@@ -168,24 +138,9 @@ func (f *EtherscanTransactionFetcher) InternalTx(addr ethereum.Address, from, to
 	txs := make([]common.InternalTx, len(results))
 	for i, v := range results {
 		tx := v.(etherscan.InternalTx)
-		txs[i] = etherscanInternalTxToCommon(tx)
+		txs[i] = common.EtherscanInternalTxToCommon(tx)
 	}
 	return txs, nil
-}
-
-func etherscanERC20TransferToCommon(tx etherscan.ERC20Transfer) common.ERC20Transfer {
-	return common.ERC20Transfer{
-		BlockNumber:     tx.BlockNumber,
-		TimeStamp:       tx.TimeStamp.Time(),
-		Hash:            tx.Hash,
-		From:            tx.From,
-		ContractAddress: tx.ContractAddress,
-		To:              tx.To,
-		Value:           tx.Value.Int(),
-		Gas:             tx.Gas,
-		GasUsed:         tx.GasUsed,
-		GasPrice:        tx.GasPrice.Int(),
-	}
 }
 
 // ERC20Transfer returns all ERC20 transfers of given address between given block range.
@@ -210,7 +165,7 @@ func (f *EtherscanTransactionFetcher) ERC20Transfer(addr ethereum.Address, from,
 	transfers := make([]common.ERC20Transfer, len(results))
 	for i, v := range results {
 		transfer := v.(etherscan.ERC20Transfer)
-		transfers[i] = etherscanERC20TransferToCommon(transfer)
+		transfers[i] = common.EtherscanERC20TransferToCommon(transfer)
 	}
 	return transfers, nil
 }

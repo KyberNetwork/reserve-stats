@@ -8,6 +8,6 @@ import (
 
 //Interface is inteface for binance storage
 type Interface interface {
-	UpdateWithdrawHistory(map[string]binance.WithdrawHistory) error
+	UpdateWithdrawHistory([]binance.WithdrawHistory) error
 	GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.WithdrawHistory, error)
 }

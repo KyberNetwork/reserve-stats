@@ -1,10 +1,8 @@
 package withdrawstorage
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
@@ -24,17 +22,7 @@ const (
 )
 
 func newTestDB(sugar *zap.SugaredLogger, tableName string) (*BinanceStorage, error) {
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		postgresHost,
-		postgresPort,
-		postgresUser,
-		postgresPassword,
-		postgresDatabase,
-	)
-	db, err := sqlx.Connect("postgres", connStr)
-	if err != nil {
-		return nil, err
-	}
+	_, db := testutil.MustNewDevelopmentDB()
 	return NewDB(sugar, db, tableName)
 }
 
@@ -49,8 +37,8 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 	logger := testutil.MustNewDevelopmentSugaredLogger()
 	logger.Info("test binance trade storage")
 	var (
-		testData = map[string]binance.WithdrawHistory{
-			"3c3bd6d1adb742f0bf8586bb7bb614cb": {
+		testData = []binance.WithdrawHistory{
+			{
 				ID:        "3c3bd6d1adb742f0bf8586bb7bb614cb",
 				Amount:    4.7,
 				Address:   "0x93Dc33d2EAFcD212879d4833202F99eC453A6e18",
@@ -59,7 +47,16 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 				ApplyTime: 1516886594000,
 				Status:    6,
 			},
-			"53bb6b37ce61443f9d7fd99c21652baa": {
+			{
+				ID:        "53bb6b37ce61443f9d7fd99c21652baa",
+				Amount:    0.64,
+				Address:   "0xe813dee553d09567D4873d9bd5A 4914796367082",
+				Asset:     "ETH",
+				TxID:      "0x679d514dafb4c8eee1fce3b00a984167bed02bf69ca278e49fa4c4a8fb2308ed",
+				ApplyTime: 1522037352000,
+				Status:    6,
+			},
+			{
 				ID:        "53bb6b37ce61443f9d7fd99c21652baa",
 				Amount:    0.64,
 				Address:   "0xe813dee553d09567D4873d9bd5A 4914796367082",

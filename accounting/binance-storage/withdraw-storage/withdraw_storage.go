@@ -69,7 +69,7 @@ func (bd *BinanceStorage) DeleteTable() error {
 }
 
 //UpdateWithdrawHistory save withdraw history to db
-func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories map[string]binance.WithdrawHistory) (err error) {
+func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.WithdrawHistory) (err error) {
 	var (
 		logger       = bd.sugar.With("func", "accounting/binance_storage.UpdateWithdrawHistory")
 		withdrawJSON []byte

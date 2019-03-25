@@ -85,6 +85,9 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	if fromTime.IsZero() {
+		fromTime = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
+	}
 
 	toTime, err = timeutil.ToTimeMillisFromContext(c)
 	if err != nil {
@@ -120,5 +123,8 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	return binanceStorage.UpdateWithdrawHistory(withdrawHistory)
+	if err := binanceStorage.UpdateWithdrawHistory(withdrawHistory); err != nil {
+		return err
+	}
+	return binanceStorage.Close()
 }

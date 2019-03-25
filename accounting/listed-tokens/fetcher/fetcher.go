@@ -40,12 +40,12 @@ func updateListedToken(listedToken map[string]common.ListedToken, symbol, name s
 				Address:   token.Address,
 				Timestamp: token.Timestamp,
 			})
-			token.Address = address.Hex()
+			token.Address = address
 			token.Timestamp = timestamp
 			listedToken[key] = token
 		} else {
 			token.Old = append(token.Old, common.OldListedToken{
-				Address:   address.Hex(),
+				Address:   address,
 				Timestamp: timestamp,
 			})
 			listedToken[key] = token
@@ -54,7 +54,7 @@ func updateListedToken(listedToken map[string]common.ListedToken, symbol, name s
 	}
 	listedToken[key] = common.ListedToken{
 		Name:      name,
-		Address:   address.Hex(),
+		Address:   address,
 		Symbol:    symbol,
 		Timestamp: timestamp,
 	}
@@ -63,10 +63,11 @@ func updateListedToken(listedToken map[string]common.ListedToken, symbol, name s
 
 //GetListedToken return listed token for a reserve address
 func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
-	tokenSymbol *blockchain.TokenInfoGetter) (map[string]common.ListedToken, error) {
+	tokenSymbol *blockchain.TokenInfoGetter) ([]common.ListedToken, error) {
 	var (
-		logger = f.sugar.With("func", "accounting/cmd/accounting-listed-token-fetcher")
-		result = make(map[string]common.ListedToken)
+		logger       = f.sugar.With("func", "accounting/cmd/accounting-listed-token-fetcher")
+		result       = make(map[string]common.ListedToken)
+		returnResult []common.ListedToken
 	)
 	// step 1: get conversionRatesContract address
 	logger.Infow("reserve address", "reserve", reserveAddr)
@@ -105,6 +106,9 @@ func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
 		}
 		result = updateListedToken(result, symbol, name, address, timestamp)
 	}
+	for _, token := range result {
+		returnResult = append(returnResult, token)
+	}
 
-	return result, nil
+	return returnResult, nil
 }

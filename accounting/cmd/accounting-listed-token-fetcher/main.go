@@ -20,7 +20,7 @@ import (
 const (
 	blockFlag          = "block"
 	reserveAddressFlag = "reserve-address"
-	tokenTable         = "tokens"
+	tokenTable         = "listed_tokens"
 )
 
 func main() {
@@ -105,12 +105,14 @@ func run(c *cli.Context) error {
 		}
 	}()
 
-	fetcher := fetcher.NewListedTokenFetcher(ethClient, resolv, sugar)
-
-	listedTokens, err := fetcher.GetListedToken(block, reserveAddr, tokenSymbol)
+	f := fetcher.NewListedTokenFetcher(ethClient, resolv, sugar)
+	listedTokens, err := f.GetListedToken(block, reserveAddr, tokenSymbol)
 	if err != nil {
 		return err
 	}
 
-	return listedTokenStorage.CreateOrUpdate(listedTokens)
+	if err = listedTokenStorage.CreateOrUpdate(listedTokens); err != nil {
+		return err
+	}
+	return listedTokenStorage.Close()
 }

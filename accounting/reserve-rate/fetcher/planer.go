@@ -19,18 +19,18 @@ type ReserveBlockInfo struct {
 type ReserveBlockInfos []ReserveBlockInfo
 
 //Len reutnr ReserveBlockInfos len
-func (RBIs ReserveBlockInfos) Len() int {
-	return len(RBIs)
+func (rbis ReserveBlockInfos) Len() int {
+	return len(rbis)
 }
 
 //Swap swaps two ReserveBlockInfo member by index i and j
-func (RBIs ReserveBlockInfos) Swap(i, j int) {
-	RBIs[i], RBIs[j] = RBIs[j], RBIs[i]
+func (rbis ReserveBlockInfos) Swap(i, j int) {
+	rbis[i], rbis[j] = rbis[j], rbis[i]
 }
 
 //Less return if member i is less than member j
-func (RBIs ReserveBlockInfos) Less(i, j int) bool {
-	return RBIs[i].Timestamp.Before(RBIs[j].Timestamp)
+func (rbis ReserveBlockInfos) Less(i, j int) bool {
+	return rbis[i].Timestamp.Before(rbis[j].Timestamp)
 }
 
 func (fc *Fetcher) getLastFetchedBlockPerReserve() (ReserveBlockInfos, error) {
@@ -98,9 +98,8 @@ func (fc *Fetcher) Run() error {
 			} else {
 				toTime = time.Now()
 			}
-			fc.crawler.Addresses = rsvAddrs
 			logger.Infow("calling fetch", "fromTime", fromTime.String(), "toTime", toTime.String(), "addresses", rsvAddrs)
-			if err := fc.fetch(fromTime, toTime); err != nil {
+			if err := fc.fetch(fromTime, toTime, rsvAddrs); err != nil {
 				return err
 			}
 			index++

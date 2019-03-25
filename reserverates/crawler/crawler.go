@@ -18,11 +18,11 @@ import (
 )
 
 // ReserveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
-// a set of Addresses to crawl rates from and setting object to query for reserve's token settings
+// a set of addresses to crawl rates from and setting object to query for reserve's token settings
 type ReserveRatesCrawler struct {
 	sugar           *zap.SugaredLogger
 	wrapperContract reserveRateGetter
-	Addresses       []ethereum.Address
+	addresses       []ethereum.Address
 	rtf             reserveTokenFetcherInterface
 }
 
@@ -45,7 +45,7 @@ func NewReserveRatesCrawler(
 	return &ReserveRatesCrawler{
 		sugar:           sugar,
 		wrapperContract: wrpContract,
-		Addresses:       ethAddrs,
+		addresses:       ethAddrs,
 		rtf:             blockchain.NewReserveTokenFetcher(sugar, client, symbolResolver),
 	}, nil
 }
@@ -93,8 +93,13 @@ func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 }
 
 // GetReserveRates returns the map[ReserveAddress]ReserveRates at the given block number.
-// It will only return rates from the set of Addresses within its definition.
+// It will only return rates from the set of addresses within its definition.
 func (rrc *ReserveRatesCrawler) GetReserveRates(block uint64) (map[string]map[string]rsvRateCommon.ReserveRateEntry, error) {
+	return rrc.GetReserveRatesWithAddresses(rrc.addresses, block)
+}
+
+//GetReserveRatesWithAddresses fetch rates with a list of input addresses and given block number
+func (rrc *ReserveRatesCrawler) GetReserveRatesWithAddresses(addresses []ethereum.Address, block uint64) (map[string]map[string]rsvRateCommon.ReserveRateEntry, error) {
 	var (
 		err    error
 		g      errgroup.Group
@@ -103,13 +108,12 @@ func (rrc *ReserveRatesCrawler) GetReserveRates(block uint64) (map[string]map[st
 	)
 
 	logger := rrc.sugar.With(
-		"func", "reserverates/crawler/ReserveRatesCrawler.GetReserveRates",
+		"func", "reserverates/crawler/ReserveRatesCrawler.GetReserveRatesWithAddresses",
 		"block", block,
-		"reserves", len(rrc.Addresses),
+		"reserves", len(addresses),
 	)
 	logger.Debug("fetching rates for all reserves")
-
-	for _, rsvAddr := range rrc.Addresses {
+	for _, rsvAddr := range addresses {
 		// copy to local variables to avoid race condition
 		block, rsvAddr := block, rsvAddr
 		g.Go(func() error {

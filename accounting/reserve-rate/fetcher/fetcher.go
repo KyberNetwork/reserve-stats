@@ -6,6 +6,7 @@ import (
 
 	"github.com/KyberNetwork/tokenrate"
 	ethereum "github.com/ethereum/go-ethereum"
+	ethereumCommon "github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/client"
@@ -68,7 +69,7 @@ func NewFetcher(sugar *zap.SugaredLogger,
 	return fetcher, nil
 }
 
-func (fc *Fetcher) fetch(fromTime, toTime time.Time) error {
+func (fc *Fetcher) fetch(fromTime, toTime time.Time, addresses []ethereumCommon.Address) error {
 	var (
 		lastBlockErrCh = make(chan error)
 		rateErrChn     = make(chan error)
@@ -103,7 +104,7 @@ func (fc *Fetcher) fetch(fromTime, toTime time.Time) error {
 				defer wg.Done()
 				logger.Debugw("A job has started", "job order", jobOrder, "block", blockInfo.Block)
 
-				rates, rateErr := retryFetchTokenRate(attempts, fc.sugar, fc.crawler, blockInfo.Block, fc.retryDelayTime)
+				rates, rateErr := retryFetchTokenRate(attempts, fc.sugar, fc.crawler, blockInfo.Block, fc.retryDelayTime, addresses)
 				if rateErr != nil {
 					fc.markAsFailed()
 					errCh <- rateErr
@@ -128,7 +129,8 @@ func retryFetchTokenRate(maxAttempt int,
 	sugar *zap.SugaredLogger,
 	rsvRateCrawler *crawler.ReserveRatesCrawler,
 	block uint64,
-	retryInterval time.Duration) (map[string]map[string]float64, error) {
+	retryInterval time.Duration,
+	addresses []ethereumCommon.Address) (map[string]map[string]float64, error) {
 	var (
 		result = make(map[string]map[string]float64)
 		err    error
@@ -136,7 +138,7 @@ func retryFetchTokenRate(maxAttempt int,
 	)
 
 	for i := 0; i < maxAttempt; i++ {
-		rates, err := rsvRateCrawler.GetReserveRates(block)
+		rates, err := rsvRateCrawler.GetReserveRatesWithAddresses(addresses, block)
 		if err != nil {
 			logger.Debugw("failed to fetch reserve rate", "attempt", i, "error", err)
 			time.Sleep(retryInterval)

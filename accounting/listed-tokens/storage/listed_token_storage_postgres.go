@@ -49,7 +49,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, tableName string) (*ListedToke
 }
 
 //CreateOrUpdate add or edit an record in the tokens table
-func (ltd *ListedTokenDB) CreateOrUpdate(tokens []common.ListedToken) (err error) {
+func (ltd *ListedTokenDB) CreateOrUpdate(tokens map[string]common.ListedToken) (err error) {
 	var (
 		logger = ltd.sugar.With("func", "accounting/lisetdtokenstorage.CreateOrUpdate")
 	)

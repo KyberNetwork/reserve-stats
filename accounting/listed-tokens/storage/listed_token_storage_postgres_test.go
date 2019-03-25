@@ -36,27 +36,7 @@ func TestListedTokenStorage(t *testing.T) {
 	logger.Info("start testing")
 
 	var (
-		listedTokens = map[string]common.ListedToken{
-			"KNC-Kyber Network Crystal": {
-				Address:   ethereum.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200"),
-				Symbol:    "KNC",
-				Name:      "Kyber Network Crystal",
-				Timestamp: timeutil.TimestampMsToTime(1553241328394).UTC(),
-			},
-			"APPC-AppCoins": {
-				Address:   ethereum.HexToAddress("0x1a7a8BD9106F2B8D977E08582DC7d24c723ab0DB"),
-				Symbol:    "APPC",
-				Name:      "AppCoins",
-				Timestamp: timeutil.TimestampMsToTime(1509977454000).UTC(),
-				Old: []common.OldListedToken{
-					{
-						Address:   ethereum.HexToAddress("0x27054b13b1B798B345b591a4d22e6562d47eA75a"),
-						Timestamp: timeutil.TimestampMsToTime(1507599220000).UTC(),
-					},
-				},
-			},
-		}
-		expectedListedToken = []common.ListedToken{
+		listedTokens = []common.ListedToken{
 			{
 				Address:   ethereum.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200"),
 				Symbol:    "KNC",
@@ -76,31 +56,7 @@ func TestListedTokenStorage(t *testing.T) {
 				},
 			},
 		}
-		listedTokensNew = map[string]common.ListedToken{
-			"KNC-Kyber Network Crystal": {
-				Address:   ethereum.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200"),
-				Symbol:    "KNC",
-				Name:      "Kyber Network Crystal",
-				Timestamp: timeutil.TimestampMsToTime(1553241328394).UTC(),
-			},
-			"APPC-AppCoins": {
-				Address:   ethereum.HexToAddress("0x406F1CddcFe308cf815Ce2914e15f96036230884"),
-				Symbol:    "APPC",
-				Name:      "AppCoins",
-				Timestamp: timeutil.TimestampMsToTime(1509977458000).UTC(),
-				Old: []common.OldListedToken{
-					{
-						Address:   ethereum.HexToAddress("0x1a7a8BD9106F2B8D977E08582DC7d24c723ab0DB"),
-						Timestamp: timeutil.TimestampMsToTime(1509977454000).UTC(),
-					},
-					{
-						Address:   ethereum.HexToAddress("0x27054b13b1B798B345b591a4d22e6562d47eA75a"),
-						Timestamp: timeutil.TimestampMsToTime(1507599220000).UTC(),
-					},
-				},
-			},
-		}
-		expectedListedTokensNew = []common.ListedToken{
+		listedTokensNew = []common.ListedToken{
 			{
 				Address:   ethereum.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200"),
 				Symbol:    "KNC",
@@ -136,12 +92,12 @@ func TestListedTokenStorage(t *testing.T) {
 
 	storedListedTokens, err := storage.GetTokens()
 	require.NoError(t, err)
-	assert.ElementsMatch(t, expectedListedToken, storedListedTokens)
+	assert.ElementsMatch(t, listedTokens, storedListedTokens)
 
 	err = storage.CreateOrUpdate(listedTokensNew)
 	require.NoError(t, err)
 
 	storedNewListedTokens, err := storage.GetTokens()
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, expectedListedTokensNew, storedNewListedTokens)
+	assert.ElementsMatch(t, listedTokensNew, storedNewListedTokens)
 }

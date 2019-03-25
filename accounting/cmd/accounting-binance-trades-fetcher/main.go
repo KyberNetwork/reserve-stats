@@ -7,6 +7,8 @@ import (
 	"github.com/urfave/cli"
 
 	fetcher "github.com/KyberNetwork/reserve-stats/accounting/binance-fetcher"
+	tradestorage "github.com/KyberNetwork/reserve-stats/accounting/binance-storage/trade-storage"
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 )
@@ -19,6 +21,7 @@ const (
 	defaultRetryDelay = 2 // minute
 	defaultAttempt    = 4
 	defaultBatchSize  = 100
+	tradeTableName    = "binance_trades"
 )
 
 func main() {
@@ -54,6 +57,7 @@ func main() {
 	)
 
 	app.Flags = append(app.Flags, binance.NewCliFlags()...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -81,13 +85,30 @@ func run(c *cli.Context) error {
 	attempt := c.Int(attemptFlag)
 	batchSize := c.Int(batchSizeFlag)
 	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
+	storage, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	binanceStorage, err := tradestorage.NewDB(sugar, storage, tradeTableName)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if cErr := binanceStorage.Close(); cErr != nil {
+			sugar.Errorf("Close database error", "error", cErr)
+		}
+	}()
 
 	tradeHistories, err := binanceFetcher.GetTradeHistory(fromID)
 	if err != nil {
 		return err
 	}
-
 	sugar.Debugw("trade histories", "result", tradeHistories)
 
-	return nil
+	if err := binanceStorage.UpdateTradeHistory(tradeHistories); err != nil {
+		return err
+	}
+	return binanceStorage.Close()
 }

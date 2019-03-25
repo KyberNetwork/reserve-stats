@@ -147,21 +147,26 @@ func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (bin
 	return withdrawHistory, err
 }
 
-func appendResult(result []binance.WithdrawHistory, withdrawList []binance.WithdrawHistory) ([]binance.WithdrawHistory, time.Time) {
+func appendResult(result []binance.WithdrawHistory, withdrawList []binance.WithdrawHistory, lastID string) ([]binance.WithdrawHistory, time.Time, string) {
 	var (
 		startTime time.Time
+		latestID  string
 	)
 	for _, withdrawHistory := range withdrawList {
 		result = append(result, withdrawHistory)
 		withdrawHistoryTime := timeutil.TimestampMsToTime(withdrawHistory.ApplyTime)
-		if withdrawHistoryTime.After(startTime) {
+		if withdrawHistory.ID == lastID {
+			continue
+		}
+		if withdrawHistoryTime.After(startTime) || withdrawHistoryTime.Equal(startTime) {
 			startTime = withdrawHistoryTime
+			latestID = withdrawHistory.ID
 		}
 	}
 	if startTime.IsZero() {
 		startTime = time.Now()
 	}
-	return result, startTime
+	return result, startTime, latestID
 }
 
 //GetWithdrawHistory get all withdraw history in time range fromTime to toTime
@@ -169,6 +174,7 @@ func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.With
 	var (
 		result []binance.WithdrawHistory
 		logger = f.sugar.With("func", "accounting/binance-fetcher.GetWithdrawHistory")
+		lastID string
 	)
 	logger.Info("Start get withdraw history")
 	startTime := fromTime
@@ -178,7 +184,8 @@ func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.With
 		if err != nil {
 			return result, err
 		}
-		result, startTime = appendResult(result, withdrawHistory.WithdrawList)
+		result, startTime, lastID = appendResult(result, withdrawHistory.WithdrawList, lastID)
+		logger.Debugw("last id", "id", lastID)
 		if startTime.After(endTime) {
 			break
 		}

@@ -12,6 +12,10 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
+const (
+	binanceWithdrawTableTest = "withdraw_test"
+)
+
 func newTestDB(sugar *zap.SugaredLogger, tableName string) (*BinanceStorage, error) {
 	_, db := testutil.MustNewDevelopmentDB()
 	return NewDB(sugar, db, tableName)

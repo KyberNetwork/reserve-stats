@@ -16,9 +16,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
 )
 
-//defaultStartingTime for reserve-rate fetcher is on 31-01-2018
-const defaultStartingTime uint64 = 1517356800000
-
 //Fetcher is the struct taking care of fetching reserve-rates for accounting
 type Fetcher struct {
 	sugar                 *zap.SugaredLogger

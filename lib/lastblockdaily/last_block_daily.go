@@ -191,7 +191,10 @@ func (lbr *LastBlockResolver) Next() (common.BlockInfo, error) {
 	if err != nil {
 		return common.BlockInfo{}, err
 	}
-	err = lbr.db.UpdateBlockInfo(lastBlock)
+	if err = lbr.db.UpdateBlockInfo(lastBlock); err != nil {
+		return lastBlock, err
+	}
+
 	lbr.LastResolved = lastBlock
 	return lastBlock, nil
 }
@@ -292,7 +295,10 @@ func (lbr *LastBlockResolver) Resolve(date time.Time) (common.BlockInfo, error) 
 	if err != nil {
 		return common.BlockInfo{}, err
 	}
-	err = lbr.db.UpdateBlockInfo(lastBlock)
+	if err = lbr.db.UpdateBlockInfo(lastBlock); err != nil {
+		return lastBlock, err
+	}
+
 	lbr.LastResolved = lastBlock
 	return lastBlock, err
 }

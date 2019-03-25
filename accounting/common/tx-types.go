@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	etherscan "github.com/nanmu42/etherscan-api"
 )
 
 // NormalTx holds info from normal tx query.
@@ -154,4 +155,52 @@ func (tx ERC20Transfer) MarshalJSON() ([]byte, error) {
 		AliasERC20Transfer: (AliasERC20Transfer)(tx),
 		Timestamp:          timeutil.TimeToTimestampMs(tx.Timestamp),
 	})
+}
+
+//EtherscanInternalTxToCommon transforms etherScan.InternalTx to accounting's InternalTx
+func EtherscanInternalTxToCommon(tx etherscan.InternalTx) InternalTx {
+	return InternalTx{
+		BlockNumber: tx.BlockNumber,
+		Timestamp:   tx.TimeStamp.Time(),
+		Hash:        tx.Hash,
+		From:        tx.From,
+		To:          tx.To,
+		Value:       tx.Value.Int(),
+		Gas:         tx.Gas,
+		GasUsed:     tx.GasUsed,
+		IsError:     tx.IsError,
+	}
+}
+
+//EtherscanERC20TransferToCommon transforms etherScan.ERC20Trasnfer to accounting's ERC20Transfer
+func EtherscanERC20TransferToCommon(tx etherscan.ERC20Transfer) ERC20Transfer {
+	return ERC20Transfer{
+		BlockNumber:     tx.BlockNumber,
+		Timestamp:       tx.TimeStamp.Time(),
+		Hash:            tx.Hash,
+		From:            tx.From,
+		ContractAddress: tx.ContractAddress,
+		To:              tx.To,
+		Value:           tx.Value.Int(),
+		Gas:             tx.Gas,
+		GasUsed:         tx.GasUsed,
+		GasPrice:        tx.GasPrice.Int(),
+	}
+}
+
+//EtherscanNormalTxToCommon transform etherScan.NormalTx to accounting's normalTx
+func EtherscanNormalTxToCommon(tx etherscan.NormalTx) NormalTx {
+	return NormalTx{
+		BlockNumber: tx.BlockNumber,
+		Timestamp:   tx.TimeStamp.Time(),
+		Hash:        tx.Hash,
+		BlockHash:   tx.BlockHash,
+		From:        tx.From,
+		To:          tx.To,
+		Value:       tx.Value.Int(),
+		Gas:         tx.Gas,
+		GasUsed:     tx.GasUsed,
+		GasPrice:    tx.GasPrice.Int(),
+		IsError:     tx.IsError,
+	}
 }

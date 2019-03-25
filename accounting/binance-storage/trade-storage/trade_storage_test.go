@@ -60,7 +60,7 @@ func TestBinanceTradeStorage(t *testing.T) {
 		},
 	}
 
-	binanceStorage, err := newTestDB(logger, tradeTableTest)
+	binanceStorage, err := newTestDB(logger)
 	assert.NoError(t, err)
 
 	defer teardown(t, binanceStorage)

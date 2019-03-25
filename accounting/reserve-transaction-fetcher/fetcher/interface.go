@@ -5,7 +5,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 
-	"github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/common"
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 )
 
 // TransactionFetcher is the ethereum interface of transaction fetchers.

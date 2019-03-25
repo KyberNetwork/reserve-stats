@@ -12,15 +12,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
-const (
-	postgresHost             = "127.0.0.1"
-	postgresPort             = 5432
-	postgresUser             = "reserve_stats"
-	postgresPassword         = "reserve_stats"
-	postgresDatabase         = "reserve_stats"
-	binanceWithdrawTableTest = "binance_withdraws_test"
-)
-
 func newTestDB(sugar *zap.SugaredLogger, tableName string) (*BinanceStorage, error) {
 	_, db := testutil.MustNewDevelopmentDB()
 	return NewDB(sugar, db, tableName)

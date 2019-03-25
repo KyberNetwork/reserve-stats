@@ -31,12 +31,11 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	logger, err := libapp.NewLogger(c)
+	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	sugar := logger.Sugar()
-	defer logger.Sync()
+	defer flush()
 
 	db, err := libapp.NewDBFromContext(c)
 	if err != nil {
@@ -47,13 +46,21 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	defer ratesStorage.Close()
+	defer func(err *error) {
+		cErr := ratesStorage.Close()
+		if err == nil {
+			*err = cErr
+		} else {
+			sugar.Error("DB closing failed", "error", cErr)
+		}
+	}(&err)
 	hostStr := httputil.NewHTTPAddressFromContext(c)
 	server, err := http.NewServer(hostStr, ratesStorage, sugar)
 	if err != nil {
 		return err
 	}
-	return server.Run()
+	err = server.Run()
+	return err
 }
 
 //reserverates --addresses=0xABCDEF,0xDEFGHI --block 100

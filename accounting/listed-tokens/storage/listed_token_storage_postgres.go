@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 //ListedTokenDB is storage for listed token
@@ -104,6 +104,35 @@ type listedTokenRecord struct {
 	OldTimestamps pq.Int64Array  `db:"old_timestamps"`
 }
 
+// ListedToken converts listedTokenRecord instance to a common.ListedToken.
+func (r *listedTokenRecord) ListedToken() (common.ListedToken, error) {
+	token := common.ListedToken{
+		Address:   ethereum.HexToAddress(r.Address),
+		Symbol:    r.Symbol,
+		Name:      r.Name,
+		Timestamp: r.Timestamp.UTC(),
+	}
+
+	if len(r.OldAddresses) != len(r.OldTimestamps) {
+		return common.ListedToken{}, fmt.Errorf(
+			"malformed old data record: old_addresses=%d, old_timestamps=%d",
+			len(r.OldAddresses), len(r.OldTimestamps))
+	}
+
+	for i := range r.OldAddresses {
+		oldToken := common.OldListedToken{
+			Address:   ethereum.HexToAddress(r.OldAddresses[i]),
+			Timestamp: timeutil.TimestampMsToTime(uint64(r.OldTimestamps[i])).UTC(),
+		}
+		if token.Old == nil {
+			token.Old = []common.OldListedToken{oldToken}
+		} else {
+			token.Old = append(token.Old, oldToken)
+		}
+	}
+	return token, nil
+}
+
 // GetTokens return all tokens listed
 func (ltd *ListedTokenDB) GetTokens() ([]common.ListedToken, error) {
 	var (
@@ -138,33 +167,15 @@ GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp`, ltd.tabl
 
 	if err := ltd.db.Select(&records, getQuery); err != nil {
 		logger.Errorw("error query token", "error", err)
+		return nil, err
 	}
 
 	logger.Debugw("result from listed token", "result", records)
 
 	for _, record := range records {
-		token := common.ListedToken{
-			Address:   ethereum.HexToAddress(record.Address),
-			Symbol:    record.Symbol,
-			Name:      record.Name,
-			Timestamp: record.Timestamp.UTC(),
-		}
-
-		if len(record.OldAddresses) != len(record.OldTimestamps) {
-			return nil, fmt.Errorf("malformed old data record: old_addresses=%d, old_timestamps=%d",
-				len(record.OldAddresses), len(record.OldTimestamps))
-		}
-
-		for i := range record.OldAddresses {
-			oldToken := common.OldListedToken{
-				Address:   ethereum.HexToAddress(record.OldAddresses[i]),
-				Timestamp: timeutil.TimestampMsToTime(uint64(record.OldTimestamps[i])).UTC(),
-			}
-			if token.Old == nil {
-				token.Old = []common.OldListedToken{oldToken}
-			} else {
-				token.Old = append(token.Old, oldToken)
-			}
+		token, err := record.ListedToken()
+		if err != nil {
+			return nil, err
 		}
 		result = append(result, token)
 	}

@@ -1,10 +1,8 @@
 package tradestorage
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
@@ -15,26 +13,11 @@ import (
 )
 
 const (
-	postgresHost     = "127.0.0.1"
-	postgresPort     = 5432
-	postgresUser     = "reserve_stats"
-	postgresPassword = "reserve_stats"
-	postgresDatabase = "reserve_stats"
-	tradeTableTest   = "binance_trade_test"
+	tradeTableTest = "binance_trade_test"
 )
 
 func newTestDB(sugar *zap.SugaredLogger) (*BinanceStorage, error) {
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		postgresHost,
-		postgresPort,
-		postgresUser,
-		postgresPassword,
-		postgresDatabase,
-	)
-	db, err := sqlx.Connect("postgres", connStr)
-	if err != nil {
-		return nil, err
-	}
+	_, db := testutil.MustNewDevelopmentDB()
 	return NewDB(sugar, db, tradeTableTest)
 }
 

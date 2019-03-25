@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
+
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-
-	"github.com/jmoiron/sqlx"
-	"go.uber.org/zap"
 )
 
 //BinanceStorage is storage for binance fetcher including trade history and withdraw history

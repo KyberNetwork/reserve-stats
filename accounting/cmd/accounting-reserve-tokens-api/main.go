@@ -7,19 +7,20 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	"github.com/KyberNetwork/reserve-stats/accounting/listed-tokens/server"
+	"github.com/KyberNetwork/reserve-stats/accounting/listed-tokens/storage"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 )
 
 func main() {
 	app := libapp.NewApp()
-	app.Name = "User stat module"
-	app.Usage = "Store and return user stat information"
+	app.Name = "Accounting listed token api"
+	app.Usage = ""
 	app.Action = run
-	app.Version = "0.0.1"
 
+	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AccountingListedTokenPort)...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
-	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.UsersPort)...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -31,24 +32,18 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
 	defer flusher()
 
-	sugar.Info("Run reserve token api")
+	db, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return err
+	}
+	listedTokenStorage, err := storage.NewDB(sugar, db, common.ListedTokenTable)
+	if err != nil {
+		return err
+	}
 
-	// db, err := libapp.NewDBFromContext(c)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// listedTokenStorage, err := storage.NewDB(
-	// 	sugar,
-	// 	db,
-	// )
-	// if err != nil {
-	// 	return err
-	// }
-
-	// defer listedTokenStorage.Close()
-
-	return nil
+	server := server.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), listedTokenStorage)
+	return server.Run()
 }

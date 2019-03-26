@@ -111,7 +111,11 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	defer ratesStorage.Close()
+	defer func() {
+		if cErr := ratesStorage.Close(); cErr != nil {
+			sugar.Errorf("failed to close rate storage: err=%s", cErr.Error())
+		}
+	}()
 	cgk := coingecko.New()
 
 	lbdDB, err := lbdpostgres.NewDB(sugar, db)
@@ -128,5 +132,8 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return rrFetcher.Run()
+	if err = rrFetcher.Run(); err != nil {
+		return err
+	}
+	return ratesStorage.Close()
 }

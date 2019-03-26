@@ -9,6 +9,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/urfave/cli"
 
+	"github.com/KyberNetwork/reserve-stats/accounting/gateway"
 	"github.com/KyberNetwork/reserve-stats/gateway/http"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
@@ -100,7 +101,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("permission object creation error: %s", err)
 	}
-	svr, err := http.NewServer(httputil.NewHTTPAddressFromContext(c),
+	svr, err := gateway.NewServer(httputil.NewHTTPAddressFromContext(c),
 		c.String(listedTokenURLFlag),
 		auth,
 		perm,

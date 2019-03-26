@@ -130,7 +130,7 @@ func (s *Storage) GetAll() ([]*common.ReserveAddress, error) {
 		stored    []*ReserveAddress
 		results   []*common.ReserveAddress
 		queryStmt = `SELECT id, address, type, description, timestamp
-FROM  addresses `
+FROM addresses`
 	)
 
 	logger.Debug("querying all stored reserve addresses")

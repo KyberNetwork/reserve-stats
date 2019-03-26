@@ -5,8 +5,6 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum"
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -59,7 +57,8 @@ func TestIsNextDay(t *testing.T) {
 
 func TestRun(t *testing.T) {
 	//This test requires a runtime of 70 seconds. Should only be run manually
-	t.Skip()
+	// t.Skip()aa
+
 	var (
 		// Saturday, September 1, 2018 1:02:00 PM
 		start = timeutil.TimestampMsToTime(uint64(1535806920000))
@@ -80,8 +79,7 @@ func TestRun(t *testing.T) {
 
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	ethClient := testutil.MustNewDevelopmentwEthereumClient()
-	db, err := sqlx.Connect("postgres", "host=127.0.0.1 port=5432 user=reserve_stats password=reserve_stats dbname=reserve_stats sslmode=disable")
-	require.NoError(t, err)
+	_, db := testutil.MustNewDevelopmentDB()
 	bldb, err := postgres.NewDB(sugar, db, postgres.WithBlockInfoTableName("test_block_info"))
 	require.NoError(t, err)
 	blkTimeRsv, err := blockchain.NewBlockTimeResolver(sugar, ethClient)

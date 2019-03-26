@@ -22,7 +22,7 @@ type Fetcher struct {
 	storage               rrstorage.Interface
 	crawler               *crawler.ReserveRatesCrawler
 	ethUSDRateFetcher     tokenrate.ETHUSDRateProvider
-	lastBlockResolver     *lastblockdaily.LastBlockResolver
+	lastBlockResolver     lastblockdaily.Interface
 	sleepTime             time.Duration
 	retryDelayTime        time.Duration
 	retryAttempts         int

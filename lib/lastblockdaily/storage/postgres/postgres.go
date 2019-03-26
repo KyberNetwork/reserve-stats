@@ -42,7 +42,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*BlockInfo
 	CREATE TABLE IF NOT EXISTS %[1]s
 (
 	block bigint NOT NULL,
-	time timestamp,
+	time timestamp NOT NULL,
 	CONSTRAINT %[1]s_pk PRIMARY KEY(block)
 ) ;
 CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s (time);

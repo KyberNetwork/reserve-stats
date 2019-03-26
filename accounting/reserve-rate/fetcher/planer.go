@@ -18,7 +18,7 @@ type ReserveBlockInfo struct {
 //ReserveBlockInfos abstract the list of ReserveBlockInfo
 type ReserveBlockInfos []ReserveBlockInfo
 
-//Len reutnr ReserveBlockInfos len
+//Len returns ReserveBlockInfos len
 func (rbis ReserveBlockInfos) Len() int {
 	return len(rbis)
 }
@@ -28,7 +28,7 @@ func (rbis ReserveBlockInfos) Swap(i, j int) {
 	rbis[i], rbis[j] = rbis[j], rbis[i]
 }
 
-//Less return if member i is less than member j
+//Less returns if member i is less than member j
 func (rbis ReserveBlockInfos) Less(i, j int) bool {
 	return rbis[i].Timestamp.Before(rbis[j].Timestamp)
 }
@@ -74,8 +74,10 @@ func (fc *Fetcher) Run() error {
 		if err != nil {
 			return err
 		}
-		index := 0
-		rsvAddrs := []ethereum.Address{}
+		var (
+			rsvAddrs []ethereum.Address
+			index    = 0
+		)
 		//rbis is a sorted array of (rsvAddress, timestamp)
 		//For example, rbis is [
 		//						{(NewReseve), 0}

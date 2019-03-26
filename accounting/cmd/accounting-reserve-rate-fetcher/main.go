@@ -22,8 +22,6 @@ import (
 )
 
 const (
-	addressesFlag = "addresses"
-
 	attemptsFlag    = "attempts"
 	defaultAttempts = 3
 
@@ -33,8 +31,6 @@ const (
 	retryDelayFlag        = "retry-delay"
 	defaultRetryDelayTime = 5 * time.Minute
 	defaultPostGresDB     = common.DefaultDB
-
-	addressServerFlag = "address-server"
 )
 
 func main() {
@@ -44,11 +40,6 @@ func main() {
 	app.Action = run
 
 	app.Flags = append(app.Flags,
-		cli.StringSliceFlag{
-			Name:   addressesFlag,
-			EnvVar: "ADDRESSES",
-			Usage:  "list of reserve contract addresses. Example: --addresses={\"0x1111\",\"0x222\"}",
-		},
 		cli.IntFlag{
 			Name:   attemptsFlag,
 			Usage:  "The number of attempt to query rates from blockchain",
@@ -67,15 +58,11 @@ func main() {
 			EnvVar: "SLEEP_TIME",
 			Value:  defaultSleepTime,
 		},
-		cli.StringFlag{
-			Name:   addressServerFlag,
-			Usage:  "The address of Reserve Addresses server",
-			EnvVar: "ADDRESS_SERVER",
-		},
 		blockchain.NewEthereumNodeFlags(),
 	)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostGresDB)...)
 	app.Flags = append(app.Flags, timeutil.NewTimeRangeCliFlags()...)
+	app.Flags = append(app.Flags, client.NewClientFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -133,7 +120,7 @@ func run(c *cli.Context) error {
 	}
 	lastBlockResolver := lastblockdaily.NewLastBlockResolver(ethClient, blockTimeResolver, sugar, lbdDB)
 
-	addressClient, err := client.NewClient(sugar, c.String(addressServerFlag))
+	addressClient, err := client.NewClientFromContext(c, sugar)
 	if err != nil {
 		return err
 	}

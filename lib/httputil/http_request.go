@@ -19,8 +19,6 @@ func NewRequest(method, endpoint, host string, params map[string]string) (*http.
 		return nil, err
 	}
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
 	q := req.URL.Query()
 	for k, v := range params {
 		q.Add(k, v)

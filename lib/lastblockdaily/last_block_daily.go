@@ -35,7 +35,7 @@ var (
 type LastBlockResolver struct {
 	sugar        *zap.SugaredLogger
 	client       *ethclient.Client
-	resolver     *blockchain.BlockTimeResolver
+	resolver     blockchain.BlockTimeResolverInterface
 	LastResolved common.BlockInfo
 	avgBlockTime time.Duration
 	db           storage.Interface
@@ -149,8 +149,8 @@ func (lbr *LastBlockResolver) Next() (common.BlockInfo, error) {
 		// no last block of the day resolved
 		return common.BlockInfo{}, fmt.Errorf("no last resolved block to call Next()")
 	}
-	//lookin DB first
-	nextDay := timeutil.Midnight(lbr.LastResolved.Timestamp).AddDate(0, 0, 1)
+	//look DB first
+	nextDay := nextDay(lbr.LastResolved.Timestamp)
 	blockInfo, err := lbr.db.GetBlockInfo(nextDay)
 	switch err {
 	case sql.ErrNoRows:

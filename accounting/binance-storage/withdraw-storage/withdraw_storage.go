@@ -1,16 +1,16 @@
-package tradestorage
+package withdrawstorage
 
 import (
 	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/jmoiron/sqlx"
-	"go.uber.org/zap"
-
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+
+	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 )
 
 //BinanceStorage is storage for binance fetcher including trade history and withdraw history
@@ -28,11 +28,11 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, tableName string) (*BinanceSto
 
 	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%[1]s"
 	(
-	  id   bigint NOT NULL,
+	  id   text NOT NULL,
 	  data JSONB,
 	  CONSTRAINT %[1]s_pk PRIMARY KEY(id)
 	);
-	CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s ((data ->> 'time'));
+	CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s ((data ->> 'applyTime'));
 	`
 
 	query := fmt.Sprintf(schemaFmt, tableName)
@@ -68,11 +68,11 @@ func (bd *BinanceStorage) DeleteTable() error {
 	return nil
 }
 
-//UpdateTradeHistory save trade history into a postgres db
-func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err error) {
+//UpdateWithdrawHistory save withdraw history to db
+func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.WithdrawHistory) (err error) {
 	var (
-		logger    = bd.sugar.With("func", "accounting/binance_storage.UpdateTradeHistory")
-		tradeJSON []byte
+		logger       = bd.sugar.With("func", "accounting/binance_storage.UpdateWithdrawHistory")
+		withdrawJSON []byte
 	)
 	const updateQuery = `INSERT INTO %[1]s (id, data)
 	VALUES(
@@ -83,35 +83,36 @@ func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err
 
 	tx, err := bd.db.Beginx()
 	if err != nil {
-		return err
+		return
 	}
 
 	defer pgsql.CommitOrRollback(tx, bd.sugar, &err)
 
 	query := fmt.Sprintf(updateQuery, bd.tableName)
-	logger.Debugw("query update trade history", "query", query)
-	for _, trade := range trades {
-		tradeJSON, err = json.Marshal(trade)
+	logger.Debugw("query update withdraw history", "query", query)
+
+	for _, withdraw := range withdrawHistories {
+		withdrawJSON, err = json.Marshal(withdraw)
 		if err != nil {
 			return
 		}
-		if _, err = tx.Exec(query, trade.ID, tradeJSON); err != nil {
+		if _, err = tx.Exec(query, withdraw.ID, withdrawJSON); err != nil {
 			return
 		}
 	}
 
-	return err
+	return
 }
 
-//GetTradeHistory return trade history from binance storage
-func (bd *BinanceStorage) GetTradeHistory(fromTime, toTime time.Time) ([]binance.TradeHistory, error) {
+//GetWithdrawHistory return list of withdraw fromTime to toTime
+func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.WithdrawHistory, error) {
 	var (
 		logger   = bd.sugar.With("func", "account/binance_storage.GetTradeHistory")
-		result   []binance.TradeHistory
+		result   []binance.WithdrawHistory
 		dbResult [][]byte
-		tmp      binance.TradeHistory
+		tmp      binance.WithdrawHistory
 	)
-	const selectStmt = `SELECT data FROM %s WHERE data->>'time'>=$1 AND data->>'time'<=$2`
+	const selectStmt = `SELECT data FROM %s WHERE data->>'applyTime'>=$1 AND data->>'applyTime'<=$2`
 	query := fmt.Sprintf(selectStmt, bd.tableName)
 
 	logger.Debugw("querying trade history...", "query", query)

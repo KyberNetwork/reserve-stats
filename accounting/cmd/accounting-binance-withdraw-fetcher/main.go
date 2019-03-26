@@ -8,18 +8,21 @@ import (
 	"github.com/urfave/cli"
 
 	fetcher "github.com/KyberNetwork/reserve-stats/accounting/binance-fetcher"
+	withdrawstorage "github.com/KyberNetwork/reserve-stats/accounting/binance-storage/withdraw-storage"
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
-	retryDelayFlag    = "retry-delay"
-	attemptFlag       = "attempt"
-	batchSizeFlag     = "batch-size"
-	defaultRetryDelay = 2 // minute
-	defaultAttempt    = 4
-	defaultBatchSize  = 100
+	retryDelayFlag       = "retry-delay"
+	attemptFlag          = "attempt"
+	batchSizeFlag        = "batch-size"
+	defaultRetryDelay    = 2 // minute
+	defaultAttempt       = 4
+	defaultBatchSize     = 100
+	binanceWithdrawTable = "binance_withdraws"
 )
 
 func main() {
@@ -51,6 +54,7 @@ func main() {
 
 	app.Flags = append(app.Flags, binance.NewCliFlags()...)
 	app.Flags = append(app.Flags, timeutil.NewMilliTimeRangeCliFlags()...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -81,6 +85,9 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	if fromTime.IsZero() {
+		fromTime = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
+	}
 
 	toTime, err = timeutil.ToTimeMillisFromContext(c)
 	if err != nil {
@@ -95,12 +102,29 @@ func run(c *cli.Context) error {
 	batchSize := c.Int(batchSizeFlag)
 	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
 
+	db, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	binanceStorage, err := withdrawstorage.NewDB(sugar, db, binanceWithdrawTable)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if cErr := binanceStorage.Close(); cErr != nil {
+			sugar.Errorf("Close database error", "error", cErr)
+		}
+	}()
+
 	withdrawHistory, err := binanceFetcher.GetWithdrawHistory(fromTime, toTime)
 	if err != nil {
 		return err
 	}
 
-	sugar.Infow("withdraw history", "value", withdrawHistory)
-
-	return nil
+	if err := binanceStorage.UpdateWithdrawHistory(withdrawHistory); err != nil {
+		return err
+	}
+	return binanceStorage.Close()
 }

@@ -56,7 +56,7 @@ func ToTimeFromContext(c *cli.Context) (time.Time, error) {
 func millisTimeFlagFromContext(c *cli.Context, flag string) (time.Time, error) {
 	timeUint := c.Uint64(flag)
 	if timeUint == 0 {
-		return time.Time{}, ErrEmptyFlag
+		return time.Time{}, nil
 	}
 	return TimestampMsToTime(timeUint), nil
 }

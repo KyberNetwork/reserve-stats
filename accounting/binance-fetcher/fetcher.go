@@ -5,11 +5,9 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-
-	"golang.org/x/sync/errgroup"
 )
 
 //Fetcher is a fetcher for get binance data
@@ -19,7 +17,6 @@ type Fetcher struct {
 	retryDelay time.Duration
 	attempt    int
 	batchSize  int
-	//TODO: storage will be add in another PR
 }
 
 //NewFetcher return a new fetcher instance
@@ -125,7 +122,6 @@ func (f *Fetcher) GetTradeHistory(fromID uint64) ([]binance.TradeHistory, error)
 		}
 		return true
 	})
-	// TODO: save to storage
 	return result, nil
 }
 
@@ -149,49 +145,20 @@ func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (bin
 	return withdrawHistory, err
 }
 
-func appendResult(result map[string]binance.WithdrawHistory, withdrawList []binance.WithdrawHistory) time.Time {
-	var (
-		startTime time.Time
-	)
-	for _, withdrawHistory := range withdrawList {
-		if _, exist := result[withdrawHistory.ID]; !exist {
-			result[withdrawHistory.ID] = withdrawHistory
-			withdrawHistoryTime := timeutil.TimestampMsToTime(withdrawHistory.ApplyTime)
-			if withdrawHistoryTime.After(startTime) {
-				startTime = withdrawHistoryTime
-			}
-		}
-	}
-	if startTime.IsZero() {
-		startTime = time.Now()
-	}
-	return startTime
-}
-
 //GetWithdrawHistory get all withdraw history in time range fromTime to toTime
-func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) (map[string]binance.WithdrawHistory, error) {
+func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.WithdrawHistory, error) {
 	var (
-		result = make(map[string]binance.WithdrawHistory)
+		result []binance.WithdrawHistory
 		logger = f.sugar.With("func", "accounting/binance-fetcher.GetWithdrawHistory")
 	)
 	logger.Info("Start get withdraw history")
-	startTime := fromTime
-	endTime := toTime
-	for {
-		withdrawHistory, err := f.getWithdrawHistoryWithRetry(startTime, endTime)
-		if err != nil {
-			return result, err
-		}
-		// logger.Debugw("withdraw hitory", "value", withdrawHistory.WithdrawList)
-		startTime = appendResult(result, withdrawHistory.WithdrawList)
-		// result = append(result, withdrawHistory.WithdrawList...)
-		if startTime.After(endTime) {
-			break
-		}
+	withdrawHistory, err := f.getWithdrawHistoryWithRetry(fromTime, toTime)
+	if err != nil {
+		return result, err
 	}
+	result = append(result, withdrawHistory.WithdrawList...)
 	// log for test get withdraw history successfully
 	logger.Debugw("withdraw history", "list", result)
 
-	// TODO: save to storage
 	return result, nil
 }

@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"math/big"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -12,6 +13,10 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+)
+
+const (
+	versionTable = "listed_token_version"
 )
 
 //ListedTokenDB is storage for listed token
@@ -31,12 +36,18 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, tableName string) (*ListedToke
 	symbol text NOT NULL,
 	timestamp TIMESTAMP NOT NULL,
 	parent_id INT REFERENCES "%[1]s" (id)
-)
+);
+CREATE TABLE IF NOT EXISTS "%[2]s"
+(
+	id SERIAL PRIMARY KEY,
+	version INT NOT NULL,
+	block_number bigint NOT NULL
+);
 	`
 	var logger = sugar.With("func", "accounting/storage.NewDB")
 
 	logger.Debug("initializing database schema")
-	if _, err := db.Exec(fmt.Sprintf(schemaFmt, tableName)); err != nil {
+	if _, err := db.Exec(fmt.Sprintf(schemaFmt, tableName, versionTable)); err != nil {
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
@@ -49,7 +60,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, tableName string) (*ListedToke
 }
 
 //CreateOrUpdate add or edit an record in the tokens table
-func (ltd *ListedTokenDB) CreateOrUpdate(tokens []common.ListedToken) (err error) {
+func (ltd *ListedTokenDB) CreateOrUpdate(tokens []common.ListedToken, blockNumber *big.Int) (err error) {
 	var (
 		logger = ltd.sugar.With("func", "accounting/lisetdtokenstorage.CreateOrUpdate")
 	)
@@ -61,14 +72,24 @@ VALUES ($1,
         CASE WHEN $5::text IS NOT NULL THEN (SELECT id FROM "%[1]s" WHERE address = $5) ELSE NULL END)
 ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id`,
 		ltd.tableName)
-
 	logger.Debugw("upsert token", "value", upsertQuery)
+
+	updateVersionQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (id, version, block_number)
+	VALUES($1,
+		$2,
+		$3)
+	ON CONFLICT (id) DO UPDATE SET version = %[1]s.version + 1, block_number = EXCLUDED.block_number`, versionTable)
+	logger.Debugw("update version", "query", updateVersionQuery)
 
 	tx, err := ltd.db.Beginx()
 	if err != nil {
 		return
 	}
 	defer pgsql.CommitOrRollback(tx, logger, &err)
+
+	if _, err = tx.Exec(updateVersionQuery, 1, 1, blockNumber.Uint64()); err != nil {
+		return
+	}
 
 	for _, token := range tokens {
 		if _, err = tx.Exec(upsertQuery,
@@ -104,6 +125,11 @@ type listedTokenRecord struct {
 	OldTimestamps pq.Int64Array  `db:"old_timestamps"`
 }
 
+type listedTokenVersion struct {
+	Version     uint64 `db:"version"`
+	BlockNumber uint64 `db:"block_number"`
+}
+
 // ListedToken converts listedTokenRecord instance to a common.ListedToken.
 func (r *listedTokenRecord) ListedToken() (common.ListedToken, error) {
 	token := common.ListedToken{
@@ -134,14 +160,14 @@ func (r *listedTokenRecord) ListedToken() (common.ListedToken, error) {
 }
 
 // GetTokens return all tokens listed
-func (ltd *ListedTokenDB) GetTokens() ([]common.ListedToken, error) {
+func (ltd *ListedTokenDB) GetTokens() (result []common.ListedToken, version, blockNumber uint64, err error) {
 	var (
 		logger = ltd.sugar.With(
 			"func",
 			"accounting/listed-token-storage/listedtokenstorage.GetTokens",
 		)
-		result  []common.ListedToken
-		records []listedTokenRecord
+		records        []listedTokenRecord
+		versionRecords []listedTokenVersion
 	)
 
 	getQuery := fmt.Sprintf(`SELECT joined.address,
@@ -165,22 +191,38 @@ FROM (SELECT toks.address,
 GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp`, ltd.tableName)
 	logger.Debugw("get tokens query", "query", getQuery)
 
-	if err := ltd.db.Select(&records, getQuery); err != nil {
-		logger.Errorw("error query token", "error", err)
-		return nil, err
+	getVersionQuery := fmt.Sprintf(`SELECT version, block_number FROM "%[1]s" LIMIT 1`, versionTable)
+	logger.Debugw("get token version", "query", getVersionQuery)
+
+	tx, err := ltd.db.Beginx()
+	if err != nil {
+		return nil, 0, 0, err
 	}
 
-	logger.Debugw("result from listed token", "result", records)
+	defer pgsql.CommitOrRollback(tx, logger, &err)
+
+	if err := tx.Select(&records, getQuery); err != nil {
+		logger.Errorw("error query token", "error", err)
+		return nil, 0, 0, err
+	}
 
 	for _, record := range records {
 		token, err := record.ListedToken()
 		if err != nil {
-			return nil, err
+			return nil, 0, 0, err
 		}
 		result = append(result, token)
 	}
 
-	return result, nil
+	if err := tx.Select(&versionRecords, getVersionQuery); err != nil {
+		logger.Error("error query token verson", "error", err)
+		return nil, 0, 0, err
+	}
+
+	version = versionRecords[0].Version
+	blockNumber = versionRecords[0].BlockNumber
+
+	return result, version, blockNumber, nil
 }
 
 //Close db connection
@@ -195,6 +237,7 @@ func (ltd *ListedTokenDB) Close() error {
 func (ltd *ListedTokenDB) DeleteTable() error {
 	const dropQuery = `DROP TABLE %s;`
 	query := fmt.Sprintf(dropQuery, ltd.tableName)
+	query += fmt.Sprintf(dropQuery, versionTable)
 
 	ltd.sugar.Infow("Drop token table", "query", query)
 	_, err := ltd.db.Exec(query)

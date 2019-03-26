@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"math/big"
 	"os"
+	"reflect"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
@@ -20,7 +22,6 @@ import (
 const (
 	blockFlag          = "block"
 	reserveAddressFlag = "reserve-address"
-	tokenTable         = "listed_tokens"
 )
 
 func main() {
@@ -59,8 +60,18 @@ func run(c *cli.Context) error {
 	}
 	defer flush()
 
+	ethClient, err := blockchain.NewEthereumClientFromFlag(c)
+	if err != nil {
+		return err
+	}
+
 	if c.String(blockFlag) == "" {
 		sugar.Info("no block number provided, get listed token from latest block")
+		header, err := ethClient.HeaderByNumber(context.Background(), nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		block = header.Number
 	} else {
 		block, err = libapp.ParseBigIntFlag(c, blockFlag)
 		if err != nil {
@@ -71,12 +82,8 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("reserve address is required")
 	}
 	reserveAddrStr := c.String(reserveAddressFlag)
+	sugar.Debug(reserveAddrStr)
 	reserveAddr = ethereum.HexToAddress(reserveAddrStr)
-
-	ethClient, err := blockchain.NewEthereumClientFromFlag(c)
-	if err != nil {
-		return err
-	}
 
 	tokenSymbol, err := blockchain.NewTokenInfoGetterFromContext(c)
 	if err != nil {
@@ -94,7 +101,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	listedTokenStorage, err := storage.NewDB(sugar, db, tokenTable)
+	listedTokenStorage, err := storage.NewDB(sugar, db, common.ListedTokenTable)
 	if err != nil {
 		return err
 	}
@@ -111,8 +118,15 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	if err = listedTokenStorage.CreateOrUpdate(listedTokens); err != nil {
+	storedListedToken, err := listedTokenStorage.GetTokens()
+	if err != nil {
 		return err
 	}
+	if !reflect.DeepEqual(storedListedToken, listedTokens) {
+		if err = listedTokenStorage.CreateOrUpdate(listedTokens, block); err != nil {
+			return err
+		}
+	}
+
 	return listedTokenStorage.Close()
 }

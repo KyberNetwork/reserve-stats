@@ -39,4 +39,7 @@ const (
 
 	// AccountingWalletErc20Port is the port number of accounting-wallet-erc20-api service
 	AccountingWalletErc20Port = 8012
+
+	//AccountingListedTokenPort is the port number of accounting-listed-token service
+	AccountingListedTokenPort = 8013
 )

@@ -44,12 +44,12 @@ var (
 	}
 	binanceTrades = []binance.TradeHistory{
 		{
-			Symbol:   "BNBBTC",
-			ID:       28457,
-			OrderID:  100234,
-			Price:    "4.00000100",
-			Quantity: "12.00000000",
-			// TODO: missing QuoteQty
+			Symbol:          "BNBBTC",
+			ID:              28457,
+			OrderID:         100234,
+			Price:           "4.00000100",
+			Quantity:        "12.00000000",
+			QuoteQuantity:   "48.000012",
 			Commission:      "10.10000000",
 			CommissionAsset: "BNB",
 			Time:            1499865549590,

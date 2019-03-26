@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tradestorage "github.com/KyberNetwork/reserve-stats/accounting/binance-storage/trade-storage"
+	tradestorage "github.com/KyberNetwork/reserve-stats/accounting/binance/storage"
 	huobistorage "github.com/KyberNetwork/reserve-stats/accounting/huobi/storage/postgres"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"

@@ -19,7 +19,6 @@ type Fetcher struct {
 	retryDelay time.Duration
 	attempt    int
 	batchSize  int
-	//TODO: storage will be add in another PR
 }
 
 //NewFetcher return a new fetcher instance

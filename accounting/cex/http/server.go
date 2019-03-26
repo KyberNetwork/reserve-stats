@@ -14,8 +14,7 @@ type Server struct {
 	r     *gin.Engine
 	host  string
 	hs    huobistorage.Interface
-	// TODO: moves binance to same package level as huobi
-	bs tradestorage.Interface
+	bs    tradestorage.Interface
 }
 
 // NewServer creates a new instance of Server.

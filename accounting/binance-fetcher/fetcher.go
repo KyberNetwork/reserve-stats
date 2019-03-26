@@ -5,11 +5,9 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-
-	"golang.org/x/sync/errgroup"
 )
 
 //Fetcher is a fetcher for get binance data
@@ -147,48 +145,19 @@ func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (bin
 	return withdrawHistory, err
 }
 
-func appendResult(result []binance.WithdrawHistory, withdrawList []binance.WithdrawHistory, lastID string) ([]binance.WithdrawHistory, time.Time, string) {
-	var (
-		startTime time.Time
-		latestID  string
-	)
-	for _, withdrawHistory := range withdrawList {
-		result = append(result, withdrawHistory)
-		withdrawHistoryTime := timeutil.TimestampMsToTime(withdrawHistory.ApplyTime)
-		if withdrawHistory.ID == lastID {
-			continue
-		}
-		if withdrawHistoryTime.After(startTime) || withdrawHistoryTime.Equal(startTime) {
-			startTime = withdrawHistoryTime
-			latestID = withdrawHistory.ID
-		}
-	}
-	if startTime.IsZero() {
-		startTime = time.Now()
-	}
-	return result, startTime, latestID
-}
-
 //GetWithdrawHistory get all withdraw history in time range fromTime to toTime
 func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.WithdrawHistory, error) {
 	var (
 		result []binance.WithdrawHistory
 		logger = f.sugar.With("func", "accounting/binance-fetcher.GetWithdrawHistory")
-		lastID string
 	)
 	logger.Info("Start get withdraw history")
-	startTime := fromTime
-	endTime := toTime
-	for {
-		withdrawHistory, err := f.getWithdrawHistoryWithRetry(startTime, endTime)
-		if err != nil {
-			return result, err
-		}
-		result, startTime, lastID = appendResult(result, withdrawHistory.WithdrawList, lastID)
-		logger.Debugw("last id", "id", lastID)
-		if startTime.After(endTime) {
-			break
-		}
+	withdrawHistoryList, err := f.getWithdrawHistoryWithRetry(fromTime, toTime)
+	if err != nil {
+		return result, err
+	}
+	for _, withdrawHistory := range withdrawHistoryList.WithdrawList {
+		result = append(result, withdrawHistory)
 	}
 	// log for test get withdraw history successfully
 	logger.Debugw("withdraw history", "list", result)

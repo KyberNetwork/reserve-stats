@@ -21,7 +21,6 @@ const (
 	defaultRetryDelay = 2 // minute
 	defaultAttempt    = 4
 	defaultBatchSize  = 100
-	tradeTableName    = "binance_trades"
 )
 
 func main() {
@@ -90,7 +89,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	binanceStorage, err := tradestorage.NewDB(sugar, storage, tradeTableName)
+	binanceStorage, err := tradestorage.NewDB(sugar, storage)
 	if err != nil {
 		return err
 	}

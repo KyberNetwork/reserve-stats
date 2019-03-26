@@ -1,4 +1,4 @@
-package tradestorage
+package storage
 
 import (
 	"time"

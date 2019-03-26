@@ -38,7 +38,7 @@ func (f *Fetcher) getTradeHistoryWithRetry(symbol string, fromID uint64) ([]bina
 	var (
 		tradeHistoriesResponse []binance.TradeHistory
 		err                    error
-		logger                 = f.sugar.With("func", "accounting/binance-fetcher/fetcher.getTradeHistoryWithRetry")
+		logger                 = f.sugar.With("func", "accounting/binance/fetcher/Fetcher.getTradeHistoryWithRetry")
 	)
 	for attempt := 0; attempt < f.attempt; attempt++ {
 		tradeHistoriesResponse, err = f.client.GetTradeHistory(symbol, fromID)
@@ -53,8 +53,8 @@ func (f *Fetcher) getTradeHistoryWithRetry(symbol string, fromID uint64) ([]bina
 
 func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]binance.TradeHistory, error) {
 	var (
-		logger = f.sugar.With("func", "accounting/binance-fetcher.getTradeHistoryForOneSymbol")
-		result = []binance.TradeHistory{}
+		logger = f.sugar.With("func", "accounting/binance/fetcher/Fetcher.getTradeHistoryForOneSymbol")
+		result []binance.TradeHistory
 	)
 	for {
 		tradeHistoriesResponse, err := f.getTradeHistoryWithRetry(symbol, fromID)
@@ -78,7 +78,7 @@ func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]b
 func (f *Fetcher) GetTradeHistory(fromID uint64) ([]binance.TradeHistory, error) {
 	var (
 		tradeHistories sync.Map
-		logger         = f.sugar.With("func", "accounting/binance-fetcher.getTradeHistory")
+		logger         = f.sugar.With("func", "accounting/binance/fetcher/Fetcher.getTradeHistory")
 		errGroup       errgroup.Group
 		result         []binance.TradeHistory
 	)
@@ -134,7 +134,7 @@ func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (bin
 		withdrawHistory binance.WithdrawHistoryList
 		err             error
 		logger          = f.sugar.With(
-			"func", "accounting/binance-fetcher.getWithdrawHistoryWithRetry",
+			"func", "accounting/binance/fetcher/Fetcher.getWithdrawHistoryWithRetry",
 		)
 	)
 	for attempt := 0; attempt < f.attempt; attempt++ {
@@ -172,7 +172,7 @@ func appendResult(result map[string]binance.WithdrawHistory, withdrawList []bina
 func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) (map[string]binance.WithdrawHistory, error) {
 	var (
 		result = make(map[string]binance.WithdrawHistory)
-		logger = f.sugar.With("func", "accounting/binance-fetcher.GetWithdrawHistory")
+		logger = f.sugar.With("func", "accounting/binance/fetcher/Fetcher.GetWithdrawHistory")
 	)
 	logger.Info("Start get withdraw history")
 	startTime := fromTime

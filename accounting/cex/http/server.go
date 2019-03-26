@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	tradestorage "github.com/KyberNetwork/reserve-stats/accounting/binance-storage/trade-storage"
+	tradestorage "github.com/KyberNetwork/reserve-stats/accounting/binance/storage"
 	huobistorage "github.com/KyberNetwork/reserve-stats/accounting/huobi/storage"
 )
 

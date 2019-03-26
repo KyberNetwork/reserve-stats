@@ -39,7 +39,7 @@ type Option func(fc *Fetcher)
 func NewFetcher(sugar *zap.SugaredLogger,
 	storage rrstorage.Interface,
 	crawler *crawler.ReserveRatesCrawler,
-	lastBlockResolver *lastblockdaily.LastBlockResolver,
+	lastBlockResolver lastblockdaily.Interface,
 	ethusdRate tokenrate.ETHUSDRateProvider,
 	retryDelay, sleepTime time.Duration,
 	retryAttempts int,

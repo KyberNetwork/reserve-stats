@@ -49,8 +49,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	// TODO: make table name optional
-	bs, err := tradestorage.NewDB(sugar, db, "binance_trades")
+	bs, err := tradestorage.NewDB(sugar, db)
 	if err != nil {
 		return err
 	}

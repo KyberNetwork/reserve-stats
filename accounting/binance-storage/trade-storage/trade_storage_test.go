@@ -18,7 +18,7 @@ const (
 
 func newTestDB(sugar *zap.SugaredLogger) (*BinanceStorage, error) {
 	_, db := testutil.MustNewDevelopmentDB()
-	return NewDB(sugar, db, tradeTableTest)
+	return NewDB(sugar, db, WithTableName(tradeTableTest))
 }
 
 func teardown(t *testing.T, storage *BinanceStorage) {

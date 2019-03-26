@@ -203,7 +203,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	bs, err := tradestorage.NewDB(sugar, db, "binance_cex_http_test")
+	bs, err := tradestorage.NewDB(sugar, db, tradestorage.WithTableName("binance_cex_http_test"))
 	if err != nil {
 		log.Fatal(err)
 	}

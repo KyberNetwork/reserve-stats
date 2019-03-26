@@ -13,6 +13,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
+const defaultTradeTableName = "binance_trades"
+
 //BinanceStorage is storage for binance fetcher including trade history and withdraw history
 type BinanceStorage struct {
 	sugar     *zap.SugaredLogger
@@ -20,8 +22,18 @@ type BinanceStorage struct {
 	tableName string
 }
 
+// Option is the option for BinanceStorage constructor.
+type Option func(*BinanceStorage)
+
+// WithTableName is the option to create BinanceStorage.
+func WithTableName(tableName string) Option {
+	return func(storage *BinanceStorage) {
+		storage.tableName = tableName
+	}
+}
+
 //NewDB return a new instance of binance storage
-func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, tableName string) (*BinanceStorage, error) {
+func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*BinanceStorage, error) {
 	var (
 		logger = sugar.With("func", "accounting/binance-storage/binancestorage.NewDB")
 	)
@@ -35,7 +47,20 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, tableName string) (*BinanceSto
 	CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s ((data ->> 'time'));
 	`
 
-	query := fmt.Sprintf(schemaFmt, tableName)
+	s := &BinanceStorage{
+		sugar: sugar,
+		db:    db,
+	}
+
+	for _, option := range options {
+		option(s)
+	}
+
+	if len(s.tableName) == 0 {
+		s.tableName = defaultTradeTableName
+	}
+
+	query := fmt.Sprintf(schemaFmt, s.tableName)
 	logger.Debugw("create table query", "query", query)
 
 	if _, err := db.Exec(query); err != nil {
@@ -44,11 +69,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, tableName string) (*BinanceSto
 
 	logger.Info("binance table init successfully")
 
-	return &BinanceStorage{
-		sugar:     sugar,
-		db:        db,
-		tableName: tableName,
-	}, nil
+	return s, nil
 }
 
 //Close database connection

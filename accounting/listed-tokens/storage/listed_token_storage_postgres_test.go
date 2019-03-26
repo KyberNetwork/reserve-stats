@@ -58,6 +58,7 @@ func TestListedTokenStorage(t *testing.T) {
 				},
 			},
 		}
+		blockNumberNew  = big.NewInt(7442899)
 		listedTokensNew = []common.ListedToken{
 			{
 				Address:   ethereum.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200"),
@@ -98,12 +99,12 @@ func TestListedTokenStorage(t *testing.T) {
 	assert.Equal(t, version, uint64(1))
 	assert.Equal(t, blockNumber.Uint64(), storedBlockNumber)
 
-	err = storage.CreateOrUpdate(listedTokensNew, blockNumber)
+	err = storage.CreateOrUpdate(listedTokensNew, blockNumberNew)
 	require.NoError(t, err)
 
 	storedNewListedTokens, version, storedBlockNumber, err := storage.GetTokens()
 	assert.NoError(t, err)
 	assert.Equal(t, version, uint64(2))
-	assert.Equal(t, blockNumber.Uint64(), storedBlockNumber)
+	assert.Equal(t, blockNumberNew.Uint64(), storedBlockNumber)
 	assert.ElementsMatch(t, listedTokensNew, storedNewListedTokens)
 }

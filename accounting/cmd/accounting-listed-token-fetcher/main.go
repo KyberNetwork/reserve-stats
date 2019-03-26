@@ -9,7 +9,9 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
 
-	listedtoken "github.com/KyberNetwork/reserve-stats/accounting/listed-token-fetcher"
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	"github.com/KyberNetwork/reserve-stats/accounting/listed-tokens/fetcher"
+	"github.com/KyberNetwork/reserve-stats/accounting/listed-tokens/storage"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
@@ -18,6 +20,7 @@ import (
 const (
 	blockFlag          = "block"
 	reserveAddressFlag = "reserve-address"
+	tokenTable         = "listed_tokens"
 )
 
 func main() {
@@ -39,6 +42,7 @@ func main() {
 	)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -86,7 +90,29 @@ func run(c *cli.Context) error {
 
 	resolv := blockchain.NewEtherscanContractTimestampResolver(sugar, etherscanClient)
 
-	fetcher := listedtoken.NewListedTokenFetcher(ethClient, resolv, sugar)
+	db, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return err
+	}
+	listedTokenStorage, err := storage.NewDB(sugar, db, tokenTable)
+	if err != nil {
+		return err
+	}
 
-	return fetcher.GetListedToken(block, reserveAddr, tokenSymbol)
+	defer func() {
+		if cErr := listedTokenStorage.Close(); cErr != nil {
+			sugar.Errorw("Close database error", "error", cErr)
+		}
+	}()
+
+	f := fetcher.NewListedTokenFetcher(ethClient, resolv, sugar)
+	listedTokens, err := f.GetListedToken(block, reserveAddr, tokenSymbol)
+	if err != nil {
+		return err
+	}
+
+	if err = listedTokenStorage.CreateOrUpdate(listedTokens); err != nil {
+		return err
+	}
+	return listedTokenStorage.Close()
 }

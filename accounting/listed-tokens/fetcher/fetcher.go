@@ -1,7 +1,6 @@
-package listedtoken
+package fetcher
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
@@ -14,7 +13,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 //Fetcher to get token listed in a reserve
@@ -35,83 +33,82 @@ func NewListedTokenFetcher(ethClient *ethclient.Client, contractTimestampResolve
 }
 
 func updateListedToken(listedToken map[string]common.ListedToken, symbol, name string, address ethereum.Address, timestamp time.Time) map[string]common.ListedToken {
-	timestamps := timeutil.TimeToTimestampMs(timestamp)
 	key := fmt.Sprintf("%s-%s", symbol, name)
 	if token, existed := listedToken[key]; existed {
-		if token.Timestamp > timestamps {
+		if token.Timestamp.After(timestamp) {
 			token.Old = append(token.Old, common.OldListedToken{
 				Address:   token.Address,
 				Timestamp: token.Timestamp,
 			})
-			token.Address = address.Hex()
-			token.Timestamp = timestamps
+			token.Address = address
+			token.Timestamp = timestamp
+			listedToken[key] = token
 		} else {
 			token.Old = append(token.Old, common.OldListedToken{
-				Address:   address.Hex(),
-				Timestamp: timestamps,
+				Address:   address,
+				Timestamp: timestamp,
 			})
+			listedToken[key] = token
 		}
 		return listedToken
 	}
 	listedToken[key] = common.ListedToken{
 		Name:      name,
-		Address:   address.Hex(),
+		Address:   address,
 		Symbol:    symbol,
-		Timestamp: timestamps,
+		Timestamp: timestamp,
 	}
 	return listedToken
 }
 
 //GetListedToken return listed token for a reserve address
 func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
-	tokenSymbol *blockchain.TokenInfoGetter) error {
+	tokenSymbol *blockchain.TokenInfoGetter) ([]common.ListedToken, error) {
 	var (
-		logger = f.sugar.With("func", "accounting/cmd/accounting-listed-token-fetcher")
-		result = make(map[string]common.ListedToken)
+		logger       = f.sugar.With("func", "accounting/cmd/accounting-listed-token-fetcher")
+		result       = make(map[string]common.ListedToken)
+		returnResult []common.ListedToken
 	)
 	// step 1: get conversionRatesContract address
 	logger.Infow("reserve address", "reserve", reserveAddr)
 	reserveContractClient, err := contracts.NewReserve(reserveAddr, f.ethClient)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	callOpts := &bind.CallOpts{BlockNumber: block}
 	conversionRatesContract, err := reserveContractClient.ConversionRatesContract(callOpts)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// step 2: get listedTokens from conversionRatesContract
 	conversionRateContractClient, err := contracts.NewConversionRates(conversionRatesContract, f.ethClient)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	listedTokens, err := conversionRateContractClient.GetListedTokens(callOpts)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, address := range listedTokens {
 		symbol, err := tokenSymbol.Symbol(address)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		name, err := tokenSymbol.Name(address)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		timestamp, err := f.contractTimestampResolver.Resolve(address)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		result = updateListedToken(result, symbol, name, address, timestamp)
 	}
-	resultJSON, err := json.Marshal(result)
-	if err != nil {
-		return err
+	for _, token := range result {
+		returnResult = append(returnResult, token)
 	}
 
-	// currently print out to cli, save to storage later
-	logger.Debugw("result listed token", "result", string(resultJSON))
-	return nil
+	return returnResult, nil
 }

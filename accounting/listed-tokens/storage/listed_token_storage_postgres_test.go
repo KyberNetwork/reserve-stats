@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"math/big"
 	"testing"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -36,6 +37,7 @@ func TestListedTokenStorage(t *testing.T) {
 	logger.Info("start testing")
 
 	var (
+		blockNumber  = big.NewInt(7442895)
 		listedTokens = []common.ListedToken{
 			{
 				Address:   ethereum.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200"),
@@ -87,17 +89,21 @@ func TestListedTokenStorage(t *testing.T) {
 
 	defer teardown(t, storage)
 
-	err = storage.CreateOrUpdate(listedTokens)
+	err = storage.CreateOrUpdate(listedTokens, blockNumber)
 	require.NoError(t, err)
 
-	storedListedTokens, err := storage.GetTokens()
+	storedListedTokens, version, storedBlockNumber, err := storage.GetTokens()
 	require.NoError(t, err)
 	assert.ElementsMatch(t, listedTokens, storedListedTokens)
+	assert.Equal(t, version, uint64(1))
+	assert.Equal(t, blockNumber.Uint64(), storedBlockNumber)
 
-	err = storage.CreateOrUpdate(listedTokensNew)
+	err = storage.CreateOrUpdate(listedTokensNew, blockNumber)
 	require.NoError(t, err)
 
-	storedNewListedTokens, err := storage.GetTokens()
+	storedNewListedTokens, version, storedBlockNumber, err := storage.GetTokens()
 	assert.NoError(t, err)
+	assert.Equal(t, version, uint64(2))
+	assert.Equal(t, blockNumber.Uint64(), storedBlockNumber)
 	assert.ElementsMatch(t, listedTokensNew, storedNewListedTokens)
 }

@@ -33,4 +33,7 @@ const (
 
 	// AccountingCEXTradesPort is the port number of accounting-cex-trade-trades-api service.
 	AccountingCEXTradesPort = 8010
+
+	//AccountingListedTokenPort is the port number of accounting-listed-token service
+	AccountingListedTokenPort = 8011
 )

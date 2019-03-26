@@ -129,3 +129,23 @@ type ListedToken struct {
 	Timestamp time.Time        `json:"timestamp"`
 	Old       []OldListedToken `json:"old,omitempty"`
 }
+
+// MarshalJSON implements custom JSON marshaller for ReserveAddress to
+// format timestamp in unix millis instead of RFC3339.
+func (l *ListedToken) MarshalJSON() ([]byte, error) {
+	type AliasListedToken ListedToken
+
+	var ts *uint64
+	if !l.Timestamp.IsZero() {
+		millis := timeutil.TimeToTimestampMs(l.Timestamp)
+		ts = &millis
+	}
+
+	return json.Marshal(struct {
+		*AliasListedToken
+		Timestamp *uint64 `json:"timestamp,omitempty"`
+	}{
+		AliasListedToken: (*AliasListedToken)(l),
+		Timestamp:        ts,
+	})
+}

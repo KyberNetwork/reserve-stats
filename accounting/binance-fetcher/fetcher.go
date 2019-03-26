@@ -152,13 +152,11 @@ func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.With
 		logger = f.sugar.With("func", "accounting/binance-fetcher.GetWithdrawHistory")
 	)
 	logger.Info("Start get withdraw history")
-	withdrawHistoryList, err := f.getWithdrawHistoryWithRetry(fromTime, toTime)
+	withdrawHistory, err := f.getWithdrawHistoryWithRetry(fromTime, toTime)
 	if err != nil {
 		return result, err
 	}
-	for _, withdrawHistory := range withdrawHistoryList.WithdrawList {
-		result = append(result, withdrawHistory)
-	}
+	result = append(result, withdrawHistory.WithdrawList...)
 	// log for test get withdraw history successfully
 	logger.Debugw("withdraw history", "list", result)
 

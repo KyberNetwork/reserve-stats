@@ -24,17 +24,15 @@ func NewWalletFetcher(sugar *zap.SugaredLogger, client *etherscan.Client) *Walle
 }
 
 // Fetch return all ERC20transfer from input or error if occured.
-func (wf *WalletFetcher) Fetch(walletAddress ethereum.Address, tokenAddress ethereum.Address, from, to *big.Int) ([]common.ERC20Transfer, error) {
+func (wf *WalletFetcher) Fetch(walletAddress ethereum.Address, from, to *big.Int) ([]common.ERC20Transfer, error) {
 	const offset = 500
 	var (
 		logger = wf.sugar.With(
 			"func",
 			"accounting/reserve-transaction-fetcher/fetcher.EtherscanTransactionFetcher.fetch",
 			"wallt address", walletAddress.Hex(),
-			"token address", tokenAddress.Hex(),
 			"offset", offset,
 		)
-		token   = tokenAddress.String()
 		wallet  = walletAddress.String()
 		results []common.ERC20Transfer
 	)
@@ -69,7 +67,7 @@ func (wf *WalletFetcher) Fetch(walletAddress ethereum.Address, tokenAddress ethe
 	// Etherscan paging starts with index=1
 	for page := 1; ; page++ {
 		logger.Debugw("fetching a page of transactions", "page", page)
-		txs, err := wf.client.ERC20Transfers(&token, &wallet, startBlock, endBlock, page, offset)
+		txs, err := wf.client.ERC20Transfers(nil, &wallet, startBlock, endBlock, page, offset)
 		if blockchain.IsEtherscanNotransactionFound(err) {
 			logger.Debugw("all transaction fetched", "page", page)
 			break

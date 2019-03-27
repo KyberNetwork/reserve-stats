@@ -54,8 +54,8 @@ CREATE TABLE IF NOT EXISTS "%[3]s"
 );
 CREATE TABLE IF NOT EXISTS "%[4]s"
 (
-	id SERIAL PRIMARY KEY
-	token_id INT REFERENCE "%[1]s" (id)
+	id SERIAL PRIMARY KEY,
+	token_id INT REFERENCE "%[1]s" (id),
 	reserve_id INT REFERENCE "%[4]s" (id)
 )
 	`
@@ -77,7 +77,8 @@ CREATE TABLE IF NOT EXISTS "%[4]s"
 //CreateOrUpdate add or edit an record in the tokens table
 func (ltd *ListedTokenDB) CreateOrUpdate(tokens []common.ListedToken, blockNumber *big.Int, reserve ethereum.Address) (err error) {
 	var (
-		logger = ltd.sugar.With("func", "accounting/lisetdtokenstorage.CreateOrUpdate")
+		logger             = ltd.sugar.With("func", "accounting/lisetdtokenstorage.CreateOrUpdate")
+		tokenID, reserveID int64
 	)
 	upsertQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address, name, symbol, timestamp, parent_id)
 VALUES ($1,
@@ -85,7 +86,7 @@ VALUES ($1,
         $3,
 		$4,
         CASE WHEN $5::text IS NOT NULL THEN (SELECT id FROM "%[1]s" WHERE address = $5) ELSE NULL END)
-ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id`,
+ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id RETURNING id`,
 		ltd.tableName)
 	logger.Debugw("upsert token", "value", upsertQuery)
 
@@ -94,7 +95,7 @@ ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id`,
 	ON CONFLICT (reserve) DO UPDATE version = %[1]s.version+1, block_number = EXCLUDED.block_number`, versionTable)
 	logger.Debugw("update version", "query", updateVersionQuery)
 
-	updateReserveQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address) VALUE($1) ON CONFLICT (address) DO NOTHING`, reservesTable)
+	updateReserveQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address) VALUE($1) ON CONFLICT (address) DO NOTHING RETURNING id`, reservesTable)
 	logger.Debugw("update reserve", "query", updateReserveQuery)
 
 	updateReserveTokenQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (token_id, reserve_id) values($1, $2)`, reservesTokensTable)
@@ -106,7 +107,7 @@ ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id`,
 	}
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 
-	if _, err = tx.Exec(updateReserveQuery, reserve); err != nil {
+	if err = tx.Get(&reserveID, updateReserveQuery, reserve); err != nil {
 		return
 	}
 
@@ -115,7 +116,7 @@ ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id`,
 	}
 
 	for _, token := range tokens {
-		if _, err = tx.Exec(upsertQuery,
+		if err = tx.Get(&tokenID, upsertQuery,
 			token.Address.Hex(),
 			token.Name,
 			token.Symbol,

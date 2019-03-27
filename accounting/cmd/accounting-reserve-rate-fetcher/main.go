@@ -15,6 +15,7 @@ import (
 	rrpostgres "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
 	lbdpostgres "github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/storage/postgres"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -22,6 +23,8 @@ import (
 )
 
 const (
+	addressesFlag = "addresses"
+
 	attemptsFlag    = "attempts"
 	defaultAttempts = 3
 
@@ -40,6 +43,11 @@ func main() {
 	app.Action = run
 
 	app.Flags = append(app.Flags,
+		cli.StringSliceFlag{
+			Name:   addressesFlag,
+			EnvVar: "ADDRESSES",
+			Usage:  "list of reserve contract addresses. Example: --addresses={\"0x1111\",\"0x222\"}",
+		},
 		cli.IntFlag{
 			Name:   attemptsFlag,
 			Usage:  "The number of attempt to query rates from blockchain",
@@ -61,6 +69,7 @@ func main() {
 		blockchain.NewEthereumNodeFlags(),
 	)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostGresDB)...)
+	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
 	app.Flags = append(app.Flags, timeutil.NewTimeRangeCliFlags()...)
 	app.Flags = append(app.Flags, client.NewClientFlags()...)
 	if err := app.Run(os.Args); err != nil {
@@ -73,7 +82,7 @@ func run(c *cli.Context) error {
 		attempts       = c.Int(attemptsFlag)
 		retryDelayTime = c.Duration(retryDelayFlag)
 		sleepTime      = c.Duration(sleepTimeFlag)
-		addrs          []string
+		addressClient  client.Interface
 	)
 
 	sugar, flush, err := libapp.NewSugaredLogger(c)
@@ -97,7 +106,7 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("cannot create symbol Resolver, err: %v", err)
 	}
 
-	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, addrs, ethClient, symbolResolver)
+	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, ethClient, symbolResolver)
 	if err != nil {
 		return fmt.Errorf("cannot rate crawler, err: %v", err)
 	}
@@ -124,10 +133,25 @@ func run(c *cli.Context) error {
 	}
 	lastBlockResolver := lastblockdaily.NewLastBlockResolver(ethClient, blockTimeResolver, sugar, lbdDB)
 
-	addressClient, err := client.NewClientFromContext(c, sugar)
-	if err != nil {
-		return err
+	addrs := c.StringSlice(addressesFlag)
+	if len(addrs) != 0 {
+		sugar.Infow("using provided addresses instead of querying from accounting-reserve-addresses service")
+		etherscanClient, err := etherscan.NewEtherscanClientFromContext(c)
+		if err != nil {
+			return err
+		}
+		resolver := blockchain.NewEtherscanContractTimestampResolver(sugar, etherscanClient)
+		addressClient, err = client.NewFixedAddresses(addrs, resolver)
+		if err != nil {
+			return err
+		}
+	} else {
+		addressClient, err = client.NewClientFromContext(c, sugar)
+		if err != nil {
+			return err
+		}
 	}
+
 	rrFetcher, err := fetcher.NewFetcher(sugar, ratesStorage, ratesCrawler, lastBlockResolver, cgk, retryDelayTime, sleepTime, attempts, addressClient)
 	if err != nil {
 		return err

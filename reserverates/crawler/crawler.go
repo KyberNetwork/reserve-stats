@@ -22,14 +22,12 @@ import (
 type ReserveRatesCrawler struct {
 	sugar           *zap.SugaredLogger
 	wrapperContract reserveRateGetter
-	addresses       []ethereum.Address
 	rtf             reserveTokenFetcherInterface
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
 func NewReserveRatesCrawler(
 	sugar *zap.SugaredLogger,
-	addrs []string,
 	client bind.ContractBackend,
 	symbolResolver blockchain.TokenSymbolResolver) (*ReserveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapperFallback(sugar, client)
@@ -37,15 +35,9 @@ func NewReserveRatesCrawler(
 		return nil, err
 	}
 
-	var ethAddrs []ethereum.Address
-	for _, addr := range addrs {
-		ethAddrs = append(ethAddrs, ethereum.HexToAddress(addr))
-	}
-
 	return &ReserveRatesCrawler{
 		sugar:           sugar,
 		wrapperContract: wrpContract,
-		addresses:       ethAddrs,
 		rtf:             blockchain.NewReserveTokenFetcher(sugar, client, symbolResolver),
 	}, nil
 }
@@ -90,12 +82,6 @@ func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 
 	logger.Debug("reserve rates fetched successfully")
 	return rates, err
-}
-
-// GetReserveRates returns the map[ReserveAddress]ReserveRates at the given block number.
-// It will only return rates from the set of addresses within its definition.
-func (rrc *ReserveRatesCrawler) GetReserveRates(block uint64) (map[string]map[string]rsvRateCommon.ReserveRateEntry, error) {
-	return rrc.GetReserveRatesWithAddresses(rrc.addresses, block)
 }
 
 //GetReserveRatesWithAddresses fetch rates with a list of input addresses and given block number

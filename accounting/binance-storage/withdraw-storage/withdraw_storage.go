@@ -132,3 +132,26 @@ func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) ([]bina
 
 	return result, nil
 }
+
+//GetLastStoredTimestamp return last timestamp stored in database
+func (bd *BinanceStorage) GetLastStoredTimestamp() (time.Time, error) {
+	var (
+		logger   = bd.sugar.With("func", "account/binance_storage.GetLastStoredTimestamp")
+		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
+		dbResult []uint64
+	)
+	const selectStmt = `SELECT data->>'applyTime' FROM %s ORDER BY data->>'applyTime' DESC LIMIT 1`
+	query := fmt.Sprintf(selectStmt, bd.tableName)
+
+	logger.Debugw("querying trade history...", "query", query)
+
+	if err := bd.db.Select(&dbResult, query); err != nil {
+		return result, err
+	}
+
+	if len(dbResult) == 1 {
+		result = timeutil.TimestampMsToTime(dbResult[0])
+	}
+
+	return result, nil
+}

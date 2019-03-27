@@ -9,12 +9,12 @@ import (
 	validator "gopkg.in/go-playground/validator.v8"
 )
 
-// isValidCexName is a validator.Func function that returns true if given field
-// is a valid cex name address.
-func isValidCexName(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
+// isValidCEXName is a validator.Func function that returns true if given field
+// is a valid cex-trade name address.
+func isValidCEXName(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
 	field reflect.Value, _ reflect.Type, _ reflect.Kind, _ string) bool {
 	cexNameInput := strings.ToLower(field.String())
-	return common.IsValidCexName(cexNameInput)
+	return common.IsValidCEXName(cexNameInput)
 }
 
 func init() {
@@ -23,7 +23,7 @@ func init() {
 			name string
 			fn   validator.Func
 		}{
-			{"isValidCexName", isValidCexName},
+			{"isValidCEXName", isValidCEXName},
 		}
 		for _, val := range validators {
 			if err := v.RegisterValidation(val.name, val.fn); err != nil {

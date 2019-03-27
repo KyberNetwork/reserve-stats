@@ -25,7 +25,7 @@ func NewServer(sugar *zap.SugaredLogger, host string, hs huobistorage.Interface,
 }
 
 func (s *Server) register() {
-	s.r.GET("/cex_trades", s.getTrades)
+	s.r.GET("/trades", s.getTrades)
 }
 
 // Run starts the HTTP server and runs in foreground until terminate by user.

@@ -64,7 +64,7 @@ func TestTrades(t *testing.T) {
 	var tests = []httputil.HTTPTestCase{
 		{
 			Msg:      "get getTrades from all exchanges",
-			Endpoint: "/cex_trades",
+			Endpoint: "/trades",
 			Method:   http.MethodGet,
 			Params: map[string]string{
 				"from": "1494901162000",
@@ -86,7 +86,7 @@ func TestTrades(t *testing.T) {
 		},
 		{
 			Msg:      "get empty trades with newer time range",
-			Endpoint: "/cex_trades",
+			Endpoint: "/trades",
 			Method:   http.MethodGet,
 			Params: map[string]string{
 				"from": "1499865549600",
@@ -106,7 +106,7 @@ func TestTrades(t *testing.T) {
 		},
 		{
 			Msg:      "get empty trades with older time range",
-			Endpoint: "/cex_trades",
+			Endpoint: "/trades",
 			Method:   http.MethodGet,
 			Params: map[string]string{
 				"from": "1494901160000",
@@ -126,7 +126,7 @@ func TestTrades(t *testing.T) {
 		},
 		{
 			Msg:      "get getTrades from huobi",
-			Endpoint: "/cex_trades",
+			Endpoint: "/trades",
 			Method:   http.MethodGet,
 			Params: map[string]string{
 				"from": "1494901162000",
@@ -148,7 +148,7 @@ func TestTrades(t *testing.T) {
 		},
 		{
 			Msg:      "get getTrades from binance",
-			Endpoint: "/cex_trades",
+			Endpoint: "/trades",
 			Method:   http.MethodGet,
 			Params: map[string]string{
 				"from": "1494901162000",
@@ -170,7 +170,7 @@ func TestTrades(t *testing.T) {
 		},
 		{
 			Msg:      "get getTrades with invalid exchange",
-			Endpoint: "/cex_trades",
+			Endpoint: "/trades",
 			Method:   http.MethodGet,
 			Params: map[string]string{
 				"from": "1494901162000",

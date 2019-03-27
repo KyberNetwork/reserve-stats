@@ -1,12 +1,12 @@
-package cexwithdrawalapi
+package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -30,7 +30,8 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 	var (
 		createdAt uint64 = 1525754125590
 		testData         = []huobi.WithdrawHistory{
-			{ID: 2272335,
+			{
+				ID:         2272335,
 				CreatedAt:  createdAt,
 				UpdatedAt:  1525754753403,
 				Currency:   "ETH",
@@ -46,21 +47,33 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 		tests = []httputil.HTTPTestCase{
 			{
 				Msg:      "get an existing test record",
-				Endpoint: fmt.Sprintf("/withdrawals?from=%d&to=%d&cex=%s", createdAt-10, createdAt+10, "huobi"),
-				Method:   http.MethodGet,
+				Endpoint: "/withdrawals",
+				Params: map[string]string{
+					"from": strconv.FormatUint(createdAt-10, 10),
+					"to":   strconv.FormatUint(createdAt+10, 10),
+					"cex":  "huobi",
+				},
+				Method: http.MethodGet,
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 					t.Helper()
 					require.Equal(t, http.StatusOK, resp.Code)
-					var result []huobi.WithdrawHistory
+					var result response
 					err := json.NewDecoder(resp.Body).Decode(&result)
 					require.NoError(t, err)
-					assert.Equal(t, testData, result)
+					assert.Equal(t, response{
+						Huobi: testData,
+					}, result)
 				},
 			},
 			{
 				Msg:      "get an invalid exchange name",
-				Endpoint: fmt.Sprintf("/withdrawals?from=%d&to=%d&cex=%s", createdAt-10, createdAt+10, "huoxbxix"),
-				Method:   http.MethodGet,
+				Endpoint: "/withdrawals",
+				Params: map[string]string{
+					"from": strconv.FormatUint(createdAt-10, 10),
+					"to":   strconv.FormatUint(createdAt+10, 10),
+					"cex":  "huoxbxix",
+				},
+				Method: http.MethodGet,
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 					t.Helper()
 					require.Equal(t, http.StatusBadRequest, resp.Code)

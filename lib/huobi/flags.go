@@ -15,7 +15,7 @@ const (
 	huobiRequestPerSecond = "huobi-requests-per-second"
 )
 
-//NewCliFlags return cli flags to configure cex client
+//NewCliFlags return cli flags to configure cex-trade client
 func NewCliFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{

@@ -15,7 +15,6 @@ import (
 
 const (
 	walletAddressesFlag = "wallet-addresses"
-	tokenAddressFlag    = "token-addresses"
 	fromBlockFlag       = "from-block"
 	toBlockFlag         = "to-block"
 )
@@ -32,11 +31,6 @@ func main() {
 			Name:   walletAddressesFlag,
 			EnvVar: "WALLET_ADDRESSES",
 			Usage:  "list of wallet addresses to fetch transactions",
-		},
-		cli.StringSliceFlag{
-			Name:   tokenAddressFlag,
-			EnvVar: "TOKEN_ADDRESSES",
-			Usage:  "list of token addresses to fetch transactions",
 		},
 		cli.StringFlag{
 			Name:   fromBlockFlag,
@@ -86,11 +80,6 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	tokenAddrs := c.StringSlice(tokenAddressFlag)
-	if err := validateAddrsList(tokenAddrs); err != nil {
-		sugar.Errorf("error in token addresses input %v", err)
-		return err
-	}
 	fromBlock, err := libapp.ParseBigIntFlag(c, fromBlockFlag)
 	if err != nil {
 		return err
@@ -108,17 +97,14 @@ func run(c *cli.Context) error {
 
 	f := fetcher.NewWalletFetcher(sugar, etherscanClient)
 	for _, walletAddr := range walletAddrs {
-		for _, tokenAddr := range tokenAddrs {
-			transfers, err := f.Fetch(ethereum.HexToAddress(walletAddr), ethereum.HexToAddress(tokenAddr), fromBlock, toBlock)
-			if err != nil {
-				return err
-			}
-			sugar.Infow("fetched ERC20 transactions",
-				"wallet addr", walletAddr,
-				"token addr", tokenAddr,
-				"txs", transfers,
-			)
+		transfers, err := f.Fetch(ethereum.HexToAddress(walletAddr), fromBlock, toBlock)
+		if err != nil {
+			return err
 		}
+		sugar.Infow("fetched ERC20 transactions",
+			"wallet addr", walletAddr,
+			"txs", transfers,
+		)
 	}
 	return nil
 }

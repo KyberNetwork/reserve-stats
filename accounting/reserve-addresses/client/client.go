@@ -33,8 +33,8 @@ func NewClient(sugar *zap.SugaredLogger, url string) (*Client, error) {
 func (c *Client) GetAllReserveAddress() ([]*common.ReserveAddress, error) {
 	const endpoint = "/addresses"
 	var (
-		result        = []*common.ReserveAddress{}
-		reserveResult = []*common.ReserveAddress{}
+		result        []*common.ReserveAddress
+		reserveResult []*common.ReserveAddress
 	)
 	req, err := httputil.NewRequest(http.MethodGet, endpoint, c.url, nil)
 	if err != nil {
@@ -46,7 +46,11 @@ func (c *Client) GetAllReserveAddress() ([]*common.ReserveAddress, error) {
 		return result, err
 	}
 
-	defer rsp.Body.Close()
+	defer func() {
+		if cErr := rsp.Body.Close(); cErr != nil {
+			c.sugar.Errorf("failed to close body: err=%s", cErr.Error())
+		}
+	}()
 
 	if rsp.StatusCode != http.StatusOK {
 		return result, fmt.Errorf("unexpected return code: %d", rsp.StatusCode)
@@ -59,5 +63,10 @@ func (c *Client) GetAllReserveAddress() ([]*common.ReserveAddress, error) {
 			reserveResult = append(reserveResult, addr)
 		}
 	}
+
+	if err = rsp.Body.Close(); err != nil {
+		return nil, err
+	}
+
 	return reserveResult, nil
 }

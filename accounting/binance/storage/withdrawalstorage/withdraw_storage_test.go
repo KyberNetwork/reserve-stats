@@ -1,4 +1,4 @@
-package withdrawstorage
+package withdrawalstorage
 
 import (
 	"testing"

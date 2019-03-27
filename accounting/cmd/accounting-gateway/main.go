@@ -16,22 +16,23 @@ import (
 )
 
 const (
-	writeAccessKeyFlag = "write-access-key"
-	writeSecretKeyFlag = "write-secret-key"
-	readAccessKeyFlag  = "read-access-key"
-	readSecretKeyFlag  = "read-secret-key"
-	listedTokenURLFlag = "listed-token-url"
+	writeAccessKeyFlag         = "write-access-key"
+	writeSecretKeyFlag         = "write-secret-key"
+	readAccessKeyFlag          = "read-access-key"
+	readSecretKeyFlag          = "read-secret-key"
+	cexTradeAPIURLFlag         = "cex-trade-url"
+	reserveAddressesAPIURLFlag = "reserve-addresses-url"
 )
 
 var (
-	//TODO: change to httputil.ListedTokenPort
-	defaultListedTokenURLValue = fmt.Sprintf("http://127.0.0.1:%d", 8010)
+	defaultCexTradeAPIValue       = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingCEXTradesPort)
+	defaultReserveAddressAPIValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingReserveAddressPort)
 )
 
 func main() {
 	app := libapp.NewApp()
-	app.Name = "Gateway"
-	app.Usage = "Reserve Stats API Gateway"
+	app.Name = "gateway"
+	app.Usage = "Accounting API Gateway"
 	app.Version = "0.0.1"
 	app.Action = run
 
@@ -57,10 +58,16 @@ func main() {
 			EnvVar: "READ_SECRET_KEY",
 		},
 		cli.StringFlag{
-			Name:   listedTokenURLFlag,
-			Usage:  "listed token API URL",
-			Value:  defaultListedTokenURLValue,
-			EnvVar: "LISTED_TOKEN_URL",
+			Name:   cexTradeAPIURLFlag,
+			Usage:  "cex trade api url",
+			Value:  defaultCexTradeAPIValue,
+			EnvVar: "CEX_TRADE_URL",
+		},
+		cli.StringFlag{
+			Name:   reserveAddressesAPIURLFlag,
+			Usage:  "reserve addresses api url",
+			Value:  defaultReserveAddressAPIValue,
+			EnvVar: "RESERVE_ADDRESS_URL",
 		},
 	)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.GatewayPort)...)
@@ -77,11 +84,18 @@ func run(c *cli.Context) error {
 	}
 	defer libapp.NewFlusher(logger)()
 
-	err = validation.Validate(c.String(listedTokenURLFlag),
+	err = validation.Validate(c.String(cexTradeAPIURLFlag),
 		validation.Required,
 		is.URL)
 	if err != nil {
-		return fmt.Errorf("invalid listed token API URL: %s", c.String(listedTokenURLFlag))
+		return fmt.Errorf("invalid cex trade API URL: %s", c.String(cexTradeAPIURLFlag))
+	}
+
+	err = validation.Validate(c.String(reserveAddressesAPIURLFlag),
+		validation.Required,
+		is.URL)
+	if err != nil {
+		return fmt.Errorf("invalid reserve address API URL: %s", c.String(reserveAddressesAPIURLFlag))
 	}
 
 	if err := validation.Validate(c.String(writeAccessKeyFlag), validation.Required); err != nil {
@@ -102,7 +116,8 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("permission object creation error: %s", err)
 	}
 	svr, err := gateway.NewServer(httputil.NewHTTPAddressFromContext(c),
-		c.String(listedTokenURLFlag),
+		c.String(cexTradeAPIURLFlag),
+		c.String(reserveAddressesAPIURLFlag),
 		auth,
 		perm,
 		logger,

@@ -85,12 +85,6 @@ func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 	return rates, err
 }
 
-// GetReserveRates returns the map[ReserveAddress]ReserveRates at the given block number.
-// It will only return rates from the set of addresses within its definition.
-func (rrc *ReserveRatesCrawler) GetReserveRates(block uint64) (map[string]map[string]rsvRateCommon.ReserveRateEntry, error) {
-	return rrc.GetReserveRatesWithAddresses(rrc.addresses, block)
-}
-
 //GetReserveRatesWithAddresses fetch rates with a list of input addresses and given block number
 func (rrc *ReserveRatesCrawler) GetReserveRatesWithAddresses(addresses []ethereum.Address, block uint64) (map[string]map[string]rsvRateCommon.ReserveRateEntry, error) {
 	var (

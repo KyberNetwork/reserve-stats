@@ -12,7 +12,10 @@ import (
 )
 
 var (
-	emptyErrMsg = "abi: unmarshalling empty output"
+	revertErrors = map[string]struct{}{
+		"abi: unmarshalling empty output": {},
+		"VM execution error.":             {},
+	}
 
 	// KyberNetwork smart contracts return this address
 	// in case it don't have one
@@ -20,6 +23,14 @@ var (
 	// get sanity address from reserve, but the sanity was not set at that time
 	voidAddr = common.HexToAddress("0x0000000000000000000000000000000000000000")
 )
+
+func isRevertError(err error) bool {
+	if err == nil {
+		return false
+	}
+	_, ok := revertErrors[err.Error()]
+	return ok
+}
 
 // VersionedWrapperFallback is a wrapper around VersionedWrapper with fallback
 // if getSanityRates throw an exception.
@@ -85,7 +96,7 @@ func (vwf *VersionedWrapperFallback) getReserveRateFallback(block uint64, rsvAdd
 				src, dst, big.NewInt(0),
 				big.NewInt(0).SetUint64(block))
 			if gErr != nil {
-				if gErr.Error() != emptyErrMsg {
+				if isRevertError(err) {
 					return gErr
 				}
 				logger.Infow("got exception when calling reserve contract")
@@ -109,7 +120,7 @@ func (vwf *VersionedWrapperFallback) getReserveRateFallback(block uint64, rsvAdd
 				logger.Debugw("calling sanity rates contract GetSanityRate")
 				sanityRate, gErr = sanityRateContract.GetSanityRate(callOpts, src, dst)
 				if gErr != nil {
-					if gErr.Error() != emptyErrMsg {
+					if isRevertError(err) {
 						return gErr
 
 					}
@@ -158,7 +169,7 @@ func (vwf *VersionedWrapperFallback) GetReserveRate(block uint64, rsvAddr common
 	)
 	rates, sanityRates, err := vwf.vw.GetReserveRate(block, rsvAddr, srcs, dsts)
 	if err != nil {
-		if err.Error() == emptyErrMsg {
+		if isRevertError(err) {
 			logger.Infow("wrapper contract execution failed, fallback to calling reserve directly", "err", err)
 			return vwf.getReserveRateFallback(block, rsvAddr, srcs, dsts)
 		}

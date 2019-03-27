@@ -14,6 +14,7 @@ type TradeHistory struct {
 	OrderID         int64  `json:"orderId"`
 	Price           string `json:"price"`
 	Quantity        string `json:"qty"`
+	QuoteQuantity   string `json:"quote_qty"`
 	Commission      string `json:"commission"`
 	CommissionAsset string `json:"commissionAsset"`
 	Time            uint64 `json:"time"`

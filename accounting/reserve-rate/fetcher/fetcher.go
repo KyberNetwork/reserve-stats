@@ -160,7 +160,6 @@ func (fc *Fetcher) fetch(fromTime, toTime time.Time) error {
 					fc.markAsFailed()
 					errCh <- rateErr
 				}
-				//TODO: parallel this
 				ethUSDRate, err := retryFetchETHUSDRate(attempts, fc.sugar, fc.ethUSDRateFetcher, blockInfo.Timestamp, fc.retryDelayTime)
 				if err != nil {
 					fc.markAsFailed()

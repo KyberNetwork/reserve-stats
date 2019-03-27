@@ -7,8 +7,8 @@ import (
 
 	"github.com/urfave/cli"
 
-	fetcher "github.com/KyberNetwork/reserve-stats/accounting/binance-fetcher"
 	withdrawstorage "github.com/KyberNetwork/reserve-stats/accounting/binance-storage/withdraw-storage"
+	fetcher "github.com/KyberNetwork/reserve-stats/accounting/binance/fetcher"
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"

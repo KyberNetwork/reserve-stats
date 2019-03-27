@@ -4,12 +4,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
-
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 //default frame is 1 year =365  days
@@ -30,10 +30,7 @@ func (sv *Server) reserveRates(c *gin.Context) {
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
 
@@ -41,10 +38,7 @@ func (sv *Server) reserveRates(c *gin.Context) {
 		httputil.TimeRangeQueryWithMaxTimeFrame(maxTimeFrame),
 	)
 	if err != nil {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
 
@@ -54,20 +48,14 @@ func (sv *Server) reserveRates(c *gin.Context) {
 	reserveRate, err := sv.db.GetRates(from, to)
 	if err != nil {
 		sv.sugar.Errorw(err.Error(), "query", query)
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
 
 	ethUsdRate, err := sv.db.GetETHUSDRates(from, to)
 	if err != nil {
 		sv.sugar.Errorw(err.Error(), "query", query)
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return
 	}
 

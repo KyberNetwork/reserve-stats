@@ -3,26 +3,24 @@ package main
 import (
 	"log"
 	"os"
-	"time"
 
 	"github.com/urfave/cli"
 
-	withdrawstorage "github.com/KyberNetwork/reserve-stats/accounting/binance-storage/withdraw-storage"
 	fetcher "github.com/KyberNetwork/reserve-stats/accounting/binance/fetcher"
+	"github.com/KyberNetwork/reserve-stats/accounting/binance/storage/tradestorage"
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
-	retryDelayFlag       = "retry-delay"
-	attemptFlag          = "attempt"
-	batchSizeFlag        = "batch-size"
-	defaultRetryDelay    = 2 // minute
-	defaultAttempt       = 4
-	defaultBatchSize     = 100
-	binanceWithdrawTable = "binance_withdraws"
+	fromIDFlag        = "from-id"
+	retryDelayFlag    = "retry-delay"
+	attemptFlag       = "attempt"
+	batchSizeFlag     = "batch-size"
+	defaultRetryDelay = 2 // minute
+	defaultAttempt    = 4
+	defaultBatchSize  = 100
 )
 
 func main() {
@@ -50,10 +48,14 @@ func main() {
 			EnvVar: "BATCH_SIZE",
 			Value:  defaultBatchSize,
 		},
+		cli.Uint64Flag{
+			Name:   fromIDFlag,
+			Usage:  "id to get trade history from",
+			EnvVar: "FROM_ID",
+		},
 	)
 
 	app.Flags = append(app.Flags, binance.NewCliFlags()...)
-	app.Flags = append(app.Flags, timeutil.NewMilliTimeRangeCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
 
 	if err := app.Run(os.Args); err != nil {
@@ -62,11 +64,6 @@ func main() {
 }
 
 func run(c *cli.Context) error {
-	var (
-		fromTime, toTime time.Time
-		err              error
-	)
-
 	sugar, flusher, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
@@ -81,33 +78,18 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	fromTime, err = timeutil.FromTimeMillisFromContext(c)
-	if err != nil {
-		return err
-	}
-	if fromTime.IsZero() {
-		fromTime = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
-	}
-
-	toTime, err = timeutil.ToTimeMillisFromContext(c)
-	if err != nil {
-		return err
-	}
-	if toTime.IsZero() {
-		toTime = time.Now()
-	}
+	fromID := c.Uint64(fromIDFlag)
 
 	retryDelay := c.Int(retryDelayFlag)
 	attempt := c.Int(attemptFlag)
 	batchSize := c.Int(batchSizeFlag)
 	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
-
-	db, err := libapp.NewDBFromContext(c)
+	storage, err := libapp.NewDBFromContext(c)
 	if err != nil {
 		return err
 	}
 
-	binanceStorage, err := withdrawstorage.NewDB(sugar, db, binanceWithdrawTable)
+	binanceStorage, err := tradestorage.NewDB(sugar, storage)
 	if err != nil {
 		return err
 	}
@@ -118,12 +100,13 @@ func run(c *cli.Context) error {
 		}
 	}()
 
-	withdrawHistory, err := binanceFetcher.GetWithdrawHistory(fromTime, toTime)
+	tradeHistories, err := binanceFetcher.GetTradeHistory(fromID)
 	if err != nil {
 		return err
 	}
+	sugar.Debugw("trade histories", "result", tradeHistories)
 
-	if err := binanceStorage.UpdateWithdrawHistory(withdrawHistory); err != nil {
+	if err := binanceStorage.UpdateTradeHistory(tradeHistories); err != nil {
 		return err
 	}
 	return binanceStorage.Close()

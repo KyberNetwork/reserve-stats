@@ -78,12 +78,6 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	fromID := c.Uint64(fromIDFlag)
-
-	retryDelay := c.Int(retryDelayFlag)
-	attempt := c.Int(attemptFlag)
-	batchSize := c.Int(batchSizeFlag)
-	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
 	storage, err := libapp.NewDBFromContext(c)
 	if err != nil {
 		return err
@@ -99,6 +93,22 @@ func run(c *cli.Context) error {
 			sugar.Errorf("Close database error", "error", cErr)
 		}
 	}()
+
+	fromID := c.Uint64(fromIDFlag)
+	if fromID == 0 {
+		// get last stored ID in storage
+		fromID, err = binanceStorage.GetLastStoredID()
+		if err != nil {
+			return err
+		}
+	}
+
+	sugar.Infow("fetch trade from id", "id", fromID)
+
+	retryDelay := c.Int(retryDelayFlag)
+	attempt := c.Int(attemptFlag)
+	batchSize := c.Int(batchSizeFlag)
+	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
 
 	tradeHistories, err := binanceFetcher.GetTradeHistory(fromID)
 	if err != nil {

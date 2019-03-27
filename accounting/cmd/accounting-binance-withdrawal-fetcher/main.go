@@ -81,27 +81,6 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	fromTime, err = timeutil.FromTimeMillisFromContext(c)
-	if err != nil {
-		return err
-	}
-	if fromTime.IsZero() {
-		fromTime = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
-	}
-
-	toTime, err = timeutil.ToTimeMillisFromContext(c)
-	if err != nil {
-		return err
-	}
-	if toTime.IsZero() {
-		toTime = time.Now()
-	}
-
-	retryDelay := c.Int(retryDelayFlag)
-	attempt := c.Int(attemptFlag)
-	batchSize := c.Int(batchSizeFlag)
-	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
-
 	db, err := libapp.NewDBFromContext(c)
 	if err != nil {
 		return err
@@ -117,6 +96,32 @@ func run(c *cli.Context) error {
 			sugar.Errorf("Close database error", "error", cErr)
 		}
 	}()
+
+	fromTime, err = timeutil.FromTimeMillisFromContext(c)
+	if err != nil {
+		return err
+	}
+	if fromTime.IsZero() {
+		fromTime, err = binanceStorage.GetLastStoredTimestamp()
+		if err != nil {
+			return err
+		}
+	}
+
+	sugar.Infow("from timestamp", "fromTime", fromTime)
+
+	toTime, err = timeutil.ToTimeMillisFromContext(c)
+	if err != nil {
+		return err
+	}
+	if toTime.IsZero() {
+		toTime = time.Now()
+	}
+
+	retryDelay := c.Int(retryDelayFlag)
+	attempt := c.Int(attemptFlag)
+	batchSize := c.Int(batchSizeFlag)
+	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
 
 	withdrawHistory, err := binanceFetcher.GetWithdrawHistory(fromTime, toTime)
 	if err != nil {

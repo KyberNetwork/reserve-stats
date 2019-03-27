@@ -35,7 +35,7 @@ func NewFetcherJob(c *cli.Context, order int, block uint64, addrs []string, atte
 	var ethAddrs []ethereum.Address
 	for _, addr := range addrs {
 		if !ethereum.IsHexAddress(addr) {
-			return nil, fmt.Errorf("Non etherum address input %s", addr)
+			return nil, fmt.Errorf("non etherum address input %s", addr)
 		}
 		ethAddrs = append(ethAddrs, ethereum.HexToAddress(addr))
 	}

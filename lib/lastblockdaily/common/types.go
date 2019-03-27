@@ -1,4 +1,4 @@
-package lastblockdaily
+package common
 
 import (
 	"time"

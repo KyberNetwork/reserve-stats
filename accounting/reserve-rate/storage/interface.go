@@ -5,7 +5,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 
-	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
+	lastblockdaily "github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
 )
 
 //Interface defines a set of interface for reserve rate storage, which can be implemented by any DB

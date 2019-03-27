@@ -5,13 +5,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
-	"github.com/urfave/cli"
-	"go.uber.org/zap"
 )
 
 type job interface {
@@ -25,11 +26,11 @@ type FetcherJob struct {
 	order    int
 	block    uint64
 	attempts int
-	addrs    []string
+	addrs    []ethereum.Address
 }
 
 // NewFetcherJob return an instance of FetcherJob
-func NewFetcherJob(c *cli.Context, order int, block uint64, addrs []string, attempts int) *FetcherJob {
+func NewFetcherJob(c *cli.Context, order int, block uint64, addrs []ethereum.Address, attempts int) *FetcherJob {
 	return &FetcherJob{
 		c:        c,
 		order:    order,
@@ -37,7 +38,6 @@ func NewFetcherJob(c *cli.Context, order int, block uint64, addrs []string, atte
 		attempts: attempts,
 		addrs:    addrs,
 	}
-
 }
 
 // retry the given fn function for attempts time with sleep duration between before returns an error.
@@ -71,12 +71,12 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (map[string]map[string]com
 		return nil, err
 	}
 
-	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, fj.addrs, client, symbolResolver)
+	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, client, symbolResolver)
 	if err != nil {
 		return nil, err
 	}
 
-	rates, err := ratesCrawler.GetReserveRates(fj.block)
+	rates, err := ratesCrawler.GetReserveRatesWithAddresses(fj.addrs, fj.block)
 	if err != nil {
 		return nil, err
 	}

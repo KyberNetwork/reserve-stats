@@ -6,18 +6,21 @@ import (
 	"os"
 	"time"
 
+	"github.com/KyberNetwork/tokenrate/coingecko"
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/urfave/cli"
+
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/client"
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/fetcher"
 	rrpostgres "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
+	lbdpostgres "github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/storage/postgres"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
-
-	"github.com/KyberNetwork/tokenrate/coingecko"
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/urfave/cli"
 )
 
 const (
@@ -67,7 +70,9 @@ func main() {
 		blockchain.NewEthereumNodeFlags(),
 	)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostGresDB)...)
+	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
 	app.Flags = append(app.Flags, timeutil.NewTimeRangeCliFlags()...)
+	app.Flags = append(app.Flags, client.NewClientFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -75,10 +80,10 @@ func main() {
 
 func run(c *cli.Context) error {
 	var (
-		options        []fetcher.Option
 		attempts       = c.Int(attemptsFlag)
 		retryDelayTime = c.Duration(retryDelayFlag)
 		sleepTime      = c.Duration(sleepTimeFlag)
+		addressClient  client.Interface
 	)
 
 	sugar, flush, err := libapp.NewSugaredLogger(c)
@@ -97,23 +102,12 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	addrs := c.StringSlice(addressesFlag)
-	if len(addrs) == 0 {
-		return fmt.Errorf("empty reserve address")
-	}
-
-	for _, addr := range addrs {
-		if !ethereum.IsHexAddress(addr) {
-			return fmt.Errorf("malformed address: %s", addr)
-		}
-	}
-
 	symbolResolver, err := blockchain.NewTokenInfoGetterFromContext(c)
 	if err != nil {
 		return fmt.Errorf("cannot create symbol Resolver, err: %v", err)
 	}
 
-	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, addrs, ethClient, symbolResolver)
+	ratesCrawler, err := crawler.NewReserveRatesCrawler(sugar, ethClient, symbolResolver)
 	if err != nil {
 		return fmt.Errorf("cannot rate crawler, err: %v", err)
 	}
@@ -127,35 +121,81 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	defer ratesStorage.Close()
+	defer func() {
+		if cErr := ratesStorage.Close(); cErr != nil {
+			sugar.Errorf("failed to close rate storage: err=%s", cErr.Error())
+		}
+	}()
 	cgk := coingecko.New()
 
-	lastBlockResolver := lastblockdaily.NewLastBlockResolver(ethClient, blockTimeResolver, sugar)
-
-	fromDate, err := timeutil.FromTimeFromContext(c)
-	if err != nil {
-		if err != timeutil.ErrEmptyFlag {
-			return err
-		}
-		sugar.Info("no fromDate provided. Checking permanent storage for the last stored rate")
-	} else {
-		options = append(options, fetcher.WithFromTime(fromDate))
-
-	}
-
-	toDate, err := timeutil.ToTimeFromContext(c)
-	if err != nil {
-		if err != timeutil.ErrEmptyFlag {
-			return err
-		}
-		sugar.Info("no toDate provided. Running in daemon mode")
-	} else {
-		options = append(options, fetcher.WithToTime(toDate))
-	}
-
-	rrFetcher, err := fetcher.NewFetcher(sugar, ratesStorage, ratesCrawler, lastBlockResolver, cgk, retryDelayTime, sleepTime, attempts, addrs, options...)
+	lbdDB, err := lbdpostgres.NewDB(sugar, db)
 	if err != nil {
 		return err
 	}
-	return rrFetcher.Run()
+	lastBlockResolver := lastblockdaily.NewLastBlockResolver(ethClient, blockTimeResolver, sugar, lbdDB)
+
+	addrs := c.StringSlice(addressesFlag)
+	if len(addrs) != 0 {
+		sugar.Infow("using provided addresses instead of querying from accounting-reserve-addresses service")
+		etherscanClient, err := etherscan.NewEtherscanClientFromContext(c)
+		if err != nil {
+			return err
+		}
+		resolver := blockchain.NewEtherscanContractTimestampResolver(sugar, etherscanClient)
+		addressClient, err = client.NewFixedAddresses(addrs, resolver)
+		if err != nil {
+			return err
+		}
+	} else {
+		addressClient, err = client.NewClientFromContext(c, sugar)
+		if err != nil {
+			return err
+		}
+	}
+
+	rrFetcher, err := fetcher.NewFetcher(sugar, ratesStorage, ratesCrawler, lastBlockResolver, cgk, retryDelayTime, sleepTime, attempts, addressClient)
+	if err != nil {
+		return err
+	}
+
+	fromDate, err := timeutil.FromTimeFromContext(c)
+	switch err {
+	case timeutil.ErrEmptyFlag:
+		sugar.Info("fromDate not provide. Fetcher running in daemon mode...")
+	case nil:
+		sugar.Infof("fromDate provided. Fetcher run from %s ...", fromDate.String())
+	default:
+		return err
+	}
+
+	toDate, err := timeutil.FromTimeFromContext(c)
+	switch err {
+	case timeutil.ErrEmptyFlag:
+		sugar.Info("toDate not provide. Fetcher running till now...")
+		toDate = time.Now()
+	case nil:
+		sugar.Infof("toDate provided. Fetcher run to %s ...", toDate.String())
+	default:
+		return err
+	}
+
+	if !fromDate.IsZero() && !toDate.IsZero() {
+		var ethAddrs []ethereum.Address
+		addrs, err := addressClient.GetAllReserveAddress()
+		if err != nil {
+			return err
+		}
+		for _, addr := range addrs {
+			ethAddrs = append(ethAddrs, addr.Address)
+		}
+		if err = rrFetcher.Fetch(fromDate, toDate, ethAddrs); err != nil {
+			return err
+		}
+		return ratesStorage.Close()
+	}
+
+	if err = rrFetcher.Run(); err != nil {
+		return err
+	}
+	return ratesStorage.Close()
 }

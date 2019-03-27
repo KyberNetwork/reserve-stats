@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
-	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
+	lbdCommon "github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 )
 
@@ -116,7 +116,7 @@ func (rdb *RatesStorage) updateQuotes(tx *sqlx.Tx, quotes []string) error {
 }
 
 //UpdateRatesRecords update mutiple rate records from a block with mutiple reserve address into the DB
-func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lastblockdaily.BlockInfo, rateRecords map[string]map[string]float64, ethusdRate float64) error {
+func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lbdCommon.BlockInfo, rateRecords map[string]map[string]float64, ethusdRate float64) error {
 	var (
 		rsvAddrs    = make(map[string]bool)
 		rsvAddrsArr []string
@@ -301,7 +301,7 @@ func (rdb *RatesStorage) GetRates(from, to time.Time) (map[string]storage.Accoun
 }
 
 //updateETHUSDPrice store the ETHUSD rate at that blockInfo
-func (rdb *RatesStorage) updateETHUSDPrice(blockInfo lastblockdaily.BlockInfo, ethusdRate float64, tx *sqlx.Tx) error {
+func (rdb *RatesStorage) updateETHUSDPrice(blockInfo lbdCommon.BlockInfo, ethusdRate float64, tx *sqlx.Tx) error {
 	var logger = rdb.sugar.With(
 		"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
 		"block_number", blockInfo.Block,
@@ -328,13 +328,13 @@ func (rdb *RatesStorage) updateETHUSDPrice(blockInfo lastblockdaily.BlockInfo, e
 }
 
 //GetLastResolvedBlockInfo return block info of the rate with latest timestamp
-func (rdb *RatesStorage) GetLastResolvedBlockInfo(reserveAddr ethereum.Address) (lastblockdaily.BlockInfo, error) {
+func (rdb *RatesStorage) GetLastResolvedBlockInfo(reserveAddr ethereum.Address) (lbdCommon.BlockInfo, error) {
 	const (
 		selectStmt = `SELECT time,block FROM %[1]s WHERE time=
 		(SELECT MAX(time) FROM %[1]s) AND reserve_id=(SELECT id FROM %[2]s WHERE %[2]s.address=$1) LIMIT 1`
 	)
 	var (
-		rateTableResult = lastblockdaily.BlockInfo{}
+		rateTableResult = lbdCommon.BlockInfo{}
 		logger          = rdb.sugar.With("func", "accounting/reserve-rate/storage/postgres/RatesStorage.GetLastResolvedBlockInfo")
 	)
 

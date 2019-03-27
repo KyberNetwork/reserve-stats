@@ -1,9 +1,6 @@
 package fetcher
 
 import (
-	"database/sql"
-	"fmt"
-	"math"
 	"sync"
 	"time"
 
@@ -12,14 +9,12 @@ import (
 	ethereumCommon "github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/client"
 	rrstorage "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	lbdCommon "github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
 )
-
-//defaultStartingTime for reserve-rate fetcher is on 31-01-2018
-const defaultStartingTime uint64 = 1517356800000
 
 //Fetcher is the struct taking care of fetching reserve-rates for accounting
 type Fetcher struct {
@@ -27,63 +22,28 @@ type Fetcher struct {
 	storage               rrstorage.Interface
 	crawler               *crawler.ReserveRatesCrawler
 	ethUSDRateFetcher     tokenrate.ETHUSDRateProvider
-	lastBlockResolver     *lastblockdaily.LastBlockResolver
-	fromTime              time.Time
-	toTime                time.Time
+	lastBlockResolver     lastblockdaily.Interface
 	sleepTime             time.Duration
 	retryDelayTime        time.Duration
 	retryAttempts         int
 	lastCompletedJobOrder uint64
 	mutex                 *sync.Mutex
 	failed                bool
-	addresses             []string
+	addressClient         client.Interface
 }
 
 //Option set the init behaviour of Fetcher
 type Option func(fc *Fetcher)
 
-//WithFromTime set Fromtime for fetcher with a blockInfo of input timestamp and unknowm blockNumber
-//without this init function Fetcher will
-func WithFromTime(from time.Time) Option {
-	return func(fc *Fetcher) {
-		fc.fromTime = from
-	}
-}
-
-//WithToTime set toblock for fetcher with a blockInfo of inputt timestamp and unknown blockNumber.
-//Without this init function, Fetcher is put into daemon mode
-func WithToTime(to time.Time) Option {
-	return func(fc *Fetcher) {
-		fc.toTime = to
-	}
-}
-
-func (fc *Fetcher) getMinLastResolvedBlockInfo() (lastblockdaily.BlockInfo, error) {
-	var result = lastblockdaily.BlockInfo{
-		Block: math.MaxUint64,
-	}
-	for _, rsv := range fc.addresses {
-
-		fromBlockInfo, err := fc.storage.GetLastResolvedBlockInfo(ethereumCommon.HexToAddress(rsv))
-		if err != nil {
-			return result, err
-		}
-		if fromBlockInfo.Block < result.Block {
-			result = fromBlockInfo
-		}
-	}
-	return result, nil
-}
-
 //NewFetcher return a fetcher with options
 func NewFetcher(sugar *zap.SugaredLogger,
 	storage rrstorage.Interface,
 	crawler *crawler.ReserveRatesCrawler,
-	lastBlockResolver *lastblockdaily.LastBlockResolver,
-	ethusdRate tokenrate.ETHUSDRateProvider,
+	lastBlockResolver lastblockdaily.Interface,
+	ethUSDRate tokenrate.ETHUSDRateProvider,
 	retryDelay, sleepTime time.Duration,
 	retryAttempts int,
-	addrs []string,
+	addressClient client.Interface,
 	options ...Option) (*Fetcher, error) {
 
 	fetcher := &Fetcher{
@@ -94,37 +54,24 @@ func NewFetcher(sugar *zap.SugaredLogger,
 		retryDelayTime:    retryDelay,
 		sleepTime:         sleepTime,
 		retryAttempts:     retryAttempts,
-		ethUSDRateFetcher: ethusdRate,
+		ethUSDRateFetcher: ethUSDRate,
 		mutex:             &sync.Mutex{},
-		addresses:         addrs,
 		failed:            false,
+		addressClient:     addressClient,
 	}
 	for _, opt := range options {
 		opt(fetcher)
-	}
-	//get last crawled blockInfo if fetcher is init without  from time
-	if fetcher.fromTime.IsZero() {
-		sugar.Debugw("empty from time, trying to get from block from db...")
-		fromBlockInfo, err := fetcher.getMinLastResolvedBlockInfo()
-		switch err {
-		case sql.ErrNoRows:
-			fetcher.fromTime = timeutil.TimestampMsToTime(defaultStartingTime)
-			sugar.Debugw("There is no row from DB, running from default from time", "from time", fetcher.fromTime.String())
-		case nil:
-			fetcher.lastBlockResolver.LastResolved = fromBlockInfo
-		default:
-			return nil, fmt.Errorf("cannot get last resolved block info from db, err: %v", err)
-		}
 	}
 
 	return fetcher, nil
 }
 
-func (fc *Fetcher) fetch(fromTime, toTime time.Time) error {
+//Fetch get and store data from time-to time With addresses
+func (fc *Fetcher) Fetch(fromTime, toTime time.Time, addresses []ethereumCommon.Address) error {
 	var (
 		lastBlockErrCh = make(chan error)
 		rateErrChn     = make(chan error)
-		lastBlockBlCh  = make(chan lastblockdaily.BlockInfo)
+		lastBlockBlCh  = make(chan lbdCommon.BlockInfo)
 		wg             = &sync.WaitGroup{}
 		logger         = fc.sugar.With("func", "accounting/reserve-rate/fetcher/Fetcher.fetch",
 			"from", fromTime.String(),
@@ -151,11 +98,11 @@ func (fc *Fetcher) fetch(fromTime, toTime time.Time) error {
 		case blockInfo := <-lastBlockBlCh:
 			wg.Add(1)
 			jobOrder++
-			go func(errCh chan error, blockInfo lastblockdaily.BlockInfo, attempts int, jobOrder uint64) {
+			go func(errCh chan error, blockInfo lbdCommon.BlockInfo, attempts int, jobOrder uint64) {
 				defer wg.Done()
 				logger.Debugw("A job has started", "job order", jobOrder, "block", blockInfo.Block)
 
-				rates, rateErr := retryFetchTokenRate(attempts, fc.sugar, fc.crawler, blockInfo.Block, fc.retryDelayTime)
+				rates, rateErr := retryFetchTokenRate(attempts, fc.sugar, fc.crawler, blockInfo.Block, fc.retryDelayTime, addresses)
 				if rateErr != nil {
 					fc.markAsFailed()
 					errCh <- rateErr
@@ -175,38 +122,12 @@ func (fc *Fetcher) fetch(fromTime, toTime time.Time) error {
 	}
 }
 
-//Run start the fetcher
-func (fc *Fetcher) Run() error {
-	var (
-		toTime     = fc.toTime
-		fromTime   = fc.fromTime
-		logger     = fc.sugar.With("func", "accounting/reserve-rate/Fetcher.Run")
-		daemonMode = false
-	)
-	if fc.toTime.IsZero() {
-		toTime = time.Now()
-		logger.Info("no end time specified, fetcher run in daemon mode")
-		daemonMode = true
-	}
-	for {
-		if err := fc.fetch(fromTime, toTime); err != nil {
-			return err
-		}
-		if !daemonMode {
-			break
-		}
-		time.Sleep(fc.sleepTime)
-		fromTime = toTime
-		toTime = time.Now()
-	}
-	return nil
-}
-
 func retryFetchTokenRate(maxAttempt int,
 	sugar *zap.SugaredLogger,
 	rsvRateCrawler *crawler.ReserveRatesCrawler,
 	block uint64,
-	retryInterval time.Duration) (map[string]map[string]float64, error) {
+	retryInterval time.Duration,
+	addresses []ethereumCommon.Address) (map[string]map[string]float64, error) {
 	var (
 		result = make(map[string]map[string]float64)
 		err    error
@@ -214,7 +135,7 @@ func retryFetchTokenRate(maxAttempt int,
 	)
 
 	for i := 0; i < maxAttempt; i++ {
-		rates, err := rsvRateCrawler.GetReserveRates(block)
+		rates, err := rsvRateCrawler.GetReserveRatesWithAddresses(addresses, block)
 		if err != nil {
 			logger.Debugw("failed to fetch reserve rate", "attempt", i, "error", err)
 			time.Sleep(retryInterval)

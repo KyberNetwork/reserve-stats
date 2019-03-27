@@ -4,11 +4,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
+	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/storage/postgres"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
@@ -55,7 +57,8 @@ func TestIsNextDay(t *testing.T) {
 
 func TestRun(t *testing.T) {
 	//This test requires a runtime of 70 seconds. Should only be run manually
-	t.Skip()
+	// t.Skip()aa
+
 	var (
 		// Saturday, September 1, 2018 1:02:00 PM
 		start = timeutil.TimestampMsToTime(uint64(1535806920000))
@@ -71,17 +74,22 @@ func TestRun(t *testing.T) {
 			6291077, // Sep-07-2018 11:59:47 PM +UTC
 		}
 		errCh  = make(chan error)
-		resChn = make(chan BlockInfo)
+		resChn = make(chan common.BlockInfo)
 	)
 
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	ethClient := testutil.MustNewDevelopmentwEthereumClient()
-
+	_, db := testutil.MustNewDevelopmentDB()
+	bldb, err := postgres.NewDB(sugar, db, postgres.WithBlockInfoTableName("test_block_info"))
+	require.NoError(t, err)
 	blkTimeRsv, err := blockchain.NewBlockTimeResolver(sugar, ethClient)
 	require.NoError(t, err)
 
-	lbResolver := NewLastBlockResolver(ethClient, blkTimeRsv, sugar)
-
+	lbResolver := NewLastBlockResolver(ethClient, blkTimeRsv, sugar, bldb)
+	defer func() {
+		require.NoError(t, bldb.TearDown())
+		require.NoError(t, bldb.Close())
+	}()
 	var (
 		results []uint64
 		toBreak bool

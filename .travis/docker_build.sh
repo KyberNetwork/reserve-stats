@@ -36,6 +36,9 @@ case "$build_part" in
     2)
         build_file .travis/build_part_2
         ;;
+    3)
+        build_file .travis/build_part_3
+        ;;
     *)
         # find list of modules that already build in above step
         modules=($(sed -e 's/ .*$//' .travis/build_part_*))

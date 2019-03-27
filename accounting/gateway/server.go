@@ -33,7 +33,7 @@ func newReverseProxyMW(target string) (gin.HandlerFunc, error) {
 }
 
 // NewServer creates new instance of gateway HTTP server.
-func NewServer(addr, listedTokenURL string,
+func NewServer(addr, cexTradeURL, reserveAddressURL string,
 	auth *httpsign.Authenticator,
 	perm gin.HandlerFunc,
 	logger *zap.Logger) (*Server, error) {
@@ -47,12 +47,23 @@ func NewServer(addr, listedTokenURL string,
 	r.Use(cors.New(corsConfig))
 	r.Use(perm)
 	r.Use(auth.Authenticated())
-	if listedTokenURL != "" {
-		listedTokenProxyMW, err := newReverseProxyMW(listedTokenURL)
+	if cexTradeURL != "" {
+		cexTradeURLMW, err := newReverseProxyMW(cexTradeURL)
 		if err != nil {
 			return nil, err
 		}
-		r.GET("/reserve/tokens", listedTokenProxyMW)
+		r.GET("/cex_trades", cexTradeURLMW)
+	}
+
+	if reserveAddressURL != "" {
+		reserveAddressURLMW, err := newReverseProxyMW(reserveAddressURL)
+		if err != nil {
+			return nil, err
+		}
+		r.POST("/addresses", reserveAddressURLMW)
+		r.GET("/addresses/:id", reserveAddressURLMW)
+		r.GET("/addresses", reserveAddressURLMW)
+		r.PUT("/addresses/:id", reserveAddressURLMW)
 	}
 
 	return &Server{

@@ -2,7 +2,6 @@ package workers
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -31,23 +30,14 @@ type FetcherJob struct {
 }
 
 // NewFetcherJob return an instance of FetcherJob
-func NewFetcherJob(c *cli.Context, order int, block uint64, addrs []string, attempts int) (*FetcherJob, error) {
-	var ethAddrs []ethereum.Address
-	for _, addr := range addrs {
-		if !ethereum.IsHexAddress(addr) {
-			return nil, fmt.Errorf("non etherum address input %s", addr)
-		}
-		ethAddrs = append(ethAddrs, ethereum.HexToAddress(addr))
-	}
-
+func NewFetcherJob(c *cli.Context, order int, block uint64, addrs []ethereum.Address, attempts int) *FetcherJob {
 	return &FetcherJob{
 		c:        c,
 		order:    order,
 		block:    block,
 		attempts: attempts,
-		addrs:    ethAddrs,
-	}, nil
-
+		addrs:    addrs,
+	}
 }
 
 // retry the given fn function for attempts time with sleep duration between before returns an error.

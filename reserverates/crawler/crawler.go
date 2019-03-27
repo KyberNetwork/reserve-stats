@@ -22,7 +22,6 @@ import (
 type ReserveRatesCrawler struct {
 	sugar           *zap.SugaredLogger
 	wrapperContract reserveRateGetter
-	addresses       []ethereum.Address
 	rtf             reserveTokenFetcherInterface
 }
 

@@ -62,5 +62,8 @@ func run(c *cli.Context) error {
 
 	s := http.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), hs, bs)
 
-	return s.Run()
+	if err = s.Run(); err != nil {
+		return err
+	}
+	return db.Close()
 }

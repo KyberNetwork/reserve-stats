@@ -82,7 +82,6 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("reserve address is required")
 	}
 	reserveAddrStr := c.String(reserveAddressFlag)
-	sugar.Debug(reserveAddrStr)
 	reserveAddr = ethereum.HexToAddress(reserveAddrStr)
 
 	tokenSymbol, err := blockchain.NewTokenInfoGetterFromContext(c)
@@ -123,7 +122,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 	if !reflect.DeepEqual(storedListedToken, listedTokens) {
-		if err = listedTokenStorage.CreateOrUpdate(listedTokens, block); err != nil {
+		if err = listedTokenStorage.CreateOrUpdate(listedTokens, block, reserveAddr); err != nil {
 			return err
 		}
 	}

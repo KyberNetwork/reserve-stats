@@ -38,6 +38,7 @@ func TestListedTokenStorage(t *testing.T) {
 
 	var (
 		blockNumber  = big.NewInt(7442895)
+		reserve      = ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")
 		listedTokens = []common.ListedToken{
 			{
 				Address:   ethereum.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200"),
@@ -90,7 +91,7 @@ func TestListedTokenStorage(t *testing.T) {
 
 	defer teardown(t, storage)
 
-	err = storage.CreateOrUpdate(listedTokens, blockNumber)
+	err = storage.CreateOrUpdate(listedTokens, blockNumber, reserve)
 	require.NoError(t, err)
 
 	storedListedTokens, version, storedBlockNumber, err := storage.GetTokens()
@@ -99,7 +100,7 @@ func TestListedTokenStorage(t *testing.T) {
 	assert.Equal(t, version, uint64(1))
 	assert.Equal(t, blockNumber.Uint64(), storedBlockNumber)
 
-	err = storage.CreateOrUpdate(listedTokensNew, blockNumberNew)
+	err = storage.CreateOrUpdate(listedTokensNew, blockNumberNew, reserve)
 	require.NoError(t, err)
 
 	storedNewListedTokens, version, storedBlockNumber, err := storage.GetTokens()

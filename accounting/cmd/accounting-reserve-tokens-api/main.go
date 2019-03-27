@@ -15,8 +15,8 @@ import (
 
 func main() {
 	app := libapp.NewApp()
-	app.Name = "Accounting listed token api"
-	app.Usage = ""
+	app.Name = "accounting-reserve-tokens-api"
+	app.Usage = "Accounting listed token api"
 	app.Action = run
 
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AccountingListedTokenPort)...)
@@ -43,6 +43,12 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	defer func() {
+		if cErr := listedTokenStorage.Close(); err != nil {
+			sugar.Errorw("Close database error", "error", cErr)
+		}
+	}()
 
 	server := server.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), listedTokenStorage)
 	return server.Run()

@@ -66,7 +66,8 @@ func NewFetcher(sugar *zap.SugaredLogger,
 	return fetcher, nil
 }
 
-func (fc *Fetcher) fetch(fromTime, toTime time.Time, addresses []ethereumCommon.Address) error {
+//Fetch get and store data from time-to time With addresses
+func (fc *Fetcher) Fetch(fromTime, toTime time.Time, addresses []ethereumCommon.Address) error {
 	var (
 		lastBlockErrCh = make(chan error)
 		rateErrChn     = make(chan error)

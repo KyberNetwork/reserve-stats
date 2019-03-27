@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/tokenrate/coingecko"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
@@ -156,6 +157,43 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	fromDate, err := timeutil.FromTimeFromContext(c)
+	switch err {
+	case timeutil.ErrEmptyFlag:
+		sugar.Info("fromDate not provide. Fetcher running in daemon mode...")
+	case nil:
+		sugar.Infof("fromDate provided. Fetcher run from %s ...", fromDate.String())
+	default:
+		return err
+	}
+
+	toDate, err := timeutil.FromTimeFromContext(c)
+	switch err {
+	case timeutil.ErrEmptyFlag:
+		sugar.Info("toDate not provide. Fetcher running till now...")
+		toDate = time.Now()
+	case nil:
+		sugar.Infof("toDate provided. Fetcher run to %s ...", toDate.String())
+	default:
+		return err
+	}
+
+	if !fromDate.IsZero() && !toDate.IsZero() {
+		var ethAddrs []ethereum.Address
+		addrs, err := addressClient.GetAllReserveAddress()
+		if err != nil {
+			return err
+		}
+		for _, addr := range addrs {
+			ethAddrs = append(ethAddrs, addr.Address)
+		}
+		if err = rrFetcher.Fetch(fromDate, toDate, ethAddrs); err != nil {
+			return err
+		}
+		return ratesStorage.Close()
+	}
+
 	if err = rrFetcher.Run(); err != nil {
 		return err
 	}

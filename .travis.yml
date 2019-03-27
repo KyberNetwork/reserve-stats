@@ -36,6 +36,8 @@ before_script:
   - psql -c "CREATE DATABASE reserve_stats;" -U postgres
   - psql -c "CREATE USER reserve_stats WITH PASSWORD 'reserve_stats';" -U postgres
 
+script: skip
+
 deploy:
   - provider: script
     script: bash .travis/docker_build.sh

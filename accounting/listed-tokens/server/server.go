@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/KyberNetwork/reserve-stats/accounting/listed-tokens/storage" // import custom validator functions
-	"github.com/KyberNetwork/reserve-stats/lib/httputil"                     // import custom validator functions
-	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators"        // import custom validator functions
+	"github.com/KyberNetwork/reserve-stats/accounting/listed-tokens/storage"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 )
 
 //Server struct for listed token api

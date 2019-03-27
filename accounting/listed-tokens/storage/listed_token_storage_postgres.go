@@ -16,7 +16,9 @@ import (
 )
 
 const (
-	versionTable = "listed_token_version"
+	versionTable        = "listed_token_version"
+	reservesTable       = "reserves"
+	reservesTokensTable = "reserves_tokens"
 )
 
 //ListedTokenDB is storage for listed token
@@ -41,13 +43,26 @@ CREATE TABLE IF NOT EXISTS "%[2]s"
 (
 	id SERIAL PRIMARY KEY,
 	version INT NOT NULL,
-	block_number bigint NOT NULL
+	block_number bigint NOT NULL,
+	reserve text NOT NULL UNIQUE
 );
+CREATE TABLE IF NOT EXISTS "%[3]s"
+(
+	id serial NOT NULL,
+	address TEXT NOT NULL UNIQUE,
+	CONSTRAINT %[1]s_pk PRIMARY KEY(id)
+);
+CREATE TABLE IF NOT EXISTS "%[4]s"
+(
+	id SERIAL PRIMARY KEY
+	token_id INT REFERENCE "%[1]s" (id)
+	reserve_id INT REFERENCE "%[4]s" (id)
+)
 	`
 	var logger = sugar.With("func", "accounting/storage.NewDB")
 
 	logger.Debug("initializing database schema")
-	if _, err := db.Exec(fmt.Sprintf(schemaFmt, tableName, versionTable)); err != nil {
+	if _, err := db.Exec(fmt.Sprintf(schemaFmt, tableName, versionTable, reservesTable, reservesTokensTable)); err != nil {
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
@@ -60,7 +75,7 @@ CREATE TABLE IF NOT EXISTS "%[2]s"
 }
 
 //CreateOrUpdate add or edit an record in the tokens table
-func (ltd *ListedTokenDB) CreateOrUpdate(tokens []common.ListedToken, blockNumber *big.Int) (err error) {
+func (ltd *ListedTokenDB) CreateOrUpdate(tokens []common.ListedToken, blockNumber *big.Int, reserve ethereum.Address) (err error) {
 	var (
 		logger = ltd.sugar.With("func", "accounting/lisetdtokenstorage.CreateOrUpdate")
 	)
@@ -68,18 +83,22 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens []common.ListedToken, blockNumbe
 VALUES ($1,
         $2,
         $3,
-        $4,
+		$4,
         CASE WHEN $5::text IS NOT NULL THEN (SELECT id FROM "%[1]s" WHERE address = $5) ELSE NULL END)
 ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id`,
 		ltd.tableName)
 	logger.Debugw("upsert token", "value", upsertQuery)
 
-	updateVersionQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (id, version, block_number)
-	VALUES($1,
-		$2,
-		$3)
-	ON CONFLICT (id) DO UPDATE SET version = %[1]s.version + 1, block_number = EXCLUDED.block_number`, versionTable)
+	updateVersionQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (block_number, reserve)
+	VALUES($1, $2)
+	ON CONFLICT (reserve) DO UPDATE version = %[1]s.version+1, block_number = EXCLUDED.block_number`, versionTable)
 	logger.Debugw("update version", "query", updateVersionQuery)
+
+	updateReserveQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address) VALUE($1) ON CONFLICT (address) DO NOTHING`, reservesTable)
+	logger.Debugw("update reserve", "query", updateReserveQuery)
+
+	updateReserveTokenQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (token_id, reserve_id) values($1, $2)`, reservesTokensTable)
+	logger.Debugw("update reserve token", "query", updateReserveTokenQuery)
 
 	tx, err := ltd.db.Beginx()
 	if err != nil {
@@ -87,7 +106,11 @@ ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id`,
 	}
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 
-	if _, err = tx.Exec(updateVersionQuery, 1, 1, blockNumber.Uint64()); err != nil {
+	if _, err = tx.Exec(updateReserveQuery, reserve); err != nil {
+		return
+	}
+
+	if _, err = tx.Exec(updateVersionQuery, blockNumber.Uint64(), reserve); err != nil {
 		return
 	}
 
@@ -97,6 +120,7 @@ ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id`,
 			token.Name,
 			token.Symbol,
 			token.Timestamp.UTC(),
+			reserve.Hex(),
 			nil); err != nil {
 			return
 		}
@@ -107,6 +131,7 @@ ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id`,
 				token.Name,
 				token.Symbol,
 				oldToken.Timestamp.UTC(),
+				reserve.Hex(),
 				token.Address.Hex()); err != nil {
 				return
 			}
@@ -235,9 +260,8 @@ func (ltd *ListedTokenDB) Close() error {
 
 //DeleteTable remove tables use for test
 func (ltd *ListedTokenDB) DeleteTable() error {
-	const dropQuery = `DROP TABLE %s;`
-	query := fmt.Sprintf(dropQuery, ltd.tableName)
-	query += fmt.Sprintf(dropQuery, versionTable)
+	const dropQuery = `DROP TABLE %[1]s, %[2]s;`
+	query := fmt.Sprintf(dropQuery, ltd.tableName, versionTable)
 
 	ltd.sugar.Infow("Drop token table", "query", query)
 	_, err := ltd.db.Exec(query)

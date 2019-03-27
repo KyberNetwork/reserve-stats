@@ -3,7 +3,7 @@ module github.com/KyberNetwork/reserve-stats
 require (
 	github.com/Knetic/govaluate v3.0.0+incompatible // indirect
 	github.com/KyberNetwork/httpsign-utils v0.1.1
-	github.com/KyberNetwork/tokenrate v0.0.0-20181015045844-27abfb84ae1c
+	github.com/KyberNetwork/tokenrate v0.0.0-20190327091843-b702f2d3511e
 	github.com/aristanetworks/goarista v0.0.0-20181002214814-33151c4543a7 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
 	github.com/boltdb/bolt v1.3.1
@@ -29,7 +29,6 @@ require (
 	github.com/jackpal/go-nat-pmp v1.0.1 // indirect
 	github.com/jinzhu/now v0.0.0-20181116074157-8ec929ed50c3
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
-	github.com/jsternberg/zap-logfmt v1.2.0 // indirect
 	github.com/karalabe/hid v0.0.0-20180420081245-2b4488a37358 // indirect
 	github.com/lib/pq v1.0.0
 	github.com/mattn/go-colorable v0.0.9 // indirect
@@ -37,7 +36,6 @@ require (
 	github.com/nanmu42/etherscan-api v1.0.4
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
-	github.com/opentracing/opentracing-go v1.1.0 // indirect
 	github.com/oschwald/geoip2-golang v1.2.1
 	github.com/oschwald/maxminddb-golang v1.3.0 // indirect
 	github.com/pborman/uuid v1.2.0 // indirect
@@ -48,6 +46,8 @@ require (
 	github.com/stretchr/testify v1.3.0
 	github.com/syndtr/goleveldb v0.0.0-20181012014443-6b91fda63f2e // indirect
 	github.com/urfave/cli v1.20.0
+	go.uber.org/atomic v1.3.2 // indirect
+	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4
 	golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a // indirect

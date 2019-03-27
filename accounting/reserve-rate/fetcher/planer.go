@@ -101,7 +101,7 @@ func (fc *Fetcher) Run() error {
 				toTime = time.Now()
 			}
 			logger.Infow("calling fetch", "fromTime", fromTime.String(), "toTime", toTime.String(), "addresses", rsvAddrs)
-			if err := fc.fetch(fromTime, toTime, rsvAddrs); err != nil {
+			if err := fc.Fetch(fromTime, toTime, rsvAddrs); err != nil {
 				return err
 			}
 			index++

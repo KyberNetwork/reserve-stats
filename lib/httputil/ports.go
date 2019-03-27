@@ -28,7 +28,7 @@ const (
 	// UsersPublicPort is the port number for user stats public service
 	UsersPublicPort HTTPPort = 8008
 
-	// AccountingReserveAddressPort is the port number of accounting-reserve-addresses service.
+	// AccountingReserveAddressPort is the port number of accounting-reserve-addresses-api service.
 	AccountingReserveAddressPort = 8009
 
 	// AccountingCEXTradesPort is the port number of accounting-cex-trades-api service.

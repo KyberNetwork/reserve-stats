@@ -96,7 +96,7 @@ func run(c *cli.Context) error {
 
 	fromID := c.Uint64(fromIDFlag)
 	if fromID == 0 {
-		// get last stored ID in storage
+		sugar.Info("from id is not provided, get latest from id stored in database")
 		fromID, err = binanceStorage.GetLastStoredID()
 		if err != nil {
 			return err

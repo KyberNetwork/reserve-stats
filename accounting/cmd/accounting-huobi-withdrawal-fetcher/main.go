@@ -95,12 +95,14 @@ func run(c *cli.Context) error {
 
 	fromID := c.Uint64(fromIDFlag)
 	if fromID == 0 {
+		sugar.Info("From id is not provided, get last id stored in db")
 		fromID, err = hdb.GetLastIDStored()
 		if err != nil {
 			return err
 		}
 	}
 	sugar.Infow("get withdraw history from", "ID", fromID)
+
 	retryDelay := c.Duration(retryDelayFlag)
 	maxAttempts := c.Int(maxAttemptFlag)
 

@@ -102,6 +102,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 	if fromTime.IsZero() {
+		sugar.Info("from time is not provided, get latest timestamp from database")
 		fromTime, err = binanceStorage.GetLastStoredTimestamp()
 		if err != nil {
 			return err

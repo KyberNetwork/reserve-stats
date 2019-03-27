@@ -92,8 +92,7 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("cannot get from time: %v", err)
 	}
 	if from.IsZero() {
-		// get last stored timestamp
-		// if last stored timestamp is empty then it is 2018-01-01
+		sugar.Info("from timestamp is not provided, get latest timestamp from database")
 		from, err = hdb.GetLastStoredTimestamp()
 		if err != nil {
 			return err

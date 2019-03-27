@@ -63,7 +63,10 @@ func TestBinanceTradeStorage(t *testing.T) {
 	binanceStorage, err := newTestDB(logger)
 	assert.NoError(t, err)
 
-	defer teardown(t, binanceStorage)
+	defer func() {
+		teardown(t, binanceStorage)
+		assert.NoError(t, binanceStorage.Close())
+	}()
 
 	err = binanceStorage.UpdateTradeHistory(testData)
 	assert.NoError(t, err)
@@ -75,4 +78,7 @@ func TestBinanceTradeStorage(t *testing.T) {
 	tradeHistories, err := binanceStorage.GetTradeHistory(fromTime, toTime)
 	assert.NoError(t, err)
 	assert.Equal(t, testData, tradeHistories)
+	id, err := binanceStorage.GetLastStoredID()
+	assert.NoError(t, err)
+	assert.Equal(t, id, testData[1].ID)
 }

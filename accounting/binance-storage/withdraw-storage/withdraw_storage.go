@@ -138,20 +138,18 @@ func (bd *BinanceStorage) GetLastStoredTimestamp() (time.Time, error) {
 	var (
 		logger   = bd.sugar.With("func", "account/binance_storage.GetLastStoredTimestamp")
 		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
-		dbResult []uint64
+		dbResult uint64
 	)
 	const selectStmt = `SELECT data->>'applyTime' FROM %s ORDER BY data->>'applyTime' DESC LIMIT 1`
 	query := fmt.Sprintf(selectStmt, bd.tableName)
 
-	logger.Debugw("querying trade history...", "query", query)
+	logger.Debugw("querying last stored timestamp...", "query", query)
 
-	if err := bd.db.Select(&dbResult, query); err != nil {
+	if err := bd.db.Get(&dbResult, query); err != nil {
 		return result, err
 	}
 
-	if len(dbResult) == 1 {
-		result = timeutil.TimestampMsToTime(dbResult[0])
-	}
+	result = timeutil.TimestampMsToTime(dbResult)
 
 	return result, nil
 }

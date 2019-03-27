@@ -86,8 +86,10 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 	binanceStorage, err := newTestDB(logger, binanceWithdrawTableTest)
 	assert.NoError(t, err)
 
-	defer teardown(t, binanceStorage)
-
+	defer func() {
+		teardown(t, binanceStorage)
+		assert.NoError(t, binanceStorage.Close())
+	}()
 	err = binanceStorage.UpdateWithdrawHistory(testData)
 	assert.NoError(t, err)
 
@@ -98,4 +100,8 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 	withdrawHistory, err := binanceStorage.GetWithdrawHistory(fromTime, toTime)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedData, withdrawHistory)
+
+	lastStoredTimestamp, err := binanceStorage.GetLastStoredTimestamp()
+	assert.NoError(t, err)
+	assert.Equal(t, timeutil.TimeToTimestampMs(lastStoredTimestamp), testData[1].ApplyTime)
 }

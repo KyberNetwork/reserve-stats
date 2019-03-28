@@ -67,6 +67,15 @@ func TestNormalTx(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, testTxs, txs)
 
+	// make sure we can safely insert duplicated transaction with value changed
+	testTxs[0].Gas++
+	testTxs[1].Gas++
+	err = s.StoreNormalTx(testTxs)
+	require.NoError(t, err)
+	txs, err = s.GetNormalTx(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
+	require.NoError(t, err)
+	assert.Equal(t, testTxs, txs)
+
 	txs, err = s.GetNormalTx(txTimestamp.Add(time.Second*2), txTimestamp.Add(time.Second*3))
 	require.NoError(t, err)
 	assert.Len(t, txs, 0)

@@ -86,7 +86,8 @@ func (s *Storage) StoreNormalTx(txs []common.NormalTx) (err error) {
 		logger = s.sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreNormalTx")
 	)
 	const updateStmt = `INSERT INTO "%[1]s"(tx_hash, data)
-VALUES ($1, $2);
+VALUES ($1, $2)
+ON CONFLICT ON CONSTRAINT "%[1]s_pkey" DO UPDATE SET data = EXCLUDED.data;
 `
 
 	query := fmt.Sprintf(updateStmt, s.tableNames.Normal)

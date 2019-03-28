@@ -51,7 +51,7 @@ func WithUserURL(userURL string) Option {
 	}
 }
 
-//WithPriceAnalyticURL set price analytic for server
+//WithPriceAnalyticURL set price analytic proxy for server
 func WithPriceAnalyticURL(priceAnalyticURL string) Option {
 	return func(s *Server) error {
 		priceProxyMW, err := newReverseProxyMW(priceAnalyticURL)
@@ -60,6 +60,33 @@ func WithPriceAnalyticURL(priceAnalyticURL string) Option {
 		}
 		s.r.GET("/price-analytic-data", priceProxyMW)
 		s.r.POST("/price-analytic-data", priceProxyMW)
+		return nil
+	}
+}
+
+//WithCexTradesURL set cex trade proxy for server
+func WithCexTradesURL(cexTradeURL string) Option {
+	return func(s *Server) error {
+		cexTradeURLMW, err := newReverseProxyMW(cexTradeURL)
+		if err != nil {
+			return err
+		}
+		s.r.GET("/cex_trades", cexTradeURLMW)
+		return nil
+	}
+}
+
+//WithResreveAddressesURL set resreve addresses proxy for server
+func WithResreveAddressesURL(reserveAddressesURL string) Option {
+	return func(s *Server) error {
+		reserveAddressURLMW, err := newReverseProxyMW(reserveAddressesURL)
+		if err != nil {
+			return err
+		}
+		s.r.POST("/addresses", reserveAddressURLMW)
+		s.r.GET("/addresses/:id", reserveAddressURLMW)
+		s.r.GET("/addresses", reserveAddressURLMW)
+		s.r.PUT("/addresses/:id", reserveAddressURLMW)
 		return nil
 	}
 }

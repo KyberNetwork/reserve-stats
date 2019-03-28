@@ -9,7 +9,6 @@ import (
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/urfave/cli"
 
-	"github.com/KyberNetwork/reserve-stats/accounting/gateway"
 	"github.com/KyberNetwork/reserve-stats/gateway/http"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
@@ -115,12 +114,12 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("permission object creation error: %s", err)
 	}
-	svr, err := gateway.NewServer(httputil.NewHTTPAddressFromContext(c),
-		c.String(cexTradeAPIURLFlag),
-		c.String(reserveAddressesAPIURLFlag),
+	svr, err := http.NewServer(httputil.NewHTTPAddressFromContext(c),
 		auth,
 		perm,
 		logger,
+		http.WithCexTradesURL(c.String(cexTradeAPIURLFlag)),
+		http.WithResreveAddressesURL(c.String(reserveAddressesAPIURLFlag)),
 	)
 	if err != nil {
 		return err

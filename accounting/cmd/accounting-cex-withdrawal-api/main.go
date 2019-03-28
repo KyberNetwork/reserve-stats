@@ -6,6 +6,7 @@ import (
 
 	"github.com/urfave/cli"
 
+	"github.com/KyberNetwork/reserve-stats/accounting/binance/storage/withdrawalstorage"
 	"github.com/KyberNetwork/reserve-stats/accounting/cex-withdrawal/http"
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	huobiPostgres "github.com/KyberNetwork/reserve-stats/accounting/huobi/storage/withdrawal-history/postgres"
@@ -43,17 +44,31 @@ func run(c *cli.Context) error {
 		return err
 	}
 
+	defer func() {
+		if cErr := db.Close(); cErr != nil {
+			sugar.Errorf("failed to close database: err=%s", cErr.Error())
+		}
+	}()
+
 	huobiDB, err := huobiPostgres.NewDB(sugar, db)
 	if err != nil {
 		return err
 	}
 
-	host := httputil.NewHTTPAddressFromContext(c)
-	server, err := http.NewServer(host, huobiDB, nil, sugar)
+	binanceDB, err := withdrawalstorage.NewDB(sugar, db)
 	if err != nil {
 		return err
 	}
-	return server.Run()
+
+	host := httputil.NewHTTPAddressFromContext(c)
+	server, err := http.NewServer(host, huobiDB, binanceDB, sugar)
+	if err != nil {
+		return err
+	}
+	if err = server.Run(); err != nil {
+		return err
+	}
+	return db.Close()
 }
 
 func main() {

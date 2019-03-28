@@ -22,7 +22,6 @@ const (
 	defaultRetryDelay    = 2 * time.Minute
 	defaultAttempt       = 4
 	defaultBatchSize     = 100
-	binanceWithdrawTable = "binance_withdraws"
 )
 
 func main() {
@@ -86,7 +85,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	binanceStorage, err := withdrawstorage.NewDB(sugar, db, binanceWithdrawTable)
+	binanceStorage, err := withdrawstorage.NewDB(sugar, db)
 	if err != nil {
 		return err
 	}

@@ -54,6 +54,12 @@ func (sv *Server) get(c *gin.Context) {
 		return
 	}
 
+	if len(query.Exchanges) == 0 {
+		query.Exchanges = []string{
+			common.Huobi.String(),
+			common.Binance.String()}
+	}
+
 	from, to, err := query.Validate(
 		httputil.TimeRangeQueryWithMaxTimeFrame(maxTimeFrame),
 	)

@@ -17,9 +17,9 @@ const (
 	binanceWithdrawTableTest = "withdraw_test"
 )
 
-func newTestDB(sugar *zap.SugaredLogger, tableName string) (*BinanceStorage, error) {
+func newTestDB(sugar *zap.SugaredLogger) (*BinanceStorage, error) {
 	_, db := testutil.MustNewDevelopmentDB()
-	return NewDB(sugar, db, tableName)
+	return NewDB(sugar, db, WithTableName(binanceWithdrawTableTest))
 }
 
 func teardown(t *testing.T, storage *BinanceStorage) {
@@ -84,7 +84,7 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 		}
 	)
 
-	binanceStorage, err := newTestDB(logger, binanceWithdrawTableTest)
+	binanceStorage, err := newTestDB(logger)
 	assert.NoError(t, err)
 
 	defer teardown(t, binanceStorage)

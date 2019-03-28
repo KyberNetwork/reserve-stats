@@ -145,13 +145,13 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("permission object creation error: %s", err)
 	}
 	svr, err := http.NewServer(httputil.NewHTTPAddressFromContext(c),
-		c.String(tradeLogsAPIURLFlag),
-		c.String(reserveRatesAPIURLFlag),
-		c.String(userAPIURLFlag),
-		c.String(priceAnalyticURLFlag),
 		auth,
 		perm,
 		logger,
+		http.WithTradeLogURL(c.String(tradeLogsAPIURLFlag)),
+		http.WithReserveRatesURL(c.String(reserveRatesAPIURLFlag)),
+		http.WithPriceAnalyticURL(c.String(priceAnalyticURLFlag)),
+		http.WithUserURL(c.String(userAPIURLFlag)),
 	)
 	if err != nil {
 		return err

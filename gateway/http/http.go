@@ -32,10 +32,12 @@ func newReverseProxyMW(target string) (gin.HandlerFunc, error) {
 }
 
 // NewServer creates new instance of gateway HTTP server.
-func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL string,
+func NewServer(addr string,
 	auth *httpsign.Authenticator,
 	perm gin.HandlerFunc,
-	logger *zap.Logger) (*Server, error) {
+	logger *zap.Logger,
+	options ...Option,
+) (*Server, error) {
 	r := gin.Default()
 	r.Use(libhttputil.MiddlewareHandler)
 	corsConfig := cors.DefaultConfig()
@@ -46,54 +48,18 @@ func NewServer(addr, tradeLogsURL, reserveRatesURL, userURL, priceAnalyticURL st
 	r.Use(cors.New(corsConfig))
 	r.Use(perm)
 	r.Use(auth.Authenticated())
-	if tradeLogsURL != "" {
-		tradeLogsProxyMW, err := newReverseProxyMW(tradeLogsURL)
-		if err != nil {
-			return nil, err
-		}
-		r.GET("/trade-logs", tradeLogsProxyMW)
-		r.GET("/burn-fee", tradeLogsProxyMW)
-		r.GET("/asset-volume", tradeLogsProxyMW)
-		r.GET("/reserve-volume", tradeLogsProxyMW)
-		r.GET("/wallet-fee", tradeLogsProxyMW)
-		r.GET("/user-volume", tradeLogsProxyMW)
-		r.GET("/user-list", tradeLogsProxyMW)
-		r.GET("/trade-summary", tradeLogsProxyMW)
-		r.GET("/wallet-stats", tradeLogsProxyMW)
-		r.GET("/country-stats", tradeLogsProxyMW)
-		r.GET("/heat-map", tradeLogsProxyMW)
-		r.GET("/integration-volume", tradeLogsProxyMW)
-	}
-	if reserveRatesURL != "" {
-		reserveRateProxyMW, err := newReverseProxyMW(reserveRatesURL)
-		if err != nil {
-			return nil, err
-		}
-		r.GET("/reserve-rates", reserveRateProxyMW)
-	}
 
-	if userURL != "" {
-		userProxyMW, err := newReverseProxyMW(userURL)
-		if err != nil {
-			return nil, err
-		}
-		r.GET("/users", userProxyMW)
-		r.POST("/users", userProxyMW)
-	}
-
-	if priceAnalyticURL != "" {
-		priceProxyMW, err := newReverseProxyMW(priceAnalyticURL)
-		if err != nil {
-			return nil, err
-		}
-		r.GET("/price-analytic-data", priceProxyMW)
-		r.POST("/price-analytic-data", priceProxyMW)
-	}
-
-	return &Server{
+	server := Server{
 		addr: addr,
 		r:    r,
-	}, nil
+	}
+
+	for _, opt := range options {
+		if err := opt(&server); err != nil {
+			return nil, err
+		}
+	}
+	return &server, nil
 }
 
 // Start runs the HTTP gateway server.

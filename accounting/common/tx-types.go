@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	etherscan "github.com/nanmu42/etherscan-api"
 )
 
@@ -110,51 +111,73 @@ func (tx InternalTx) MarshalJSON() ([]byte, error) {
 
 // ERC20Transfer holds info from ERC20 token transfer event query.
 type ERC20Transfer struct {
-	BlockNumber     int       `json:"blockNumber,string"`
-	Timestamp       time.Time `json:"timestamp"`
-	Hash            string    `json:"hash"`
-	From            string    `json:"from"`
-	ContractAddress string    `json:"contractAddress"`
-	To              string    `json:"to"`
-	Value           *big.Int  `json:"value"`
-	Gas             int       `json:"gas,string"`
-	GasUsed         int       `json:"gasUsed,string"`
-	GasPrice        *big.Int  `json:"gasPrice"`
+	BlockNumber     int              `json:"blockNumber,string"`
+	Timestamp       time.Time        `json:"-"`
+	Hash            ethereum.Hash    `json:"-"`
+	From            ethereum.Address `json:"-"`
+	ContractAddress ethereum.Address `json:"-"`
+	To              ethereum.Address `json:"-"`
+	Value           *big.Int         `json:"value"`
+	Gas             int              `json:"gas,string"`
+	GasUsed         int              `json:"gasUsed,string"`
+	GasPrice        *big.Int         `json:"gasPrice"`
 }
 
-// UnmarshalJSON is the custom unmarshaller that read timestamp in unix milliseconds.
-func (tx *ERC20Transfer) UnmarshalJSON(data []byte) error {
-	type AliasERC20Transfer ERC20Transfer
+//MarshalJSON return marshal form of erc20transfer
+func (et ERC20Transfer) MarshalJSON() ([]byte, error) {
+	type AliasErc20 ERC20Transfer
+	var ts *uint64
+	if !et.Timestamp.IsZero() {
+		millis := timeutil.TimeToTimestampMs(et.Timestamp)
+		ts = &millis
+	}
+
+	return json.Marshal(struct {
+		Timestamp       *uint64 `json:"timestamp"`
+		Hash            string  `json:"hash"`
+		From            string  `json:"from"`
+		ContractAddress string  `json:"contractAddress"`
+		To              string  `json:"to"`
+		AliasErc20
+	}{
+		Timestamp:       ts,
+		Hash:            et.Hash.Hex(),
+		From:            et.From.Hex(),
+		ContractAddress: et.ContractAddress.Hex(),
+		To:              et.ContractAddress.Hex(),
+		AliasErc20:      (AliasErc20)(et),
+	})
+}
+
+//UnmarshalJSON return an ERC20Transfer object from JSON form
+func (et *ERC20Transfer) UnmarshalJSON(data []byte) error {
+	type AliasErc20 ERC20Transfer
 	decoded := new(struct {
-		AliasERC20Transfer
-		Timestamp uint64 `json:"timestamp"`
+		Timestamp       *uint64 `json:"timestamp,omitempty"`
+		Hash            string  `json:"hash"`
+		From            string  `json:"from"`
+		ContractAddress string  `json:"contractAddress"`
+		To              string  `json:"to"`
+		AliasErc20
 	})
 	if err := json.Unmarshal(data, decoded); err != nil {
 		return err
 	}
-	tx.BlockNumber = decoded.BlockNumber
-	tx.Timestamp = timeutil.TimestampMsToTime(decoded.Timestamp).UTC()
-	tx.Hash = decoded.Hash
-	tx.From = decoded.From
-	tx.ContractAddress = decoded.ContractAddress
-	tx.To = decoded.To
-	tx.Value = decoded.Value
-	tx.Gas = decoded.Gas
-	tx.GasUsed = decoded.GasUsed
-	tx.GasPrice = decoded.GasPrice
-	return nil
-}
+	if decoded.Timestamp != nil {
+		et.Timestamp = timeutil.TimestampMsToTime(*decoded.Timestamp)
+	}
 
-// MarshalJSON is the custom JSON marshaller that output timestamp in unix milliseconds.
-func (tx ERC20Transfer) MarshalJSON() ([]byte, error) {
-	type AliasERC20Transfer ERC20Transfer
-	return json.Marshal(struct {
-		AliasERC20Transfer
-		Timestamp uint64 `json:"timestamp"`
-	}{
-		AliasERC20Transfer: (AliasERC20Transfer)(tx),
-		Timestamp:          timeutil.TimeToTimestampMs(tx.Timestamp),
-	})
+	et.BlockNumber = decoded.BlockNumber
+
+	et.Hash = ethereum.HexToHash(decoded.Hash)
+	et.From = ethereum.HexToAddress(decoded.From)
+	et.To = ethereum.HexToAddress(decoded.To)
+	et.Value = decoded.Value
+	et.Gas = decoded.Gas
+	et.GasUsed = decoded.GasUsed
+	et.GasPrice = decoded.GasPrice
+
+	return nil
 }
 
 //EtherscanInternalTxToCommon transforms etherScan.InternalTx to accounting's InternalTx
@@ -177,10 +200,10 @@ func EtherscanERC20TransferToCommon(tx etherscan.ERC20Transfer) ERC20Transfer {
 	return ERC20Transfer{
 		BlockNumber:     tx.BlockNumber,
 		Timestamp:       tx.TimeStamp.Time(),
-		Hash:            tx.Hash,
-		From:            tx.From,
-		ContractAddress: tx.ContractAddress,
-		To:              tx.To,
+		Hash:            ethereum.HexToHash(tx.Hash),
+		From:            ethereum.HexToAddress(tx.From),
+		ContractAddress: ethereum.HexToAddress(tx.ContractAddress),
+		To:              ethereum.HexToAddress(tx.To),
 		Value:           tx.Value.Int(),
 		Gas:             tx.Gas,
 		GasUsed:         tx.GasUsed,

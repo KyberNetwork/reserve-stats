@@ -99,7 +99,6 @@ func (vwf *VersionedWrapperFallback) getReserveRateFallback(block uint64, rsvAdd
 				if !isRevertError(gErr) {
 					return gErr
 				}
-				gErr = nil
 				logger.Infow("got exception when calling reserve contract")
 				rate = big.NewInt(0)
 			}
@@ -123,7 +122,6 @@ func (vwf *VersionedWrapperFallback) getReserveRateFallback(block uint64, rsvAdd
 					if !isRevertError(gErr) {
 						return gErr
 					}
-					gErr = nil
 					logger.Infow("got exception when calling sanity rate contract")
 					sanityRate = big.NewInt(0)
 				}

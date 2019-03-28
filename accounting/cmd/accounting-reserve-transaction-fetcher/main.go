@@ -106,6 +106,8 @@ func run(c *cli.Context) error {
 		return err
 	}
 
+	// TODO: if address type is reserve/intermediate --> fetch all transactions
+	// TODO: if address type is pricing/sanity operator --> fetch normal/internal transactions
 	f := fetcher.NewEtherscanTransactionFetcher(sugar, etherscanClient)
 	for _, addr := range ethAddrs {
 		normalTxs, err := f.NormalTx(addr, fromBlock, toBlock)

@@ -92,7 +92,7 @@ func (f *EtherscanTransactionFetcher) fetch(fn *fetchFn, addr ethereum.Address, 
 func etherscanNormalTxToCommon(tx etherscan.NormalTx) common.NormalTx {
 	return common.NormalTx{
 		BlockNumber: tx.BlockNumber,
-		TimeStamp:   tx.TimeStamp.Time(),
+		Timestamp:   tx.TimeStamp.Time(),
 		Hash:        tx.Hash,
 		BlockHash:   tx.BlockHash,
 		From:        tx.From,

@@ -99,7 +99,7 @@ ON CONFLICT ON CONSTRAINT "%[1]s_pkey" DO UPDATE SET data = EXCLUDED.data;
 	}
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 	for _, t := range txs {
-		data, err := json.Marshal(&t)
+		data, err := json.Marshal(t)
 		if err != nil {
 			return err
 		}

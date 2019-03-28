@@ -49,13 +49,13 @@ func (tx *NormalTx) UnmarshalJSON(data []byte) error {
 }
 
 // MarshalJSON is the custom JSON marshaller that output timestamp in unix milliseconds.
-func (tx *NormalTx) MarshalJSON() ([]byte, error) {
+func (tx NormalTx) MarshalJSON() ([]byte, error) {
 	type AliasTNormalTx NormalTx
 	return json.Marshal(struct {
-		*AliasTNormalTx
+		AliasTNormalTx
 		Timestamp uint64 `json:"timestamp"`
 	}{
-		AliasTNormalTx: (*AliasTNormalTx)(tx),
+		AliasTNormalTx: (AliasTNormalTx)(tx),
 		Timestamp:      timeutil.TimeToTimestampMs(tx.Timestamp),
 	})
 }

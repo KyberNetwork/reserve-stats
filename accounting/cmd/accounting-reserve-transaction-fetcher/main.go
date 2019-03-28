@@ -9,6 +9,7 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/client"
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/fetcher"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
@@ -47,6 +48,8 @@ func main() {
 	)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
 	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
+	app.Flags = append(app.Flags, client.NewClientFlags()...)
+
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -65,15 +68,27 @@ func run(c *cli.Context) error {
 	defer flusher()
 
 	addrs := c.StringSlice(addressesFlag)
+	var ethAddrs []ethereum.Address
 	if len(addrs) == 0 {
-		sugar.Info("no address provided")
-		return nil
+		sugar.Info("no address provided, look up in address client instead")
+		addressClient, err := client.NewClientFromContext(c, sugar)
+		if err != nil {
+			return err
+		}
+		addresses, err := addressClient.GetAllReserveAddress()
+		if err != nil {
+			return err
+		}
+		for _, addr := range addresses {
+			ethAddrs = append(ethAddrs, addr.Address)
+		}
 	}
 
 	for _, addr := range addrs {
 		if !ethereum.IsHexAddress(addr) {
 			return fmt.Errorf("invalid address provided: address=%s", addr)
 		}
+		ethAddrs = append(ethAddrs, ethereum.HexToAddress(addr))
 	}
 
 	fromBlock, err := libapp.ParseBigIntFlag(c, fromBlockFlag)
@@ -92,8 +107,8 @@ func run(c *cli.Context) error {
 	}
 
 	f := fetcher.NewEtherscanTransactionFetcher(sugar, etherscanClient)
-	for _, addr := range addrs {
-		normalTxs, err := f.NormalTx(ethereum.HexToAddress(addr), fromBlock, toBlock)
+	for _, addr := range ethAddrs {
+		normalTxs, err := f.NormalTx(addr, fromBlock, toBlock)
 		if err != nil {
 			return err
 		}
@@ -102,7 +117,7 @@ func run(c *cli.Context) error {
 			"txs", normalTxs,
 		)
 
-		internalTxs, err := f.InternalTx(ethereum.HexToAddress(addr), fromBlock, toBlock)
+		internalTxs, err := f.InternalTx(addr, fromBlock, toBlock)
 		if err != nil {
 			return err
 		}
@@ -111,7 +126,7 @@ func run(c *cli.Context) error {
 			"txs", internalTxs,
 		)
 
-		transfers, err := f.ERC20Transfer(ethereum.HexToAddress(addr), fromBlock, toBlock)
+		transfers, err := f.ERC20Transfer(addr, fromBlock, toBlock)
 		if err != nil {
 			return err
 		}

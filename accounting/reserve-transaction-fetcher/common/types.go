@@ -63,7 +63,7 @@ func (tx NormalTx) MarshalJSON() ([]byte, error) {
 // InternalTx holds info from internal tx query.
 type InternalTx struct {
 	BlockNumber int       `json:"blockNumber,string"`
-	TimeStamp   time.Time `json:"timeStamp"`
+	Timestamp   time.Time `json:"timestamp"`
 	Hash        string    `json:"hash"`
 	From        string    `json:"from"`
 	To          string    `json:"to"`
@@ -71,6 +71,40 @@ type InternalTx struct {
 	Gas         int       `json:"gas,string"`
 	GasUsed     int       `json:"gasUsed,string"`
 	IsError     int       `json:"isError,string"`
+}
+
+// UnmarshalJSON is the custom unmarshaller that read timestamp in unix milliseconds.
+func (tx *InternalTx) UnmarshalJSON(data []byte) error {
+	type AliasNormalTx NormalTx
+	decoded := new(struct {
+		AliasNormalTx
+		Timestamp uint64 `json:"timestamp"`
+	})
+	if err := json.Unmarshal(data, decoded); err != nil {
+		return err
+	}
+	tx.BlockNumber = decoded.BlockNumber
+	tx.Timestamp = timeutil.TimestampMsToTime(decoded.Timestamp).UTC()
+	tx.Hash = decoded.Hash
+	tx.From = decoded.From
+	tx.To = decoded.To
+	tx.Value = decoded.Value
+	tx.Gas = decoded.Gas
+	tx.GasUsed = decoded.GasUsed
+	tx.IsError = decoded.IsError
+	return nil
+}
+
+// MarshalJSON is the custom JSON marshaller that output timestamp in unix milliseconds.
+func (tx InternalTx) MarshalJSON() ([]byte, error) {
+	type AliasInternalTx InternalTx
+	return json.Marshal(struct {
+		AliasInternalTx
+		Timestamp uint64 `json:"timestamp"`
+	}{
+		AliasInternalTx: (AliasInternalTx)(tx),
+		Timestamp:       timeutil.TimeToTimestampMs(tx.Timestamp),
+	})
 }
 
 // ERC20Transfer holds info from ERC20 token transfer event query.

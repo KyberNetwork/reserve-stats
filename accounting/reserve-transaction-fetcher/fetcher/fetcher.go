@@ -135,7 +135,7 @@ func (f *EtherscanTransactionFetcher) NormalTx(addr ethereum.Address, from, to *
 func etherscanInternalTxToCommon(tx etherscan.InternalTx) common.InternalTx {
 	return common.InternalTx{
 		BlockNumber: tx.BlockNumber,
-		TimeStamp:   tx.TimeStamp.Time(),
+		Timestamp:   tx.TimeStamp.Time(),
 		Hash:        tx.Hash,
 		From:        tx.From,
 		To:          tx.To,

@@ -80,3 +80,50 @@ func TestNormalTx(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, txs, 0)
 }
+
+func TestInternalTx(t *testing.T) {
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
+	_, db := testutil.MustNewDevelopmentDB()
+	s, err := NewStorage(sugar, db, WithTableName(&tableNames{
+		Normal:   "normal_test_internal_tx",
+		Internal: "internal_test_internal_tx",
+		ERC20:    "erc20_test_internal_tx",
+	}))
+	require.NoError(t, err)
+
+	defer func(t *testing.T) {
+		require.NoError(t, s.TearDown())
+	}(t)
+
+	txTimestamp := timeutil.TimestampMsToTime(1477837690 * 1000).UTC()
+
+	testTxs := []common.InternalTx{
+		{
+			BlockNumber: 2535368,
+			Timestamp:   txTimestamp,
+			Hash:        "0x8a1a9989bda84f80143181a68bc137ecefa64d0d4ebde45dd94fc0cf49e70cb6",
+			From:        "0x20d42f2e99a421147acf198d775395cac2e8b03d",
+			To:          "",
+			Value:       big.NewInt(0),
+			Gas:         254791,
+			GasUsed:     46750,
+			IsError:     0,
+		},
+	}
+
+	err = s.StoreInternalTx(testTxs)
+	require.NoError(t, err)
+	txs, err := s.GetInternalTx(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
+	require.NoError(t, err)
+	assert.Equal(t, testTxs, txs)
+
+	err = s.StoreInternalTx(testTxs)
+	require.NoError(t, err)
+	txs, err = s.GetInternalTx(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
+	require.NoError(t, err)
+	assert.Equal(t, testTxs, txs)
+
+	txs, err = s.GetInternalTx(txTimestamp.Add(time.Second*2), txTimestamp.Add(time.Second*3))
+	require.NoError(t, err)
+	assert.Len(t, txs, 0)
+}

@@ -51,7 +51,15 @@ func NewStorage(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*Stor
     tx_hash text  NOT NULL PRIMARY KEY,
     data    JSONB NOT NULL
 );
-CREATE INDEX IF NOT EXISTS "%[1]s_time_idx" ON "%[1]s" ((data ->> 'timestamp'));`
+CREATE INDEX IF NOT EXISTS "%[1]s_time_idx" ON "%[1]s" ((data ->> 'timestamp'));
+
+CREATE TABLE IF NOT EXISTS "%[2]s"
+(
+    data JSONB NOT NULL UNIQUE
+);
+
+CREATE INDEX IF NOT EXISTS "%[2]s_time_idx" ON "%[2]s" ((data ->> 'timestamp'));
+`
 
 	s := &Storage{sugar: sugar, db: db}
 	for _, option := range options {
@@ -61,7 +69,7 @@ CREATE INDEX IF NOT EXISTS "%[1]s_time_idx" ON "%[1]s" ((data ->> 'timestamp'));
 		s.tableNames = defaultTableNames
 	}
 
-	query := fmt.Sprintf(schemaFmt, s.tableNames.Normal)
+	query := fmt.Sprintf(schemaFmt, s.tableNames.Normal, s.tableNames.Internal)
 	logger.Infow("initializing database schema", "query", query)
 	if _, err := db.Exec(query); err != nil {
 		return nil, err
@@ -95,17 +103,18 @@ ON CONFLICT ON CONSTRAINT "%[1]s_pkey" DO UPDATE SET data = EXCLUDED.data;
 
 	tx, err := s.db.Beginx()
 	if err != nil {
-		return err
+		return
 	}
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 	for _, t := range txs {
-		data, err := json.Marshal(t)
+		var data []byte
+		data, err = json.Marshal(t)
 		if err != nil {
-			return err
+			return
 		}
 		_, err = tx.Exec(query, t.BlockHash, data)
 		if err != nil {
-			return err
+			return
 		}
 	}
 
@@ -145,12 +154,69 @@ WHERE data ->> 'timestamp' >= $1
 	return results, nil
 }
 
-func (*Storage) StoreInternalTx([]common.InternalTx) error {
-	panic("implement me")
+func (s *Storage) StoreInternalTx(txs []common.InternalTx) (err error) {
+	var logger = s.sugar.With(
+		"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreInternalTx",
+	)
+
+	const updateStmt = `INSERT INTO "%[1]s"(data)
+VALUES ($1)
+ON CONFLICT DO NOTHING;
+`
+
+	query := fmt.Sprintf(updateStmt, s.tableNames.Internal)
+	logger.Debugw("storing internal transactions to database", "query", query)
+
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return
+	}
+	defer pgsql.CommitOrRollback(tx, logger, &err)
+	for _, t := range txs {
+		var data []byte
+		data, err = json.Marshal(t)
+		if err != nil {
+			return
+		}
+
+		if _, err = tx.Exec(query, data); err != nil {
+			return
+		}
+	}
+	return
 }
 
-func (*Storage) GetInternalTx(from time.Time, to time.Time) ([]common.InternalTx, error) {
-	panic("implement me")
+func (s *Storage) GetInternalTx(from time.Time, to time.Time) ([]common.InternalTx, error) {
+	var (
+		logger = s.sugar.With(
+			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.GetInternalTx",
+			"from", from.String(),
+			"to", to.String(),
+		)
+		dbResult [][]byte
+		results  []common.InternalTx
+		t        common.InternalTx
+	)
+	const selectStmt = `SELECT data
+FROM "%[1]s"
+WHERE data ->> 'timestamp' >= $1
+  AND data ->> 'timestamp' < $2`
+	query := fmt.Sprintf(selectStmt, s.tableNames.Internal)
+	logger.Debugw("querying internal transactions from database", "query", query)
+	if err := s.db.Select(
+		&dbResult,
+		query,
+		timeutil.TimeToTimestampMs(from),
+		timeutil.TimeToTimestampMs(to)); err != nil {
+		return nil, err
+	}
+	for _, data := range dbResult {
+		if err := json.Unmarshal(data, &t); err != nil {
+			return nil, err
+		}
+		results = append(results, t)
+	}
+	return results, nil
 }
 
 func (*Storage) StoreERC20Transfer([]common.ERC20Transfer) error {

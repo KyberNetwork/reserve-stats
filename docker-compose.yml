@@ -11,7 +11,6 @@ services:
     volumes:
       - './init-postgres-db.sh:/docker-entrypoint-initdb.d/init-postgres-db.sh'
       - './data/postgres:/var/lib/postgresql/data'
-
     environment:
       POSTGRES_DB: reserve_stats
       POSTGRES_USER: reserve_stats

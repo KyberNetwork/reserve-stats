@@ -127,3 +127,53 @@ func TestInternalTx(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, txs, 0)
 }
+
+func TestERC20Transfer(t *testing.T) {
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
+	_, db := testutil.MustNewDevelopmentDB()
+	s, err := NewStorage(sugar, db, WithTableName(&tableNames{
+		Normal:   "normal_test_erc20_transfer",
+		Internal: "internal_test_erc20_transfer",
+		ERC20:    "erc20_test_erc20_transfer",
+	}))
+	require.NoError(t, err)
+
+	defer func(t *testing.T) {
+		require.NoError(t, s.TearDown())
+	}(t)
+
+	txTimestamp := timeutil.TimestampMsToTime(1473433992 * 1000).UTC()
+	txVal, ok := big.NewInt(0).SetString("101000000000000000000", 10)
+	require.True(t, ok)
+
+	testTxs := []common.ERC20Transfer{
+		{
+			BlockNumber:     2228258,
+			Timestamp:       txTimestamp,
+			Hash:            "0x5f2cd76fd3656686e356bc02cc91d8d0726a16936fd08e67ed30467053225a86",
+			From:            "0x4e83362442b8d1bec281594cea3050c8eb01311c",
+			ContractAddress: "0xecf8f87f810ecf450940c9f60066b4a7a501d6a7",
+			To:              "0xac75b73394c329376c214663d92156afa864a77f",
+			Value:           txVal,
+			Gas:             1000000,
+			GasUsed:         93657,
+			GasPrice:        big.NewInt(20000000000),
+		},
+	}
+
+	err = s.StoreERC20Transfer(testTxs)
+	require.NoError(t, err)
+	txs, err := s.GetERC20Transfer(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
+	require.NoError(t, err)
+	assert.Equal(t, testTxs, txs)
+
+	err = s.StoreERC20Transfer(testTxs)
+	require.NoError(t, err)
+	txs, err = s.GetERC20Transfer(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
+	require.NoError(t, err)
+	assert.Equal(t, testTxs, txs)
+
+	txs, err = s.GetERC20Transfer(txTimestamp.Add(time.Second*2), txTimestamp.Add(time.Second*3))
+	require.NoError(t, err)
+	assert.Len(t, txs, 0)
+}

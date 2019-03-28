@@ -75,9 +75,9 @@ type InternalTx struct {
 
 // UnmarshalJSON is the custom unmarshaller that read timestamp in unix milliseconds.
 func (tx *InternalTx) UnmarshalJSON(data []byte) error {
-	type AliasNormalTx NormalTx
+	type AliasInternalTx InternalTx
 	decoded := new(struct {
-		AliasNormalTx
+		AliasInternalTx
 		Timestamp uint64 `json:"timestamp"`
 	})
 	if err := json.Unmarshal(data, decoded); err != nil {
@@ -110,7 +110,7 @@ func (tx InternalTx) MarshalJSON() ([]byte, error) {
 // ERC20Transfer holds info from ERC20 token transfer event query.
 type ERC20Transfer struct {
 	BlockNumber     int       `json:"blockNumber,string"`
-	TimeStamp       time.Time `json:"timeStamp"`
+	Timestamp       time.Time `json:"timestamp"`
 	Hash            string    `json:"hash"`
 	From            string    `json:"from"`
 	ContractAddress string    `json:"contractAddress"`
@@ -119,4 +119,39 @@ type ERC20Transfer struct {
 	Gas             int       `json:"gas,string"`
 	GasUsed         int       `json:"gasUsed,string"`
 	GasPrice        *big.Int  `json:"gasPrice"`
+}
+
+// UnmarshalJSON is the custom unmarshaller that read timestamp in unix milliseconds.
+func (tx *ERC20Transfer) UnmarshalJSON(data []byte) error {
+	type AliasERC20Transfer ERC20Transfer
+	decoded := new(struct {
+		AliasERC20Transfer
+		Timestamp uint64 `json:"timestamp"`
+	})
+	if err := json.Unmarshal(data, decoded); err != nil {
+		return err
+	}
+	tx.BlockNumber = decoded.BlockNumber
+	tx.Timestamp = timeutil.TimestampMsToTime(decoded.Timestamp).UTC()
+	tx.Hash = decoded.Hash
+	tx.From = decoded.From
+	tx.ContractAddress = decoded.ContractAddress
+	tx.To = decoded.To
+	tx.Value = decoded.Value
+	tx.Gas = decoded.Gas
+	tx.GasUsed = decoded.GasUsed
+	tx.GasPrice = decoded.GasPrice
+	return nil
+}
+
+// MarshalJSON is the custom JSON marshaller that output timestamp in unix milliseconds.
+func (tx ERC20Transfer) MarshalJSON() ([]byte, error) {
+	type AliasERC20Transfer ERC20Transfer
+	return json.Marshal(struct {
+		AliasERC20Transfer
+		Timestamp uint64 `json:"timestamp"`
+	}{
+		AliasERC20Transfer: (AliasERC20Transfer)(tx),
+		Timestamp:          timeutil.TimeToTimestampMs(tx.Timestamp),
+	})
 }

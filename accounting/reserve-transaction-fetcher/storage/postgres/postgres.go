@@ -14,9 +14,9 @@ import (
 )
 
 var defaultTableNames = &tableNames{
-	Normal:   "tx_normal",
-	Internal: "tx_internal",
-	ERC20:    "tx_erc20",
+	Normal:   "rsv_tx_normal",
+	Internal: "rsv_tx_internal",
+	ERC20:    "rsv_tx_erc20",
 }
 
 // tableNames contains name of all PostgreSQL tables used for this this.
@@ -59,6 +59,13 @@ CREATE TABLE IF NOT EXISTS "%[2]s"
 );
 
 CREATE INDEX IF NOT EXISTS "%[2]s_time_idx" ON "%[2]s" ((data ->> 'timestamp'));
+
+CREATE TABLE IF NOT EXISTS "%[3]s"
+(
+    data JSONB NOT NULL UNIQUE
+);
+
+CREATE INDEX IF NOT EXISTS "%[3]s_time_idx" ON "%[3]s" ((data ->> 'timestamp'));
 `
 
 	s := &Storage{sugar: sugar, db: db}
@@ -69,7 +76,7 @@ CREATE INDEX IF NOT EXISTS "%[2]s_time_idx" ON "%[2]s" ((data ->> 'timestamp'));
 		s.tableNames = defaultTableNames
 	}
 
-	query := fmt.Sprintf(schemaFmt, s.tableNames.Normal, s.tableNames.Internal)
+	query := fmt.Sprintf(schemaFmt, s.tableNames.Normal, s.tableNames.Internal, s.tableNames.ERC20)
 	logger.Infow("initializing database schema", "query", query)
 	if _, err := db.Exec(query); err != nil {
 		return nil, err
@@ -82,8 +89,10 @@ func (s *Storage) TearDown() error {
 	var logger = s.sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.TearDown")
 	const dropFMT = `
 	DROP TABLE %[1]s CASCADE;
+	DROP TABLE %[2]s CASCADE;
+	DROP TABLE %[3]s CASCADE;
 	`
-	query := fmt.Sprintf(dropFMT, s.tableNames.Normal)
+	query := fmt.Sprintf(dropFMT, s.tableNames.Normal, s.tableNames.Internal, s.tableNames.ERC20)
 	logger.Debugw("cleanup database", "query", query)
 	_, err := s.db.Exec(query)
 	return err
@@ -219,10 +228,67 @@ WHERE data ->> 'timestamp' >= $1
 	return results, nil
 }
 
-func (*Storage) StoreERC20Transfer([]common.ERC20Transfer) error {
-	panic("implement me")
+func (s *Storage) StoreERC20Transfer(txs []common.ERC20Transfer) (err error) {
+	var logger = s.sugar.With(
+		"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreERC20Transfer",
+	)
+
+	const updateStmt = `INSERT INTO "%[1]s"(data)
+VALUES ($1)
+ON CONFLICT DO NOTHING;
+`
+
+	query := fmt.Sprintf(updateStmt, s.tableNames.ERC20)
+	logger.Debugw("storing ERC20 transfers to database", "query", query)
+
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return
+	}
+	defer pgsql.CommitOrRollback(tx, logger, &err)
+	for _, t := range txs {
+		var data []byte
+		data, err = json.Marshal(t)
+		if err != nil {
+			return
+		}
+
+		if _, err = tx.Exec(query, data); err != nil {
+			return
+		}
+	}
+	return
 }
 
-func (*Storage) GetERC20Transfer(from time.Time, to time.Time) ([]common.ERC20Transfer, error) {
-	panic("implement me")
+func (s *Storage) GetERC20Transfer(from time.Time, to time.Time) ([]common.ERC20Transfer, error) {
+	var (
+		logger = s.sugar.With(
+			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.GetERC20Transfer",
+			"from", from.String(),
+			"to", to.String(),
+		)
+		dbResult [][]byte
+		results  []common.ERC20Transfer
+		t        common.ERC20Transfer
+	)
+	const selectStmt = `SELECT data
+FROM "%[1]s"
+WHERE data ->> 'timestamp' >= $1
+  AND data ->> 'timestamp' < $2`
+	query := fmt.Sprintf(selectStmt, s.tableNames.ERC20)
+	logger.Debugw("querying ERC20 transfers from database", "query", query)
+	if err := s.db.Select(
+		&dbResult,
+		query,
+		timeutil.TimeToTimestampMs(from),
+		timeutil.TimeToTimestampMs(to)); err != nil {
+		return nil, err
+	}
+	for _, data := range dbResult {
+		if err := json.Unmarshal(data, &t); err != nil {
+			return nil, err
+		}
+		results = append(results, t)
+	}
+	return results, nil
 }

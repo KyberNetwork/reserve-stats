@@ -8,7 +8,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
 
-	fetcher "github.com/KyberNetwork/reserve-stats/accounting/wallet-fetcher"
+	fetcher "github.com/KyberNetwork/reserve-stats/accounting/wallet-erc20/fetcher"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
 )

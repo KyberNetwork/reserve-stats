@@ -231,7 +231,7 @@ GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp`, ltd.tabl
 	logger.Debugw("get tokens query", "query", getQuery)
 
 	getVersionQuery := fmt.Sprintf(`SELECT version, block_number FROM "%[1]s" WHERE reserve = $1 LIMIT 1`, versionTable)
-	logger.Debugw("get token version", "query", getVersionQuery, "reserve", reserve)
+	logger.Debugw("get token version", "query", getVersionQuery, "reserve", reserve.Hex())
 
 	tx, err := ltd.db.Beginx()
 	if err != nil {
@@ -253,7 +253,7 @@ GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp`, ltd.tabl
 		result = append(result, token)
 	}
 
-	if err := tx.Select(&versionRecords, getVersionQuery, reserve); err != nil {
+	if err := tx.Select(&versionRecords, getVersionQuery, reserve.Hex()); err != nil {
 		logger.Error("error query token verson", "error", err)
 		return nil, 0, 0, err
 	}

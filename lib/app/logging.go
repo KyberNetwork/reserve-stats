@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -15,9 +14,9 @@ type syncer interface {
 // NewFlusher creates a new syncer from given syncer that log a error message if failed to sync.
 func NewFlusher(s syncer) func() {
 	return func() {
-		if err := s.Sync(); err != nil {
-			log.Printf("failed to flush logger: %s", err.Error())
-		}
+		// ignore the error as the sync function will always fail in Linux
+		// https://github.com/uber-go/zap/issues/370
+		_ = s.Sync()
 	}
 }
 

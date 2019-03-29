@@ -7,7 +7,7 @@ import (
 
 	"github.com/urfave/cli"
 
-	fetcher "github.com/KyberNetwork/reserve-stats/accounting/binance/fetcher"
+	"github.com/KyberNetwork/reserve-stats/accounting/binance/fetcher"
 	withdrawstorage "github.com/KyberNetwork/reserve-stats/accounting/binance/storage/withdrawalstorage"
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
@@ -16,13 +16,12 @@ import (
 )
 
 const (
-	retryDelayFlag       = "retry-delay"
-	attemptFlag          = "attempt"
-	batchSizeFlag        = "batch-size"
-	defaultRetryDelay    = 2 * time.Minute
-	defaultAttempt       = 4
-	defaultBatchSize     = 100
-	binanceWithdrawTable = "binance_withdraws"
+	retryDelayFlag    = "retry-delay"
+	attemptFlag       = "attempt"
+	batchSizeFlag     = "batch-size"
+	defaultRetryDelay = 2 * time.Minute
+	defaultAttempt    = 4
+	defaultBatchSize  = 100
 )
 
 func main() {
@@ -86,7 +85,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	binanceStorage, err := withdrawstorage.NewDB(sugar, db, binanceWithdrawTable)
+	binanceStorage, err := withdrawstorage.NewDB(sugar, db)
 	if err != nil {
 		return err
 	}

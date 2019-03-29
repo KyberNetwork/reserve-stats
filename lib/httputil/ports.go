@@ -31,6 +31,6 @@ const (
 	// AccountingReserveAddressPort is the port number of accounting-reserve-addresses-api service.
 	AccountingReserveAddressPort = 8009
 
-	// AccountingCEXTradesPort is the port number of accounting-cex-trades-api service.
+	// AccountingCEXTradesPort is the port number of accounting-cex-trade-trades-api service.
 	AccountingCEXTradesPort = 8010
 )

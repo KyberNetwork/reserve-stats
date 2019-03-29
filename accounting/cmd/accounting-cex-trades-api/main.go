@@ -7,7 +7,7 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/binance/storage/tradestorage"
-	"github.com/KyberNetwork/reserve-stats/accounting/cex/http"
+	"github.com/KyberNetwork/reserve-stats/accounting/cex-trade/http"
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	huobistorage "github.com/KyberNetwork/reserve-stats/accounting/huobi/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"

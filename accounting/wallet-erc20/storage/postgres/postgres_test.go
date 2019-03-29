@@ -40,7 +40,7 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	sugar := logger.Sugar()
 
 	_, db := testutil.MustNewDevelopmentDB()
-
+	//Test if the constraint unique works...
 	for i := 0; i < 10; i++ {
 		td := testData[0]
 
@@ -57,10 +57,13 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	err = wdb.UpdateERC20Transfer(testData)
+	err = wdb.UpdateERC20Transfers(testData)
 	require.NoError(t, err)
 	data, err := wdb.GetERC20Transfers(testWalletAddr, testContractAddr, timeutil.TimestampMsToTime(1553757130000), timeutil.TimestampMsToTime(1553757150000))
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(data))
 	assert.Equal(t, testData[0].Gas, data[0].Gas)
+	block, err := wdb.GetLastStoredBlock(testWalletAddr)
+	assert.NoError(t, err)
+	assert.Equal(t, testData[0].BlockNumber, block)
 }

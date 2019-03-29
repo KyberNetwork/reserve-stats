@@ -74,7 +74,7 @@ func (et ERC20Transfer) MarshalJSON() ([]byte, error) {
 		Hash:            et.Hash.Hex(),
 		From:            et.From.Hex(),
 		ContractAddress: et.ContractAddress.Hex(),
-		To:              et.ContractAddress.Hex(),
+		To:              et.To.Hex(),
 		AliasErc20:      (AliasErc20)(et),
 	})
 }
@@ -102,6 +102,7 @@ func (et *ERC20Transfer) UnmarshalJSON(data []byte) error {
 	et.Hash = ethereum.HexToHash(decoded.Hash)
 	et.From = ethereum.HexToAddress(decoded.From)
 	et.To = ethereum.HexToAddress(decoded.To)
+	et.ContractAddress = ethereum.HexToAddress(decoded.ContractAddress)
 	et.Value = decoded.Value
 	et.Gas = decoded.Gas
 	et.GasUsed = decoded.GasUsed

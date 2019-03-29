@@ -10,4 +10,5 @@ import (
 type Interface interface {
 	UpdateTradeHistory([]binance.TradeHistory) error
 	GetTradeHistory(fromTime, toTime time.Time) ([]binance.TradeHistory, error)
+	GetLastStoredID() (uint64, error)
 }

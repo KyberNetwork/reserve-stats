@@ -10,4 +10,5 @@ import (
 type Interface interface {
 	UpdateTradeHistory(trade []huobi.TradeHistory) error
 	GetTradeHistory(from, to time.Time) ([]huobi.TradeHistory, error)
+	GetLastStoredTimestamp() (time.Time, error)
 }

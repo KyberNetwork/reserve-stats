@@ -54,9 +54,10 @@ CREATE TABLE IF NOT EXISTS "%[3]s"
 );
 CREATE TABLE IF NOT EXISTS "%[4]s"
 (
-	id SERIAL PRIMARY KEY,
-	token_id INT REFERENCE "%[1]s" (id),
-	reserve_id INT REFERENCE "%[4]s" (id)
+	id SERIAL NOT NULL,
+	token_id INT REFERENCES "%[1]s" (id),
+	reserve_id INT REFERENCES "%[3]s" (id),
+	PRIMARY KEY (token_id, reserve_id)
 )
 	`
 	var logger = sugar.With("func", "accounting/storage.NewDB")
@@ -78,7 +79,7 @@ CREATE TABLE IF NOT EXISTS "%[4]s"
 func (ltd *ListedTokenDB) CreateOrUpdate(tokens []common.ListedToken, blockNumber *big.Int, reserve ethereum.Address) (err error) {
 	var (
 		logger             = ltd.sugar.With("func", "accounting/lisetdtokenstorage.CreateOrUpdate")
-		tokenID, reserveID int64
+		tokenID, reserveID uint64
 	)
 	upsertQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address, name, symbol, timestamp, parent_id)
 VALUES ($1,
@@ -90,15 +91,16 @@ ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id RETURNING id`
 		ltd.tableName)
 	logger.Debugw("upsert token", "value", upsertQuery)
 
-	updateVersionQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (block_number, reserve)
-	VALUES($1, $2)
-	ON CONFLICT (reserve) DO UPDATE version = %[1]s.version+1, block_number = EXCLUDED.block_number`, versionTable)
+	updateVersionQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (version, block_number, reserve)
+	VALUES($1, $2, $3)
+	ON CONFLICT (reserve) DO UPDATE SET version = %[1]s.version+1, block_number = EXCLUDED.block_number`, versionTable)
 	logger.Debugw("update version", "query", updateVersionQuery)
 
-	updateReserveQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address) VALUE($1) ON CONFLICT (address) DO NOTHING RETURNING id`, reservesTable)
+	updateReserveQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address) VALUES ($1) ON CONFLICT (address) DO NOTHING RETURNING id`, reservesTable)
 	logger.Debugw("update reserve", "query", updateReserveQuery)
 
-	updateReserveTokenQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (token_id, reserve_id) values($1, $2)`, reservesTokensTable)
+	updateReserveTokenQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (token_id, reserve_id) VALUES ($1, $2)
+	ON CONFLICT (token_id, reserve_id) DO NOTHING`, reservesTokensTable)
 	logger.Debugw("update reserve token", "query", updateReserveTokenQuery)
 
 	tx, err := ltd.db.Beginx()
@@ -107,11 +109,11 @@ ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id RETURNING id`
 	}
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 
-	if err = tx.Get(&reserveID, updateReserveQuery, reserve); err != nil {
+	if err = tx.Get(&reserveID, updateReserveQuery, reserve.Hex()); err != nil {
 		return
 	}
 
-	if _, err = tx.Exec(updateVersionQuery, blockNumber.Uint64(), reserve); err != nil {
+	if _, err = tx.Exec(updateVersionQuery, 1, blockNumber.Uint64(), reserve.Hex()); err != nil {
 		return
 	}
 
@@ -121,19 +123,27 @@ ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id RETURNING id`
 			token.Name,
 			token.Symbol,
 			token.Timestamp.UTC(),
-			reserve.Hex(),
 			nil); err != nil {
 			return
 		}
 
+		logger.Debugw("token id", "id", tokenID)
+
+		if _, err = tx.Exec(updateReserveTokenQuery, tokenID, reserveID); err != nil {
+			return
+		}
+
 		for _, oldToken := range token.Old {
-			if _, err = tx.Exec(upsertQuery,
+			if err = tx.Get(&tokenID, upsertQuery,
 				oldToken.Address.Hex(),
 				token.Name,
 				token.Symbol,
 				oldToken.Timestamp.UTC(),
-				reserve.Hex(),
 				token.Address.Hex()); err != nil {
+				return
+			}
+
+			if _, err = tx.Exec(updateReserveTokenQuery, tokenID, reserveID); err != nil {
 				return
 			}
 		}
@@ -186,7 +196,7 @@ func (r *listedTokenRecord) ListedToken() (common.ListedToken, error) {
 }
 
 // GetTokens return all tokens listed
-func (ltd *ListedTokenDB) GetTokens() (result []common.ListedToken, version, blockNumber uint64, err error) {
+func (ltd *ListedTokenDB) GetTokens(reserve string) (result []common.ListedToken, version, blockNumber uint64, err error) {
 	var (
 		logger = ltd.sugar.With(
 			"func",
@@ -196,28 +206,32 @@ func (ltd *ListedTokenDB) GetTokens() (result []common.ListedToken, version, blo
 		versionRecords []listedTokenVersion
 	)
 
-	getQuery := fmt.Sprintf(`SELECT joined.address,
+	getQuery := fmt.Sprintf(`
+WITH r as (SELECT id FROM "%[1]s" WHERE %[1]s.address = $1)
+	SELECT joined.address,
        joined.name,
        joined.symbol,
        joined.timestamp,
        array_agg(joined.old_address) FILTER ( WHERE joined.old_address IS NOT NULL)::text[] AS old_addresses,
        array_agg(extract(EPOCH FROM joined.old_timestamp) * 1000)
-                 FILTER ( WHERE joined.old_timestamp IS NOT NULL)::BIGINT[]                 AS old_timestamps
+				 FILTER ( WHERE joined.old_timestamp IS NOT NULL)::BIGINT[]                 AS old_timestamps
 FROM (SELECT toks.address,
              toks.name,
              toks.symbol,
              toks.timestamp,
              olds.address   AS old_address,
              olds.timestamp AS old_timestamp
-      FROM "%[1]s" AS toks
-             LEFT JOIN "%[1]s" AS olds
-                       ON toks.id = olds.parent_id
-      WHERE toks.parent_id IS NULL
+      FROM "%[2]s" AS toks
+             LEFT JOIN "%[2]s" AS olds
+					   ON toks.id = olds.parent_id
+			 JOIN "%[3]s" as rk
+			 		   ON toks.id = rk.token_id
+      WHERE toks.parent_id IS NULL AND rk.reserve_id = r.id
       ORDER BY timestamp DESC) AS joined
-GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp`, ltd.tableName)
+GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp`, reservesTable, ltd.tableName, reservesTokensTable)
 	logger.Debugw("get tokens query", "query", getQuery)
 
-	getVersionQuery := fmt.Sprintf(`SELECT version, block_number FROM "%[1]s" LIMIT 1`, versionTable)
+	getVersionQuery := fmt.Sprintf(`SELECT version, block_number FROM "%[1]s" WHERE reserve = $1 LIMIT 1`, versionTable)
 	logger.Debugw("get token version", "query", getVersionQuery)
 
 	tx, err := ltd.db.Beginx()
@@ -227,7 +241,7 @@ GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp`, ltd.tabl
 
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 
-	if err := tx.Select(&records, getQuery); err != nil {
+	if err := tx.Select(&records, getQuery, reserve); err != nil {
 		logger.Errorw("error query token", "error", err)
 		return nil, 0, 0, err
 	}
@@ -240,13 +254,15 @@ GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp`, ltd.tabl
 		result = append(result, token)
 	}
 
-	if err := tx.Select(&versionRecords, getVersionQuery); err != nil {
+	if err := tx.Select(&versionRecords, getVersionQuery, reserve); err != nil {
 		logger.Error("error query token verson", "error", err)
 		return nil, 0, 0, err
 	}
 
-	version = versionRecords[0].Version
-	blockNumber = versionRecords[0].BlockNumber
+	if len(versionRecords) == 1 {
+		version = versionRecords[0].Version
+		blockNumber = versionRecords[0].BlockNumber
+	}
 
 	return result, version, blockNumber, nil
 }
@@ -261,8 +277,8 @@ func (ltd *ListedTokenDB) Close() error {
 
 //DeleteTable remove tables use for test
 func (ltd *ListedTokenDB) DeleteTable() error {
-	const dropQuery = `DROP TABLE %[1]s, %[2]s;`
-	query := fmt.Sprintf(dropQuery, ltd.tableName, versionTable)
+	const dropQuery = `DROP TABLE %[1]s, %[2]s, %[3]s, %[4]s;`
+	query := fmt.Sprintf(dropQuery, reservesTokensTable, ltd.tableName, versionTable, reservesTable)
 
 	ltd.sugar.Infow("Drop token table", "query", query)
 	_, err := ltd.db.Exec(query)

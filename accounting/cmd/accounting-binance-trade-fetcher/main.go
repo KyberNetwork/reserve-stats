@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
 	"github.com/urfave/cli"
 
@@ -18,9 +19,9 @@ const (
 	retryDelayFlag    = "retry-delay"
 	attemptFlag       = "attempt"
 	batchSizeFlag     = "batch-size"
-	defaultRetryDelay = 2 // minute
+	defaultRetryDelay = 2 * time.Minute
 	defaultAttempt    = 4
-	defaultBatchSize  = 100
+	defaultBatchSize  = 20
 )
 
 func main() {
@@ -30,7 +31,7 @@ func main() {
 	app.Action = run
 
 	app.Flags = append(app.Flags,
-		cli.IntFlag{
+		cli.DurationFlag{
 			Name:   retryDelayFlag,
 			Usage:  "delay time when do a retry",
 			EnvVar: "RETRY_DELAY",
@@ -105,7 +106,7 @@ func run(c *cli.Context) error {
 
 	sugar.Infow("fetch trade from id", "id", fromID+1)
 
-	retryDelay := c.Int(retryDelayFlag)
+	retryDelay := c.Duration(retryDelayFlag)
 	attempt := c.Int(attemptFlag)
 	batchSize := c.Int(batchSizeFlag)
 	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)

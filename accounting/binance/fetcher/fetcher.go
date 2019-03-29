@@ -20,12 +20,11 @@ type Fetcher struct {
 }
 
 //NewFetcher return a new fetcher instance
-func NewFetcher(sugar *zap.SugaredLogger, client *binance.Client, retryDelay, attempt, batchSize int) *Fetcher {
-	retryDelayTime := time.Duration(retryDelay) * time.Minute
+func NewFetcher(sugar *zap.SugaredLogger, client *binance.Client, retryDelay time.Duration, attempt, batchSize int) *Fetcher {
 	return &Fetcher{
 		sugar:      sugar,
 		client:     client,
-		retryDelay: retryDelayTime,
+		retryDelay: retryDelay,
 		attempt:    attempt,
 		batchSize:  batchSize,
 	}
@@ -39,11 +38,15 @@ func (f *Fetcher) getTradeHistoryWithRetry(symbol string, fromID uint64) ([]bina
 	)
 	for attempt := 0; attempt < f.attempt; attempt++ {
 		tradeHistoriesResponse, err = f.client.GetTradeHistory(symbol, fromID)
-		if err == nil {
+		switch err {
+		case binance.ErrBadAPIKeyFormat, binance.ErrRejectedMBxKey:
+			return nil, err
+		case nil:
 			return tradeHistoriesResponse, nil
+		default:
+			logger.Warnw("get trade history failed", "error", err, "attempt", attempt)
+			time.Sleep(f.retryDelay)
 		}
-		logger.Warnw("get trade history failed", "error", err, "attempt", attempt)
-		time.Sleep(f.retryDelay)
 	}
 	return tradeHistoriesResponse, err
 }

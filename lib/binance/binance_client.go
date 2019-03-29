@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -21,6 +22,20 @@ import (
 
 const (
 	endpointPrefix = "https://api.binance.com"
+)
+
+const (
+	badAPIKeyFormatCode = -2014
+	rejfectedMbxKeyCode = -2015
+)
+
+var (
+	// ErrBadAPIKeyFormat is the error to returns in
+	// https://github.com/binance-exchange/binance-official-api-docs/blob/master/errors.md#-2014-bad_api_key_fmt
+	ErrBadAPIKeyFormat = errors.New("API-key format invalid")
+	// ErrRejectedMBxKey is the error to returns in
+	// https://github.com/binance-exchange/binance-official-api-docs/blob/master/errors.md#-2015-rejected_mbx_key
+	ErrRejectedMBxKey = errors.New("invalid API-key, IP, or permissions for action")
 )
 
 //Client represent a binance api client
@@ -98,6 +113,20 @@ func (bc *Client) sign(msg string) (string, error) {
 	return result, nil
 }
 
+func decodeErrorResponse(body io.Reader) (*ErrorResponse, error) {
+	var response = &ErrorResponse{}
+	if err := json.NewDecoder(body).Decode(&response); err != nil {
+		return nil, err
+	}
+	return response, nil
+}
+
+//ErrorResponse response a basic response from binance
+type ErrorResponse struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+}
+
 func (bc *Client) sendRequest(method, endpoint string, params map[string]string, signNeeded bool,
 	timepoint time.Time) ([]byte, error) {
 
@@ -139,11 +168,30 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 	case 500:
 		err = errors.New("500 from Binance, its fault")
 	case 401:
-		err = errors.New("binance api key not valid")
+		errRsp, err := decodeErrorResponse(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("unexpected response: http_code=%d, failed to decode error response: err=%s",
+				http.StatusUnauthorized,
+				err.Error())
+		}
+		logger.Errorw("unexpected response from Binance API",
+			"http_status", http.StatusUnauthorized,
+			"code", errRsp.Code,
+			"msg", errRsp.Msg,
+		)
+		// https://github.com/binance-exchange/binance-official-api-docs/blob/master/errors.md#-2014-bad_api_key_fmt
+		switch errRsp.Code {
+		case badAPIKeyFormatCode:
+			return nil, ErrBadAPIKeyFormat
+		case rejfectedMbxKeyCode:
+			return nil, ErrRejectedMBxKey
+		default:
+			return nil, fmt.Errorf("code=%d msg=%s", errRsp.Code, errRsp.Msg)
+		}
 	case 200:
 		respBody, err = ioutil.ReadAll(resp.Body)
 	default:
-		var response APIResponse
+		var response ErrorResponse
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			logger.Errorw("request body decode error", "error", err)
 			break

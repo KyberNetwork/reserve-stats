@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -41,7 +42,9 @@ func (s *Server) getReserveToken(c *gin.Context) {
 		return
 	}
 
-	listedTokens, version, blockNumber, err := s.storage.GetTokens()
+	reserveAddr := ethereum.HexToAddress(query.Reserve)
+
+	listedTokens, version, blockNumber, err := s.storage.GetTokens(reserveAddr.Hex())
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return

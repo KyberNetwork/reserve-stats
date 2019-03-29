@@ -1,14 +1,18 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
 
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	fetcher "github.com/KyberNetwork/reserve-stats/accounting/wallet-erc20/fetcher"
+	"github.com/KyberNetwork/reserve-stats/accounting/wallet-erc20/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
 )
@@ -17,6 +21,7 @@ const (
 	walletAddressesFlag = "wallet-addresses"
 	fromBlockFlag       = "from-block"
 	toBlockFlag         = "to-block"
+	defaultPostGresDB   = common.DefaultDB
 )
 
 func main() {
@@ -44,6 +49,7 @@ func main() {
 		},
 	)
 	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostGresDB)...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -82,12 +88,14 @@ func run(c *cli.Context) error {
 
 	fromBlock, err := libapp.ParseBigIntFlag(c, fromBlockFlag)
 	if err != nil {
-		return err
+		sugar.Warnf("error in parsing fromblock: %v, fetch from last stored block instead", err)
+		fromBlock = nil
 	}
 
 	toBlock, err := libapp.ParseBigIntFlag(c, toBlockFlag)
 	if err != nil {
-		return err
+		sugar.Warnf("error in parsing toblock: %v, fetch to latest block Instead", err)
+		toBlock = nil
 	}
 
 	etherscanClient, err := etherscan.NewEtherscanClientFromContext(c)
@@ -95,16 +103,37 @@ func run(c *cli.Context) error {
 		return err
 	}
 
+	db, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	wdb, err := postgres.NewDB(sugar, db)
+	if err != nil {
+		return err
+	}
+
 	f := fetcher.NewWalletFetcher(sugar, etherscanClient)
 	for _, walletAddr := range walletAddrs {
+		if fromBlock == nil {
+			lastStoredBlock, err := wdb.GetLastStoredBlock(ethereum.HexToAddress(walletAddr))
+			switch err {
+			case sql.ErrNoRows:
+				sugar.Infof("no record for wallet %s yet. fetch from beginning", walletAddr)
+			case nil:
+				sugar.Infof("found record for wallet %s. fetch from block %d", lastStoredBlock+1)
+				fromBlock = big.NewInt(int64(lastStoredBlock + 1))
+			default:
+				return err
+			}
+		}
 		transfers, err := f.Fetch(ethereum.HexToAddress(walletAddr), fromBlock, toBlock)
 		if err != nil {
 			return err
 		}
-		sugar.Infow("fetched ERC20 transactions",
-			"wallet addr", walletAddr,
-			"txs", transfers,
-		)
+		if err := wdb.UpdateERC20Transfers(transfers); err != nil {
+			return err
+		}
 	}
 	return nil
 }

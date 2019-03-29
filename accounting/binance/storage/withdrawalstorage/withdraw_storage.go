@@ -140,7 +140,7 @@ func (bd *BinanceStorage) GetLastStoredTimestamp() (time.Time, error) {
 		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
 		dbResult uint64
 	)
-	const selectStmt = `SELECT data->>'applyTime' FROM %s ORDER BY data->>'applyTime' DESC LIMIT 1`
+	const selectStmt = `SELECT MAX(data->>'applyTime') FROM %s`
 	query := fmt.Sprintf(selectStmt, bd.tableName)
 
 	logger.Debugw("querying last stored timestamp", "query", query)

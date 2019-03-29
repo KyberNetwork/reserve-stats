@@ -173,7 +173,7 @@ func (hdb *HuobiStorage) GetLastIDStored() (uint64, error) {
 			"func", "reserverates/storage/postgres/RateStorage.GetLastIDStored",
 		)
 	)
-	const selectStmt = `SELECT id FROM %[1]s ORDER BY id DESC LIMIT 1`
+	const selectStmt = `SELECT MAX(id) FROM %[1]s`
 	query := fmt.Sprintf(selectStmt, hdb.tableNames[huobiWithdrawalTableName])
 	logger.Debugw("querying trade history...", "query", query)
 

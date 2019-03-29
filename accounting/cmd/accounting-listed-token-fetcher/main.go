@@ -117,7 +117,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	storedListedToken, _, _, err := listedTokenStorage.GetTokens()
+	storedListedToken, _, _, err := listedTokenStorage.GetTokens(reserveAddr.Hex())
 	if err != nil {
 		return err
 	}

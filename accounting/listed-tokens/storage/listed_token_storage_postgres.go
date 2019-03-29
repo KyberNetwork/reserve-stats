@@ -194,7 +194,7 @@ func (r *listedTokenRecord) ListedToken() (common.ListedToken, error) {
 }
 
 // GetTokens return all tokens listed
-func (ltd *ListedTokenDB) GetTokens(reserve string) (result []common.ListedToken, version, blockNumber uint64, err error) {
+func (ltd *ListedTokenDB) GetTokens(reserve ethereum.Address) (result []common.ListedToken, version, blockNumber uint64, err error) {
 	var (
 		logger = ltd.sugar.With(
 			"func",
@@ -240,7 +240,7 @@ GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp`, ltd.tabl
 
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 
-	if err := tx.Select(&records, getQuery, reserve); err != nil {
+	if err := tx.Select(&records, getQuery, reserve.Hex()); err != nil {
 		logger.Errorw("error query token", "error", err)
 		return nil, 0, 0, err
 	}

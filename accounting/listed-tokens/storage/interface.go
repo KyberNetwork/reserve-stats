@@ -10,5 +10,5 @@ import (
 //Interface represent interface for accounting lsited token service
 type Interface interface {
 	CreateOrUpdate(tokens []common.ListedToken, blockNumber *big.Int, reserve ethereum.Address) error
-	GetTokens(reserve string) ([]common.ListedToken, uint64, uint64, error)
+	GetTokens(reserve ethereum.Address) ([]common.ListedToken, uint64, uint64, error)
 }

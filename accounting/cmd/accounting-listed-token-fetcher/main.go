@@ -35,7 +35,7 @@ func main() {
 			EnvVar: "BLOCK",
 			Usage:  "block to get listed token",
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Name:   reserveAddressFlag,
 			EnvVar: "RESERVE_ADDRESS",
 			Usage:  "reserve address to get listed token",
@@ -78,11 +78,11 @@ func run(c *cli.Context) error {
 			return err
 		}
 	}
-	if c.String(reserveAddressFlag) == "" {
+
+	addrs := c.StringSlice(reserveAddressFlag)
+	if len(addrs) == 0 {
 		return fmt.Errorf("reserve address is required")
 	}
-	reserveAddrStr := c.String(reserveAddressFlag)
-	reserveAddr = ethereum.HexToAddress(reserveAddrStr)
 
 	tokenSymbol, err := blockchain.NewTokenInfoGetterFromContext(c)
 	if err != nil {
@@ -112,18 +112,21 @@ func run(c *cli.Context) error {
 	}()
 
 	f := fetcher.NewListedTokenFetcher(ethClient, resolv, sugar)
-	listedTokens, err := f.GetListedToken(block, reserveAddr, tokenSymbol)
-	if err != nil {
-		return err
-	}
-
-	storedListedToken, _, _, err := listedTokenStorage.GetTokens(reserveAddr.Hex())
-	if err != nil {
-		return err
-	}
-	if !reflect.DeepEqual(storedListedToken, listedTokens) {
-		if err = listedTokenStorage.CreateOrUpdate(listedTokens, block, reserveAddr); err != nil {
+	for _, addr := range addrs {
+		reserveAddr = ethereum.HexToAddress(addr)
+		listedTokens, err := f.GetListedToken(block, reserveAddr, tokenSymbol)
+		if err != nil {
 			return err
+		}
+
+		storedListedToken, _, _, err := listedTokenStorage.GetTokens(reserveAddr)
+		if err != nil {
+			return err
+		}
+		if !reflect.DeepEqual(storedListedToken, listedTokens) {
+			if err = listedTokenStorage.CreateOrUpdate(listedTokens, block, reserveAddr); err != nil {
+				return err
+			}
 		}
 	}
 

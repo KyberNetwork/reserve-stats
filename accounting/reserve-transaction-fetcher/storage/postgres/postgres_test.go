@@ -135,9 +135,10 @@ func TestERC20Transfer(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	_, db := testutil.MustNewDevelopmentDB()
 	s, err := NewStorage(sugar, db, WithTableName(&tableNames{
-		Normal:   "normal_test_erc20_transfer",
-		Internal: "internal_test_erc20_transfer",
-		ERC20:    "erc20_test_erc20_transfer",
+		Normal:       "normal_test_erc20_transfer",
+		Internal:     "internal_test_erc20_transfer",
+		ERC20:        "erc20_test_erc20_transfer",
+		LastInserted: "last_inserted_erc20_transfer",
 	}))
 	require.NoError(t, err)
 

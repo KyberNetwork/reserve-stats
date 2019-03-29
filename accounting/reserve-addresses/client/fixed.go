@@ -10,14 +10,14 @@ import (
 // FixedAddresses is an implementation of client.Interface that always returns
 // a pre supplied list of addresses.
 type FixedAddresses struct {
-	addresses []*common.ReserveAddress
+	addresses []common.ReserveAddress
 }
 
 // NewFixedAddresses creates a FixedAddresses instance with given list of reserve addresses.
 func NewFixedAddresses(addresses []string, resolv blockchain.ContractTimestampResolver) (*FixedAddresses, error) {
-	var ras []*common.ReserveAddress
+	var ras []common.ReserveAddress
 	for i, address := range addresses {
-		ra := &common.ReserveAddress{
+		ra := common.ReserveAddress{
 			ID:          uint64(i),
 			Address:     ethereum.HexToAddress(address),
 			Type:        common.Reserve,
@@ -34,7 +34,7 @@ func NewFixedAddresses(addresses []string, resolv blockchain.ContractTimestampRe
 	return &FixedAddresses{addresses: ras}, nil
 }
 
-// GetAllReserveAddress returns all available reserve addresses.
-func (fa *FixedAddresses) GetAllReserveAddress() ([]*common.ReserveAddress, error) {
+// ReserveAddresses returns all available reserve addresses.
+func (fa *FixedAddresses) ReserveAddresses(_ ...common.AddressType) ([]common.ReserveAddress, error) {
 	return fa.addresses, nil
 }

@@ -29,13 +29,15 @@ func NewClient(sugar *zap.SugaredLogger, url string) (*Client, error) {
 	}, nil
 }
 
-// GetAllReserveAddress Will return all the current reserve addresses in DB
-func (c *Client) GetAllReserveAddress() ([]*common.ReserveAddress, error) {
+// ReserveAddresses Will return all the current reserve addresses in DB
+func (c *Client) ReserveAddresses(filterTypes ...common.AddressType) ([]common.ReserveAddress, error) {
 	const endpoint = "/addresses"
 	var (
-		result        []*common.ReserveAddress
-		reserveResult []*common.ReserveAddress
+		result        []common.ReserveAddress
+		reserveResult []common.ReserveAddress
+		filter        = make(map[common.AddressType]struct{})
 	)
+
 	req, err := httputil.NewRequest(http.MethodGet, endpoint, c.url, nil)
 	if err != nil {
 		return result, err
@@ -58,10 +60,19 @@ func (c *Client) GetAllReserveAddress() ([]*common.ReserveAddress, error) {
 	if err = json.NewDecoder(rsp.Body).Decode(&result); err != nil {
 		return result, err
 	}
-	for _, addr := range result {
-		if addr.Type == common.Reserve {
-			reserveResult = append(reserveResult, addr)
+
+	if len(filterTypes) != 0 {
+		for _, typ := range filterTypes {
+			filter[typ] = struct{}{}
 		}
+
+		for _, addr := range result {
+			if _, ok := filter[addr.Type]; ok {
+				reserveResult = append(reserveResult, addr)
+			}
+		}
+	} else {
+		reserveResult = result
 	}
 
 	if err = rsp.Body.Close(); err != nil {

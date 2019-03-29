@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -17,9 +18,10 @@ func TestNormalTx(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	_, db := testutil.MustNewDevelopmentDB()
 	s, err := NewStorage(sugar, db, WithTableName(&tableNames{
-		Normal:   "normal_test_normal_tx",
-		Internal: "internal_test_normal_tx",
-		ERC20:    "erc20_test_normal_tx",
+		Normal:       "normal_test_normal_tx",
+		Internal:     "internal_test_normal_tx",
+		ERC20:        "erc20_test_normal_tx",
+		LastInserted: "last_inserted_test_normal_tx",
 	}))
 	require.NoError(t, err)
 
@@ -85,9 +87,10 @@ func TestInternalTx(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	_, db := testutil.MustNewDevelopmentDB()
 	s, err := NewStorage(sugar, db, WithTableName(&tableNames{
-		Normal:   "normal_test_internal_tx",
-		Internal: "internal_test_internal_tx",
-		ERC20:    "erc20_test_internal_tx",
+		Normal:       "normal_test_internal_tx",
+		Internal:     "internal_test_internal_tx",
+		ERC20:        "erc20_test_internal_tx",
+		LastInserted: "last_inserted_test_internal_tx",
 	}))
 	require.NoError(t, err)
 
@@ -176,4 +179,43 @@ func TestERC20Transfer(t *testing.T) {
 	txs, err = s.GetERC20Transfer(txTimestamp.Add(time.Second*2), txTimestamp.Add(time.Second*3))
 	require.NoError(t, err)
 	assert.Len(t, txs, 0)
+}
+
+func TestLastInserted(t *testing.T) {
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
+	_, db := testutil.MustNewDevelopmentDB()
+	s, err := NewStorage(sugar, db, WithTableName(&tableNames{
+		Normal:       "normal_test_last_inserted",
+		Internal:     "internal_test_last_inserted",
+		ERC20:        "erc20_test_last_inserted",
+		LastInserted: "last_inserted_test_last_inserted",
+	}))
+	require.NoError(t, err)
+
+	defer func(t *testing.T) {
+		require.NoError(t, s.TearDown())
+	}(t)
+	var (
+		testAddr         = ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")
+		testLastInserted = big.NewInt(7461105)
+	)
+
+	lastInserted, err := s.GetLastInserted(testAddr)
+	require.NoError(t, err)
+	assert.Nil(t, lastInserted)
+
+	err = s.StoreLastInserted(testAddr, testLastInserted)
+	require.NoError(t, err)
+
+	lastInserted, err = s.GetLastInserted(testAddr)
+	require.NoError(t, err)
+	assert.Equal(t, 0, testLastInserted.Cmp(lastInserted))
+
+	testLastInserted.Add(testLastInserted, big.NewInt(100))
+	err = s.StoreLastInserted(testAddr, testLastInserted)
+	require.NoError(t, err)
+
+	lastInserted, err = s.GetLastInserted(testAddr)
+	require.NoError(t, err)
+	assert.Equal(t, 0, testLastInserted.Cmp(lastInserted))
 }

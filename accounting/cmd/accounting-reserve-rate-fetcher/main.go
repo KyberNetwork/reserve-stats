@@ -181,7 +181,7 @@ func run(c *cli.Context) error {
 
 	if !fromDate.IsZero() && !toDate.IsZero() {
 		var ethAddrs []ethereum.Address
-		addrs, err := addressClient.GetAllReserveAddress()
+		addrs, err := addressClient.ReserveAddresses(common.Reserve)
 		if err != nil {
 			return err
 		}

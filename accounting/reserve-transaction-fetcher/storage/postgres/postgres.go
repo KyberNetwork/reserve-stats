@@ -1,10 +1,13 @@
 package postgres
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 
@@ -14,16 +17,18 @@ import (
 )
 
 var defaultTableNames = &tableNames{
-	Normal:   "rsv_tx_normal",
-	Internal: "rsv_tx_internal",
-	ERC20:    "rsv_tx_erc20",
+	Normal:       "rsv_tx_normal",
+	Internal:     "rsv_tx_internal",
+	ERC20:        "rsv_tx_erc20",
+	LastInserted: "rsv_tx_last_inserted",
 }
 
 // tableNames contains name of all PostgreSQL tables used for this this.
 type tableNames struct {
-	Normal   string
-	Internal string
-	ERC20    string
+	Normal       string
+	Internal     string
+	ERC20        string
+	LastInserted string
 }
 
 // Storage is the an implementation of storage.ReserveTransactionStorage interface using PostgresQL.
@@ -66,7 +71,12 @@ CREATE TABLE IF NOT EXISTS "%[3]s"
 );
 
 CREATE INDEX IF NOT EXISTS "%[3]s_time_idx" ON "%[3]s" ((data ->> 'timestamp'));
-`
+
+CREATE TABLE IF NOT EXISTS "%[4]s"
+(
+    address       text   NOT NULL PRIMARY KEY,
+    last_inserted BIGINT NOT NULL
+);`
 
 	s := &Storage{sugar: sugar, db: db}
 	for _, option := range options {
@@ -76,7 +86,11 @@ CREATE INDEX IF NOT EXISTS "%[3]s_time_idx" ON "%[3]s" ((data ->> 'timestamp'));
 		s.tableNames = defaultTableNames
 	}
 
-	query := fmt.Sprintf(schemaFmt, s.tableNames.Normal, s.tableNames.Internal, s.tableNames.ERC20)
+	query := fmt.Sprintf(schemaFmt,
+		s.tableNames.Normal,
+		s.tableNames.Internal,
+		s.tableNames.ERC20,
+		s.tableNames.LastInserted)
 	logger.Infow("initializing database schema", "query", query)
 	if _, err := db.Exec(query); err != nil {
 		return nil, err
@@ -87,12 +101,18 @@ CREATE INDEX IF NOT EXISTS "%[3]s_time_idx" ON "%[3]s" ((data ->> 'timestamp'));
 // TearDown removes all in used tables of reserve transaction storage.
 func (s *Storage) TearDown() error {
 	var logger = s.sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.TearDown")
-	const dropFMT = `
+	const dropFmt = `
 	DROP TABLE %[1]s CASCADE;
 	DROP TABLE %[2]s CASCADE;
 	DROP TABLE %[3]s CASCADE;
+	DROP TABLE %[4]s CASCADE;
 	`
-	query := fmt.Sprintf(dropFMT, s.tableNames.Normal, s.tableNames.Internal, s.tableNames.ERC20)
+	query := fmt.Sprintf(dropFmt,
+		s.tableNames.Normal,
+		s.tableNames.Internal,
+		s.tableNames.ERC20,
+		s.tableNames.LastInserted,
+	)
 	logger.Debugw("cleanup database", "query", query)
 	_, err := s.db.Exec(query)
 	return err
@@ -291,4 +311,49 @@ WHERE data ->> 'timestamp' >= $1
 		results = append(results, t)
 	}
 	return results, nil
+}
+
+func (s *Storage) StoreLastInserted(addr ethereum.Address, blockNumber *big.Int) error {
+	var (
+		logger = s.sugar.With(
+			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreLastInserted",
+			"address", addr.String(),
+			"block_number", blockNumber.String(),
+		)
+	)
+	const queryFmt = `INSERT INTO "%[1]s"(address, last_inserted)
+VALUES ($1, $2)
+ON CONFLICT ON CONSTRAINT "%[1]s_pkey" DO UPDATE SET last_inserted = EXCLUDED.last_inserted;
+`
+	query := fmt.Sprintf(queryFmt, s.tableNames.LastInserted)
+
+	logger.Debugw("updating last inserted to database")
+
+	_, err := s.db.Exec(query, addr.String(), blockNumber.Uint64())
+	return err
+}
+
+func (s *Storage) GetLastInserted(addr ethereum.Address) (*big.Int, error) {
+	var (
+		logger = s.sugar.With(
+			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.GetLastInserted",
+			"address", addr.String(),
+		)
+		lastInserted uint64
+	)
+	const queryFmt = `SELECT last_inserted
+FROM "%[1]s"
+WHERE address ILIKE $1`
+	query := fmt.Sprintf(queryFmt, s.tableNames.LastInserted)
+	logger.Debugw("fetching last inserted to database")
+	err := s.db.Get(&lastInserted, query, addr.String())
+	switch err {
+	case sql.ErrNoRows:
+		logger.Infow("no last inserted record exists")
+		return nil, nil
+	case nil:
+		return big.NewInt(0).SetUint64(lastInserted), nil
+	default:
+		return nil, err
+	}
 }

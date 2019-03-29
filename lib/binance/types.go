@@ -1,12 +1,5 @@
 package binance
 
-//APIResponse response a basic response from binance
-type APIResponse struct {
-	Code    int    `json:"code"`
-	Msg     string `json:"msg"`
-	Success bool   `json:"success"`
-}
-
 //TradeHistory return a history of a trade
 type TradeHistory struct {
 	Symbol          string `json:"symbol"`

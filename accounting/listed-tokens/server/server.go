@@ -44,7 +44,7 @@ func (s *Server) getReserveToken(c *gin.Context) {
 
 	reserveAddr := ethereum.HexToAddress(query.Reserve)
 
-	listedTokens, version, blockNumber, err := s.storage.GetTokens(reserveAddr.Hex())
+	listedTokens, version, blockNumber, err := s.storage.GetTokens(reserveAddr)
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return

@@ -96,7 +96,7 @@ ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id RETURNING id`
 	ON CONFLICT (reserve) DO UPDATE SET version = %[1]s.version+1, block_number = EXCLUDED.block_number`, versionTable)
 	logger.Debugw("update version", "query", updateVersionQuery)
 
-	updateReserveQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address) VALUES ($1) ON CONFLICT (address) DO NOTHING RETURNING id`, reservesTable)
+	updateReserveQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address) VALUES ($1) ON CONFLICT (address) DO UPDATE SET address = EXCLUDED.address RETURNING id`, reservesTable)
 	logger.Debugw("update reserve", "query", updateReserveQuery)
 
 	updateReserveTokenQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (token_id, reserve_id) VALUES ($1, $2)
@@ -126,8 +126,6 @@ ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id RETURNING id`
 			nil); err != nil {
 			return
 		}
-
-		logger.Debugw("token id", "id", tokenID)
 
 		if _, err = tx.Exec(updateReserveTokenQuery, tokenID, reserveID); err != nil {
 			return
@@ -207,7 +205,6 @@ func (ltd *ListedTokenDB) GetTokens(reserve string) (result []common.ListedToken
 	)
 
 	getQuery := fmt.Sprintf(`
-WITH r as (SELECT id FROM "%[1]s" WHERE %[1]s.address = $1)
 	SELECT joined.address,
        joined.name,
        joined.symbol,
@@ -221,18 +218,20 @@ FROM (SELECT toks.address,
              toks.timestamp,
              olds.address   AS old_address,
              olds.timestamp AS old_timestamp
-      FROM "%[2]s" AS toks
-             LEFT JOIN "%[2]s" AS olds
+      FROM "%[1]s" AS toks
+             LEFT JOIN "%[1]s" AS olds
 					   ON toks.id = olds.parent_id
-			 JOIN "%[3]s" as rk
-			 		   ON toks.id = rk.token_id
-      WHERE toks.parent_id IS NULL AND rk.reserve_id = r.id
+			 JOIN "%[2]s" as rk
+						ON toks.id = rk.token_id
+			 JOIN "%[3]s" as r
+			 			ON rk.reserve_id = r.id
+      WHERE toks.parent_id IS NULL AND r.address = $1 
       ORDER BY timestamp DESC) AS joined
-GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp`, reservesTable, ltd.tableName, reservesTokensTable)
+GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp`, ltd.tableName, reservesTokensTable, reservesTable)
 	logger.Debugw("get tokens query", "query", getQuery)
 
 	getVersionQuery := fmt.Sprintf(`SELECT version, block_number FROM "%[1]s" WHERE reserve = $1 LIMIT 1`, versionTable)
-	logger.Debugw("get token version", "query", getVersionQuery)
+	logger.Debugw("get token version", "query", getVersionQuery, "reserve", reserve)
 
 	tx, err := ltd.db.Beginx()
 	if err != nil {

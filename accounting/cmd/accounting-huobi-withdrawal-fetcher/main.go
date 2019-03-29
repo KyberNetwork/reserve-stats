@@ -101,13 +101,13 @@ func run(c *cli.Context) error {
 			return err
 		}
 	}
-	sugar.Infow("get withdraw history from", "ID", fromID)
+	sugar.Infow("get withdraw history from", "ID", fromID+1)
 
 	retryDelay := c.Duration(retryDelayFlag)
 	maxAttempts := c.Int(maxAttemptFlag)
 
 	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts)
-	data, err := fetcher.GetWithdrawHistory(fromID)
+	data, err := fetcher.GetWithdrawHistory(fromID + 1)
 	if err != nil {
 		return err
 	}

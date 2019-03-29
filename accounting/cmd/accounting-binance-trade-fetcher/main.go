@@ -103,14 +103,14 @@ func run(c *cli.Context) error {
 		}
 	}
 
-	sugar.Infow("fetch trade from id", "id", fromID)
+	sugar.Infow("fetch trade from id", "id", fromID+1)
 
 	retryDelay := c.Int(retryDelayFlag)
 	attempt := c.Int(attemptFlag)
 	batchSize := c.Int(batchSizeFlag)
 	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
 
-	tradeHistories, err := binanceFetcher.GetTradeHistory(fromID)
+	tradeHistories, err := binanceFetcher.GetTradeHistory(fromID + 1)
 	if err != nil {
 		return err
 	}

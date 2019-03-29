@@ -47,8 +47,12 @@ func (f *EtherscanTransactionFetcher) fetch(fn *fetchFn, addr ethereum.Address, 
 		results []interface{}
 	)
 	// clone from, to value to avoid changing
-	from = big.NewInt(0).Set(from)
-	to = big.NewInt(0).Set(to)
+	if from != nil {
+		from = big.NewInt(0).Set(from)
+	}
+	if to != nil {
+		to = big.NewInt(0).Set(to)
+	}
 
 	var (
 		startBlock *int

@@ -22,9 +22,8 @@ import (
 const (
 	addressesFlag = "addresses"
 
-	defaultFromBlock = 5069586
-	fromBlockFlag    = "from-block"
-	toBlockFlag      = "to-block"
+	fromBlockFlag = "from-block"
+	toBlockFlag   = "to-block"
 )
 
 func fetchTx(
@@ -170,9 +169,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	if len(c.String(fromBlockFlag)) == 0 {
-		fromBlock = big.NewInt(defaultFromBlock)
-	} else {
+	if len(c.String(fromBlockFlag)) != 0 {
 		fromBlock, err = libapp.ParseBigIntFlag(c, fromBlockFlag)
 		if err != nil {
 			return err

@@ -87,21 +87,27 @@ func run(c *cli.Context) error {
 
 	}
 
-	defer func(err *error) {
-		cErr := hdb.Close()
-		if err == nil {
-			*err = cErr
-		} else {
-			sugar.Error("DB closing failed", "error", cErr)
+	defer func() {
+		if cErr := hdb.Close(); cErr != nil {
+			sugar.Errorf("Close database error", "error", cErr)
 		}
-	}(&err)
+	}()
 
 	fromID := c.Uint64(fromIDFlag)
+	if fromID == 0 {
+		sugar.Info("From id is not provided, get last id stored in db")
+		fromID, err = hdb.GetLastIDStored()
+		if err != nil {
+			return err
+		}
+	}
+	sugar.Infow("get withdraw history from", "ID", fromID+1)
+
 	retryDelay := c.Duration(retryDelayFlag)
 	maxAttempts := c.Int(maxAttemptFlag)
 
 	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts)
-	data, err := fetcher.GetWithdrawHistory(fromID)
+	data, err := fetcher.GetWithdrawHistory(fromID + 1)
 	if err != nil {
 		return err
 	}
@@ -111,6 +117,8 @@ func run(c *cli.Context) error {
 		records = append(records, record...)
 	}
 
-	err = hdb.UpdateWithdrawHistory(records)
-	return err
+	if err = hdb.UpdateWithdrawHistory(records); err != nil {
+		return err
+	}
+	return hdb.Close()
 }

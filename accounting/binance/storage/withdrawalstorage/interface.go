@@ -10,4 +10,5 @@ import (
 type Interface interface {
 	UpdateWithdrawHistory([]binance.WithdrawHistory) error
 	GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.WithdrawHistory, error)
+	GetLastStoredTimestamp() (time.Time, error)
 }

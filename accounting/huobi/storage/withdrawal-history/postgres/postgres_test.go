@@ -16,7 +16,21 @@ import (
 func TestSaveAndGetAccountingRates(t *testing.T) {
 	var (
 		testData = []huobi.WithdrawHistory{
-			{ID: 2272335,
+			{
+				ID:         2272335,
+				CreatedAt:  1525754125590,
+				UpdatedAt:  1525754753403,
+				Currency:   "ETH",
+				Type:       "withdraw",
+				Amount:     0.48957444,
+				State:      "confirmed",
+				Fee:        0.01,
+				Address:    "f6a605cdd9b2471ffdff706f8b7665a12b862158",
+				AddressTag: "",
+				TxHash:     "cdef3adad017d9564e62282f5e0f0d87d72b995759f1f7f4e473137cc1b96e56",
+			},
+			{
+				ID:         2272334,
 				CreatedAt:  1525754125590,
 				UpdatedAt:  1525754753403,
 				Currency:   "ETH",
@@ -49,6 +63,10 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 
 	err = hdb.UpdateWithdrawHistory(testData)
 	require.NoError(t, err)
+
+	lastID, err := hdb.GetLastIDStored()
+	require.NoError(t, err)
+	assert.Equal(t, uint64(2272335), lastID)
 
 	withdrawals, err := hdb.GetWithdrawHistory(timeutil.TimestampMsToTime(1525754125500), timeutil.TimestampMsToTime(1525754125600))
 	require.NoError(t, err)

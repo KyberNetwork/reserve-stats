@@ -75,16 +75,6 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	from, err := timeutil.FromTimeMillisFromContext(c)
-	if err != nil {
-		return fmt.Errorf("cannot get from time: %v", err)
-	}
-	to, err := timeutil.ToTimeMillisFromContext(c)
-	if err != nil {
-		return fmt.Errorf("cannot get to time: %v", err)
-	}
-	retryDelay := c.Duration(retryDelayFlag)
-	maxAttempts := c.Int(maxAttemptFlag)
 
 	db, err := libapp.NewDBFromContext(c)
 	if err != nil {
@@ -96,6 +86,31 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("cannot create huobi database instance: %v", err)
 
 	}
+
+	from, err := timeutil.FromTimeMillisFromContext(c)
+	if err != nil {
+		return fmt.Errorf("cannot get from time: %v", err)
+	}
+	if from.IsZero() {
+		sugar.Info("from timestamp is not provided, get latest timestamp from database")
+		from, err = hdb.GetLastStoredTimestamp()
+		if err != nil {
+			return err
+		}
+	}
+	sugar.Infow("fetch trade from time", "time", from)
+
+	to, err := timeutil.ToTimeMillisFromContext(c)
+	if err != nil {
+		return fmt.Errorf("cannot get to time: %v", err)
+	}
+	if to.IsZero() {
+		to = time.Now()
+	}
+
+	retryDelay := c.Duration(retryDelayFlag)
+	maxAttempts := c.Int(maxAttemptFlag)
+
 	startTime := from
 	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts)
 	batchDuration := c.Duration(batchDurationFlag)

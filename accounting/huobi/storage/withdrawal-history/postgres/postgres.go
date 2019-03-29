@@ -164,3 +164,22 @@ func (hdb *HuobiStorage) GetWithdrawHistory(from, to time.Time) ([]huobi.Withdra
 	}
 	return result, nil
 }
+
+//GetLastIDStored return lastest id stored in database
+func (hdb *HuobiStorage) GetLastIDStored() (uint64, error) {
+	var (
+		result uint64
+		logger = hdb.sugar.With(
+			"func", "reserverates/storage/postgres/RateStorage.GetLastIDStored",
+		)
+	)
+	const selectStmt = `SELECT MAX(id) FROM %[1]s`
+	query := fmt.Sprintf(selectStmt, hdb.tableNames[huobiWithdrawalTableName])
+	logger.Debugw("querying trade history...", "query", query)
+
+	if err := hdb.db.Get(&result, query); err != nil {
+		return 0, err
+	}
+
+	return result, nil
+}

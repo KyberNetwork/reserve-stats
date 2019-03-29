@@ -10,4 +10,5 @@ import (
 type Interface interface {
 	UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory) error
 	GetWithdrawHistory(from, to time.Time) ([]huobi.WithdrawHistory, error)
+	GetLastIDStored() (uint64, error)
 }

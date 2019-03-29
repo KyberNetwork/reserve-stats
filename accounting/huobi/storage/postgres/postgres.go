@@ -160,3 +160,24 @@ func (hdb *HuobiStorage) GetTradeHistory(from, to time.Time) ([]huobi.TradeHisto
 	}
 	return result, nil
 }
+
+//GetLastStoredTimestamp return the last stored timestamp in database
+func (hdb *HuobiStorage) GetLastStoredTimestamp() (time.Time, error) {
+	var (
+		dbResult uint64
+		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
+		logger   = hdb.sugar.With(
+			"func", "reserverates/storage/postgres/RateStorage.GetLastStoredTimestamp",
+		)
+	)
+	const selectStmt = `SELECT MAX(data->>'created-at') FROM %[1]s`
+	query := fmt.Sprintf(selectStmt, hdb.tableNames[huobiTradesTableName])
+	logger.Debugw("querying trade history...", "query", query)
+	if err := hdb.db.Get(&dbResult, query); err != nil {
+		return result, err
+	}
+	if dbResult != 0 {
+		result = timeutil.TimestampMsToTime(dbResult)
+	}
+	return result, nil
+}

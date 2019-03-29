@@ -152,3 +152,21 @@ func (bd *BinanceStorage) GetTradeHistory(fromTime, toTime time.Time) ([]binance
 
 	return result, nil
 }
+
+//GetLastStoredID return last stored id
+func (bd *BinanceStorage) GetLastStoredID() (uint64, error) {
+	var (
+		logger = bd.sugar.With("func", "account/binance_storage.GetLastStoredID")
+		result uint64
+	)
+	const selectStmt = `SELECT MAX(id) FROM %s`
+	query := fmt.Sprintf(selectStmt, bd.tableName)
+
+	logger.Debugw("querying last stored id", "query", query)
+
+	if err := bd.db.Get(&result, query); err != nil {
+		return 0, err
+	}
+
+	return result, nil
+}

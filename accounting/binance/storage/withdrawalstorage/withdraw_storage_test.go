@@ -5,6 +5,7 @@ import (
 
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
@@ -90,6 +91,10 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 
 	err = binanceStorage.UpdateWithdrawHistory(testData)
 	assert.NoError(t, err)
+
+	lastStoredTimestamp, err := binanceStorage.GetLastStoredTimestamp()
+	require.NoError(t, err)
+	assert.Equal(t, uint64(1522037352000), timeutil.TimeToTimestampMs(lastStoredTimestamp))
 
 	// test get trade history from database
 	fromTime := timeutil.TimestampMsToTime(1516886594000)

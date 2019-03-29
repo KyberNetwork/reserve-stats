@@ -317,7 +317,7 @@ func (s *Storage) StoreLastInserted(addr ethereum.Address, blockNumber *big.Int)
 	var (
 		logger = s.sugar.With(
 			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreLastInserted",
-			"address", addr.String(),
+			"address", addr.Hex(),
 			"block_number", blockNumber.String(),
 		)
 	)
@@ -337,7 +337,7 @@ func (s *Storage) GetLastInserted(addr ethereum.Address) (*big.Int, error) {
 	var (
 		logger = s.sugar.With(
 			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.GetLastInserted",
-			"address", addr.String(),
+			"address", addr.Hex(),
 		)
 		lastInserted uint64
 	)

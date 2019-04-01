@@ -5,7 +5,6 @@ import (
 	"log"
 	"math/big"
 	"os"
-	"reflect"
 
 	"github.com/urfave/cli"
 
@@ -137,14 +136,8 @@ func run(c *cli.Context) error {
 			return err
 		}
 
-		storedListedToken, _, _, err := listedTokenStorage.GetTokens(addr.Address)
-		if err != nil {
+		if err = listedTokenStorage.CreateOrUpdate(listedTokens, block, addr.Address); err != nil {
 			return err
-		}
-		if !reflect.DeepEqual(storedListedToken, listedTokens) {
-			if err = listedTokenStorage.CreateOrUpdate(listedTokens, block, addr.Address); err != nil {
-				return err
-			}
 		}
 	}
 

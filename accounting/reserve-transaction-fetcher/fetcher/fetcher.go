@@ -46,6 +46,13 @@ func (f *EtherscanTransactionFetcher) fetch(fn *fetchFn, addr ethereum.Address, 
 		)
 		results []interface{}
 	)
+	// clone from, to value to avoid changing
+	if from != nil {
+		from = big.NewInt(0).Set(from)
+	}
+	if to != nil {
+		to = big.NewInt(0).Set(to)
+	}
 
 	var (
 		startBlock *int
@@ -92,7 +99,7 @@ func (f *EtherscanTransactionFetcher) fetch(fn *fetchFn, addr ethereum.Address, 
 func etherscanNormalTxToCommon(tx etherscan.NormalTx) common.NormalTx {
 	return common.NormalTx{
 		BlockNumber: tx.BlockNumber,
-		TimeStamp:   tx.TimeStamp.Time(),
+		Timestamp:   tx.TimeStamp.Time(),
 		Hash:        tx.Hash,
 		BlockHash:   tx.BlockHash,
 		From:        tx.From,
@@ -135,7 +142,7 @@ func (f *EtherscanTransactionFetcher) NormalTx(addr ethereum.Address, from, to *
 func etherscanInternalTxToCommon(tx etherscan.InternalTx) common.InternalTx {
 	return common.InternalTx{
 		BlockNumber: tx.BlockNumber,
-		TimeStamp:   tx.TimeStamp.Time(),
+		Timestamp:   tx.TimeStamp.Time(),
 		Hash:        tx.Hash,
 		From:        tx.From,
 		To:          tx.To,
@@ -176,7 +183,7 @@ func (f *EtherscanTransactionFetcher) InternalTx(addr ethereum.Address, from, to
 func etherscanERC20TransferToCommon(tx etherscan.ERC20Transfer) common.ERC20Transfer {
 	return common.ERC20Transfer{
 		BlockNumber:     tx.BlockNumber,
-		TimeStamp:       tx.TimeStamp.Time(),
+		Timestamp:       tx.TimeStamp.Time(),
 		Hash:            tx.Hash,
 		From:            tx.From,
 		ContractAddress: tx.ContractAddress,

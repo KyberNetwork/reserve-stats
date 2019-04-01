@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	addressServerFlag = "address-server-url"
+	addressServerFlag    = "address-server-url"
+	defaultAddressServer = "http://127.0.0.1:8009"
 )
 
 //NewClientFlags return flags to init addresses client
@@ -18,6 +19,7 @@ func NewClientFlags() []cli.Flag {
 			Name:   addressServerFlag,
 			Usage:  "The address of Reserve Addresses server with port number",
 			EnvVar: "ADDRESS_SERVER_URL",
+			Value:  defaultAddressServer,
 		}}
 }
 

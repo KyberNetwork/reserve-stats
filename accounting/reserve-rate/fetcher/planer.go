@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	lbdCommon "github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
@@ -38,7 +39,7 @@ func (fc *Fetcher) getLastFetchedBlockPerReserve() (ReserveBlockInfos, error) {
 		result ReserveBlockInfos
 		logger = fc.sugar.With("func", "accounting/reserve-rate/fetcher/planer.go/getLastFetchedBlockPerReserve")
 	)
-	addresses, err := fc.addressClient.GetAllReserveAddress()
+	addresses, err := fc.addressClient.ReserveAddresses(common.Reserve)
 	if err != nil {
 		return result, err
 	}

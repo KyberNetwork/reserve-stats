@@ -16,7 +16,7 @@ var cl *Client
 func TestGetAllReserveAddress(t *testing.T) {
 	//skip as it need external resource
 	t.Skip()
-	result, err := cl.GetAllReserveAddress()
+	result, err := cl.ReserveAddresses()
 	require.NoError(t, err)
 	log.Printf("result is %v", result)
 }

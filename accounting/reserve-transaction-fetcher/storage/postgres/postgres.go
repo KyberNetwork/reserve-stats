@@ -11,7 +11,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 
-	"github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/common"
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )

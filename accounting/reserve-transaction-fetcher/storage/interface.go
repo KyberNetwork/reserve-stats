@@ -6,7 +6,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 
-	"github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/common"
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 )
 
 // ReserveTransactionStorage is the common interface of accounting-reserve-transaction persistent storage.

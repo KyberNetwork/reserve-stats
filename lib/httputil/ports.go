@@ -36,4 +36,7 @@ const (
 
 	// AccountingTransactionsPort is the port number of accounting-reserve-transaction-api service.
 	AccountingTransactionsPort = 8011
+
+	// AccountingWalletErc20Port is the port number of accounting-wallet-erc20-api service
+	AccountingWalletErc20Port = 8012
 )

@@ -2,18 +2,17 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"math/big"
 	"os"
 	"reflect"
 
-	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/accounting/listed-tokens/fetcher"
 	"github.com/KyberNetwork/reserve-stats/accounting/listed-tokens/storage"
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/client"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
@@ -44,6 +43,7 @@ func main() {
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
+	app.Flags = append(app.Flags, client.NewClientFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -51,8 +51,8 @@ func main() {
 
 func run(c *cli.Context) error {
 	var (
-		block       *big.Int
-		reserveAddr ethereum.Address
+		block         *big.Int
+		addressClient client.Interface
 	)
 	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
@@ -80,8 +80,22 @@ func run(c *cli.Context) error {
 	}
 
 	addrs := c.StringSlice(reserveAddressFlag)
-	if len(addrs) == 0 {
-		return fmt.Errorf("reserve address is required")
+	if len(addrs) != 0 {
+		sugar.Infow("using provided addresses instead of querying from accounting-reserve-addresses service")
+		etherscanClient, err := etherscan.NewEtherscanClientFromContext(c)
+		if err != nil {
+			return err
+		}
+		resolver := blockchain.NewEtherscanContractTimestampResolver(sugar, etherscanClient)
+		addressClient, err = client.NewFixedAddresses(addrs, resolver)
+		if err != nil {
+			return err
+		}
+	} else {
+		addressClient, err = client.NewClientFromContext(c, sugar)
+		if err != nil {
+			return err
+		}
 	}
 
 	tokenSymbol, err := blockchain.NewTokenInfoGetterFromContext(c)
@@ -111,20 +125,24 @@ func run(c *cli.Context) error {
 		}
 	}()
 
+	reserveAddrs, err := addressClient.ReserveAddresses(common.Reserve)
+	if err != nil {
+		return err
+	}
+
 	f := fetcher.NewListedTokenFetcher(ethClient, resolv, sugar)
-	for _, addr := range addrs {
-		reserveAddr = ethereum.HexToAddress(addr)
-		listedTokens, err := f.GetListedToken(block, reserveAddr, tokenSymbol)
+	for _, addr := range reserveAddrs {
+		listedTokens, err := f.GetListedToken(block, addr.Address, tokenSymbol)
 		if err != nil {
 			return err
 		}
 
-		storedListedToken, _, _, err := listedTokenStorage.GetTokens(reserveAddr)
+		storedListedToken, _, _, err := listedTokenStorage.GetTokens(addr.Address)
 		if err != nil {
 			return err
 		}
 		if !reflect.DeepEqual(storedListedToken, listedTokens) {
-			if err = listedTokenStorage.CreateOrUpdate(listedTokens, block, reserveAddr); err != nil {
+			if err = listedTokenStorage.CreateOrUpdate(listedTokens, block, addr.Address); err != nil {
 				return err
 			}
 		}

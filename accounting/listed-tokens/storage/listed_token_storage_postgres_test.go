@@ -96,7 +96,7 @@ func TestListedTokenStorage(t *testing.T) {
 	err = storage.CreateOrUpdate(listedTokens, blockNumber, reserve)
 	require.NoError(t, err)
 
-	storedListedTokens, version, storedBlockNumber, err := storage.GetTokens(reserve)
+	storedListedTokens, version, storedBlockNumber, err := storage.GetTokens()
 	require.NoError(t, err)
 	assert.ElementsMatch(t, listedTokens, storedListedTokens)
 	assert.Equal(t, version, uint64(1))
@@ -105,7 +105,7 @@ func TestListedTokenStorage(t *testing.T) {
 	err = storage.CreateOrUpdate(listedTokensNew, blockNumberNew, reserve)
 	require.NoError(t, err)
 
-	storedNewListedTokens, version, storedBlockNumber, err := storage.GetTokens(reserve)
+	storedNewListedTokens, version, storedBlockNumber, err := storage.GetTokens()
 	assert.NoError(t, err)
 	assert.Equal(t, version, uint64(2))
 	assert.Equal(t, blockNumberNew.Uint64(), storedBlockNumber)

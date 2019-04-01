@@ -39,7 +39,7 @@ type WalletErc20Storage struct {
 // NewDB return the WalletErc20Storage instance. User must call Close() before exit.
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*WalletErc20Storage, error) {
 	var (
-		logger = sugar.With("func", "reserverates/storage/postgres/NewDB")
+		logger = sugar.With("func", "accounting/wallet-erc20/storage/postgres.NewDB")
 		//set Default table name
 	)
 
@@ -52,8 +52,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*WalletErc
 ) ;
 
 CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s 
-((data ->> 'timeStamp'),(data ->> 'contractAddress'),(data ->> 'from'),(data ->> 'from'));
-
+((data ->> 'timestamp'),(data ->> 'contractAddress'),(data ->> 'from'),(data ->> 'from'));
 `
 
 	ws := &WalletErc20Storage{
@@ -97,7 +96,7 @@ func (wdb *WalletErc20Storage) Close() error {
 }
 
 //UpdateERC20Transfers store the ERC20Transfer rate at that blockInfo
-func (wdb *WalletErc20Storage) UpdateERC20Transfers(erc20Txs []common.ERC20Transfer) error {
+func (wdb *WalletErc20Storage) UpdateERC20Transfers(erc20Txs []common.ERC20Transfer) (err error) {
 	var (
 		logger = wdb.sugar.With(
 			"func", "accounting/wallet-erc20/storage/postgres..UpdateRatesRecords",
@@ -109,7 +108,6 @@ func (wdb *WalletErc20Storage) UpdateERC20Transfers(erc20Txs []common.ERC20Trans
 		$1
 	)
 	ON CONFLICT ON CONSTRAINT %[1]s_data_key DO NOTHING
-
 	`
 	query := fmt.Sprintf(updateStmt,
 		wdb.tableName,
@@ -118,22 +116,22 @@ func (wdb *WalletErc20Storage) UpdateERC20Transfers(erc20Txs []common.ERC20Trans
 
 	tx, err := wdb.db.Beginx()
 	if err != nil {
-		return err
+		return
 	}
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 	for _, erc20Tx := range erc20Txs {
 		data, err := json.Marshal(erc20Tx)
 		if err != nil {
-			return err
+			return
 		}
 		logger.Debugf("%s contract %s", data, erc20Tx.ContractAddress.Hex())
 		_, err = tx.Exec(query, data)
 		if err != nil {
-			return err
+			return
 		}
 	}
 
-	return err
+	return
 }
 
 //GetERC20Transfers return erc20 transfer between from.. to.. in its json []byte form

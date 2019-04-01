@@ -164,7 +164,7 @@ func (et *ERC20Transfer) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	if decoded.Timestamp != nil {
-		et.Timestamp = timeutil.TimestampMsToTime(*decoded.Timestamp)
+		et.Timestamp = timeutil.TimestampMsToTime(*decoded.Timestamp).UTC()
 	}
 
 	et.BlockNumber = decoded.BlockNumber

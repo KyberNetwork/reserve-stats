@@ -89,7 +89,6 @@ SELECT joined.address,
        joined.name,
        joined.symbol,
        joined.timestamp,
-       joined.reserve,
        array_agg(joined.old_address)
                  FILTER ( WHERE joined.old_address IS NOT NULL)::text[]     AS old_addresses,
        array_agg(extract(EPOCH FROM joined.old_timestamp) * 1000)
@@ -99,18 +98,13 @@ FROM (SELECT toks.address,
              toks.symbol,
              toks.timestamp,
              olds.address   AS old_address,
-             olds.timestamp AS old_timestamp,
-             r.address      AS reserve
+             olds.timestamp AS old_timestamp
       FROM "%[1]s" AS toks
                LEFT JOIN "%[1]s" AS olds
                          ON toks.id = olds.parent_id
-               JOIN "%[4]s" as rk
-                    ON toks.id = rk.token_id
-               JOIN "%[3]s" as r
-                    ON rk.reserve_id = r.id
       WHERE toks.parent_id IS NULL
       ORDER BY timestamp DESC) AS joined
-GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp, joined.reserve;
+GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp;
 `
 	var (
 		logger = sugar.With("func", "accounting/storage.NewDB")
@@ -256,7 +250,7 @@ func (r *listedTokenRecord) ListedToken() (common.ListedToken, error) {
 }
 
 // GetTokens return all tokens listed
-func (ltd *ListedTokenDB) GetTokens(reserve ethereum.Address) (result []common.ListedToken, version, blockNumber uint64, err error) {
+func (ltd *ListedTokenDB) GetTokens() (result []common.ListedToken, version, blockNumber uint64, err error) {
 	var (
 		logger = ltd.sugar.With(
 			"func",
@@ -272,12 +266,11 @@ func (ltd *ListedTokenDB) GetTokens(reserve ethereum.Address) (result []common.L
        timestamp,
        old_addresses,
        old_timestamps
-FROM "tokens_view"
-WHERE reserve = $1;`
+FROM "tokens_view";`
 	logger.Debugw("get tokens query", "query", getQuery)
 
-	getVersionQuery := fmt.Sprintf(`SELECT version, block_number FROM "%[1]s" WHERE reserve = $1 LIMIT 1`, ltd.tb.version)
-	logger.Debugw("get token version", "query", getVersionQuery, "reserve", reserve.Hex())
+	getVersionQuery := fmt.Sprintf(`SELECT version, block_number FROM "%[1]s" LIMIT 1`, ltd.tb.version)
+	logger.Debugw("get token version", "query", getVersionQuery)
 
 	tx, err := ltd.db.Beginx()
 	if err != nil {
@@ -286,7 +279,7 @@ WHERE reserve = $1;`
 
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 
-	if err := tx.Select(&records, getQuery, reserve.Hex()); err != nil {
+	if err := tx.Select(&records, getQuery); err != nil {
 		logger.Errorw("error query token", "error", err)
 		return nil, 0, 0, err
 	}
@@ -299,7 +292,7 @@ WHERE reserve = $1;`
 		result = append(result, token)
 	}
 
-	if err := tx.Select(&versionRecords, getVersionQuery, reserve.Hex()); err != nil {
+	if err := tx.Select(&versionRecords, getVersionQuery); err != nil {
 		logger.Error("error query token version", "error", err)
 		return nil, 0, 0, err
 	}

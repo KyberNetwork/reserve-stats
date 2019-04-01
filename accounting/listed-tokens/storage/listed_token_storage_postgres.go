@@ -52,7 +52,8 @@ func WithTableName(tb *tableNames) Option {
 
 //NewDB open a new database connection an create initiated table if it is not exist
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*ListedTokenDB, error) {
-	const schemaFmt string = `CREATE TABLE IF NOT EXISTS "%[1]s"
+	const schemaFmt string = `-- listed_tokens table
+CREATE TABLE IF NOT EXISTS "%[1]s"
 (
     id        SERIAL PRIMARY KEY,
     address   text      NOT NULL UNIQUE,
@@ -62,6 +63,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*ListedTok
     parent_id INT REFERENCES "%[1]s" (id)
 );
 
+-- version table
 CREATE TABLE IF NOT EXISTS "%[2]s"
 (
     id           SERIAL PRIMARY KEY,
@@ -70,12 +72,14 @@ CREATE TABLE IF NOT EXISTS "%[2]s"
     reserve      text   NOT NULL UNIQUE
 );
 
+-- reserves table
 CREATE TABLE IF NOT EXISTS "%[3]s"
 (
     id      serial NOT NULL PRIMARY KEY,
     address TEXT   NOT NULL UNIQUE
 );
 
+-- reserve_token table
 CREATE TABLE IF NOT EXISTS "%[4]s"
 (
     id         SERIAL NOT NULL,

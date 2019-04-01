@@ -51,5 +51,8 @@ func run(c *cli.Context) error {
 	}()
 
 	s := server.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), listedTokenStorage)
-	return s.Run()
+	if err = s.Run(); err != nil {
+		return err
+	}
+	return listedTokenStorage.Close()
 }

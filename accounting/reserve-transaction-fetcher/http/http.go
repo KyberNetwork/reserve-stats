@@ -8,7 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/common"
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	txcommon "github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/common"
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 )
@@ -42,7 +43,7 @@ func (q *getTransactionsQuery) validate() (time.Time, time.Time, map[string]stru
 		return time.Time{}, time.Time{}, nil, err
 	}
 	for _, typeString := range q.Types {
-		_, ok := common.TransactionTypes[typeString]
+		_, ok := txcommon.TransactionTypes[typeString]
 		if !ok {
 			return time.Time{}, time.Time{}, nil, fmt.Errorf("invalid type %s", typeString)
 		}
@@ -50,7 +51,7 @@ func (q *getTransactionsQuery) validate() (time.Time, time.Time, map[string]stru
 	}
 	//If the types is empty, return all types
 	if len(types) == 0 {
-		for typeString := range common.TransactionTypes {
+		for typeString := range txcommon.TransactionTypes {
 			types[typeString] = struct{}{}
 		}
 
@@ -90,7 +91,7 @@ func (s *Server) getTransactions(c *gin.Context) {
 		)
 		return
 	}
-	if _, ok := types[common.ERC20.String()]; ok {
+	if _, ok := types[txcommon.ERC20.String()]; ok {
 		erc20Txs, err = s.rts.GetERC20Transfer(from, to)
 		if err != nil {
 			httputil.ResponseFailure(
@@ -101,7 +102,7 @@ func (s *Server) getTransactions(c *gin.Context) {
 			return
 		}
 	}
-	if _, ok := types[common.Normal.String()]; ok {
+	if _, ok := types[txcommon.Normal.String()]; ok {
 		normalTxs, err = s.rts.GetNormalTx(from, to)
 		if err != nil {
 			httputil.ResponseFailure(
@@ -112,7 +113,7 @@ func (s *Server) getTransactions(c *gin.Context) {
 			return
 		}
 	}
-	if _, ok := types[common.Internal.String()]; ok {
+	if _, ok := types[txcommon.Internal.String()]; ok {
 		internalTxs, err = s.rts.GetInternalTx(from, to)
 		if err != nil {
 			httputil.ResponseFailure(

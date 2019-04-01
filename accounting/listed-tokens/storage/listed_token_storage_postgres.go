@@ -15,21 +15,43 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
-const (
-	versionTable        = "listed_token_version"
-	reservesTable       = "reserves"
-	reservesTokensTable = "reserves_tokens"
-)
+var defaultTableNames = newTableNames(
+	"listed_tokens_version",
+	"listed_tokens_reserves",
+	"listed_tokens_reserves_tokens",
+	"listed_tokens")
+
+type tableNames struct {
+	version        string
+	reserves       string
+	reservesTokens string
+	tokens         string
+}
+
+func newTableNames(version string, reserves string, reservesTokens string, tokens string) *tableNames {
+	return &tableNames{version: version, reserves: reserves, reservesTokens: reservesTokens, tokens: tokens}
+}
 
 //ListedTokenDB is storage for listed token
 type ListedTokenDB struct {
-	sugar     *zap.SugaredLogger
-	db        *sqlx.DB
-	tableName string
+	sugar *zap.SugaredLogger
+	db    *sqlx.DB
+
+	tb *tableNames
+}
+
+// Option is the ListedTokenDB constructor option.
+type Option func(*ListedTokenDB)
+
+// WithTableName is the option to use a non-default table name.
+func WithTableName(tb *tableNames) Option {
+	return func(db *ListedTokenDB) {
+		db.tb = tb
+	}
 }
 
 //NewDB open a new database connection an create initiated table if it is not exist
-func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, tableName string) (*ListedTokenDB, error) {
+func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*ListedTokenDB, error) {
 	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%[1]s"
 (
 	id SERIAL PRIMARY KEY,
@@ -60,19 +82,29 @@ CREATE TABLE IF NOT EXISTS "%[4]s"
 	PRIMARY KEY (token_id, reserve_id)
 )
 	`
-	var logger = sugar.With("func", "accounting/storage.NewDB")
+	var (
+		logger = sugar.With("func", "accounting/storage.NewDB")
+		ltd    = &ListedTokenDB{
+			sugar: sugar,
+			db:    db,
+		}
+	)
 
-	logger.Debug("initializing database schema")
-	if _, err := db.Exec(fmt.Sprintf(schemaFmt, tableName, versionTable, reservesTable, reservesTokensTable)); err != nil {
+	for _, option := range options {
+		option(ltd)
+	}
+
+	if ltd.tb == nil {
+		ltd.tb = defaultTableNames
+	}
+
+	query := fmt.Sprintf(schemaFmt, ltd.tb.tokens, ltd.tb.version, ltd.tb.reserves, ltd.tb.reservesTokens)
+	logger.Debugw("initializing database schema", "query", query)
+	if _, err := db.Exec(query); err != nil {
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
-
-	return &ListedTokenDB{
-		sugar:     sugar,
-		db:        db,
-		tableName: tableName,
-	}, nil
+	return ltd, nil
 }
 
 //CreateOrUpdate add or edit an record in the tokens table
@@ -88,19 +120,19 @@ VALUES ($1,
 		$4,
         CASE WHEN $5::text IS NOT NULL THEN (SELECT id FROM "%[1]s" WHERE address = $5) ELSE NULL END)
 ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id RETURNING id`,
-		ltd.tableName)
+		ltd.tb.tokens)
 	logger.Debugw("upsert token", "value", upsertQuery)
 
 	updateVersionQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (version, block_number, reserve)
 	VALUES($1, $2, $3)
-	ON CONFLICT (reserve) DO UPDATE SET version = %[1]s.version+1, block_number = EXCLUDED.block_number`, versionTable)
+	ON CONFLICT (reserve) DO UPDATE SET version = %[1]s.version+1, block_number = EXCLUDED.block_number`, ltd.tb.version)
 	logger.Debugw("update version", "query", updateVersionQuery)
 
-	updateReserveQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address) VALUES ($1) ON CONFLICT (address) DO UPDATE SET address = EXCLUDED.address RETURNING id`, reservesTable)
+	updateReserveQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address) VALUES ($1) ON CONFLICT (address) DO UPDATE SET address = EXCLUDED.address RETURNING id`, ltd.tb.reserves)
 	logger.Debugw("update reserve", "query", updateReserveQuery)
 
 	updateReserveTokenQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (token_id, reserve_id) VALUES ($1, $2)
-	ON CONFLICT (token_id, reserve_id) DO NOTHING`, reservesTokensTable)
+	ON CONFLICT (token_id, reserve_id) DO NOTHING`, ltd.tb.reservesTokens)
 	logger.Debugw("update reserve token", "query", updateReserveTokenQuery)
 
 	tx, err := ltd.db.Beginx()
@@ -227,10 +259,10 @@ FROM (SELECT toks.address,
 			 			ON rk.reserve_id = r.id
       WHERE toks.parent_id IS NULL AND r.address = $1 
       ORDER BY timestamp DESC) AS joined
-GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp`, ltd.tableName, reservesTokensTable, reservesTable)
+GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp`, ltd.tb.tokens, ltd.tb.reservesTokens, ltd.tb.reserves)
 	logger.Debugw("get tokens query", "query", getQuery)
 
-	getVersionQuery := fmt.Sprintf(`SELECT version, block_number FROM "%[1]s" WHERE reserve = $1 LIMIT 1`, versionTable)
+	getVersionQuery := fmt.Sprintf(`SELECT version, block_number FROM "%[1]s" WHERE reserve = $1 LIMIT 1`, ltd.tb.version)
 	logger.Debugw("get token version", "query", getVersionQuery, "reserve", reserve.Hex())
 
 	tx, err := ltd.db.Beginx()
@@ -277,7 +309,7 @@ func (ltd *ListedTokenDB) Close() error {
 //DeleteTable remove tables use for test
 func (ltd *ListedTokenDB) DeleteTable() error {
 	const dropQuery = `DROP TABLE %[1]s, %[2]s, %[3]s, %[4]s;`
-	query := fmt.Sprintf(dropQuery, reservesTokensTable, ltd.tableName, versionTable, reservesTable)
+	query := fmt.Sprintf(dropQuery, ltd.tb.reservesTokens, ltd.tb.tokens, ltd.tb.version, ltd.tb.reserves)
 
 	ltd.sugar.Infow("Drop token table", "query", query)
 	_, err := ltd.db.Exec(query)

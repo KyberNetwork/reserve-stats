@@ -114,7 +114,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	listedTokenStorage, err := storage.NewDB(sugar, db, common.ListedTokenTable)
+	listedTokenStorage, err := storage.NewDB(sugar, db)
 	if err != nil {
 		return err
 	}

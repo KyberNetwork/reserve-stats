@@ -96,7 +96,7 @@ func (wdb *WalletErc20Storage) Close() error {
 }
 
 //UpdateERC20Transfers store the ERC20Transfer rate at that blockInfo
-func (wdb *WalletErc20Storage) UpdateERC20Transfers(erc20Txs []common.ERC20Transfer) (err error) {
+func (wdb *WalletErc20Storage) UpdateERC20Transfers(erc20Txs []common.ERC20Transfer) error {
 	var (
 		logger = wdb.sugar.With(
 			"func", "accounting/wallet-erc20/storage/postgres..UpdateRatesRecords",
@@ -116,22 +116,23 @@ func (wdb *WalletErc20Storage) UpdateERC20Transfers(erc20Txs []common.ERC20Trans
 
 	tx, err := wdb.db.Beginx()
 	if err != nil {
-		return
+		return err
 	}
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 	for _, erc20Tx := range erc20Txs {
-		data, err := json.Marshal(erc20Tx)
+		var data []byte
+		data, err = json.Marshal(erc20Tx)
 		if err != nil {
-			return
+			return err
 		}
 		logger.Debugf("%s contract %s", data, erc20Tx.ContractAddress.Hex())
 		_, err = tx.Exec(query, data)
 		if err != nil {
-			return
+			return err
 		}
 	}
 
-	return
+	return err
 }
 
 //GetERC20Transfers return erc20 transfer between from.. to.. in its json []byte form

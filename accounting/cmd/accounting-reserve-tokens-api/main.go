@@ -39,7 +39,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	listedTokenStorage, err := storage.NewDB(sugar, db, common.ListedTokenTable)
+	listedTokenStorage, err := storage.NewDB(sugar, db)
 	if err != nil {
 		return err
 	}
@@ -50,6 +50,6 @@ func run(c *cli.Context) error {
 		}
 	}()
 
-	server := server.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), listedTokenStorage)
-	return server.Run()
+	s := server.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), listedTokenStorage)
+	return s.Run()
 }

@@ -14,11 +14,13 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
-const tokenTableTest = "listed_tokens_test"
-
 func newListedTokenDB(sugar *zap.SugaredLogger) (*ListedTokenDB, error) {
 	_, db := testutil.MustNewDevelopmentDB()
-	storage, err := NewDB(sugar, db, tokenTableTest)
+	storage, err := NewDB(sugar, db, WithTableName(newTableNames(
+		"test_listed_tokens_version",
+		"test_listed_tokens_reserves",
+		"test_listed_tokens_reserves_tokens",
+		"test_listed_tokens")))
 	if err != nil {
 		return nil, err
 	}

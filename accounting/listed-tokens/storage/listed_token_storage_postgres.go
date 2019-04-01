@@ -52,36 +52,66 @@ func WithTableName(tb *tableNames) Option {
 
 //NewDB open a new database connection an create initiated table if it is not exist
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*ListedTokenDB, error) {
-	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%[1]s"
+	const schemaFmt string = `CREATE TABLE IF NOT EXISTS "%[1]s"
 (
-	id SERIAL PRIMARY KEY,
-	address text NOT NULL UNIQUE,
-	name text NOT NULL,
-	symbol text NOT NULL,
-	timestamp TIMESTAMP NOT NULL,
-	parent_id INT REFERENCES "%[1]s" (id)
+    id        SERIAL PRIMARY KEY,
+    address   text      NOT NULL UNIQUE,
+    name      text      NOT NULL,
+    symbol    text      NOT NULL,
+    timestamp TIMESTAMP NOT NULL,
+    parent_id INT REFERENCES "%[1]s" (id)
 );
+
 CREATE TABLE IF NOT EXISTS "%[2]s"
 (
-	id SERIAL PRIMARY KEY,
-	version INT NOT NULL,
-	block_number bigint NOT NULL,
-	reserve text NOT NULL UNIQUE
+    id           SERIAL PRIMARY KEY,
+    version      INT    NOT NULL,
+    block_number bigint NOT NULL,
+    reserve      text   NOT NULL UNIQUE
 );
+
 CREATE TABLE IF NOT EXISTS "%[3]s"
 (
-	id serial NOT NULL,
-	address TEXT NOT NULL UNIQUE,
-	CONSTRAINT %[1]s_pk PRIMARY KEY(id)
+    id      serial NOT NULL PRIMARY KEY,
+    address TEXT   NOT NULL UNIQUE
 );
+
 CREATE TABLE IF NOT EXISTS "%[4]s"
 (
-	id SERIAL NOT NULL,
-	token_id INT REFERENCES "%[1]s" (id),
-	reserve_id INT REFERENCES "%[3]s" (id),
-	PRIMARY KEY (token_id, reserve_id)
-)
-	`
+    id         SERIAL NOT NULL,
+    token_id   INT REFERENCES "%[1]s" (id),
+    reserve_id INT REFERENCES "%[3]s" (id),
+    PRIMARY KEY (token_id, reserve_id)
+);
+
+CREATE OR REPLACE VIEW tokens_view AS
+SELECT joined.address,
+       joined.name,
+       joined.symbol,
+       joined.timestamp,
+       joined.reserve,
+       array_agg(joined.old_address)
+                 FILTER ( WHERE joined.old_address IS NOT NULL)::text[]     AS old_addresses,
+       array_agg(extract(EPOCH FROM joined.old_timestamp) * 1000)
+                 FILTER ( WHERE joined.old_timestamp IS NOT NULL)::BIGINT[] AS old_timestamps
+FROM (SELECT toks.address,
+             toks.name,
+             toks.symbol,
+             toks.timestamp,
+             olds.address   AS old_address,
+             olds.timestamp AS old_timestamp,
+             r.address      AS reserve
+      FROM "%[1]s" AS toks
+               LEFT JOIN "%[1]s" AS olds
+                         ON toks.id = olds.parent_id
+               JOIN "%[4]s" as rk
+                    ON toks.id = rk.token_id
+               JOIN "%[3]s" as r
+                    ON rk.reserve_id = r.id
+      WHERE toks.parent_id IS NULL
+      ORDER BY timestamp DESC) AS joined
+GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp, joined.reserve;
+`
 	var (
 		logger = sugar.With("func", "accounting/storage.NewDB")
 		ltd    = &ListedTokenDB{
@@ -236,30 +266,14 @@ func (ltd *ListedTokenDB) GetTokens(reserve ethereum.Address) (result []common.L
 		versionRecords []listedTokenVersion
 	)
 
-	getQuery := fmt.Sprintf(`
-	SELECT joined.address,
-       joined.name,
-       joined.symbol,
-       joined.timestamp,
-       array_agg(joined.old_address) FILTER ( WHERE joined.old_address IS NOT NULL)::text[] AS old_addresses,
-       array_agg(extract(EPOCH FROM joined.old_timestamp) * 1000)
-				 FILTER ( WHERE joined.old_timestamp IS NOT NULL)::BIGINT[]                 AS old_timestamps
-FROM (SELECT toks.address,
-             toks.name,
-             toks.symbol,
-             toks.timestamp,
-             olds.address   AS old_address,
-             olds.timestamp AS old_timestamp
-      FROM "%[1]s" AS toks
-             LEFT JOIN "%[1]s" AS olds
-					   ON toks.id = olds.parent_id
-			 JOIN "%[2]s" as rk
-						ON toks.id = rk.token_id
-			 JOIN "%[3]s" as r
-			 			ON rk.reserve_id = r.id
-      WHERE toks.parent_id IS NULL AND r.address = $1 
-      ORDER BY timestamp DESC) AS joined
-GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp`, ltd.tb.tokens, ltd.tb.reservesTokens, ltd.tb.reserves)
+	getQuery := `SELECT address,
+       name,
+       symbol,
+       timestamp,
+       old_addresses,
+       old_timestamps
+FROM "tokens_view"
+WHERE reserve = $1;`
 	logger.Debugw("get tokens query", "query", getQuery)
 
 	getVersionQuery := fmt.Sprintf(`SELECT version, block_number FROM "%[1]s" WHERE reserve = $1 LIMIT 1`, ltd.tb.version)
@@ -286,7 +300,7 @@ GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp`, ltd.tb.t
 	}
 
 	if err := tx.Select(&versionRecords, getVersionQuery, reserve.Hex()); err != nil {
-		logger.Error("error query token verson", "error", err)
+		logger.Error("error query token version", "error", err)
 		return nil, 0, 0, err
 	}
 
@@ -308,7 +322,8 @@ func (ltd *ListedTokenDB) Close() error {
 
 //DeleteTable remove tables use for test
 func (ltd *ListedTokenDB) DeleteTable() error {
-	const dropQuery = `DROP TABLE %[1]s, %[2]s, %[3]s, %[4]s;`
+	const dropQuery = `DROP VIEW "tokens_view";
+DROP TABLE "%[1]s", "%[2]s", "%[3]s", "%[4]s";`
 	query := fmt.Sprintf(dropQuery, ltd.tb.reservesTokens, ltd.tb.tokens, ltd.tb.version, ltd.tb.reserves)
 
 	ltd.sugar.Infow("Drop token table", "query", query)

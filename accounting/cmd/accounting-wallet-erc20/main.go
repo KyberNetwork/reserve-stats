@@ -11,7 +11,7 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
-	fetcher "github.com/KyberNetwork/reserve-stats/accounting/wallet-erc20/fetcher"
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/fetcher"
 	"github.com/KyberNetwork/reserve-stats/accounting/wallet-erc20/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
@@ -113,7 +113,9 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	f := fetcher.NewWalletFetcher(sugar, etherscanClient)
+	f := fetcher.NewEtherscanTransactionFetcher(sugar, etherscanClient)
+
+	//f := fetcher.NewWalletFetcher(sugar, etherscanClient)
 	for _, walletAddr := range walletAddrs {
 		if fromBlock == nil {
 			lastStoredBlock, err := wdb.GetLastStoredBlock(ethereum.HexToAddress(walletAddr))
@@ -127,7 +129,7 @@ func run(c *cli.Context) error {
 				return err
 			}
 		}
-		transfers, err := f.Fetch(ethereum.HexToAddress(walletAddr), fromBlock, toBlock)
+		transfers, err := f.ERC20Transfer(ethereum.HexToAddress(walletAddr), fromBlock, toBlock)
 		if err != nil {
 			return err
 		}

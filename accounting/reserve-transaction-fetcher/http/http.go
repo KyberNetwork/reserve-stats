@@ -32,7 +32,7 @@ type getTransactionsQuery struct {
 }
 
 func (q *getTransactionsQuery) validate() (time.Time, time.Time, map[string]struct{}, error) {
-	var types map[string]struct{}
+	var types = make(map[string]struct{})
 
 	fromTime, toTime, err := q.Validate(
 		httputil.TimeRangeQueryWithMaxTimeFrame(maxTimeFrame),

@@ -11,7 +11,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 
-	"github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/common"
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
@@ -118,6 +118,7 @@ func (s *Storage) TearDown() error {
 	return err
 }
 
+//StoreNormalTx store normal tx
 func (s *Storage) StoreNormalTx(txs []common.NormalTx) (err error) {
 	var (
 		logger = s.sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreNormalTx")
@@ -150,6 +151,7 @@ ON CONFLICT ON CONSTRAINT "%[1]s_pkey" DO UPDATE SET data = EXCLUDED.data;
 	return nil
 }
 
+//GetNormalTx get normal tx between a certain period of time
 func (s *Storage) GetNormalTx(from time.Time, to time.Time) ([]common.NormalTx, error) {
 	var (
 		logger = s.sugar.With(
@@ -183,6 +185,7 @@ WHERE data ->> 'timestamp' >= $1
 	return results, nil
 }
 
+//StoreInternalTx stores internal tx
 func (s *Storage) StoreInternalTx(txs []common.InternalTx) (err error) {
 	var logger = s.sugar.With(
 		"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreInternalTx",
@@ -215,6 +218,7 @@ ON CONFLICT DO NOTHING;
 	return
 }
 
+//GetInternalTx get internal txs between a period of time
 func (s *Storage) GetInternalTx(from time.Time, to time.Time) ([]common.InternalTx, error) {
 	var (
 		logger = s.sugar.With(
@@ -248,6 +252,7 @@ WHERE data ->> 'timestamp' >= $1
 	return results, nil
 }
 
+//StoreERC20Transfer save ERC20 transfer
 func (s *Storage) StoreERC20Transfer(txs []common.ERC20Transfer) (err error) {
 	var logger = s.sugar.With(
 		"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreERC20Transfer",
@@ -280,6 +285,7 @@ ON CONFLICT DO NOTHING;
 	return
 }
 
+//GetERC20Transfer get ERC20 transfer between a period of time
 func (s *Storage) GetERC20Transfer(from time.Time, to time.Time) ([]common.ERC20Transfer, error) {
 	var (
 		logger = s.sugar.With(
@@ -313,6 +319,7 @@ WHERE data ->> 'timestamp' >= $1
 	return results, nil
 }
 
+//StoreLastInserted save last insert address and block number where it's last inserted
 func (s *Storage) StoreLastInserted(addr ethereum.Address, blockNumber *big.Int) error {
 	var (
 		logger = s.sugar.With(
@@ -333,6 +340,7 @@ ON CONFLICT ON CONSTRAINT "%[1]s_pkey" DO UPDATE SET last_inserted = EXCLUDED.la
 	return err
 }
 
+//GetLastInserted return last inserted block of an address
 func (s *Storage) GetLastInserted(addr ethereum.Address) (*big.Int, error) {
 	var (
 		logger = s.sugar.With(

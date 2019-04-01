@@ -1,10 +1,9 @@
 package main
 
 import (
-	"database/sql"
+	"errors"
 	"fmt"
 	"log"
-	"math/big"
 	"os"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -55,17 +54,20 @@ func main() {
 	}
 }
 
-func validateAddrsList(addrs []string) error {
+func parseWalletAddrs(addrs []string) ([]ethereum.Address, error) {
+	var parsed []ethereum.Address
 	if len(addrs) == 0 {
-		return fmt.Errorf("no address provided")
+		return nil, errors.New("no address provided")
 	}
 
 	for _, addr := range addrs {
 		if !ethereum.IsHexAddress(addr) {
-			return fmt.Errorf("invalid address provided: address=%s", addr)
+			return nil, fmt.Errorf("invalid address provided: address=%s", addr)
 		}
+		parsed = append(parsed, ethereum.HexToAddress(addr))
 	}
-	return nil
+
+	return parsed, nil
 }
 
 func run(c *cli.Context) error {
@@ -80,9 +82,8 @@ func run(c *cli.Context) error {
 
 	defer flusher()
 
-	walletAddrs := c.StringSlice(walletAddressesFlag)
-	if err := validateAddrsList(walletAddrs); err != nil {
-		sugar.Errorf("error in wallet addresses input %v", err)
+	walletAddrs, err := parseWalletAddrs(c.StringSlice(walletAddressesFlag))
+	if err != nil {
 		return err
 	}
 
@@ -114,28 +115,6 @@ func run(c *cli.Context) error {
 	}
 
 	f := fetcher.NewEtherscanTransactionFetcher(sugar, etherscanClient)
-
-	//f := fetcher.NewWalletFetcher(sugar, etherscanClient)
-	for _, walletAddr := range walletAddrs {
-		if fromBlock == nil {
-			lastStoredBlock, err := wdb.GetLastStoredBlock(ethereum.HexToAddress(walletAddr))
-			switch err {
-			case sql.ErrNoRows:
-				sugar.Infof("no record for wallet %s yet. fetch from beginning", walletAddr)
-			case nil:
-				sugar.Infof("found record for wallet %s. fetch from block %d", lastStoredBlock+1)
-				fromBlock = big.NewInt(int64(lastStoredBlock + 1))
-			default:
-				return err
-			}
-		}
-		transfers, err := f.ERC20Transfer(ethereum.HexToAddress(walletAddr), fromBlock, toBlock)
-		if err != nil {
-			return err
-		}
-		if err := wdb.UpdateERC20Transfers(transfers); err != nil {
-			return err
-		}
-	}
-	return nil
+	s := newService(sugar, f, wdb, walletAddrs, fromBlock, toBlock)
+	return s.run()
 }

@@ -52,64 +52,6 @@ func WithTableName(tb *tableNames) Option {
 
 //NewDB open a new database connection an create initiated table if it is not exist
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*ListedTokenDB, error) {
-	const schemaFmt string = `-- listed_tokens table
-CREATE TABLE IF NOT EXISTS "%[1]s"
-(
-    id        SERIAL PRIMARY KEY,
-    address   text      NOT NULL UNIQUE,
-    name      text      NOT NULL,
-    symbol    text      NOT NULL,
-    timestamp TIMESTAMP NOT NULL,
-    parent_id INT REFERENCES "%[1]s" (id)
-);
-
--- version table
-CREATE TABLE IF NOT EXISTS "%[2]s"
-(
-    id           SERIAL PRIMARY KEY,
-    version      INT    NOT NULL,
-    block_number bigint NOT NULL,
-    reserve      text   NOT NULL UNIQUE
-);
-
--- reserves table
-CREATE TABLE IF NOT EXISTS "%[3]s"
-(
-    id      serial NOT NULL PRIMARY KEY,
-    address TEXT   NOT NULL UNIQUE
-);
-
--- reserve_token table
-CREATE TABLE IF NOT EXISTS "%[4]s"
-(
-    id         SERIAL NOT NULL,
-    token_id   INT REFERENCES "%[1]s" (id),
-    reserve_id INT REFERENCES "%[3]s" (id),
-    PRIMARY KEY (token_id, reserve_id)
-);
-
-CREATE OR REPLACE VIEW tokens_view AS
-SELECT joined.address,
-       joined.name,
-       joined.symbol,
-       joined.timestamp,
-       array_agg(joined.old_address)
-                 FILTER ( WHERE joined.old_address IS NOT NULL)::text[]     AS old_addresses,
-       array_agg(extract(EPOCH FROM joined.old_timestamp) * 1000)
-                 FILTER ( WHERE joined.old_timestamp IS NOT NULL)::BIGINT[] AS old_timestamps
-FROM (SELECT toks.address,
-             toks.name,
-             toks.symbol,
-             toks.timestamp,
-             olds.address   AS old_address,
-             olds.timestamp AS old_timestamp
-      FROM "%[1]s" AS toks
-               LEFT JOIN "%[1]s" AS olds
-                         ON toks.id = olds.parent_id
-      WHERE toks.parent_id IS NULL
-      ORDER BY timestamp DESC) AS joined
-GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp;
-`
 	var (
 		logger = sugar.With("func", "accounting/storage.NewDB")
 		ltd    = &ListedTokenDB{
@@ -138,30 +80,15 @@ GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp;
 //CreateOrUpdate add or edit an record in the tokens table
 func (ltd *ListedTokenDB) CreateOrUpdate(tokens []common.ListedToken, blockNumber *big.Int, reserve ethereum.Address) (err error) {
 	var (
-		logger             = ltd.sugar.With("func", "accounting/lisetdtokenstorage.CreateOrUpdate")
-		tokenID, reserveID uint64
+		logger  = ltd.sugar.With("func", "accounting/listed_tokens/storage/ltd.CreateOrUpdate")
+		changed = false
 	)
-	upsertQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address, name, symbol, timestamp, parent_id)
-VALUES ($1,
-        $2,
-        $3,
-		$4,
-        CASE WHEN $5::text IS NOT NULL THEN (SELECT id FROM "%[1]s" WHERE address = $5) ELSE NULL END)
-ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id RETURNING id`,
-		ltd.tb.tokens)
-	logger.Debugw("upsert token", "value", upsertQuery)
+	saveTokenQuery := fmt.Sprintf(`SELECT save_token($1, $2, $3, $4, $5, $6)`)
 
-	updateVersionQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (version, block_number, reserve)
-	VALUES($1, $2, $3)
-	ON CONFLICT (reserve) DO UPDATE SET version = %[1]s.version+1, block_number = EXCLUDED.block_number`, ltd.tb.version)
+	updateVersionQuery := fmt.Sprintf(`UPDATE "%[1]s"
+SET version      = CASE WHEN $1 THEN version + 1 ELSE version END,
+    block_number = $2;`, ltd.tb.version)
 	logger.Debugw("update version", "query", updateVersionQuery)
-
-	updateReserveQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (address) VALUES ($1) ON CONFLICT (address) DO UPDATE SET address = EXCLUDED.address RETURNING id`, ltd.tb.reserves)
-	logger.Debugw("update reserve", "query", updateReserveQuery)
-
-	updateReserveTokenQuery := fmt.Sprintf(`INSERT INTO "%[1]s" (token_id, reserve_id) VALUES ($1, $2)
-	ON CONFLICT (token_id, reserve_id) DO NOTHING`, ltd.tb.reservesTokens)
-	logger.Debugw("update reserve token", "query", updateReserveTokenQuery)
 
 	tx, err := ltd.db.Beginx()
 	if err != nil {
@@ -169,41 +96,42 @@ ON CONFLICT (address) DO UPDATE SET parent_id = EXCLUDED.parent_id RETURNING id`
 	}
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 
-	if err = tx.Get(&reserveID, updateReserveQuery, reserve.Hex()); err != nil {
-		return
-	}
-
-	if _, err = tx.Exec(updateVersionQuery, 1, blockNumber.Uint64(), reserve.Hex()); err != nil {
-		return
-	}
-
 	for _, token := range tokens {
-		if err = tx.Get(&tokenID, upsertQuery,
+		var dbChanged = false
+		if err = tx.Get(&dbChanged, saveTokenQuery,
 			token.Address.Hex(),
 			token.Name,
 			token.Symbol,
 			token.Timestamp.UTC(),
-			nil); err != nil {
+			nil,
+			reserve.Hex()); err != nil {
 			return
 		}
 
-		if _, err = tx.Exec(updateReserveTokenQuery, tokenID, reserveID); err != nil {
-			return
+		if dbChanged {
+			changed = true
 		}
 
 		for _, oldToken := range token.Old {
-			if err = tx.Get(&tokenID, upsertQuery,
+			if err = tx.Get(&dbChanged, saveTokenQuery,
 				oldToken.Address.Hex(),
 				token.Name,
 				token.Symbol,
 				oldToken.Timestamp.UTC(),
-				token.Address.Hex()); err != nil {
+				token.Address.Hex(),
+				reserve.Hex()); err != nil {
 				return
 			}
 
-			if _, err = tx.Exec(updateReserveTokenQuery, tokenID, reserveID); err != nil {
-				return
+			if dbChanged {
+				changed = true
 			}
+		}
+	}
+
+	if changed {
+		if _, err = tx.Exec(updateVersionQuery, changed, blockNumber.Uint64()); err != nil {
+			return
 		}
 	}
 
@@ -260,8 +188,8 @@ func (ltd *ListedTokenDB) GetTokens() (result []common.ListedToken, version, blo
 			"func",
 			"accounting/listed-token-storage/listedtokenstorage.GetTokens",
 		)
-		records        []listedTokenRecord
-		versionRecords []listedTokenVersion
+		records       []listedTokenRecord
+		versionRecord listedTokenVersion
 	)
 
 	getQuery := `SELECT address,
@@ -296,15 +224,13 @@ FROM "tokens_view";`
 		result = append(result, token)
 	}
 
-	if err := tx.Select(&versionRecords, getVersionQuery); err != nil {
+	if err := tx.Get(&versionRecord, getVersionQuery); err != nil {
 		logger.Error("error query token version", "error", err)
 		return nil, 0, 0, err
 	}
 
-	if len(versionRecords) == 1 {
-		version = versionRecords[0].Version
-		blockNumber = versionRecords[0].BlockNumber
-	}
+	version = versionRecord.Version
+	blockNumber = versionRecord.BlockNumber
 
 	return result, version, blockNumber, nil
 }
@@ -320,6 +246,7 @@ func (ltd *ListedTokenDB) Close() error {
 //DeleteTable remove tables use for test
 func (ltd *ListedTokenDB) DeleteTable() error {
 	const dropQuery = `DROP VIEW "tokens_view";
+drop function save_token(text, text, text, timestamp, text, text);
 DROP TABLE "%[1]s", "%[2]s", "%[3]s", "%[4]s";`
 	query := fmt.Sprintf(dropQuery, ltd.tb.reservesTokens, ltd.tb.tokens, ltd.tb.version, ltd.tb.reserves)
 

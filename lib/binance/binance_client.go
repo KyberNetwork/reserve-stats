@@ -292,7 +292,14 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 	if err != nil {
 		return result, err
 	}
+
 	err = json.Unmarshal(res, &result)
+	if err != nil {
+		return result, err
+	}
+	if !result.Success {
+		return result, fmt.Errorf("failed to get binance withdrawal history, reason: %s", result.Message)
+	}
 	return result, err
 }
 
@@ -318,6 +325,34 @@ func (bc *Client) GetExchangeInfo() (ExchangeInfo, error) {
 	if err != nil {
 		return result, err
 	}
+	err = json.Unmarshal(res, &result)
+	return result, err
+}
+
+//GetAccountInfo return account infos
+func (bc *Client) GetAccountInfo() (AccountInfo, error) {
+	var (
+		result AccountInfo
+	)
+	const weight = 5
+	//Wait before creating the request to avoid timestamp request outside the recWindow
+	if err := bc.waitN(weight); err != nil {
+		return result, err
+	}
+
+	endpoint := fmt.Sprintf("%s/api/v3/account", endpointPrefix)
+
+	res, err := bc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		nil,
+		true,
+		time.Now(),
+	)
+	if err != nil {
+		return result, err
+	}
+
 	err = json.Unmarshal(res, &result)
 	return result, err
 }

@@ -44,6 +44,8 @@ type WithdrawHistory struct {
 //WithdrawHistoryList is a list of binance withdraw history
 type WithdrawHistoryList struct {
 	WithdrawList []WithdrawHistory `json:"withdrawList"`
+	Success      bool              `json:"success"`
+	Message      string            `json:"msg"`
 }
 
 //ExchangeInfo is info of binance
@@ -91,4 +93,12 @@ type SymbolFilterType struct {
 	ApplytoMarket    bool   `json:"applyToMarket,omitempty"`
 	Limit            int    `json:"limit,omitempty"`
 	MaxNumAlgoOrders int    `json:"MaxNumAlgoOrders,omitempty"`
+}
+
+//AccountInfo is the object to store account info from binance
+type AccountInfo struct {
+	CanTrade    bool   `json:"canTrade"`
+	CanDeposit  bool   `json:"canDeposit"`
+	CanWithdraw bool   `json:"canWithdraw"`
+	UpdateTime  uint64 `json:"updateTime"`
 }

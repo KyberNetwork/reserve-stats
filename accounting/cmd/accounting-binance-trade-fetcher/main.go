@@ -79,6 +79,9 @@ func run(c *cli.Context) error {
 		return err
 	}
 
+	if _, err := binanceClient.GetAccountInfo(); err != nil {
+		return err
+	}
 	storage, err := libapp.NewDBFromContext(c)
 	if err != nil {
 		return err

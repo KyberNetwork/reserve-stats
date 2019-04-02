@@ -111,7 +111,7 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 	}
 
 	if err := errGroup.Wait(); err != nil {
-		return result, nil
+		return result, err
 	}
 	fetchResult.Range(func(key, value interface{}) bool {
 		symbol, ok := key.(string)

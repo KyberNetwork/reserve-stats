@@ -1,5 +1,11 @@
 # Reserve transaction 
 
+List of Ethereum transactions for configured addresses. There are 3 types of transactions:  
+- **Normal** Ethereum transactions.  
+- **Internal** transactions. Internal transaction is a transaction made by calling another contract method inside an Etherum contract. It is not present by a real contract in Ethereum.  
+- **ERC20** transfers.  
+
+
 ## Get transactions 
 
 ```shell

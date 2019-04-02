@@ -1,5 +1,8 @@
 # Reserve listed tokens 
 
+Returns list of tokens listed in KyberNetwork, includes any current and historical listed tokens. If a token has
+address changed, the old addresses should be included.
+
 ## Get listed tokens 
 
 ```shell

@@ -1,5 +1,17 @@
 # Reserve addresses 
 
+Returns Ethereum addresses related to KyberNetwork's reserve. An address will have one of following types:
+
+- **reserve**: address of KyberNetwork's reserve contract, example: 0x63825c174ab367968EC60f061753D3bbD36A0D8F
+- **pricing operator**: operator addresses of conversion rate contract. Can be get by calling getOperators method of conversion rate contract, example:
+0x8bc3da587def887b5c822105729ee1d6af05a5ca, 0x9224016462b204c57eb70e1d69652f60bcaf53a8
+- **sanity operator**: operator address of sanity rates contract. Can be get by calling getOperators method of sanity rates
+contract
+- **intermediate operator**: some centralized exchanges (Huobi) does not allow deposit/withdraw directly to contract
+account. Therefore, we need to use a intermediate account when deposit/withdraw funds to reserve contract.
+- **centralized exchange deposit addresses:** Ethereum address to deposit funds to centralized exchanges
+(binance: 0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90, huobi: 0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66)
+
 ## Get all addresses 
 
 ```shell

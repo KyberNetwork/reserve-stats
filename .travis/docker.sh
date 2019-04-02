@@ -38,4 +38,7 @@ case "$build_part" in
     2)
         push_file .travis/build_part_2
         ;;
+    3)
+        push_file .travis/build_part_3
+        ;;
 esac

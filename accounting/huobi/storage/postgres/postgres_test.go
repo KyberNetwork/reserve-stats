@@ -60,6 +60,10 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
+	ts, err := hdb.GetLastStoredTimestamp()
+	require.NoError(t, err)
+	assert.Zero(t, ts)
+
 	err = hdb.UpdateTradeHistory(testData)
 	require.NoError(t, err)
 

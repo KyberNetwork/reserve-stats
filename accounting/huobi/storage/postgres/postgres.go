@@ -167,7 +167,7 @@ func (hdb *HuobiStorage) GetLastStoredTimestamp() (time.Time, error) {
 		dbResult uint64
 		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
 		logger   = hdb.sugar.With(
-			"func", "reserverates/storage/postgres/RateStorage.GetLastStoredTimestamp",
+			"func", "accounting/huobi/storage/postgres/RateStorage.GetLastStoredTimestamp",
 		)
 	)
 	const selectStmt = `SELECT MAX(data->>'created-at') FROM %[1]s`

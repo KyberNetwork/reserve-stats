@@ -46,7 +46,7 @@ curl -X GET "http://gateway.local/reserve/tokens?reserve=0x63825c174ab367968EC60
 
 ### HTTP request
 
-`GET http://gateway.local/transactions`
+`GET http://gateway.local/reserve/tokens`
 
 Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------

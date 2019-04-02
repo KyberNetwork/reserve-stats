@@ -42,7 +42,7 @@ curl -X GET "http://gateway.local/wallet/transactions?wallet=0x63825c174ab367968
 
 ### HTTP request
 
-`GET http://gateway.local/transactions`
+`GET http://gateway.local/wallet/transactions`
 
 Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------

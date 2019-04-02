@@ -23,3 +23,4 @@ data/
 !*/cmd/*/*.md
 tokeninfo/cmd/output.json
 apidocs/build
+accounting/apidocs/build

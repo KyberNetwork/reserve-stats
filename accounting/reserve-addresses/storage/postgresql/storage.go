@@ -163,7 +163,7 @@ func (s *Storage) GetAll() ([]*common.ReserveAddress, int64, error) {
 		results   []*common.ReserveAddress
 		queryStmt = `SELECT id, address, type, description, timestamp
 FROM addresses`
-		queryVersionStmt = fmt.Sprintf(`SELECT MAX(version) FROM %[1]s`, addressVersionTableName)
+		queryVersionStmt = fmt.Sprintf(`SELECT version FROM %[1]s WHERE id = 1`, addressVersionTableName)
 		version          int64
 	)
 
@@ -179,8 +179,10 @@ FROM addresses`
 		}
 		results = append(results, result)
 	}
-	if err := s.db.Get(&version, queryVersionStmt); err != nil {
-		return nil, 0, err
+	if len(results) > 0 {
+		if err := s.db.Get(&version, queryVersionStmt); err != nil {
+			return nil, 0, err
+		}
 	}
 	return results, version, nil
 }

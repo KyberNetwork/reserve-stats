@@ -44,6 +44,7 @@ func NewStorage(sugar *zap.SugaredLogger, db *sqlx.DB, resolv blockchain.Contrac
 CREATE TABLE IF NOT EXISTS "%[2]s"
 (
 	id SERIAL PRIMARY KEY,
+	version integer NOT NULL,
 	timestamp TIMESTAMP
 );
 --create trigger function
@@ -56,8 +57,8 @@ BEGIN
         inc = TRUE;
     END IF;
 	IF inc THEN
-		INSERT INTO "%[2]s" (timestamp)
-		VALUES (now());
+		INSERT INTO "%[2]s" (id, version, timestamp)
+		VALUES (1, 1, now()) ON CONFLICT (id) DO UPDATE SET version = %[2]s.version+1, timestamp = EXCLUDED.timestamp;
 	END IF;
 	RETURN NULL;
 END;
@@ -162,7 +163,7 @@ func (s *Storage) GetAll() ([]*common.ReserveAddress, int64, error) {
 		results   []*common.ReserveAddress
 		queryStmt = `SELECT id, address, type, description, timestamp
 FROM addresses`
-		queryVersionStmt = fmt.Sprintf(`SELECT MAX(id) FROM %[1]s`, addressVersionTableName)
+		queryVersionStmt = fmt.Sprintf(`SELECT MAX(version) FROM %[1]s`, addressVersionTableName)
 		version          int64
 	)
 

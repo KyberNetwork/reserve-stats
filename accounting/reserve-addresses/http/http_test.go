@@ -29,6 +29,11 @@ var (
 	tts time.Time
 )
 
+type allAddressesResponse struct {
+	Version int64                    `json:"version"`
+	Data    []*common.ReserveAddress `json:"data"`
+}
+
 func TestReserveAddressGetAll(t *testing.T) {
 	var tests = []httputil.HTTPTestCase{
 		{
@@ -39,10 +44,10 @@ func TestReserveAddressGetAll(t *testing.T) {
 				t.Helper()
 				require.Equal(t, http.StatusOK, resp.Code)
 
-				var addrs []*common.ReserveAddress
-				err := json.NewDecoder(resp.Body).Decode(&addrs)
+				var response allAddressesResponse
+				err := json.NewDecoder(resp.Body).Decode(&response)
 				require.NoError(t, err)
-				require.Len(t, addrs, 0)
+				require.Len(t, response.Data, 0)
 			},
 		},
 	}
@@ -73,15 +78,15 @@ func TestReserveAddressGetAll(t *testing.T) {
 				t.Helper()
 				require.Equal(t, http.StatusOK, resp.Code)
 
-				var addrs []*common.ReserveAddress
-				err := json.NewDecoder(resp.Body).Decode(&addrs)
+				var response allAddressesResponse
+				err := json.NewDecoder(resp.Body).Decode(&response)
 				require.NoError(t, err)
-				require.Len(t, addrs, 1)
-				assert.Equal(t, id1, addrs[0].ID)
-				assert.Equal(t, testAddress1, addrs[0].Address)
-				assert.Equal(t, common.Reserve, addrs[0].Type)
-				assert.Equal(t, testDescription1, addrs[0].Description)
-				assert.Equal(t, tts.UTC().Unix(), addrs[0].Timestamp.Unix())
+				require.Len(t, response.Data, 1)
+				assert.Equal(t, id1, response.Data[0].ID)
+				assert.Equal(t, testAddress1, response.Data[0].Address)
+				assert.Equal(t, common.Reserve, response.Data[0].Type)
+				assert.Equal(t, testDescription1, response.Data[0].Description)
+				assert.Equal(t, tts.UTC().Unix(), response.Data[0].Timestamp.Unix())
 			},
 		},
 	}
@@ -104,22 +109,22 @@ func TestReserveAddressGetAll(t *testing.T) {
 				t.Helper()
 				require.Equal(t, http.StatusOK, resp.Code)
 
-				var addrs []*common.ReserveAddress
-				err := json.NewDecoder(resp.Body).Decode(&addrs)
+				var response allAddressesResponse
+				err := json.NewDecoder(resp.Body).Decode(&response)
 				require.NoError(t, err)
-				require.Len(t, addrs, 2)
+				require.Len(t, response.Data, 2)
 
-				assert.Equal(t, id1, addrs[0].ID)
-				assert.Equal(t, testAddress1, addrs[0].Address)
-				assert.Equal(t, common.Reserve, addrs[0].Type)
-				assert.Equal(t, testDescription1, addrs[0].Description)
-				assert.Equal(t, tts.UTC().Unix(), addrs[0].Timestamp.Unix())
+				assert.Equal(t, id1, response.Data[0].ID)
+				assert.Equal(t, testAddress1, response.Data[0].Address)
+				assert.Equal(t, common.Reserve, response.Data[0].Type)
+				assert.Equal(t, testDescription1, response.Data[0].Description)
+				assert.Equal(t, tts.UTC().Unix(), response.Data[0].Timestamp.Unix())
 
-				assert.Equal(t, id2, addrs[1].ID)
-				assert.Equal(t, testAddress2, addrs[1].Address)
-				assert.Equal(t, common.PricingOperator, addrs[1].Type)
-				assert.Equal(t, testDescription2, addrs[1].Description)
-				assert.Equal(t, tts.UTC().Unix(), addrs[1].Timestamp.Unix())
+				assert.Equal(t, id2, response.Data[1].ID)
+				assert.Equal(t, testAddress2, response.Data[1].Address)
+				assert.Equal(t, common.PricingOperator, response.Data[1].Type)
+				assert.Equal(t, testDescription2, response.Data[1].Description)
+				assert.Equal(t, tts.UTC().Unix(), response.Data[1].Timestamp.Unix())
 
 			},
 		},

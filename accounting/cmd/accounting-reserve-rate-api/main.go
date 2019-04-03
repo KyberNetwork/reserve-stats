@@ -46,21 +46,20 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	defer func(err *error) {
-		cErr := ratesStorage.Close()
-		if err == nil {
-			*err = cErr
-		} else {
-			sugar.Error("DB closing failed", "error", cErr)
+	defer func() {
+		if cErr := ratesStorage.Close(); cErr != nil {
+			sugar.Errorw("failed to close rates storage", "err", cErr.Error())
 		}
-	}(&err)
+	}()
 	hostStr := httputil.NewHTTPAddressFromContext(c)
 	server, err := http.NewServer(hostStr, ratesStorage, sugar)
 	if err != nil {
 		return err
 	}
-	err = server.Run()
-	return err
+	if err = server.Run(); err != nil {
+		return err
+	}
+	return ratesStorage.Close()
 }
 
 //reserverates --addresses=0xABCDEF,0xDEFGHI --block 100

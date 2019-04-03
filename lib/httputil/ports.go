@@ -42,4 +42,7 @@ const (
 
 	//AccountingListedTokenPort is the port number of accounting-listed-token service
 	AccountingListedTokenPort = 8013
+
+	//AccountingCexWithdrawalPort is the port number of accounting-listed-token service
+	AccountingCexWithdrawalPort = 8014
 )

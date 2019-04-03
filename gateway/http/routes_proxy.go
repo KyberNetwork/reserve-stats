@@ -90,3 +90,51 @@ func WithResreveAddressesURL(reserveAddressesURL string) Option {
 		return nil
 	}
 }
+
+//WithCexWithdrawalURL return withdraw proxy
+func WithCexWithdrawalURL(cexWithdrawalURL string) Option {
+	return func(s *Server) error {
+		cexWithdrawalURLMW, err := newReverseProxyMW(cexWithdrawalURL)
+		if err != nil {
+			return err
+		}
+		s.r.GET("/withdrawals", cexWithdrawalURLMW)
+		return nil
+	}
+}
+
+//WithReserveTokenURL return reserve token proxy
+func WithReserveTokenURL(reserveTokenURL string) Option {
+	return func(s *Server) error {
+		reserveTokenURLMW, err := newReverseProxyMW(reserveTokenURL)
+		if err != nil {
+			return err
+		}
+		s.r.GET("/reserve/tokens", reserveTokenURLMW)
+		return nil
+	}
+}
+
+//WithReserveTransactionURL return withdraw proxy
+func WithReserveTransactionURL(reserveTransactionURL string) Option {
+	return func(s *Server) error {
+		reserveTransactionURLMW, err := newReverseProxyMW(reserveTransactionURL)
+		if err != nil {
+			return err
+		}
+		s.r.GET("/transactions", reserveTransactionURLMW)
+		return nil
+	}
+}
+
+//WithERC20APIURL return withdraw proxy
+func WithERC20APIURL(ERC20APIUrl string) Option {
+	return func(s *Server) error {
+		ERC20APIUrlMW, err := newReverseProxyMW(ERC20APIUrl)
+		if err != nil {
+			return err
+		}
+		s.r.GET("/wallet/transactions", ERC20APIUrlMW)
+		return nil
+	}
+}

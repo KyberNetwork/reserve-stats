@@ -22,7 +22,7 @@ func newServerCli() *cli.App {
 	app := libapp.NewApp()
 	app.Name = "cex-trade-withdrawal-api"
 	app.Usage = "server for query accounting cex-trade withdrawal"
-	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.ReserveRatesPort)...)
+	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AccountingCexWithdrawalPort)...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostGresDB)...)
 	app.Action = run
 	return app

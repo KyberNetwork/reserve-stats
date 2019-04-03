@@ -21,11 +21,19 @@ const (
 	readSecretKeyFlag          = "read-secret-key"
 	cexTradeAPIURLFlag         = "cex-trade-url"
 	reserveAddressesAPIURLFlag = "reserve-addresses-url"
+	cexWithdrawalURLFlag       = "cex-withdrawal-url"
+	reserveTokenURLFlag        = "reserve-token-url"
+	reserveTransactionURLFlag  = "reserve-transaction-url"
+	erc20APIURLFlag            = "erc20-api-url"
 )
 
 var (
-	defaultCexTradeAPIValue       = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingCEXTradesPort)
-	defaultReserveAddressAPIValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingReserveAddressPort)
+	defaultCexTradeAPIValue           = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingCEXTradesPort)
+	defaultReserveAddressAPIValue     = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingReserveAddressPort)
+	defaultCexWithdrawalAPIValue      = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingCexWithdrawalPort)
+	defaultReserveTokenAPIValue       = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingListedTokenPort)
+	defaultReserveTransactionAPIValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingTransactionsPort)
+	defaultERC20APIValue              = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingWalletErc20Port)
 )
 
 func main() {
@@ -68,6 +76,30 @@ func main() {
 			Value:  defaultReserveAddressAPIValue,
 			EnvVar: "RESERVE_ADDRESS_URL",
 		},
+		cli.StringFlag{
+			Name:   cexWithdrawalURLFlag,
+			Usage:  "cex withdrawal api url",
+			Value:  defaultReserveAddressAPIValue,
+			EnvVar: "CEX_WITHDRAWAL_URL",
+		},
+		cli.StringFlag{
+			Name:   reserveTokenURLFlag,
+			Usage:  "reserve token api url",
+			Value:  defaultReserveAddressAPIValue,
+			EnvVar: "RESERVE_TOKEN_URL",
+		},
+		cli.StringFlag{
+			Name:   reserveTransactionURLFlag,
+			Usage:  "reserve transaction api url",
+			Value:  defaultReserveAddressAPIValue,
+			EnvVar: "RESERVE_TRANSACTION_URL",
+		},
+		cli.StringFlag{
+			Name:   erc20APIURLFlag,
+			Usage:  "erc20 api url",
+			Value:  defaultERC20APIValue,
+			EnvVar: "ERC20_API_URL",
+		},
 	)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.GatewayPort)...)
 
@@ -97,6 +129,34 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("invalid reserve address API URL: %s", c.String(reserveAddressesAPIURLFlag))
 	}
 
+	err = validation.Validate(c.String(cexWithdrawalURLFlag),
+		validation.Required,
+		is.URL)
+	if err != nil {
+		return fmt.Errorf("invalid cex withdrawal API URL: %s", c.String(cexWithdrawalURLFlag))
+	}
+
+	err = validation.Validate(c.String(reserveTokenURLFlag),
+		validation.Required,
+		is.URL)
+	if err != nil {
+		return fmt.Errorf("invalid reserve token API URL: %s", c.String(reserveTokenURLFlag))
+	}
+
+	err = validation.Validate(c.String(reserveTransactionURLFlag),
+		validation.Required,
+		is.URL)
+	if err != nil {
+		return fmt.Errorf("invalid reserve transaction API URL: %s", c.String(reserveTransactionURLFlag))
+	}
+
+	err = validation.Validate(c.String(erc20APIURLFlag),
+		validation.Required,
+		is.URL)
+	if err != nil {
+		return fmt.Errorf("invalid erc20 transaction API URL: %s", c.String(erc20APIURLFlag))
+	}
+
 	if err := validation.Validate(c.String(writeAccessKeyFlag), validation.Required); err != nil {
 		return fmt.Errorf("access key error: %s", err.Error())
 	}
@@ -120,6 +180,10 @@ func run(c *cli.Context) error {
 		logger,
 		http.WithCexTradesURL(c.String(cexTradeAPIURLFlag)),
 		http.WithResreveAddressesURL(c.String(reserveAddressesAPIURLFlag)),
+		http.WithCexWithdrawalURL(c.String(cexWithdrawalURLFlag)),
+		http.WithReserveTokenURL(c.String(reserveTokenURLFlag)),
+		http.WithReserveTransactionURL(c.String(reserveTransactionURLFlag)),
+		http.WithERC20APIURL(c.String(erc20APIURLFlag)),
 	)
 	if err != nil {
 		return err

@@ -170,7 +170,7 @@ func (hdb *HuobiStorage) GetLastStoredTimestamp() (time.Time, error) {
 			"func", "accounting/huobi/storage/postgres/RateStorage.GetLastStoredTimestamp",
 		)
 	)
-	const selectStmt = `SELECT MAX(data->>'created-at') FROM %[1]s`
+	const selectStmt = `SELECT COALESCE(MAX(data->>'created-at'), '0') FROM %[1]s`
 	query := fmt.Sprintf(selectStmt, hdb.tableNames[huobiTradesTableName])
 	logger.Debugw("querying trade history...", "query", query)
 	if err := hdb.db.Get(&dbResult, query); err != nil {

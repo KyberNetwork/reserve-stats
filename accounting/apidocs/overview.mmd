@@ -19,16 +19,16 @@ PostgresQL::listed_tokens --> accounting-reserve-tokens-api
 accounting-reserve-tokens-api --> accounting-gateway
 
 reserve-addresses-api --> accounting-reserve-rate-fetcher
-accounting-reserve-rate-fetcher --> PostgresQL:reserve_rates
-PostgresQL:reserve_rates --> accounting-reserve-rate-api
+accounting-reserve-rate-fetcher --> PostgresQL::reserve_rates
+PostgresQL::reserve_rates --> accounting-reserve-rate-api
 accounting-reserve-rate-api --> accounting-gateway
 
 reserve-addresses-api --> accounting-transaction-fetcher
-accounting-transaction-fetcher --> PostgresQL:transactions
-PostgresQL:transactions --> accounting-transaction-api
+accounting-transaction-fetcher --> PostgresQL::transactions
+PostgresQL::transactions --> accounting-transaction-api
 accounting-transaction-api --> accounting-gateway
 
 
-wallet-erc20 --> PostgresQL:wallet_erc20
-PostgresQL:wallet_erc20 --> wallet-erc20-api
+wallet-erc20 --> PostgresQL::wallet_erc20
+PostgresQL::wallet_erc20 --> wallet-erc20-api
 wallet-erc20-api --> accounting-gateway

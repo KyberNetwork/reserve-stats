@@ -8,9 +8,10 @@ import (
 )
 
 const (
-	binanceAPIKeyFlag       = "binance-api-key"
-	binanceSecretKeyFlag    = "binance-secret-key"
-	binanceRequestPerSecond = "binance-requests-per-second"
+	binanceAPIKeyFlag           = "binance-api-key"
+	binanceSecretKeyFlag        = "binance-secret-key"
+	binanceRequestPerSecond     = "binance-requests-per-second"
+	binanceClientValidationFlag = "binance-client-validation"
 )
 
 //NewCliFlags return cli flags to configure cex-trade client
@@ -32,6 +33,11 @@ func NewCliFlags() []cli.Flag {
 			EnvVar: "BINANCE_REQUESTS_PER_SECOND",
 			Value:  10,
 		},
+		cli.BoolTFlag{
+			Name:   binanceClientValidationFlag,
+			Usage:  "if set to true, the client is validate by calling GetAccounts with its API key",
+			EnvVar: "BINANCE_CLIENT_VALIDATION",
+		},
 	}
 }
 
@@ -39,6 +45,7 @@ func NewCliFlags() []cli.Flag {
 func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, error) {
 	var (
 		apiKey, secretKey string
+		options           []Option
 	)
 	if c.String(binanceAPIKeyFlag) == "" {
 		return nil, errors.New("cannot create binance client, lack of api key")
@@ -54,6 +61,9 @@ func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, er
 		return nil, errors.New("rate limit must be greater than 0")
 	}
 
-	limiter := NewRateLimiter(rps)
-	return NewBinance(apiKey, secretKey, sugar, WithRateLimiter(limiter)), nil
+	options = append(options, WithRateLimiter(NewRateLimiter(rps)))
+	if validateRequire := c.BoolT(binanceClientValidationFlag); validateRequire {
+		options = append(options, WithValidation())
+	}
+	return NewBinance(apiKey, secretKey, sugar, options...)
 }

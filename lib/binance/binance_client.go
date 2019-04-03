@@ -47,30 +47,44 @@ type Client struct {
 }
 
 //Option sets the initialization behavior for binance instance
-type Option func(cl *Client)
+type Option func(cl *Client) error
 
 //WithRateLimiter alter rate limiter of binance client
 func WithRateLimiter(limiter Limiter) Option {
-	return func(cl *Client) {
+	return func(cl *Client) error {
 		cl.rateLimiter = limiter
+		return nil
+	}
+}
+
+//WithValidation check if API key is valid by calling GetAccountInfo with its key
+func WithValidation() Option {
+	return func(cl *Client) error {
+		_, err := cl.GetAccountInfo()
+		if err != nil {
+			return fmt.Errorf("cannot call GetAccountInfo With current params, error : %v", err)
+		}
+		return nil
 	}
 }
 
 //NewBinance return a new client for binance api
-func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...Option) *Client {
+func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...Option) (*Client, error) {
 	clnt := &Client{
 		APIKey:    apiKey,
 		SecretKey: secretKey,
 		sugar:     sugar,
 	}
 	for _, opt := range options {
-		opt(clnt)
+		if err := opt(clnt); err != nil {
+			return nil, err
+		}
 	}
 	//Set Default rate limiter to the limit spefified by https://api.binance.com/api/v1/exchangeInfo
 	if clnt.rateLimiter == nil {
 		clnt.rateLimiter = NewRateLimiter(defaultHardLimit)
 	}
-	return clnt
+	return clnt, nil
 }
 
 //waitN mimic the leaky bucket algorithm to wait for n drop

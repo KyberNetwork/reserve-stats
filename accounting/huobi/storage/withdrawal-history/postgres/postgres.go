@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	huobiWithdrawalTableName = "huobi_withdrawal"
+	huobiWithdrawalTableName = "huobi_withdrawals"
 )
 
 //Option define init behaviour for db storage.

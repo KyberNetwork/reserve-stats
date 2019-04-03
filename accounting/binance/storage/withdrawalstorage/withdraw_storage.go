@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const defaultTableName = "binance_withdraws"
+const defaultTableName = "binance_withdrawals"
 
 //BinanceStorage is storage for binance fetcher including trade history and withdraw history
 type BinanceStorage struct {

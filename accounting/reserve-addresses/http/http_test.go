@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	rcommon "github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/common"
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/storage/postgresql"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
@@ -29,11 +30,6 @@ var (
 	tts time.Time
 )
 
-type allAddressesResponse struct {
-	Version int64                    `json:"version"`
-	Data    []*common.ReserveAddress `json:"data"`
-}
-
 func TestReserveAddressGetAll(t *testing.T) {
 	var tests = []httputil.HTTPTestCase{
 		{
@@ -44,7 +40,7 @@ func TestReserveAddressGetAll(t *testing.T) {
 				t.Helper()
 				require.Equal(t, http.StatusOK, resp.Code)
 
-				var response allAddressesResponse
+				var response rcommon.AllAddressesResponse
 				err := json.NewDecoder(resp.Body).Decode(&response)
 				require.NoError(t, err)
 				require.Len(t, response.Data, 0)
@@ -78,7 +74,7 @@ func TestReserveAddressGetAll(t *testing.T) {
 				t.Helper()
 				require.Equal(t, http.StatusOK, resp.Code)
 
-				var response allAddressesResponse
+				var response rcommon.AllAddressesResponse
 				err := json.NewDecoder(resp.Body).Decode(&response)
 				require.NoError(t, err)
 				require.Len(t, response.Data, 1)
@@ -109,7 +105,7 @@ func TestReserveAddressGetAll(t *testing.T) {
 				t.Helper()
 				require.Equal(t, http.StatusOK, resp.Code)
 
-				var response allAddressesResponse
+				var response rcommon.AllAddressesResponse
 				err := json.NewDecoder(resp.Body).Decode(&response)
 				require.NoError(t, err)
 				require.Len(t, response.Data, 2)
@@ -421,7 +417,7 @@ func TestVersion(t *testing.T) {
 					t.Helper()
 					require.Equal(t, http.StatusOK, resp.Code)
 
-					var response allAddressesResponse
+					var response rcommon.AllAddressesResponse
 					err := json.NewDecoder(resp.Body).Decode(&response)
 					require.NoError(t, err)
 					currentVersion = response.Version
@@ -454,7 +450,7 @@ func TestVersion(t *testing.T) {
 					t.Helper()
 					require.Equal(t, http.StatusOK, resp.Code)
 
-					var response allAddressesResponse
+					var response rcommon.AllAddressesResponse
 					err := json.NewDecoder(resp.Body).Decode(&response)
 					require.NoError(t, err)
 					assert.Equal(t, currentVersion+1, response.Version)
@@ -490,7 +486,7 @@ func TestVersion(t *testing.T) {
 				t.Helper()
 				require.Equal(t, http.StatusOK, resp.Code)
 
-				var response allAddressesResponse
+				var response rcommon.AllAddressesResponse
 				err := json.NewDecoder(resp.Body).Decode(&response)
 				require.NoError(t, err)
 				assert.Equal(t, currentVersion+1, response.Version)

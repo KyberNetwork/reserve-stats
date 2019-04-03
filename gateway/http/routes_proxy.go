@@ -128,13 +128,13 @@ func WithReserveTransactionURL(reserveTransactionURL string) Option {
 }
 
 //WithERC20APIURL return withdraw proxy
-func WithERC20APIURL(ERC20APIUrl string) Option {
+func WithERC20APIURL(erc20URL string) Option {
 	return func(s *Server) error {
-		ERC20APIUrlMW, err := newReverseProxyMW(ERC20APIUrl)
+		erc20URLMW, err := newReverseProxyMW(erc20URL)
 		if err != nil {
 			return err
 		}
-		s.r.GET("/wallet/transactions", ERC20APIUrlMW)
+		s.r.GET("/wallet/transactions", erc20URLMW)
 		return nil
 	}
 }

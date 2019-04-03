@@ -79,19 +79,19 @@ func main() {
 		cli.StringFlag{
 			Name:   cexWithdrawalURLFlag,
 			Usage:  "cex withdrawal api url",
-			Value:  defaultReserveAddressAPIValue,
+			Value:  defaultCexWithdrawalAPIValue,
 			EnvVar: "CEX_WITHDRAWAL_URL",
 		},
 		cli.StringFlag{
 			Name:   reserveTokenURLFlag,
 			Usage:  "reserve token api url",
-			Value:  defaultReserveAddressAPIValue,
+			Value:  defaultReserveTokenAPIValue,
 			EnvVar: "RESERVE_TOKEN_URL",
 		},
 		cli.StringFlag{
 			Name:   reserveTransactionURLFlag,
 			Usage:  "reserve transaction api url",
-			Value:  defaultReserveAddressAPIValue,
+			Value:  defaultReserveTransactionAPIValue,
 			EnvVar: "RESERVE_TRANSACTION_URL",
 		},
 		cli.StringFlag{

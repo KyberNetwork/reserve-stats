@@ -4,24 +4,25 @@ import (
 	"log"
 	"os"
 
+	"github.com/urfave/cli"
+
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/http"
 	rrpostgres "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/urfave/cli"
 )
 
 const (
-	defaultPostGresDB = common.DefaultDB
+	defaultPostgresDB = common.DefaultDB
 )
 
 func newServerCli() *cli.App {
 	app := libapp.NewApp()
 	app.Name = "reserve-rates-api"
 	app.Usage = "server for query accounting reserve rate API"
-	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.ReserveRatesPort)...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostGresDB)...)
+	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AccountingReserveRatesPort)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostgresDB)...)
 	app.Action = run
 	return app
 }

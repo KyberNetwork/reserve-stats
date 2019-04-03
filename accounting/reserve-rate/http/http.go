@@ -12,8 +12,10 @@ import (
 	"go.uber.org/zap"
 )
 
-//default frame is 1 year =365  days
-var maxTimeFrame = 365 * 24 * time.Hour
+var (
+	maxTimeFrame     = 365 * 24 * time.Hour // 1 year
+	defaultTimeFrame = 30 * 24 * time.Hour  // 30 days
+)
 
 // Server is the engine to serve reserve-rate API query
 type Server struct {
@@ -26,7 +28,7 @@ type Server struct {
 func (sv *Server) reserveRates(c *gin.Context) {
 	var (
 		query  httputil.TimeRangeQuery
-		logger = sv.sugar.With("func", "accouting/reserve-rate/http/Server.reserveRates")
+		logger = sv.sugar.With("func", "accounting/reserve-rate/http/Server.reserveRates")
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -39,6 +41,7 @@ func (sv *Server) reserveRates(c *gin.Context) {
 
 	from, to, err := query.Validate(
 		httputil.TimeRangeQueryWithMaxTimeFrame(maxTimeFrame),
+		httputil.TimeRangeQueryWithDefaultTimeFrame(defaultTimeFrame),
 	)
 	if err != nil {
 		c.JSON(

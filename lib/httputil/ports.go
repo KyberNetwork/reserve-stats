@@ -45,4 +45,7 @@ const (
 
 	//AccountingCexWithdrawalPort is the port number of accounting-listed-token service
 	AccountingCexWithdrawalPort = 8014
+
+	// AccountingReserveRatesPort is the port number of account-reserve-rates-api service
+	AccountingReserveRatesPort = 8015
 )

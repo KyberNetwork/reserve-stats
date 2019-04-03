@@ -29,6 +29,11 @@ var (
 	tts time.Time
 )
 
+type allAddressesResponse struct {
+	Version int64                    `json:"version"`
+	Data    []*common.ReserveAddress `json:"data"`
+}
+
 func TestReserveAddressGetAll(t *testing.T) {
 	var tests = []httputil.HTTPTestCase{
 		{
@@ -39,10 +44,10 @@ func TestReserveAddressGetAll(t *testing.T) {
 				t.Helper()
 				require.Equal(t, http.StatusOK, resp.Code)
 
-				var addrs []*common.ReserveAddress
-				err := json.NewDecoder(resp.Body).Decode(&addrs)
+				var response allAddressesResponse
+				err := json.NewDecoder(resp.Body).Decode(&response)
 				require.NoError(t, err)
-				require.Len(t, addrs, 0)
+				require.Len(t, response.Data, 0)
 			},
 		},
 	}
@@ -73,15 +78,15 @@ func TestReserveAddressGetAll(t *testing.T) {
 				t.Helper()
 				require.Equal(t, http.StatusOK, resp.Code)
 
-				var addrs []*common.ReserveAddress
-				err := json.NewDecoder(resp.Body).Decode(&addrs)
+				var response allAddressesResponse
+				err := json.NewDecoder(resp.Body).Decode(&response)
 				require.NoError(t, err)
-				require.Len(t, addrs, 1)
-				assert.Equal(t, id1, addrs[0].ID)
-				assert.Equal(t, testAddress1, addrs[0].Address)
-				assert.Equal(t, common.Reserve, addrs[0].Type)
-				assert.Equal(t, testDescription1, addrs[0].Description)
-				assert.Equal(t, tts.UTC().Unix(), addrs[0].Timestamp.Unix())
+				require.Len(t, response.Data, 1)
+				assert.Equal(t, id1, response.Data[0].ID)
+				assert.Equal(t, testAddress1, response.Data[0].Address)
+				assert.Equal(t, common.Reserve, response.Data[0].Type)
+				assert.Equal(t, testDescription1, response.Data[0].Description)
+				assert.Equal(t, tts.UTC().Unix(), response.Data[0].Timestamp.Unix())
 			},
 		},
 	}
@@ -104,22 +109,22 @@ func TestReserveAddressGetAll(t *testing.T) {
 				t.Helper()
 				require.Equal(t, http.StatusOK, resp.Code)
 
-				var addrs []*common.ReserveAddress
-				err := json.NewDecoder(resp.Body).Decode(&addrs)
+				var response allAddressesResponse
+				err := json.NewDecoder(resp.Body).Decode(&response)
 				require.NoError(t, err)
-				require.Len(t, addrs, 2)
+				require.Len(t, response.Data, 2)
 
-				assert.Equal(t, id1, addrs[0].ID)
-				assert.Equal(t, testAddress1, addrs[0].Address)
-				assert.Equal(t, common.Reserve, addrs[0].Type)
-				assert.Equal(t, testDescription1, addrs[0].Description)
-				assert.Equal(t, tts.UTC().Unix(), addrs[0].Timestamp.Unix())
+				assert.Equal(t, id1, response.Data[0].ID)
+				assert.Equal(t, testAddress1, response.Data[0].Address)
+				assert.Equal(t, common.Reserve, response.Data[0].Type)
+				assert.Equal(t, testDescription1, response.Data[0].Description)
+				assert.Equal(t, tts.UTC().Unix(), response.Data[0].Timestamp.Unix())
 
-				assert.Equal(t, id2, addrs[1].ID)
-				assert.Equal(t, testAddress2, addrs[1].Address)
-				assert.Equal(t, common.PricingOperator, addrs[1].Type)
-				assert.Equal(t, testDescription2, addrs[1].Description)
-				assert.Equal(t, tts.UTC().Unix(), addrs[1].Timestamp.Unix())
+				assert.Equal(t, id2, response.Data[1].ID)
+				assert.Equal(t, testAddress2, response.Data[1].Address)
+				assert.Equal(t, common.PricingOperator, response.Data[1].Type)
+				assert.Equal(t, testDescription2, response.Data[1].Description)
+				assert.Equal(t, tts.UTC().Unix(), response.Data[1].Timestamp.Unix())
 
 			},
 		},
@@ -397,6 +402,101 @@ WHERE id = $1`, id)
 		},
 	}
 
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, ts.r) })
+	}
+}
+
+func TestVersion(t *testing.T) {
+	var (
+		currentVersion int64
+		testID         uint64
+		tests          = []httputil.HTTPTestCase{
+			{
+				Msg:      "get current version",
+				Endpoint: "/addresses",
+				Method:   http.MethodGet,
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					t.Helper()
+					require.Equal(t, http.StatusOK, resp.Code)
+
+					var response allAddressesResponse
+					err := json.NewDecoder(resp.Body).Decode(&response)
+					require.NoError(t, err)
+					currentVersion = response.Version
+				},
+			},
+			{
+				Msg:      "create a new reserve to check version changes",
+				Endpoint: "/addresses",
+				Method:   http.MethodPost,
+				Body: []byte(`{
+  "address": "0x72BEb1a358bcAF0FAe938769803A2dD77396771E",
+  "type": "reserve",
+  "description": "main reserve 3"
+}`),
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					t.Helper()
+					require.Equal(t, http.StatusCreated, resp.Code)
+
+					var addr = &common.ReserveAddress{}
+					err := json.NewDecoder(resp.Body).Decode(addr)
+					require.NoError(t, err)
+					testID = addr.ID
+				},
+			},
+			{
+				Msg:      "compare version after creating new address",
+				Endpoint: "/addresses",
+				Method:   http.MethodGet,
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					t.Helper()
+					require.Equal(t, http.StatusOK, resp.Code)
+
+					var response allAddressesResponse
+					err := json.NewDecoder(resp.Body).Decode(&response)
+					require.NoError(t, err)
+					assert.Equal(t, currentVersion+1, response.Version)
+					currentVersion = response.Version
+				},
+			},
+		}
+	)
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, ts.r) })
+	}
+
+	tests = []httputil.HTTPTestCase{
+		{
+			Msg:      "update reserve to check version change",
+			Endpoint: fmt.Sprintf("/addresses/%d", testID),
+			Method:   http.MethodPut,
+			Body: []byte(`{
+  "description": "main reserve 5"
+}`),
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusNoContent, resp.Code)
+			},
+		},
+		{
+			Msg:      "compare version after updating new address",
+			Endpoint: "/addresses",
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusOK, resp.Code)
+
+				var response allAddressesResponse
+				err := json.NewDecoder(resp.Body).Decode(&response)
+				require.NoError(t, err)
+				assert.Equal(t, currentVersion+1, response.Version)
+			},
+		},
+	}
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, ts.r) })

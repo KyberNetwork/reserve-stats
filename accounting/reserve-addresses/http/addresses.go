@@ -124,7 +124,7 @@ func (s *Server) get(c *gin.Context) {
 }
 
 func (s *Server) getAll(c *gin.Context) {
-	addrs, err := s.storage.GetAll()
+	addrs, version, err := s.storage.GetAll()
 	if err != nil {
 		httputil.ResponseFailure(
 			c,
@@ -138,7 +138,13 @@ func (s *Server) getAll(c *gin.Context) {
 		addrs = []*common.ReserveAddress{}
 	}
 
-	c.JSON(http.StatusOK, addrs)
+	c.JSON(
+		http.StatusOK,
+		gin.H{
+			"version": version,
+			"data":    addrs,
+		},
+	)
 }
 
 type updateInput struct {

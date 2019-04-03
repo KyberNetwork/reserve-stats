@@ -16,7 +16,10 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 )
 
-const addressesTableName = "addresses"
+const (
+	addressesTableName      = "addresses"
+	addressVersionTableName = "addresses_version"
+)
 
 // Storage implements accounting reserve addresses storage.Interface with PostgreSQL as storage engine.
 type Storage struct {
@@ -28,7 +31,7 @@ type Storage struct {
 // NewStorage creates a new instance of Storage.
 func NewStorage(sugar *zap.SugaredLogger, db *sqlx.DB, resolv blockchain.ContractTimestampResolver) (*Storage, error) {
 	var logger = sugar.With("func", "accounting/reserve-addresses/storage/postgresql.NewStorage")
-	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%s"
+	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%[1]s"
 (
   id           SERIAL PRIMARY KEY,
   address      TEXT      NOT NULL UNIQUE,
@@ -36,10 +39,39 @@ func NewStorage(sugar *zap.SugaredLogger, db *sqlx.DB, resolv blockchain.Contrac
   description  TEXT,
   timestamp    TIMESTAMP,
   last_updated TIMESTAMP NOT NULL
-)`
+);
+--create version table
+CREATE TABLE IF NOT EXISTS "%[2]s"
+(
+	id SERIAL PRIMARY KEY,
+	version integer NOT NULL,
+	timestamp TIMESTAMP
+);
+--create trigger function
+CREATE OR REPLACE FUNCTION inc_version() RETURNS TRIGGER AS
+$$
+DECLARE
+    inc BOOLEAN = false;
+BEGIN
+    IF tg_op = 'INSERT' OR tg_op = 'UPDATE' THEN
+        inc = TRUE;
+    END IF;
+	IF inc THEN
+		INSERT INTO "%[2]s" (id, version, timestamp)
+		VALUES (1, 1, now()) ON CONFLICT (id) DO UPDATE SET version = %[2]s.version+1, timestamp = EXCLUDED.timestamp;
+	END IF;
+	RETURN NULL;
+END;
+$$ LANGUAGE PLPGSQL;
+DROP TRIGGER IF EXISTS version_trigger ON %[1]s;
+CREATE TRIGGER version_trigger
+    AFTER INSERT OR UPDATE
+    ON %[1]s 
+    FOR EACH ROW
+EXECUTE PROCEDURE inc_version();`
 
 	logger.Debugw("initializing database schema")
-	if _, err := db.Exec(fmt.Sprintf(schemaFmt, addressesTableName)); err != nil {
+	if _, err := db.Exec(fmt.Sprintf(schemaFmt, addressesTableName, addressVersionTableName)); err != nil {
 		return nil, err
 	}
 
@@ -124,28 +156,35 @@ WHERE id = $1`
 
 // GetAll returns all stored reserve addresses in database.
 // It returns no error if there is nothing in database.
-func (s *Storage) GetAll() ([]*common.ReserveAddress, error) {
+func (s *Storage) GetAll() ([]*common.ReserveAddress, int64, error) {
 	var (
 		logger    = s.sugar.With("func", "accounting/reserve-addresses/storage/postgresql/Storage.GetAll")
 		stored    []*ReserveAddress
 		results   []*common.ReserveAddress
 		queryStmt = `SELECT id, address, type, description, timestamp
 FROM addresses`
+		queryVersionStmt = fmt.Sprintf(`SELECT version FROM %[1]s WHERE id = 1`, addressVersionTableName)
+		version          int64
 	)
 
 	logger.Debug("querying all stored reserve addresses")
 	if err := s.db.Select(&stored, queryStmt); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	for _, r := range stored {
 		result, err := r.Common()
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		results = append(results, result)
 	}
-	return results, nil
+	if len(results) > 0 {
+		if err := s.db.Get(&version, queryVersionStmt); err != nil {
+			return nil, 0, err
+		}
+	}
+	return results, version, nil
 }
 
 // Update updates the reserve address with given information. If given data is zero, it won't be updated to database.

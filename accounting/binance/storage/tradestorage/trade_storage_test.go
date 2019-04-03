@@ -88,4 +88,12 @@ func TestBinanceTradeStorage(t *testing.T) {
 	ts, err = binanceStorage.GetLastStoredID()
 	require.NoError(t, err)
 	assert.NotZero(t, ts)
+
+	// test stored duplicate data
+	err = binanceStorage.UpdateTradeHistory(testData)
+	assert.NoError(t, err)
+
+	tradeHistories, err = binanceStorage.GetTradeHistory(fromTime, toTime)
+	require.NoError(t, err)
+	assert.Equal(t, testData, tradeHistories)
 }

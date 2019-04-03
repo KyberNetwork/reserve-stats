@@ -71,4 +71,12 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	withdrawals, err := hdb.GetWithdrawHistory(timeutil.TimestampMsToTime(1525754125500), timeutil.TimestampMsToTime(1525754125600))
 	require.NoError(t, err)
 	assert.Equal(t, testData, withdrawals)
+
+	//test does not stored duplicate records
+	err = hdb.UpdateWithdrawHistory(testData)
+	require.NoError(t, err)
+
+	withdrawals, err = hdb.GetWithdrawHistory(timeutil.TimestampMsToTime(1525754125500), timeutil.TimestampMsToTime(1525754125600))
+	require.NoError(t, err)
+	assert.Equal(t, testData, withdrawals)
 }

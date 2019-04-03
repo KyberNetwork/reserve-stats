@@ -232,7 +232,7 @@ func (rdb *RatesStorage) GetETHUSDRates(from, to time.Time) (storage.AccountingR
 		selectStmt = `SELECT time,rate FROM %[1]s WHERE time>=$1 AND time <$2`
 	)
 	query := fmt.Sprintf(selectStmt, rdb.tableNames[usdTableName])
-	logger.Debug("Queryingrate...", "query", query)
+	logger.Debugw("Querying rate...", "query", query)
 	if err := rdb.db.Select(&dbResult, query, from, to); err != nil {
 		return result, err
 	}

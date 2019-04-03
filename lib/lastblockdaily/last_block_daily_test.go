@@ -57,8 +57,7 @@ func TestIsNextDay(t *testing.T) {
 
 func TestRun(t *testing.T) {
 	//This test requires a runtime of 70 seconds. Should only be run manually
-	// t.Skip()aa
-
+	t.Skip()
 	var (
 		// Saturday, September 1, 2018 1:02:00 PM
 		start = timeutil.TimestampMsToTime(uint64(1535806920000))

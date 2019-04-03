@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	rcommon "github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/common"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 )
 
@@ -33,19 +34,19 @@ func NewClient(sugar *zap.SugaredLogger, url string) (*Client, error) {
 func (c *Client) ReserveAddresses(filterTypes ...common.AddressType) ([]common.ReserveAddress, error) {
 	const endpoint = "/addresses"
 	var (
-		result        []common.ReserveAddress
+		result        rcommon.AllAddressesResponse
 		reserveResult []common.ReserveAddress
 		filter        = make(map[common.AddressType]struct{})
 	)
 
 	req, err := httputil.NewRequest(http.MethodGet, endpoint, c.url, nil)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 
 	rsp, err := c.client.Do(req)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
 
 	defer func() {
@@ -55,10 +56,10 @@ func (c *Client) ReserveAddresses(filterTypes ...common.AddressType) ([]common.R
 	}()
 
 	if rsp.StatusCode != http.StatusOK {
-		return result, fmt.Errorf("unexpected return code: %d", rsp.StatusCode)
+		return nil, fmt.Errorf("unexpected return code: %d", rsp.StatusCode)
 	}
 	if err = json.NewDecoder(rsp.Body).Decode(&result); err != nil {
-		return result, err
+		return nil, err
 	}
 
 	if len(filterTypes) != 0 {
@@ -66,13 +67,13 @@ func (c *Client) ReserveAddresses(filterTypes ...common.AddressType) ([]common.R
 			filter[typ] = struct{}{}
 		}
 
-		for _, addr := range result {
+		for _, addr := range result.Data {
 			if _, ok := filter[addr.Type]; ok {
 				reserveResult = append(reserveResult, addr)
 			}
 		}
 	} else {
-		reserveResult = result
+		reserveResult = result.Data
 	}
 
 	if err = rsp.Body.Close(); err != nil {

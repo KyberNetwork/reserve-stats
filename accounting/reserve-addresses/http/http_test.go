@@ -408,6 +408,101 @@ WHERE id = $1`, id)
 	}
 }
 
+func TestVersion(t *testing.T) {
+	var (
+		currentVersion int64
+		testID         uint64
+		tests          = []httputil.HTTPTestCase{
+			{
+				Msg:      "get current version",
+				Endpoint: "/addresses",
+				Method:   http.MethodGet,
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					t.Helper()
+					require.Equal(t, http.StatusOK, resp.Code)
+
+					var response allAddressesResponse
+					err := json.NewDecoder(resp.Body).Decode(&response)
+					require.NoError(t, err)
+					currentVersion = response.Version
+				},
+			},
+			{
+				Msg:      "create a new reserve to check version changes",
+				Endpoint: "/addresses",
+				Method:   http.MethodPost,
+				Body: []byte(`{
+  "address": "0x72BEb1a358bcAF0FAe938769803A2dD77396771E",
+  "type": "reserve",
+  "description": "main reserve 3"
+}`),
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					t.Helper()
+					require.Equal(t, http.StatusCreated, resp.Code)
+
+					var addr = &common.ReserveAddress{}
+					err := json.NewDecoder(resp.Body).Decode(addr)
+					require.NoError(t, err)
+					testID = addr.ID
+				},
+			},
+			{
+				Msg:      "compare version after creating new address",
+				Endpoint: "/addresses",
+				Method:   http.MethodGet,
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					t.Helper()
+					require.Equal(t, http.StatusOK, resp.Code)
+
+					var response allAddressesResponse
+					err := json.NewDecoder(resp.Body).Decode(&response)
+					require.NoError(t, err)
+					assert.Equal(t, currentVersion+1, response.Version)
+					currentVersion = response.Version
+				},
+			},
+		}
+	)
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, ts.r) })
+	}
+
+	tests = []httputil.HTTPTestCase{
+		{
+			Msg:      "update reserve to check version change",
+			Endpoint: fmt.Sprintf("/addresses/%d", testID),
+			Method:   http.MethodPut,
+			Body: []byte(`{
+  "description": "main reserve 5"
+}`),
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusNoContent, resp.Code)
+			},
+		},
+		{
+			Msg:      "compare version after updating new address",
+			Endpoint: "/addresses",
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusOK, resp.Code)
+
+				var response allAddressesResponse
+				err := json.NewDecoder(resp.Body).Decode(&response)
+				require.NoError(t, err)
+				assert.Equal(t, currentVersion+1, response.Version)
+			},
+		},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, ts.r) })
+	}
+}
+
 func TestMain(m *testing.M) {
 	var err error
 	tts = time.Now().UTC()

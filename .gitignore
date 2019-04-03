@@ -24,3 +24,5 @@ data/
 tokeninfo/cmd/output.json
 apidocs/build
 accounting/apidocs/build
+accounting/apidocs/node_modules
+accounting/apidocs/overview.mmd.svg

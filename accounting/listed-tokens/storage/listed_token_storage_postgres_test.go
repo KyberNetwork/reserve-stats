@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"math/big"
 	"testing"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -13,11 +14,13 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
-const tokenTableTest = "listed_tokens_test"
-
 func newListedTokenDB(sugar *zap.SugaredLogger) (*ListedTokenDB, error) {
 	_, db := testutil.MustNewDevelopmentDB()
-	storage, err := NewDB(sugar, db, tokenTableTest)
+	storage, err := NewDB(sugar, db, WithTableName(newTableNames(
+		"test_listed_tokens_version",
+		"test_listed_tokens_reserves",
+		"test_listed_tokens_reserves_tokens",
+		"test_listed_tokens")))
 	if err != nil {
 		return nil, err
 	}
@@ -36,6 +39,8 @@ func TestListedTokenStorage(t *testing.T) {
 	logger.Info("start testing")
 
 	var (
+		blockNumber  = big.NewInt(7442895)
+		reserve      = ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")
 		listedTokens = []common.ListedToken{
 			{
 				Address:   ethereum.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200"),
@@ -56,6 +61,7 @@ func TestListedTokenStorage(t *testing.T) {
 				},
 			},
 		}
+		blockNumberNew  = big.NewInt(7442899)
 		listedTokensNew = []common.ListedToken{
 			{
 				Address:   ethereum.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200"),
@@ -87,17 +93,20 @@ func TestListedTokenStorage(t *testing.T) {
 
 	defer teardown(t, storage)
 
-	err = storage.CreateOrUpdate(listedTokens)
+	err = storage.CreateOrUpdate(listedTokens, blockNumber, reserve)
 	require.NoError(t, err)
 
-	storedListedTokens, err := storage.GetTokens()
+	storedListedTokens, version, storedBlockNumber, err := storage.GetTokens()
 	require.NoError(t, err)
 	assert.ElementsMatch(t, listedTokens, storedListedTokens)
+	assert.Equal(t, uint64(1), version)
+	assert.Equal(t, blockNumber.Uint64(), storedBlockNumber)
 
-	err = storage.CreateOrUpdate(listedTokensNew)
+	err = storage.CreateOrUpdate(listedTokensNew, blockNumberNew, reserve)
 	require.NoError(t, err)
-
-	storedNewListedTokens, err := storage.GetTokens()
+	storedNewListedTokens, version, storedBlockNumber, err := storage.GetTokens()
 	assert.NoError(t, err)
+	assert.Equal(t, uint64(2), version)
+	assert.Equal(t, blockNumberNew.Uint64(), storedBlockNumber)
 	assert.ElementsMatch(t, listedTokensNew, storedNewListedTokens)
 }

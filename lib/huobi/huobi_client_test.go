@@ -27,8 +27,10 @@ func TestHuobiClient(t *testing.T) {
 		t.Skip("Huobi secret key is not available")
 	}
 
-	huobiClient := NewClient(huobiAPIKey, huobiSecretKey, sugar)
-	_, err := huobiClient.GetAccounts()
+	huobiClient, err := NewClient(huobiAPIKey, huobiSecretKey, sugar)
+	assert.NoError(t, err)
+
+	_, err = huobiClient.GetAccounts()
 	assert.NoError(t, err, fmt.Sprintf("get account fee error: %s", err))
 
 	//fixed timestamp for test
@@ -66,8 +68,8 @@ func TestHuobiClientWithLimiter(t *testing.T) {
 		t.Skip("Huobi secret key is not available")
 	}
 
-	huobiClient := NewClient(huobiAPIKey, huobiSecretKey, sugar, WithRateLimiter(limiter))
-
+	huobiClient, err := NewClient(huobiAPIKey, huobiSecretKey, sugar, WithRateLimiter(limiter))
+	assert.NoError(t, err)
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
 		go func(i int) {

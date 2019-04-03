@@ -28,8 +28,8 @@ func TestBinanceClient(t *testing.T) {
 		t.Skip("Binance secret key is not available")
 	}
 
-	binanceClient := NewBinance(binanceAPIKey, binanceSecretKey, sugar)
-
+	binanceClient, err := NewBinance(binanceAPIKey, binanceSecretKey, sugar)
+	assert.NoError(t, err)
 	assetDetail, err := binanceClient.GetAssetDetail()
 	assert.NoError(t, err, "binance client get asset detail error: %s", err)
 	assert.NotEmpty(t, assetDetail, "asset detail should not be nil")
@@ -65,7 +65,9 @@ func TestBinanceClientWithLimiter(t *testing.T) {
 		t.Skip("Binance secret key is not available")
 	}
 
-	binanceClient := NewBinance(binanceAPIKey, binanceSecretKey, sugar, WithRateLimiter(limiter))
+	binanceClient, err := NewBinance(binanceAPIKey, binanceSecretKey, sugar, WithRateLimiter(limiter))
+	assert.NoError(t, err)
+
 	for i := 0; i < 500; i++ {
 		wg.Add(1)
 		go func(i int) {

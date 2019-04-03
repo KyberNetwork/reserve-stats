@@ -89,6 +89,9 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 
 	defer teardown(t, binanceStorage)
 
+	_, err = binanceStorage.GetLastStoredTimestamp()
+	require.NoError(t, err)
+
 	err = binanceStorage.UpdateWithdrawHistory(testData)
 	assert.NoError(t, err)
 

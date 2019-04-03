@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"testing"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
@@ -59,6 +60,10 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 		err = hdb.Close()
 		require.NoError(t, err)
 	}()
+
+	ts, err := hdb.GetLastStoredTimestamp()
+	require.NoError(t, err)
+	assert.Equal(t, ts, time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 	err = hdb.UpdateTradeHistory(testData)
 	require.NoError(t, err)

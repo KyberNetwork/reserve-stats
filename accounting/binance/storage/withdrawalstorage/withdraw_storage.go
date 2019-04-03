@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const defaultTableName = "binance_withdraws"
+const defaultTableName = "binance_withdrawals"
 
 //BinanceStorage is storage for binance fetcher including trade history and withdraw history
 type BinanceStorage struct {
@@ -161,7 +161,7 @@ func (bd *BinanceStorage) GetLastStoredTimestamp() (time.Time, error) {
 		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
 		dbResult uint64
 	)
-	const selectStmt = `SELECT MAX(data->>'applyTime') FROM %s`
+	const selectStmt = `SELECT COALESCE(MAX(data->>'applyTime'), '0') FROM %s`
 	query := fmt.Sprintf(selectStmt, bd.tableName)
 
 	logger.Debugw("querying last stored timestamp", "query", query)

@@ -159,7 +159,7 @@ func (bd *BinanceStorage) GetLastStoredID() (uint64, error) {
 		logger = bd.sugar.With("func", "account/binance_storage.GetLastStoredID")
 		result uint64
 	)
-	const selectStmt = `SELECT MAX(id) FROM %s`
+	const selectStmt = `SELECT COALESCE(MAX(id), 0) FROM %s`
 	query := fmt.Sprintf(selectStmt, bd.tableName)
 
 	logger.Debugw("querying last stored id", "query", query)

@@ -106,4 +106,12 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 	withdrawHistory, err := binanceStorage.GetWithdrawHistory(fromTime, toTime)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedData, withdrawHistory)
+
+	// test stored duplicate data
+	err = binanceStorage.UpdateWithdrawHistory(testData)
+	assert.NoError(t, err)
+
+	withdrawHistory, err = binanceStorage.GetWithdrawHistory(fromTime, toTime)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedData, withdrawHistory)
 }

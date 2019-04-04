@@ -77,4 +77,9 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, len(data), 1)
 	assert.Equal(t, testData[0].FieldAmount, data[0].FieldAmount)
+
+	// test database does not stored duplicated records(with the same id)
+	data, err = hdb.GetTradeHistory(timeutil.TimestampMsToTime(1540793585679), timeutil.TimestampMsToTime(1540793586000))
+	require.NoError(t, err)
+	assert.Equal(t, len(data), 1)
 }

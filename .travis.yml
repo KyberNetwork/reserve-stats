@@ -43,11 +43,11 @@ deploy:
   - provider: script
     script: bash .travis/docker.sh
     on:
-      tags: true
       branch:
         - develop
         - staging
         - master
+      tags: true
 
   - provider: s3
     access_key_id: $AWS_ACCESS_KEY_ID

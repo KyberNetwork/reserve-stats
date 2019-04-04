@@ -1,0 +1,34 @@
+graph LR
+
+binance-trade-fetcher --> PostgresQL::cex_trades
+huobi-trade-fetcher --> PostgresQL::cex_trades
+PostgresQL::cex_trades --> cex-trades-api
+cex-trades-api --> accounting-gateway
+
+binance-withdrawal-fetcher --> PostgresQL::cex_withdrawals
+huobi-withdrawal-fetcher --> PostgresQL::cex_withdrawals
+PostgresQL::cex_withdrawals --> cex-withdrawal-api
+cex-withdrawal-api --> accounting-gateway
+
+PostgresQL::reserve_addresses ---|<>|reserve-addresses-api
+reserve-addresses-api --> accounting-gateway
+
+reserve-addresses-api --> accounting-listed-token-fetcher
+accounting-listed-token-fetcher --> PostgresQL::listed_tokens
+PostgresQL::listed_tokens --> accounting-reserve-tokens-api
+accounting-reserve-tokens-api --> accounting-gateway
+
+reserve-addresses-api --> accounting-reserve-rate-fetcher
+accounting-reserve-rate-fetcher --> PostgresQL::reserve_rates
+PostgresQL::reserve_rates --> accounting-reserve-rate-api
+accounting-reserve-rate-api --> accounting-gateway
+
+reserve-addresses-api --> accounting-transaction-fetcher
+accounting-transaction-fetcher --> PostgresQL::transactions
+PostgresQL::transactions --> accounting-transaction-api
+accounting-transaction-api --> accounting-gateway
+
+
+wallet-erc20 --> PostgresQL::wallet_erc20
+PostgresQL::wallet_erc20 --> wallet-erc20-api
+wallet-erc20-api --> accounting-gateway

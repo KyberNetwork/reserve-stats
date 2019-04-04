@@ -13,17 +13,18 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	"github.com/KyberNetwork/reserve-stats/accounting/wallet-erc20/storage"
 	"github.com/KyberNetwork/reserve-stats/accounting/wallet-erc20/storage/postgres"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
-func newTestServer(storage *postgres.WalletErc20Storage, sugar *zap.SugaredLogger) (*Server, error) {
+func newTestServer(rts storage.Interface, sugar *zap.SugaredLogger) (*Server, error) {
 	return NewServer(
 		sugar,
 		"",
-		storage,
+		rts,
 	), nil
 
 }

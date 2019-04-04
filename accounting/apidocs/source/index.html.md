@@ -11,6 +11,7 @@ includes:
   - reserve_addresses
   - reserve_transactions
   - reserve_ERC_20
+  - reserve_rates
   - reserve_listed_tokens
   - cex/trades_history
   - cex/withdrawal_history

@@ -25,6 +25,7 @@ const (
 	reserveTokenURLFlag        = "reserve-token-url"
 	reserveTransactionURLFlag  = "reserve-transaction-url"
 	erc20APIURLFlag            = "erc20-api-url"
+	reserveRatesAPIFlag        = "reserve-rates-url"
 )
 
 var (
@@ -34,6 +35,7 @@ var (
 	defaultReserveTokenAPIValue       = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingListedTokenPort)
 	defaultReserveTransactionAPIValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingTransactionsPort)
 	defaultERC20APIValue              = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingWalletErc20Port)
+	defaultReserveRatesAPIValue       = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingReserveRatesPort)
 )
 
 func main() {
@@ -100,6 +102,12 @@ func main() {
 			Value:  defaultERC20APIValue,
 			EnvVar: "ERC20_API_URL",
 		},
+		cli.StringFlag{
+			Name:   reserveRatesAPIFlag,
+			Usage:  "reserve rates api url",
+			Value:  defaultReserveRatesAPIValue,
+			EnvVar: "RESERVE_RATES_URL",
+		},
 	)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.GatewayPort)...)
 
@@ -157,6 +165,13 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("invalid erc20 transaction API URL: %s", c.String(erc20APIURLFlag))
 	}
 
+	err = validation.Validate(c.String(reserveRatesAPIFlag),
+		validation.Required,
+		is.URL)
+	if err != nil {
+		return fmt.Errorf("invalid reserve rates API URL: %s", c.String(reserveRatesAPIFlag))
+	}
+
 	if err := validation.Validate(c.String(writeAccessKeyFlag), validation.Required); err != nil {
 		return fmt.Errorf("access key error: %s", err.Error())
 	}
@@ -184,6 +199,7 @@ func run(c *cli.Context) error {
 		http.WithReserveTokenURL(c.String(reserveTokenURLFlag)),
 		http.WithReserveTransactionURL(c.String(reserveTransactionURLFlag)),
 		http.WithERC20APIURL(c.String(erc20APIURLFlag)),
+		http.WithReserveRatesURL(c.String(reserveRatesAPIFlag)),
 	)
 	if err != nil {
 		return err

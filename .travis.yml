@@ -43,9 +43,12 @@ deploy:
   - provider: script
     script: bash .travis/docker.sh
     on:
-      branch: develop
-      branch: staging
-      branch: master
+      all_branches: true
+      condition: $TRAVIS_BRANCH =~ ^develop|staging|master$
+
+  - provider: script
+    script: bash .travis/docker.sh
+    on:
       tags: true
 
   - provider: s3

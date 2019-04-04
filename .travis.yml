@@ -45,9 +45,9 @@ deploy:
     on:
       branch:
         - develop
+        - 2549-accounting-build
         - staging
         - master
-      tags: true
 
   - provider: s3
     access_key_id: $AWS_ACCESS_KEY_ID

@@ -11,4 +11,7 @@ RUN apt-get update && \
     apt-get install -y ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
+ENV HTTP_ADDRESS=0.0.0.0:8009
+EXPOSE 8009
+
 ENTRYPOINT ["/accounting-reserve-addresses-api"]

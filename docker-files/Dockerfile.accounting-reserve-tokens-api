@@ -11,4 +11,7 @@ RUN apt-get update && \
     apt-get install -y ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
+ENV HTTP_ADDRESS=0.0.0.0:8013
+EXPOSE 8013
+
 ENTRYPOINT ["/accounting-reserve-tokens-api"]

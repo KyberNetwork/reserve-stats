@@ -1,0 +1,14 @@
+FROM golang:1.11-stretch AS build-env
+
+COPY . /reserve-stats
+WORKDIR /reserve-stats/accounting/cmd/accounting-wallet-erc20
+RUN go build -v -mod=vendor -o /accounting-wallet-erc20
+
+FROM debian:stretch
+COPY --from=build-env /accounting-wallet-erc20 /
+
+RUN apt-get update && \
+    apt-get install -y ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+ENTRYPOINT ["/accounting-wallet-erc20"]

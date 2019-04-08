@@ -71,3 +71,15 @@ deploy:
     on:
       branch: develop
       condition: $BUILD_PART = 4
+
+  - provider: s3
+    access_key_id: $AWS_ACCESS_KEY_ID
+    secret_access_key: $AWS_SECRET_ACCESS_KEY
+    bucket: dev-accounting-docs.knstats.com
+    region: ap-southeast-1
+    acl: public_read
+    local_dir: accounting/apidocs/build
+    skip_cleanup: true
+    on:
+      branch: develop
+      condition: $BUILD_PART = 4

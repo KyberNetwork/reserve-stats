@@ -28,8 +28,8 @@ type Server struct {
 
 type getTransactionsQuery struct {
 	httputil.TimeRangeQuery
-	Wallet string `form:"wallet" binding:"required,isAddress"`
-	Token  string `form:"token" binding:"required,isAddress"`
+	Wallet string `form:"wallet" binding:"isAddress"`
+	Token  string `form:"token" binding:"isAddress"`
 }
 
 func (s *Server) getTransactions(c *gin.Context) {

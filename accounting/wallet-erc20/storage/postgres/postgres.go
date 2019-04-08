@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
@@ -150,11 +151,13 @@ func (wdb *WalletErc20Storage) GetERC20Transfers(wallet, token ethereum.Address,
 		tmp common.ERC20Transfer
 	)
 	const selectStmt = `SELECT data FROM %[1]s WHERE ((data->>'timestamp')>=$1::text AND (data->>'timestamp')<$2::text) AND
-	($3 = '0x0000000000000000000000000000000000000000' OR (data->>'from'=$3 OR data->>'to'=$3)) AND
-	($4 = '0x0000000000000000000000000000000000000000' OR data->>'contractAddress'=$4)`
+	($3 OR (data->>'from'=$4 OR data->>'to'=$4)) AND
+	($5 OR data->>'contractAddress'=$6)`
 	query := fmt.Sprintf(selectStmt, wdb.tableName)
 	logger.Debugw("querying ERC20 transfers history...", "query", query)
-	if err := wdb.db.Select(&dbResult, query, timeutil.TimeToTimestampMs(from), timeutil.TimeToTimestampMs(to), wallet.Hex(), token.Hex()); err != nil {
+	walletFilter := blockchain.IsZeroAddress(wallet)
+	tokenFilter := blockchain.IsZeroAddress(token)
+	if err := wdb.db.Select(&dbResult, query, timeutil.TimeToTimestampMs(from), timeutil.TimeToTimestampMs(to), walletFilter, wallet.Hex(), tokenFilter, token.Hex()); err != nil {
 		return result, err
 	}
 	logger.Debugw("result", "len", len(dbResult))

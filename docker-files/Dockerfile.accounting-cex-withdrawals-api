@@ -1,11 +1,11 @@
 FROM golang:1.11-stretch AS build-env
 
 COPY . /reserve-stats
-WORKDIR /reserve-stats/accounting/cmd/accounting-cex-withdrawal-api
-RUN go build -v -mod=vendor -o /accounting-cex-withdrawal-api
+WORKDIR /reserve-stats/accounting/cmd/accounting-cex-withdrawals-api
+RUN go build -v -mod=vendor -o /accounting-cex-withdrawals-api
 
 FROM debian:stretch
-COPY --from=build-env /accounting-cex-withdrawal-api /
+COPY --from=build-env /accounting-cex-withdrawals-api /
 
 RUN apt-get update && \
     apt-get install -y ca-certificates && \
@@ -14,4 +14,4 @@ RUN apt-get update && \
 ENV HTTP_ADDRESS=0.0.0.0:8014
 EXPOSE 8014
 
-ENTRYPOINT ["/accounting-cex-withdrawal-api"]
+ENTRYPOINT ["/accounting-cex-withdrawals-api"]

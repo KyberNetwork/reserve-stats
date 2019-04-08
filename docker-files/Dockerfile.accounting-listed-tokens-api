@@ -1,0 +1,17 @@
+FROM golang:1.11-stretch AS build-env
+
+COPY . /reserve-stats
+WORKDIR /reserve-stats/accounting/cmd/accounting-listed-tokens-api
+RUN go build -v -mod=vendor -o /accounting-listed-tokens-api
+
+FROM debian:stretch
+COPY --from=build-env /accounting-listed-tokens-api /
+
+RUN apt-get update && \
+    apt-get install -y ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV HTTP_ADDRESS=0.0.0.0:8013
+EXPOSE 8013
+
+ENTRYPOINT ["/accounting-listed-tokens-api"]

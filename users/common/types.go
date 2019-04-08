@@ -49,8 +49,31 @@ type UserCap struct {
 	TxLimit float64 `json:"tx_limit"`
 }
 
+//Option is option for UserCap
+type Option func(*UserCap)
+
+//WithLimit optional added customize limit to usercap
+func WithLimit(dailyLimit, txLimit float64) Option {
+	return func(userCap *UserCap) {
+		userCap.DailyLimit = dailyLimit
+		userCap.TxLimit = txLimit
+	}
+}
+
 // NewUserCap returns user cap based on KYC status.
-func NewUserCap(kyced bool) *UserCap {
+func NewUserCap(kyced bool, options ...Option) *UserCap {
+	var (
+		userCap = &UserCap{
+			DailyLimit: 0,
+			TxLimit:    0,
+		}
+	)
+	if len(options) != 0 {
+		for _, option := range options {
+			option(userCap)
+		}
+		return userCap
+	}
 	if kyced {
 		return kycCap
 	}

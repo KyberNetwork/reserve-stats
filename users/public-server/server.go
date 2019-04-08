@@ -40,7 +40,8 @@ type userQuery struct {
 }
 
 //NewServer return new server instance
-func NewServer(sugar *zap.SugaredLogger, host string, rateProvider tokenrate.ETHUSDRateProvider, storage *redis.Client) *Server {
+func NewServer(sugar *zap.SugaredLogger, host string, rateProvider tokenrate.ETHUSDRateProvider, storage *redis.Client,
+	kycedCap, nonKYCCap *common.UserCap) *Server {
 	r := gin.Default()
 	return &Server{
 		sugar:        sugar,
@@ -48,8 +49,8 @@ func NewServer(sugar *zap.SugaredLogger, host string, rateProvider tokenrate.ETH
 		host:         host,
 		rateProvider: httputil.NewCachedRateProvider(sugar, rateProvider, time.Hour),
 		redisClient:  storage,
-		kycedCap:     common.NewUserCap(true),
-		nonKycedCap:  common.NewUserCap(false),
+		kycedCap:     kycedCap,
+		nonKycedCap:  nonKYCCap,
 	}
 }
 

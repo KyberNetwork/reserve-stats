@@ -37,7 +37,7 @@ type RedisCacher struct {
 
 //NewRedisCacher returns a new redis cacher instance
 func NewRedisCacher(sugar *zap.SugaredLogger, postgresDB *storage.UserDB,
-	influxDBClient client.Client, redisClient *redis.Client, expiration time.Duration) *RedisCacher {
+	influxDBClient client.Client, redisClient *redis.Client, expiration time.Duration, kycedCap, nonKycedCap *common.UserCap) *RedisCacher {
 	return &RedisCacher{
 		sugar:          sugar,
 		postgresDB:     postgresDB,
@@ -45,8 +45,8 @@ func NewRedisCacher(sugar *zap.SugaredLogger, postgresDB *storage.UserDB,
 		redisClient:    redisClient,
 		expiration:     expiration,
 
-		kycedCap:    common.NewUserCap(true),
-		nonKycedCap: common.NewUserCap(false),
+		kycedCap:    kycedCap,
+		nonKycedCap: nonKycedCap,
 	}
 }
 

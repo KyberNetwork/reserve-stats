@@ -16,8 +16,16 @@ import (
 )
 
 const (
-	expireTimeFlag    = "expire-time"
-	defaultExpireTime = 3600 // 1 hour
+	expireTimeFlag               = "expire-time"
+	nonKYCDailyLimitFlag         = "non-kyc-daily-limit"
+	nonKYCTxLimitFlag            = "non-kyc-tx-limit"
+	kycedDailyLimitFlag          = "kyced-daily-limit"
+	kycedTxLimitFlag             = "kyced-tx-limit"
+	defaultExpireTime            = 3600 // 1 hour
+	defaultNonKYCDailyLimitValue = 15000
+	defaultNonKYCTxLimitValue    = 15000
+	defaultKYCEDDailyLimitValue  = 1000000
+	defaultKYCEDTxLimitValue     = 200000
 )
 
 func main() {
@@ -36,6 +44,30 @@ func main() {
 			Usage:  "Time to expire redis cache, count by second",
 			EnvVar: "EXPIRE_TIME",
 			Value:  defaultExpireTime,
+		},
+		cli.Float64Flag{
+			Name:   nonKYCDailyLimitFlag,
+			Usage:  "Daily limit for non kyc user",
+			EnvVar: "NON_KYC_DAILY_LIMIT",
+			Value:  defaultNonKYCDailyLimitValue,
+		},
+		cli.Float64Flag{
+			Name:   nonKYCTxLimitFlag,
+			Usage:  "Tx limit for non kyc user",
+			EnvVar: "NON_KYC_TX_LIMIT",
+			Value:  defaultNonKYCTxLimitValue,
+		},
+		cli.Float64Flag{
+			Name:   kycedDailyLimitFlag,
+			Usage:  "Daily limit for kyced user",
+			EnvVar: "KYCED_DAILY_LIMIT",
+			Value:  defaultKYCEDDailyLimitValue,
+		},
+		cli.Float64Flag{
+			Name:   kycedTxLimitFlag,
+			Usage:  "Tx limit for kyced user",
+			EnvVar: "KYCED_TX_LIMIT",
+			Value:  defaultKYCEDTxLimitValue,
 		},
 	)
 
@@ -81,12 +113,20 @@ func run(c *cli.Context) error {
 		return err
 	}
 
+	nonKYCDailyLimit := c.Float64(nonKYCDailyLimitFlag)
+	nonKYCTxLimit := c.Float64(nonKYCTxLimitFlag)
+	kycedDailyLimit := c.Float64(kycedDailyLimitFlag)
+	kycedTxLimit := c.Float64(kycedTxLimitFlag)
+
+	nonKYCCap := common.NewUserCap(true, common.WithLimit(nonKYCDailyLimit, nonKYCTxLimit))
+	kycedCap := common.NewUserCap(true, common.WithLimit(kycedDailyLimit, kycedTxLimit))
+
 	expireTimeSecond := c.Int64(expireTimeFlag)
 	expireTime := time.Duration(expireTimeSecond) * time.Second
 
 	sugar.Debugw("Initiated redis cached", "cache", redisCacheClient)
 
-	redisCacher := cacher.NewRedisCacher(sugar, userDB, influxDBClient, redisCacheClient, expireTime)
+	redisCacher := cacher.NewRedisCacher(sugar, userDB, influxDBClient, redisCacheClient, expireTime, kycedCap, nonKYCCap)
 
 	return redisCacher.CacheUserInfo()
 }

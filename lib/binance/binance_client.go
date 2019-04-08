@@ -62,7 +62,7 @@ func WithValidation() Option {
 	return func(cl *Client) error {
 		_, err := cl.GetAccountInfo()
 		if err != nil {
-			return fmt.Errorf("cannot call GetAccountInfo With current params, error : %v", err)
+			return fmt.Errorf("failed to validate Binance API key by calling GetAccountInfo API: err=%s", err.Error())
 		}
 		return nil
 	}

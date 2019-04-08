@@ -49,7 +49,7 @@ func WithValidation() Option {
 	return func(cl *Client) error {
 		_, err := cl.GetAccounts()
 		if err != nil {
-			return fmt.Errorf("cannot call GetAccounts With current params, error : %v", err)
+			return fmt.Errorf("failed to validate Huobi API key by calling GetAccountInfo API: err=%s", err.Error())
 		}
 		return nil
 	}

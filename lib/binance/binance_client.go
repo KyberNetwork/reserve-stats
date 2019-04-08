@@ -47,30 +47,44 @@ type Client struct {
 }
 
 //Option sets the initialization behavior for binance instance
-type Option func(cl *Client)
+type Option func(cl *Client) error
 
 //WithRateLimiter alter rate limiter of binance client
 func WithRateLimiter(limiter Limiter) Option {
-	return func(cl *Client) {
+	return func(cl *Client) error {
 		cl.rateLimiter = limiter
+		return nil
+	}
+}
+
+//WithValidation check if API key is valid by calling GetAccountInfo with its key
+func WithValidation() Option {
+	return func(cl *Client) error {
+		_, err := cl.GetAccountInfo()
+		if err != nil {
+			return fmt.Errorf("failed to validate Binance API key by calling GetAccountInfo API: err=%s", err.Error())
+		}
+		return nil
 	}
 }
 
 //NewBinance return a new client for binance api
-func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...Option) *Client {
+func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...Option) (*Client, error) {
 	clnt := &Client{
 		APIKey:    apiKey,
 		SecretKey: secretKey,
 		sugar:     sugar,
 	}
 	for _, opt := range options {
-		opt(clnt)
+		if err := opt(clnt); err != nil {
+			return nil, err
+		}
 	}
 	//Set Default rate limiter to the limit spefified by https://api.binance.com/api/v1/exchangeInfo
 	if clnt.rateLimiter == nil {
 		clnt.rateLimiter = NewRateLimiter(defaultHardLimit)
 	}
-	return clnt
+	return clnt, nil
 }
 
 //waitN mimic the leaky bucket algorithm to wait for n drop
@@ -292,7 +306,14 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 	if err != nil {
 		return result, err
 	}
+
 	err = json.Unmarshal(res, &result)
+	if err != nil {
+		return result, err
+	}
+	if !result.Success {
+		return result, fmt.Errorf("failed to get binance withdrawal history, reason: %s", result.Message)
+	}
 	return result, err
 }
 
@@ -318,6 +339,34 @@ func (bc *Client) GetExchangeInfo() (ExchangeInfo, error) {
 	if err != nil {
 		return result, err
 	}
+	err = json.Unmarshal(res, &result)
+	return result, err
+}
+
+//GetAccountInfo return account infos
+func (bc *Client) GetAccountInfo() (AccountInfo, error) {
+	var (
+		result AccountInfo
+	)
+	const weight = 5
+	//Wait before creating the request to avoid timestamp request outside the recWindow
+	if err := bc.waitN(weight); err != nil {
+		return result, err
+	}
+
+	endpoint := fmt.Sprintf("%s/api/v3/account", endpointPrefix)
+
+	res, err := bc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		nil,
+		true,
+		time.Now(),
+	)
+	if err != nil {
+		return result, err
+	}
+
 	err = json.Unmarshal(res, &result)
 	return result, err
 }

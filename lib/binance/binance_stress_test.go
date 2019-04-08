@@ -19,8 +19,8 @@ func TestBinance(t *testing.T) {
 
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 
-	bn := NewBinance(apiKey, secretKey, sugar)
-
+	bn, err := NewBinance(apiKey, secretKey, sugar)
+	assert.NoError(t, err)
 	const requests = 10000
 	var g errgroup.Group
 	for i := 0; i < requests; i++ {

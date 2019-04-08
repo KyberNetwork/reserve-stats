@@ -34,31 +34,45 @@ type Client struct {
 }
 
 //Option sets the initialization behavior for binance instance
-type Option func(cl *Client)
+type Option func(cl *Client) error
 
 //WithRateLimiter alter ratelimiter of binance client
 func WithRateLimiter(limiter Limiter) Option {
-	return func(cl *Client) {
+	return func(cl *Client) error {
 		cl.rateLimiter = limiter
+		return nil
+	}
+}
+
+//WithValidation check if API key is valid by calling GetAccounts with its key
+func WithValidation() Option {
+	return func(cl *Client) error {
+		_, err := cl.GetAccounts()
+		if err != nil {
+			return fmt.Errorf("failed to validate Huobi API key by calling GetAccountInfo API: err=%s", err.Error())
+		}
+		return nil
 	}
 }
 
 //NewClient return a new HuobiClient instance
-func NewClient(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...Option) *Client {
+func NewClient(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...Option) (*Client, error) {
 	clnt := &Client{
 		APIKey:    apiKey,
 		SecretKey: secretKey,
 		sugar:     sugar,
 	}
 	for _, opt := range options {
-		opt(clnt)
+		if err := opt(clnt); err != nil {
+			return nil, err
+		}
 	}
 	//Set Default rate limiter to the limit spefified by https://github.com/huobiapi/API_Docs_en/wiki/Request_Process
 	if clnt.rateLimiter == nil {
 		const huobiDefaultRateLimit = 10
 		clnt.rateLimiter = rate.NewLimiter(rate.Limit(huobiDefaultRateLimit), 1)
 	}
-	return clnt
+	return clnt, nil
 
 }
 
@@ -169,6 +183,9 @@ func (hc *Client) GetAccounts() ([]Account, error) {
 		return result.Data, err
 	}
 	err = json.Unmarshal(res, &result)
+	if result.Status != StatusOK.String() {
+		return result.Data, fmt.Errorf("received unexpect status: %s", result.Status)
+	}
 	return result.Data, err
 }
 
@@ -176,6 +193,7 @@ func (hc *Client) GetAccounts() ([]Account, error) {
 //extras  params included fromID for further querrying.
 //details at https://github.com/huobiapi/API_Docs_en/wiki/REST_Reference#get-v1orderorders--get-order-list
 func (hc *Client) GetTradeHistory(symbol string, startDate, endDate time.Time, extras ...ExtrasTradeHistoryParams) (TradeHistoryList, error) {
+
 	var (
 		result TradeHistoryList
 		params = map[string]string{
@@ -207,6 +225,13 @@ func (hc *Client) GetTradeHistory(symbol string, startDate, endDate time.Time, e
 		return result, err
 	}
 	err = json.Unmarshal(res, &result)
+	if err != nil {
+		return result, err
+	}
+
+	if result.Status != StatusOK.String() {
+		return result, fmt.Errorf("received unexpect status: %s", result.Status)
+	}
 	return result, err
 }
 
@@ -227,10 +252,18 @@ func (hc *Client) GetWithdrawHistory(currency string, fromID uint64) (WithdrawHi
 		},
 		true,
 	)
+
 	if err != nil {
 		return result, err
 	}
+
 	err = json.Unmarshal(res, &result)
+	if err != nil {
+		return result, err
+	}
+	if result.Status != StatusOK.String() {
+		return result, fmt.Errorf("received unexpect status: %s", result.Status)
+	}
 	return result, err
 }
 

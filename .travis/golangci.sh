@@ -27,6 +27,10 @@ build_docs() {
     pushd ./apidocs
     docker-compose up
     popd
+
+    pushd ./accounting/apidocs
+    docker-compose up
+    popd
 }
 
 case "$build_part" in

@@ -168,7 +168,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	toDate, err := timeutil.FromTimeFromContext(c)
+	toDate, err := timeutil.ToTimeFromContext(c)
 	switch err {
 	case timeutil.ErrEmptyFlag:
 		sugar.Info("toDate not provide. Fetcher running till now...")

@@ -1,7 +1,16 @@
 language: go
 
 go:
-  - 1.11.x
+  # pin go version to avoid test failure
+  # https://travis-ci.com/KyberNetwork/reserve-stats/jobs/191022971
+  # /home/travis/.gimme/versions/go1.12.2.linux.amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+  # /usr/bin/ld: /tmp/go-link-820513584/000006.o: unrecognized relocation (0x2a) in section `.text'
+  # /usr/bin/ld: final link failed: Bad value
+  # collect2: error: ld returned 1 exit status
+  # happens with
+  # - go 1.11.7
+  # - go 1.12.2
+  - 1.11.6
 
 services:
   - docker

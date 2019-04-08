@@ -31,8 +31,8 @@ const (
 var (
 	defaultCexTradeAPIValue           = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingCEXTradesPort)
 	defaultReserveAddressAPIValue     = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingReserveAddressPort)
-	defaultCexWithdrawalAPIValue      = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingCexWithdrawalPort)
-	defaultReserveTokenAPIValue       = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingListedTokenPort)
+	defaultCexWithdrawalAPIValue      = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingCEXWithdrawalsPort)
+	defaultReserveTokenAPIValue       = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingReserveTokensPort)
 	defaultReserveTransactionAPIValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingTransactionsPort)
 	defaultERC20APIValue              = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingWalletErc20Port)
 	defaultReserveRatesAPIValue       = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingReserveRatesPort)

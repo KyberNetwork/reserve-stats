@@ -19,7 +19,7 @@ func main() {
 	app.Usage = "Accounting listed token api"
 	app.Action = run
 
-	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AccountingListedTokenPort)...)
+	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AccountingReserveTokensPort)...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
 
 	if err := app.Run(os.Args); err != nil {

@@ -30,23 +30,19 @@ type RedisCacher struct {
 	influxDBClient client.Client
 	redisClient    *redis.Client
 	expiration     time.Duration
-
-	kycedCap    *common.UserCap
-	nonKycedCap *common.UserCap
+	userCapConf    *common.UserCapConfiguration
 }
 
 //NewRedisCacher returns a new redis cacher instance
 func NewRedisCacher(sugar *zap.SugaredLogger, postgresDB *storage.UserDB,
-	influxDBClient client.Client, redisClient *redis.Client, expiration time.Duration, kycedCap, nonKycedCap *common.UserCap) *RedisCacher {
+	influxDBClient client.Client, redisClient *redis.Client, expiration time.Duration, userCapConf *common.UserCapConfiguration) *RedisCacher {
 	return &RedisCacher{
 		sugar:          sugar,
 		postgresDB:     postgresDB,
 		influxDBClient: influxDBClient,
 		redisClient:    redisClient,
 		expiration:     expiration,
-
-		kycedCap:    kycedCap,
-		nonKycedCap: nonKycedCap,
+		userCapConf:    userCapConf,
 	}
 }
 
@@ -128,13 +124,12 @@ func (rc *RedisCacher) cacheRichUser() error {
 			return nil
 		}
 
-		if (kyced && userTradeAmount < rc.kycedCap.DailyLimit) ||
-			(!kyced && userTradeAmount < rc.nonKycedCap.DailyLimit) {
+		if !rc.userCapConf.IsRich(kyced, userTradeAmount) {
 			// if user is not rich then it is already cached before
 			continue
 		}
 
-		// save to cache with 1 hour
+		// save to cache with configured expiration duration
 		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", richPrefix, userAddress), rc.expiration); err != nil {
 			if dErr := pipe.Discard(); dErr != nil {
 				err = fmt.Errorf("%s - %s", dErr.Error(), err.Error())

@@ -46,7 +46,7 @@ func NewUserCapConfiguration(nonKYCDailyLimit, nonKYCTxLimit, kycDailyLimit, kyc
 	}
 }
 
-// Cap returns UserCap of user for either kyced or non kyced.
+// UserCap returns UserCap of user for either kyced or non kyced.
 func (c *UserCapConfiguration) UserCap(kyced bool) UserCap {
 	if kyced {
 		return c.KYC

@@ -13,7 +13,7 @@ const (
 	defaultKYCDailyLimitValue = 1000000
 
 	kycTxLimitFlag         = "kyc-tx-limit"
-	defaultKYCTxLimitValue = 200000
+	defaultKYCTxLimitValue = 1000000
 )
 
 //UserCap is users transaction cap.

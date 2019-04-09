@@ -33,15 +33,15 @@ type UserCapConfiguration struct {
 }
 
 // NewUserCapConfiguration creates new instance of UserCapConfiguration from given parameters.
-func NewUserCapConfiguration(nonKYCDailyLimit, nonKYCTxLimit, KYCDailyLimit, KYCTxLimit float64) *UserCapConfiguration {
+func NewUserCapConfiguration(nonKYCDailyLimit, nonKYCTxLimit, kycDailyLimit, kycTxLimit float64) *UserCapConfiguration {
 	return &UserCapConfiguration{
 		NonKYC: UserCap{
 			DailyLimit: nonKYCDailyLimit,
 			TxLimit:    nonKYCTxLimit,
 		},
 		KYC: UserCap{
-			DailyLimit: KYCDailyLimit,
-			TxLimit:    KYCTxLimit,
+			DailyLimit: kycDailyLimit,
+			TxLimit:    kycTxLimit,
 		},
 	}
 }

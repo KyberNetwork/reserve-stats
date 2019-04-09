@@ -8,52 +8,23 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+	_ "github.com/lib/pq" // sql driver name: "postgres"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/KyberNetwork/reserve-stats/app-names/common"
 	"github.com/KyberNetwork/reserve-stats/app-names/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq" // sql driver name: "postgres"
-	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
-
-const (
-	postgresHost     = "127.0.0.1"
-	postgresPort     = 5432
-	postgresUser     = "reserve_stats"
-	postgresPassword = "reserve_stats"
-	postgresDatabase = "reserve_stats"
-)
-
-func newTestDB(sugar *zap.SugaredLogger) (*storage.AppNameDB, error) {
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		postgresHost,
-		postgresPort,
-		postgresUser,
-		postgresPassword,
-		postgresDatabase,
-	)
-	db, err := sqlx.Connect("postgres", connStr)
-	if err != nil {
-		return nil, err
-	}
-	return storage.NewAppNameDB(sugar, db)
-}
-
-func tearDown(t *testing.T, storage *storage.AppNameDB) {
-	assert.Nil(t, storage.DeleteAllTables(), "database should be deleted completely")
-}
 
 func TestAppNameHTTPServer(t *testing.T) {
-	logger, err := zap.NewDevelopment()
-	assert.Nil(t, err, "logger should be initiated successfully")
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
+	db, fn := testutil.MustNewRandomDevelopmentDB()
+	defer func() { assert.NoError(t, fn()) }()
 
-	sugar := logger.Sugar()
-	appNameStorage, err := newTestDB(sugar)
+	appNameStorage, err := storage.NewAppNameDB(sugar, db)
 	assert.Nil(t, err, "database should be initiated successfully")
-
-	defer tearDown(t, appNameStorage)
 
 	s, err := NewServer("", appNameStorage, sugar)
 	assert.Nil(t, err, "server should be create successfully")
@@ -78,7 +49,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 			{
 				Msg:      "fail to create with empty app name",
 				Method:   http.MethodPost,
-				Endpoint: fmt.Sprintf("%s", requestEndpoint),
+				Endpoint: requestEndpoint,
 				Body: []byte(`
 				{
 					"addresses": [
@@ -94,7 +65,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 			{
 				Msg:      "fail to create with invalid address",
 				Method:   http.MethodPost,
-				Endpoint: fmt.Sprintf("%s", requestEndpoint),
+				Endpoint: requestEndpoint,
 				Body: []byte(`
 				{
 					"name": "first_app",
@@ -110,7 +81,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 			{
 				Msg:      "create success",
 				Method:   http.MethodPost,
-				Endpoint: fmt.Sprintf("%s", requestEndpoint),
+				Endpoint: requestEndpoint,
 				Body: []byte(`
 				{
 					"name": "first_app",
@@ -155,9 +126,9 @@ func TestAppNameHTTPServer(t *testing.T) {
 				},
 			},
 			{
-				Msg:      "fail to create app with conflict address",
+				Msg:      "create app with conflict address",
 				Method:   http.MethodPost,
-				Endpoint: fmt.Sprintf("%s", requestEndpoint),
+				Endpoint: requestEndpoint,
 				Body: []byte(`
 				{
 					"name": "first_app_conflict_address",
@@ -167,13 +138,13 @@ func TestAppNameHTTPServer(t *testing.T) {
 				}
 				`),
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-					assert.Equal(t, http.StatusConflict, resp.Code)
+					assert.Equal(t, http.StatusCreated, resp.Code)
 				},
 			},
 			{
 				Msg:      "update addresses",
 				Method:   http.MethodPost,
-				Endpoint: fmt.Sprintf("%s", requestEndpoint),
+				Endpoint: requestEndpoint,
 				Body: []byte(`
 				{
 					"id": 1,
@@ -200,7 +171,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 			{
 				Msg:      "update application name",
 				Method:   http.MethodPost,
-				Endpoint: fmt.Sprintf("%s", requestEndpoint),
+				Endpoint: requestEndpoint,
 				Body: []byte(`
 				{
 					"id": 1,
@@ -225,7 +196,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 			},
 			{
 				Msg:      "get all apps",
-				Endpoint: fmt.Sprintf("%s", requestEndpoint),
+				Endpoint: requestEndpoint,
 				Method:   http.MethodGet,
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 					assert.Equal(t, http.StatusOK, resp.Code)
@@ -303,7 +274,6 @@ func TestAppNameHTTPServer(t *testing.T) {
 					assert.Equal(t, int64(1), result.ID)
 					assert.Equal(t,
 						[]ethereum.Address{
-							ethereum.HexToAddress("0x587ecf600d304f831201c30ea0845118dd57516e"),
 							ethereum.HexToAddress("0xde6a6fb70b0375d9c761f67f2db3de97f21362dc"),
 						},
 						result.Addresses,
@@ -348,7 +318,6 @@ func TestAppNameHTTPServer(t *testing.T) {
 						assert.Equal(t, int64(1), result[0].ID)
 						assert.Equal(t,
 							[]ethereum.Address{
-								ethereum.HexToAddress("0x587ecf600d304f831201c30ea0845118dd57516e"),
 								ethereum.HexToAddress("0xde6a6fb70b0375d9c761f67f2db3de97f21362dc"),
 							},
 							result[0].Addresses,
@@ -358,7 +327,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 			},
 			{
 				Msg:      "re-active delete app",
-				Endpoint: fmt.Sprintf("%s", requestEndpoint),
+				Endpoint: requestEndpoint,
 				Method:   http.MethodPost,
 				Body: []byte(`
 				{
@@ -376,6 +345,7 @@ func TestAppNameHTTPServer(t *testing.T) {
 	)
 
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, s.r) })
 	}
 }

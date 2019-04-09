@@ -44,6 +44,7 @@ install:
 before_script:
   - psql -c "CREATE DATABASE reserve_stats;" -U postgres
   - psql -c "CREATE USER reserve_stats WITH PASSWORD 'reserve_stats';" -U postgres
+  - psql -c "ALTER USER reserve_stats CREATEDB;" -U postgres
 
 script:
   - bash .travis/golangci.sh

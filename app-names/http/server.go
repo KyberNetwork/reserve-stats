@@ -5,12 +5,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
 	"github.com/KyberNetwork/reserve-stats/app-names/common"
 	"github.com/KyberNetwork/reserve-stats/app-names/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 // Server is the engine to serve reserve-rate API query
@@ -18,18 +19,39 @@ type Server struct {
 	r     *gin.Engine
 	host  string
 	sugar *zap.SugaredLogger
-	db    *storage.AppNameDB
+	db    storage.Interface
 }
 
 func (sv *Server) getApps(c *gin.Context) {
 	var (
-		logger = sv.sugar.With("func", "intergration-app-names/http/Server.getAddrToAppName")
+		logger       = sv.sugar.With("func", "app-names/http/Server.getAddrToAppName")
+		nameFilter   *string
+		activeFilter *bool
 	)
+
 	logger.Debug("getting addr to App name")
-	name := c.Query("name")
-	logger.Debugw("got name parameter from query", "name", name)
-	active := c.Query("active")
-	apps, err := sv.db.GetAllApp(name, active)
+	name, ok := c.GetQuery("name")
+	if ok {
+		logger.Debugw("got name parameter from query", "name", name)
+		nameFilter = &name
+	}
+
+	activeStr, ok := c.GetQuery("active")
+	if ok {
+		active, err := strconv.ParseBool(activeStr)
+		if err != nil {
+			httputil.ResponseFailure(
+				c,
+				http.StatusBadRequest,
+				err,
+			)
+			return
+		}
+		logger.Debugw("got active parameter from query", "active", active)
+		activeFilter = &active
+	}
+
+	apps, err := sv.db.GetAll(nameFilter, activeFilter)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,
@@ -45,7 +67,6 @@ func (sv *Server) getApps(c *gin.Context) {
 }
 
 func (sv *Server) getAddressFromAppID(c *gin.Context) {
-	// TODO: using ShouldBindUri when gin support it in new release
 	appIDStr := c.Param("id")
 	appID, err := strconv.ParseInt(appIDStr, 10, 64)
 	if err != nil {
@@ -57,9 +78,9 @@ func (sv *Server) getAddressFromAppID(c *gin.Context) {
 		return
 	}
 
-	result, err := sv.db.GetApp(appID)
+	result, err := sv.db.Get(appID)
 	if err != nil {
-		if err == storage.ErrAppNotExist {
+		if err == storage.ErrNotExists {
 			httputil.ResponseFailure(
 				c,
 				http.StatusNotFound,
@@ -97,22 +118,14 @@ func (sv *Server) createApp(c *gin.Context) {
 		return
 	}
 	if id, update, err = sv.db.CreateOrUpdate(q); err != nil {
-		if err == storage.ErrAddrExisted {
-			httputil.ResponseFailure(
-				c,
-				http.StatusConflict,
-				err,
-			)
-		} else {
-			httputil.ResponseFailure(
-				c,
-				http.StatusInternalServerError,
-				err,
-			)
-		}
+		httputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			err,
+		)
 		return
 	}
-	app, err := sv.db.GetApp(id)
+	app, err := sv.db.Get(id)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,
@@ -128,10 +141,7 @@ func (sv *Server) createApp(c *gin.Context) {
 }
 
 func (sv *Server) updateApp(c *gin.Context) {
-	var (
-		q common.Application
-	)
-	//TODO: using ShouldBindUri when gin support it in new release
+	var q common.Application
 	appID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || appID == 0 {
 		if err != nil {
@@ -157,9 +167,11 @@ func (sv *Server) updateApp(c *gin.Context) {
 		)
 		return
 	}
-	err = sv.db.UpdateAppAddress(appID, q)
+	q.ID = appID
+
+	err = sv.db.Update(q)
 	if err != nil {
-		if err == storage.ErrAppNotExist {
+		if err == storage.ErrNotExists {
 			httputil.ResponseFailure(
 				c,
 				http.StatusNotFound,
@@ -174,7 +186,7 @@ func (sv *Server) updateApp(c *gin.Context) {
 		}
 		return
 	}
-	app, err := sv.db.GetApp(appID)
+	app, err := sv.db.Get(appID)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,
@@ -196,8 +208,8 @@ func (sv *Server) deleteApp(c *gin.Context) {
 		)
 		return
 	}
-	if err := sv.db.DeleteApp(appID); err != nil {
-		if err == storage.ErrAppNotExist {
+	if err := sv.db.Delete(appID); err != nil {
+		if err == storage.ErrNotExists {
 			httputil.ResponseFailure(
 				c,
 				http.StatusNotFound,
@@ -230,7 +242,7 @@ func (sv *Server) Run() error {
 }
 
 // NewServer create an instance of Server to serve API query
-func NewServer(host string, appNameDB *storage.AppNameDB, sugar *zap.SugaredLogger) (*Server, error) {
+func NewServer(host string, appNameDB storage.Interface, sugar *zap.SugaredLogger) (*Server, error) {
 	r := gin.Default()
 	return &Server{
 		r:     r,

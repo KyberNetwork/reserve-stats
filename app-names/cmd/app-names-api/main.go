@@ -48,7 +48,12 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	// TODO: flush db
+
+	defer func() {
+		if cErr := db.Close(); cErr != nil {
+			sugar.Errorw("failed to close database", err, cErr)
+		}
+	}()
 
 	server, err := http.NewServer(httputil.NewHTTPAddressFromContext(c), appNameDB, sugar)
 	if err != nil {
@@ -56,6 +61,8 @@ func run(c *cli.Context) error {
 	}
 
 	sugar.Info("Run Addr to Appname module")
-	return server.Run()
-
+	if err = server.Run(); err != nil {
+		return err
+	}
+	return db.Close()
 }

@@ -34,17 +34,17 @@ const (
 	// AccountingCEXTradesPort is the port number of accounting-cex-trade-trades-api service.
 	AccountingCEXTradesPort = 8010
 
-	// AccountingTransactionsPort is the port number of accounting-reserve-transaction-api service.
+	// AccountingTransactionsPort is the port number of accounting-reserve-transactions-api service.
 	AccountingTransactionsPort = 8011
 
 	// AccountingWalletErc20Port is the port number of accounting-wallet-erc20-api service
 	AccountingWalletErc20Port = 8012
 
-	//AccountingListedTokenPort is the port number of accounting-listed-token service
-	AccountingListedTokenPort = 8013
+	//AccountingReserveTokensPort is the port number of accounting-reserve-tokens service
+	AccountingReserveTokensPort = 8013
 
-	//AccountingCexWithdrawalPort is the port number of accounting-listed-token service
-	AccountingCexWithdrawalPort = 8014
+	//AccountingCEXWithdrawalsPort is the port number of accounting-listed-token service
+	AccountingCEXWithdrawalsPort = 8014
 
 	// AccountingReserveRatesPort is the port number of account-reserve-rates-api service
 	AccountingReserveRatesPort = 8015

@@ -4,16 +4,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/app-names"
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
+	appname "github.com/KyberNetwork/reserve-stats/app-names"
 	lipappnames "github.com/KyberNetwork/reserve-stats/lib/appnames"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 const (

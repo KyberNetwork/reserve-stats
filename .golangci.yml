@@ -1,0 +1,25 @@
+run:
+  deadline: 5m
+  modules-download-mode: vendor
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - unused
+    - gosimple
+    - structcheck
+    - varcheck
+    - typecheck
+    - govet
+    - staticcheck
+    - ineffassign
+    - deadcode
+    - golint
+    - stylecheck
+    - interfacer
+    - unconvert
+    - goconst
+    - goimports
+    - scopelint
+    - gocritic

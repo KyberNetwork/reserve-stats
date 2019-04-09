@@ -3,19 +3,19 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -23,23 +23,6 @@ const (
 	testUSDAmount = 0.222
 	testVolAmount = 0.333
 )
-
-type mockCore struct {
-}
-
-func (c *mockCore) Tokens() ([]core.Token, error) {
-	return []core.Token{
-		core.ETHToken,
-	}, nil
-}
-
-func (c *mockCore) FromWei(ethereum.Address, *big.Int) (float64, error) {
-	return 0, nil
-}
-
-func (c *mockCore) ToWei(ethereum.Address, float64) (*big.Int, error) {
-	return nil, nil
-}
 
 func (s *mockStorage) GetReserveVolume(rsvAddr ethereum.Address, token ethereum.Address, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
 	return nil, nil
@@ -104,6 +87,7 @@ func TestAssetVolumeHttp(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, router) })
 	}
 }

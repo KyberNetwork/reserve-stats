@@ -2,34 +2,15 @@ package storage
 
 import (
 	"fmt"
-	"net/http"
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
-)
 
-func doInfluxHTTPReq(client http.Client, cmd, endpoint, db string) error {
-	req, err := http.NewRequest(http.MethodPost, endpoint, nil)
-	if err != nil {
-		return err
-	}
-	q := req.URL.Query()
-	q.Add("q", cmd)
-	q.Add("db", db)
-	req.URL.RawQuery = q.Encode()
-	rsp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	if rsp.StatusCode != http.StatusOK {
-		return fmt.Errorf("wrong status code, expected: %d, got: %d", http.StatusOK, rsp.StatusCode)
-	}
-	return nil
-}
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
+)
 
 func aggregationTestData(is *InfluxStorage) error {
 

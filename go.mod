@@ -28,6 +28,7 @@ require (
 	github.com/jackpal/go-nat-pmp v1.0.1 // indirect
 	github.com/jinzhu/now v0.0.0-20181116074157-8ec929ed50c3
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
+	github.com/jsternberg/zap-logfmt v1.2.0 // indirect
 	github.com/karalabe/hid v0.0.0-20180420081245-2b4488a37358 // indirect
 	github.com/lib/pq v1.0.0
 	github.com/mattn/go-colorable v0.0.9 // indirect
@@ -45,8 +46,6 @@ require (
 	github.com/stretchr/testify v1.3.0
 	github.com/syndtr/goleveldb v0.0.0-20181012014443-6b91fda63f2e // indirect
 	github.com/urfave/cli v1.20.0
-	go.uber.org/atomic v1.3.2 // indirect
-	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4
 	golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a // indirect

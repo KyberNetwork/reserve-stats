@@ -29,8 +29,7 @@ type Server struct {
 	host         string
 	rateProvider tokenrate.ETHUSDRateProvider
 	redisClient  *redis.Client
-	kycedCap     *common.UserCap
-	nonKycedCap  *common.UserCap
+	userCapConf  *common.UserCapConfiguration
 }
 
 //UserQuery is query for user info
@@ -40,7 +39,12 @@ type userQuery struct {
 }
 
 //NewServer return new server instance
-func NewServer(sugar *zap.SugaredLogger, host string, rateProvider tokenrate.ETHUSDRateProvider, storage *redis.Client) *Server {
+func NewServer(
+	sugar *zap.SugaredLogger,
+	host string,
+	rateProvider tokenrate.ETHUSDRateProvider,
+	storage *redis.Client,
+	userCapConf *common.UserCapConfiguration) *Server {
 	r := gin.Default()
 	return &Server{
 		sugar:        sugar,
@@ -48,8 +52,7 @@ func NewServer(sugar *zap.SugaredLogger, host string, rateProvider tokenrate.ETH
 		host:         host,
 		rateProvider: httputil.NewCachedRateProvider(sugar, rateProvider, time.Hour),
 		redisClient:  storage,
-		kycedCap:     common.NewUserCap(true),
-		nonKycedCap:  common.NewUserCap(false),
+		userCapConf:  userCapConf,
 	}
 }
 
@@ -114,11 +117,7 @@ func (s *Server) getUsers(c *gin.Context) {
 		return
 	}
 
-	if kyced {
-		userCap = blockchain.EthToWei(s.kycedCap.TxLimit / rate)
-	} else {
-		userCap = blockchain.EthToWei(s.nonKycedCap.TxLimit / rate)
-	}
+	userCap = blockchain.EthToWei(s.userCapConf.UserCap(kyced).TxLimit / rate)
 
 	c.JSON(
 		http.StatusOK,

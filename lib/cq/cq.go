@@ -6,9 +6,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 )
 
 const (
@@ -103,10 +104,7 @@ func hasGroupBy(query string) bool {
 			totalBracket++
 		}
 	}
-	if totalBracket == 0 {
-		return true
-	}
-	return false
+	return totalBracket == 0
 }
 
 func (cq *ContinuousQuery) prepareQueries(isCQ bool) ([]string, error) {

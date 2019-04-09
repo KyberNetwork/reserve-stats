@@ -3,9 +3,10 @@ package userprofile
 import (
 	"container/heap"
 	"fmt"
+	"sync"
+
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	ethereum "github.com/ethereum/go-ethereum/common"
-	"sync"
 )
 
 // CachedClient is the wrapper of User Profile Client with caching ability.

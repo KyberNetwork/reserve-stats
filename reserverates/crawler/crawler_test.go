@@ -1,15 +1,17 @@
 package crawler
 
 import (
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"reflect"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-stats/lib/contracts"
-	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
 )
 
 const (
@@ -38,13 +40,11 @@ func (mst *mockSupportedTokens) Tokens(ethereum.Address, uint64) ([]blockchain.T
 
 func newTestCrawler(sugar *zap.SugaredLogger) (*ReserveRatesCrawler, error) {
 	var (
-		addrs       = []ethereum.Address{ethereum.HexToAddress(testRsvAddress)}
 		wrpContract = contracts.MockVersionedWrapper{}
 	)
 
 	return &ReserveRatesCrawler{
 		wrapperContract: &wrpContract,
-		addresses:       addrs,
 		rtf:             &mockSupportedTokens{},
 		sugar:           sugar,
 	}, nil
@@ -53,22 +53,22 @@ func newTestCrawler(sugar *zap.SugaredLogger) (*ReserveRatesCrawler, error) {
 // TestGetReserveRate query the mock blockchain for reserve rate result
 // and ensure that the result is the rate configured
 func TestGetReserveRate(t *testing.T) {
-	var testRateEntry = rsvRateCommon.ReserveRateEntry{
-		BuyReserveRate:  1.0,
-		SellReserveRate: 2.0,
-		BuySanityRate:   3.0,
-		SellSanityRate:  4.0,
-	}
-	logger, err := zap.NewDevelopment()
-	assert.Nil(t, err, "logger should be created")
+	var (
+		addrs = []ethereum.Address{ethereum.HexToAddress(testRsvAddress)}
 
-	defer logger.Sync()
-	sugar := logger.Sugar()
+		testRateEntry = rsvRateCommon.ReserveRateEntry{
+			BuyReserveRate:  1.0,
+			SellReserveRate: 2.0,
+			BuySanityRate:   3.0,
+			SellSanityRate:  4.0,
+		}
+	)
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 
 	crawler, err := newTestCrawler(sugar)
 	assert.Nil(t, err, "test crawler should be created")
 
-	rates, err := crawler.GetReserveRates(0)
+	rates, err := crawler.GetReserveRatesWithAddresses(addrs, 0)
 	assert.Nil(t, err, "reserve rate should be generate")
 
 	rate, ok := rates[testRsvAddress]

@@ -226,7 +226,7 @@ func (_ConversionRates *ConversionRatesCallerSession) GetAlerters() ([]common.Ad
 
 // GetBasicRate is a free data retrieval call binding the contract method 0xcf8fee11.
 //
-// Solidity: function getBasicRate(token address, buy bool) constant returns(uint256)
+// Solidity: function getBasicRate(address token, bool buy) constant returns(uint256)
 func (_ConversionRates *ConversionRatesCaller) GetBasicRate(opts *bind.CallOpts, token common.Address, buy bool) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -238,21 +238,21 @@ func (_ConversionRates *ConversionRatesCaller) GetBasicRate(opts *bind.CallOpts,
 
 // GetBasicRate is a free data retrieval call binding the contract method 0xcf8fee11.
 //
-// Solidity: function getBasicRate(token address, buy bool) constant returns(uint256)
+// Solidity: function getBasicRate(address token, bool buy) constant returns(uint256)
 func (_ConversionRates *ConversionRatesSession) GetBasicRate(token common.Address, buy bool) (*big.Int, error) {
 	return _ConversionRates.Contract.GetBasicRate(&_ConversionRates.CallOpts, token, buy)
 }
 
 // GetBasicRate is a free data retrieval call binding the contract method 0xcf8fee11.
 //
-// Solidity: function getBasicRate(token address, buy bool) constant returns(uint256)
+// Solidity: function getBasicRate(address token, bool buy) constant returns(uint256)
 func (_ConversionRates *ConversionRatesCallerSession) GetBasicRate(token common.Address, buy bool) (*big.Int, error) {
 	return _ConversionRates.Contract.GetBasicRate(&_ConversionRates.CallOpts, token, buy)
 }
 
 // GetCompactData is a free data retrieval call binding the contract method 0xe4a2ac62.
 //
-// Solidity: function getCompactData(token address) constant returns(uint256, uint256, bytes1, bytes1)
+// Solidity: function getCompactData(address token) constant returns(uint256, uint256, bytes1, bytes1)
 func (_ConversionRates *ConversionRatesCaller) GetCompactData(opts *bind.CallOpts, token common.Address) (*big.Int, *big.Int, [1]byte, [1]byte, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -272,14 +272,14 @@ func (_ConversionRates *ConversionRatesCaller) GetCompactData(opts *bind.CallOpt
 
 // GetCompactData is a free data retrieval call binding the contract method 0xe4a2ac62.
 //
-// Solidity: function getCompactData(token address) constant returns(uint256, uint256, bytes1, bytes1)
+// Solidity: function getCompactData(address token) constant returns(uint256, uint256, bytes1, bytes1)
 func (_ConversionRates *ConversionRatesSession) GetCompactData(token common.Address) (*big.Int, *big.Int, [1]byte, [1]byte, error) {
 	return _ConversionRates.Contract.GetCompactData(&_ConversionRates.CallOpts, token)
 }
 
 // GetCompactData is a free data retrieval call binding the contract method 0xe4a2ac62.
 //
-// Solidity: function getCompactData(token address) constant returns(uint256, uint256, bytes1, bytes1)
+// Solidity: function getCompactData(address token) constant returns(uint256, uint256, bytes1, bytes1)
 func (_ConversionRates *ConversionRatesCallerSession) GetCompactData(token common.Address) (*big.Int, *big.Int, [1]byte, [1]byte, error) {
 	return _ConversionRates.Contract.GetCompactData(&_ConversionRates.CallOpts, token)
 }
@@ -338,7 +338,7 @@ func (_ConversionRates *ConversionRatesCallerSession) GetOperators() ([]common.A
 
 // GetRate is a free data retrieval call binding the contract method 0xb8e9c22e.
 //
-// Solidity: function getRate(token address, currentBlockNumber uint256, buy bool, qty uint256) constant returns(uint256)
+// Solidity: function getRate(address token, uint256 currentBlockNumber, bool buy, uint256 qty) constant returns(uint256)
 func (_ConversionRates *ConversionRatesCaller) GetRate(opts *bind.CallOpts, token common.Address, currentBlockNumber *big.Int, buy bool, qty *big.Int) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -350,21 +350,21 @@ func (_ConversionRates *ConversionRatesCaller) GetRate(opts *bind.CallOpts, toke
 
 // GetRate is a free data retrieval call binding the contract method 0xb8e9c22e.
 //
-// Solidity: function getRate(token address, currentBlockNumber uint256, buy bool, qty uint256) constant returns(uint256)
+// Solidity: function getRate(address token, uint256 currentBlockNumber, bool buy, uint256 qty) constant returns(uint256)
 func (_ConversionRates *ConversionRatesSession) GetRate(token common.Address, currentBlockNumber *big.Int, buy bool, qty *big.Int) (*big.Int, error) {
 	return _ConversionRates.Contract.GetRate(&_ConversionRates.CallOpts, token, currentBlockNumber, buy, qty)
 }
 
 // GetRate is a free data retrieval call binding the contract method 0xb8e9c22e.
 //
-// Solidity: function getRate(token address, currentBlockNumber uint256, buy bool, qty uint256) constant returns(uint256)
+// Solidity: function getRate(address token, uint256 currentBlockNumber, bool buy, uint256 qty) constant returns(uint256)
 func (_ConversionRates *ConversionRatesCallerSession) GetRate(token common.Address, currentBlockNumber *big.Int, buy bool, qty *big.Int) (*big.Int, error) {
 	return _ConversionRates.Contract.GetRate(&_ConversionRates.CallOpts, token, currentBlockNumber, buy, qty)
 }
 
 // GetRateUpdateBlock is a free data retrieval call binding the contract method 0x8036d757.
 //
-// Solidity: function getRateUpdateBlock(token address) constant returns(uint256)
+// Solidity: function getRateUpdateBlock(address token) constant returns(uint256)
 func (_ConversionRates *ConversionRatesCaller) GetRateUpdateBlock(opts *bind.CallOpts, token common.Address) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -376,21 +376,21 @@ func (_ConversionRates *ConversionRatesCaller) GetRateUpdateBlock(opts *bind.Cal
 
 // GetRateUpdateBlock is a free data retrieval call binding the contract method 0x8036d757.
 //
-// Solidity: function getRateUpdateBlock(token address) constant returns(uint256)
+// Solidity: function getRateUpdateBlock(address token) constant returns(uint256)
 func (_ConversionRates *ConversionRatesSession) GetRateUpdateBlock(token common.Address) (*big.Int, error) {
 	return _ConversionRates.Contract.GetRateUpdateBlock(&_ConversionRates.CallOpts, token)
 }
 
 // GetRateUpdateBlock is a free data retrieval call binding the contract method 0x8036d757.
 //
-// Solidity: function getRateUpdateBlock(token address) constant returns(uint256)
+// Solidity: function getRateUpdateBlock(address token) constant returns(uint256)
 func (_ConversionRates *ConversionRatesCallerSession) GetRateUpdateBlock(token common.Address) (*big.Int, error) {
 	return _ConversionRates.Contract.GetRateUpdateBlock(&_ConversionRates.CallOpts, token)
 }
 
 // GetStepFunctionData is a free data retrieval call binding the contract method 0x62674e93.
 //
-// Solidity: function getStepFunctionData(token address, command uint256, param uint256) constant returns(int256)
+// Solidity: function getStepFunctionData(address token, uint256 command, uint256 param) constant returns(int256)
 func (_ConversionRates *ConversionRatesCaller) GetStepFunctionData(opts *bind.CallOpts, token common.Address, command *big.Int, param *big.Int) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -402,21 +402,21 @@ func (_ConversionRates *ConversionRatesCaller) GetStepFunctionData(opts *bind.Ca
 
 // GetStepFunctionData is a free data retrieval call binding the contract method 0x62674e93.
 //
-// Solidity: function getStepFunctionData(token address, command uint256, param uint256) constant returns(int256)
+// Solidity: function getStepFunctionData(address token, uint256 command, uint256 param) constant returns(int256)
 func (_ConversionRates *ConversionRatesSession) GetStepFunctionData(token common.Address, command *big.Int, param *big.Int) (*big.Int, error) {
 	return _ConversionRates.Contract.GetStepFunctionData(&_ConversionRates.CallOpts, token, command, param)
 }
 
 // GetStepFunctionData is a free data retrieval call binding the contract method 0x62674e93.
 //
-// Solidity: function getStepFunctionData(token address, command uint256, param uint256) constant returns(int256)
+// Solidity: function getStepFunctionData(address token, uint256 command, uint256 param) constant returns(int256)
 func (_ConversionRates *ConversionRatesCallerSession) GetStepFunctionData(token common.Address, command *big.Int, param *big.Int) (*big.Int, error) {
 	return _ConversionRates.Contract.GetStepFunctionData(&_ConversionRates.CallOpts, token, command, param)
 }
 
 // GetTokenBasicData is a free data retrieval call binding the contract method 0x721bba59.
 //
-// Solidity: function getTokenBasicData(token address) constant returns(bool, bool)
+// Solidity: function getTokenBasicData(address token) constant returns(bool, bool)
 func (_ConversionRates *ConversionRatesCaller) GetTokenBasicData(opts *bind.CallOpts, token common.Address) (bool, bool, error) {
 	var (
 		ret0 = new(bool)
@@ -432,21 +432,21 @@ func (_ConversionRates *ConversionRatesCaller) GetTokenBasicData(opts *bind.Call
 
 // GetTokenBasicData is a free data retrieval call binding the contract method 0x721bba59.
 //
-// Solidity: function getTokenBasicData(token address) constant returns(bool, bool)
+// Solidity: function getTokenBasicData(address token) constant returns(bool, bool)
 func (_ConversionRates *ConversionRatesSession) GetTokenBasicData(token common.Address) (bool, bool, error) {
 	return _ConversionRates.Contract.GetTokenBasicData(&_ConversionRates.CallOpts, token)
 }
 
 // GetTokenBasicData is a free data retrieval call binding the contract method 0x721bba59.
 //
-// Solidity: function getTokenBasicData(token address) constant returns(bool, bool)
+// Solidity: function getTokenBasicData(address token) constant returns(bool, bool)
 func (_ConversionRates *ConversionRatesCallerSession) GetTokenBasicData(token common.Address) (bool, bool, error) {
 	return _ConversionRates.Contract.GetTokenBasicData(&_ConversionRates.CallOpts, token)
 }
 
 // GetTokenControlInfo is a free data retrieval call binding the contract method 0xe7d4fd91.
 //
-// Solidity: function getTokenControlInfo(token address) constant returns(uint256, uint256, uint256)
+// Solidity: function getTokenControlInfo(address token) constant returns(uint256, uint256, uint256)
 func (_ConversionRates *ConversionRatesCaller) GetTokenControlInfo(opts *bind.CallOpts, token common.Address) (*big.Int, *big.Int, *big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -464,14 +464,14 @@ func (_ConversionRates *ConversionRatesCaller) GetTokenControlInfo(opts *bind.Ca
 
 // GetTokenControlInfo is a free data retrieval call binding the contract method 0xe7d4fd91.
 //
-// Solidity: function getTokenControlInfo(token address) constant returns(uint256, uint256, uint256)
+// Solidity: function getTokenControlInfo(address token) constant returns(uint256, uint256, uint256)
 func (_ConversionRates *ConversionRatesSession) GetTokenControlInfo(token common.Address) (*big.Int, *big.Int, *big.Int, error) {
 	return _ConversionRates.Contract.GetTokenControlInfo(&_ConversionRates.CallOpts, token)
 }
 
 // GetTokenControlInfo is a free data retrieval call binding the contract method 0xe7d4fd91.
 //
-// Solidity: function getTokenControlInfo(token address) constant returns(uint256, uint256, uint256)
+// Solidity: function getTokenControlInfo(address token) constant returns(uint256, uint256, uint256)
 func (_ConversionRates *ConversionRatesCallerSession) GetTokenControlInfo(token common.Address) (*big.Int, *big.Int, *big.Int, error) {
 	return _ConversionRates.Contract.GetTokenControlInfo(&_ConversionRates.CallOpts, token)
 }
@@ -556,7 +556,7 @@ func (_ConversionRates *ConversionRatesCallerSession) ReserveContract() (common.
 
 // TokenImbalanceData is a free data retrieval call binding the contract method 0xa80c609e.
 //
-// Solidity: function tokenImbalanceData( address,  uint256) constant returns(uint256)
+// Solidity: function tokenImbalanceData(address , uint256 ) constant returns(uint256)
 func (_ConversionRates *ConversionRatesCaller) TokenImbalanceData(opts *bind.CallOpts, arg0 common.Address, arg1 *big.Int) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -568,14 +568,14 @@ func (_ConversionRates *ConversionRatesCaller) TokenImbalanceData(opts *bind.Cal
 
 // TokenImbalanceData is a free data retrieval call binding the contract method 0xa80c609e.
 //
-// Solidity: function tokenImbalanceData( address,  uint256) constant returns(uint256)
+// Solidity: function tokenImbalanceData(address , uint256 ) constant returns(uint256)
 func (_ConversionRates *ConversionRatesSession) TokenImbalanceData(arg0 common.Address, arg1 *big.Int) (*big.Int, error) {
 	return _ConversionRates.Contract.TokenImbalanceData(&_ConversionRates.CallOpts, arg0, arg1)
 }
 
 // TokenImbalanceData is a free data retrieval call binding the contract method 0xa80c609e.
 //
-// Solidity: function tokenImbalanceData( address,  uint256) constant returns(uint256)
+// Solidity: function tokenImbalanceData(address , uint256 ) constant returns(uint256)
 func (_ConversionRates *ConversionRatesCallerSession) TokenImbalanceData(arg0 common.Address, arg1 *big.Int) (*big.Int, error) {
 	return _ConversionRates.Contract.TokenImbalanceData(&_ConversionRates.CallOpts, arg0, arg1)
 }
@@ -608,63 +608,63 @@ func (_ConversionRates *ConversionRatesCallerSession) ValidRateDurationInBlocks(
 
 // AddAlerter is a paid mutator transaction binding the contract method 0x408ee7fe.
 //
-// Solidity: function addAlerter(newAlerter address) returns()
+// Solidity: function addAlerter(address newAlerter) returns()
 func (_ConversionRates *ConversionRatesTransactor) AddAlerter(opts *bind.TransactOpts, newAlerter common.Address) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "addAlerter", newAlerter)
 }
 
 // AddAlerter is a paid mutator transaction binding the contract method 0x408ee7fe.
 //
-// Solidity: function addAlerter(newAlerter address) returns()
+// Solidity: function addAlerter(address newAlerter) returns()
 func (_ConversionRates *ConversionRatesSession) AddAlerter(newAlerter common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.AddAlerter(&_ConversionRates.TransactOpts, newAlerter)
 }
 
 // AddAlerter is a paid mutator transaction binding the contract method 0x408ee7fe.
 //
-// Solidity: function addAlerter(newAlerter address) returns()
+// Solidity: function addAlerter(address newAlerter) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) AddAlerter(newAlerter common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.AddAlerter(&_ConversionRates.TransactOpts, newAlerter)
 }
 
 // AddOperator is a paid mutator transaction binding the contract method 0x9870d7fe.
 //
-// Solidity: function addOperator(newOperator address) returns()
+// Solidity: function addOperator(address newOperator) returns()
 func (_ConversionRates *ConversionRatesTransactor) AddOperator(opts *bind.TransactOpts, newOperator common.Address) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "addOperator", newOperator)
 }
 
 // AddOperator is a paid mutator transaction binding the contract method 0x9870d7fe.
 //
-// Solidity: function addOperator(newOperator address) returns()
+// Solidity: function addOperator(address newOperator) returns()
 func (_ConversionRates *ConversionRatesSession) AddOperator(newOperator common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.AddOperator(&_ConversionRates.TransactOpts, newOperator)
 }
 
 // AddOperator is a paid mutator transaction binding the contract method 0x9870d7fe.
 //
-// Solidity: function addOperator(newOperator address) returns()
+// Solidity: function addOperator(address newOperator) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) AddOperator(newOperator common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.AddOperator(&_ConversionRates.TransactOpts, newOperator)
 }
 
 // AddToken is a paid mutator transaction binding the contract method 0xd48bfca7.
 //
-// Solidity: function addToken(token address) returns()
+// Solidity: function addToken(address token) returns()
 func (_ConversionRates *ConversionRatesTransactor) AddToken(opts *bind.TransactOpts, token common.Address) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "addToken", token)
 }
 
 // AddToken is a paid mutator transaction binding the contract method 0xd48bfca7.
 //
-// Solidity: function addToken(token address) returns()
+// Solidity: function addToken(address token) returns()
 func (_ConversionRates *ConversionRatesSession) AddToken(token common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.AddToken(&_ConversionRates.TransactOpts, token)
 }
 
 // AddToken is a paid mutator transaction binding the contract method 0xd48bfca7.
 //
-// Solidity: function addToken(token address) returns()
+// Solidity: function addToken(address token) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) AddToken(token common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.AddToken(&_ConversionRates.TransactOpts, token)
 }
@@ -692,336 +692,336 @@ func (_ConversionRates *ConversionRatesTransactorSession) ClaimAdmin() (*types.T
 
 // DisableTokenTrade is a paid mutator transaction binding the contract method 0x158859f7.
 //
-// Solidity: function disableTokenTrade(token address) returns()
+// Solidity: function disableTokenTrade(address token) returns()
 func (_ConversionRates *ConversionRatesTransactor) DisableTokenTrade(opts *bind.TransactOpts, token common.Address) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "disableTokenTrade", token)
 }
 
 // DisableTokenTrade is a paid mutator transaction binding the contract method 0x158859f7.
 //
-// Solidity: function disableTokenTrade(token address) returns()
+// Solidity: function disableTokenTrade(address token) returns()
 func (_ConversionRates *ConversionRatesSession) DisableTokenTrade(token common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.DisableTokenTrade(&_ConversionRates.TransactOpts, token)
 }
 
 // DisableTokenTrade is a paid mutator transaction binding the contract method 0x158859f7.
 //
-// Solidity: function disableTokenTrade(token address) returns()
+// Solidity: function disableTokenTrade(address token) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) DisableTokenTrade(token common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.DisableTokenTrade(&_ConversionRates.TransactOpts, token)
 }
 
 // EnableTokenTrade is a paid mutator transaction binding the contract method 0x1d6a8bda.
 //
-// Solidity: function enableTokenTrade(token address) returns()
+// Solidity: function enableTokenTrade(address token) returns()
 func (_ConversionRates *ConversionRatesTransactor) EnableTokenTrade(opts *bind.TransactOpts, token common.Address) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "enableTokenTrade", token)
 }
 
 // EnableTokenTrade is a paid mutator transaction binding the contract method 0x1d6a8bda.
 //
-// Solidity: function enableTokenTrade(token address) returns()
+// Solidity: function enableTokenTrade(address token) returns()
 func (_ConversionRates *ConversionRatesSession) EnableTokenTrade(token common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.EnableTokenTrade(&_ConversionRates.TransactOpts, token)
 }
 
 // EnableTokenTrade is a paid mutator transaction binding the contract method 0x1d6a8bda.
 //
-// Solidity: function enableTokenTrade(token address) returns()
+// Solidity: function enableTokenTrade(address token) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) EnableTokenTrade(token common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.EnableTokenTrade(&_ConversionRates.TransactOpts, token)
 }
 
 // RecordImbalance is a paid mutator transaction binding the contract method 0xc6fd2103.
 //
-// Solidity: function recordImbalance(token address, buyAmount int256, rateUpdateBlock uint256, currentBlock uint256) returns()
+// Solidity: function recordImbalance(address token, int256 buyAmount, uint256 rateUpdateBlock, uint256 currentBlock) returns()
 func (_ConversionRates *ConversionRatesTransactor) RecordImbalance(opts *bind.TransactOpts, token common.Address, buyAmount *big.Int, rateUpdateBlock *big.Int, currentBlock *big.Int) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "recordImbalance", token, buyAmount, rateUpdateBlock, currentBlock)
 }
 
 // RecordImbalance is a paid mutator transaction binding the contract method 0xc6fd2103.
 //
-// Solidity: function recordImbalance(token address, buyAmount int256, rateUpdateBlock uint256, currentBlock uint256) returns()
+// Solidity: function recordImbalance(address token, int256 buyAmount, uint256 rateUpdateBlock, uint256 currentBlock) returns()
 func (_ConversionRates *ConversionRatesSession) RecordImbalance(token common.Address, buyAmount *big.Int, rateUpdateBlock *big.Int, currentBlock *big.Int) (*types.Transaction, error) {
 	return _ConversionRates.Contract.RecordImbalance(&_ConversionRates.TransactOpts, token, buyAmount, rateUpdateBlock, currentBlock)
 }
 
 // RecordImbalance is a paid mutator transaction binding the contract method 0xc6fd2103.
 //
-// Solidity: function recordImbalance(token address, buyAmount int256, rateUpdateBlock uint256, currentBlock uint256) returns()
+// Solidity: function recordImbalance(address token, int256 buyAmount, uint256 rateUpdateBlock, uint256 currentBlock) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) RecordImbalance(token common.Address, buyAmount *big.Int, rateUpdateBlock *big.Int, currentBlock *big.Int) (*types.Transaction, error) {
 	return _ConversionRates.Contract.RecordImbalance(&_ConversionRates.TransactOpts, token, buyAmount, rateUpdateBlock, currentBlock)
 }
 
 // RemoveAlerter is a paid mutator transaction binding the contract method 0x01a12fd3.
 //
-// Solidity: function removeAlerter(alerter address) returns()
+// Solidity: function removeAlerter(address alerter) returns()
 func (_ConversionRates *ConversionRatesTransactor) RemoveAlerter(opts *bind.TransactOpts, alerter common.Address) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "removeAlerter", alerter)
 }
 
 // RemoveAlerter is a paid mutator transaction binding the contract method 0x01a12fd3.
 //
-// Solidity: function removeAlerter(alerter address) returns()
+// Solidity: function removeAlerter(address alerter) returns()
 func (_ConversionRates *ConversionRatesSession) RemoveAlerter(alerter common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.RemoveAlerter(&_ConversionRates.TransactOpts, alerter)
 }
 
 // RemoveAlerter is a paid mutator transaction binding the contract method 0x01a12fd3.
 //
-// Solidity: function removeAlerter(alerter address) returns()
+// Solidity: function removeAlerter(address alerter) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) RemoveAlerter(alerter common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.RemoveAlerter(&_ConversionRates.TransactOpts, alerter)
 }
 
 // RemoveOperator is a paid mutator transaction binding the contract method 0xac8a584a.
 //
-// Solidity: function removeOperator(operator address) returns()
+// Solidity: function removeOperator(address operator) returns()
 func (_ConversionRates *ConversionRatesTransactor) RemoveOperator(opts *bind.TransactOpts, operator common.Address) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "removeOperator", operator)
 }
 
 // RemoveOperator is a paid mutator transaction binding the contract method 0xac8a584a.
 //
-// Solidity: function removeOperator(operator address) returns()
+// Solidity: function removeOperator(address operator) returns()
 func (_ConversionRates *ConversionRatesSession) RemoveOperator(operator common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.RemoveOperator(&_ConversionRates.TransactOpts, operator)
 }
 
 // RemoveOperator is a paid mutator transaction binding the contract method 0xac8a584a.
 //
-// Solidity: function removeOperator(operator address) returns()
+// Solidity: function removeOperator(address operator) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) RemoveOperator(operator common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.RemoveOperator(&_ConversionRates.TransactOpts, operator)
 }
 
 // SetBaseRate is a paid mutator transaction binding the contract method 0x1a4813d7.
 //
-// Solidity: function setBaseRate(tokens address[], baseBuy uint256[], baseSell uint256[], buy bytes14[], sell bytes14[], blockNumber uint256, indices uint256[]) returns()
+// Solidity: function setBaseRate(address[] tokens, uint256[] baseBuy, uint256[] baseSell, bytes14[] buy, bytes14[] sell, uint256 blockNumber, uint256[] indices) returns()
 func (_ConversionRates *ConversionRatesTransactor) SetBaseRate(opts *bind.TransactOpts, tokens []common.Address, baseBuy []*big.Int, baseSell []*big.Int, buy [][14]byte, sell [][14]byte, blockNumber *big.Int, indices []*big.Int) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "setBaseRate", tokens, baseBuy, baseSell, buy, sell, blockNumber, indices)
 }
 
 // SetBaseRate is a paid mutator transaction binding the contract method 0x1a4813d7.
 //
-// Solidity: function setBaseRate(tokens address[], baseBuy uint256[], baseSell uint256[], buy bytes14[], sell bytes14[], blockNumber uint256, indices uint256[]) returns()
+// Solidity: function setBaseRate(address[] tokens, uint256[] baseBuy, uint256[] baseSell, bytes14[] buy, bytes14[] sell, uint256 blockNumber, uint256[] indices) returns()
 func (_ConversionRates *ConversionRatesSession) SetBaseRate(tokens []common.Address, baseBuy []*big.Int, baseSell []*big.Int, buy [][14]byte, sell [][14]byte, blockNumber *big.Int, indices []*big.Int) (*types.Transaction, error) {
 	return _ConversionRates.Contract.SetBaseRate(&_ConversionRates.TransactOpts, tokens, baseBuy, baseSell, buy, sell, blockNumber, indices)
 }
 
 // SetBaseRate is a paid mutator transaction binding the contract method 0x1a4813d7.
 //
-// Solidity: function setBaseRate(tokens address[], baseBuy uint256[], baseSell uint256[], buy bytes14[], sell bytes14[], blockNumber uint256, indices uint256[]) returns()
+// Solidity: function setBaseRate(address[] tokens, uint256[] baseBuy, uint256[] baseSell, bytes14[] buy, bytes14[] sell, uint256 blockNumber, uint256[] indices) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) SetBaseRate(tokens []common.Address, baseBuy []*big.Int, baseSell []*big.Int, buy [][14]byte, sell [][14]byte, blockNumber *big.Int, indices []*big.Int) (*types.Transaction, error) {
 	return _ConversionRates.Contract.SetBaseRate(&_ConversionRates.TransactOpts, tokens, baseBuy, baseSell, buy, sell, blockNumber, indices)
 }
 
 // SetCompactData is a paid mutator transaction binding the contract method 0x64887334.
 //
-// Solidity: function setCompactData(buy bytes14[], sell bytes14[], blockNumber uint256, indices uint256[]) returns()
+// Solidity: function setCompactData(bytes14[] buy, bytes14[] sell, uint256 blockNumber, uint256[] indices) returns()
 func (_ConversionRates *ConversionRatesTransactor) SetCompactData(opts *bind.TransactOpts, buy [][14]byte, sell [][14]byte, blockNumber *big.Int, indices []*big.Int) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "setCompactData", buy, sell, blockNumber, indices)
 }
 
 // SetCompactData is a paid mutator transaction binding the contract method 0x64887334.
 //
-// Solidity: function setCompactData(buy bytes14[], sell bytes14[], blockNumber uint256, indices uint256[]) returns()
+// Solidity: function setCompactData(bytes14[] buy, bytes14[] sell, uint256 blockNumber, uint256[] indices) returns()
 func (_ConversionRates *ConversionRatesSession) SetCompactData(buy [][14]byte, sell [][14]byte, blockNumber *big.Int, indices []*big.Int) (*types.Transaction, error) {
 	return _ConversionRates.Contract.SetCompactData(&_ConversionRates.TransactOpts, buy, sell, blockNumber, indices)
 }
 
 // SetCompactData is a paid mutator transaction binding the contract method 0x64887334.
 //
-// Solidity: function setCompactData(buy bytes14[], sell bytes14[], blockNumber uint256, indices uint256[]) returns()
+// Solidity: function setCompactData(bytes14[] buy, bytes14[] sell, uint256 blockNumber, uint256[] indices) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) SetCompactData(buy [][14]byte, sell [][14]byte, blockNumber *big.Int, indices []*big.Int) (*types.Transaction, error) {
 	return _ConversionRates.Contract.SetCompactData(&_ConversionRates.TransactOpts, buy, sell, blockNumber, indices)
 }
 
 // SetImbalanceStepFunction is a paid mutator transaction binding the contract method 0xbc9cbcc8.
 //
-// Solidity: function setImbalanceStepFunction(token address, xBuy int256[], yBuy int256[], xSell int256[], ySell int256[]) returns()
+// Solidity: function setImbalanceStepFunction(address token, int256[] xBuy, int256[] yBuy, int256[] xSell, int256[] ySell) returns()
 func (_ConversionRates *ConversionRatesTransactor) SetImbalanceStepFunction(opts *bind.TransactOpts, token common.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "setImbalanceStepFunction", token, xBuy, yBuy, xSell, ySell)
 }
 
 // SetImbalanceStepFunction is a paid mutator transaction binding the contract method 0xbc9cbcc8.
 //
-// Solidity: function setImbalanceStepFunction(token address, xBuy int256[], yBuy int256[], xSell int256[], ySell int256[]) returns()
+// Solidity: function setImbalanceStepFunction(address token, int256[] xBuy, int256[] yBuy, int256[] xSell, int256[] ySell) returns()
 func (_ConversionRates *ConversionRatesSession) SetImbalanceStepFunction(token common.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
 	return _ConversionRates.Contract.SetImbalanceStepFunction(&_ConversionRates.TransactOpts, token, xBuy, yBuy, xSell, ySell)
 }
 
 // SetImbalanceStepFunction is a paid mutator transaction binding the contract method 0xbc9cbcc8.
 //
-// Solidity: function setImbalanceStepFunction(token address, xBuy int256[], yBuy int256[], xSell int256[], ySell int256[]) returns()
+// Solidity: function setImbalanceStepFunction(address token, int256[] xBuy, int256[] yBuy, int256[] xSell, int256[] ySell) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) SetImbalanceStepFunction(token common.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
 	return _ConversionRates.Contract.SetImbalanceStepFunction(&_ConversionRates.TransactOpts, token, xBuy, yBuy, xSell, ySell)
 }
 
 // SetQtyStepFunction is a paid mutator transaction binding the contract method 0x80d8b380.
 //
-// Solidity: function setQtyStepFunction(token address, xBuy int256[], yBuy int256[], xSell int256[], ySell int256[]) returns()
+// Solidity: function setQtyStepFunction(address token, int256[] xBuy, int256[] yBuy, int256[] xSell, int256[] ySell) returns()
 func (_ConversionRates *ConversionRatesTransactor) SetQtyStepFunction(opts *bind.TransactOpts, token common.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "setQtyStepFunction", token, xBuy, yBuy, xSell, ySell)
 }
 
 // SetQtyStepFunction is a paid mutator transaction binding the contract method 0x80d8b380.
 //
-// Solidity: function setQtyStepFunction(token address, xBuy int256[], yBuy int256[], xSell int256[], ySell int256[]) returns()
+// Solidity: function setQtyStepFunction(address token, int256[] xBuy, int256[] yBuy, int256[] xSell, int256[] ySell) returns()
 func (_ConversionRates *ConversionRatesSession) SetQtyStepFunction(token common.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
 	return _ConversionRates.Contract.SetQtyStepFunction(&_ConversionRates.TransactOpts, token, xBuy, yBuy, xSell, ySell)
 }
 
 // SetQtyStepFunction is a paid mutator transaction binding the contract method 0x80d8b380.
 //
-// Solidity: function setQtyStepFunction(token address, xBuy int256[], yBuy int256[], xSell int256[], ySell int256[]) returns()
+// Solidity: function setQtyStepFunction(address token, int256[] xBuy, int256[] yBuy, int256[] xSell, int256[] ySell) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) SetQtyStepFunction(token common.Address, xBuy []*big.Int, yBuy []*big.Int, xSell []*big.Int, ySell []*big.Int) (*types.Transaction, error) {
 	return _ConversionRates.Contract.SetQtyStepFunction(&_ConversionRates.TransactOpts, token, xBuy, yBuy, xSell, ySell)
 }
 
 // SetReserveAddress is a paid mutator transaction binding the contract method 0x14673d31.
 //
-// Solidity: function setReserveAddress(reserve address) returns()
+// Solidity: function setReserveAddress(address reserve) returns()
 func (_ConversionRates *ConversionRatesTransactor) SetReserveAddress(opts *bind.TransactOpts, reserve common.Address) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "setReserveAddress", reserve)
 }
 
 // SetReserveAddress is a paid mutator transaction binding the contract method 0x14673d31.
 //
-// Solidity: function setReserveAddress(reserve address) returns()
+// Solidity: function setReserveAddress(address reserve) returns()
 func (_ConversionRates *ConversionRatesSession) SetReserveAddress(reserve common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.SetReserveAddress(&_ConversionRates.TransactOpts, reserve)
 }
 
 // SetReserveAddress is a paid mutator transaction binding the contract method 0x14673d31.
 //
-// Solidity: function setReserveAddress(reserve address) returns()
+// Solidity: function setReserveAddress(address reserve) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) SetReserveAddress(reserve common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.SetReserveAddress(&_ConversionRates.TransactOpts, reserve)
 }
 
 // SetTokenControlInfo is a paid mutator transaction binding the contract method 0xbfee3569.
 //
-// Solidity: function setTokenControlInfo(token address, minimalRecordResolution uint256, maxPerBlockImbalance uint256, maxTotalImbalance uint256) returns()
+// Solidity: function setTokenControlInfo(address token, uint256 minimalRecordResolution, uint256 maxPerBlockImbalance, uint256 maxTotalImbalance) returns()
 func (_ConversionRates *ConversionRatesTransactor) SetTokenControlInfo(opts *bind.TransactOpts, token common.Address, minimalRecordResolution *big.Int, maxPerBlockImbalance *big.Int, maxTotalImbalance *big.Int) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "setTokenControlInfo", token, minimalRecordResolution, maxPerBlockImbalance, maxTotalImbalance)
 }
 
 // SetTokenControlInfo is a paid mutator transaction binding the contract method 0xbfee3569.
 //
-// Solidity: function setTokenControlInfo(token address, minimalRecordResolution uint256, maxPerBlockImbalance uint256, maxTotalImbalance uint256) returns()
+// Solidity: function setTokenControlInfo(address token, uint256 minimalRecordResolution, uint256 maxPerBlockImbalance, uint256 maxTotalImbalance) returns()
 func (_ConversionRates *ConversionRatesSession) SetTokenControlInfo(token common.Address, minimalRecordResolution *big.Int, maxPerBlockImbalance *big.Int, maxTotalImbalance *big.Int) (*types.Transaction, error) {
 	return _ConversionRates.Contract.SetTokenControlInfo(&_ConversionRates.TransactOpts, token, minimalRecordResolution, maxPerBlockImbalance, maxTotalImbalance)
 }
 
 // SetTokenControlInfo is a paid mutator transaction binding the contract method 0xbfee3569.
 //
-// Solidity: function setTokenControlInfo(token address, minimalRecordResolution uint256, maxPerBlockImbalance uint256, maxTotalImbalance uint256) returns()
+// Solidity: function setTokenControlInfo(address token, uint256 minimalRecordResolution, uint256 maxPerBlockImbalance, uint256 maxTotalImbalance) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) SetTokenControlInfo(token common.Address, minimalRecordResolution *big.Int, maxPerBlockImbalance *big.Int, maxTotalImbalance *big.Int) (*types.Transaction, error) {
 	return _ConversionRates.Contract.SetTokenControlInfo(&_ConversionRates.TransactOpts, token, minimalRecordResolution, maxPerBlockImbalance, maxTotalImbalance)
 }
 
 // SetValidRateDurationInBlocks is a paid mutator transaction binding the contract method 0x6c6295b8.
 //
-// Solidity: function setValidRateDurationInBlocks(duration uint256) returns()
+// Solidity: function setValidRateDurationInBlocks(uint256 duration) returns()
 func (_ConversionRates *ConversionRatesTransactor) SetValidRateDurationInBlocks(opts *bind.TransactOpts, duration *big.Int) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "setValidRateDurationInBlocks", duration)
 }
 
 // SetValidRateDurationInBlocks is a paid mutator transaction binding the contract method 0x6c6295b8.
 //
-// Solidity: function setValidRateDurationInBlocks(duration uint256) returns()
+// Solidity: function setValidRateDurationInBlocks(uint256 duration) returns()
 func (_ConversionRates *ConversionRatesSession) SetValidRateDurationInBlocks(duration *big.Int) (*types.Transaction, error) {
 	return _ConversionRates.Contract.SetValidRateDurationInBlocks(&_ConversionRates.TransactOpts, duration)
 }
 
 // SetValidRateDurationInBlocks is a paid mutator transaction binding the contract method 0x6c6295b8.
 //
-// Solidity: function setValidRateDurationInBlocks(duration uint256) returns()
+// Solidity: function setValidRateDurationInBlocks(uint256 duration) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) SetValidRateDurationInBlocks(duration *big.Int) (*types.Transaction, error) {
 	return _ConversionRates.Contract.SetValidRateDurationInBlocks(&_ConversionRates.TransactOpts, duration)
 }
 
 // TransferAdmin is a paid mutator transaction binding the contract method 0x75829def.
 //
-// Solidity: function transferAdmin(newAdmin address) returns()
+// Solidity: function transferAdmin(address newAdmin) returns()
 func (_ConversionRates *ConversionRatesTransactor) TransferAdmin(opts *bind.TransactOpts, newAdmin common.Address) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "transferAdmin", newAdmin)
 }
 
 // TransferAdmin is a paid mutator transaction binding the contract method 0x75829def.
 //
-// Solidity: function transferAdmin(newAdmin address) returns()
+// Solidity: function transferAdmin(address newAdmin) returns()
 func (_ConversionRates *ConversionRatesSession) TransferAdmin(newAdmin common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.TransferAdmin(&_ConversionRates.TransactOpts, newAdmin)
 }
 
 // TransferAdmin is a paid mutator transaction binding the contract method 0x75829def.
 //
-// Solidity: function transferAdmin(newAdmin address) returns()
+// Solidity: function transferAdmin(address newAdmin) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) TransferAdmin(newAdmin common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.TransferAdmin(&_ConversionRates.TransactOpts, newAdmin)
 }
 
 // TransferAdminQuickly is a paid mutator transaction binding the contract method 0x7acc8678.
 //
-// Solidity: function transferAdminQuickly(newAdmin address) returns()
+// Solidity: function transferAdminQuickly(address newAdmin) returns()
 func (_ConversionRates *ConversionRatesTransactor) TransferAdminQuickly(opts *bind.TransactOpts, newAdmin common.Address) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "transferAdminQuickly", newAdmin)
 }
 
 // TransferAdminQuickly is a paid mutator transaction binding the contract method 0x7acc8678.
 //
-// Solidity: function transferAdminQuickly(newAdmin address) returns()
+// Solidity: function transferAdminQuickly(address newAdmin) returns()
 func (_ConversionRates *ConversionRatesSession) TransferAdminQuickly(newAdmin common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.TransferAdminQuickly(&_ConversionRates.TransactOpts, newAdmin)
 }
 
 // TransferAdminQuickly is a paid mutator transaction binding the contract method 0x7acc8678.
 //
-// Solidity: function transferAdminQuickly(newAdmin address) returns()
+// Solidity: function transferAdminQuickly(address newAdmin) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) TransferAdminQuickly(newAdmin common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.TransferAdminQuickly(&_ConversionRates.TransactOpts, newAdmin)
 }
 
 // WithdrawEther is a paid mutator transaction binding the contract method 0xce56c454.
 //
-// Solidity: function withdrawEther(amount uint256, sendTo address) returns()
+// Solidity: function withdrawEther(uint256 amount, address sendTo) returns()
 func (_ConversionRates *ConversionRatesTransactor) WithdrawEther(opts *bind.TransactOpts, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "withdrawEther", amount, sendTo)
 }
 
 // WithdrawEther is a paid mutator transaction binding the contract method 0xce56c454.
 //
-// Solidity: function withdrawEther(amount uint256, sendTo address) returns()
+// Solidity: function withdrawEther(uint256 amount, address sendTo) returns()
 func (_ConversionRates *ConversionRatesSession) WithdrawEther(amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.WithdrawEther(&_ConversionRates.TransactOpts, amount, sendTo)
 }
 
 // WithdrawEther is a paid mutator transaction binding the contract method 0xce56c454.
 //
-// Solidity: function withdrawEther(amount uint256, sendTo address) returns()
+// Solidity: function withdrawEther(uint256 amount, address sendTo) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) WithdrawEther(amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.WithdrawEther(&_ConversionRates.TransactOpts, amount, sendTo)
 }
 
 // WithdrawToken is a paid mutator transaction binding the contract method 0x3ccdbb28.
 //
-// Solidity: function withdrawToken(token address, amount uint256, sendTo address) returns()
+// Solidity: function withdrawToken(address token, uint256 amount, address sendTo) returns()
 func (_ConversionRates *ConversionRatesTransactor) WithdrawToken(opts *bind.TransactOpts, token common.Address, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _ConversionRates.contract.Transact(opts, "withdrawToken", token, amount, sendTo)
 }
 
 // WithdrawToken is a paid mutator transaction binding the contract method 0x3ccdbb28.
 //
-// Solidity: function withdrawToken(token address, amount uint256, sendTo address) returns()
+// Solidity: function withdrawToken(address token, uint256 amount, address sendTo) returns()
 func (_ConversionRates *ConversionRatesSession) WithdrawToken(token common.Address, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.WithdrawToken(&_ConversionRates.TransactOpts, token, amount, sendTo)
 }
 
 // WithdrawToken is a paid mutator transaction binding the contract method 0x3ccdbb28.
 //
-// Solidity: function withdrawToken(token address, amount uint256, sendTo address) returns()
+// Solidity: function withdrawToken(address token, uint256 amount, address sendTo) returns()
 func (_ConversionRates *ConversionRatesTransactorSession) WithdrawToken(token common.Address, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _ConversionRates.Contract.WithdrawToken(&_ConversionRates.TransactOpts, token, amount, sendTo)
 }
@@ -1102,7 +1102,7 @@ type ConversionRatesAdminClaimed struct {
 
 // FilterAdminClaimed is a free log retrieval operation binding the contract event 0x65da1cfc2c2e81576ad96afb24a581f8e109b7a403b35cbd3243a1c99efdb9ed.
 //
-// Solidity: e AdminClaimed(newAdmin address, previousAdmin address)
+// Solidity: event AdminClaimed(address newAdmin, address previousAdmin)
 func (_ConversionRates *ConversionRatesFilterer) FilterAdminClaimed(opts *bind.FilterOpts) (*ConversionRatesAdminClaimedIterator, error) {
 
 	logs, sub, err := _ConversionRates.contract.FilterLogs(opts, "AdminClaimed")
@@ -1114,7 +1114,7 @@ func (_ConversionRates *ConversionRatesFilterer) FilterAdminClaimed(opts *bind.F
 
 // WatchAdminClaimed is a free log subscription operation binding the contract event 0x65da1cfc2c2e81576ad96afb24a581f8e109b7a403b35cbd3243a1c99efdb9ed.
 //
-// Solidity: e AdminClaimed(newAdmin address, previousAdmin address)
+// Solidity: event AdminClaimed(address newAdmin, address previousAdmin)
 func (_ConversionRates *ConversionRatesFilterer) WatchAdminClaimed(opts *bind.WatchOpts, sink chan<- *ConversionRatesAdminClaimed) (event.Subscription, error) {
 
 	logs, sub, err := _ConversionRates.contract.WatchLogs(opts, "AdminClaimed")
@@ -1225,7 +1225,7 @@ type ConversionRatesAlerterAdded struct {
 
 // FilterAlerterAdded is a free log retrieval operation binding the contract event 0x5611bf3e417d124f97bf2c788843ea8bb502b66079fbee02158ef30b172cb762.
 //
-// Solidity: e AlerterAdded(newAlerter address, isAdd bool)
+// Solidity: event AlerterAdded(address newAlerter, bool isAdd)
 func (_ConversionRates *ConversionRatesFilterer) FilterAlerterAdded(opts *bind.FilterOpts) (*ConversionRatesAlerterAddedIterator, error) {
 
 	logs, sub, err := _ConversionRates.contract.FilterLogs(opts, "AlerterAdded")
@@ -1237,7 +1237,7 @@ func (_ConversionRates *ConversionRatesFilterer) FilterAlerterAdded(opts *bind.F
 
 // WatchAlerterAdded is a free log subscription operation binding the contract event 0x5611bf3e417d124f97bf2c788843ea8bb502b66079fbee02158ef30b172cb762.
 //
-// Solidity: e AlerterAdded(newAlerter address, isAdd bool)
+// Solidity: event AlerterAdded(address newAlerter, bool isAdd)
 func (_ConversionRates *ConversionRatesFilterer) WatchAlerterAdded(opts *bind.WatchOpts, sink chan<- *ConversionRatesAlerterAdded) (event.Subscription, error) {
 
 	logs, sub, err := _ConversionRates.contract.WatchLogs(opts, "AlerterAdded")
@@ -1348,7 +1348,7 @@ type ConversionRatesEtherWithdraw struct {
 
 // FilterEtherWithdraw is a free log retrieval operation binding the contract event 0xec47e7ed86c86774d1a72c19f35c639911393fe7c1a34031fdbd260890da90de.
 //
-// Solidity: e EtherWithdraw(amount uint256, sendTo address)
+// Solidity: event EtherWithdraw(uint256 amount, address sendTo)
 func (_ConversionRates *ConversionRatesFilterer) FilterEtherWithdraw(opts *bind.FilterOpts) (*ConversionRatesEtherWithdrawIterator, error) {
 
 	logs, sub, err := _ConversionRates.contract.FilterLogs(opts, "EtherWithdraw")
@@ -1360,7 +1360,7 @@ func (_ConversionRates *ConversionRatesFilterer) FilterEtherWithdraw(opts *bind.
 
 // WatchEtherWithdraw is a free log subscription operation binding the contract event 0xec47e7ed86c86774d1a72c19f35c639911393fe7c1a34031fdbd260890da90de.
 //
-// Solidity: e EtherWithdraw(amount uint256, sendTo address)
+// Solidity: event EtherWithdraw(uint256 amount, address sendTo)
 func (_ConversionRates *ConversionRatesFilterer) WatchEtherWithdraw(opts *bind.WatchOpts, sink chan<- *ConversionRatesEtherWithdraw) (event.Subscription, error) {
 
 	logs, sub, err := _ConversionRates.contract.WatchLogs(opts, "EtherWithdraw")
@@ -1471,7 +1471,7 @@ type ConversionRatesOperatorAdded struct {
 
 // FilterOperatorAdded is a free log retrieval operation binding the contract event 0x091a7a4b85135fdd7e8dbc18b12fabe5cc191ea867aa3c2e1a24a102af61d58b.
 //
-// Solidity: e OperatorAdded(newOperator address, isAdd bool)
+// Solidity: event OperatorAdded(address newOperator, bool isAdd)
 func (_ConversionRates *ConversionRatesFilterer) FilterOperatorAdded(opts *bind.FilterOpts) (*ConversionRatesOperatorAddedIterator, error) {
 
 	logs, sub, err := _ConversionRates.contract.FilterLogs(opts, "OperatorAdded")
@@ -1483,7 +1483,7 @@ func (_ConversionRates *ConversionRatesFilterer) FilterOperatorAdded(opts *bind.
 
 // WatchOperatorAdded is a free log subscription operation binding the contract event 0x091a7a4b85135fdd7e8dbc18b12fabe5cc191ea867aa3c2e1a24a102af61d58b.
 //
-// Solidity: e OperatorAdded(newOperator address, isAdd bool)
+// Solidity: event OperatorAdded(address newOperator, bool isAdd)
 func (_ConversionRates *ConversionRatesFilterer) WatchOperatorAdded(opts *bind.WatchOpts, sink chan<- *ConversionRatesOperatorAdded) (event.Subscription, error) {
 
 	logs, sub, err := _ConversionRates.contract.WatchLogs(opts, "OperatorAdded")
@@ -1595,7 +1595,7 @@ type ConversionRatesTokenWithdraw struct {
 
 // FilterTokenWithdraw is a free log retrieval operation binding the contract event 0x72cb8a894ddb372ceec3d2a7648d86f17d5a15caae0e986c53109b8a9a9385e6.
 //
-// Solidity: e TokenWithdraw(token address, amount uint256, sendTo address)
+// Solidity: event TokenWithdraw(address token, uint256 amount, address sendTo)
 func (_ConversionRates *ConversionRatesFilterer) FilterTokenWithdraw(opts *bind.FilterOpts) (*ConversionRatesTokenWithdrawIterator, error) {
 
 	logs, sub, err := _ConversionRates.contract.FilterLogs(opts, "TokenWithdraw")
@@ -1607,7 +1607,7 @@ func (_ConversionRates *ConversionRatesFilterer) FilterTokenWithdraw(opts *bind.
 
 // WatchTokenWithdraw is a free log subscription operation binding the contract event 0x72cb8a894ddb372ceec3d2a7648d86f17d5a15caae0e986c53109b8a9a9385e6.
 //
-// Solidity: e TokenWithdraw(token address, amount uint256, sendTo address)
+// Solidity: event TokenWithdraw(address token, uint256 amount, address sendTo)
 func (_ConversionRates *ConversionRatesFilterer) WatchTokenWithdraw(opts *bind.WatchOpts, sink chan<- *ConversionRatesTokenWithdraw) (event.Subscription, error) {
 
 	logs, sub, err := _ConversionRates.contract.WatchLogs(opts, "TokenWithdraw")
@@ -1717,7 +1717,7 @@ type ConversionRatesTransferAdminPending struct {
 
 // FilterTransferAdminPending is a free log retrieval operation binding the contract event 0x3b81caf78fa51ecbc8acb482fd7012a277b428d9b80f9d156e8a54107496cc40.
 //
-// Solidity: e TransferAdminPending(pendingAdmin address)
+// Solidity: event TransferAdminPending(address pendingAdmin)
 func (_ConversionRates *ConversionRatesFilterer) FilterTransferAdminPending(opts *bind.FilterOpts) (*ConversionRatesTransferAdminPendingIterator, error) {
 
 	logs, sub, err := _ConversionRates.contract.FilterLogs(opts, "TransferAdminPending")
@@ -1729,7 +1729,7 @@ func (_ConversionRates *ConversionRatesFilterer) FilterTransferAdminPending(opts
 
 // WatchTransferAdminPending is a free log subscription operation binding the contract event 0x3b81caf78fa51ecbc8acb482fd7012a277b428d9b80f9d156e8a54107496cc40.
 //
-// Solidity: e TransferAdminPending(pendingAdmin address)
+// Solidity: event TransferAdminPending(address pendingAdmin)
 func (_ConversionRates *ConversionRatesFilterer) WatchTransferAdminPending(opts *bind.WatchOpts, sink chan<- *ConversionRatesTransferAdminPending) (event.Subscription, error) {
 
 	logs, sub, err := _ConversionRates.contract.WatchLogs(opts, "TransferAdminPending")

@@ -6,13 +6,14 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/tokenrate/coingecko"
+
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	libredis "github.com/KyberNetwork/reserve-stats/lib/redis"
+	"github.com/KyberNetwork/reserve-stats/users/common"
 	server "github.com/KyberNetwork/reserve-stats/users/public-server"
-	"github.com/KyberNetwork/tokenrate/coingecko"
 )
 
 func main() {
@@ -24,23 +25,22 @@ func main() {
 
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.UsersPublicPort)...)
 	app.Flags = append(app.Flags, libredis.NewCliFlags()...)
+	app.Flags = append(app.Flags, common.NewUserCapCliFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func run(c *cli.Context) error {
-	if err := app.Validate(c); err != nil {
+	if err := libapp.Validate(c); err != nil {
 		return err
 	}
 
-	logger, err := app.NewLogger(c)
+	sugar, flusher, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
-
-	sugar := logger.Sugar()
+	defer flusher()
 	sugar.Info("Run user stats public service")
 
 	redisClient, err := libredis.NewClientFromContext(c)
@@ -49,8 +49,9 @@ func run(c *cli.Context) error {
 	}
 
 	sugar.Debugw("initiate redis client", "client", redisClient)
+	userCapConf := common.NewUserCapConfigurationFromContext(c)
 
-	publicServer := server.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), coingecko.New(), redisClient)
+	publicServer := server.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), coingecko.New(), redisClient, userCapConf)
 
 	return publicServer.Run()
 }

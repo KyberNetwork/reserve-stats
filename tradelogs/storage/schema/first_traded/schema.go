@@ -14,11 +14,3 @@ const (
 	//Country is t he enumerated field for country
 	Country //country
 )
-
-//tradeLogSchemaFields translates the stringer of reserveRate fields into its enumerated form
-var tradeLogSchemaFields = map[string]FieldName{
-	"time":        Time,
-	"traded":      Traded,
-	"wallet_addr": WalletAddress,
-	"country":     Country,
-}

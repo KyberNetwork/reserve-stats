@@ -43,17 +43,16 @@ func run(c *cli.Context) error {
 	var (
 		err error
 	)
-	logger, err := libapp.NewLogger(c)
+	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	defer flush()
 
 	fromTime, err := timeutil.FromTimeFromContext(c)
 	if err == timeutil.ErrEmptyFlag {
 		sugar.Infof("no from time provided, using default: %s", defaultFromTime)
-		fromTime, err = defaultFromTime, nil
+		fromTime = defaultFromTime
 
 	} else if err != nil {
 		return err
@@ -63,7 +62,7 @@ func run(c *cli.Context) error {
 	if err == timeutil.ErrEmptyFlag {
 		now := time.Now()
 		sugar.Infof("no from time provided, using now: %s", now.String())
-		toTime, err = now, nil
+		toTime = now
 	} else if err != nil {
 		return err
 	}

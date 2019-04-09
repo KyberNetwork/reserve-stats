@@ -2,14 +2,16 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"log"
 	"os"
+
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+
+	"github.com/urfave/cli"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/tokeninfo"
-	"github.com/urfave/cli"
 )
 
 const outputFlag = "output"
@@ -48,11 +50,11 @@ func reserve(c *cli.Context) error {
 		return err
 	}
 
-	logger, err := libapp.NewLogger(c)
+	sugar, flusher, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
+	defer flusher()
 
 	client, err := blockchain.NewEthereumClientFromFlag(c)
 	if err != nil {
@@ -68,7 +70,7 @@ func reserve(c *cli.Context) error {
 	}
 
 	f, err := tokeninfo.NewReserveCrawler(
-		logger.Sugar(),
+		sugar,
 		internalNetworkClient,
 	)
 	if err != nil {
@@ -85,5 +87,5 @@ func reserve(c *cli.Context) error {
 		return err
 	}
 
-	return json.NewDecoder(output).Decode(result)
+	return json.NewEncoder(output).Encode(result)
 }

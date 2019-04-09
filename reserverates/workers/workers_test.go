@@ -2,16 +2,17 @@ package workers
 
 import (
 	"fmt"
-	"log"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 )
 
 type mockStorage struct {
@@ -33,7 +34,7 @@ func (s *mockStorage) UpdateRatesRecords(uint64, map[string]map[string]common.Re
 	s.m.Lock()
 	defer s.m.Unlock()
 
-	s.counter = s.counter + 1
+	s.counter++
 	return nil
 }
 func (s *mockStorage) GetRatesByTimePoint(addrs []ethereum.Address, fromTime, toTime uint64) (map[string]map[string][]common.ReserveRates, error) {
@@ -61,13 +62,7 @@ func (j *mockJob) info() (order int, block uint64) {
 }
 
 func newTestWorkerPool(maxWorkers int) *Pool {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
-
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	return NewPool(sugar, maxWorkers, newMockStorage())
 }
 

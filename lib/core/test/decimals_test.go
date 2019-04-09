@@ -9,7 +9,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -17,9 +16,8 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
-
-const defaultEthereumNode = "https://mainnet.infura.io"
 
 var timeout = 30 * time.Second
 
@@ -43,11 +41,6 @@ func TestTokenDecimals(t *testing.T) {
 	secret, ok := os.LookupEnv("CORE_SIGNING_KEY")
 	assert.True(t, ok)
 
-	node, ok := os.LookupEnv("ETHEREUM_NODE")
-	if !ok {
-		node = defaultEthereumNode
-	}
-
 	c, err := core.NewClient(sugar, url, secret)
 	require.NoError(t, err, "core client should be initiated successfully")
 
@@ -65,8 +58,8 @@ func TestTokenDecimals(t *testing.T) {
 		}
 	}
 
-	client, err := ethclient.Dial(node)
-	require.NoError(t, err, "Ethereum client should init successfully")
+	client := testutil.MustNewDevelopmentwEthereumClient()
+
 	var (
 		g           errgroup.Group
 		resourcesCh = make(chan struct{}, 10)                   // resources limiter, thread need to acquire release resource

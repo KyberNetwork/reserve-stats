@@ -1,11 +1,12 @@
 package blockchain
 
 import (
+	"math/big"
+
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
-	"math/big"
 )
 
 // TokenInfo is information of a supported token of a reserve.

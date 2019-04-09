@@ -33,7 +33,7 @@ func loadTestData(db string) error {
 	if err != nil {
 		return err
 	}
-	defer exported.Close()
+	defer func() { _ = exported.Close() }()
 
 	req, err = http.NewRequest(http.MethodPost, endpoint+"write", exported)
 	if err != nil {
@@ -87,5 +87,4 @@ func TestLoadTradeLogs(t *testing.T) {
 	if len(tradeLogs) != expectedLen {
 		t.Errorf("wrong number of trade log returned, expected: %d, got: %d", expectedLen, len(tradeLogs))
 	}
-
 }

@@ -1,34 +1,27 @@
 package contracts
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-stats/lib/testutil"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 func TestVersionedWrapperFallback_GetReserveRate(t *testing.T) {
 	testutil.SkipExternal(t)
 
 	const (
-		ethNodeURL      = "https://mainnet.infura.io"
 		blockNumber     = 6000744
 		internalReserve = "0x63825c174ab367968EC60f061753D3bbD36A0D8F"
 		bnbAddr         = "0xB8c77482e45F1F44dE1745F52C74426C631bDD52"
 		ethAddr         = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 	)
 
-	logger, err := zap.NewDevelopment()
-	require.NoError(t, err)
-	defer logger.Sync()
-	sugar := logger.Sugar()
-
-	client, err := ethclient.Dial(ethNodeURL)
-	require.NoError(t, err)
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
+	client := testutil.MustNewDevelopmentwEthereumClient()
 	vwf, err := NewVersionedWrapperFallback(sugar, client)
 	require.NoError(t, err)
 	rates, sanityRates, err := vwf.GetReserveRate(

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -11,7 +13,6 @@ import (
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 	volSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/volume"
 	walletFeeVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletfee_volume"
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 func (is *InfluxStorage) rowToAggregatedBurnFee(row []interface{}, idxs map[burnVolumeSchema.FieldName]int) (time.Time, float64, ethereum.Address, error) {
@@ -30,21 +31,24 @@ func (is *InfluxStorage) rowToAggregatedBurnFee(row []interface{}, idxs map[burn
 	if err != nil {
 		return ts, burnFee, reserve, err
 	}
-	if row[idxs[burnVolumeSchema.SrcReserveAddr]] != nil && row[idxs[burnVolumeSchema.DstReserveAddr]] != nil {
+
+	switch {
+	case row[idxs[burnVolumeSchema.SrcReserveAddr]] != nil && row[idxs[burnVolumeSchema.DstReserveAddr]] != nil:
 		panic("Logic fault : there should not be a record with both source and dest reserve address")
-	} else if row[idxs[burnVolumeSchema.SrcReserveAddr]] != nil {
+	case row[idxs[burnVolumeSchema.SrcReserveAddr]] != nil:
 		reserve, err = influxdb.GetAddressFromInterface(row[idxs[burnVolumeSchema.SrcReserveAddr]])
 		if err != nil {
 			return ts, burnFee, reserve, err
 		}
-	} else if row[idxs[burnVolumeSchema.DstReserveAddr]] != nil {
+	case row[idxs[burnVolumeSchema.DstReserveAddr]] != nil:
 		reserve, err = influxdb.GetAddressFromInterface(row[idxs[burnVolumeSchema.DstReserveAddr]])
 		if err != nil {
 			return ts, burnFee, reserve, err
 		}
-	} else {
+	default:
 		panic("Logic fault : there should not be a record with nil source and dest reserve address")
 	}
+
 	return ts, burnFee, reserve, nil
 }
 
@@ -106,15 +110,6 @@ func (is *InfluxStorage) rowToAggregatedFee(row []interface{}, idxs walletFeeVol
 		return ts, fee, err
 	}
 	return ts, fee, nil
-}
-
-func (is *InfluxStorage) rowToCountryStats(row []interface{}) (time.Time, common.CountryStats, error) {
-	var (
-		ts           time.Time
-		countryStats common.CountryStats
-		err          error
-	)
-	return ts, countryStats, err
 }
 
 // rowToTradeLog converts the result of InfluxDB query from to TradeLog event.

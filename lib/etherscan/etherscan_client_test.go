@@ -1,4 +1,4 @@
-package etherscanclient
+package etherscan
 
 import (
 	"fmt"
@@ -7,21 +7,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/nanmu42/etherscan-api"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 	"golang.org/x/time/rate"
+
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 func TestEtherScanClient(t *testing.T) {
 	testutil.SkipExternal(t)
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 
 	etherscanAPIKey, ok := os.LookupEnv("ETHERSCAN_API_KEY")
 	if !ok {
@@ -47,16 +42,10 @@ func TestEtherScanClientWithRateLimiter(t *testing.T) {
 	//at rps =6 etherscan will return 403 for some requests.
 	t.Skip()
 	var (
-		rps = 6
+		rps = 5
 		wg  = &sync.WaitGroup{}
 	)
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer logger.Sync()
-
-	sugar := logger.Sugar()
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	etherscanAPIKey, ok := os.LookupEnv("ETHERSCAN_API_KEY")
 	if !ok {
 		sugar.Info("etherscan api is not provided, using public api")
@@ -72,6 +61,7 @@ func TestEtherScanClientWithRateLimiter(t *testing.T) {
 			defer wg.Done()
 			_, err := etherscanClient.EtherTotalSupply()
 			sugar.Debugw("finshed a request", "request_number", index, "finish_time", time.Now(), "error", err)
+			assert.NoError(t, err, fmt.Sprintf("got error: %v", err))
 		}(i)
 	}
 	wg.Wait()

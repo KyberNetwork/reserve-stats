@@ -27,27 +27,27 @@ github.com/davecgh/go-spew/spew
 # github.com/deckarep/golang-set v1.7.1
 github.com/deckarep/golang-set
 # github.com/ethereum/go-ethereum v1.8.17 => github.com/favadi/go-ethereum v1.8.16-fork
-github.com/ethereum/go-ethereum/common
-github.com/ethereum/go-ethereum
-github.com/ethereum/go-ethereum/ethclient
 github.com/ethereum/go-ethereum/accounts/abi/bind
+github.com/ethereum/go-ethereum/common
+github.com/ethereum/go-ethereum/ethclient
+github.com/ethereum/go-ethereum
 github.com/ethereum/go-ethereum/core/types
 github.com/ethereum/go-ethereum/accounts/abi
 github.com/ethereum/go-ethereum/event
+github.com/ethereum/go-ethereum/accounts/keystore
+github.com/ethereum/go-ethereum/crypto
+github.com/ethereum/go-ethereum/log
 github.com/ethereum/go-ethereum/common/hexutil
 github.com/ethereum/go-ethereum/crypto/sha3
 github.com/ethereum/go-ethereum/rlp
 github.com/ethereum/go-ethereum/rpc
-github.com/ethereum/go-ethereum/accounts/keystore
-github.com/ethereum/go-ethereum/crypto
-github.com/ethereum/go-ethereum/log
 github.com/ethereum/go-ethereum/params
 github.com/ethereum/go-ethereum/trie
 github.com/ethereum/go-ethereum/common/math
 github.com/ethereum/go-ethereum/common/mclock
-github.com/ethereum/go-ethereum/p2p/netutil
 github.com/ethereum/go-ethereum/accounts
 github.com/ethereum/go-ethereum/crypto/secp256k1
+github.com/ethereum/go-ethereum/p2p/netutil
 github.com/ethereum/go-ethereum/common/prque
 github.com/ethereum/go-ethereum/ethdb
 github.com/ethereum/go-ethereum/metrics
@@ -124,8 +124,8 @@ github.com/rjeczalik/notify
 # github.com/rs/cors v1.6.0
 github.com/rs/cors
 # github.com/stretchr/testify v1.3.0
-github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
+github.com/stretchr/testify/assert
 # github.com/syndtr/goleveldb v0.0.0-20181012014443-6b91fda63f2e
 github.com/syndtr/goleveldb/leveldb
 github.com/syndtr/goleveldb/leveldb/errors

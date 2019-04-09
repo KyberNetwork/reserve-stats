@@ -34,31 +34,45 @@ type Client struct {
 }
 
 //Option sets the initialization behavior for binance instance
-type Option func(cl *Client)
+type Option func(cl *Client) error
 
 //WithRateLimiter alter ratelimiter of binance client
 func WithRateLimiter(limiter Limiter) Option {
-	return func(cl *Client) {
+	return func(cl *Client) error {
 		cl.rateLimiter = limiter
+		return nil
+	}
+}
+
+//WithValidation check if API key is valid by calling GetAccounts with its key
+func WithValidation() Option {
+	return func(cl *Client) error {
+		_, err := cl.GetAccounts()
+		if err != nil {
+			return fmt.Errorf("failed to validate Huobi API key by calling GetAccountInfo API: err=%s", err.Error())
+		}
+		return nil
 	}
 }
 
 //NewClient return a new HuobiClient instance
-func NewClient(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...Option) *Client {
+func NewClient(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...Option) (*Client, error) {
 	clnt := &Client{
 		APIKey:    apiKey,
 		SecretKey: secretKey,
 		sugar:     sugar,
 	}
 	for _, opt := range options {
-		opt(clnt)
+		if err := opt(clnt); err != nil {
+			return nil, err
+		}
 	}
 	//Set Default rate limiter to the limit spefified by https://github.com/huobiapi/API_Docs_en/wiki/Request_Process
 	if clnt.rateLimiter == nil {
 		const huobiDefaultRateLimit = 10
 		clnt.rateLimiter = rate.NewLimiter(rate.Limit(huobiDefaultRateLimit), 1)
 	}
-	return clnt
+	return clnt, nil
 
 }
 
@@ -99,7 +113,7 @@ func (hc *Client) sendRequest(method, requestURL string, params map[string]strin
 		logger = hc.sugar.With("func", "huobi_client/sendRequest")
 	)
 	client := &http.Client{
-		Timeout: time.Duration(30 * time.Second),
+		Timeout: 30 * time.Second,
 	}
 	reqBody, err := json.Marshal(params)
 	if err != nil {
@@ -117,7 +131,7 @@ func (hc *Client) sendRequest(method, requestURL string, params map[string]strin
 		return []byte{}, err
 	}
 	if signNeeded {
-		timestamp := fmt.Sprintf("%s", time.Now().UTC().Format("2006-01-02T15:04:05"))
+		timestamp := time.Now().UTC().Format("2006-01-02T15:04:05")
 		params["SignatureMethod"] = "HmacSHA256"
 		params["SignatureVersion"] = "2"
 		params["AccessKeyId"] = hc.APIKey
@@ -143,16 +157,12 @@ func (hc *Client) sendRequest(method, requestURL string, params map[string]strin
 	switch resp.StatusCode {
 	case 404:
 		err = errors.New("api not found")
-		break
 	case 429:
 		err = errors.New("breaking Huobi request rate limit")
-		break
 	case 500:
 		err = errors.New("500 from Huobi, its fault")
-		break
 	case 200:
 		respBody, err = ioutil.ReadAll(resp.Body)
-		break
 	}
 	return respBody, err
 }
@@ -173,30 +183,55 @@ func (hc *Client) GetAccounts() ([]Account, error) {
 		return result.Data, err
 	}
 	err = json.Unmarshal(res, &result)
+	if result.Status != StatusOK.String() {
+		return result.Data, fmt.Errorf("received unexpect status: %s", result.Status)
+	}
 	return result.Data, err
 }
 
 //GetTradeHistory return trade history of an account
-func (hc *Client) GetTradeHistory(symbol string, startDate, endDate time.Time) (TradeHistoryList, error) {
+//extras  params included fromID for further querrying.
+//details at https://github.com/huobiapi/API_Docs_en/wiki/REST_Reference#get-v1orderorders--get-order-list
+func (hc *Client) GetTradeHistory(symbol string, startDate, endDate time.Time, extras ...ExtrasTradeHistoryParams) (TradeHistoryList, error) {
+
 	var (
 		result TradeHistoryList
-	)
-	endpoint := fmt.Sprintf("%s/v1/order/orders", huobiEndpoint)
-	res, err := hc.sendRequest(
-		http.MethodGet,
-		endpoint,
-		map[string]string{
+		params = map[string]string{
 			"states":     "filled",
 			"symbol":     strings.ToLower(symbol),
 			"start-date": startDate.Format("2006-01-02"),
 			"end-date":   endDate.Format("2006-01-02"),
-		},
+		}
+	)
+	if len(extras) > 0 {
+		if extras[0].From != "" {
+			params["from"] = extras[0].From
+		}
+		if extras[0].Size != "" {
+			params["size"] = extras[0].Size
+		}
+		if extras[0].Direct != "" {
+			params["direct"] = extras[0].Direct
+		}
+	}
+	endpoint := fmt.Sprintf("%s/v1/order/orders", huobiEndpoint)
+	res, err := hc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		params,
 		true,
 	)
 	if err != nil {
 		return result, err
 	}
 	err = json.Unmarshal(res, &result)
+	if err != nil {
+		return result, err
+	}
+
+	if result.Status != StatusOK.String() {
+		return result, fmt.Errorf("received unexpect status: %s", result.Status)
+	}
 	return result, err
 }
 
@@ -217,9 +252,67 @@ func (hc *Client) GetWithdrawHistory(currency string, fromID uint64) (WithdrawHi
 		},
 		true,
 	)
+
 	if err != nil {
 		return result, err
 	}
+
 	err = json.Unmarshal(res, &result)
+	if err != nil {
+		return result, err
+	}
+	if result.Status != StatusOK.String() {
+		return result, fmt.Errorf("received unexpect status: %s", result.Status)
+	}
 	return result, err
+}
+
+//GetSymbolsPair return list of pairs for Huobi's data
+func (hc *Client) GetSymbolsPair() ([]Symbol, error) {
+	var (
+		symbolReply SymbolsReply
+	)
+	endpoint := fmt.Sprintf("%s/v1/common/symbols", huobiEndpoint)
+	res, err := hc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		nil,
+		false,
+	)
+	if err != nil {
+		return symbolReply.Data, err
+	}
+	err = json.Unmarshal(res, &symbolReply)
+	if err != nil {
+		return symbolReply.Data, err
+	}
+	if symbolReply.Status != StatusOK.String() {
+		return symbolReply.Data, fmt.Errorf("unexpected reply status %s", symbolReply.Status)
+	}
+	return symbolReply.Data, nil
+}
+
+//GetCurrencies return list of Currencies supported by Huobi
+func (hc *Client) GetCurrencies() ([]string, error) {
+	var (
+		reply CurrenciesReply
+	)
+	endpoint := fmt.Sprintf("%s/v1/common/currencys", huobiEndpoint)
+	res, err := hc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		nil,
+		false,
+	)
+	if err != nil {
+		return reply.Data, err
+	}
+	err = json.Unmarshal(res, &reply)
+	if err != nil {
+		return reply.Data, err
+	}
+	if reply.Status != StatusOK.String() {
+		return reply.Data, fmt.Errorf("unexpected reply status %s", reply.Status)
+	}
+	return reply.Data, nil
 }

@@ -13,9 +13,10 @@ const (
 	huobiAPIKeyFlag       = "huobi-api-key"
 	huobiSecretKeyFlag    = "huobi-secret-key"
 	huobiRequestPerSecond = "huobi-requests-per-second"
+	huobiClientValidation = "huobi-client-validation"
 )
 
-//NewCliFlags return cli flags to configure cex client
+//NewCliFlags return cli flags to configure cex-trade client
 func NewCliFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
@@ -30,9 +31,14 @@ func NewCliFlags() []cli.Flag {
 		},
 		cli.Float64Flag{
 			Name:   huobiRequestPerSecond,
-			Usage:  "huobi request limit per second, default to 10 which huobi's normal rate limit (100 request per 10 sec)",
+			Usage:  "huobi request limit per second, default to 8 which huobi's tested rate limit",
 			EnvVar: "HUOBI_REQUESTS_PER_SECOND",
-			Value:  10,
+			Value:  8,
+		},
+		cli.BoolTFlag{
+			Name:   huobiClientValidation,
+			Usage:  "if set to true, the client is validate by calling GetAccounts with its API key",
+			EnvVar: "HUOBI_CLIENT_VALIDATION",
 		},
 	}
 }
@@ -41,6 +47,7 @@ func NewCliFlags() []cli.Flag {
 func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, error) {
 	var (
 		apiKey, secretKey string
+		options           []Option
 	)
 	if c.String(huobiAPIKeyFlag) == "" {
 		return nil, fmt.Errorf("cannot create huobi client, lack of api key")
@@ -57,7 +64,9 @@ func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, er
 		return nil, errors.New("request per second must be greater than 0")
 	}
 
-	limiter := rate.NewLimiter(rate.Limit(rps), 1)
-
-	return NewClient(apiKey, secretKey, sugar, WithRateLimiter(limiter)), nil
+	options = append(options, WithRateLimiter(rate.NewLimiter(rate.Limit(rps), 1)))
+	if validateRequire := c.BoolT(huobiClientValidation); validateRequire {
+		options = append(options, WithValidation())
+	}
+	return NewClient(apiKey, secretKey, sugar, options...)
 }

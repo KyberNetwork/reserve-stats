@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -15,13 +16,26 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
-	"golang.org/x/time/rate"
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
 	endpointPrefix = "https://api.binance.com"
+)
+
+const (
+	badAPIKeyFormatCode = -2014
+	rejfectedMbxKeyCode = -2015
+)
+
+var (
+	// ErrBadAPIKeyFormat is the error to returns in
+	// https://github.com/binance-exchange/binance-official-api-docs/blob/master/errors.md#-2014-bad_api_key_fmt
+	ErrBadAPIKeyFormat = errors.New("API-key format invalid")
+	// ErrRejectedMBxKey is the error to returns in
+	// https://github.com/binance-exchange/binance-official-api-docs/blob/master/errors.md#-2015-rejected_mbx_key
+	ErrRejectedMBxKey = errors.New("invalid API-key, IP, or permissions for action")
 )
 
 //Client represent a binance api client
@@ -33,32 +47,49 @@ type Client struct {
 }
 
 //Option sets the initialization behavior for binance instance
-type Option func(cl *Client)
+type Option func(cl *Client) error
 
-//WithRateLimiter alter ratelimiter of binance client
+//WithRateLimiter alter rate limiter of binance client
 func WithRateLimiter(limiter Limiter) Option {
-	return func(cl *Client) {
+	return func(cl *Client) error {
 		cl.rateLimiter = limiter
+		return nil
+	}
+}
+
+//WithValidation check if API key is valid by calling GetAccountInfo with its key
+func WithValidation() Option {
+	return func(cl *Client) error {
+		_, err := cl.GetAccountInfo()
+		if err != nil {
+			return fmt.Errorf("failed to validate Binance API key by calling GetAccountInfo API: err=%s", err.Error())
+		}
+		return nil
 	}
 }
 
 //NewBinance return a new client for binance api
-func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...Option) *Client {
+func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...Option) (*Client, error) {
 	clnt := &Client{
 		APIKey:    apiKey,
 		SecretKey: secretKey,
 		sugar:     sugar,
 	}
 	for _, opt := range options {
-		opt(clnt)
+		if err := opt(clnt); err != nil {
+			return nil, err
+		}
 	}
 	//Set Default rate limiter to the limit spefified by https://api.binance.com/api/v1/exchangeInfo
 	if clnt.rateLimiter == nil {
-		const binanceDefaultRateLimit = 20
-
-		clnt.rateLimiter = rate.NewLimiter(rate.Limit(binanceDefaultRateLimit), 1)
+		clnt.rateLimiter = NewRateLimiter(defaultHardLimit)
 	}
-	return clnt
+	return clnt, nil
+}
+
+//waitN mimic the leaky bucket algorithm to wait for n drop
+func (bc *Client) waitN(n int) error {
+	return bc.rateLimiter.WaitN(context.Background(), n)
 }
 
 func (bc *Client) fillRequest(req *http.Request, signNeeded bool, timepoint time.Time) error {
@@ -96,6 +127,20 @@ func (bc *Client) sign(msg string) (string, error) {
 	return result, nil
 }
 
+func decodeErrorResponse(body io.Reader) (*ErrorResponse, error) {
+	var response = &ErrorResponse{}
+	if err := json.NewDecoder(body).Decode(&response); err != nil {
+		return nil, err
+	}
+	return response, nil
+}
+
+//ErrorResponse response a basic response from binance
+type ErrorResponse struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+}
+
 func (bc *Client) sendRequest(method, endpoint string, params map[string]string, signNeeded bool,
 	timepoint time.Time) ([]byte, error) {
 
@@ -104,7 +149,7 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 		logger   = bc.sugar.With("func", "binance_client/sendRequest")
 	)
 	client := &http.Client{
-		Timeout: time.Duration(30 * time.Second),
+		Timeout: 30 * time.Second,
 	}
 	req, err := http.NewRequest(method, endpoint, nil)
 	if err != nil {
@@ -132,21 +177,35 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 	switch resp.StatusCode {
 	case 429:
 		err = errors.New("breaking binance request rate limit")
-		break
 	case 418:
 		err = errors.New("ip has been auto-banned by binance for continuing to send requests after receiving 429 codes")
-		break
 	case 500:
 		err = errors.New("500 from Binance, its fault")
-		break
 	case 401:
-		err = errors.New("binance api key not valid")
-		break
+		errRsp, err := decodeErrorResponse(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("unexpected response: http_code=%d, failed to decode error response: err=%s",
+				http.StatusUnauthorized,
+				err.Error())
+		}
+		logger.Errorw("unexpected response from Binance API",
+			"http_status", http.StatusUnauthorized,
+			"code", errRsp.Code,
+			"msg", errRsp.Msg,
+		)
+		// https://github.com/binance-exchange/binance-official-api-docs/blob/master/errors.md#-2014-bad_api_key_fmt
+		switch errRsp.Code {
+		case badAPIKeyFormatCode:
+			return nil, ErrBadAPIKeyFormat
+		case rejfectedMbxKeyCode:
+			return nil, ErrRejectedMBxKey
+		default:
+			return nil, fmt.Errorf("code=%d msg=%s", errRsp.Code, errRsp.Msg)
+		}
 	case 200:
 		respBody, err = ioutil.ReadAll(resp.Body)
-		break
 	default:
-		var response APIResponse
+		var response ErrorResponse
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			logger.Errorw("request body decode error", "error", err)
 			break
@@ -157,24 +216,28 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 }
 
 //GetTradeHistory return history of trading on binance
-func (bc *Client) GetTradeHistory(symbol string, fromID int64) ([]TradeHistory, error) {
+//if fromID = -1 then function will not put fromId as a param
+func (bc *Client) GetTradeHistory(symbol string, fromID uint64) ([]TradeHistory, error) {
 	var (
 		result []TradeHistory
 	)
 	const weight = 5
 	//Wait before creating the request to avoid timestamp request outside the recWindow
-	if err := bc.rateLimiter.WaitN(context.Background(), weight); err != nil {
+	if err := bc.waitN(weight); err != nil {
 		return result, err
 	}
 
 	endpoint := fmt.Sprintf("%s/api/v3/myTrades", endpointPrefix)
+	params := map[string]string{
+		"symbol": symbol,
+	}
+
+	params["fromId"] = strconv.FormatUint(fromID, 10)
+
 	res, err := bc.sendRequest(
 		http.MethodGet,
 		endpoint,
-		map[string]string{
-			"symbol": symbol,
-			"fromId": strconv.FormatInt(fromID, 10),
-		},
+		params,
 		true,
 		time.Now(),
 	)
@@ -192,7 +255,7 @@ func (bc *Client) GetAssetDetail() (AssetDetailResponse, error) {
 	)
 	const weight = 1
 	//Wait before creating the request to avoid timestamp request outside the recWindow
-	if err := bc.rateLimiter.WaitN(context.Background(), weight); err != nil {
+	if err := bc.waitN(weight); err != nil {
 		return result, err
 	}
 
@@ -218,24 +281,92 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 	)
 	const weight = 1
 	//Wait before creating the request to avoid timestamp request outside the recWindow
-	if err := bc.rateLimiter.WaitN(context.Background(), weight); err != nil {
+	if err := bc.waitN(weight); err != nil {
 		return result, err
 	}
 
 	endpoint := fmt.Sprintf("%s/wapi/v3/withdrawHistory.html", endpointPrefix)
+
+	params := map[string]string{}
+	if !fromTime.IsZero() {
+		params["startTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(fromTime), 10)
+	}
+
+	if !toTime.IsZero() {
+		params["endTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(toTime), 10)
+	}
+
 	res, err := bc.sendRequest(
 		http.MethodGet,
 		endpoint,
-		map[string]string{
-			"startTime": strconv.FormatUint(timeutil.TimeToTimestampMs(fromTime), 10),
-			"endTime":   strconv.FormatUint(timeutil.TimeToTimestampMs(toTime), 10),
-		},
+		params,
 		true,
 		time.Now(),
 	)
 	if err != nil {
 		return result, err
 	}
+
+	err = json.Unmarshal(res, &result)
+	if err != nil {
+		return result, err
+	}
+	if !result.Success {
+		return result, fmt.Errorf("failed to get binance withdrawal history, reason: %s", result.Message)
+	}
+	return result, err
+}
+
+//GetExchangeInfo return exchange info
+func (bc *Client) GetExchangeInfo() (ExchangeInfo, error) {
+	var (
+		result ExchangeInfo
+	)
+	const weight = 1
+	//Wait before creating the request to avoid timestamp request outside the recWindow
+	if err := bc.rateLimiter.WaitN(context.Background(), weight); err != nil {
+		return result, err
+	}
+
+	endpoint := fmt.Sprintf("%s/api/v1/exchangeInfo", endpointPrefix)
+	res, err := bc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		map[string]string{},
+		false,
+		time.Now(),
+	)
+	if err != nil {
+		return result, err
+	}
+	err = json.Unmarshal(res, &result)
+	return result, err
+}
+
+//GetAccountInfo return account infos
+func (bc *Client) GetAccountInfo() (AccountInfo, error) {
+	var (
+		result AccountInfo
+	)
+	const weight = 5
+	//Wait before creating the request to avoid timestamp request outside the recWindow
+	if err := bc.waitN(weight); err != nil {
+		return result, err
+	}
+
+	endpoint := fmt.Sprintf("%s/api/v3/account", endpointPrefix)
+
+	res, err := bc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		nil,
+		true,
+		time.Now(),
+	)
+	if err != nil {
+		return result, err
+	}
+
 	err = json.Unmarshal(res, &result)
 	return result, err
 }

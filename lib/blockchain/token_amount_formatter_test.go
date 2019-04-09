@@ -1,19 +1,18 @@
 package blockchain
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 func TestTokenAmountFormatter(t *testing.T) {
 	testutil.SkipExternal(t)
-	client, err := ethclient.Dial("https://mainnet.infura.io")
-	require.NoError(t, err)
+	client := testutil.MustNewDevelopmentwEthereumClient()
 	f, err := NewTokenAmountFormatter(client)
 	require.NoError(t, err)
 

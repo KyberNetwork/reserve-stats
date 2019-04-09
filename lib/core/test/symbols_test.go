@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 type tokenIDResult struct {
@@ -36,11 +36,6 @@ func TestTokenSymbols(t *testing.T) {
 	secret, ok := os.LookupEnv("CORE_SIGNING_KEY")
 	assert.True(t, ok)
 
-	node, ok := os.LookupEnv("ETHEREUM_NODE")
-	if !ok {
-		node = defaultEthereumNode
-	}
-
 	c, err := core.NewClient(sugar, url, secret)
 	require.NoError(t, err, "core client should be initiated successfully")
 
@@ -56,8 +51,7 @@ func TestTokenSymbols(t *testing.T) {
 		tokensFromCore[strings.ToLower(token.Address)] = token.ID
 	}
 
-	client, err := ethclient.Dial(node)
-	require.NoError(t, err, "Ethereum client should init successfully")
+	client := testutil.MustNewDevelopmentwEthereumClient()
 	symbolLookup := blockchain.NewTokenSymbol(client)
 	var (
 		g           errgroup.Group

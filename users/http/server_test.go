@@ -81,8 +81,6 @@ func TestUserHTTPServer(t *testing.T) {
 	// test case
 	const (
 		requestEndpoint = "/users"
-		queryAddress    = "0xc9a658f87d7432ff897f31dce318f0856f66acb7"
-		nonKycAddress   = "0xb8df4cf4b7ad086cd5139a75033566164e41a0b4"
 	)
 
 	var (
@@ -226,6 +224,7 @@ func TestUserHTTPServer(t *testing.T) {
 	)
 
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { httputil.RunHTTPTestCase(t, tc, s.r) })
 	}
 }

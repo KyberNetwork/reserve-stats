@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/big"
 	"os"
 	"time"
+
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/urfave/cli"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
@@ -15,7 +19,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserverates/storage/influx"
 	"github.com/KyberNetwork/reserve-stats/reserverates/workers"
-	"github.com/urfave/cli"
 )
 
 const (
@@ -106,12 +109,11 @@ func run(c *cli.Context) error {
 		daemon             bool
 	)
 
-	logger, err := libapp.NewLogger(c)
+	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	defer flush()
 
 	influxClient, err := influxdb.NewClientFromContext(c)
 	if err != nil {
@@ -171,6 +173,13 @@ func run(c *cli.Context) error {
 		sugar.Infow("using internal reserve address as user does not input any", "address", addr.Hex())
 	}
 
+	var ethAddrs []ethereum.Address
+	for _, addr := range addrs {
+		if !ethereum.IsHexAddress(addr) {
+			return fmt.Errorf("non etherum address input %s", addr)
+		}
+		ethAddrs = append(ethAddrs, ethereum.HexToAddress(addr))
+	}
 	for {
 		currentHeader, fErr := ethClient.HeaderByNumber(context.Background(), nil)
 		if fErr != nil {
@@ -205,7 +214,7 @@ func run(c *cli.Context) error {
 
 			for block := fromBlock; block < toBlock; block++ {
 				jobOrder++
-				pool.Run(workers.NewFetcherJob(c, jobOrder, uint64(block), addrs, attempts))
+				pool.Run(workers.NewFetcherJob(c, jobOrder, uint64(block), ethAddrs, attempts))
 			}
 
 			for pool.GetLastCompleteJobOrder() < jobOrder {

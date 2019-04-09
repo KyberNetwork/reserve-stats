@@ -18,6 +18,7 @@ import (
 const (
 	expireTimeFlag    = "expire-time"
 	defaultExpireTime = 3600 // 1 hour
+
 )
 
 func main() {
@@ -30,6 +31,7 @@ func main() {
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
 	app.Flags = append(app.Flags, libredis.NewCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
+	app.Flags = append(app.Flags, common.NewUserCapCliFlags()...)
 	app.Flags = append(app.Flags,
 		cli.IntFlag{
 			Name:   expireTimeFlag,
@@ -49,12 +51,12 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	logger, err := libapp.NewLogger(c)
+	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	defer flush()
+
 	sugar.Info("Run user public cacher")
 
 	postgresDB, err := libapp.NewDBFromContext(c)
@@ -66,6 +68,9 @@ func run(c *cli.Context) error {
 		sugar,
 		postgresDB,
 	)
+	if err != nil {
+		return err
+	}
 	sugar.Debugw("Initiated postgres client", "client", userDB)
 
 	influxDBClient, err := influxdb.NewClientFromContext(c)
@@ -80,10 +85,10 @@ func run(c *cli.Context) error {
 
 	expireTimeSecond := c.Int64(expireTimeFlag)
 	expireTime := time.Duration(expireTimeSecond) * time.Second
-
+	userCapConf := common.NewUserCapConfigurationFromContext(c)
 	sugar.Debugw("Initiated redis cached", "cache", redisCacheClient)
 
-	redisCacher := cacher.NewRedisCacher(sugar, userDB, influxDBClient, redisCacheClient, expireTime)
+	redisCacher := cacher.NewRedisCacher(sugar, userDB, influxDBClient, redisCacheClient, expireTime, userCapConf)
 
 	return redisCacher.CacheUserInfo()
 }

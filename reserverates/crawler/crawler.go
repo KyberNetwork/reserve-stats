@@ -2,17 +2,19 @@ package crawler
 
 import (
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"golang.org/x/sync/errgroup"
 	"sync"
+
+	"golang.org/x/sync/errgroup"
+
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/core"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"go.uber.org/zap"
 )
 
 // ReserveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
@@ -20,30 +22,22 @@ import (
 type ReserveRatesCrawler struct {
 	sugar           *zap.SugaredLogger
 	wrapperContract reserveRateGetter
-	addresses       []ethereum.Address
 	rtf             reserveTokenFetcherInterface
 }
 
 // NewReserveRatesCrawler returns an instant of ReserveRatesCrawler.
 func NewReserveRatesCrawler(
 	sugar *zap.SugaredLogger,
-	addrs []string,
-	client *ethclient.Client,
+	client bind.ContractBackend,
 	symbolResolver blockchain.TokenSymbolResolver) (*ReserveRatesCrawler, error) {
 	wrpContract, err := contracts.NewVersionedWrapperFallback(sugar, client)
 	if err != nil {
 		return nil, err
 	}
 
-	var ethAddrs []ethereum.Address
-	for _, addr := range addrs {
-		ethAddrs = append(ethAddrs, ethereum.HexToAddress(addr))
-	}
-
 	return &ReserveRatesCrawler{
 		sugar:           sugar,
 		wrapperContract: wrpContract,
-		addresses:       ethAddrs,
 		rtf:             blockchain.NewReserveTokenFetcher(sugar, client, symbolResolver),
 	}, nil
 }
@@ -90,9 +84,8 @@ func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 	return rates, err
 }
 
-// GetReserveRates returns the map[ReserveAddress]ReserveRates at the given block number.
-// It will only return rates from the set of addresses within its definition.
-func (rrc *ReserveRatesCrawler) GetReserveRates(block uint64) (map[string]map[string]rsvRateCommon.ReserveRateEntry, error) {
+//GetReserveRatesWithAddresses fetch rates with a list of input addresses and given block number
+func (rrc *ReserveRatesCrawler) GetReserveRatesWithAddresses(addresses []ethereum.Address, block uint64) (map[string]map[string]rsvRateCommon.ReserveRateEntry, error) {
 	var (
 		err    error
 		g      errgroup.Group
@@ -101,13 +94,12 @@ func (rrc *ReserveRatesCrawler) GetReserveRates(block uint64) (map[string]map[st
 	)
 
 	logger := rrc.sugar.With(
-		"func", "reserverates/crawler/ReserveRatesCrawler.GetReserveRates",
+		"func", "reserverates/crawler/ReserveRatesCrawler.GetReserveRatesWithAddresses",
 		"block", block,
-		"reserves", len(rrc.addresses),
+		"reserves", len(addresses),
 	)
 	logger.Debug("fetching rates for all reserves")
-
-	for _, rsvAddr := range rrc.addresses {
+	for _, rsvAddr := range addresses {
 		// copy to local variables to avoid race condition
 		block, rsvAddr := block, rsvAddr
 		g.Go(func() error {

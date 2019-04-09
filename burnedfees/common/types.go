@@ -18,10 +18,10 @@ type BurnAssignedFeesEvent struct {
 }
 
 func (bae *BurnAssignedFeesEvent) String() string {
-	return fmt.Sprintf("BurnAssignedFeesEvent blocknumber=%d tx_hash=%s reserve=%s sender=%s quantity=%d",
+	return fmt.Sprintf("BurnAssignedFeesEvent blocknumber=%d tx_hash=%s reserve=%s sender=%s quantity=%s",
 		bae.BlockNumber,
 		bae.TxHash.String(),
 		bae.Reserve.String(),
 		bae.Sender.String(),
-		bae.Quantity)
+		bae.Quantity.String())
 }

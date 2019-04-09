@@ -35,12 +35,11 @@ func main() {
 }
 
 func run(c *cli.Context) error {
-	logger, err := libapp.NewLogger(c)
+	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	defer flush()
 
 	cgk := coingecko.New()
 

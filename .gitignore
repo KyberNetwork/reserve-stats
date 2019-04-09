@@ -20,5 +20,9 @@ data/
 */cmd/cmd
 */cmd/*/*
 !*/cmd/*/*.go
+!*/cmd/*/*.md
 tokeninfo/cmd/output.json
 apidocs/build
+accounting/apidocs/build
+accounting/apidocs/node_modules
+accounting/apidocs/overview.mmd.svg

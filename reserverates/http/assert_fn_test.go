@@ -3,12 +3,14 @@ package http
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/KyberNetwork/reserve-stats/reserverates/common"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 )
 
 func expectCorrectRate(t *testing.T, resp *httptest.ResponseRecorder) {

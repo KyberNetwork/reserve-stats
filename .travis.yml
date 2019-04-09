@@ -1,7 +1,16 @@
 language: go
 
 go:
-  - 1.11.x
+  # pin go version to avoid test failure
+  # https://travis-ci.com/KyberNetwork/reserve-stats/jobs/191022971
+  # /home/travis/.gimme/versions/go1.12.2.linux.amd64/pkg/tool/linux_amd64/link: running gcc failed: exit status 1
+  # /usr/bin/ld: /tmp/go-link-820513584/000006.o: unrecognized relocation (0x2a) in section `.text'
+  # /usr/bin/ld: final link failed: Bad value
+  # collect2: error: ld returned 1 exit status
+  # happens with
+  # - go 1.11.7
+  # - go 1.12.2
+  - 1.11.6
 
 services:
   - docker
@@ -11,42 +20,45 @@ addons:
   postgresql: "9.5"
 
 before_install:
-  - docker run -d -p "127.0.0.1:8086:8086" influxdb:1.6.3-alpine
+  - docker run -d -p "127.0.0.1:8086:8086" influxdb:1.7.1-alpine
 
 env:
   global:
-    - GOMETALINTER_VERSION=2.0.11
+    - GOLANGCI_LINT_VERSION=1.15.0
     - GO111MODULE=on
-    - PATH=$PATH:${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
 
 matrix:
   include:
     - env:
-      - BUILD_PART: 1
+        - BUILD_PART: 1
     - env:
-      - BUILD_PART: 2
+        - BUILD_PART: 2
     - env:
-      - BUILD_PART: 3
+        - BUILD_PART: 3
+    - env:
+        - BUILD_PART: 4
 
 install:
-  - ./.travis/gometalinter-install.sh
-
-cache:
-  directories:
-  - ${TRAVIS_HOME}/gometalinter/gometalinter-${GOMETALINTER_VERSION}-linux-amd64
+  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b ${TRAVIS_HOME}/bin v${GOLANGCI_LINT_VERSION}
 
 before_script:
   - psql -c "CREATE DATABASE reserve_stats;" -U postgres
   - psql -c "CREATE USER reserve_stats WITH PASSWORD 'reserve_stats';" -U postgres
 
 script:
-  - bash .travis/docker_build.sh
+  - bash .travis/golangci.sh
 
 deploy:
   - provider: script
-    script: bash .travis/docker_push.sh
+    script: bash .travis/docker.sh
     on:
       all_branches: true
+      condition: $TRAVIS_BRANCH =~ ^develop|staging|master$
+
+  - provider: script
+    script: bash .travis/docker.sh
+    on:
+      tags: true
 
   - provider: s3
     access_key_id: $AWS_ACCESS_KEY_ID
@@ -58,4 +70,16 @@ deploy:
     skip_cleanup: true
     on:
       branch: develop
-      condition: $BUILD_PART = 3
+      condition: $BUILD_PART = 4
+
+  - provider: s3
+    access_key_id: $AWS_ACCESS_KEY_ID
+    secret_access_key: $AWS_SECRET_ACCESS_KEY
+    bucket: dev-accounting-docs.knstats.com
+    region: ap-southeast-1
+    acl: public_read
+    local_dir: accounting/apidocs/build
+    skip_cleanup: true
+    on:
+      branch: develop
+      condition: $BUILD_PART = 4

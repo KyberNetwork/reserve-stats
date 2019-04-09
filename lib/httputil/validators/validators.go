@@ -17,10 +17,7 @@ import (
 func isEthereumAddress(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
 	field reflect.Value, _ reflect.Type, _ reflect.Kind, _ string) bool {
 	address := field.String()
-	if err := validation.Validate(address, validation.Required); err != nil {
-		return false
-	}
-	if !common.IsHexAddress(address) {
+	if len(address) != 0 && !common.IsHexAddress(address) {
 		return false
 	}
 	return true
@@ -74,10 +71,20 @@ func isValidCountryCode(_ *validator.Validate, _ reflect.Value, _ reflect.Value,
 
 func init() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("isAddress", isEthereumAddress)
-		v.RegisterValidation("isEmail", isEmail)
-		v.RegisterValidation("isFreq", isFreq)
-		v.RegisterValidation("isSupportedTimezone", isSupportedTimezone)
-		v.RegisterValidation("isValidCountryCode", isValidCountryCode)
+		var validators = []struct {
+			name string
+			fn   validator.Func
+		}{
+			{"isAddress", isEthereumAddress},
+			{"isEmail", isEmail},
+			{"isFreq", isFreq},
+			{"isSupportedTimezone", isSupportedTimezone},
+			{"isValidCountryCode", isValidCountryCode},
+		}
+		for _, val := range validators {
+			if err := v.RegisterValidation(val.name, val.fn); err != nil {
+				panic(err)
+			}
+		}
 	}
 }

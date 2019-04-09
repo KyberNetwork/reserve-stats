@@ -4,21 +4,21 @@ import (
 	"log"
 	"os"
 
+	"github.com/urfave/cli"
+
 	"github.com/KyberNetwork/reserve-stats/app-names/http"
 	"github.com/KyberNetwork/reserve-stats/app-names/storage"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/urfave/cli"
 )
 
 const (
-	dataFilePathFlag = "data-path"
-	defaultDB        = "app-names"
+	defaultDB = "app-names"
 )
 
 func main() {
 	app := libapp.NewApp()
-	app.Name = "Address to Intergration App Name"
+	app.Name = "Integration Application Name manager"
 	app.Action = run
 	app.Version = "0.0.1"
 	app.Flags = append(app.Flags)
@@ -48,6 +48,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	// TODO: flush db
 
 	server, err := http.NewServer(httputil.NewHTTPAddressFromContext(c), appNameDB, sugar)
 	if err != nil {

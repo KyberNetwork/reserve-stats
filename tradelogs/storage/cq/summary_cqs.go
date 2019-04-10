@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"text/template"
 
-	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	libcq "github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	firstTradedSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/first_traded"
@@ -93,8 +93,8 @@ func CreateSummaryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		TradeLogMeasurementName:     common.TradeLogMeasurementName,
 		SrcAddr:                     logSchema.SrcAddr.String(),
 		DstAddr:                     logSchema.DstAddr.String(),
-		ETHTokenAddr:                core.ETHToken.Address,
-		WETHTokenAddr:               core.WETHToken.Address,
+		ETHTokenAddr:                blockchain.ETHAddr.Hex(),
+		WETHTokenAddr:               blockchain.WETHAddr.Hex(),
 	}); err != nil {
 		return nil, err
 	}

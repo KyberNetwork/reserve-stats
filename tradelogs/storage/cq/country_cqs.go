@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"text/template"
 
-	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	libcq "github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	countryStatSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/country_stats"
@@ -47,9 +47,9 @@ func executeCountryVolumeTemplate(templateString, amountType, amountTypeAddr str
 		ETHUSDRate:                    logSchema.EthUSDRate.String(),
 		TradeLogMeasurementName:       common.TradeLogMeasurementName,
 		SrcAddr:                       logSchema.SrcAddr.String(),
-		ETHTokenAddr:                  core.ETHToken.Address,
+		ETHTokenAddr:                  blockchain.ETHAddr.Hex(),
 		DstAddr:                       logSchema.DstAddr.String(),
-		WETHTokenAddr:                 core.WETHToken.Address,
+		WETHTokenAddr:                 blockchain.ETHAddr.Hex(),
 		AmountTypeAddr:                amountTypeAddr,
 		Country:                       logSchema.Country.String(),
 	}); err != nil {
@@ -142,8 +142,8 @@ func CreateCountryCqs(dbName string) ([]*libcq.ContinuousQuery, error) {
 		TradeLogMeasurementName:     common.TradeLogMeasurementName,
 		SrcAddr:                     logSchema.SrcAddr.String(),
 		DstAddr:                     logSchema.DstAddr.String(),
-		ETHTokenAddr:                core.ETHToken.Address,
-		WETHTokenAddr:               core.WETHToken.Address,
+		ETHTokenAddr:                blockchain.ETHAddr.Hex(),
+		WETHTokenAddr:               blockchain.WETHAddr.Hex(),
 		Country:                     logSchema.Country.String(),
 	}); err != nil {
 		return nil, err

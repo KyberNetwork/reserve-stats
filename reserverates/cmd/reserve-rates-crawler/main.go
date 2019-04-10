@@ -14,7 +14,6 @@ import (
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserverates/storage/influx"
@@ -94,7 +93,6 @@ func main() {
 		},
 		blockchain.NewEthereumNodeFlags(),
 	)
-	app.Flags = append(app.Flags, core.NewCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {

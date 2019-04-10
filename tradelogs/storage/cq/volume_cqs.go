@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	libcq "github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
@@ -66,8 +66,8 @@ func executeAssetVolumeTemplate(stringTemplate, amountType, cqMeasurementName, a
 		TradeLogMeasurementName: common.TradeLogMeasurementName,
 		SrcAddr:                 logSchema.SrcAddr.String(),
 		DstAddr:                 logSchema.DstAddr.String(),
-		ETHTokenAddr:            core.ETHToken.Address,
-		WETHTokenAddr:           core.WETHToken.Address,
+		ETHTokenAddr:            blockchain.ETHAddr.Hex(),
+		WETHTokenAddr:           blockchain.WETHAddr.Hex(),
 		AmountTypeAddr:          amountTypeAddr,
 	}); err != nil {
 		return "", err
@@ -278,9 +278,9 @@ func renderRsvCqFromTemplate(tmpl *template.Template, mName string, types RsvFie
 		ETHUSDRate:              logSchema.EthUSDRate.String(),
 		TradeLogMeasurementName: common.TradeLogMeasurementName,
 		SrcAddr:                 logSchema.SrcAddr.String(),
-		ETHTokenAddr:            core.ETHToken.Address,
+		ETHTokenAddr:            blockchain.ETHAddr.Hex(),
 		DstAddr:                 logSchema.DstAddr.String(),
-		WETHTokenAddr:           core.WETHToken.Address,
+		WETHTokenAddr:           blockchain.WETHAddr.Hex(),
 		RsvFieldsType:           types,
 		MeasurementName:         mName,
 	})

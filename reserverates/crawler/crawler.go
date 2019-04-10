@@ -13,7 +13,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
 )
 
@@ -67,8 +66,8 @@ func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 	}
 
 	for _, token := range tokens {
-		srcAddresses = append(srcAddresses, token.Address, ethereum.HexToAddress(core.ETHToken.Address))
-		destAddresses = append(destAddresses, ethereum.HexToAddress(core.ETHToken.Address), token.Address)
+		srcAddresses = append(srcAddresses, token.Address, blockchain.ETHAddr)
+		destAddresses = append(destAddresses, blockchain.ETHAddr, token.Address)
 	}
 
 	reserveRates, sanityRates, err := rrc.wrapperContract.GetReserveRate(block, rsvAddr, srcAddresses, destAddresses)

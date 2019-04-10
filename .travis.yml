@@ -37,6 +37,8 @@ matrix:
         - BUILD_PART: 3
     - env:
         - BUILD_PART: 4
+    - env:
+        - BUILD_PART: 5
 
 install:
   - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b ${TRAVIS_HOME}/bin v${GOLANGCI_LINT_VERSION}
@@ -70,7 +72,7 @@ deploy:
     skip_cleanup: true
     on:
       branch: develop
-      condition: $BUILD_PART = 4
+      condition: $BUILD_PART = 5
 
   - provider: s3
     access_key_id: $AWS_ACCESS_KEY_ID
@@ -82,4 +84,4 @@ deploy:
     skip_cleanup: true
     on:
       branch: develop
-      condition: $BUILD_PART = 4
+      condition: $BUILD_PART = 5

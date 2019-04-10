@@ -2,8 +2,4 @@ accounting accounting-binance-trade-fetcher accounting-binance-withdrawal-fetche
 accounting accounting-cex-trades-api accounting-cex-withdrawals-api 
 accounting accounting-gateway 
 accounting accounting-huobi-trade-fetcher accounting-huobi-withdrawal-fetcher 
-accounting accounting-listed-token-fetcher accounting-listed-tokens-api
 accounting accounting-reserve-addresses-api 
-accounting accounting-reserve-rates-api accounting-reserve-rate-fetcher 
-accounting accounting-reserve-transactions-api accounting-reserve-transaction-fetcher
-accounting accounting-wallet-erc20-api accounting-wallet-erc20

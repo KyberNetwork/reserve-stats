@@ -64,6 +64,21 @@ func WithPriceAnalyticURL(priceAnalyticURL string) Option {
 	}
 }
 
+//WithAppNamesURL set price analytic proxy for server
+func WithAppNamesURL(appNamesURL string) Option {
+	return func(s *Server) error {
+		appNamesProxyMW, err := newReverseProxyMW(appNamesURL)
+		if err != nil {
+			return err
+		}
+		s.r.GET("/applications", appNamesProxyMW)
+		s.r.POST("/applications", appNamesProxyMW)
+		s.r.PUT("/applications", appNamesProxyMW)
+		s.r.DELETE("/applications", appNamesProxyMW)
+		return nil
+	}
+}
+
 //WithCexTradesURL set cex trade proxy for server
 func WithCexTradesURL(cexTradeURL string) Option {
 	return func(s *Server) error {

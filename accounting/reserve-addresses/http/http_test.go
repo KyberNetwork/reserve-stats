@@ -33,7 +33,7 @@ var (
 func TestReserveAddressGetAll(t *testing.T) {
 	var tests = []httputil.HTTPTestCase{
 		{
-			Msg:      "get a existing reserve address",
+			Msg:      "get an existing reserve address",
 			Endpoint: "/addresses",
 			Method:   http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -67,7 +67,7 @@ func TestReserveAddressGetAll(t *testing.T) {
 
 	tests = []httputil.HTTPTestCase{
 		{
-			Msg:      "get a existing reserve address",
+			Msg:      "get an existing reserve address",
 			Endpoint: "/addresses",
 			Method:   http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -98,7 +98,7 @@ func TestReserveAddressGetAll(t *testing.T) {
 
 	tests = []httputil.HTTPTestCase{
 		{
-			Msg:      "get a existing reserve address",
+			Msg:      "get an existing reserve address",
 			Endpoint: "/addresses",
 			Method:   http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -234,7 +234,7 @@ func TestReserveAddressesGet(t *testing.T) {
 
 	var tests = []httputil.HTTPTestCase{
 		{
-			Msg:      "get a existing reserve address",
+			Msg:      "get an existing reserve address",
 			Endpoint: fmt.Sprintf("/addresses/%d", id),
 			Method:   http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {

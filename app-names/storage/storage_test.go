@@ -123,7 +123,7 @@ func TestStorage(t *testing.T) {
 	})
 	require.Equal(t, ErrNotExists, err)
 
-	apps, err := s.GetAll(nil, nil)
+	apps, err := s.GetAll()
 	require.NoError(t, err)
 	assert.ElementsMatch(t, []common.Application{
 		{
@@ -136,8 +136,7 @@ func TestStorage(t *testing.T) {
 		},
 	}, apps)
 
-	activeFilter := true
-	apps, err = s.GetAll(nil, &activeFilter)
+	apps, err = s.GetAll(WithActiveFilter())
 	require.NoError(t, err)
 	assert.ElementsMatch(t, []common.Application{
 		{
@@ -150,13 +149,11 @@ func TestStorage(t *testing.T) {
 		},
 	}, apps)
 
-	activeFilter = false
-	apps, err = s.GetAll(nil, &activeFilter)
+	apps, err = s.GetAll(WithInactiveFilter())
 	require.NoError(t, err)
 	assert.Len(t, apps, 0)
 
-	nameFilter := "updated_test_app_name"
-	apps, err = s.GetAll(&nameFilter, nil)
+	apps, err = s.GetAll(WithNameFilter("updated_test_app_name"))
 	require.NoError(t, err)
 	assert.ElementsMatch(t, []common.Application{
 		{
@@ -169,14 +166,11 @@ func TestStorage(t *testing.T) {
 		},
 	}, apps)
 
-	nameFilter = "random_not_exists_name"
-	apps, err = s.GetAll(&nameFilter, nil)
+	apps, err = s.GetAll(WithNameFilter("random_not_exists_name"))
 	require.NoError(t, err)
 	assert.Len(t, apps, 0)
 
-	nameFilter = "random_not_exists_name"
-	activeFilter = true
-	apps, err = s.GetAll(&nameFilter, &activeFilter)
+	apps, err = s.GetAll(WithNameFilter("random_not_exists_name"), WithActiveFilter())
 	require.NoError(t, err)
 	assert.Len(t, apps, 0)
 
@@ -201,8 +195,7 @@ func TestStorage(t *testing.T) {
 	require.NoError(t, err)
 	app, err = s.Get(id)
 	require.Equal(t, ErrNotExists, err)
-	activeFilter = false
-	apps, err = s.GetAll(nil, &activeFilter)
+	apps, err = s.GetAll(WithInactiveFilter())
 	require.NoError(t, err)
 	assert.ElementsMatch(t, []common.Application{
 		{

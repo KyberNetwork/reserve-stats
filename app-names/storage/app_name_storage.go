@@ -109,7 +109,7 @@ type getAppResult struct {
 }
 
 // GetAll return all app in storage
-func (adb *AppNameDB) GetAll(name *string, active *bool) ([]common.Application, error) {
+func (adb *AppNameDB) GetAll(filters ...Filter) ([]common.Application, error) {
 	var (
 		logger = adb.sugar.With(
 			"func", "app-names/storage.GetAll",
@@ -120,21 +120,26 @@ FROM app_names AS apps
 WHERE ($1::TEXT IS NULL OR apps.name = $1)
   AND ($2::BOOLEAN IS NULL OR apps.active = $2)
 GROUP BY apps.id, apps.name;`
-		result []getAppResult
-		apps   []common.Application
+		filterConf = &FilterConf{}
+		result     []getAppResult
+		apps       []common.Application
 	)
 	logger.With("query", query)
 
-	if name != nil {
-		logger.With("name", *name)
+	for _, filter := range filters {
+		filter(filterConf)
 	}
 
-	if active != nil {
-		logger.With("active", *active)
+	if filterConf.Name != nil {
+		logger.With("name", *filterConf.Name)
+	}
+
+	if filterConf.Active != nil {
+		logger.With("active", *filterConf.Active)
 	}
 
 	logger.Debug("get all applications")
-	if err := adb.db.Select(&result, query, name, active); err != nil {
+	if err := adb.db.Select(&result, query, filterConf.Name, filterConf.Active); err != nil {
 		return nil, err
 	}
 

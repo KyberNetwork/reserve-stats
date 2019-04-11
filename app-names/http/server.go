@@ -24,16 +24,15 @@ type Server struct {
 
 func (sv *Server) getApps(c *gin.Context) {
 	var (
-		logger       = sv.sugar.With("func", "app-names/http/Server.getAddrToAppName")
-		nameFilter   *string
-		activeFilter *bool
+		logger  = sv.sugar.With("func", "app-names/http/Server.getAddrToAppName")
+		filters []storage.Filter
 	)
 
 	logger.Debug("getting addr to App name")
 	name, ok := c.GetQuery("name")
 	if ok {
 		logger.Debugw("got name parameter from query", "name", name)
-		nameFilter = &name
+		filters = append(filters, storage.WithNameFilter(name))
 	}
 
 	activeStr, ok := c.GetQuery("active")
@@ -48,10 +47,14 @@ func (sv *Server) getApps(c *gin.Context) {
 			return
 		}
 		logger.Debugw("got active parameter from query", "active", active)
-		activeFilter = &active
+		if active {
+			filters = append(filters, storage.WithActiveFilter())
+		} else {
+			filters = append(filters, storage.WithInactiveFilter())
+		}
 	}
 
-	apps, err := sv.db.GetAll(nameFilter, activeFilter)
+	apps, err := sv.db.GetAll(filters...)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,

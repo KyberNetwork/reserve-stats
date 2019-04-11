@@ -14,7 +14,7 @@ import (
 )
 
 func TestHuobiClient(t *testing.T) {
-	//t.Skip("skip huobi trade history test")
+	t.Skip("skip huobi trade history test")
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 
 	huobiAPIKey, ok := os.LookupEnv("HUOBI_API_KEY")

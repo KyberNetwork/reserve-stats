@@ -16,6 +16,7 @@ func TestStorage(t *testing.T) {
 		testApplicationName = "test_app_name"
 		testAddress1        = "0x64F70539776f08C5EF505254C2426F3e47A5204A"
 		testAddress2        = "0xB868636A18c9935D9B259228851cC49245ae68A2"
+		testAddress3        = "0xC315F1aE2a55F84eA0Fd69c6d76D27282D563255"
 	)
 
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
@@ -196,6 +197,45 @@ func TestStorage(t *testing.T) {
 	app, err = s.Get(id)
 	require.Equal(t, ErrNotExists, err)
 	apps, err = s.GetAll(WithInactiveFilter())
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []common.Application{
+		{
+			ID:   id,
+			Name: "updated_test_app_name",
+			Addresses: []ethereum.Address{
+				ethereum.HexToAddress(testAddress1),
+				ethereum.HexToAddress(testAddress2),
+			},
+		},
+	}, apps)
+
+	err = s.Update(common.Application{ID: id})
+	require.NoError(t, err)
+	app, err = s.Get(id)
+	require.NoError(t, err)
+
+	apps, err = s.GetAll(WithAddressFilter(ethereum.HexToAddress("0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5")))
+	require.NoError(t, err)
+	assert.Empty(t, apps)
+
+	_, _, err = s.CreateOrUpdate(common.Application{
+		Name: "test_application_3",
+		Addresses: []ethereum.Address{
+			ethereum.HexToAddress(testAddress3),
+		},
+	})
+	app, err = s.Get(id)
+	require.NoError(t, err)
+	assert.Equal(t, common.Application{
+		ID:   id,
+		Name: "updated_test_app_name",
+		Addresses: []ethereum.Address{
+			ethereum.HexToAddress(testAddress1),
+			ethereum.HexToAddress(testAddress2),
+		},
+	}, app)
+
+	apps, err = s.GetAll(WithAddressFilter(ethereum.HexToAddress(testAddress1)))
 	require.NoError(t, err)
 	assert.ElementsMatch(t, []common.Application{
 		{

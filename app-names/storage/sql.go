@@ -49,7 +49,8 @@ BEGIN
 
         DELETE
         FROM addresses
-        WHERE NOT address = ANY (_addresses);
+        WHERE app_name_id = _id
+          AND NOT address = ANY (_addresses);
     END IF;
 
     RETURN;
@@ -85,7 +86,8 @@ BEGIN
 
             DELETE
             FROM addresses
-            WHERE NOT address = ANY (_addresses);
+            WHERE app_name_id = _id
+              AND NOT address = ANY (_addresses);
         END IF;
     END IF;
     RETURN;

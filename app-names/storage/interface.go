@@ -9,7 +9,7 @@ import (
 // FilterConf is the configuration of GetAll function.
 type FilterConf struct {
 	Name    *string
-	Address *ethereum.Address
+	Address *string
 	Active  *bool
 }
 
@@ -26,7 +26,8 @@ func WithNameFilter(name string) Filter {
 // WithAddressFilter filters the applications list by address.
 func WithAddressFilter(address ethereum.Address) Filter {
 	return func(filters *FilterConf) {
-		filters.Address = &address
+		addressFilter := address.Hex()
+		filters.Address = &addressFilter
 	}
 }
 

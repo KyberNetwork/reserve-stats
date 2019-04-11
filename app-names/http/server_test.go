@@ -225,6 +225,28 @@ func TestAppNameHTTPServer(t *testing.T) {
 				},
 			},
 			{
+				Msg:      "get application with address filter",
+				Endpoint: fmt.Sprintf("%s?address=0x587ecf600d304f831201c30ea0845118dd57516e", requestEndpoint),
+				Method:   http.MethodGet,
+				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+					var result []common.Application
+					assert.Equal(t, http.StatusOK, resp.Code)
+					assert.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+					assert.Len(t, result, 1)
+					if len(result) > 0 {
+						app := result[0]
+						assert.Equal(t, int64(1), app.ID)
+						assert.Equal(t,
+							[]ethereum.Address{
+								ethereum.HexToAddress("0x587ecf600d304f831201c30ea0845118dd57516e"),
+							},
+							app.Addresses,
+						)
+						assert.Equal(t, "first_app_new_edition", app.Name)
+					}
+				},
+			},
+			{
 				Msg:      "update app not exist",
 				Method:   http.MethodPut,
 				Endpoint: fmt.Sprintf("%s/%d", requestEndpoint, 100),

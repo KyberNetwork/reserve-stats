@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -28,11 +29,16 @@ func (sv *Server) getApps(c *gin.Context) {
 		filters []storage.Filter
 	)
 
-	logger.Debug("getting addr to App name")
 	name, ok := c.GetQuery("name")
 	if ok {
 		logger.Debugw("got name parameter from query", "name", name)
 		filters = append(filters, storage.WithNameFilter(name))
+	}
+
+	addr, ok := c.GetQuery("address")
+	if ok {
+		logger.Debugw("got addr parameter from query", "addr", addr)
+		filters = append(filters, storage.WithAddressFilter(ethereum.HexToAddress(addr)))
 	}
 
 	activeStr, ok := c.GetQuery("active")
@@ -201,7 +207,6 @@ func (sv *Server) updateApp(c *gin.Context) {
 }
 
 func (sv *Server) deleteApp(c *gin.Context) {
-	//TODO: using ShouldBindUri when gin support it in new release
 	appID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		httputil.ResponseFailure(

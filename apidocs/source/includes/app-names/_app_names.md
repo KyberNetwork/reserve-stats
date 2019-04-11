@@ -1,4 +1,4 @@
-# App names
+# App Names
 
 ## Create App
 
@@ -84,6 +84,12 @@ curl -X GET "https://gateway.local/applications"
 ### HTTP Request
 
 `GET https://gateway.local/applications`
+
+Params | Type | Required | Default | Description
+------ | ---- | -------- | ------- | -----------
+name | string | false | nil | returns applications with given name
+address | string | false | nil | returns applications with given address
+active | bool | false | nil | returns applications with active or inactive status
 
 ## Get an app by id
 

@@ -12,7 +12,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -54,7 +54,7 @@ func TestAssetVolumeHttp(t *testing.T) {
 		invalidFrom = "xxxx"
 		validTo     = 1539302400000
 		// mock core only return ETH, KNC is not in the list of mock core's clients
-		validAsset               = core.ETHToken.Address
+		validAsset               = blockchain.ETHAddr.Hex()
 		invalidAsset             = "KNC"
 		invalidFromInputEndpoint = fmt.Sprintf("%s?from=%s&to=%d&asset=%s&freq=%s", endpoint, invalidFrom, validTo, validAsset, freq)
 		invalidAssetEndpoint     = fmt.Sprintf("%s?from=%s&to=%d&asset=%s&freq=%s", endpoint, invalidFrom, validTo, invalidAsset, freq)

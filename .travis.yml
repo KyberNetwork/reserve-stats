@@ -37,6 +37,8 @@ matrix:
         - BUILD_PART: 3
     - env:
         - BUILD_PART: 4
+    - env:
+        - BUILD_PART: 5
 
 install:
   - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b ${TRAVIS_HOME}/bin v${GOLANGCI_LINT_VERSION}
@@ -44,6 +46,7 @@ install:
 before_script:
   - psql -c "CREATE DATABASE reserve_stats;" -U postgres
   - psql -c "CREATE USER reserve_stats WITH PASSWORD 'reserve_stats';" -U postgres
+  - psql -c "ALTER USER reserve_stats CREATEDB;" -U postgres
 
 script:
   - bash .travis/golangci.sh
@@ -70,7 +73,7 @@ deploy:
     skip_cleanup: true
     on:
       branch: develop
-      condition: $BUILD_PART = 4
+      condition: $BUILD_PART = 5
 
   - provider: s3
     access_key_id: $AWS_ACCESS_KEY_ID
@@ -82,4 +85,4 @@ deploy:
     skip_cleanup: true
     on:
       branch: develop
-      condition: $BUILD_PART = 4
+      condition: $BUILD_PART = 5

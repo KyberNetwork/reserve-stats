@@ -46,7 +46,7 @@ func (cc *CachedClient) LookUpCache(addr ethereum.Address) (UserProfile, bool) {
 // If this fail then it will query from endpoint
 func (cc *CachedClient) LookUpUserProfile(addr ethereum.Address) (UserProfile, error) {
 	logger := cc.sugar.With(
-		"func", "lib/core/CachedClient.Token",
+		"func", "lib/userprofile/LookUpUserProfile.Token",
 		"address", addr.Hex(),
 	)
 	p, ok := cc.LookUpCache(addr)

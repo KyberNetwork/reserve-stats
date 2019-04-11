@@ -24,9 +24,48 @@ func MustNewDevelopmentDB() (dbName string, db *sqlx.DB) {
 		postgresPassword,
 		postgresDatabase,
 	)
-	db, err := sqlx.Connect("postgres", connStr)
-	if err != nil {
+	db = sqlx.MustConnect("postgres", connStr)
+	return postgresDatabase, db
+}
+
+// MustNewRandomDevelopmentDB creates a new development DB.
+// It also returns a function to teardown it after the test.
+func MustNewRandomDevelopmentDB() (ddlDB *sqlx.DB, teardown func() error) {
+	dbName := RandomString(8)
+
+	ddlDBConnStr := fmt.Sprintf("host=%s port=%d user=%s password=%s sslmode=disable",
+		postgresHost,
+		postgresPort,
+		postgresUser,
+		postgresDatabase,
+	)
+	ddlDB = sqlx.MustConnect("postgres", ddlDBConnStr)
+	ddlDB.MustExec(fmt.Sprintf(`CREATE DATABASE "%s"`, dbName))
+	if err := ddlDB.Close(); err != nil {
 		panic(err)
 	}
-	return postgresDatabase, db
+
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		postgresHost,
+		postgresPort,
+		postgresUser,
+		postgresPassword,
+		dbName,
+	)
+	db := sqlx.MustConnect("postgres", connStr)
+	return db, func() error {
+		if err := db.Close(); err != nil {
+			return err
+		}
+		ddlDB, err := sqlx.Connect("postgres", ddlDBConnStr)
+		if err != nil {
+			return err
+		}
+
+		if _, err = ddlDB.Exec(fmt.Sprintf(`DROP DATABASE "%s"`, dbName)); err != nil {
+			return err
+		}
+
+		return ddlDB.Close()
+	}
 }

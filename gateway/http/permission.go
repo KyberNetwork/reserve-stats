@@ -31,7 +31,7 @@ m = g(r.sub, p.sub)  && keyMatch(r.obj, p.obj) && regexMatch(r.act, p.act)
 `
 	)
 	pol := fmt.Sprintf(`
-p, %s, /*, (GET)|(POST)
+p, %s, /*, (GET)|(POST)|(PUT)|(DELETE)
 p, %s, /*, GET
 `, writeKeyID, readKeyID)
 	sa := scas.NewAdapter(pol)

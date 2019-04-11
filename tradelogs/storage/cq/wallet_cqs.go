@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"text/template"
 
-	"github.com/KyberNetwork/reserve-stats/lib/core"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	firstTradedSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/first_traded"
@@ -104,9 +104,9 @@ func CreateWalletStatsCqs(dbName string) ([]*cq.ContinuousQuery, error) {
 		ETHUSDRate:                 logSchema.EthUSDRate.String(),
 		TradeLogMeasurementName:    common.TradeLogMeasurementName,
 		SrcAddr:                    logSchema.SrcAddr.String(),
-		ETHTokenAddr:               core.ETHToken.Address,
+		ETHTokenAddr:               blockchain.ETHAddr.Hex(),
 		DstAddr:                    logSchema.DstAddr.String(),
-		WETHTokenAddr:              core.WETHToken.Address,
+		WETHTokenAddr:              blockchain.WETHAddr.Hex(),
 		WalletAddr:                 logSchema.WalletAddress.String(),
 	}); err != nil {
 		return nil, err

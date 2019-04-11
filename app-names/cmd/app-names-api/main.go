@@ -4,31 +4,26 @@ import (
 	"log"
 	"os"
 
-	appNames "github.com/KyberNetwork/reserve-stats/app-names"
+	"github.com/urfave/cli"
+
 	"github.com/KyberNetwork/reserve-stats/app-names/http"
+	"github.com/KyberNetwork/reserve-stats/app-names/storage"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/urfave/cli"
 )
 
 const (
-	dataFilePathFlag = "data-path"
+	defaultDB = "app-names"
 )
 
 func main() {
 	app := libapp.NewApp()
-	app.Name = "Address to Intergration App Name"
+	app.Name = "Integration Application Name manager"
 	app.Action = run
 	app.Version = "0.0.1"
 	app.Flags = append(app.Flags)
-	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AppName)...)
-	app.Flags = append(app.Flags,
-		cli.StringFlag{
-			Name:   dataFilePathFlag,
-			Usage:  "file path to address to app name json",
-			EnvVar: "DATA_PATH",
-		},
-	)
+	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AppNames)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -44,14 +39,30 @@ func run(c *cli.Context) error {
 	}
 	defer flush()
 
-	addrToAppname := appNames.NewMapAddrAppName(appNames.WithDataFile(c.String(dataFilePathFlag)))
+	db, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return err
+	}
 
-	server, err := http.NewServer(httputil.NewHTTPAddressFromContext(c), addrToAppname, sugar)
+	appNameDB, err := storage.NewAppNameDB(sugar, db)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if cErr := db.Close(); cErr != nil {
+			sugar.Errorw("failed to close database", err, cErr)
+		}
+	}()
+
+	server, err := http.NewServer(httputil.NewHTTPAddressFromContext(c), appNameDB, sugar)
 	if err != nil {
 		return err
 	}
 
 	sugar.Info("Run Addr to Appname module")
-	return server.Run()
-
+	if err = server.Run(); err != nil {
+		return err
+	}
+	return db.Close()
 }

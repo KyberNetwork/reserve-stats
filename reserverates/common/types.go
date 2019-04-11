@@ -5,7 +5,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/core"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
@@ -30,11 +29,25 @@ type LastRate struct {
 // - sanityRate: [sellSanityRate(index: 0)]-[buySanityRate)(index: 0)]-[sellSanityRate(index: 1)]-[buySanityRate)(index: 1)]...
 func NewReserveRateEntry(reserveRates, sanityRates []*big.Int, index int) ReserveRateEntry {
 	return ReserveRateEntry{
-		BuyReserveRate:  core.ETHToken.FromWei(reserveRates[index*2+1]),
-		BuySanityRate:   core.ETHToken.FromWei(sanityRates[index*2+1]),
-		SellReserveRate: core.ETHToken.FromWei(reserveRates[index*2]),
-		SellSanityRate:  core.ETHToken.FromWei(sanityRates[index*2]),
+		BuyReserveRate:  fromWeiETH(reserveRates[index*2+1]),
+		BuySanityRate:   fromWeiETH(sanityRates[index*2+1]),
+		SellReserveRate: fromWeiETH(reserveRates[index*2]),
+		SellSanityRate:  fromWeiETH(sanityRates[index*2]),
 	}
+}
+
+func fromWeiETH(amount *big.Int) float64 {
+	const ethDecimal = 18
+	if amount == nil {
+		return 0
+	}
+	f := new(big.Float).SetInt(amount)
+	power := new(big.Float).SetInt(new(big.Int).Exp(
+		big.NewInt(10), big.NewInt(ethDecimal), nil,
+	))
+	res := new(big.Float).Quo(f, power)
+	result, _ := res.Float64()
+	return result
 }
 
 // ReserveRates hold all the pairs's rate for a particular reserve and metadata

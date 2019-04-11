@@ -224,6 +224,8 @@ func TestStorage(t *testing.T) {
 			ethereum.HexToAddress(testAddress3),
 		},
 	})
+	require.NoError(t, err)
+
 	app, err = s.Get(id)
 	require.NoError(t, err)
 	assert.Equal(t, common.Application{

@@ -76,7 +76,7 @@ id | integer | true | none | id of reserve
 ```shell
 curl -X POST "http://gateway.local/addresses" \ 
 -H "Content-Type: application/json" \ 
--D '{"address": "0x63825c174ab367968EC60f061753D3bbD36A0D8F", "type":"reserve", "description": "Kyber network reserve"}' 
+-d '{"address": "0x63825c174ab367968EC60f061753D3bbD36A0D8F", "type":"reserve", "description": "Kyber network reserve"}' 
 ```
 
 > the above request will return reponse like this:

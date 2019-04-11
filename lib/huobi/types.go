@@ -8,10 +8,17 @@ type Account struct {
 	UserID string `json:"user-id"`
 }
 
+// CommonResponse is common field of all huobi responses.
+type CommonResponse struct {
+	Status       string `json:"status"`
+	ErrorCode    string `json:"err-code"`
+	ErrorMessage string `json:"err-msg"`
+}
+
 //AccountResponse response for accoutn api
 type AccountResponse struct {
-	Data   []Account `json:"data"`
-	Status string    `json:"status"`
+	Data []Account `json:"data"`
+	CommonResponse
 }
 
 //TradeHistory is a history of a trade in huobi
@@ -37,8 +44,8 @@ type TradeHistory struct {
 
 //TradeHistoryList is a list of trade history
 type TradeHistoryList struct {
-	Data   []TradeHistory `json:"data"`
-	Status string         `json:"status"`
+	Data []TradeHistory `json:"data"`
+	CommonResponse
 }
 
 //WithdrawHistory is history of a withdraw
@@ -58,8 +65,8 @@ type WithdrawHistory struct {
 
 //WithdrawHistoryList is a list of withdraw history
 type WithdrawHistoryList struct {
-	Data   []WithdrawHistory `json:"data"`
-	Status string            `json:"status"`
+	Data []WithdrawHistory `json:"data"`
+	CommonResponse
 }
 
 //SymbolsReply hold huobi's reply data and status

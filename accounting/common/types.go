@@ -48,6 +48,8 @@ const (
 	IntermediateOperator // intermediate_operator
 	// CEXDepositAddress is Ethereum address used to deposit funds to centralized exchanges.
 	CEXDepositAddress // cex_deposit_address
+	// CompanyWallet is Ethereum address used by the company as a wallet
+	CompanyWallet // company_wallet
 )
 
 var validAddressTypes = map[string]AddressType{
@@ -56,6 +58,7 @@ var validAddressTypes = map[string]AddressType{
 	SanityOperator.String():       SanityOperator,
 	IntermediateOperator.String(): IntermediateOperator,
 	CEXDepositAddress.String():    CEXDepositAddress,
+	CompanyWallet.String():        CompanyWallet,
 }
 
 // IsValidAddressType returns true if given

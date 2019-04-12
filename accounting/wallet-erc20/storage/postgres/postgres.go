@@ -11,12 +11,11 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
-	walletErc20TxsTableName = "wallet_erc20_txs"
+	walletErc20TxsTableName = "rsv_tx_erc20"
 )
 
 //Option define init behaviour for db storage.
@@ -47,9 +46,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*WalletErc
 	const schemaFMT = `
 	CREATE TABLE IF NOT EXISTS %[1]s
 (
-	id BIGSERIAL NOT NULL,
 	data JSONB NOT NULL UNIQUE,
-	CONSTRAINT %[1]s_pk PRIMARY KEY(id)
 ) ;
 
 CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s 
@@ -96,46 +93,6 @@ func (wdb *WalletErc20Storage) Close() error {
 	return nil
 }
 
-//UpdateERC20Transfers store the ERC20Transfer rate at that blockInfo
-func (wdb *WalletErc20Storage) UpdateERC20Transfers(erc20Txs []common.ERC20Transfer) error {
-	var (
-		logger = wdb.sugar.With(
-			"func", "accounting/wallet-erc20/storage/postgres..UpdateRatesRecords",
-			"len(erc20Txs)", len(erc20Txs),
-		)
-	)
-	const updateStmt = `INSERT INTO %[1]s(data)
-	VALUES ( 
-		$1
-	)
-	ON CONFLICT ON CONSTRAINT %[1]s_data_key DO NOTHING
-	`
-	query := fmt.Sprintf(updateStmt,
-		wdb.tableName,
-	)
-	logger.Debugw("updating ERC20transfers...", "query", query)
-
-	tx, err := wdb.db.Beginx()
-	if err != nil {
-		return err
-	}
-	defer pgsql.CommitOrRollback(tx, logger, &err)
-	for _, erc20Tx := range erc20Txs {
-		var data []byte
-		data, err = json.Marshal(erc20Tx)
-		if err != nil {
-			return err
-		}
-		logger.Debugf("%s contract %s", data, erc20Tx.ContractAddress.Hex())
-		_, err = tx.Exec(query, data)
-		if err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
 //GetERC20Transfers return erc20 transfer between from.. to.. in its json []byte form
 func (wdb *WalletErc20Storage) GetERC20Transfers(wallet, token ethereum.Address, from, to time.Time) ([]common.ERC20Transfer, error) {
 	var (
@@ -166,27 +123,6 @@ func (wdb *WalletErc20Storage) GetERC20Transfers(wallet, token ethereum.Address,
 			return result, err
 		}
 		result = append(result, tmp)
-	}
-	return result, nil
-}
-
-//GetLastStoredBlock return last stored block of a wallet
-//return sql.NoRows error if there is no row
-func (wdb *WalletErc20Storage) GetLastStoredBlock(wallet ethereum.Address) (int, error) {
-	var (
-		result int
-		logger = wdb.sugar.With(
-			"func", "accounting/wallet-erc20/storage/postgres.GetLastStoredBlock",
-			"wallet", wallet.Hex(),
-		)
-	)
-	const selectStmt = `SELECT data->>'blockNumber' FROM %[1]s WHERE data->>'timestamp'=
-	(SELECT MAX(data->>'timestamp') FROM %[1]s WHERE (data->>'from'=$1 OR data->>'to'=$1)) LIMIT 1 
-	`
-	query := fmt.Sprintf(selectStmt, wdb.tableName)
-	logger.Debugw("querying trade history...", "query", query)
-	if err := wdb.db.Get(&result, query, wallet.Hex()); err != nil {
-		return result, err
 	}
 	return result, nil
 }

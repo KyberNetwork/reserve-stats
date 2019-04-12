@@ -20,6 +20,8 @@ type ReserveTransactionStorage interface {
 	StoreERC20Transfer([]common.ERC20Transfer) error
 	GetERC20Transfer(from time.Time, to time.Time) ([]common.ERC20Transfer, error)
 
+	GetWalletERC20Transfers(WalletAddr, TokenAddr ethereum.Address, from, to time.Time) ([]common.ERC20Transfer, error)
+
 	StoreLastInserted(ethereum.Address, *big.Int) error
 	GetLastInserted(ethereum.Address) (*big.Int, error)
 }

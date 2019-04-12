@@ -13,14 +13,14 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
-	"github.com/KyberNetwork/reserve-stats/accounting/wallet-erc20/storage"
-	"github.com/KyberNetwork/reserve-stats/accounting/wallet-erc20/storage/postgres"
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/storage"
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/storage/postgres"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
-func newTestServer(rts storage.Interface, sugar *zap.SugaredLogger) (*Server, error) {
+func newTestServer(rts storage.ReserveTransactionStorage, sugar *zap.SugaredLogger) (*Server, error) {
 	return NewServer(
 		sugar,
 		"",
@@ -32,7 +32,7 @@ func newTestServer(rts storage.Interface, sugar *zap.SugaredLogger) (*Server, er
 func TestERC20Transfer(t *testing.T) {
 	_, storage := testutil.MustNewDevelopmentDB()
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	rts, err := postgres.NewDB(sugar, storage)
+	rts, err := postgres.NewStorage(sugar, storage)
 	require.NoError(t, err)
 
 	s, err := newTestServer(rts, sugar)
@@ -67,7 +67,7 @@ func TestERC20Transfer(t *testing.T) {
 		},
 	}
 
-	err = rts.UpdateERC20Transfers(testReserveRates)
+	err = rts.StoreERC20Transfer(testReserveRates)
 	require.NoError(t, err)
 
 	var tests = []httputil.HTTPTestCase{

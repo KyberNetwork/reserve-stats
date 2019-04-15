@@ -52,13 +52,16 @@ func NewStorage(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*Stor
 	var (
 		logger = sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/NewStorage")
 	)
-	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%[1]s"
+	const schemaFmt = `
+	-- create table tx normal
+	CREATE TABLE IF NOT EXISTS "%[1]s"
 (
     tx_hash text  NOT NULL PRIMARY KEY,
     data    JSONB NOT NULL
 );
 CREATE INDEX IF NOT EXISTS "%[1]s_time_idx" ON "%[1]s" ((data ->> 'timestamp'));
 
+-- create table tx internal
 CREATE TABLE IF NOT EXISTS "%[2]s"
 (
     data JSONB NOT NULL UNIQUE
@@ -66,13 +69,16 @@ CREATE TABLE IF NOT EXISTS "%[2]s"
 
 CREATE INDEX IF NOT EXISTS "%[2]s_time_idx" ON "%[2]s" ((data ->> 'timestamp'));
 
+-- create table tx erc20
 CREATE TABLE IF NOT EXISTS "%[3]s"
 (
     data JSONB NOT NULL UNIQUE
 );
 
-CREATE INDEX IF NOT EXISTS "%[3]s_time_idx" ON "%[3]s" ((data ->> 'timestamp'));
+CREATE INDEX IF NOT EXISTS "%[3]s_time_idx" ON "%[3]s" ((data ->> 'timestamp'),
+(data ->> 'contractAddress'),(data ->> 'from'),(data ->> 'from'));
 
+-- create table last inserted
 CREATE TABLE IF NOT EXISTS "%[4]s"
 (
     address       text   NOT NULL PRIMARY KEY,

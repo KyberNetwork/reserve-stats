@@ -518,6 +518,32 @@ func TestVersion(t *testing.T) {
 				assert.Equal(t, currentVersion+1, response.Version)
 			},
 		},
+		{
+			Msg:      "test update invalid id",
+			Endpoint: fmt.Sprintf("/addresses/%d", testID+99),
+			Method:   http.MethodPut,
+			Body: []byte(`{
+  "description": "main reserve 5"
+}`),
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusNotFound, resp.Code)
+			},
+		},
+		{
+			Msg:      "test version no changes",
+			Endpoint: "/addresses",
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusOK, resp.Code)
+
+				var response rcommon.AllAddressesResponse
+				err := json.NewDecoder(resp.Body).Decode(&response)
+				require.NoError(t, err)
+				assert.Equal(t, currentVersion+1, response.Version)
+			},
+		},
 	}
 	for _, tc := range tests {
 		tc := tc

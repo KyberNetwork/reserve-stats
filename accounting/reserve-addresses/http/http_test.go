@@ -492,6 +492,32 @@ func TestVersion(t *testing.T) {
 				assert.Equal(t, currentVersion+1, response.Version)
 			},
 		},
+		{
+			Msg:      "test update no changes",
+			Endpoint: fmt.Sprintf("/addresses/%d", testID),
+			Method:   http.MethodPut,
+			Body: []byte(`{
+  "description": "main reserve 5"
+}`),
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusNoContent, resp.Code)
+			},
+		},
+		{
+			Msg:      "test version no changes",
+			Endpoint: "/addresses",
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusOK, resp.Code)
+
+				var response rcommon.AllAddressesResponse
+				err := json.NewDecoder(resp.Body).Decode(&response)
+				require.NoError(t, err)
+				assert.Equal(t, currentVersion+1, response.Version)
+			},
+		},
 	}
 	for _, tc := range tests {
 		tc := tc

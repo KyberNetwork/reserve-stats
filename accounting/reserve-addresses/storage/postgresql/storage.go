@@ -53,9 +53,12 @@ $$
 DECLARE
     inc BOOLEAN = false;
 BEGIN
-    IF tg_op = 'INSERT' OR tg_op = 'UPDATE' THEN
+    IF tg_op = 'INSERT' THEN
         inc = TRUE;
-    END IF;
+	END IF;
+	IF tg_op = 'UPDATE' AND OLD IS DISTINCT FROM NEW THEN
+		inc = TRUE;
+	END IF;
 	IF inc THEN
 		INSERT INTO "%[2]s" (id, version, timestamp)
 		VALUES (1, 1, now()) ON CONFLICT (id) DO UPDATE SET version = %[2]s.version+1, timestamp = EXCLUDED.timestamp;

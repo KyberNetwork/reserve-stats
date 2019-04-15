@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS "%[3]s"
 );
 
 CREATE INDEX IF NOT EXISTS "%[3]s_time_idx" ON "%[3]s" ((data ->> 'timestamp'),
-(data ->> 'contractAddress'),(data ->> 'from'),(data ->> 'from'));
+(data ->> 'contractAddress'),(data ->> 'from'),(data ->> 'to'));
 
 -- create table last inserted
 CREATE TABLE IF NOT EXISTS "%[4]s"

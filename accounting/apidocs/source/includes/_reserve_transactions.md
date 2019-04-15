@@ -72,4 +72,4 @@ Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
 from | integer | true | one hour from now | from time to get transactions 
 to | integer | true | now | to time to get transactions 
-type | string | true | all | include: "normal", "internal", "ERC20" 
+type | string | true | all | include: "normal", "internal", "erc20"

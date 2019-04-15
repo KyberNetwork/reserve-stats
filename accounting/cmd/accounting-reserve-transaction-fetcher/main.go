@@ -73,7 +73,7 @@ func fetchTx(
 	// for reserve, intermediate address type, need to fetch: normal, internal, ERC20 transactions.
 	// for pricing operator, sanity operator, we need to fetch: normal, internal transactions as they are not supposed
 	// to hold any ERC20 tokens.
-	if addr.Type == common.Reserve || addr.Type == common.IntermediateOperator {
+	if addr.Type == common.Reserve || addr.Type == common.IntermediateOperator || addr.Type == common.CompanyWallet {
 		logger.Infow("fetching ERC20 transactions")
 		transfers, err := f.ERC20Transfer(addr.Address, fromBlock, toBlock)
 		if err != nil {

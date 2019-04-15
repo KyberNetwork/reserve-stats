@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
@@ -51,13 +52,16 @@ func NewStorage(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*Stor
 	var (
 		logger = sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/NewStorage")
 	)
-	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%[1]s"
+	const schemaFmt = `
+	-- create table tx normal
+	CREATE TABLE IF NOT EXISTS "%[1]s"
 (
     tx_hash text  NOT NULL PRIMARY KEY,
     data    JSONB NOT NULL
 );
 CREATE INDEX IF NOT EXISTS "%[1]s_time_idx" ON "%[1]s" ((data ->> 'timestamp'));
 
+-- create table tx internal
 CREATE TABLE IF NOT EXISTS "%[2]s"
 (
     data JSONB NOT NULL UNIQUE
@@ -65,13 +69,16 @@ CREATE TABLE IF NOT EXISTS "%[2]s"
 
 CREATE INDEX IF NOT EXISTS "%[2]s_time_idx" ON "%[2]s" ((data ->> 'timestamp'));
 
+-- create table tx erc20
 CREATE TABLE IF NOT EXISTS "%[3]s"
 (
     data JSONB NOT NULL UNIQUE
 );
 
-CREATE INDEX IF NOT EXISTS "%[3]s_time_idx" ON "%[3]s" ((data ->> 'timestamp'));
+CREATE INDEX IF NOT EXISTS "%[3]s_time_idx" ON "%[3]s" ((data ->> 'timestamp'),
+(data ->> 'contractAddress'),(data ->> 'from'),(data ->> 'to'));
 
+-- create table last inserted
 CREATE TABLE IF NOT EXISTS "%[4]s"
 (
     address       text   NOT NULL PRIMARY KEY,
@@ -364,4 +371,38 @@ WHERE address ILIKE $1`
 	default:
 		return nil, err
 	}
+}
+
+//GetWalletERC20Transfers return erc20 transfer between from.. to.. in its json []byte form
+func (s *Storage) GetWalletERC20Transfers(wallet, token ethereum.Address, from, to time.Time) ([]common.ERC20Transfer, error) {
+	var (
+		dbResult [][]byte
+		result   []common.ERC20Transfer
+		logger   = s.sugar.With(
+			"func", "accounting/wallet-erc20/storage/postgres..UpdateRatesRecords",
+			"from", from.UTC(),
+			"to", to.UTC(),
+			"wallet", wallet.Hex(),
+			"token", token.Hex(),
+		)
+		tmp common.ERC20Transfer
+	)
+	const selectStmt = `SELECT data FROM %[1]s WHERE ((data->>'timestamp')>=$1::text AND (data->>'timestamp')<$2::text) AND
+	($3 OR (data->>'from'=$4 OR data->>'to'=$4)) AND
+	($5 OR data->>'contractAddress'=$6)`
+	query := fmt.Sprintf(selectStmt, s.tableNames.ERC20)
+	logger.Debugw("querying ERC20 transfers history...", "query", query)
+	walletFilter := blockchain.IsZeroAddress(wallet)
+	tokenFilter := blockchain.IsZeroAddress(token)
+	if err := s.db.Select(&dbResult, query, timeutil.TimeToTimestampMs(from), timeutil.TimeToTimestampMs(to), walletFilter, wallet.Hex(), tokenFilter, token.Hex()); err != nil {
+		return result, err
+	}
+	logger.Debugw("result", "len", len(dbResult))
+	for _, data := range dbResult {
+		if err := json.Unmarshal(data, &tmp); err != nil {
+			return result, err
+		}
+		result = append(result, tmp)
+	}
+	return result, nil
 }

@@ -121,6 +121,7 @@ type ERC20Transfer struct {
 	Gas             int              `json:"gas,string"`
 	GasUsed         int              `json:"gasUsed,string"`
 	GasPrice        *big.Int         `json:"gasPrice"`
+	AddressType     string           `json:"-"`
 }
 
 //MarshalJSON return marshal form of erc20transfer
@@ -197,7 +198,7 @@ func EtherscanInternalTxToCommon(tx etherscan.InternalTx) InternalTx {
 }
 
 //EtherscanERC20TransferToCommon transforms etherScan.ERC20Trasnfer to accounting's ERC20Transfer
-func EtherscanERC20TransferToCommon(tx etherscan.ERC20Transfer) ERC20Transfer {
+func EtherscanERC20TransferToCommon(tx etherscan.ERC20Transfer, addressType AddressType) ERC20Transfer {
 	return ERC20Transfer{
 		BlockNumber:     tx.BlockNumber,
 		Timestamp:       tx.TimeStamp.Time(),
@@ -209,6 +210,7 @@ func EtherscanERC20TransferToCommon(tx etherscan.ERC20Transfer) ERC20Transfer {
 		Gas:             tx.Gas,
 		GasUsed:         tx.GasUsed,
 		GasPrice:        tx.GasPrice.Int(),
+		AddressType:     addressType.String(),
 	}
 }
 

@@ -162,6 +162,35 @@ func TestERC20Transfer(t *testing.T) {
 			Gas:             1000000,
 			GasUsed:         93657,
 			GasPrice:        big.NewInt(20000000000),
+			AddressType:     common.Reserve.String(),
+		},
+		{
+			BlockNumber:     2228258,
+			Timestamp:       txTimestamp,
+			Hash:            ethereum.HexToHash("0xf0ddb076798afba4fc507e96333aaa9a610b76b6774fdd94c10b78b06e18f9e6"),
+			From:            ethereum.HexToAddress("0x4e83362442b8d1bec281594cea3050c8eb01311c"),
+			ContractAddress: ethereum.HexToAddress("0xecf8f87f810ecf450940c9f60066b4a7a501d6a7"),
+			To:              ethereum.HexToAddress("0xac75b73394c329376c214663d92156afa864a77f"),
+			Value:           txVal,
+			Gas:             1000000,
+			GasUsed:         93657,
+			GasPrice:        big.NewInt(20000000000),
+			AddressType:     common.CompanyWallet.String(),
+		},
+	}
+
+	confirmTxs := []common.ERC20Transfer{
+		{
+			BlockNumber:     2228258,
+			Timestamp:       txTimestamp,
+			Hash:            ethereum.HexToHash("0x5f2cd76fd3656686e356bc02cc91d8d0726a16936fd08e67ed30467053225a86"),
+			From:            ethereum.HexToAddress("0x4e83362442b8d1bec281594cea3050c8eb01311c"),
+			ContractAddress: ethereum.HexToAddress("0xecf8f87f810ecf450940c9f60066b4a7a501d6a7"),
+			To:              ethereum.HexToAddress("0xac75b73394c329376c214663d92156afa864a77f"),
+			Value:           txVal,
+			Gas:             1000000,
+			GasUsed:         93657,
+			GasPrice:        big.NewInt(20000000000),
 		},
 	}
 
@@ -169,13 +198,13 @@ func TestERC20Transfer(t *testing.T) {
 	require.NoError(t, err)
 	txs, err := s.GetERC20Transfer(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
-	assert.Equal(t, testTxs, txs)
+	assert.Equal(t, confirmTxs, txs)
 
 	err = s.StoreERC20Transfer(testTxs)
 	require.NoError(t, err)
 	txs, err = s.GetERC20Transfer(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
-	assert.Equal(t, testTxs, txs)
+	assert.Equal(t, confirmTxs, txs)
 
 	txs, err = s.GetERC20Transfer(txTimestamp.Add(time.Second*2), txTimestamp.Add(time.Second*3))
 	require.NoError(t, err)

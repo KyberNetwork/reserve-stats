@@ -4,9 +4,9 @@ package common
 
 import "strconv"
 
-const _AddressType_name = "reservepricing_operatorsanity_operatorintermediate_operatorcex_deposit_address"
+const _AddressType_name = "reservepricing_operatorsanity_operatorintermediate_operatorcex_deposit_addresscompany_wallet"
 
-var _AddressType_index = [...]uint8{0, 7, 23, 38, 59, 78}
+var _AddressType_index = [...]uint8{0, 7, 23, 38, 59, 78, 92}
 
 func (i AddressType) String() string {
 	if i < 0 || i >= AddressType(len(_AddressType_index)-1) {

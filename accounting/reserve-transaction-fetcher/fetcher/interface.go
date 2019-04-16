@@ -13,5 +13,5 @@ import (
 type TransactionFetcher interface {
 	NormalTx(addr ethereum.Address, from, to *big.Int) ([]common.NormalTx, error)
 	InternalTx(addr ethereum.Address, from, to *big.Int) ([]common.InternalTx, error)
-	ERC20Transfer(addr ethereum.Address, from, to *big.Int) ([]common.ERC20Transfer, error)
+	ERC20Transfer(addr ethereum.Address, from, to *big.Int, addressType common.AddressType) ([]common.ERC20Transfer, error)
 }

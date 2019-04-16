@@ -151,7 +151,7 @@ func (f *EtherscanTransactionFetcher) InternalTx(addr ethereum.Address, from, to
 }
 
 // ERC20Transfer returns all ERC20 transfers of given address between given block range.
-func (f *EtherscanTransactionFetcher) ERC20Transfer(addr ethereum.Address, from, to *big.Int) ([]common.ERC20Transfer, error) {
+func (f *EtherscanTransactionFetcher) ERC20Transfer(addr ethereum.Address, from, to *big.Int, addressType common.AddressType) ([]common.ERC20Transfer, error) {
 	fn := newFetchFunction("transfer", func(address string, startBlock *int, endBlock *int, page int, offset int) ([]interface{}, error) {
 		transfers, err := f.client.ERC20Transfers(nil, &address, startBlock, endBlock, page, offset)
 		if err != nil {
@@ -172,7 +172,7 @@ func (f *EtherscanTransactionFetcher) ERC20Transfer(addr ethereum.Address, from,
 	transfers := make([]common.ERC20Transfer, len(results))
 	for i, v := range results {
 		transfer := v.(etherscan.ERC20Transfer)
-		transfers[i] = common.EtherscanERC20TransferToCommon(transfer)
+		transfers[i] = common.EtherscanERC20TransferToCommon(transfer, addressType)
 	}
 	return transfers, nil
 }

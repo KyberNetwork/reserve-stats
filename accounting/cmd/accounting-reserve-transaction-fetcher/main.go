@@ -75,7 +75,7 @@ func fetchTx(
 	// to hold any ERC20 tokens.
 	if addr.Type == common.Reserve || addr.Type == common.IntermediateOperator || addr.Type == common.CompanyWallet {
 		logger.Infow("fetching ERC20 transactions")
-		transfers, err := f.ERC20Transfer(addr.Address, fromBlock, toBlock)
+		transfers, err := f.ERC20Transfer(addr.Address, fromBlock, toBlock, addr.Type)
 		if err != nil {
 			return err
 		}

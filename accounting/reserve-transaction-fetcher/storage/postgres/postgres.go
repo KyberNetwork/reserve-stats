@@ -307,14 +307,16 @@ func (s *Storage) GetERC20Transfer(from time.Time, to time.Time) ([]common.ERC20
 	const selectStmt = `SELECT data
 FROM "%[1]s"
 WHERE data ->> 'timestamp' >= $1
-  AND data ->> 'timestamp' < $2`
+	AND data ->> 'timestamp' < $2
+	AND data ->> 'address-type' <> $3::text`
 	query := fmt.Sprintf(selectStmt, s.tableNames.ERC20)
 	logger.Debugw("querying ERC20 transfers from database", "query", query)
 	if err := s.db.Select(
 		&dbResult,
 		query,
 		timeutil.TimeToTimestampMs(from),
-		timeutil.TimeToTimestampMs(to)); err != nil {
+		timeutil.TimeToTimestampMs(to),
+		common.CompanyWallet.String()); err != nil {
 		return nil, err
 	}
 	for _, data := range dbResult {
@@ -389,12 +391,14 @@ func (s *Storage) GetWalletERC20Transfers(wallet, token ethereum.Address, from, 
 	)
 	const selectStmt = `SELECT data FROM %[1]s WHERE ((data->>'timestamp')>=$1::text AND (data->>'timestamp')<$2::text) AND
 	($3 OR (data->>'from'=$4 OR data->>'to'=$4)) AND
-	($5 OR data->>'contractAddress'=$6)`
+	($5 OR data->>'contractAddress'=$6)
+	AND (data->>'address-type' = $7)`
 	query := fmt.Sprintf(selectStmt, s.tableNames.ERC20)
 	logger.Debugw("querying ERC20 transfers history...", "query", query)
 	walletFilter := blockchain.IsZeroAddress(wallet)
 	tokenFilter := blockchain.IsZeroAddress(token)
-	if err := s.db.Select(&dbResult, query, timeutil.TimeToTimestampMs(from), timeutil.TimeToTimestampMs(to), walletFilter, wallet.Hex(), tokenFilter, token.Hex()); err != nil {
+	if err := s.db.Select(&dbResult, query, timeutil.TimeToTimestampMs(from), timeutil.TimeToTimestampMs(to),
+		walletFilter, wallet.Hex(), tokenFilter, token.Hex(), common.CompanyWallet.String()); err != nil {
 		return result, err
 	}
 	logger.Debugw("result", "len", len(dbResult))

@@ -139,6 +139,7 @@ func (et ERC20Transfer) MarshalJSON() ([]byte, error) {
 		From            string  `json:"from"`
 		ContractAddress string  `json:"contractAddress"`
 		To              string  `json:"to"`
+		AddressType     string  `json:"address-type"`
 		AliasErc20
 	}{
 		Timestamp:       ts,
@@ -146,6 +147,7 @@ func (et ERC20Transfer) MarshalJSON() ([]byte, error) {
 		From:            et.From.Hex(),
 		ContractAddress: et.ContractAddress.Hex(),
 		To:              et.To.Hex(),
+		AddressType:     et.AddressType,
 		AliasErc20:      (AliasErc20)(et),
 	})
 }

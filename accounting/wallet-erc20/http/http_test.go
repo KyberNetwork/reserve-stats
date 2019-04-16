@@ -40,7 +40,7 @@ func TestERC20Transfer(t *testing.T) {
 	s.register()
 
 	// prepare data
-	testReserveRates := []common.ERC20Transfer{
+	testWalletERC20Transfer := []common.ERC20Transfer{
 		{
 			Timestamp:       timeutil.TimestampMsToTime(1554094535000),
 			Hash:            ethereum.HexToHash("0xf18cc8635570d4be2ec39a89234219bce64785333978c56f98c6772a9a200942"),
@@ -52,6 +52,7 @@ func TestERC20Transfer(t *testing.T) {
 			Gas:             376367,
 			GasUsed:         321367,
 			GasPrice:        big.NewInt(4179327936),
+			AddressType:     common.CompanyWallet.String(),
 		},
 		{
 			Timestamp:       timeutil.TimestampMsToTime(1554199276000),
@@ -64,10 +65,11 @@ func TestERC20Transfer(t *testing.T) {
 			Gas:             338021,
 			GasUsed:         191589,
 			GasPrice:        big.NewInt(6000000000),
+			AddressType:     common.CompanyWallet.String(),
 		},
 	}
 
-	err = rts.StoreERC20Transfer(testReserveRates)
+	err = rts.StoreERC20Transfer(testWalletERC20Transfer)
 	require.NoError(t, err)
 
 	var tests = []httputil.HTTPTestCase{

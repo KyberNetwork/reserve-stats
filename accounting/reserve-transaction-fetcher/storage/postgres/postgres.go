@@ -22,6 +22,7 @@ var defaultTableNames = &tableNames{
 	Internal:     "rsv_tx_internal",
 	ERC20:        "rsv_tx_erc20",
 	LastInserted: "rsv_tx_last_inserted",
+	TxsReserves:  "rsv_txs_reserves",
 }
 
 // tableNames contains name of all PostgreSQL tables used for this this.
@@ -30,6 +31,7 @@ type tableNames struct {
 	Internal     string
 	ERC20        string
 	LastInserted string
+	TxsReserves  string
 }
 
 // Storage is the an implementation of storage.ReserveTransactionStorage interface using PostgresQL.
@@ -72,7 +74,8 @@ CREATE INDEX IF NOT EXISTS "%[2]s_time_idx" ON "%[2]s" ((data ->> 'timestamp'));
 -- create table tx erc20
 CREATE TABLE IF NOT EXISTS "%[3]s"
 (
-    data JSONB NOT NULL UNIQUE
+		data JSONB NOT NULL UNIQUE,
+		tx_hash text NOT NULL PRIMARY KEY
 );
 
 CREATE INDEX IF NOT EXISTS "%[3]s_time_idx" ON "%[3]s" ((data ->> 'timestamp'),
@@ -83,7 +86,17 @@ CREATE TABLE IF NOT EXISTS "%[4]s"
 (
     address       text   NOT NULL PRIMARY KEY,
     last_inserted BIGINT NOT NULL
-);`
+);
+
+-- create table link from 
+CREATE TABLE IF NOT EXISTS "%[5]s"
+(
+	tx_hash_key text REFERENCES "%[3]s" (tx_hash),
+	reserve_type text NOT NULL,
+	PRIMARY KEY (tx_hash_key, reserve_type)
+);
+
+`
 
 	s := &Storage{sugar: sugar, db: db}
 	for _, option := range options {
@@ -93,11 +106,14 @@ CREATE TABLE IF NOT EXISTS "%[4]s"
 		s.tableNames = defaultTableNames
 	}
 
+	logger.Debugw("txs reserves table", "table", s.tableNames.TxsReserves)
+
 	query := fmt.Sprintf(schemaFmt,
 		s.tableNames.Normal,
 		s.tableNames.Internal,
 		s.tableNames.ERC20,
-		s.tableNames.LastInserted)
+		s.tableNames.LastInserted,
+		s.tableNames.TxsReserves)
 	logger.Infow("initializing database schema", "query", query)
 	if _, err := db.Exec(query); err != nil {
 		return nil, err
@@ -113,12 +129,14 @@ func (s *Storage) TearDown() error {
 	DROP TABLE %[2]s CASCADE;
 	DROP TABLE %[3]s CASCADE;
 	DROP TABLE %[4]s CASCADE;
+	DROP TABLE %[5]s CASCADE;
 	`
 	query := fmt.Sprintf(dropFmt,
 		s.tableNames.Normal,
 		s.tableNames.Internal,
 		s.tableNames.ERC20,
 		s.tableNames.LastInserted,
+		s.tableNames.TxsReserves,
 	)
 	logger.Debugw("cleanup database", "query", query)
 	_, err := s.db.Exec(query)
@@ -260,18 +278,25 @@ WHERE data ->> 'timestamp' >= $1
 }
 
 //StoreERC20Transfer save ERC20 transfer
-func (s *Storage) StoreERC20Transfer(txs []common.ERC20Transfer) (err error) {
+func (s *Storage) StoreERC20Transfer(txs []common.ERC20Transfer, reserveType string) (err error) {
 	var logger = s.sugar.With(
 		"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreERC20Transfer",
 	)
 
-	const updateStmt = `INSERT INTO "%[1]s"(data)
-VALUES ($1)
+	const (
+		updateStmt = `INSERT INTO "%[1]s"(tx_hash, data)
+VALUES ($1, $2)
 ON CONFLICT DO NOTHING;
 `
+		insertStmt = `INSERT INTO "%[1]s" (tx_hash_key, reserve_type)
+	VALUES ($1, $2)
+		ON CONFLICT DO NOTHING;`
+	)
 
 	query := fmt.Sprintf(updateStmt, s.tableNames.ERC20)
 	logger.Debugw("storing ERC20 transfers to database", "query", query)
+
+	insertTxRsvQuery := fmt.Sprintf(insertStmt, s.tableNames.TxsReserves)
 
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -285,7 +310,13 @@ ON CONFLICT DO NOTHING;
 			return
 		}
 
-		if _, err = tx.Exec(query, data); err != nil {
+		// insert into rsv_erc20_txs
+		if _, err = tx.Exec(query, t.Hash.Hex(), data); err != nil {
+			return
+		}
+
+		// insert into txs_reserves
+		if _, err = tx.Exec(insertTxRsvQuery, t.Hash.Hex(), reserveType); err != nil {
 			return
 		}
 	}
@@ -306,10 +337,11 @@ func (s *Storage) GetERC20Transfer(from time.Time, to time.Time) ([]common.ERC20
 	)
 	const selectStmt = `SELECT data
 FROM "%[1]s"
+JOIN "%[2]s" AS reserve ON reserve.tx_hash_key = %[1]s.tx_hash
 WHERE data ->> 'timestamp' >= $1
 	AND data ->> 'timestamp' < $2
-	AND data ->> 'address-type' <> $3::text`
-	query := fmt.Sprintf(selectStmt, s.tableNames.ERC20)
+	AND reserve.reserve_type <> $3`
+	query := fmt.Sprintf(selectStmt, s.tableNames.ERC20, s.tableNames.TxsReserves)
 	logger.Debugw("querying ERC20 transfers from database", "query", query)
 	if err := s.db.Select(
 		&dbResult,
@@ -389,11 +421,11 @@ func (s *Storage) GetWalletERC20Transfers(wallet, token ethereum.Address, from, 
 		)
 		tmp common.ERC20Transfer
 	)
-	const selectStmt = `SELECT data FROM %[1]s WHERE ((data->>'timestamp')>=$1::text AND (data->>'timestamp')<$2::text) AND
+	const selectStmt = `SELECT data FROM %[1]s JOIN "%[2]s" as reserve ON reserve.tx_hash_key = %[1]s.tx_hash WHERE ((data->>'timestamp')>=$1::text AND (data->>'timestamp')<$2::text) AND
 	($3 OR (data->>'from'=$4 OR data->>'to'=$4)) AND
 	($5 OR data->>'contractAddress'=$6)
-	AND (data->>'address-type' = $7)`
-	query := fmt.Sprintf(selectStmt, s.tableNames.ERC20)
+	AND reserve.reserve_type = $7`
+	query := fmt.Sprintf(selectStmt, s.tableNames.ERC20, s.tableNames.TxsReserves)
 	logger.Debugw("querying ERC20 transfers history...", "query", query)
 	walletFilter := blockchain.IsZeroAddress(wallet)
 	tokenFilter := blockchain.IsZeroAddress(token)

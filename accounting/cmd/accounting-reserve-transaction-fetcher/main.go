@@ -81,7 +81,7 @@ func fetchTx(
 		}
 		logger.Infow("storing ERC20 transfers to database", "transfers", len(transfers))
 		if len(transfers) > 0 {
-			if err = s.StoreERC20Transfer(transfers); err != nil {
+			if err = s.StoreERC20Transfer(transfers, addr.Type.String()); err != nil {
 				return err
 			}
 		}

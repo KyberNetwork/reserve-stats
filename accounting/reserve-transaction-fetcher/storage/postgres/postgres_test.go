@@ -91,6 +91,7 @@ func TestInternalTx(t *testing.T) {
 		Internal:     "internal_test_internal_tx",
 		ERC20:        "erc20_test_internal_tx",
 		LastInserted: "last_inserted_test_internal_tx",
+		TxsReserves:  "test_rsv_txs_reserves",
 	}))
 	require.NoError(t, err)
 
@@ -139,6 +140,7 @@ func TestERC20Transfer(t *testing.T) {
 		Internal:     "internal_test_erc20_transfer",
 		ERC20:        "erc20_test_erc20_transfer",
 		LastInserted: "last_inserted_erc20_transfer",
+		TxsReserves:  "test_rsv_txs_reserves",
 	}))
 	require.NoError(t, err)
 
@@ -162,7 +164,6 @@ func TestERC20Transfer(t *testing.T) {
 			Gas:             1000000,
 			GasUsed:         93657,
 			GasPrice:        big.NewInt(20000000000),
-			AddressType:     common.Reserve.String(),
 		},
 		{
 			BlockNumber:     2228258,
@@ -175,36 +176,20 @@ func TestERC20Transfer(t *testing.T) {
 			Gas:             1000000,
 			GasUsed:         93657,
 			GasPrice:        big.NewInt(20000000000),
-			AddressType:     common.CompanyWallet.String(),
 		},
 	}
 
-	confirmTxs := []common.ERC20Transfer{
-		{
-			BlockNumber:     2228258,
-			Timestamp:       txTimestamp,
-			Hash:            ethereum.HexToHash("0x5f2cd76fd3656686e356bc02cc91d8d0726a16936fd08e67ed30467053225a86"),
-			From:            ethereum.HexToAddress("0x4e83362442b8d1bec281594cea3050c8eb01311c"),
-			ContractAddress: ethereum.HexToAddress("0xecf8f87f810ecf450940c9f60066b4a7a501d6a7"),
-			To:              ethereum.HexToAddress("0xac75b73394c329376c214663d92156afa864a77f"),
-			Value:           txVal,
-			Gas:             1000000,
-			GasUsed:         93657,
-			GasPrice:        big.NewInt(20000000000),
-		},
-	}
-
-	err = s.StoreERC20Transfer(testTxs)
+	err = s.StoreERC20Transfer(testTxs, common.Reserve.String())
 	require.NoError(t, err)
 	txs, err := s.GetERC20Transfer(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
-	assert.Equal(t, confirmTxs, txs)
+	assert.Equal(t, testTxs, txs)
 
-	err = s.StoreERC20Transfer(testTxs)
+	err = s.StoreERC20Transfer(testTxs, common.Reserve.String())
 	require.NoError(t, err)
 	txs, err = s.GetERC20Transfer(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
-	assert.Equal(t, confirmTxs, txs)
+	assert.Equal(t, testTxs, txs)
 
 	txs, err = s.GetERC20Transfer(txTimestamp.Add(time.Second*2), txTimestamp.Add(time.Second*3))
 	require.NoError(t, err)
@@ -219,6 +204,7 @@ func TestLastInserted(t *testing.T) {
 		Internal:     "internal_test_last_inserted",
 		ERC20:        "erc20_test_last_inserted",
 		LastInserted: "last_inserted_test_last_inserted",
+		TxsReserves:  "test_rsv_txs_reserves",
 	}))
 	require.NoError(t, err)
 

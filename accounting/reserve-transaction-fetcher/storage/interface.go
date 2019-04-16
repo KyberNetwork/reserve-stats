@@ -15,10 +15,10 @@ type ReserveTransactionStorage interface {
 	GetNormalTx(from time.Time, to time.Time) ([]common.NormalTx, error)
 
 	StoreInternalTx([]common.InternalTx) error
-	GetInternalTx(from time.Time, to time.Time) ([]common.InternalTx, error)
+	GetInternalTx(from, to time.Time) ([]common.InternalTx, error)
 
-	StoreERC20Transfer([]common.ERC20Transfer) error
-	GetERC20Transfer(from time.Time, to time.Time) ([]common.ERC20Transfer, error)
+	StoreERC20Transfer([]common.ERC20Transfer, string) error
+	GetERC20Transfer(from, to time.Time) ([]common.ERC20Transfer, error)
 
 	GetWalletERC20Transfers(WalletAddr, TokenAddr ethereum.Address, from, to time.Time) ([]common.ERC20Transfer, error)
 

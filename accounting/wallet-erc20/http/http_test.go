@@ -39,6 +39,10 @@ func TestERC20Transfer(t *testing.T) {
 	require.NoError(t, err)
 	s.register()
 
+	defer func(t *testing.T) {
+		require.NoError(t, rts.TearDown())
+	}(t)
+
 	// prepare data
 	testWalletERC20Transfer := []common.ERC20Transfer{
 		{
@@ -65,11 +69,10 @@ func TestERC20Transfer(t *testing.T) {
 			Gas:             338021,
 			GasUsed:         191589,
 			GasPrice:        big.NewInt(6000000000),
-			AddressType:     common.CompanyWallet.String(),
 		},
 	}
 
-	err = rts.StoreERC20Transfer(testWalletERC20Transfer)
+	err = rts.StoreERC20Transfer(testWalletERC20Transfer, common.CompanyWallet.String())
 	require.NoError(t, err)
 
 	var tests = []httputil.HTTPTestCase{

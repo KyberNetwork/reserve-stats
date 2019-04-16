@@ -56,7 +56,6 @@ func TestERC20Transfer(t *testing.T) {
 			Gas:             376367,
 			GasUsed:         321367,
 			GasPrice:        big.NewInt(4179327936),
-			AddressType:     common.CompanyWallet.String(),
 		},
 		{
 			Timestamp:       timeutil.TimestampMsToTime(1554199276000),

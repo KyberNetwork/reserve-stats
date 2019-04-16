@@ -121,7 +121,6 @@ type ERC20Transfer struct {
 	Gas             int              `json:"gas,string"`
 	GasUsed         int              `json:"gasUsed,string"`
 	GasPrice        *big.Int         `json:"gasPrice"`
-	AddressType     string           `json:"-"`
 }
 
 //MarshalJSON return marshal form of erc20transfer
@@ -139,7 +138,6 @@ func (et ERC20Transfer) MarshalJSON() ([]byte, error) {
 		From            string  `json:"from"`
 		ContractAddress string  `json:"contractAddress"`
 		To              string  `json:"to"`
-		AddressType     string  `json:"address-type"`
 		AliasErc20
 	}{
 		Timestamp:       ts,
@@ -147,7 +145,6 @@ func (et ERC20Transfer) MarshalJSON() ([]byte, error) {
 		From:            et.From.Hex(),
 		ContractAddress: et.ContractAddress.Hex(),
 		To:              et.To.Hex(),
-		AddressType:     et.AddressType,
 		AliasErc20:      (AliasErc20)(et),
 	})
 }
@@ -212,7 +209,6 @@ func EtherscanERC20TransferToCommon(tx etherscan.ERC20Transfer, addressType stri
 		Gas:             tx.Gas,
 		GasUsed:         tx.GasUsed,
 		GasPrice:        tx.GasPrice.Int(),
-		AddressType:     addressType,
 	}
 }
 

@@ -22,6 +22,7 @@ func TestNormalTx(t *testing.T) {
 		Internal:     "internal_test_normal_tx",
 		ERC20:        "erc20_test_normal_tx",
 		LastInserted: "last_inserted_test_normal_tx",
+		TxsReserves:  "test_rsv_txs_reserves",
 	}))
 	require.NoError(t, err)
 

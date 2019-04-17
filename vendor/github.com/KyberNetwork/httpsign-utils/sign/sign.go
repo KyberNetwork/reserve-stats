@@ -1,4 +1,4 @@
-package httputil
+package sign
 
 import (
 	"bytes"
@@ -6,12 +6,12 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
-
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"time"
 )
 
 const (
@@ -32,7 +32,7 @@ func Sign(r *http.Request, keyID, secret string) (*http.Request, error) {
 	}
 	r.Header.Set(digest, digestBody)
 	// Set nonce
-	currentNonce := timeutil.UnixMilliSecond()
+	currentNonce := time.Now().UnixNano() / int64(time.Millisecond)
 	r.Header.Set(nonce, fmt.Sprintf("%d", currentNonce))
 	// Create sign string
 	var signBuffer bytes.Buffer
@@ -65,6 +65,7 @@ func calculateDigest(r *http.Request) (string, error) {
 	if r.Body == nil || r.ContentLength == 0 {
 		return "", nil
 	}
+
 	body, err := r.GetBody()
 	if err != nil {
 		return "", err
@@ -74,6 +75,7 @@ func calculateDigest(r *http.Request) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	hex.EncodeToString(h.Sum(nil))
 	digest := fmt.Sprintf("SHA-256=%s", base64.StdEncoding.EncodeToString(h.Sum(nil)))
 	return digest, nil
 }

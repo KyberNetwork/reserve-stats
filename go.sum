@@ -9,6 +9,8 @@ git.apache.org/thrift.git v0.0.0-20180902110319-2566ecd5d999/go.mod h1:fPE2ZNJGy
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Knetic/govaluate v3.0.0+incompatible h1:7o6+MAPhYTCF0+fdvoz1xDedhRb4f6s9Tn1Tt7/WTEg=
 github.com/Knetic/govaluate v3.0.0+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
+github.com/KyberNetwork/httpsign-utils v0.1.1 h1:+iu+DjS8UpEVCvjfc0DaeIc3a79tj8tpR0B/z09S7Qk=
+github.com/KyberNetwork/httpsign-utils v0.1.1/go.mod h1:ei9f4goMiAdxKtXl2ihlY1a+WJKLb5g3Ne8Uz9gVkNQ=
 github.com/KyberNetwork/tokenrate v0.0.0-20181015045844-27abfb84ae1c h1:9+tFR7G+AVDeflRcG/lUWFiu1dkZzHjrUwZ13y6JQv8=
 github.com/KyberNetwork/tokenrate v0.0.0-20181015045844-27abfb84ae1c/go.mod h1:zvMeMoRv7rJjd/q7FkNygUM47UsNjt/fXcbuwpuifKA=
 github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYUyUczH0OGQWaF5ceTx0UBShxjsH6f8oGKYe2c=
@@ -48,6 +50,8 @@ github.com/gin-contrib/cors v0.0.0-20181008113111-488de3ec974f h1:7kBk9VE4vAlHGs
 github.com/gin-contrib/cors v0.0.0-20181008113111-488de3ec974f/go.mod h1:cw+u9IsAkC16e42NtYYVCLsHYXE98nB3M7Dr9mLSeH4=
 github.com/gin-contrib/httpsign v0.0.0-20181102021455-787f0a566bf9 h1:EZGywyAFgdjPIDBuMfDeZh5JrktGhFtDXli6yrCuu74=
 github.com/gin-contrib/httpsign v0.0.0-20181102021455-787f0a566bf9/go.mod h1:jQWyiaAcpbwcIj3WnGeKmJobobFZlaqWfZVz2ln2pbQ=
+github.com/gin-contrib/httpsign v0.0.0-20190301062400-d644b4c2b4c5 h1:fyj5xoZOfnNvpuRr1pwOpYVFEblJmNdZ+tIptamunSw=
+github.com/gin-contrib/httpsign v0.0.0-20190301062400-d644b4c2b4c5/go.mod h1:jQWyiaAcpbwcIj3WnGeKmJobobFZlaqWfZVz2ln2pbQ=
 github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 h1:AzN37oI0cOS+cougNAV9szl6CVoj2RYwzS3DpUQNtlY=
 github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7/go.mod h1:VJ0WA2NBN22VlZ2dKZQPAPnyWw5XTlK1KymzLKsr59s=
 github.com/gin-contrib/zap v0.0.0-20180827024651-a4f331736217 h1:Wehz4qCxQmK12V7/uCHqYVGGZ6qTf5vtKz9AzcX0pGc=

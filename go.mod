@@ -2,6 +2,7 @@ module github.com/KyberNetwork/reserve-stats
 
 require (
 	github.com/Knetic/govaluate v3.0.0+incompatible // indirect
+	github.com/KyberNetwork/httpsign-utils v0.1.1
 	github.com/KyberNetwork/tokenrate v0.0.0-20181015045844-27abfb84ae1c
 	github.com/aristanetworks/goarista v0.0.0-20181002214814-33151c4543a7 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
@@ -14,7 +15,7 @@ require (
 	github.com/ethereum/go-ethereum v1.8.17
 	github.com/fjl/memsize v0.0.0-20180929194037-2a09253e352a // indirect
 	github.com/gin-contrib/cors v0.0.0-20181008113111-488de3ec974f
-	github.com/gin-contrib/httpsign v0.0.0-20181102021455-787f0a566bf9
+	github.com/gin-contrib/httpsign v0.0.0-20190301062400-d644b4c2b4c5
 	github.com/gin-contrib/zap v0.0.0-20180827024651-a4f331736217
 	github.com/gin-gonic/gin v1.3.0
 	github.com/go-ozzo/ozzo-validation v3.5.0+incompatible

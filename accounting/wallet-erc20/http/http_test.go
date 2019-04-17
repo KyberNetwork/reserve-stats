@@ -43,6 +43,9 @@ func TestERC20Transfer(t *testing.T) {
 		require.NoError(t, rts.TearDown())
 	}(t)
 
+	err = rts.StoreReserve(ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"), common.CompanyWallet.String())
+	require.NoError(t, err)
+
 	// prepare data
 	testWalletERC20Transfer := []common.ERC20Transfer{
 		{
@@ -71,7 +74,7 @@ func TestERC20Transfer(t *testing.T) {
 		},
 	}
 
-	err = rts.StoreERC20Transfer(testWalletERC20Transfer, common.CompanyWallet.String())
+	err = rts.StoreERC20Transfer(testWalletERC20Transfer, ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"))
 	require.NoError(t, err)
 
 	var tests = []httputil.HTTPTestCase{
@@ -83,6 +86,7 @@ func TestERC20Transfer(t *testing.T) {
 				assert.Equal(t, http.StatusOK, resp.Code)
 
 				var result []common.ERC20Transfer
+				sugar.Debugw("resutl", "response", resp.Body)
 				if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 					t.Error("Could not decode result", "err", err)
 				}

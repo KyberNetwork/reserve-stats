@@ -75,13 +75,13 @@ func fetchTx(
 	// to hold any ERC20 tokens.
 	if addr.Type == common.Reserve || addr.Type == common.IntermediateOperator || addr.Type == common.CompanyWallet {
 		logger.Infow("fetching ERC20 transactions")
-		transfers, err := f.ERC20Transfer(addr.Address, fromBlock, toBlock, addr.Type)
+		transfers, err := f.ERC20Transfer(addr.Address, fromBlock, toBlock)
 		if err != nil {
 			return err
 		}
 		logger.Infow("storing ERC20 transfers to database", "transfers", len(transfers))
 		if len(transfers) > 0 {
-			if err = s.StoreERC20Transfer(transfers, addr.Type.String()); err != nil {
+			if err = s.StoreERC20Transfer(transfers, addr.Address); err != nil {
 				return err
 			}
 		}
@@ -211,6 +211,9 @@ func run(c *cli.Context) error {
 	f := fetcher.NewEtherscanTransactionFetcher(sugar, etherscanClient)
 	for _, addr := range addrs {
 		fromBlock, toBlock, addr := fromBlock, toBlock, addr
+		if err := s.StoreReserve(addr.Address, addr.Type.String()); err != nil {
+			return err
+		}
 
 		lastInserted, err := s.GetLastInserted(addr.Address)
 		if err != nil {

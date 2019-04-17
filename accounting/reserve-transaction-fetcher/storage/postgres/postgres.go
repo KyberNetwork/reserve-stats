@@ -22,6 +22,7 @@ var defaultTableNames = &tableNames{
 	Internal:     "rsv_tx_internal",
 	ERC20:        "rsv_tx_erc20",
 	LastInserted: "rsv_tx_last_inserted",
+	Reserves:     "rsv_tx_reserves",
 	TxsReserves:  "rsv_txs_reserves",
 }
 
@@ -31,6 +32,7 @@ type tableNames struct {
 	Internal     string
 	ERC20        string
 	LastInserted string
+	Reserves     string
 	TxsReserves  string
 }
 
@@ -74,8 +76,8 @@ CREATE INDEX IF NOT EXISTS "%[2]s_time_idx" ON "%[2]s" ((data ->> 'timestamp'));
 -- create table tx erc20
 CREATE TABLE IF NOT EXISTS "%[3]s"
 (
-		data JSONB NOT NULL UNIQUE,
-		tx_hash text NOT NULL PRIMARY KEY
+	  id SERIAL PRIMARY KEY,
+		data JSONB NOT NULL UNIQUE
 );
 
 CREATE INDEX IF NOT EXISTS "%[3]s_time_idx" ON "%[3]s" ((data ->> 'timestamp'),
@@ -85,15 +87,22 @@ CREATE INDEX IF NOT EXISTS "%[3]s_time_idx" ON "%[3]s" ((data ->> 'timestamp'),
 CREATE TABLE IF NOT EXISTS "%[4]s"
 (
     address       text   NOT NULL PRIMARY KEY,
-    last_inserted BIGINT NOT NULL
+		last_inserted BIGINT NOT NULL
 );
 
--- create table link from 
+-- create table reserves
 CREATE TABLE IF NOT EXISTS "%[5]s"
 (
-	tx_hash_key text REFERENCES "%[3]s" (tx_hash),
-	reserve_type text NOT NULL,
-	PRIMARY KEY (tx_hash_key, reserve_type)
+	address text NOT NULL PRIMARY KEY,
+	address_type text NOT NULL
+);
+
+-- create table link from tx to reserve
+CREATE TABLE IF NOT EXISTS "%[6]s"
+(
+	tx_id int REFERENCES "%[3]s" (id),
+	address_key text REFERENCES "%[5]s" (address),
+	PRIMARY KEY (tx_id, address_key)
 );
 
 `
@@ -113,6 +122,7 @@ CREATE TABLE IF NOT EXISTS "%[5]s"
 		s.tableNames.Internal,
 		s.tableNames.ERC20,
 		s.tableNames.LastInserted,
+		s.tableNames.Reserves,
 		s.tableNames.TxsReserves)
 	logger.Infow("initializing database schema", "query", query)
 	if _, err := db.Exec(query); err != nil {
@@ -141,6 +151,24 @@ func (s *Storage) TearDown() error {
 	logger.Debugw("cleanup database", "query", query)
 	_, err := s.db.Exec(query)
 	return err
+}
+
+//StoreReserve save fetching reserve address into database
+func (s *Storage) StoreReserve(reserve ethereum.Address, reserveType string) error {
+	var (
+		logger = s.sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreReserve")
+	)
+	const storeReserve = `INSERT INTO "%[1]s" (address, address_type)
+	VALUES ($1, $2) 
+	ON CONFLICT (address) DO NOTHING`
+
+	query := fmt.Sprintf(storeReserve, s.tableNames.Reserves)
+	logger.Debugw("query to store reserve into database", "query", query)
+
+	if _, err := s.db.Exec(query, reserve.Hex(), reserveType); err != nil {
+		return err
+	}
+	return nil
 }
 
 //StoreNormalTx store normal tx
@@ -278,17 +306,17 @@ WHERE data ->> 'timestamp' >= $1
 }
 
 //StoreERC20Transfer save ERC20 transfer
-func (s *Storage) StoreERC20Transfer(txs []common.ERC20Transfer, reserveType string) (err error) {
+func (s *Storage) StoreERC20Transfer(txs []common.ERC20Transfer, reserve ethereum.Address) (err error) {
 	var logger = s.sugar.With(
 		"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreERC20Transfer",
 	)
 
 	const (
-		updateStmt = `INSERT INTO "%[1]s"(tx_hash, data)
-VALUES ($1, $2)
-ON CONFLICT DO NOTHING;
+		updateStmt = `INSERT INTO "%[1]s"(data)
+VALUES ($1)
+ON CONFLICT DO NOTHING RETURNING id;
 `
-		insertStmt = `INSERT INTO "%[1]s" (tx_hash_key, reserve_type)
+		insertStmt = `INSERT INTO "%[1]s" (tx_id, address_key)
 	VALUES ($1, $2)
 		ON CONFLICT DO NOTHING;`
 	)
@@ -311,13 +339,20 @@ ON CONFLICT DO NOTHING;
 		}
 
 		// insert into rsv_erc20_txs
-		if _, err = tx.Exec(query, t.Hash.Hex(), data); err != nil {
+		var id int64
+		if err = tx.Get(&id, query, data); err != nil && err != sql.ErrNoRows {
 			return
 		}
 
+		if err == sql.ErrNoRows {
+			err = nil
+		}
+
 		// insert into txs_reserves
-		if _, err = tx.Exec(insertTxRsvQuery, t.Hash.Hex(), reserveType); err != nil {
-			return
+		if id != 0 {
+			if _, err = tx.Exec(insertTxRsvQuery, id, reserve.Hex()); err != nil {
+				return
+			}
 		}
 	}
 	return
@@ -337,11 +372,12 @@ func (s *Storage) GetERC20Transfer(from time.Time, to time.Time) ([]common.ERC20
 	)
 	const selectStmt = `SELECT data
 FROM "%[1]s"
-JOIN "%[2]s" AS reserve ON reserve.tx_hash_key = %[1]s.tx_hash
+JOIN "%[2]s" AS a ON a.tx_id = %[1]s.id
+JOIN "%[3]s" AS reserve ON a.address_key = reserve.address 
 WHERE data ->> 'timestamp' >= $1
 	AND data ->> 'timestamp' < $2
-	AND reserve.reserve_type <> $3`
-	query := fmt.Sprintf(selectStmt, s.tableNames.ERC20, s.tableNames.TxsReserves)
+	AND reserve.address_type <> $3`
+	query := fmt.Sprintf(selectStmt, s.tableNames.ERC20, s.tableNames.TxsReserves, s.tableNames.Reserves)
 	logger.Debugw("querying ERC20 transfers from database", "query", query)
 	if err := s.db.Select(
 		&dbResult,
@@ -421,11 +457,13 @@ func (s *Storage) GetWalletERC20Transfers(wallet, token ethereum.Address, from, 
 		)
 		tmp common.ERC20Transfer
 	)
-	const selectStmt = `SELECT data FROM %[1]s JOIN "%[2]s" as reserve ON reserve.tx_hash_key = %[1]s.tx_hash WHERE ((data->>'timestamp')>=$1::text AND (data->>'timestamp')<$2::text) AND
+	const selectStmt = `SELECT data FROM %[1]s 
+	JOIN "%[2]s" as a ON a.tx_id = %[1]s.id
+	JOIN "%[3]s" as reserve ON a.address_key = reserve.address WHERE ((data->>'timestamp')>=$1::text AND (data->>'timestamp')<$2::text) AND
 	($3 OR (data->>'from'=$4 OR data->>'to'=$4)) AND
 	($5 OR data->>'contractAddress'=$6)
-	AND reserve.reserve_type = $7`
-	query := fmt.Sprintf(selectStmt, s.tableNames.ERC20, s.tableNames.TxsReserves)
+	AND reserve.address_type = $7`
+	query := fmt.Sprintf(selectStmt, s.tableNames.ERC20, s.tableNames.TxsReserves, s.tableNames.Reserves)
 	logger.Debugw("querying ERC20 transfers history...", "query", query)
 	walletFilter := blockchain.IsZeroAddress(wallet)
 	tokenFilter := blockchain.IsZeroAddress(token)

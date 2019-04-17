@@ -22,6 +22,7 @@ func TestNormalTx(t *testing.T) {
 		Internal:     "internal_test_normal_tx",
 		ERC20:        "erc20_test_normal_tx",
 		LastInserted: "last_inserted_test_normal_tx",
+		Reserves:     "test_rsv_reserves",
 		TxsReserves:  "test_rsv_txs_reserves",
 	}))
 	require.NoError(t, err)
@@ -92,6 +93,7 @@ func TestInternalTx(t *testing.T) {
 		Internal:     "internal_test_internal_tx",
 		ERC20:        "erc20_test_internal_tx",
 		LastInserted: "last_inserted_test_internal_tx",
+		Reserves:     "test_rsv_reserves",
 		TxsReserves:  "test_rsv_txs_reserves",
 	}))
 	require.NoError(t, err)
@@ -141,6 +143,7 @@ func TestERC20Transfer(t *testing.T) {
 		Internal:     "internal_test_erc20_transfer",
 		ERC20:        "erc20_test_erc20_transfer",
 		LastInserted: "last_inserted_erc20_transfer",
+		Reserves:     "test_rsv_reserves",
 		TxsReserves:  "test_rsv_txs_reserves",
 	}))
 	require.NoError(t, err)
@@ -152,6 +155,9 @@ func TestERC20Transfer(t *testing.T) {
 	txTimestamp := timeutil.TimestampMsToTime(1473433992 * 1000).UTC()
 	txVal, ok := big.NewInt(0).SetString("101000000000000000000", 10)
 	require.True(t, ok)
+
+	err = s.StoreReserve(ethereum.HexToAddress("0x4e83362442b8d1bec281594cea3050c8eb01311c"), common.Reserve.String())
+	require.NoError(t, err)
 
 	testTxs := []common.ERC20Transfer{
 		{
@@ -180,13 +186,13 @@ func TestERC20Transfer(t *testing.T) {
 		},
 	}
 
-	err = s.StoreERC20Transfer(testTxs, common.Reserve.String())
+	err = s.StoreERC20Transfer(testTxs, ethereum.HexToAddress("0x4e83362442b8d1bec281594cea3050c8eb01311c"))
 	require.NoError(t, err)
 	txs, err := s.GetERC20Transfer(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
 	assert.Equal(t, testTxs, txs)
 
-	err = s.StoreERC20Transfer(testTxs, common.Reserve.String())
+	err = s.StoreERC20Transfer(testTxs, ethereum.HexToAddress("0x4e83362442b8d1bec281594cea3050c8eb01311c"))
 	require.NoError(t, err)
 	txs, err = s.GetERC20Transfer(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
@@ -205,6 +211,7 @@ func TestLastInserted(t *testing.T) {
 		Internal:     "internal_test_last_inserted",
 		ERC20:        "erc20_test_last_inserted",
 		LastInserted: "last_inserted_test_last_inserted",
+		Reserves:     "test_rsv_reserves",
 		TxsReserves:  "test_rsv_txs_reserves",
 	}))
 	require.NoError(t, err)

@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
@@ -57,7 +56,7 @@ func TestFetcher(t *testing.T) {
 		assert.Equal(t, expectedHashes[i], internalTxs[i].Hash)
 	}
 
-	transfers, err := f.ERC20Transfer(testAddr1, big.NewInt(7356442), big.NewInt(7356500), common.CompanyWallet)
+	transfers, err := f.ERC20Transfer(testAddr1, big.NewInt(7356442), big.NewInt(7356500))
 	require.NoError(t, err)
 	expectedHashes = []string{
 		"0x3dbb05df251ee6c5fe4a4334baa05dfcf9ef85295487b1fc2f9fe7b72a8b7b5f",

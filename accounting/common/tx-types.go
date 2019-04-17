@@ -197,7 +197,7 @@ func EtherscanInternalTxToCommon(tx etherscan.InternalTx) InternalTx {
 }
 
 //EtherscanERC20TransferToCommon transforms etherScan.ERC20Trasnfer to accounting's ERC20Transfer
-func EtherscanERC20TransferToCommon(tx etherscan.ERC20Transfer, addressType string) ERC20Transfer {
+func EtherscanERC20TransferToCommon(tx etherscan.ERC20Transfer) ERC20Transfer {
 	return ERC20Transfer{
 		BlockNumber:     tx.BlockNumber,
 		Timestamp:       tx.TimeStamp.Time(),

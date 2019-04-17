@@ -86,7 +86,6 @@ func TestERC20Transfer(t *testing.T) {
 				assert.Equal(t, http.StatusOK, resp.Code)
 
 				var result []common.ERC20Transfer
-				sugar.Debugw("resutl", "response", resp.Body)
 				if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 					t.Error("Could not decode result", "err", err)
 				}

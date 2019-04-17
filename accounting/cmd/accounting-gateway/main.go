@@ -9,6 +9,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/urfave/cli"
 
+	"github.com/KyberNetwork/httpsign-utils/authenticator"
 	"github.com/KyberNetwork/reserve-stats/gateway/http"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
@@ -179,9 +180,17 @@ func run(c *cli.Context) error {
 	if err := validation.Validate(c.String(writeSecretKeyFlag), validation.Required); err != nil {
 		return fmt.Errorf("secret key error: %s", err.Error())
 	}
-	auth, err := http.NewAuthenticator(c.String(readAccessKeyFlag), c.String(readSecretKeyFlag),
-		c.String(writeAccessKeyFlag), c.String(writeSecretKeyFlag),
-	)
+	keyPairs := []authenticator.KeyPair{
+		{
+			AccessKeyID:     c.String(readAccessKeyFlag),
+			SecretAccessKey: c.String(readSecretKeyFlag),
+		},
+		{
+			AccessKeyID:     c.String(writeAccessKeyFlag),
+			SecretAccessKey: c.String(writeSecretKeyFlag),
+		},
+	}
+	auth, err := authenticator.NewAuthenticator(keyPairs...)
 	if err != nil {
 		return fmt.Errorf("authentication object creation error: %s", err)
 	}

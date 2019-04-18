@@ -13,10 +13,10 @@ import (
 type ReserveTransactionStorage interface {
 	StoreReserve(ethereum.Address, string) error
 
-	StoreNormalTx([]common.NormalTx) error
+	StoreNormalTx([]common.NormalTx, ethereum.Address) error
 	GetNormalTx(from time.Time, to time.Time) ([]common.NormalTx, error)
 
-	StoreInternalTx([]common.InternalTx) error
+	StoreInternalTx([]common.InternalTx, ethereum.Address) error
 	GetInternalTx(from, to time.Time) ([]common.InternalTx, error)
 
 	StoreERC20Transfer([]common.ERC20Transfer, ethereum.Address) error

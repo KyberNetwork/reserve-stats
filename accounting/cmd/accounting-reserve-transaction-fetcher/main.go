@@ -51,7 +51,7 @@ func fetchTx(
 
 		if len(normalTxs) > 0 {
 			logger.Infow("storing normal transactions to database", "transactions", len(normalTxs))
-			if err = s.StoreNormalTx(normalTxs); err != nil {
+			if err = s.StoreNormalTx(normalTxs, addr.Address); err != nil {
 				return err
 			}
 		}
@@ -64,7 +64,7 @@ func fetchTx(
 
 		if len(internalTxs) > 0 {
 			logger.Infow("storing internal transactions to database", "transactions", len(internalTxs))
-			if err = s.StoreInternalTx(internalTxs); err != nil {
+			if err = s.StoreInternalTx(internalTxs, addr.Address); err != nil {
 				return err
 			}
 		}

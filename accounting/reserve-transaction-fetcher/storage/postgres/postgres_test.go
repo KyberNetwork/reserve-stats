@@ -37,6 +37,9 @@ func TestNormalTx(t *testing.T) {
 	txGasPrice, ok := big.NewInt(0).SetString("10000000000000", 10)
 	require.True(t, ok)
 
+	err = s.StoreReserve(ethereum.HexToAddress("0x5abfec25f74cd88437631a7731906932776356f9"), common.Reserve.String())
+	require.NoError(t, err)
+
 	testTxs := []common.NormalTx{
 		{
 			BlockNumber: 54092,
@@ -65,7 +68,7 @@ func TestNormalTx(t *testing.T) {
 			IsError:     0,
 		},
 	}
-	err = s.StoreNormalTx(testTxs)
+	err = s.StoreNormalTx(testTxs, ethereum.HexToAddress("0x5abfec25f74cd88437631a7731906932776356f9"))
 	require.NoError(t, err)
 	txs, err := s.GetNormalTx(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
@@ -74,7 +77,7 @@ func TestNormalTx(t *testing.T) {
 	// make sure we can safely insert duplicated transaction with value changed
 	testTxs[0].Gas++
 	testTxs[1].Gas++
-	err = s.StoreNormalTx(testTxs)
+	err = s.StoreNormalTx(testTxs, ethereum.HexToAddress("0x5abfec25f74cd88437631a7731906932776356f9"))
 	require.NoError(t, err)
 	txs, err = s.GetNormalTx(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
@@ -104,6 +107,9 @@ func TestInternalTx(t *testing.T) {
 
 	txTimestamp := timeutil.TimestampMsToTime(1477837690 * 1000).UTC()
 
+	err = s.StoreReserve(ethereum.HexToAddress("0x5abfec25f74cd88437631a7731906932776356f9"), common.Reserve.String())
+	require.NoError(t, err)
+
 	testTxs := []common.InternalTx{
 		{
 			BlockNumber: 2535368,
@@ -118,13 +124,13 @@ func TestInternalTx(t *testing.T) {
 		},
 	}
 
-	err = s.StoreInternalTx(testTxs)
+	err = s.StoreInternalTx(testTxs, ethereum.HexToAddress("0x5abfec25f74cd88437631a7731906932776356f9"))
 	require.NoError(t, err)
 	txs, err := s.GetInternalTx(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
 	assert.Equal(t, testTxs, txs)
 
-	err = s.StoreInternalTx(testTxs)
+	err = s.StoreInternalTx(testTxs, ethereum.HexToAddress("0x5abfec25f74cd88437631a7731906932776356f9"))
 	require.NoError(t, err)
 	txs, err = s.GetInternalTx(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
@@ -219,6 +225,9 @@ func TestLastInserted(t *testing.T) {
 	defer func(t *testing.T) {
 		require.NoError(t, s.TearDown())
 	}(t)
+	err = s.StoreReserve(ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"), common.Reserve.String())
+	require.NoError(t, err)
+
 	var (
 		testAddr         = ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")
 		testLastInserted = big.NewInt(7461105)

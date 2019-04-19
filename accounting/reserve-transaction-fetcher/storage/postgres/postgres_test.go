@@ -16,19 +16,12 @@ import (
 
 func TestNormalTx(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	_, db := testutil.MustNewDevelopmentDB()
-	s, err := NewStorage(sugar, db, WithTableName(&tableNames{
-		Normal:       "normal_test_normal_tx",
-		Internal:     "internal_test_normal_tx",
-		ERC20:        "erc20_test_normal_tx",
-		LastInserted: "last_inserted_test_normal_tx",
-		Reserves:     "test_rsv_reserves",
-		TxsReserves:  "test_rsv_txs_reserves",
-	}))
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 
 	defer func(t *testing.T) {
-		require.NoError(t, s.TearDown())
+		require.NoError(t, teardown())
 	}(t)
 
 	txTimestamp := timeutil.TimestampMsToTime(1439048640 * 1000).UTC()
@@ -90,19 +83,12 @@ func TestNormalTx(t *testing.T) {
 
 func TestInternalTx(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	_, db := testutil.MustNewDevelopmentDB()
-	s, err := NewStorage(sugar, db, WithTableName(&tableNames{
-		Normal:       "normal_test_internal_tx",
-		Internal:     "internal_test_internal_tx",
-		ERC20:        "erc20_test_internal_tx",
-		LastInserted: "last_inserted_test_internal_tx",
-		Reserves:     "test_rsv_reserves",
-		TxsReserves:  "test_rsv_txs_reserves",
-	}))
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 
 	defer func(t *testing.T) {
-		require.NoError(t, s.TearDown())
+		require.NoError(t, teardown())
 	}(t)
 
 	txTimestamp := timeutil.TimestampMsToTime(1477837690 * 1000).UTC()
@@ -143,19 +129,12 @@ func TestInternalTx(t *testing.T) {
 
 func TestERC20Transfer(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	_, db := testutil.MustNewDevelopmentDB()
-	s, err := NewStorage(sugar, db, WithTableName(&tableNames{
-		Normal:       "normal_test_erc20_transfer",
-		Internal:     "internal_test_erc20_transfer",
-		ERC20:        "erc20_test_erc20_transfer",
-		LastInserted: "last_inserted_erc20_transfer",
-		Reserves:     "test_rsv_reserves",
-		TxsReserves:  "test_rsv_txs_reserves",
-	}))
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 
 	defer func(t *testing.T) {
-		require.NoError(t, s.TearDown())
+		require.NoError(t, teardown())
 	}(t)
 
 	txTimestamp := timeutil.TimestampMsToTime(1473433992 * 1000).UTC()
@@ -211,19 +190,12 @@ func TestERC20Transfer(t *testing.T) {
 
 func TestLastInserted(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	_, db := testutil.MustNewDevelopmentDB()
-	s, err := NewStorage(sugar, db, WithTableName(&tableNames{
-		Normal:       "normal_test_last_inserted",
-		Internal:     "internal_test_last_inserted",
-		ERC20:        "erc20_test_last_inserted",
-		LastInserted: "last_inserted_test_last_inserted",
-		Reserves:     "test_rsv_reserves",
-		TxsReserves:  "test_rsv_txs_reserves",
-	}))
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 
 	defer func(t *testing.T) {
-		require.NoError(t, s.TearDown())
+		require.NoError(t, teardown())
 	}(t)
 	err = s.StoreReserve(ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"), common.Reserve.String())
 	require.NoError(t, err)

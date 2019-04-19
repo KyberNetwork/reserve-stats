@@ -14,16 +14,12 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 )
 
-const (
-	defaultPostGresDB = common.DefaultDB
-)
-
 func newServerCli() *cli.App {
 	app := libapp.NewApp()
 	app.Name = "cex-trade-withdrawal-api"
 	app.Usage = "server for query accounting cex-trade withdrawal"
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AccountingCEXWithdrawalsPort)...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostGresDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultCexWithdrawalsDB)...)
 	app.Action = run
 	return app
 }

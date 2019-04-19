@@ -115,7 +115,7 @@ func main() {
 			EnvVar: "TO_BLOCK",
 		},
 	)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultTransactionsDB)...)
 	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, client.NewClientFlags()...)

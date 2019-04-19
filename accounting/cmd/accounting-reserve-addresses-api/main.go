@@ -22,7 +22,7 @@ func main() {
 	app.Action = run
 	app.Version = "0.0.1"
 
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultReserveAddressesDB)...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AccountingReserveAddressPort)...)
 	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
 	if err := app.Run(os.Args); err != nil {

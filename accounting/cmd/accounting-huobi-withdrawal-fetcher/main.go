@@ -22,7 +22,6 @@ const (
 	defaultRetryDelay = time.Second
 	fromIDFlag        = "from-id"
 	defaultFromID     = 0
-	defaultPostGresDB = common.DefaultDB
 )
 
 func main() {
@@ -52,7 +51,7 @@ func main() {
 		},
 	)
 	app.Flags = append(app.Flags, huobi.NewCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostGresDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultCexWithdrawalsDB)...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

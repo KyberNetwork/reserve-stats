@@ -22,8 +22,8 @@ var defaultTableNames = &tableNames{
 	Internal:     "rsv_tx_internal",
 	ERC20:        "rsv_tx_erc20",
 	LastInserted: "rsv_tx_last_inserted",
-	Reserves:     "rsv_tx_reserves",
-	TxsReserves:  "rsv_tx_normal_txs_reserves",
+	Reserves:     "rsv_tx_reserve",
+	TxsReserves:  "rsv_tx_normal_tx_reserve",
 }
 
 // tableNames contains name of all PostgreSQL tables used for this this.
@@ -45,11 +45,6 @@ type Storage struct {
 
 // Option is an configuration option of Storage constructor.
 type Option func(*Storage)
-
-// WithTableName is the option to use a non-default table name.
-func WithTableName(tn *tableNames) Option {
-	return func(s *Storage) { s.tableNames = tn }
-}
 
 // NewStorage creates new instance of Storage.
 func NewStorage(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*Storage, error) {
@@ -108,7 +103,7 @@ CREATE TABLE IF NOT EXISTS "%[6]s"
 );
 
 -- create table link from tx to reserve
-CREATE TABLE IF NOT EXISTS rsv_tx_internal_txs_reserves
+CREATE TABLE IF NOT EXISTS rsv_tx_internal_tx_reserve
 (
 	tx_id int REFERENCES "%[2]s" (id),
 	address_key text REFERENCES "%[4]s" (address),
@@ -116,7 +111,7 @@ CREATE TABLE IF NOT EXISTS rsv_tx_internal_txs_reserves
 );
 
 -- create table link from tx to reserve
-CREATE TABLE IF NOT EXISTS rsv_tx_erc20_txs_reserves
+CREATE TABLE IF NOT EXISTS rsv_tx_erc20_tx_reserve
 (
 	tx_id int REFERENCES "%[3]s" (id),
 	address_key text REFERENCES "%[4]s" (address),
@@ -199,7 +194,7 @@ func (s *Storage) StoreNormalTx(txs []common.NormalTx, reserve ethereum.Address)
 VALUES ($1, $2)
 ON CONFLICT (tx_hash) DO UPDATE SET data = EXCLUDED.data RETURNING id;
 `
-		insertStmt = `INSERT INTO "rsv_tx_normal_txs_reserves" (tx_id, address_key)
+		insertStmt = `INSERT INTO "rsv_tx_normal_tx_reserve" (tx_id, address_key)
 	VALUES ($1, $2)
 		ON CONFLICT DO NOTHING;`
 	)
@@ -285,7 +280,7 @@ func (s *Storage) StoreInternalTx(txs []common.InternalTx, reserve ethereum.Addr
 VALUES ($1)
 ON CONFLICT DO NOTHING RETURNING id;
 `
-		insertStmt = `INSERT INTO "rsv_tx_internal_txs_reserves" (tx_id, address_key)
+		insertStmt = `INSERT INTO "rsv_tx_internal_tx_reserve" (tx_id, address_key)
 	VALUES ($1, $2)
 		ON CONFLICT DO NOTHING;`
 	)
@@ -369,7 +364,7 @@ func (s *Storage) StoreERC20Transfer(txs []common.ERC20Transfer, reserve ethereu
 VALUES ($1)
 ON CONFLICT DO NOTHING RETURNING id;
 `
-		insertStmt = `INSERT INTO "rsv_tx_erc20_txs_reserves" (tx_id, address_key)
+		insertStmt = `INSERT INTO "rsv_tx_erc20_tx_reserve" (tx_id, address_key)
 	VALUES ($1, $2)
 		ON CONFLICT DO NOTHING;`
 	)
@@ -422,7 +417,7 @@ func (s *Storage) GetERC20Transfer(from time.Time, to time.Time) ([]common.ERC20
 	)
 	const selectStmt = `SELECT data
 FROM "%[1]s"
-JOIN "rsv_tx_erc20_txs_reserves" AS a ON a.tx_id = %[1]s.id
+JOIN "rsv_tx_erc20_tx_reserve" AS a ON a.tx_id = %[1]s.id
 JOIN "%[2]s" AS reserve ON a.address_key = reserve.address 
 WHERE data ->> 'timestamp' >= $1
 	AND data ->> 'timestamp' < $2
@@ -508,7 +503,7 @@ func (s *Storage) GetWalletERC20Transfers(wallet, token ethereum.Address, from, 
 		tmp common.ERC20Transfer
 	)
 	const selectStmt = `SELECT data FROM %[1]s 
-	JOIN "rsv_tx_erc20_txs_reserves" as a ON a.tx_id = %[1]s.id
+	JOIN "rsv_tx_erc20_tx_reserve" as a ON a.tx_id = %[1]s.id
 	JOIN "%[2]s" as reserve ON a.address_key = reserve.address WHERE ((data->>'timestamp')>=$1::text AND (data->>'timestamp')<$2::text) AND
 	($3 OR (data->>'from'=$4 OR data->>'to'=$4)) AND
 	($5 OR data->>'contractAddress'=$6)

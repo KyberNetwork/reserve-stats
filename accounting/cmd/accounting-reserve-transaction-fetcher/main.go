@@ -51,7 +51,7 @@ func fetchTx(
 
 		if len(normalTxs) > 0 {
 			logger.Infow("storing normal transactions to database", "transactions", len(normalTxs))
-			if err = s.StoreNormalTx(normalTxs); err != nil {
+			if err = s.StoreNormalTx(normalTxs, addr.Address); err != nil {
 				return err
 			}
 		}
@@ -64,7 +64,7 @@ func fetchTx(
 
 		if len(internalTxs) > 0 {
 			logger.Infow("storing internal transactions to database", "transactions", len(internalTxs))
-			if err = s.StoreInternalTx(internalTxs); err != nil {
+			if err = s.StoreInternalTx(internalTxs, addr.Address); err != nil {
 				return err
 			}
 		}
@@ -81,7 +81,7 @@ func fetchTx(
 		}
 		logger.Infow("storing ERC20 transfers to database", "transfers", len(transfers))
 		if len(transfers) > 0 {
-			if err = s.StoreERC20Transfer(transfers); err != nil {
+			if err = s.StoreERC20Transfer(transfers, addr.Address); err != nil {
 				return err
 			}
 		}
@@ -211,6 +211,9 @@ func run(c *cli.Context) error {
 	f := fetcher.NewEtherscanTransactionFetcher(sugar, etherscanClient)
 	for _, addr := range addrs {
 		fromBlock, toBlock, addr := fromBlock, toBlock, addr
+		if err := s.StoreReserve(addr.Address, addr.Type.String()); err != nil {
+			return err
+		}
 
 		lastInserted, err := s.GetLastInserted(addr.Address)
 		if err != nil {

@@ -221,9 +221,5 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	if err = bs.DeleteTable(); err != nil {
-		log.Fatal(err)
-	}
-
 	os.Exit(ret)
 }

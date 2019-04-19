@@ -56,41 +56,41 @@ CREATE TABLE IF NOT EXISTS "rsv_tx_erc20"
 CREATE INDEX IF NOT EXISTS "rsv_tx_erc20_time_idx" ON "rsv_tx_erc20" ((data ->> 'timestamp'),
 (data ->> 'contractAddress'),(data ->> 'from'),(data ->> 'to'));
 
--- create table last inserted
-CREATE TABLE IF NOT EXISTS "rsv_tx_last_inserted"
+-- create table reserves
+CREATE TABLE IF NOT EXISTS "rsv_tx_reserve"
 (
 	address text NOT NULL PRIMARY KEY,
 	address_type text NOT NULL
 );
 
 -- create table last inserted
-CREATE TABLE IF NOT EXISTS "%[5]s"
+CREATE TABLE IF NOT EXISTS "rsv_tx_last_inserted"
 (
-    address_key text UNIQUE REFERENCES "%[4]s" (address),
-		last_inserted BIGINT NOT NULL
+	address_key text UNIQUE REFERENCES "rsv_tx_reserve" (address),
+	last_inserted BIGINT NOT NULL
 );
 
 -- create table link from tx to reserve
-CREATE TABLE IF NOT EXISTS "%[6]s"
+CREATE TABLE IF NOT EXISTS "rsv_tx_normal_tx_reserve"
 (
-	tx_id int REFERENCES "%[1]s" (id),
-	address_key text REFERENCES "%[4]s" (address),
+	tx_id int REFERENCES "rsv_tx_normal" (id),
+	address_key text REFERENCES "rsv_tx_reserve" (address),
 	PRIMARY KEY (tx_id, address_key)
 );
 
 -- create table link from tx to reserve
 CREATE TABLE IF NOT EXISTS rsv_tx_internal_tx_reserve
 (
-	tx_id int REFERENCES "%[2]s" (id),
-	address_key text REFERENCES "%[4]s" (address),
+	tx_id int REFERENCES "rsv_tx_internal" (id),
+	address_key text REFERENCES "rsv_tx_reserve" (address),
 	PRIMARY KEY (tx_id, address_key)
 );
 
 -- create table link from tx to reserve
 CREATE TABLE IF NOT EXISTS rsv_tx_erc20_tx_reserve
 (
-	tx_id int REFERENCES "%[3]s" (id),
-	address_key text REFERENCES "%[4]s" (address),
+	tx_id int REFERENCES "rsv_tx_erc20" (id),
+	address_key text REFERENCES "rsv_tx_reserve" (address),
 	PRIMARY KEY (tx_id, address_key)
 );
 `
@@ -111,7 +111,11 @@ func (s *Storage) TearDown() error {
 	DROP TABLE rsv_tx_normal CASCADE;
 	DROP TABLE rsv_tx_internal CASCADE;
 	DROP TABLE rsv_tx_erc20 CASCADE;
+	DROP TABLE rsv_tx_reserve CASCADE;
 	DROP TABLE rsv_tx_last_inserted CASCADE;
+	DROP TABLE rsv_tx_normal_tx_reserve CASCADE;
+	DROP TABLE rsv_tx_internal_tx_reserve CASCADE;
+	DROP TABLE rsv_tx_erc20_tx_reserve CASCADE;
 	`
 	logger.Debugw("cleanup database", "query", dropFmt)
 	_, err := s.db.Exec(dropFmt)
@@ -123,7 +127,7 @@ func (s *Storage) StoreReserve(reserve ethereum.Address, reserveType string) err
 	var (
 		logger = s.sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreReserve")
 	)
-	const storeReserve = `INSERT INTO "%[1]s" (address, address_type)
+	const storeReserve = `INSERT INTO "rsv_tx_reserve" (address, address_type)
 	VALUES ($1, $2) 
 	ON CONFLICT (address) DO UPDATE SET address_type = EXCLUDED.address_type;`
 
@@ -144,7 +148,7 @@ func (s *Storage) StoreNormalTx(txs []common.NormalTx, reserve ethereum.Address)
 	const (
 		updateStmt = `INSERT INTO "rsv_tx_normal"(tx_hash, data)
 VALUES ($1, $2)
-ON CONFLICT ON CONSTRAINT "rsv_tx_normal_pkey" DO UPDATE SET data = EXCLUDED.data RETURNING id;
+ON CONFLICT (tx_hash) DO UPDATE SET data = EXCLUDED.data RETURNING id;
 `
 		insertStmt = `INSERT INTO "rsv_tx_normal_tx_reserve" (tx_id, address_key)
 	VALUES ($1, $2)
@@ -365,7 +369,7 @@ func (s *Storage) GetERC20Transfer(from time.Time, to time.Time) ([]common.ERC20
 	const selectStmt = `SELECT data
 FROM "rsv_tx_erc20"
 JOIN "rsv_tx_erc20_tx_reserve" AS a ON a.tx_id = rsv_tx_erc20.id
-JOIN "rsv_tx_reserves" AS reserve ON a.address_key = reserve.address 
+JOIN "rsv_tx_reserve" AS reserve ON a.address_key = reserve.address 
 WHERE data ->> 'timestamp' >= $1
 	AND data ->> 'timestamp' < $2
 	AND reserve.address_type <> $3`
@@ -396,9 +400,9 @@ func (s *Storage) StoreLastInserted(addr ethereum.Address, blockNumber *big.Int)
 			"block_number", blockNumber.String(),
 		)
 	)
-	const queryFmt = `INSERT INTO "rsv_tx_last_inserted"(address, last_inserted)
+	const queryFmt = `INSERT INTO "rsv_tx_last_inserted"(address_key, last_inserted)
 VALUES ($1, $2)
-ON CONFLICT ON CONSTRAINT "rsv_tx_last_inserted_pkey" DO UPDATE SET last_inserted = EXCLUDED.last_inserted;
+ON CONFLICT (address_key) DO UPDATE SET last_inserted = EXCLUDED.last_inserted;
 `
 
 	logger.Debugw("updating last inserted to database")
@@ -418,7 +422,7 @@ func (s *Storage) GetLastInserted(addr ethereum.Address) (*big.Int, error) {
 	)
 	const queryFmt = `SELECT last_inserted
 FROM "rsv_tx_last_inserted"
-WHERE address ILIKE $1`
+WHERE address_key ILIKE $1`
 	logger.Debugw("fetching last inserted to database")
 	err := s.db.Get(&lastInserted, queryFmt, addr.String())
 	switch err {
@@ -448,7 +452,7 @@ func (s *Storage) GetWalletERC20Transfers(wallet, token ethereum.Address, from, 
 	)
 	const selectStmt = `SELECT data FROM rsv_tx_erc20 
 	JOIN "rsv_tx_erc20_tx_reserve" as a ON a.tx_id = rsv_tx_erc20.id
-	JOIN "rsv_tx_reserves" as reserve ON a.address_key = reserve.address WHERE ((data->>'timestamp')>=$1::text AND (data->>'timestamp')<$2::text) AND
+	JOIN "rsv_tx_reserve" as reserve ON a.address_key = reserve.address WHERE ((data->>'timestamp')>=$1::text AND (data->>'timestamp')<$2::text) AND
 	($3 OR (data->>'from'=$4 OR data->>'to'=$4)) AND
 	($5 OR data->>'contractAddress'=$6)
 	AND reserve.address_type = $7`

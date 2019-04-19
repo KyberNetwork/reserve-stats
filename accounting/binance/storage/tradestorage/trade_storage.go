@@ -14,19 +14,8 @@ import (
 
 //BinanceStorage is storage for binance fetcher including trade history and withdraw history
 type BinanceStorage struct {
-	sugar     *zap.SugaredLogger
-	db        *sqlx.DB
-	tableName string
-}
-
-// Option is the option for BinanceStorage constructor.
-type Option func(*BinanceStorage)
-
-// WithTableName is the option to create BinanceStorage.
-func WithTableName(tableName string) Option {
-	return func(storage *BinanceStorage) {
-		storage.tableName = tableName
-	}
+	sugar *zap.SugaredLogger
+	db    *sqlx.DB
 }
 
 //NewDB return a new instance of binance storage

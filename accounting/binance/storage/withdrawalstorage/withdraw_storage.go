@@ -2,7 +2,6 @@ package withdrawalstorage
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
@@ -13,38 +12,25 @@ import (
 	"go.uber.org/zap"
 )
 
-const defaultTableName = "binance_withdrawals"
-
 //BinanceStorage is storage for binance fetcher including trade history and withdraw history
 type BinanceStorage struct {
-	sugar     *zap.SugaredLogger
-	db        *sqlx.DB
-	tableName string
-}
-
-// Option is the option for BinanceStorage constructor.
-type Option func(*BinanceStorage)
-
-// WithTableName configures the BinanceStorage with custom table name.
-func WithTableName(tableName string) Option {
-	return func(s *BinanceStorage) {
-		s.tableName = tableName
-	}
+	sugar *zap.SugaredLogger
+	db    *sqlx.DB
 }
 
 //NewDB return a new instance of binance storage
-func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*BinanceStorage, error) {
+func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 	var (
 		logger = sugar.With("func", "accounting/binance-storage/binancestorage.NewDB")
 	)
 
-	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%[1]s"
+	const schemaFmt = `CREATE TABLE IF NOT EXISTS "binance_withdrawals"
 	(
 	  id   text NOT NULL,
 	  data JSONB,
-	  CONSTRAINT %[1]s_pk PRIMARY KEY(id)
+	  CONSTRAINT binance_withdrawals_pk PRIMARY KEY(id)
 	);
-	CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s ((data ->> 'applyTime'));
+	CREATE INDEX IF NOT EXISTS binance_withdrawals_time_idx ON binance_withdrawals ((data ->> 'applyTime'));
 	`
 
 	s := &BinanceStorage{
@@ -52,18 +38,9 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*BinanceSt
 		db:    db,
 	}
 
-	for _, option := range options {
-		option(s)
-	}
+	logger.Debugw("create table query", "query", schemaFmt)
 
-	if len(s.tableName) == 0 {
-		s.tableName = defaultTableName
-	}
-
-	query := fmt.Sprintf(schemaFmt, s.tableName)
-	logger.Debugw("create table query", "query", query)
-
-	if _, err := db.Exec(query); err != nil {
+	if _, err := db.Exec(schemaFmt); err != nil {
 		return nil, err
 	}
 
@@ -82,7 +59,7 @@ func (bd *BinanceStorage) Close() error {
 
 //DeleteTable remove trades table
 func (bd *BinanceStorage) DeleteTable() error {
-	query := fmt.Sprintf("DROP TABLE %s", bd.tableName)
+	query := "DROP TABLE binance_withdrawals"
 	if _, err := bd.db.Exec(query); err != nil {
 		return err
 	}
@@ -95,11 +72,11 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 		logger       = bd.sugar.With("func", "accounting/binance_storage.UpdateWithdrawHistory")
 		withdrawJSON []byte
 	)
-	const updateQuery = `INSERT INTO %[1]s (id, data)
+	const updateQuery = `INSERT INTO binance_withdrawals (id, data)
 	VALUES(
 		$1,
 		$2
-	) ON CONFLICT ON CONSTRAINT %[1]s_pk DO NOTHING;
+	) ON CONFLICT ON CONSTRAINT binance_withdrawals_pk DO NOTHING;
 	`
 
 	tx, err := bd.db.Beginx()
@@ -109,15 +86,14 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 
 	defer pgsql.CommitOrRollback(tx, bd.sugar, &err)
 
-	query := fmt.Sprintf(updateQuery, bd.tableName)
-	logger.Debugw("query update withdraw history", "query", query)
+	logger.Debugw("query update withdraw history", "query", updateQuery)
 
 	for _, withdraw := range withdrawHistories {
 		withdrawJSON, err = json.Marshal(withdraw)
 		if err != nil {
 			return
 		}
-		if _, err = tx.Exec(query, withdraw.ID, withdrawJSON); err != nil {
+		if _, err = tx.Exec(updateQuery, withdraw.ID, withdrawJSON); err != nil {
 			return
 		}
 	}
@@ -133,14 +109,13 @@ func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) ([]bina
 		dbResult [][]byte
 		tmp      binance.WithdrawHistory
 	)
-	const selectStmt = `SELECT data FROM %s WHERE data->>'applyTime'>=$1 AND data->>'applyTime'<=$2`
-	query := fmt.Sprintf(selectStmt, bd.tableName)
+	const selectStmt = `SELECT data FROM binance_withdrawals WHERE data->>'applyTime'>=$1 AND data->>'applyTime'<=$2`
 
-	logger.Debugw("querying trade history...", "query", query)
+	logger.Debugw("querying trade history...", "query", selectStmt)
 
 	from := timeutil.TimeToTimestampMs(fromTime)
 	to := timeutil.TimeToTimestampMs(toTime)
-	if err := bd.db.Select(&dbResult, query, from, to); err != nil {
+	if err := bd.db.Select(&dbResult, selectStmt, from, to); err != nil {
 		return result, err
 	}
 
@@ -161,12 +136,11 @@ func (bd *BinanceStorage) GetLastStoredTimestamp() (time.Time, error) {
 		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
 		dbResult uint64
 	)
-	const selectStmt = `SELECT COALESCE(MAX(data->>'applyTime'), '0') FROM %s`
-	query := fmt.Sprintf(selectStmt, bd.tableName)
+	const selectStmt = `SELECT COALESCE(MAX(data->>'applyTime'), '0') FROM binance_withdrawals`
 
-	logger.Debugw("querying last stored timestamp", "query", query)
+	logger.Debugw("querying last stored timestamp", "query", selectStmt)
 
-	if err := bd.db.Get(&dbResult, query); err != nil {
+	if err := bd.db.Get(&dbResult, selectStmt); err != nil {
 		return result, err
 	}
 

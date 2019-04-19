@@ -109,7 +109,7 @@ func (s *Storage) TearDown() error {
 	var logger = s.sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.TearDown")
 	const dropFmt = `
 	DROP TABLE rsv_tx_normal CASCADE;
-	DROP TABLE rsv_tx_inernal CASCADE;
+	DROP TABLE rsv_tx_internal CASCADE;
 	DROP TABLE rsv_tx_erc20 CASCADE;
 	DROP TABLE rsv_tx_last_inserted CASCADE;
 	`
@@ -278,7 +278,7 @@ func (s *Storage) GetInternalTx(from time.Time, to time.Time) ([]common.Internal
 		t        common.InternalTx
 	)
 	const selectStmt = `SELECT data
-FROM "rsv_tx_inernal"
+FROM "rsv_tx_internal"
 WHERE data ->> 'timestamp' >= $1
   AND data ->> 'timestamp' < $2`
 	logger.Debugw("querying internal transactions from database", "query", selectStmt)

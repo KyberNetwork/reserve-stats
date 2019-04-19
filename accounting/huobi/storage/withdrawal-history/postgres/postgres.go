@@ -136,7 +136,7 @@ func (hdb *HuobiStorage) GetLastIDStored() (uint64, error) {
 			"func", "reserverates/storage/postgres/RateStorage.GetLastIDStored",
 		)
 	)
-	const selectStmt = `SELECT COALESCE(MAX(id),0) FROM %[1]s`
+	const selectStmt = `SELECT COALESCE(MAX(id),0) FROM huobi_withdrawals`
 	logger.Debugw("querying trade history...", "query", selectStmt)
 
 	if err := hdb.db.Get(&result, selectStmt); err != nil {

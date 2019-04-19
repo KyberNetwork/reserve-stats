@@ -70,9 +70,9 @@ func (rdb *RatesStorage) updateRsvAddrs(tx *sqlx.Tx, rsvs []string) error {
 }
 
 func (rdb *RatesStorage) updateTokens(tx *sqlx.Tx, tokens []string) error {
-	const tkStmt = `INSERT INTO %[1]s(symbol)
+	const tkStmt = `INSERT INTO tokens(symbol)
 	VALUES(unnest($1::TEXT[]))
-	ON CONFLICT ON CONSTRAINT %[1]s_symbol_key DO NOTHING`
+	ON CONFLICT ON CONSTRAINT tokens_symbol_key DO NOTHING`
 	var logger = rdb.sugar.With(
 		"func", "reserverates/storage/postgres/RateStorage.updateToken",
 	)

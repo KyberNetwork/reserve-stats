@@ -41,12 +41,12 @@ CREATE TABLE IF NOT EXISTS "listed_tokens_reserves_tokens"
 );
 
 -- save_token function saves or update given token to database and return TRUE if anything changes recorded to database.
-CREATE OR REPLACE FUNCTION save_token(_address "listed_tokens".address%%TYPE,
-                                      _name "listed_tokens".name%%TYPE,
-                                      _symbol "listed_tokens".name%%TYPE,
-                                      _timestamp "listed_tokens".timestamp%%TYPE,
-                                      _parent_address "listed_tokens".address%%TYPE,
-                                      _reserve_address "listed_tokens_reserves".address%%TYPE) RETURNS boolean AS
+CREATE OR REPLACE FUNCTION save_token(_address "listed_tokens".address%TYPE,
+                                      _name "listed_tokens".name%TYPE,
+                                      _symbol "listed_tokens".name%TYPE,
+                                      _timestamp "listed_tokens".timestamp%TYPE,
+                                      _parent_address "listed_tokens".address%TYPE,
+                                      _reserve_address "listed_tokens_reserves".address%TYPE) RETURNS boolean AS
 $$
 DECLARE
     stored_token   RECORD;

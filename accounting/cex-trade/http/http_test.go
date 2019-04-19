@@ -192,9 +192,9 @@ func TestTrades(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	_, db := testutil.MustNewDevelopmentDB()
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
 
-	hs, err := huobistorage.NewDB(sugar, db, huobistorage.WithTradeTableName("huobi_cex_http_test"))
+	hs, err := huobistorage.NewDB(sugar, db)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -203,7 +203,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	bs, err := tradestorage.NewDB(sugar, db, tradestorage.WithTableName("binance_cex_http_test"))
+	bs, err := tradestorage.NewDB(sugar, db)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -217,7 +217,7 @@ func TestMain(m *testing.M) {
 
 	ret := m.Run()
 
-	if err = hs.TearDown(); err != nil {
+	if err = teardown(); err != nil {
 		log.Fatal(err)
 	}
 

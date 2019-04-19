@@ -24,10 +24,11 @@ import (
 )
 
 var (
-	tdb *sqlx.DB
-	ts  *Server
-	tst *postgresql.Storage
-	tts time.Time
+	tdb      *sqlx.DB
+	ts       *Server
+	tst      *postgresql.Storage
+	tts      time.Time
+	teardown func() error
 )
 
 func TestReserveAddressGetAll(t *testing.T) {
@@ -558,7 +559,7 @@ func TestMain(m *testing.M) {
 
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 
-	_, tdb = testutil.MustNewDevelopmentDB()
+	tdb, teardown = testutil.MustNewRandomDevelopmentDB()
 
 	tst, err = postgresql.NewStorage(sugar, tdb, resolv)
 	if err != nil {
@@ -570,7 +571,7 @@ func TestMain(m *testing.M) {
 
 	ret := m.Run()
 
-	if err = tst.DeleteAllTables(); err != nil {
+	if err = teardown(); err != nil {
 		log.Fatal(err)
 	}
 

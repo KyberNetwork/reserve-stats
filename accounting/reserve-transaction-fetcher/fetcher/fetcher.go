@@ -32,10 +32,9 @@ func newFetchFunction(name string, fetch func(address string, startBlock *int, e
 	return &fetchFn{name: name, fetch: fetch}
 }
 
-func (f *EtherscanTransactionFetcher) fetch(fn *fetchFn, addr ethereum.Address, from, to *big.Int) ([]interface{}, error) {
+func (f *EtherscanTransactionFetcher) fetch(fn *fetchFn, addr ethereum.Address, from, to *big.Int, offset int) ([]interface{}, error) {
 	// maximum number of transactions to return in a page.
 	// Too small value will increase the fetching time, too big value will result in a timed out response.
-	const offset = 500
 	var (
 		logger = f.sugar.With(
 			"func",
@@ -97,7 +96,7 @@ func (f *EtherscanTransactionFetcher) fetch(fn *fetchFn, addr ethereum.Address, 
 }
 
 // NormalTx returns all normal Ethereum transaction of given address between block range.
-func (f *EtherscanTransactionFetcher) NormalTx(addr ethereum.Address, from, to *big.Int) ([]common.NormalTx, error) {
+func (f *EtherscanTransactionFetcher) NormalTx(addr ethereum.Address, from, to *big.Int, offset int) ([]common.NormalTx, error) {
 	fn := newFetchFunction("normal", func(address string, startBlock *int, endBlock *int, page int, offset int) ([]interface{}, error) {
 		normalTxs, err := f.client.NormalTxByAddress(address, startBlock, endBlock, page, offset, false)
 		if err != nil {
@@ -110,7 +109,7 @@ func (f *EtherscanTransactionFetcher) NormalTx(addr ethereum.Address, from, to *
 		return results, nil
 	})
 
-	results, err := f.fetch(fn, addr, from, to)
+	results, err := f.fetch(fn, addr, from, to, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +123,7 @@ func (f *EtherscanTransactionFetcher) NormalTx(addr ethereum.Address, from, to *
 }
 
 // InternalTx returns all internal transaction of given address between block range.
-func (f *EtherscanTransactionFetcher) InternalTx(addr ethereum.Address, from, to *big.Int) ([]common.InternalTx, error) {
+func (f *EtherscanTransactionFetcher) InternalTx(addr ethereum.Address, from, to *big.Int, offset int) ([]common.InternalTx, error) {
 	fn := newFetchFunction("internal", func(address string, startBlock *int, endBlock *int, page int, offset int) ([]interface{}, error) {
 		internalTxs, err := f.client.InternalTxByAddress(address, startBlock, endBlock, page, offset, false)
 		if err != nil {
@@ -137,7 +136,7 @@ func (f *EtherscanTransactionFetcher) InternalTx(addr ethereum.Address, from, to
 		return results, nil
 	})
 
-	results, err := f.fetch(fn, addr, from, to)
+	results, err := f.fetch(fn, addr, from, to, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +150,7 @@ func (f *EtherscanTransactionFetcher) InternalTx(addr ethereum.Address, from, to
 }
 
 // ERC20Transfer returns all ERC20 transfers of given address between given block range.
-func (f *EtherscanTransactionFetcher) ERC20Transfer(addr ethereum.Address, from, to *big.Int) ([]common.ERC20Transfer, error) {
+func (f *EtherscanTransactionFetcher) ERC20Transfer(addr ethereum.Address, from, to *big.Int, offset int) ([]common.ERC20Transfer, error) {
 	fn := newFetchFunction("transfer", func(address string, startBlock *int, endBlock *int, page int, offset int) ([]interface{}, error) {
 		transfers, err := f.client.ERC20Transfers(nil, &address, startBlock, endBlock, page, offset)
 		if err != nil {
@@ -164,7 +163,7 @@ func (f *EtherscanTransactionFetcher) ERC20Transfer(addr ethereum.Address, from,
 		return results, nil
 	})
 
-	results, err := f.fetch(fn, addr, from, to)
+	results, err := f.fetch(fn, addr, from, to, offset)
 	if err != nil {
 		return nil, err
 	}

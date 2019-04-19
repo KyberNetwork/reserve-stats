@@ -51,7 +51,7 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	}
 	sugar.Debug(len(testData))
 
-	hdb, err := NewDB(sugar, db, WithTradeTableName("test_huobi_trades"))
+	hdb, err := NewDB(sugar, db)
 	require.NoError(t, err)
 
 	defer func() {

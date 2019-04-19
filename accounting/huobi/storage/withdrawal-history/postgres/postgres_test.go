@@ -49,7 +49,7 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	sugar := logger.Sugar()
 
 	db, teardown := testutil.MustNewRandomDevelopmentDB()
-	hdb, err := NewDB(sugar, db, WithWithdrawalTableName("test_huobi_withdraw"))
+	hdb, err := NewDB(sugar, db)
 	require.NoError(t, err)
 
 	defer func() {

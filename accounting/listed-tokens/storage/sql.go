@@ -57,7 +57,7 @@ BEGIN
     IF _parent_address IS NOT NULl THEN
         SELECT id INTO stored_parent_id FROM "listed_tokens" WHERE address = _parent_address;
         IF NOT FOUND THEN
-            RAISE EXCEPTION 'token with id %% does not exist', stored_parent_id;
+            RAISE EXCEPTION 'token with id % does not exist', stored_parent_id;
         END IF;
     END IF;
     

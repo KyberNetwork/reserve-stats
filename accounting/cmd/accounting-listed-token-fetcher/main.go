@@ -41,7 +41,7 @@ func main() {
 	)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultListedTokenDB)...)
 	app.Flags = append(app.Flags, client.NewClientFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

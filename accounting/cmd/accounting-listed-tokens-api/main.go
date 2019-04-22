@@ -20,7 +20,7 @@ func main() {
 	app.Action = run
 
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AccountingReserveTokensPort)...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultListedTokenDB)...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

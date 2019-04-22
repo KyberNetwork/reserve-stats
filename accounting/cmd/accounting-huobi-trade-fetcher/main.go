@@ -22,7 +22,6 @@ const (
 	batchDurationFlag    = "batch-duration"
 	defaultMaxAttempt    = 3
 	defaultRetryDelay    = time.Second
-	defaultPostgresDB    = common.DefaultDB
 	defaultBatchDuration = 90 * 24 * time.Hour
 )
 
@@ -54,7 +53,7 @@ func main() {
 	)
 	app.Flags = append(app.Flags, huobi.NewCliFlags()...)
 	app.Flags = append(app.Flags, timeutil.NewMilliTimeRangeCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostgresDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultCexTradesDB)...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}

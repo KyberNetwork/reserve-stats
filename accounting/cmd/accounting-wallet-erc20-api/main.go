@@ -20,7 +20,7 @@ func main() {
 	app.Action = run
 	app.Version = "0.0.1"
 
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultTransactionsDB)...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AccountingWalletErc20Port)...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

@@ -57,7 +57,7 @@ func main() {
 	)
 
 	app.Flags = append(app.Flags, binance.NewCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultCexTradesDB)...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

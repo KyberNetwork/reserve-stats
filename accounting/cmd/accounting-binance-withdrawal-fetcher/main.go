@@ -53,7 +53,7 @@ func main() {
 
 	app.Flags = append(app.Flags, binance.NewCliFlags()...)
 	app.Flags = append(app.Flags, timeutil.NewMilliTimeRangeCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultCexWithdrawalsDB)...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

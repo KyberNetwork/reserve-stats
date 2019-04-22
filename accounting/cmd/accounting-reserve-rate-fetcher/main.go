@@ -34,7 +34,6 @@ const (
 
 	retryDelayFlag        = "retry-delay"
 	defaultRetryDelayTime = 5 * time.Minute
-	defaultPostGresDB     = common.DefaultDB
 )
 
 func main() {
@@ -69,7 +68,7 @@ func main() {
 		},
 		blockchain.NewEthereumNodeFlags(),
 	)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostGresDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultReserveRatesDB)...)
 	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
 	app.Flags = append(app.Flags, timeutil.NewTimeRangeCliFlags()...)
 	app.Flags = append(app.Flags, client.NewClientFlags()...)

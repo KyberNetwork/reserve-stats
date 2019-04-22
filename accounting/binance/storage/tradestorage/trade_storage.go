@@ -57,15 +57,6 @@ func (bd *BinanceStorage) Close() error {
 	return nil
 }
 
-//DeleteTable remove trades table
-func (bd *BinanceStorage) DeleteTable() error {
-	query := "DROP TABLE binance_trades;"
-	if _, err := bd.db.Exec(query); err != nil {
-		return err
-	}
-	return nil
-}
-
 //UpdateTradeHistory save trade history into a postgres db
 func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err error) {
 	var (

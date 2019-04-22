@@ -4,13 +4,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
@@ -36,12 +35,8 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 			},
 		}
 	)
-	logger, err := zap.NewDevelopment()
-	require.NoError(t, err)
-	sugar := logger.Sugar()
-
-	db, err := sqlx.Connect("postgres", "host=127.0.0.1 port=5432 user=reserve_stats password=reserve_stats dbname=reserve_stats sslmode=disable")
-	require.NoError(t, err)
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
 
 	for i := 0; i < 10; i++ {
 		td := testData[0]
@@ -55,10 +50,7 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() {
-		err := hdb.TearDown()
-		require.NoError(t, err)
-		err = hdb.Close()
-		require.NoError(t, err)
+		assert.NoError(t, teardown())
 	}()
 
 	ts, err := hdb.GetLastStoredTimestamp()

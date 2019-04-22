@@ -43,10 +43,6 @@ func TestERC20Transfer(t *testing.T) {
 	require.NoError(t, err)
 	s.register()
 
-	defer func(t *testing.T) {
-		require.NoError(t, rts.TearDown())
-	}(t)
-
 	err = rts.StoreReserve(ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"), common.CompanyWallet.String())
 	require.NoError(t, err)
 

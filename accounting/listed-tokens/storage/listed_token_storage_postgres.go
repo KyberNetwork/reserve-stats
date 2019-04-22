@@ -206,13 +206,3 @@ func (ltd *ListedTokenDB) Close() error {
 	}
 	return nil
 }
-
-//DeleteTable remove tables use for test
-func (ltd *ListedTokenDB) DeleteTable() error {
-	const dropQuery = `DROP VIEW "tokens_view";
-drop function save_token(text, text, text, timestamp, text, text);
-DROP TABLE "listed_tokens_reserves_tokens", "listed_tokens", "listed_tokens_version", "listed_tokens_reserves";`
-	ltd.sugar.Infow("Drop token table", "query", dropQuery)
-	_, err := ltd.db.Exec(dropQuery)
-	return err
-}

@@ -71,18 +71,6 @@ CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s (time);
 	return hs, nil
 }
 
-//TearDown removes all the tables
-func (bidb *BlockInfoStorage) TearDown() error {
-	const dropFMT = `
-	DROP TABLE %[1]s;
-	DROP INDEX IF EXISTS %[1]s_time_idx
-	`
-	query := fmt.Sprintf(dropFMT, bidb.tableNames[blockInfoTable])
-	bidb.sugar.Debugw("tearingdown", "query", dropFMT, "table name", bidb.tableNames[blockInfoTable])
-	_, err := bidb.db.Exec(query)
-	return err
-}
-
 //Close close DB connection
 func (bidb *BlockInfoStorage) Close() error {
 	if bidb.db != nil {

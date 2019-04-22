@@ -23,21 +23,6 @@ type RatesStorage struct {
 	tableNames map[string]string
 }
 
-//TearDown removes all the tables
-func (rdb *RatesStorage) TearDown() error {
-	const dropFMT = `
-	DROP VIEW rates_view;
-	DROP TABLE reserves, quotes, tokens, token_rates, usd_rates CASCADE;
-	`
-	tx, err := rdb.db.Beginx()
-	if err != nil {
-		return err
-	}
-	defer pgsql.CommitOrRollback(tx, rdb.sugar, &err)
-	_, err = tx.Exec(dropFMT)
-	return err
-}
-
 //Close close DB connection
 func (rdb *RatesStorage) Close() error {
 	if rdb.db != nil {

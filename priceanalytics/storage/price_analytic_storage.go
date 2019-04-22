@@ -150,9 +150,3 @@ func (pad *PriceAnalyticDB) GetPriceAnalytic(fromTime, toTime time.Time) ([]comm
 
 	return result, nil
 }
-
-//DeleteAllTables delete all table from schema using for test only
-func (pad *PriceAnalyticDB) DeleteAllTables() error {
-	_, err := pad.db.Exec(fmt.Sprintf(`DROP TABLE "%s", "%s"`, priceAnalyticTableName, priceAnalyticDataTableName))
-	return err
-}

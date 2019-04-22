@@ -24,12 +24,6 @@ type UserDB struct {
 	db    *sqlx.DB
 }
 
-//DeleteAllTables delete all table from schema using for test only
-func (udb *UserDB) DeleteAllTables() error {
-	_, err := udb.db.Exec(fmt.Sprintf(`DROP TABLE "%s", "%s"`, addressesTableName, usersTableName))
-	return err
-}
-
 //NewDB open a new database connection
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*UserDB, error) {
 	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%s"

@@ -45,17 +45,6 @@ CREATE INDEX IF NOT EXISTS huobi_trades_time_idx ON huobi_trades ((data ->> 'cre
 	return hs, nil
 }
 
-//TearDown removes all the tables
-func (hdb *HuobiStorage) TearDown() error {
-	const dropFMT = `
-	DROP TABLE huobi_trades;
-	DROP INDEX IF EXISTS huobi_trades_time_idx
-	`
-	hdb.sugar.Debugw("tearingdown", "query", dropFMT)
-	_, err := hdb.db.Exec(dropFMT)
-	return err
-}
-
 //Close close DB connection
 func (hdb *HuobiStorage) Close() error {
 	if hdb.db != nil {

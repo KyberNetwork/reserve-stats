@@ -104,24 +104,6 @@ CREATE TABLE IF NOT EXISTS rsv_tx_erc20_tx_reserve
 	return s, nil
 }
 
-// TearDown removes all in used tables of reserve transaction storage.
-func (s *Storage) TearDown() error {
-	var logger = s.sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.TearDown")
-	const dropFmt = `
-	DROP TABLE rsv_tx_normal CASCADE;
-	DROP TABLE rsv_tx_internal CASCADE;
-	DROP TABLE rsv_tx_erc20 CASCADE;
-	DROP TABLE rsv_tx_reserve CASCADE;
-	DROP TABLE rsv_tx_last_inserted CASCADE;
-	DROP TABLE rsv_tx_normal_tx_reserve CASCADE;
-	DROP TABLE rsv_tx_internal_tx_reserve CASCADE;
-	DROP TABLE rsv_tx_erc20_tx_reserve CASCADE;
-	`
-	logger.Debugw("cleanup database", "query", dropFmt)
-	_, err := s.db.Exec(dropFmt)
-	return err
-}
-
 //StoreReserve save fetching reserve address into database
 func (s *Storage) StoreReserve(reserve ethereum.Address, reserveType string) error {
 	var (

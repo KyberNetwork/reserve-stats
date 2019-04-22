@@ -9,6 +9,12 @@ import (
 
 const providerName = "coingecko"
 
+const (
+	timeLayout         = "02-01-2006"
+	currentEndpoint    = "%s/coins/%s"
+	historicalEndpoint = "%s/coins/%s/history"
+)
+
 // CoinGecko is the CoinGecko implementation of Provider. The
 // precision of CoinGecko provider is up to day.
 type CoinGecko struct {
@@ -41,9 +47,17 @@ type marketData struct {
 
 // Rate returns the rate of given token in real world currency at given timestamp.
 func (cg *CoinGecko) Rate(token, currency string, timestamp time.Time) (float64, error) {
-	const timeLayout = "02-01-2006"
+	var endpoint string
+	currentDate := time.Now().UTC().Format(timeLayout)
+	queryDate := timestamp.UTC().Format(timeLayout)
 
-	url := fmt.Sprintf("%s/coins/%s/history", cg.baseURL, token)
+	if currentDate == queryDate {
+		endpoint = currentEndpoint
+	} else {
+		endpoint = historicalEndpoint
+	}
+
+	url := fmt.Sprintf(endpoint, cg.baseURL, token)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return 0, err

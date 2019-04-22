@@ -126,9 +126,9 @@ FROM (SELECT toks.address,
       FROM "listed_tokens" AS toks
                LEFT JOIN "listed_tokens" AS olds
                          ON toks.id = olds.parent_id
-               JOIN "%[4]s" as token_reserve 
+               JOIN "listed_tokens_reserves_tokens" as token_reserve 
                          ON toks.id = token_reserve.token_id
-               JOIN "%[3]s" as reserve
+               JOIN "listed_tokens_reserves" as reserve
                          ON reserve.id = token_reserve.reserve_id
       WHERE toks.parent_id IS NULL
       ORDER BY timestamp DESC) AS joined

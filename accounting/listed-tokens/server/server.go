@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +22,7 @@ type Server struct {
 }
 
 type reserveTokenQuery struct {
-	Reserve string `json:"reserve" binding:"isAddress"`
+	Reserve string `form:"reserve" binding:"isAddress"`
 }
 
 //NewServer return new server object
@@ -43,6 +44,7 @@ func (s *Server) getReserveToken(c *gin.Context) {
 		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
+	log.Printf("reserve: %s", query.Reserve)
 	listedTokens, version, blockNumber, err := s.storage.GetTokens(ethereum.HexToAddress(query.Reserve))
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusInternalServerError, err)

@@ -128,9 +128,9 @@ FROM (SELECT toks.address,
                          ON toks.id = olds.parent_id
                JOIN "%[4]s" as token_reserve 
                          ON toks.id = token_reserve.token_id
-               JOIN "%[3]s as reserve
+               JOIN "%[3]s" as reserve
                          ON reserve.id = token_reserve.reserve_id
       WHERE toks.parent_id IS NULL
       ORDER BY timestamp DESC) AS joined
-GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp;
+GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp, joined.reserve_address;
 `

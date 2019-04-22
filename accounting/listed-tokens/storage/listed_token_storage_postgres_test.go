@@ -39,9 +39,11 @@ func TestListedTokenStorage(t *testing.T) {
 	logger.Info("start testing")
 
 	var (
-		blockNumber  = big.NewInt(7442895)
-		reserve      = ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")
-		listedTokens = []common.ListedToken{
+		blockNumber       = big.NewInt(7442895)
+		reserve           = ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")
+		notExistedReserve = ethereum.HexToAddress("0x21433Dec9Cb634A23c6A4BbcCe08c83f5aC2EC18")
+		zeroReserve       = ethereum.HexToAddress("0x0000000000000000000000000000000000000000")
+		listedTokens      = []common.ListedToken{
 			{
 				Address:   ethereum.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200"),
 				Symbol:    "KNC",
@@ -109,4 +111,15 @@ func TestListedTokenStorage(t *testing.T) {
 	assert.Equal(t, uint64(2), version)
 	assert.Equal(t, blockNumberNew.Uint64(), storedBlockNumber)
 	assert.ElementsMatch(t, listedTokensNew, storedNewListedTokens)
+
+	// assert provided reserve is zero
+	zeroReserveTokens, version, storedBlockNumber, err := storage.GetTokens(zeroReserve)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(2), version)
+	assert.Equal(t, blockNumberNew.Uint64(), storedBlockNumber)
+	assert.ElementsMatch(t, listedTokensNew, zeroReserveTokens)
+
+	noTokens, version, storedBlockNumber, err := storage.GetTokens(notExistedReserve)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(noTokens))
 }

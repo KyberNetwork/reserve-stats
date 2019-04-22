@@ -188,6 +188,7 @@ func (ltd *ListedTokenDB) GetTokens(reserve ethereum.Address) (result []common.L
 		logger = ltd.sugar.With(
 			"func",
 			"accounting/listed-token-storage/listedtokenstorage.GetTokens",
+			"reserve", reserve,
 		)
 		records       []listedTokenRecord
 		versionRecord listedTokenVersion

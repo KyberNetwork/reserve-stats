@@ -40,7 +40,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	defer logger.Sync()
+	defer libapp.NewFlusher(logger)()
 	sugar := logger.Sugar()
 	sugar.Info("Run user stats public service")
 

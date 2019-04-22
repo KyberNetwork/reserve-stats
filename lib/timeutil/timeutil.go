@@ -23,3 +23,9 @@ func UnixMilliSecond() uint64 {
 func Midnight(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 }
+
+// TimestampSecondToNs convert time stamp in second to nanosecond
+func TimestampSecondToNs(ts uint64) uint64 {
+	const secondToNs = 1000000
+	return ts * secondToNs
+}

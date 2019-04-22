@@ -119,7 +119,7 @@ func TestListedTokenStorage(t *testing.T) {
 	assert.Equal(t, blockNumberNew.Uint64(), storedBlockNumber)
 	assert.ElementsMatch(t, listedTokensNew, zeroReserveTokens)
 
-	noTokens, version, storedBlockNumber, err := storage.GetTokens(notExistedReserve)
+	noTokens, _, _, err := storage.GetTokens(notExistedReserve)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(noTokens))
 }

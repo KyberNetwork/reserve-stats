@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/listed-tokens/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
+	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 //Server struct for listed token api
@@ -17,6 +18,10 @@ type Server struct {
 	r       *gin.Engine
 	host    string
 	storage storage.Interface
+}
+
+type reserveTokenQuery struct {
+	Reserve string `json:"reserve" binding:"isAddress"`
 }
 
 //NewServer return new server object
@@ -31,7 +36,14 @@ func NewServer(sugar *zap.SugaredLogger, host string, storage storage.Interface)
 }
 
 func (s *Server) getReserveToken(c *gin.Context) {
-	listedTokens, version, blockNumber, err := s.storage.GetTokens()
+	var (
+		query reserveTokenQuery
+	)
+	if err := c.ShouldBindQuery(&query); err != nil {
+		httputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
+	listedTokens, version, blockNumber, err := s.storage.GetTokens(ethereum.HexToAddress(query.Reserve))
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return

@@ -182,7 +182,7 @@ func (r *listedTokenRecord) ListedToken() (common.ListedToken, error) {
 }
 
 // GetTokens return all tokens listed
-func (ltd *ListedTokenDB) GetTokens() (result []common.ListedToken, version, blockNumber uint64, err error) {
+func (ltd *ListedTokenDB) GetTokens(reserve ethereum.Address) (result []common.ListedToken, version, blockNumber uint64, err error) {
 	var (
 		logger = ltd.sugar.With(
 			"func",

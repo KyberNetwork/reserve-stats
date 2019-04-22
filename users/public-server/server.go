@@ -7,6 +7,7 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"go.uber.org/zap"
@@ -40,12 +41,14 @@ type userQuery struct {
 
 //NewServer return new server instance
 func NewServer(
-	sugar *zap.SugaredLogger,
+	logger *zap.Logger,
 	host string,
 	rateProvider tokenrate.ETHUSDRateProvider,
 	storage *redis.Client,
 	userCapConf *common.UserCapConfiguration) *Server {
 	r := gin.Default()
+	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	sugar := logger.Sugar()
 	return &Server{
 		sugar:        sugar,
 		r:            r,

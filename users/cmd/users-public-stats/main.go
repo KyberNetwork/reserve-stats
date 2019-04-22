@@ -36,11 +36,12 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	sugar, flusher, err := libapp.NewSugaredLogger(c)
+	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
 	}
-	defer flusher()
+	defer logger.Sync()
+	sugar := logger.Sugar()
 	sugar.Info("Run user stats public service")
 
 	redisClient, err := libredis.NewClientFromContext(c)
@@ -51,7 +52,7 @@ func run(c *cli.Context) error {
 	sugar.Debugw("initiate redis client", "client", redisClient)
 	userCapConf := common.NewUserCapConfigurationFromContext(c)
 
-	publicServer := server.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), coingecko.New(), redisClient, userCapConf)
+	publicServer := server.NewServer(logger, httputil.NewHTTPAddressFromContext(c), coingecko.New(), redisClient, userCapConf)
 
 	return publicServer.Run()
 }

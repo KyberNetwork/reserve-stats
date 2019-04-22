@@ -20,13 +20,14 @@ func TestFetcher(t *testing.T) {
 		testAddr1 = ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")
 		//testAddr2 = ethereum.HexToAddress("0xdd974d5c2e2928dea5f71b9825b8b646686bd200") // KNC ERC20 contract
 		client = etherscan.New(etherscan.Mainnet, "")
+		offset = 500
 	)
 
 	f := NewEtherscanTransactionFetcher(sugar, client)
 
 	// the result should not included the to block: 7358394
 	expected := []int{7356442, 7356961, 7357002, 7357451, 7357872, 7358016, 7358169, 7358208}
-	normalTxs, err := f.NormalTx(testAddr1, big.NewInt(7356442), big.NewInt(7358394))
+	normalTxs, err := f.NormalTx(testAddr1, big.NewInt(7356442), big.NewInt(7358394), offset)
 	require.NoError(t, err)
 	require.Len(t, normalTxs, len(expected))
 	for i := range normalTxs {
@@ -39,7 +40,7 @@ func TestFetcher(t *testing.T) {
 	//require.NoError(t, err)
 	//assert.True(t, len(normalTxs) > 400000)
 
-	internalTxs, err := f.InternalTx(testAddr1, big.NewInt(7356442), big.NewInt(7356500))
+	internalTxs, err := f.InternalTx(testAddr1, big.NewInt(7356442), big.NewInt(7356500), offset)
 	require.NoError(t, err)
 	expectedHashes := []string{
 		"0x111580b2c03d6bae12e9113ff4fc46da3c38daf98f2b282c0eb1ebc0be57c870",
@@ -56,7 +57,7 @@ func TestFetcher(t *testing.T) {
 		assert.Equal(t, expectedHashes[i], internalTxs[i].Hash)
 	}
 
-	transfers, err := f.ERC20Transfer(testAddr1, big.NewInt(7356442), big.NewInt(7356500))
+	transfers, err := f.ERC20Transfer(testAddr1, big.NewInt(7356442), big.NewInt(7356500), offset)
 	require.NoError(t, err)
 	expectedHashes = []string{
 		"0x3dbb05df251ee6c5fe4a4334baa05dfcf9ef85295487b1fc2f9fe7b72a8b7b5f",

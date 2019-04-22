@@ -22,8 +22,10 @@ import (
 const (
 	addressesFlag = "addresses"
 
-	fromBlockFlag = "from-block"
-	toBlockFlag   = "to-block"
+	fromBlockFlag      = "from-block"
+	toBlockFlag        = "to-block"
+	offsetFlag         = "offset"
+	defaultOffsetValue = 500
 )
 
 func fetchTx(
@@ -31,7 +33,8 @@ func fetchTx(
 	f fetcher.TransactionFetcher,
 	s storage.ReserveTransactionStorage,
 	addr common.ReserveAddress,
-	fromBlock, toBlock *big.Int) error {
+	fromBlock, toBlock *big.Int,
+	offset int) error {
 	var logger = sugar.With(
 		"func", "fetchTx",
 		"addr", addr.Address.String(),
@@ -44,7 +47,7 @@ func fetchTx(
 		addr.Type == common.PricingOperator ||
 		addr.Type == common.SanityOperator {
 		logger.Infow("fetching normal transactions")
-		normalTxs, err := f.NormalTx(addr.Address, fromBlock, toBlock)
+		normalTxs, err := f.NormalTx(addr.Address, fromBlock, toBlock, offset)
 		if err != nil {
 			return err
 		}
@@ -57,7 +60,7 @@ func fetchTx(
 		}
 
 		logger.Infow("fetching internal transactions")
-		internalTxs, err := f.InternalTx(addr.Address, fromBlock, toBlock)
+		internalTxs, err := f.InternalTx(addr.Address, fromBlock, toBlock, offset)
 		if err != nil {
 			return err
 		}
@@ -75,7 +78,7 @@ func fetchTx(
 	// to hold any ERC20 tokens.
 	if addr.Type == common.Reserve || addr.Type == common.IntermediateOperator || addr.Type == common.CompanyWallet {
 		logger.Infow("fetching ERC20 transactions")
-		transfers, err := f.ERC20Transfer(addr.Address, fromBlock, toBlock)
+		transfers, err := f.ERC20Transfer(addr.Address, fromBlock, toBlock, offset)
 		if err != nil {
 			return err
 		}
@@ -113,6 +116,12 @@ func main() {
 			Name:   toBlockFlag,
 			Usage:  "Fetch transactions to block",
 			EnvVar: "TO_BLOCK",
+		},
+		cli.IntFlag{
+			Name:   offsetFlag,
+			Usage:  "Offset to get transactions",
+			EnvVar: "OFFSET",
+			Value:  defaultOffsetValue,
 		},
 	)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
@@ -193,6 +202,8 @@ func run(c *cli.Context) error {
 		}
 	}
 
+	offset := c.Int(offsetFlag)
+
 	etherscanClient, err := etherscan.NewEtherscanClientFromContext(c)
 	if err != nil {
 		return err
@@ -229,7 +240,7 @@ func run(c *cli.Context) error {
 			)
 		}
 
-		if err = fetchTx(sugar, f, s, addr, fromBlock, toBlock); err != nil {
+		if err = fetchTx(sugar, f, s, addr, fromBlock, toBlock, offset); err != nil {
 			return err
 		}
 	}

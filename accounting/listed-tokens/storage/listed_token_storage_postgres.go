@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
@@ -197,8 +198,8 @@ func (ltd *ListedTokenDB) GetTokens(reserve ethereum.Address) (result []common.L
        symbol,
        timestamp,
        old_addresses,
-       old_timestamps
-FROM "tokens_view";`
+	   old_timestamps
+FROM "tokens_view" WHERE ( $1 OR reserve_address = $2 );`
 	logger.Debugw("get tokens query", "query", getQuery)
 
 	getVersionQuery := fmt.Sprintf(`SELECT version, block_number FROM "%[1]s" LIMIT 1`, ltd.tb.version)
@@ -211,7 +212,7 @@ FROM "tokens_view";`
 
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 
-	if err := tx.Select(&records, getQuery); err != nil {
+	if err := tx.Select(&records, getQuery, blockchain.IsZeroAddress(reserve), reserve.Hex()); err != nil {
 		logger.Errorw("error query token", "error", err)
 		return nil, 0, 0, err
 	}

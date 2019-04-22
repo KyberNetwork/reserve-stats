@@ -107,10 +107,11 @@ END
 $$ LANGUAGE PLPGSQL;
 
 CREATE OR REPLACE VIEW tokens_view AS
-SELECT joined.address,
+SELECT joined.address as address,
        joined.name,
        joined.symbol,
        joined.timestamp,
+       joined.reserve_address,
        array_agg(joined.old_address)
                  FILTER ( WHERE joined.old_address IS NOT NULL)::text[]     AS old_addresses,
        array_agg(extract(EPOCH FROM joined.old_timestamp) * 1000)
@@ -119,11 +120,16 @@ FROM (SELECT toks.address,
              toks.name,
              toks.symbol,
              toks.timestamp,
+             reserve.address as reserve_address,
              olds.address   AS old_address,
              olds.timestamp AS old_timestamp
       FROM "%[1]s" AS toks
                LEFT JOIN "%[1]s" AS olds
                          ON toks.id = olds.parent_id
+               JOIN "%[4]s" as token_reserve 
+                         ON toks.id = token_reserve.token_id
+               JOIN "%[3]s as reserve
+                         ON reserve.id = token_reserve.reserve_id
       WHERE toks.parent_id IS NULL
       ORDER BY timestamp DESC) AS joined
 GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp;

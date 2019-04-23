@@ -30,7 +30,7 @@ const (
 	attemptFlag                = "attempt"
 	defaultNormalOffsetValue   = 500
 	defaultInternalOffsetValue = 500
-	defaultTransferOffsetValue = 100
+	defaultTransferOffsetValue = 200
 	defaultAttemptValue        = 4
 )
 

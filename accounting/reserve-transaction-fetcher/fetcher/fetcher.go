@@ -35,18 +35,23 @@ func newFetchFunction(name string, fetch func(address string, startBlock *int, e
 
 func (f *EtherscanTransactionFetcher) fetchWithRetry(fn *fetchFn, addr ethereum.Address, startBlock, endBlock *int, page, offset int) ([]interface{}, error) {
 	var (
-		txs []interface{}
-		err error
+		txs    []interface{}
+		err    error
+		logger = f.sugar.With(
+			"func", "accounting-reserve-transaction/fetcher/fetchWithRetry",
+		)
 	)
 	for i := 0; i < f.attempt; i++ {
 		txs, err = fn.fetch(addr.String(), startBlock, endBlock, page, offset)
 		if blockchain.IsEtherscanTimeout(err) {
 			// smaller result dataset
-			if offset -= 50; offset < 0 {
+			logger.Debugw("Etherscan API timeout, retry with smaller offset", "offset", offset-50)
+			if offset -= 50; offset <= 0 {
 				break
 			}
 			continue
 		}
+		logger.Infow("fetch data success", "page", page, "attempt", i, "offset", offset)
 		break
 	}
 	return txs, err

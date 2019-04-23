@@ -92,7 +92,7 @@ func (tl *TradeLog) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	tl.Timestamp = time.Unix(0, int64(timeutil.TimestampSecondToNs(m.Timestamp)))
+	tl.Timestamp = timeutil.TimestampMsToTime(m.Timestamp)
 	return nil
 }
 

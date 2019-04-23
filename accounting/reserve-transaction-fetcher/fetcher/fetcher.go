@@ -47,7 +47,7 @@ func (f *EtherscanTransactionFetcher) fetchWithRetry(fn *fetchFn, addr ethereum.
 			// the fetcher reach the end of result
 			break
 		} else if err != nil {
-			logger.Warnw("Fetch data from Etherscan api failed, retry", "error", err, "offset", offset, "attempt", attempt)
+			logger.Warnw("Fetch data from Etherscan api failed, retry", "error", err, "offset", offset, "attempt", i)
 			continue
 		}
 		logger.Infow("fetch data success", "page", page, "attempt", i, "offset", offset)

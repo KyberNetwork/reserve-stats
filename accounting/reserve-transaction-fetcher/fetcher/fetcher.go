@@ -14,13 +14,14 @@ import (
 
 // EtherscanTransactionFetcher is an implementation of TransactionFetcher that uses Etherscan API.
 type EtherscanTransactionFetcher struct {
-	sugar  *zap.SugaredLogger
-	client *etherscan.Client
+	sugar   *zap.SugaredLogger
+	client  *etherscan.Client
+	attempt int
 }
 
 // NewEtherscanTransactionFetcher returns a new EtherscanTransactionFetcher instance.
-func NewEtherscanTransactionFetcher(sugar *zap.SugaredLogger, client *etherscan.Client) *EtherscanTransactionFetcher {
-	return &EtherscanTransactionFetcher{sugar: sugar, client: client}
+func NewEtherscanTransactionFetcher(sugar *zap.SugaredLogger, client *etherscan.Client, attempt int) *EtherscanTransactionFetcher {
+	return &EtherscanTransactionFetcher{sugar: sugar, client: client, attempt: attempt}
 }
 
 type fetchFn struct {
@@ -30,6 +31,29 @@ type fetchFn struct {
 
 func newFetchFunction(name string, fetch func(address string, startBlock *int, endBlock *int, page int, offset int) ([]interface{}, error)) *fetchFn {
 	return &fetchFn{name: name, fetch: fetch}
+}
+
+func (f *EtherscanTransactionFetcher) fetchWithRetry(fn *fetchFn, addr ethereum.Address, startBlock, endBlock *int, page, offset int) ([]interface{}, error) {
+	var (
+		txs    []interface{}
+		err    error
+		logger = f.sugar.With(
+			"func", "accounting-reserve-transaction/fetcher/fetchWithRetry",
+		)
+	)
+	for i := 0; i < f.attempt; i++ {
+		txs, err = fn.fetch(addr.String(), startBlock, endBlock, page, offset)
+		if blockchain.IsEtherscanNotransactionFound(err) {
+			// the fetcher reach the end of result
+			break
+		} else if err != nil {
+			logger.Warnw("Fetch data from Etherscan api failed, retry", "error", err, "offset", offset, "attempt", i)
+			continue
+		}
+		logger.Infow("fetch data success", "page", page, "attempt", i, "offset", offset)
+		break
+	}
+	return txs, err
 }
 
 func (f *EtherscanTransactionFetcher) fetch(fn *fetchFn, addr ethereum.Address, from, to *big.Int, offset int) ([]interface{}, error) {
@@ -83,7 +107,7 @@ func (f *EtherscanTransactionFetcher) fetch(fn *fetchFn, addr ethereum.Address, 
 	// Etherscan paging starts with index=1
 	for page := 1; ; page++ {
 		logger.Debugw("fetching a page of transactions", "page", page)
-		txs, err := fn.fetch(addr.String(), startBlock, endBlock, page, offset)
+		txs, err := f.fetchWithRetry(fn, addr, startBlock, endBlock, page, offset)
 		if blockchain.IsEtherscanNotransactionFound(err) {
 			logger.Debugw("all transaction fetched", "page", page)
 			break

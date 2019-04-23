@@ -22,10 +22,16 @@ import (
 const (
 	addressesFlag = "addresses"
 
-	fromBlockFlag      = "from-block"
-	toBlockFlag        = "to-block"
-	offsetFlag         = "offset"
-	defaultOffsetValue = 500
+	fromBlockFlag              = "from-block"
+	toBlockFlag                = "to-block"
+	normalOffsetFlag           = "normal-offset"
+	internalOffsetFlag         = "internal-offset"
+	transferOffsetFlag         = "transfer-offset"
+	attemptFlag                = "attempt"
+	defaultNormalOffsetValue   = 500
+	defaultInternalOffsetValue = 500
+	defaultTransferOffsetValue = 200
+	defaultAttemptValue        = 4
 )
 
 func fetchTx(
@@ -34,7 +40,7 @@ func fetchTx(
 	s storage.ReserveTransactionStorage,
 	addr common.ReserveAddress,
 	fromBlock, toBlock *big.Int,
-	offset int) error {
+	normalOffset, internalOffset, transferOffset int) error {
 	var logger = sugar.With(
 		"func", "fetchTx",
 		"addr", addr.Address.String(),
@@ -47,7 +53,7 @@ func fetchTx(
 		addr.Type == common.PricingOperator ||
 		addr.Type == common.SanityOperator {
 		logger.Infow("fetching normal transactions")
-		normalTxs, err := f.NormalTx(addr.Address, fromBlock, toBlock, offset)
+		normalTxs, err := f.NormalTx(addr.Address, fromBlock, toBlock, normalOffset)
 		if err != nil {
 			return err
 		}
@@ -60,7 +66,7 @@ func fetchTx(
 		}
 
 		logger.Infow("fetching internal transactions")
-		internalTxs, err := f.InternalTx(addr.Address, fromBlock, toBlock, offset)
+		internalTxs, err := f.InternalTx(addr.Address, fromBlock, toBlock, internalOffset)
 		if err != nil {
 			return err
 		}
@@ -78,7 +84,7 @@ func fetchTx(
 	// to hold any ERC20 tokens.
 	if addr.Type == common.Reserve || addr.Type == common.IntermediateOperator || addr.Type == common.CompanyWallet {
 		logger.Infow("fetching ERC20 transactions")
-		transfers, err := f.ERC20Transfer(addr.Address, fromBlock, toBlock, offset)
+		transfers, err := f.ERC20Transfer(addr.Address, fromBlock, toBlock, transferOffset)
 		if err != nil {
 			return err
 		}
@@ -118,10 +124,28 @@ func main() {
 			EnvVar: "TO_BLOCK",
 		},
 		cli.IntFlag{
-			Name:   offsetFlag,
-			Usage:  "Offset to get transactions",
-			EnvVar: "OFFSET",
-			Value:  defaultOffsetValue,
+			Name:   normalOffsetFlag,
+			Usage:  "Offset to get normal transactions",
+			EnvVar: "NORMAL_OFFSET",
+			Value:  defaultNormalOffsetValue,
+		},
+		cli.IntFlag{
+			Name:   internalOffsetFlag,
+			Usage:  "Offset to get internal transactions",
+			EnvVar: "INTERNAL_OFFSET",
+			Value:  defaultInternalOffsetValue,
+		},
+		cli.IntFlag{
+			Name:   transferOffsetFlag,
+			Usage:  "Offset to get erc20 transfer transactions",
+			EnvVar: "TRANSFER_OFFSET",
+			Value:  defaultTransferOffsetValue,
+		},
+		cli.IntFlag{
+			Name:   attemptFlag,
+			Usage:  "number of attempt to retry",
+			EnvVar: "ATTEMPT",
+			Value:  defaultAttemptValue,
 		},
 	)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultTransactionsDB)...)
@@ -202,7 +226,10 @@ func run(c *cli.Context) error {
 		}
 	}
 
-	offset := c.Int(offsetFlag)
+	normalOffset := c.Int(normalOffsetFlag)
+	internalOffset := c.Int(internalOffsetFlag)
+	transferOffset := c.Int(transferOffsetFlag)
+	attempt := c.Int(attemptFlag)
 
 	etherscanClient, err := etherscan.NewEtherscanClientFromContext(c)
 	if err != nil {
@@ -219,7 +246,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	f := fetcher.NewEtherscanTransactionFetcher(sugar, etherscanClient)
+	f := fetcher.NewEtherscanTransactionFetcher(sugar, etherscanClient, attempt)
 	for _, addr := range addrs {
 		fromBlock, toBlock, addr := fromBlock, toBlock, addr
 		if err := s.StoreReserve(addr.Address, addr.Type.String()); err != nil {
@@ -240,7 +267,7 @@ func run(c *cli.Context) error {
 			)
 		}
 
-		if err = fetchTx(sugar, f, s, addr, fromBlock, toBlock, offset); err != nil {
+		if err = fetchTx(sugar, f, s, addr, fromBlock, toBlock, normalOffset, internalOffset, transferOffset); err != nil {
 			return err
 		}
 	}

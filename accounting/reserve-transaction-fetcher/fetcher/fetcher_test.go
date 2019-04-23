@@ -23,7 +23,7 @@ func TestFetcher(t *testing.T) {
 		offset = 500
 	)
 
-	f := NewEtherscanTransactionFetcher(sugar, client)
+	f := NewEtherscanTransactionFetcher(sugar, client, 2)
 
 	// the result should not included the to block: 7358394
 	expected := []int{7356442, 7356961, 7357002, 7357451, 7357872, 7358016, 7358169, 7358208}

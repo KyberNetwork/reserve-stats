@@ -19,14 +19,13 @@ func TestRatesStorage(t *testing.T) {
 	// assume that a test never takes more than this amount of time
 	const truncateDuration = 10 * time.Second
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	_, db := testutil.MustNewDevelopmentDB()
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
 
-	rs, err := NewDB(sugar, db, "test_rsv_table", "test_token_table", "test_quote_table", "test_rates_table", "test_usd_table")
+	rs, err := NewDB(sugar, db)
 	require.NoError(t, err)
 
 	defer func(t *testing.T) {
-		require.NoError(t, rs.TearDown())
-		require.NoError(t, rs.Close())
+		require.NoError(t, teardown())
 	}(t)
 
 	_, err = rs.GetLastResolvedBlockInfo(ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"))

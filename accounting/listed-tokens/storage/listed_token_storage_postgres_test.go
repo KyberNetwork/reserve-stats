@@ -7,32 +7,11 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
-
-func newListedTokenDB(sugar *zap.SugaredLogger) (*ListedTokenDB, error) {
-	_, db := testutil.MustNewDevelopmentDB()
-	storage, err := NewDB(sugar, db, WithTableName(newTableNames(
-		"test_listed_tokens_version",
-		"test_listed_tokens_reserves",
-		"test_listed_tokens_reserves_tokens",
-		"test_listed_tokens")))
-	if err != nil {
-		return nil, err
-	}
-	return storage, nil
-}
-
-func teardown(t *testing.T, storage *ListedTokenDB) {
-	err := storage.DeleteTable()
-	assert.NoError(t, err)
-	err = storage.Close()
-	assert.NoError(t, err)
-}
 
 func TestListedTokenStorage(t *testing.T) {
 	logger := testutil.MustNewDevelopmentSugaredLogger()
@@ -90,10 +69,13 @@ func TestListedTokenStorage(t *testing.T) {
 		}
 	)
 
-	storage, err := newListedTokenDB(logger)
-	assert.NoError(t, err)
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	storage, err := NewDB(logger, db)
+	require.NoError(t, err)
 
-	defer teardown(t, storage)
+	defer func() {
+		require.NoError(t, teardown())
+	}()
 
 	err = storage.CreateOrUpdate(listedTokens, blockNumber, reserve)
 	require.NoError(t, err)

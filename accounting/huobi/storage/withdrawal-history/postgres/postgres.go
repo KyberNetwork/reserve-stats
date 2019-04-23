@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -13,83 +12,41 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
-const (
-	huobiWithdrawalTableName = "huobi_withdrawals"
-)
-
-//Option define init behaviour for db storage.
-type Option func(*HuobiStorage) error
-
-//WithWithdrawalTableName return Option to set trade table Name
-func WithWithdrawalTableName(name string) Option {
-	return func(hs *HuobiStorage) error {
-		if hs.tableNames == nil {
-			hs.tableNames = make(map[string]string)
-		}
-		hs.tableNames[huobiWithdrawalTableName] = name
-		return nil
-	}
-}
-
 //HuobiStorage defines the object to store Huobi data
 type HuobiStorage struct {
-	sugar      *zap.SugaredLogger
-	db         *sqlx.DB
-	tableNames map[string]string
+	sugar *zap.SugaredLogger
+	db    *sqlx.DB
 }
 
 // NewDB return the HuobiStorage instance. User must call Close() before exit.
-func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*HuobiStorage, error) {
+func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*HuobiStorage, error) {
 	var (
 		logger = sugar.With("func", "reserverates/storage/postgres/NewDB")
-		//set Default table name
-		tableNames = map[string]string{
-			huobiWithdrawalTableName: huobiWithdrawalTableName,
-		}
 	)
 
 	const schemaFMT = `
-	CREATE TABLE IF NOT EXISTS %[1]s
+	CREATE TABLE IF NOT EXISTS huobi_withdrawals
 (
 	id bigint NOT NULL,
 	data JSONB,
-	CONSTRAINT %[1]s_pk PRIMARY KEY(id)
+	CONSTRAINT huobi_withdrawals_pk PRIMARY KEY(id)
 ) ;
 
-CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s ((data ->> 'created-at'));
+CREATE INDEX IF NOT EXISTS huobi_withdrawals_time_idx ON huobi_withdrawals ((data ->> 'created-at'));
 
 `
 
 	hs := &HuobiStorage{
-		sugar:      sugar,
-		db:         db,
-		tableNames: tableNames,
+		sugar: sugar,
+		db:    db,
 	}
-	for _, opt := range options {
-		if err := opt(hs); err != nil {
-			return nil, err
-		}
-	}
+	logger.Debugw("initializing database schema", "query", schemaFMT)
 
-	query := fmt.Sprintf(schemaFMT, hs.tableNames[huobiWithdrawalTableName])
-	logger.Debugw("initializing database schema", "query", query)
-
-	if _, err := db.Exec(query); err != nil {
+	if _, err := db.Exec(schemaFMT); err != nil {
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
 	return hs, nil
-}
-
-//TearDown removes all the tables
-func (hdb *HuobiStorage) TearDown() error {
-	const dropFMT = `
-	DROP TABLE %s;
-	`
-	query := fmt.Sprintf(dropFMT, hdb.tableNames[huobiWithdrawalTableName])
-	hdb.sugar.Debugw("tearingdown", "query", dropFMT, "table name", hdb.tableNames[huobiWithdrawalTableName])
-	_, err := hdb.db.Exec(query)
-	return err
 }
 
 //Close close DB connection
@@ -108,16 +65,13 @@ func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory
 			"len(withdraws)", len(withdraws),
 		)
 	)
-	const updateStmt = `INSERT INTO %[1]s(id, data)
+	const updateStmt = `INSERT INTO huobi_withdrawals(id, data)
 	VALUES ( 
 		$1,
 		$2
 	)
-	ON CONFLICT ON CONSTRAINT %[1]s_pk DO NOTHING;`
-	query := fmt.Sprintf(updateStmt,
-		hdb.tableNames[huobiWithdrawalTableName],
-	)
-	logger.Debugw("updating tradeHistory...", "query", query)
+	ON CONFLICT ON CONSTRAINT huobi_withdrawals_pk DO NOTHING;`
+	logger.Debugw("updating tradeHistory...", "query", updateStmt)
 
 	tx, err := hdb.db.Beginx()
 	if err != nil {
@@ -129,7 +83,7 @@ func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory
 		if err != nil {
 			return err
 		}
-		_, err = tx.Exec(query, withdraw.ID, data)
+		_, err = tx.Exec(updateStmt, withdraw.ID, data)
 		if err != nil {
 			return err
 		}
@@ -150,10 +104,9 @@ func (hdb *HuobiStorage) GetWithdrawHistory(from, to time.Time) ([]huobi.Withdra
 		)
 		tmp huobi.WithdrawHistory
 	)
-	const selectStmt = `SELECT data FROM %[1]s WHERE data->>'created-at'>=$1 AND data->>'created-at'<$2`
-	query := fmt.Sprintf(selectStmt, hdb.tableNames[huobiWithdrawalTableName])
-	logger.Debugw("querying trade history...", "query", query)
-	if err := hdb.db.Select(&dbResult, query, timeutil.TimeToTimestampMs(from), timeutil.TimeToTimestampMs(to)); err != nil {
+	const selectStmt = `SELECT data FROM huobi_withdrawals WHERE data->>'created-at'>=$1 AND data->>'created-at'<$2`
+	logger.Debugw("querying trade history...", "query", selectStmt)
+	if err := hdb.db.Select(&dbResult, selectStmt, timeutil.TimeToTimestampMs(from), timeutil.TimeToTimestampMs(to)); err != nil {
 		return result, err
 	}
 	for _, data := range dbResult {
@@ -173,11 +126,10 @@ func (hdb *HuobiStorage) GetLastIDStored() (uint64, error) {
 			"func", "reserverates/storage/postgres/RateStorage.GetLastIDStored",
 		)
 	)
-	const selectStmt = `SELECT COALESCE(MAX(id),0) FROM %[1]s`
-	query := fmt.Sprintf(selectStmt, hdb.tableNames[huobiWithdrawalTableName])
-	logger.Debugw("querying trade history...", "query", query)
+	const selectStmt = `SELECT COALESCE(MAX(id),0) FROM huobi_withdrawals`
+	logger.Debugw("querying trade history...", "query", selectStmt)
 
-	if err := hdb.db.Get(&result, query); err != nil {
+	if err := hdb.db.Get(&result, selectStmt); err != nil {
 		return 0, err
 	}
 

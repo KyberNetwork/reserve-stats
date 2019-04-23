@@ -8,49 +8,24 @@ import (
 	"testing"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/priceanalytics/storage"
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
-
-const (
-	postgresHost     = "127.0.0.1"
-	postgresPort     = 5432
-	postgresUser     = "reserve_stats"
-	postgresPassword = "reserve_stats"
-	postgresDatabase = "reserve_stats"
-)
-
-func newTestDB(sugar *zap.SugaredLogger) (*storage.PriceAnalyticDB, error) {
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		postgresHost,
-		postgresPort,
-		postgresUser,
-		postgresPassword,
-		postgresDatabase,
-	)
-	db, err := sqlx.Connect("postgres", connStr)
-	if err != nil {
-		return nil, err
-	}
-	return storage.NewPriceStorage(sugar, db)
-}
-
-func tearDown(t *testing.T, storage *storage.PriceAnalyticDB) {
-	assert.Nil(t, storage.DeleteAllTables(), "database should be deleted completely")
-}
 
 func TestHTTPPriceAnalyticServer(t *testing.T) {
 	logger, err := zap.NewDevelopment()
 	assert.Nil(t, err, "logger should be initiated successfully")
 
 	sugar := logger.Sugar()
-	priceStorage, err := newTestDB(sugar)
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	priceStorage, err := storage.NewPriceStorage(sugar, db)
 	assert.Nil(t, err, "price storage should be initiated successfully")
 
-	defer tearDown(t, priceStorage)
+	defer func() {
+		assert.NoError(t, teardown())
+	}()
 
 	s := NewHTTPServer(sugar, "", priceStorage)
 	s.register()

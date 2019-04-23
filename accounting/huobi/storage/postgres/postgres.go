@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -13,77 +12,37 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
-const (
-	huobiTradesTableName = "huobi_trades"
-)
-
-//Option define init behaviour for db storage.
-type Option func(*HuobiStorage) error
-
-//WithTradeTableName return Option to set trade table Name
-func WithTradeTableName(name string) Option {
-	return func(hs *HuobiStorage) error {
-		if hs.tableNames == nil {
-			hs.tableNames = make(map[string]string)
-		}
-		hs.tableNames[huobiTradesTableName] = name
-		return nil
-	}
-}
-
 //HuobiStorage defines the object to store Huobi data
 type HuobiStorage struct {
-	sugar      *zap.SugaredLogger
-	db         *sqlx.DB
-	tableNames map[string]string
+	sugar *zap.SugaredLogger
+	db    *sqlx.DB
 }
 
 // NewDB return the HuobiStorage instance. User must call Close() before exit.
 // tableNames is a list of string for tablename[huobitrades]. It can be optional
-func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*HuobiStorage, error) {
+func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*HuobiStorage, error) {
 	const schemaFMT = `
-	CREATE TABLE IF NOT EXISTS %[1]s
+	CREATE TABLE IF NOT EXISTS huobi_trades
 (
 	id bigint NOT NULL,
 	data JSONB,
-	CONSTRAINT %[1]s_pk PRIMARY KEY(id)
+	CONSTRAINT huobi_trades_pk PRIMARY KEY(id)
 ) ;
-CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s ((data ->> 'created-at'));
+CREATE INDEX IF NOT EXISTS huobi_trades_time_idx ON huobi_trades ((data ->> 'created-at'));
 `
 	var (
-		logger     = sugar.With("func", "reserverates/storage/postgres/Newdb")
-		tableNames = map[string]string{huobiTradesTableName: huobiTradesTableName}
+		logger = sugar.With("func", "reserverates/storage/postgres/Newdb")
 	)
 	hs := &HuobiStorage{
-		sugar:      sugar,
-		db:         db,
-		tableNames: tableNames,
+		sugar: sugar,
+		db:    db,
 	}
-	for _, opt := range options {
-		if err := opt(hs); err != nil {
-			return nil, err
-		}
-	}
-
-	query := fmt.Sprintf(schemaFMT, hs.tableNames[huobiTradesTableName])
-	logger.Debugw("initializing database schema", "query", query)
-	if _, err := hs.db.Exec(query); err != nil {
+	logger.Debugw("initializing database schema", "query", schemaFMT)
+	if _, err := hs.db.Exec(schemaFMT); err != nil {
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
 	return hs, nil
-}
-
-//TearDown removes all the tables
-func (hdb *HuobiStorage) TearDown() error {
-	const dropFMT = `
-	DROP TABLE %[1]s;
-	DROP INDEX IF EXISTS %[1]s_time_idx
-	`
-	query := fmt.Sprintf(dropFMT, hdb.tableNames[huobiTradesTableName])
-	hdb.sugar.Debugw("tearingdown", "query", dropFMT, "table name", hdb.tableNames[huobiTradesTableName])
-	_, err := hdb.db.Exec(query)
-	return err
 }
 
 //Close close DB connection
@@ -104,16 +63,13 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trades []huobi.TradeHistory) error {
 		)
 	)
 
-	const updateStmt = `INSERT INTO %[1]s(id, data)
+	const updateStmt = `INSERT INTO huobi_trades (id, data)
 	VALUES ( 
 		$1,
 		$2
 	)
-	ON CONFLICT ON CONSTRAINT %[1]s_pk DO NOTHING;`
-	query := fmt.Sprintf(updateStmt,
-		hdb.tableNames[huobiTradesTableName],
-	)
-	logger.Debugw("updating tradeHistory...", "query", query)
+	ON CONFLICT ON CONSTRAINT huobi_trades_pk DO NOTHING;`
+	logger.Debugw("updating tradeHistory...", "query", updateStmt)
 
 	tx, err := hdb.db.Beginx()
 	if err != nil {
@@ -125,7 +81,7 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trades []huobi.TradeHistory) error {
 		if err != nil {
 			return err
 		}
-		_, err = tx.Exec(query, trade.ID, data)
+		_, err = tx.Exec(updateStmt, trade.ID, data)
 		if err != nil {
 			return err
 		}
@@ -146,10 +102,9 @@ func (hdb *HuobiStorage) GetTradeHistory(from, to time.Time) ([]huobi.TradeHisto
 		)
 		tmp huobi.TradeHistory
 	)
-	const selectStmt = `SELECT data FROM %[1]s WHERE data->>'created-at'>=$1 AND data->>'created-at'<$2`
-	query := fmt.Sprintf(selectStmt, hdb.tableNames[huobiTradesTableName])
-	logger.Debugw("querying trade history...", "query", query)
-	if err := hdb.db.Select(&dbResult, query, timeutil.TimeToTimestampMs(from), timeutil.TimeToTimestampMs(to)); err != nil {
+	const selectStmt = `SELECT data FROM huobi_trades WHERE data->>'created-at'>=$1 AND data->>'created-at'<$2`
+	logger.Debugw("querying trade history...", "query", selectStmt)
+	if err := hdb.db.Select(&dbResult, selectStmt, timeutil.TimeToTimestampMs(from), timeutil.TimeToTimestampMs(to)); err != nil {
 		return result, err
 	}
 	for _, data := range dbResult {
@@ -170,10 +125,9 @@ func (hdb *HuobiStorage) GetLastStoredTimestamp() (time.Time, error) {
 			"func", "accounting/huobi/storage/postgres/RateStorage.GetLastStoredTimestamp",
 		)
 	)
-	const selectStmt = `SELECT COALESCE(MAX(data->>'created-at'), '0') FROM %[1]s`
-	query := fmt.Sprintf(selectStmt, hdb.tableNames[huobiTradesTableName])
-	logger.Debugw("querying trade history...", "query", query)
-	if err := hdb.db.Get(&dbResult, query); err != nil {
+	const selectStmt = `SELECT COALESCE(MAX(data->>'created-at'), '0') FROM huobi_trades`
+	logger.Debugw("querying trade history...", "query", selectStmt)
+	if err := hdb.db.Get(&dbResult, selectStmt); err != nil {
 		return result, err
 	}
 	if dbResult != 0 {

@@ -43,12 +43,11 @@ func (f *EtherscanTransactionFetcher) fetchWithRetry(fn *fetchFn, addr ethereum.
 	)
 	for i := 0; i < f.attempt; i++ {
 		txs, err = fn.fetch(addr.String(), startBlock, endBlock, page, offset)
-		if blockchain.IsEtherscanTimeout(err) {
-			// smaller result dataset
-			logger.Debugw("Etherscan API timeout, retry with smaller offset", "offset", offset-50)
-			if offset -= 50; offset <= 0 {
-				break
-			}
+		if blockchain.IsEtherscanNotransactionFound(err) {
+			// the fetcher reach the end of result
+			break
+		} else if err != nil {
+			logger.Warnw("Fetch data from Etherscan api failed, retry", "error", err, "offset", offset, "attempt", attempt)
 			continue
 		}
 		logger.Infow("fetch data success", "page", page, "attempt", i, "offset", offset)

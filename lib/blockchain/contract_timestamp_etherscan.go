@@ -14,11 +14,6 @@ func IsEtherscanNotransactionFound(err error) bool {
 	return err != nil && err.Error() == "etherscan server: No transactions found"
 }
 
-// IsEtherscanTimeout returns true if given error represents etherscan timeout error.
-func IsEtherscanTimeout(err error) bool {
-	return err != nil && err.Error() == "Query Timeout occured. Please select a smaller result dataset"
-}
-
 // EtherscanContractTimestampResolver is an implementation of EtherscanContractTimestampResolver
 // that uses Etherscan API.
 type EtherscanContractTimestampResolver struct {

@@ -1,18 +1,13 @@
 package storage
 
 import (
-	"fmt"
 	"time"
+
+	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/priceanalytics/common"
-	"github.com/jmoiron/sqlx"
-	"go.uber.org/zap"
-)
-
-const (
-	priceAnalyticTableName     = "price_analytics"
-	priceAnalyticDataTableName = "price_analytics_data"
 )
 
 //PriceAnalyticDB represent db for price analytic data
@@ -23,23 +18,24 @@ type PriceAnalyticDB struct {
 
 //NewPriceStorage return new storage for price analytics
 func NewPriceStorage(sugar *zap.SugaredLogger, db *sqlx.DB) (*PriceAnalyticDB, error) {
-	const schemaFmt = `
-CREATE TABLE IF NOT EXISTS "%s" (
-	id SERIAL PRIMARY KEY,
-	timestamp TIMESTAMP NOT NULL,
-	block_expiration BOOL NOT NULL
+	const schema = `CREATE TABLE IF NOT EXISTS "price_analytics"
+(
+    id               SERIAL PRIMARY KEY,
+    timestamp        TIMESTAMP NOT NULL,
+    block_expiration BOOL      NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "%s" (
-	id SERIAL PRIMARY KEY,
-	token text NOT NULL,
-	ask_price float NOT NULL,
-	bid_price float NOT NULL,
-	mid_afp_price float NOT NULL,
-	mid_afp_old_price float NOT NULL,
-	min_spread float NOT NULL,
-	trigger_update bool NOT NULL,
-	price_analytic_id SERIAL NOT NULL REFERENCES %s (id)
+CREATE TABLE IF NOT EXISTS "price_analytics_data"
+(
+    id                SERIAL PRIMARY KEY,
+    token             text   NOT NULL,
+    ask_price         float  NOT NULL,
+    bid_price         float  NOT NULL,
+    mid_afp_price     float  NOT NULL,
+    mid_afp_old_price float  NOT NULL,
+    min_spread        float  NOT NULL,
+    trigger_update    bool   NOT NULL,
+    price_analytic_id SERIAL NOT NULL REFERENCES price_analytics (id)
 );
 `
 	var logger = sugar.With("func", "priceanalytics/storage.NewPriceStorage")
@@ -53,8 +49,7 @@ CREATE TABLE IF NOT EXISTS "%s" (
 
 	logger.Debug("initializing database schema")
 
-	if _, err = tx.Exec(fmt.Sprintf(schemaFmt,
-		priceAnalyticTableName, priceAnalyticDataTableName, priceAnalyticTableName)); err != nil {
+	if _, err = tx.Exec(schema); err != nil {
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
@@ -98,10 +93,16 @@ func (pad *PriceAnalyticDB) UpdatePriceAnalytic(data common.PriceAnalytic) error
 
 	// insert into price_analytic_data
 	for _, values := range data.TriggeringTokensList {
-		_, err = tx.Exec(fmt.Sprintf(`
-INSERT INTO "%s" (token, ask_price, bid_price, mid_afp_price, mid_afp_old_price, min_spread, trigger_update, price_analytic_id)
+		_, err = tx.Exec(`INSERT INTO "price_analytics_data" (token,
+                                    ask_price,
+                                    bid_price,
+                                    mid_afp_price,
+                                    mid_afp_old_price,
+                                    min_spread,
+                                    trigger_update,
+                                    price_analytic_id)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		`, priceAnalyticDataTableName),
+`,
 			values.Token,
 			values.AskPrice,
 			values.BidPrice,
@@ -127,8 +128,11 @@ func (pad *PriceAnalyticDB) GetPriceAnalytic(fromTime, toTime time.Time) ([]comm
 
 	logger.Debug("get price analytic data")
 	var result []common.PriceAnalytic
-	if err := pad.db.Select(&result, fmt.Sprintf(`SELECT id, cast (extract(epoch from timestamp)*1000 as bigint) as timestamp 
-	FROM %s WHERE timestamp >= $1 AND timestamp <= $2`, priceAnalyticTableName), fromTime.UTC(), toTime.UTC()); err != nil {
+	if err := pad.db.Select(&result, `SELECT id, cast(extract(epoch from timestamp) * 1000 as bigint) as timestamp
+FROM price_analytics
+WHERE timestamp >= $1
+  AND timestamp <= $2
+`, fromTime.UTC(), toTime.UTC()); err != nil {
 		logger.Debug("error get price analytics")
 		return result, err
 	}
@@ -138,7 +142,9 @@ func (pad *PriceAnalyticDB) GetPriceAnalytic(fromTime, toTime time.Time) ([]comm
 	if len(result) > 0 {
 		for index, data := range result {
 			var priceAnalyticData []common.PriceAnalyticData
-			if err := pad.db.Select(&priceAnalyticData, fmt.Sprintf(`SELECT * from "%s" WHERE price_analytic_id = $1`, priceAnalyticDataTableName), data.ID); err != nil {
+			if err := pad.db.Select(&priceAnalyticData, `SELECT *
+from "price_analytics_data"
+WHERE price_analytic_id = $1`, data.ID); err != nil {
 				pad.sugar.Debug("error getting detail data")
 				return result, err
 			}

@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -13,11 +12,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/users/common"
 )
 
-const (
-	addressesTableName = "addresses"
-	usersTableName     = "users"
-)
-
 //UserDB is storage of user data
 type UserDB struct {
 	sugar *zap.SugaredLogger
@@ -26,14 +20,14 @@ type UserDB struct {
 
 //NewDB open a new database connection
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*UserDB, error) {
-	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%s"
+	const schema = `CREATE TABLE IF NOT EXISTS "users"
 (
   id           SERIAL PRIMARY KEY,
   email        text      NOT NULL UNIQUE,
   last_updated TIMESTAMP NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "%s"
+CREATE TABLE IF NOT EXISTS "addresses"
 (
   id        SERIAL PRIMARY KEY,
   address   text      NOT NULL UNIQUE,
@@ -51,7 +45,7 @@ CREATE TABLE IF NOT EXISTS "%s"
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 
 	logger.Debug("initializing database schema")
-	if _, err = tx.Exec(fmt.Sprintf(schemaFmt, usersTableName, addressesTableName)); err != nil {
+	if _, err = tx.Exec(schema); err != nil {
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
@@ -94,24 +88,24 @@ func (udb *UserDB) CreateOrUpdate(userData common.UserData) error {
 
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 
-	stmt = fmt.Sprintf(`WITH u AS (
-  INSERT INTO "%s" (email, last_updated)
-    VALUES ($1, NOW())
-    ON CONFLICT ON CONSTRAINT users_email_key
-      DO UPDATE SET last_updated = NOW() RETURNING id
+	stmt = `WITH u AS (
+    INSERT INTO "users" (email, last_updated)
+        VALUES ($1, NOW())
+        ON CONFLICT ON CONSTRAINT users_email_key
+            DO UPDATE SET last_updated = NOW() RETURNING id
 ),
      a AS (
-       SELECT unnest($2::text[])             AS address,
-              unnest($3::double precision[]) AS timestamp
+         SELECT unnest($2::text[])             AS address,
+                unnest($3::double precision[]) AS timestamp
      )
 INSERT
-INTO "%s"(address, timestamp, user_id)
+INTO "addresses"(address, timestamp, user_id)
 SELECT a.address, to_timestamp(a.timestamp / 1000), u.id
-FROM u NATURAL JOIN a
-ON CONFLICT ON CONSTRAINT addresses_address_key DO UPDATE SET timestamp = EXCLUDED.timestamp, user_id = EXCLUDED.user_id
-`,
-		usersTableName,
-		addressesTableName)
+FROM u
+         NATURAL JOIN a
+ON CONFLICT ON CONSTRAINT addresses_address_key DO UPDATE SET timestamp = EXCLUDED.timestamp,
+                                                              user_id   = EXCLUDED.user_id
+`
 	logger.Debugw("upsert email and Ethereum addresses",
 		"stmt", stmt)
 	_, err = tx.Exec(stmt,
@@ -125,13 +119,11 @@ ON CONFLICT ON CONSTRAINT addresses_address_key DO UPDATE SET timestamp = EXCLUD
 
 	logger.Debugw("delete removed Ethereum addresses",
 		"stmt", stmt)
-	stmt = fmt.Sprintf(`DELETE
-FROM "%s"
-WHERE user_id IN (SELECT id AS user_id FROM "%s" WHERE email = $1)
- AND address NOT IN (SELECT unnest($2::text[]) as address)
-`,
-		addressesTableName,
-		usersTableName)
+	stmt = `DELETE
+FROM "addresses"
+WHERE user_id IN (SELECT id AS user_id FROM "users" WHERE email = $1)
+  AND address NOT IN (SELECT unnest($2::text[]) as address)
+`
 	_, err = tx.Exec(stmt,
 		userData.Email,
 		pq.StringArray(addresses))
@@ -144,7 +136,7 @@ WHERE user_id IN (SELECT id AS user_id FROM "%s" WHERE email = $1)
 //GetAllAddresses return all user address info from addresses table
 func (udb *UserDB) GetAllAddresses() ([]string, error) {
 	var result []string
-	if err := udb.db.Select(&result, fmt.Sprintf(`SELECT address FROM "%s"`, addressesTableName)); err != nil {
+	if err := udb.db.Select(&result, `SELECT address FROM "addresses"`); err != nil {
 		return result, err
 	}
 	return result, nil
@@ -161,7 +153,11 @@ func (udb *UserDB) IsKYCedAtTime(userAddr string, ts time.Time) (bool, error) {
 		)
 		result uint64
 	)
-	stmt := fmt.Sprintf(`SELECT COUNT(1) FROM "%s" WHERE address = $1 AND timestamp <= $2`, addressesTableName)
+	stmt := `SELECT COUNT(1)
+FROM "addresses"
+WHERE address = $1
+  AND timestamp <= $2
+`
 	logger = logger.With("query", stmt)
 	if err := udb.db.Get(&result, stmt, userAddr, ts.UTC()); err != nil {
 		return false, err

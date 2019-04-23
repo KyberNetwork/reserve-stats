@@ -77,6 +77,25 @@ func (tl *TradeLog) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// UnmarshalJSON implements custom JSON unmarshal for TradeLog
+func (tl *TradeLog) UnmarshalJSON(b []byte) error {
+	type AliasTradeLog TradeLog
+	type mask struct {
+		Timestamp uint64 `json:"timestamp"`
+		*AliasTradeLog
+	}
+	m := mask{
+		Timestamp:     0,
+		AliasTradeLog: (*AliasTradeLog)(tl),
+	}
+	err := json.Unmarshal(b, &m)
+	if err != nil {
+		return err
+	}
+	tl.Timestamp = timeutil.TimestampMsToTime(m.Timestamp)
+	return nil
+}
+
 // VolumeStats struct holds all the volume fields of volume in a specfic time
 type VolumeStats struct {
 	ETHAmount float64 `json:"eth_amount"`

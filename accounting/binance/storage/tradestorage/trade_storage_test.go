@@ -6,28 +6,11 @@ import (
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
-
-const (
-	tradeTableTest = "binance_trade_test"
-)
-
-func newTestDB(sugar *zap.SugaredLogger) (*BinanceStorage, error) {
-	_, db := testutil.MustNewDevelopmentDB()
-	return NewDB(sugar, db, WithTableName(tradeTableTest))
-}
-
-func teardown(t *testing.T, storage *BinanceStorage) {
-	err := storage.DeleteTable()
-	assert.NoError(t, err)
-	err = storage.Close()
-	assert.NoError(t, err)
-}
 
 func TestBinanceTradeStorage(t *testing.T) {
 	logger := testutil.MustNewDevelopmentSugaredLogger()
@@ -61,10 +44,13 @@ func TestBinanceTradeStorage(t *testing.T) {
 		},
 	}
 
-	binanceStorage, err := newTestDB(logger)
-	assert.NoError(t, err)
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	binanceStorage, err := NewDB(logger, db)
+	require.NoError(t, err)
 
-	defer teardown(t, binanceStorage)
+	defer func() {
+		require.NoError(t, teardown())
+	}()
 
 	ts, err := binanceStorage.GetLastStoredID()
 	require.NoError(t, err)

@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+
 	"github.com/influxdata/influxdb/client/v2"
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
@@ -16,35 +17,13 @@ import (
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 )
 
-const (
-	postgresHost     = "127.0.0.1"
-	postgresPort     = 5432
-	postgresUser     = "reserve_stats"
-	postgresPassword = "reserve_stats"
-	postgresDatabase = "reserve_stats"
-)
+func tearDown(t *testing.T, teardown func() error, influxClient client.Client) {
+	assert.NoError(t, teardown(), "database should be deleted completely")
 
-func newTestDB(sugar *zap.SugaredLogger) (*storage.UserDB, error) {
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		postgresHost,
-		postgresPort,
-		postgresUser,
-		postgresPassword,
-		postgresDatabase,
-	)
-	db, err := sqlx.Connect("postgres", connStr)
-	if err != nil {
-		return nil, err
-	}
-	return storage.NewDB(sugar, db)
-}
-
-func tearDown(t *testing.T, storage *storage.UserDB, influxClient client.Client) {
-	assert.Nil(t, storage.DeleteAllTables(), "database should be deleted completely")
 	_, err := influxClient.Query(client.Query{
 		Command: fmt.Sprintf("DROP DATABASE %s", "test_db"),
 	})
-	assert.Nil(t, err, "influx test db should be tear down successfully")
+	assert.NoError(t, err, "influx test db should be tear down successfully")
 }
 
 func TestUserHTTPServer(t *testing.T) {
@@ -52,7 +31,8 @@ func TestUserHTTPServer(t *testing.T) {
 	assert.Nil(t, err, "logger should be initiated successfully")
 
 	sugar := logger.Sugar()
-	userStorage, err := newTestDB(sugar)
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	userStorage, err := storage.NewDB(sugar, db)
 	assert.Nil(t, err, "user database should be initiated successfully")
 
 	influxClient, err := client.NewHTTPClient(client.HTTPConfig{
@@ -60,7 +40,7 @@ func TestUserHTTPServer(t *testing.T) {
 	})
 	assert.Nil(t, err, "influx client should be created successfully")
 
-	defer tearDown(t, userStorage, influxClient)
+	defer tearDown(t, teardown, influxClient)
 
 	// create test db
 	_, err = influxClient.Query(client.Query{

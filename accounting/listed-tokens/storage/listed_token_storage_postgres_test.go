@@ -7,41 +7,22 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
-func newListedTokenDB(sugar *zap.SugaredLogger) (*ListedTokenDB, error) {
-	_, db := testutil.MustNewDevelopmentDB()
-	storage, err := NewDB(sugar, db, WithTableName(newTableNames(
-		"test_listed_tokens_version",
-		"test_listed_tokens_reserves",
-		"test_listed_tokens_reserves_tokens",
-		"test_listed_tokens")))
-	if err != nil {
-		return nil, err
-	}
-	return storage, nil
-}
-
-func teardown(t *testing.T, storage *ListedTokenDB) {
-	err := storage.DeleteTable()
-	assert.NoError(t, err)
-	err = storage.Close()
-	assert.NoError(t, err)
-}
-
 func TestListedTokenStorage(t *testing.T) {
 	logger := testutil.MustNewDevelopmentSugaredLogger()
 	logger.Info("start testing")
 
 	var (
-		blockNumber  = big.NewInt(7442895)
-		reserve      = ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")
-		listedTokens = []common.ListedToken{
+		blockNumber       = big.NewInt(7442895)
+		reserve           = ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")
+		notExistedReserve = ethereum.HexToAddress("0x21433Dec9Cb634A23c6A4BbcCe08c83f5aC2EC18")
+		zeroReserve       = ethereum.HexToAddress("0x0000000000000000000000000000000000000000")
+		listedTokens      = []common.ListedToken{
 			{
 				Address:   ethereum.HexToAddress("0xdd974D5C2e2928deA5F71b9825b8b646686BD200"),
 				Symbol:    "KNC",
@@ -88,15 +69,18 @@ func TestListedTokenStorage(t *testing.T) {
 		}
 	)
 
-	storage, err := newListedTokenDB(logger)
-	assert.NoError(t, err)
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	storage, err := NewDB(logger, db)
+	require.NoError(t, err)
 
-	defer teardown(t, storage)
+	defer func() {
+		require.NoError(t, teardown())
+	}()
 
 	err = storage.CreateOrUpdate(listedTokens, blockNumber, reserve)
 	require.NoError(t, err)
 
-	storedListedTokens, version, storedBlockNumber, err := storage.GetTokens()
+	storedListedTokens, version, storedBlockNumber, err := storage.GetTokens(reserve)
 	require.NoError(t, err)
 	assert.ElementsMatch(t, listedTokens, storedListedTokens)
 	assert.Equal(t, uint64(1), version)
@@ -104,9 +88,20 @@ func TestListedTokenStorage(t *testing.T) {
 
 	err = storage.CreateOrUpdate(listedTokensNew, blockNumberNew, reserve)
 	require.NoError(t, err)
-	storedNewListedTokens, version, storedBlockNumber, err := storage.GetTokens()
+	storedNewListedTokens, version, storedBlockNumber, err := storage.GetTokens(reserve)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(2), version)
 	assert.Equal(t, blockNumberNew.Uint64(), storedBlockNumber)
 	assert.ElementsMatch(t, listedTokensNew, storedNewListedTokens)
+
+	// assert provided reserve is zero
+	zeroReserveTokens, version, storedBlockNumber, err := storage.GetTokens(zeroReserve)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(2), version)
+	assert.Equal(t, blockNumberNew.Uint64(), storedBlockNumber)
+	assert.ElementsMatch(t, listedTokensNew, zeroReserveTokens)
+
+	noTokens, _, _, err := storage.GetTokens(notExistedReserve)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(noTokens))
 }

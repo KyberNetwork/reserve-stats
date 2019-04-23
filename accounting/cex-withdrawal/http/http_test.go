@@ -22,10 +22,11 @@ import (
 )
 
 var (
-	ts  *Server
-	hdb *huobiPostgres.HuobiStorage
-	bdb *withdrawalstorage.BinanceStorage
-	tdb *sqlx.DB
+	ts       *Server
+	hdb      *huobiPostgres.HuobiStorage
+	bdb      *withdrawalstorage.BinanceStorage
+	tdb      *sqlx.DB
+	teardown func() error
 )
 
 func TestGetHuobiWithdrawal(t *testing.T) {
@@ -142,14 +143,14 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 func TestMain(m *testing.M) {
 	var err error
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	_, tdb = testutil.MustNewDevelopmentDB()
+	tdb, teardown = testutil.MustNewRandomDevelopmentDB()
 
-	hdb, err = huobiPostgres.NewDB(sugar, tdb, huobiPostgres.WithWithdrawalTableName("huobi_test_cex_withdrawal_api"))
+	hdb, err = huobiPostgres.NewDB(sugar, tdb)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	bdb, err = withdrawalstorage.NewDB(sugar, tdb, withdrawalstorage.WithTableName("binance_test_cex_withdrawal_api"))
+	bdb, err = withdrawalstorage.NewDB(sugar, tdb)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -161,12 +162,7 @@ func TestMain(m *testing.M) {
 	ts.register()
 
 	ret := m.Run()
-	err = hdb.TearDown()
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = hdb.Close()
-	if err != nil {
+	if err = teardown(); err != nil {
 		log.Fatal(err)
 	}
 	os.Exit(ret)

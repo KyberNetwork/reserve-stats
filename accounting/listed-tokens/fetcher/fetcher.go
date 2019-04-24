@@ -40,7 +40,7 @@ func updateListedToken(listedToken map[string]common.ListedToken, symbol, name s
 			token.Old = append(token.Old, common.OldListedToken{
 				Address:   token.Address,
 				Timestamp: token.Timestamp,
-				Decimals: token.Decimals,
+				Decimals:  token.Decimals,
 			})
 			token.Address = address
 			token.Timestamp = timestamp

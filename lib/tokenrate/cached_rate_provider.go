@@ -22,7 +22,7 @@ func WithTimeout(timeout time.Duration) CachedRateProviderOption {
 // USDRate can return the last non-zero value with warning
 func WithWarningOnly() CachedRateProviderOption {
 	return func(crp *CachedRateProvider) {
-		crp.withWarning = true
+		crp.warningOnly = true
 	}
 }
 
@@ -43,7 +43,7 @@ type CachedRateProvider struct {
 	sugar       *zap.SugaredLogger
 	timeout     time.Duration
 	provider    tokenrate.ETHUSDRateProvider
-	withWarning bool
+	warningOnly bool
 
 	mu         sync.RWMutex
 	cachedRate float64
@@ -77,7 +77,7 @@ func (crp *CachedRateProvider) USDRate(timestamp time.Time) (float64, error) {
 	if cachedRate == 0 || cachedTime.IsZero() || crp.isCacheExpired() {
 		logger.Debug("cache miss, calling rate provider")
 		rate, err := crp.provider.USDRate(timestamp)
-		if err != nil && crp.withWarning && cachedRate != 0 {
+		if err != nil && crp.warningOnly && cachedRate != 0 {
 			logger.Warnw("failed to fetch USD rate, return last non-zero rate", "rate", cachedRate)
 			return cachedRate, nil
 		}

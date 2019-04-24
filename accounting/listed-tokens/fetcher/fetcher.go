@@ -32,21 +32,25 @@ func NewListedTokenFetcher(ethClient *ethclient.Client, contractTimestampResolve
 	}
 }
 
-func updateListedToken(listedToken map[string]common.ListedToken, symbol, name string, address ethereum.Address, timestamp time.Time) map[string]common.ListedToken {
+func updateListedToken(listedToken map[string]common.ListedToken, symbol, name string, address ethereum.Address, timestamp time.Time,
+	decimals uint8) map[string]common.ListedToken {
 	key := fmt.Sprintf("%s-%s", symbol, name)
 	if token, existed := listedToken[key]; existed {
 		if token.Timestamp.After(timestamp) {
 			token.Old = append(token.Old, common.OldListedToken{
 				Address:   token.Address,
 				Timestamp: token.Timestamp,
+				Decimals: token.Decimals,
 			})
 			token.Address = address
 			token.Timestamp = timestamp
+			token.Decimals = decimals
 			listedToken[key] = token
 		} else {
 			token.Old = append(token.Old, common.OldListedToken{
 				Address:   address,
 				Timestamp: timestamp,
+				Decimals:  decimals,
 			})
 			listedToken[key] = token
 		}
@@ -57,6 +61,7 @@ func updateListedToken(listedToken map[string]common.ListedToken, symbol, name s
 		Address:   address,
 		Symbol:    symbol,
 		Timestamp: timestamp,
+		Decimals:  decimals,
 	}
 	return listedToken
 }
@@ -104,7 +109,11 @@ func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
 		if err != nil {
 			return nil, err
 		}
-		result = updateListedToken(result, symbol, name, address, timestamp)
+		decimals, err := tokenSymbol.Decimals(address)
+		if err != nil {
+			return nil, err
+		}
+		result = updateListedToken(result, symbol, name, address, timestamp, decimals)
 	}
 	for _, token := range result {
 		returnResult = append(returnResult, token)

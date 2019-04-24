@@ -8,9 +8,9 @@ go:
   # /usr/bin/ld: final link failed: Bad value
   # collect2: error: ld returned 1 exit status
   # happens with
+  # - 1.11.6
   # - go 1.11.7
   - 1.12.4
-  # - 1.11.6
 
 services:
   - docker
@@ -29,16 +29,16 @@ env:
 
 matrix:
   include:
-    # - env:
-    #     - BUILD_PART: 1
-    # - env:
-    #     - BUILD_PART: 2
+    - env:
+        - BUILD_PART: 1
+    - env:
+        - BUILD_PART: 2
     - env:
         - BUILD_PART: 3
-    # - env:
-    #     - BUILD_PART: 4
-    # - env:
-    #     - BUILD_PART: 5
+    - env:
+        - BUILD_PART: 4
+    - env:
+        - BUILD_PART: 5
 
 install:
   - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b ${TRAVIS_HOME}/bin v${GOLANGCI_LINT_VERSION}

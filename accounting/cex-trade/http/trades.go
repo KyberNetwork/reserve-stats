@@ -13,7 +13,10 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 )
 
-const maxTimeFrame = time.Hour * 24 * 365 * 1 // 1 year
+const (
+	maxTimeFrame     = time.Hour * 24 * 30 // 30 days
+	defaultTimeFrame = time.Hour * 24      // 1 day
+)
 
 type getTradesQuery struct {
 	httputil.TimeRangeQuery
@@ -51,6 +54,7 @@ func (s *Server) getTrades(c *gin.Context) {
 
 	fromTime, toTime, err := query.Validate(
 		httputil.TimeRangeQueryWithMaxTimeFrame(maxTimeFrame),
+		httputil.TimeRangeQueryWithDefaultTimeFrame(defaultTimeFrame),
 	)
 	if err != nil {
 		httputil.ResponseFailure(

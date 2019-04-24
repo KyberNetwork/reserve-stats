@@ -12,6 +12,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"              // import custom validator functions
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	trlib "github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
 )
@@ -23,7 +24,7 @@ func NewServer(sugar *zap.SugaredLogger, rateProvider tokenrate.ETHUSDRateProvid
 	r := gin.Default()
 	return &Server{
 		sugar:         sugar,
-		rateProvider:  httputil.NewCachedRateProvider(sugar, rateProvider, time.Hour),
+		rateProvider:  trlib.NewCachedRateProvider(sugar, rateProvider, trlib.WithTimeout(time.Hour)),
 		storage:       storage,
 		r:             r,
 		host:          host,

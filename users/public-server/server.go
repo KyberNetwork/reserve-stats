@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	trlib "github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/tokenrate"
 )
@@ -53,7 +53,7 @@ func NewServer(
 		sugar:        sugar,
 		r:            r,
 		host:         host,
-		rateProvider: httputil.NewCachedRateProvider(sugar, rateProvider, time.Hour),
+		rateProvider: trlib.NewCachedRateProvider(sugar, rateProvider, trlib.WithTimeout(time.Hour)),
 		redisClient:  storage,
 		userCapConf:  userCapConf,
 	}

@@ -46,7 +46,7 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens []common.ListedToken, blockNumbe
 		logger  = ltd.sugar.With("func", "accounting/listed_tokens/storage/ltd.CreateOrUpdate")
 		changed = false
 	)
-	saveTokenQuery := fmt.Sprintf(`SELECT save_token($1, $2, $3, $4, $5, $6)`)
+	saveTokenQuery := fmt.Sprintf(`SELECT save_token($1, $2, $3, $4, $5, $6, $7)`)
 
 	updateVersionQuery := `UPDATE "listed_tokens_version"
 SET version      = CASE WHEN $1 THEN version + 1 ELSE version END,
@@ -66,6 +66,7 @@ SET version      = CASE WHEN $1 THEN version + 1 ELSE version END,
 			token.Name,
 			token.Symbol,
 			token.Timestamp.UTC(),
+			token.Decimals,
 			nil,
 			reserve.Hex()); err != nil {
 			return
@@ -81,6 +82,7 @@ SET version      = CASE WHEN $1 THEN version + 1 ELSE version END,
 				token.Name,
 				token.Symbol,
 				oldToken.Timestamp.UTC(),
+				oldToken.Decimals,
 				token.Address.Hex(),
 				reserve.Hex()); err != nil {
 				return
@@ -106,8 +108,10 @@ type listedTokenRecord struct {
 	Symbol        string         `db:"symbol"`
 	Name          string         `db:"name"`
 	Timestamp     time.Time      `db:"timestamp"`
+	Decimals      uint8          `db:"decimals"`
 	OldAddresses  pq.StringArray `db:"old_addresses"`
 	OldTimestamps pq.Int64Array  `db:"old_timestamps"`
+	OldDecimals   pq.Int64Array  `db:"old_decimals"`
 }
 
 type listedTokenVersion struct {
@@ -122,6 +126,7 @@ func (r *listedTokenRecord) ListedToken() (common.ListedToken, error) {
 		Symbol:    r.Symbol,
 		Name:      r.Name,
 		Timestamp: r.Timestamp.UTC(),
+		Decimals:  r.Decimals,
 	}
 
 	if len(r.OldAddresses) != len(r.OldTimestamps) {
@@ -134,6 +139,7 @@ func (r *listedTokenRecord) ListedToken() (common.ListedToken, error) {
 		oldToken := common.OldListedToken{
 			Address:   ethereum.HexToAddress(r.OldAddresses[i]),
 			Timestamp: timeutil.TimestampMsToTime(uint64(r.OldTimestamps[i])).UTC(),
+			Decimals:  uint8(r.OldDecimals[i]),
 		}
 		if token.Old == nil {
 			token.Old = []common.OldListedToken{oldToken}
@@ -159,9 +165,11 @@ func (ltd *ListedTokenDB) GetTokens(reserve ethereum.Address) (result []common.L
 	getQuery := `SELECT DISTINCT address,
        name,
        symbol,
-       timestamp,
+	   timestamp,
+	   decimals,
        old_addresses,
-	   old_timestamps
+	   old_timestamps,
+	   old_decimals
 FROM "tokens_view" WHERE ( $1 OR reserve_address = $2 );`
 	logger.Debugw("get tokens query", "query", getQuery)
 

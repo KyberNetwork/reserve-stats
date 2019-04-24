@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS "listed_tokens"
     name      text      NOT NULL,
     symbol    text      NOT NULL,
     timestamp TIMESTAMP NOT NULL,
+    decimals  int       NOT NULL,
     parent_id INT REFERENCES "listed_tokens" (id)
 );
 
@@ -45,6 +46,7 @@ CREATE OR REPLACE FUNCTION save_token(_address "listed_tokens".address%TYPE,
                                       _name "listed_tokens".name%TYPE,
                                       _symbol "listed_tokens".name%TYPE,
                                       _timestamp "listed_tokens".timestamp%TYPE,
+                                      _decimals "listed_tokens".decimals%TYPE,
                                       _parent_address "listed_tokens".address%TYPE,
                                       _reserve_address "listed_tokens_reserves".address%TYPE) RETURNS boolean AS
 $$
@@ -66,8 +68,8 @@ BEGIN
     FROM "listed_tokens"
     WHERE address = _address;
     IF NOT FOUND THEN
-        INSERT INTO "listed_tokens"(address, name, symbol, timestamp, parent_id)
-        VALUES (_address, _name, _symbol, _timestamp, stored_parent_id) RETURNING * INTO stored_token;
+        INSERT INTO "listed_tokens"(address, name, symbol, timestamp, decimals, parent_id)
+        VALUES (_address, _name, _symbol, _timestamp, _decimals, stored_parent_id) RETURNING * INTO stored_token;
         changed := TRUE;
     ELSE
         IF FOUND THEN
@@ -75,6 +77,7 @@ BEGIN
                stored_token.name != _name OR
                stored_token.symbol != _symbol OR
                stored_token.timestamp != _timestamp OR
+               stored_token.decimals != _decimals OR
                (stored_token.parent_id IS NULL AND stored_parent_id IS NOT NULL) OR
                (stored_token.parent_id IS NOT NULL AND stored_parent_id IS NULL) OR
                stored_token.parent_id != stored_parent_id THEN
@@ -82,6 +85,7 @@ BEGIN
                 SET name=_name,
                     symbol=_symbol,
                     timestamp=_timestamp,
+                    decimals=_decimals,
                     parent_id = stored_parent_id
                 WHERE address = _address RETURNING * INTO stored_token;
                 changed := TRUE;
@@ -111,18 +115,23 @@ SELECT joined.address as address,
        joined.name,
        joined.symbol,
        joined.timestamp,
+       joined.decimals,
        joined.reserve_address,
        array_agg(joined.old_address)
                  FILTER ( WHERE joined.old_address IS NOT NULL)::text[]     AS old_addresses,
        array_agg(extract(EPOCH FROM joined.old_timestamp) * 1000)
-                 FILTER ( WHERE joined.old_timestamp IS NOT NULL)::BIGINT[] AS old_timestamps
+                 FILTER ( WHERE joined.old_timestamp IS NOT NULL)::BIGINT[] AS old_timestamps,
+       array_agg(joined.old_decimals)
+                 FILTER ( WHERE joined.old_decimals IS NOT NULL)::INT[] AS old_decimals
 FROM (SELECT toks.address,
              toks.name,
              toks.symbol,
              toks.timestamp,
+             toks.decimals,
              reserve.address as reserve_address,
              olds.address   AS old_address,
-             olds.timestamp AS old_timestamp
+             olds.timestamp AS old_timestamp,
+             olds.decimals  AS old_decimals
       FROM "listed_tokens" AS toks
                LEFT JOIN "listed_tokens" AS olds
                          ON toks.id = olds.parent_id
@@ -132,5 +141,5 @@ FROM (SELECT toks.address,
                          ON reserve.id = token_reserve.reserve_id
       WHERE toks.parent_id IS NULL
       ORDER BY timestamp DESC) AS joined
-GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp, joined.reserve_address;
+GROUP BY joined.address, joined.name, joined.symbol, joined.timestamp, joined.decimals, joined.reserve_address;
 `

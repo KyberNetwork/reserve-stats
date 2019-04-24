@@ -29,16 +29,19 @@ func TestListedTokenStorage(t *testing.T) {
 				Symbol:    "KNC",
 				Name:      "Kyber Network Crystal",
 				Timestamp: timeutil.TimestampMsToTime(1553241328394).UTC(),
+				Decimals:  18,
 			},
 			{
 				Address:   ethereum.HexToAddress("0x1a7a8BD9106F2B8D977E08582DC7d24c723ab0DB"),
 				Symbol:    "APPC",
 				Name:      "AppCoins",
 				Timestamp: timeutil.TimestampMsToTime(1509977454000).UTC(),
+				Decimals:  18,
 				Old: []common.OldListedToken{
 					{
 						Address:   ethereum.HexToAddress("0x27054b13b1B798B345b591a4d22e6562d47eA75a"),
 						Timestamp: timeutil.TimestampMsToTime(1507599220000).UTC(),
+						Decimals:  10,
 					},
 				},
 			},
@@ -50,20 +53,24 @@ func TestListedTokenStorage(t *testing.T) {
 				Symbol:    "KNC",
 				Name:      "Kyber Network Crystal",
 				Timestamp: timeutil.TimestampMsToTime(1553241328394).UTC(),
+				Decimals:  18,
 			},
 			{
 				Address:   ethereum.HexToAddress("0x406F1CddcFe308cf815Ce2914e15f96036230884"),
 				Symbol:    "APPC",
 				Name:      "AppCoins",
 				Timestamp: timeutil.TimestampMsToTime(1509977458000).UTC(),
+				Decimals:  18,
 				Old: []common.OldListedToken{
 					{
 						Address:   ethereum.HexToAddress("0x1a7a8BD9106F2B8D977E08582DC7d24c723ab0DB"),
 						Timestamp: timeutil.TimestampMsToTime(1509977454000).UTC(),
+						Decimals:  10,
 					},
 					{
 						Address:   ethereum.HexToAddress("0x27054b13b1B798B345b591a4d22e6562d47eA75a"),
 						Timestamp: timeutil.TimestampMsToTime(1507599220000).UTC(),
+						Decimals:  10,
 					},
 				},
 			},

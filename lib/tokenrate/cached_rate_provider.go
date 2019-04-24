@@ -8,6 +8,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const defaultTimeout = time.Hour
+
 // CachedRateProviderOption is option for CachedRateProvider constructor
 type CachedRateProviderOption func(*CachedRateProvider)
 
@@ -30,6 +32,7 @@ func WithWarningOnly() CachedRateProviderOption {
 func NewCachedRateProvider(sugar *zap.SugaredLogger, provider tokenrate.ETHUSDRateProvider, options ...CachedRateProviderOption) *CachedRateProvider {
 	crp := &CachedRateProvider{
 		sugar:    sugar,
+		timeout:  defaultTimeout,
 		provider: provider,
 	}
 	for _, option := range options {

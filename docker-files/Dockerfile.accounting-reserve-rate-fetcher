@@ -1,4 +1,4 @@
-FROM golang:1.12.4-stretch AS build-env
+FROM golang:1.12-stretch AS build-env
 
 COPY . /reserve-stats
 WORKDIR /reserve-stats/accounting/cmd/accounting-reserve-rate-fetcher

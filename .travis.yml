@@ -9,7 +9,7 @@ go:
   # collect2: error: ld returned 1 exit status
   # happens with
   # - go 1.11.7
-  - go 1.12.2
+  - 1.12.2
   # - 1.11.6
 
 services:

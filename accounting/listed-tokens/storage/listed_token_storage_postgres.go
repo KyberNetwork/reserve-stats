@@ -156,7 +156,7 @@ func (ltd *ListedTokenDB) GetTokens(reserve ethereum.Address) (result []common.L
 		versionRecord listedTokenVersion
 	)
 
-	getQuery := `SELECT address,
+	getQuery := `SELECT DISTINCT address,
        name,
        symbol,
        timestamp,

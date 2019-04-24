@@ -20,6 +20,7 @@ func TestListedTokenStorage(t *testing.T) {
 	var (
 		blockNumber       = big.NewInt(7442895)
 		reserve           = ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")
+		secondReserve     = ethereum.HexToAddress("0x21433Dec9Cb634A23c6A4BbcCe08c83f5aC2EC18")
 		notExistedReserve = ethereum.HexToAddress("0x21433Dec9Cb634A23c6A4BbcCe08c83f5aC2EC18")
 		zeroReserve       = ethereum.HexToAddress("0x0000000000000000000000000000000000000000")
 		listedTokens      = []common.ListedToken{
@@ -104,4 +105,14 @@ func TestListedTokenStorage(t *testing.T) {
 	noTokens, _, _, err := storage.GetTokens(notExistedReserve)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(noTokens))
+
+	//
+	err = storage.CreateOrUpdate(listedTokensNew, blockNumber, secondReserve)
+	require.NoError(t, err)
+
+	testDuplicateSavedTokens, version, storedBlockNumber, err := storage.GetTokens(zeroReserve)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, listedTokensNew, testDuplicateSavedTokens)
+	assert.Equal(t, uint64(3), version)
+	assert.Equal(t, blockNumber.Uint64(), storedBlockNumber)
 }

@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	maxTimeFrame     = time.Hour * 24 * 365 * 1 // 1 year
-	defaultTimeFrame = time.Hour * 24           // 1 day
+	maxTimeFrame     = time.Hour * 24 * 30 // 30 days
+	defaultTimeFrame = time.Hour * 24      // 1 day
 )
 
 // Server is the HTTP server of accounting wallet-erc20-txs HTTP API.

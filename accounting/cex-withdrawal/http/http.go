@@ -16,7 +16,10 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 )
 
-const maxTimeFrame = time.Hour * 24 * 365 * 1 // 1 year
+const (
+	maxTimeFrame     = time.Hour * 24 * 30 // 30 days
+	defaultTimeFrame = time.Hour * 24      // 1 day
+)
 
 // Server is the engine to serve cex-trade-withdrawal API query
 type Server struct {
@@ -62,6 +65,7 @@ func (sv *Server) get(c *gin.Context) {
 
 	from, to, err := query.Validate(
 		httputil.TimeRangeQueryWithMaxTimeFrame(maxTimeFrame),
+		httputil.TimeRangeQueryWithDefaultTimeFrame(defaultTimeFrame),
 	)
 	if err != nil {
 		httputil.ResponseFailure(

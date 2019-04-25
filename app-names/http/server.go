@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -24,16 +25,20 @@ type Server struct {
 
 func (sv *Server) getApps(c *gin.Context) {
 	var (
-		logger       = sv.sugar.With("func", "app-names/http/Server.getAddrToAppName")
-		nameFilter   *string
-		activeFilter *bool
+		logger  = sv.sugar.With("func", "app-names/http/Server.getAddrToAppName")
+		filters []storage.Filter
 	)
 
-	logger.Debug("getting addr to App name")
 	name, ok := c.GetQuery("name")
 	if ok {
 		logger.Debugw("got name parameter from query", "name", name)
-		nameFilter = &name
+		filters = append(filters, storage.WithNameFilter(name))
+	}
+
+	addr, ok := c.GetQuery("address")
+	if ok {
+		logger.Debugw("got addr parameter from query", "addr", addr)
+		filters = append(filters, storage.WithAddressFilter(ethereum.HexToAddress(addr)))
 	}
 
 	activeStr, ok := c.GetQuery("active")
@@ -48,10 +53,14 @@ func (sv *Server) getApps(c *gin.Context) {
 			return
 		}
 		logger.Debugw("got active parameter from query", "active", active)
-		activeFilter = &active
+		if active {
+			filters = append(filters, storage.WithActiveFilter())
+		} else {
+			filters = append(filters, storage.WithInactiveFilter())
+		}
 	}
 
-	apps, err := sv.db.GetAll(nameFilter, activeFilter)
+	apps, err := sv.db.GetAll(filters...)
 	if err != nil {
 		httputil.ResponseFailure(
 			c,
@@ -198,7 +207,6 @@ func (sv *Server) updateApp(c *gin.Context) {
 }
 
 func (sv *Server) deleteApp(c *gin.Context) {
-	//TODO: using ShouldBindUri when gin support it in new release
 	appID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		httputil.ResponseFailure(

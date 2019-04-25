@@ -9,8 +9,12 @@ git.apache.org/thrift.git v0.0.0-20180902110319-2566ecd5d999/go.mod h1:fPE2ZNJGy
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Knetic/govaluate v3.0.0+incompatible h1:7o6+MAPhYTCF0+fdvoz1xDedhRb4f6s9Tn1Tt7/WTEg=
 github.com/Knetic/govaluate v3.0.0+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
+github.com/KyberNetwork/httpsign-utils v0.1.1 h1:+iu+DjS8UpEVCvjfc0DaeIc3a79tj8tpR0B/z09S7Qk=
+github.com/KyberNetwork/httpsign-utils v0.1.1/go.mod h1:ei9f4goMiAdxKtXl2ihlY1a+WJKLb5g3Ne8Uz9gVkNQ=
 github.com/KyberNetwork/tokenrate v0.0.0-20181015045844-27abfb84ae1c h1:9+tFR7G+AVDeflRcG/lUWFiu1dkZzHjrUwZ13y6JQv8=
 github.com/KyberNetwork/tokenrate v0.0.0-20181015045844-27abfb84ae1c/go.mod h1:zvMeMoRv7rJjd/q7FkNygUM47UsNjt/fXcbuwpuifKA=
+github.com/KyberNetwork/tokenrate v0.0.0-20190327091843-b702f2d3511e h1:5sBZQMkVtI9fERNl6bSnNAa+tIx51a74C7PwTHjtAe8=
+github.com/KyberNetwork/tokenrate v0.0.0-20190327091843-b702f2d3511e/go.mod h1:zvMeMoRv7rJjd/q7FkNygUM47UsNjt/fXcbuwpuifKA=
 github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYUyUczH0OGQWaF5ceTx0UBShxjsH6f8oGKYe2c=
 github.com/aristanetworks/goarista v0.0.0-20181002214814-33151c4543a7 h1:6TQIK3K21/HnYLp+TAI6fjQ1YeH+KgLZbrFJwUjVrnQ=
 github.com/aristanetworks/goarista v0.0.0-20181002214814-33151c4543a7/go.mod h1:D/tb0zPVXnP7fmsLZjtdUhSsumbK/ij54UXjjVgMGxQ=
@@ -46,8 +50,8 @@ github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMo
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/gin-contrib/cors v0.0.0-20181008113111-488de3ec974f h1:7kBk9VE4vAlHGsHqIXuhkrFuL5xTimW4ElJ9tkrnlXk=
 github.com/gin-contrib/cors v0.0.0-20181008113111-488de3ec974f/go.mod h1:cw+u9IsAkC16e42NtYYVCLsHYXE98nB3M7Dr9mLSeH4=
-github.com/gin-contrib/httpsign v0.0.0-20181102021455-787f0a566bf9 h1:EZGywyAFgdjPIDBuMfDeZh5JrktGhFtDXli6yrCuu74=
-github.com/gin-contrib/httpsign v0.0.0-20181102021455-787f0a566bf9/go.mod h1:jQWyiaAcpbwcIj3WnGeKmJobobFZlaqWfZVz2ln2pbQ=
+github.com/gin-contrib/httpsign v0.0.0-20190301062400-d644b4c2b4c5 h1:fyj5xoZOfnNvpuRr1pwOpYVFEblJmNdZ+tIptamunSw=
+github.com/gin-contrib/httpsign v0.0.0-20190301062400-d644b4c2b4c5/go.mod h1:jQWyiaAcpbwcIj3WnGeKmJobobFZlaqWfZVz2ln2pbQ=
 github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 h1:AzN37oI0cOS+cougNAV9szl6CVoj2RYwzS3DpUQNtlY=
 github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7/go.mod h1:VJ0WA2NBN22VlZ2dKZQPAPnyWw5XTlK1KymzLKsr59s=
 github.com/gin-contrib/zap v0.0.0-20180827024651-a4f331736217 h1:Wehz4qCxQmK12V7/uCHqYVGGZ6qTf5vtKz9AzcX0pGc=
@@ -105,8 +109,6 @@ github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0 h1:5B0uxl2lzNRVkJVg+u
 github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0/go.mod h1:IiEW3SEiiErVyFdH8NTuWjSifiEQKUoyK3LNqr2kCHU=
 github.com/json-iterator/go v1.1.5 h1:gL2yXlmiIo4+t+y32d4WGwOjKGYcGOuyrg46vadswDE=
 github.com/json-iterator/go v1.1.5/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
-github.com/jsternberg/zap-logfmt v1.2.0 h1:1v+PK4/B48cy8cfQbxL4FmmNZrjnIMr2BsnyEmXqv2o=
-github.com/jsternberg/zap-logfmt v1.2.0/go.mod h1:kz+1CUmCutPWABnNkOu9hOHKdT2q3TDYCcsFy9hpqb0=
 github.com/karalabe/hid v0.0.0-20180420081245-2b4488a37358 h1:FVFwfCq+MMGoSohqKWiJwMy3FMZSM+vA0SrACbrFx1Y=
 github.com/karalabe/hid v0.0.0-20180420081245-2b4488a37358/go.mod h1:YvbcH+3Wo6XPs9nkgTY3u19KXLauXW+J5nB7hEHuX0A=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=

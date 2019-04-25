@@ -78,16 +78,15 @@ func TestRun(t *testing.T) {
 
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	ethClient := testutil.MustNewDevelopmentwEthereumClient()
-	_, db := testutil.MustNewDevelopmentDB()
-	bldb, err := postgres.NewDB(sugar, db, postgres.WithBlockInfoTableName("test_block_info"))
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	bldb, err := postgres.NewDB(sugar, db)
 	require.NoError(t, err)
 	blkTimeRsv, err := blockchain.NewBlockTimeResolver(sugar, ethClient)
 	require.NoError(t, err)
 
 	lbResolver := NewLastBlockResolver(ethClient, blkTimeRsv, sugar, bldb)
 	defer func() {
-		require.NoError(t, bldb.TearDown())
-		require.NoError(t, bldb.Close())
+		require.NoError(t, teardown())
 	}()
 	var (
 		results []uint64

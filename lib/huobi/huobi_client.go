@@ -184,7 +184,10 @@ func (hc *Client) GetAccounts() ([]Account, error) {
 	}
 	err = json.Unmarshal(res, &result)
 	if result.Status != StatusOK.String() {
-		return result.Data, fmt.Errorf("received unexpect status: %s", result.Status)
+		return result.Data, fmt.Errorf("received unexpect status: err=%s code=%s msg=%s",
+			result.Status,
+			result.ErrorCode,
+			result.ErrorMessage)
 	}
 	return result.Data, err
 }
@@ -230,7 +233,10 @@ func (hc *Client) GetTradeHistory(symbol string, startDate, endDate time.Time, e
 	}
 
 	if result.Status != StatusOK.String() {
-		return result, fmt.Errorf("received unexpect status: %s", result.Status)
+		return result, fmt.Errorf("received unexpect status: err=%s code=%s msg=%s",
+			result.Status,
+			result.ErrorCode,
+			result.ErrorMessage)
 	}
 	return result, err
 }
@@ -262,7 +268,10 @@ func (hc *Client) GetWithdrawHistory(currency string, fromID uint64) (WithdrawHi
 		return result, err
 	}
 	if result.Status != StatusOK.String() {
-		return result, fmt.Errorf("received unexpect status: %s", result.Status)
+		return result, fmt.Errorf("received unexpect status: err=%s code=%s msg=%s",
+			result.Status,
+			result.ErrorCode,
+			result.ErrorMessage)
 	}
 	return result, err
 }

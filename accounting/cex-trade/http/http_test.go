@@ -28,12 +28,12 @@ var (
 			AccountID:       100009,
 			Amount:          "10.1000000000",
 			Price:           "100.1000000000",
-			CreatedAt:       1494901162595,
+			CreatedAt:       1526428800000,
 			Type:            "buy-limit",
 			FieldAmount:     "10.1000000000",
 			FieldCashAmount: "1011.0100000000",
 			FieldFees:       "0.0202000000",
-			FinishedAt:      1494901400468,
+			FinishedAt:      1526428800000,
 			UserID:          1000,
 			Source:          "api",
 			State:           "filled",
@@ -52,7 +52,7 @@ var (
 			QuoteQuantity:   "48.000012",
 			Commission:      "10.10000000",
 			CommissionAsset: "BNB",
-			Time:            1499865549590,
+			Time:            1528675200000,
 			IsBuyer:         true,
 			IsMaker:         false,
 			IsBestMatch:     false,
@@ -63,12 +63,12 @@ var (
 func TestTrades(t *testing.T) {
 	var tests = []httputil.HTTPTestCase{
 		{
-			Msg:      "get getTrades from all exchanges",
+			Msg:      "get trades from all exchanges",
 			Endpoint: "/trades",
 			Method:   http.MethodGet,
 			Params: map[string]string{
-				"from": "1494901162000",
-				"to":   "1499865549600",
+				"from": "1526428800000",
+				"to":   "1528675200001",
 			},
 			Body: nil,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -89,8 +89,8 @@ func TestTrades(t *testing.T) {
 			Endpoint: "/trades",
 			Method:   http.MethodGet,
 			Params: map[string]string{
-				"from": "1499865549600",
-				"to":   "1499865559600",
+				"from": "1531440000000",
+				"to":   "1531440000000",
 			},
 			Body: nil,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -129,8 +129,8 @@ func TestTrades(t *testing.T) {
 			Endpoint: "/trades",
 			Method:   http.MethodGet,
 			Params: map[string]string{
-				"from": "1494901162000",
-				"to":   "1499865549600",
+				"from": "1526428700000",
+				"to":   "1526428900000",
 				"cex":  "huobi",
 			},
 			Body: nil,
@@ -151,8 +151,8 @@ func TestTrades(t *testing.T) {
 			Endpoint: "/trades",
 			Method:   http.MethodGet,
 			Params: map[string]string{
-				"from": "1494901162000",
-				"to":   "1499865549600",
+				"from": "1528675100000",
+				"to":   "1528675300000",
 				"cex":  "binance",
 			},
 			Body: nil,
@@ -192,9 +192,9 @@ func TestTrades(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	_, db := testutil.MustNewDevelopmentDB()
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
 
-	hs, err := huobistorage.NewDB(sugar, db, huobistorage.WithTradeTableName("huobi_cex_http_test"))
+	hs, err := huobistorage.NewDB(sugar, db)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -203,7 +203,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	bs, err := tradestorage.NewDB(sugar, db, tradestorage.WithTableName("binance_cex_http_test"))
+	bs, err := tradestorage.NewDB(sugar, db)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -217,11 +217,7 @@ func TestMain(m *testing.M) {
 
 	ret := m.Run()
 
-	if err = hs.TearDown(); err != nil {
-		log.Fatal(err)
-	}
-
-	if err = bs.DeleteTable(); err != nil {
+	if err = teardown(); err != nil {
 		log.Fatal(err)
 	}
 

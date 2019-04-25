@@ -13,16 +13,12 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 )
 
-const (
-	defaultPostgresDB = common.DefaultDB
-)
-
 func newServerCli() *cli.App {
 	app := libapp.NewApp()
 	app.Name = "reserve-rates-api"
 	app.Usage = "server for query accounting reserve rate API"
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AccountingReserveRatesPort)...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostgresDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultReserveRatesDB)...)
 	app.Action = run
 	return app
 }

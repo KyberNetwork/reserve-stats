@@ -3,7 +3,6 @@ package postgres
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -12,124 +11,133 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
-var defaultTableNames = &tableNames{
-	Normal:       "rsv_tx_normal",
-	Internal:     "rsv_tx_internal",
-	ERC20:        "rsv_tx_erc20",
-	LastInserted: "rsv_tx_last_inserted",
-}
-
-// tableNames contains name of all PostgreSQL tables used for this this.
-type tableNames struct {
-	Normal       string
-	Internal     string
-	ERC20        string
-	LastInserted string
-}
-
 // Storage is the an implementation of storage.ReserveTransactionStorage interface using PostgresQL.
 type Storage struct {
-	sugar      *zap.SugaredLogger
-	db         *sqlx.DB
-	tableNames *tableNames
-}
-
-// Option is an configuration option of Storage constructor.
-type Option func(*Storage)
-
-// WithTableName is the option to use a non-default table name.
-func WithTableName(tn *tableNames) Option {
-	return func(s *Storage) { s.tableNames = tn }
+	sugar *zap.SugaredLogger
+	db    *sqlx.DB
 }
 
 // NewStorage creates new instance of Storage.
-func NewStorage(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*Storage, error) {
+func NewStorage(sugar *zap.SugaredLogger, db *sqlx.DB) (*Storage, error) {
 	var (
 		logger = sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/NewStorage")
 	)
-	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%[1]s"
+	const schemaFmt = `
+	-- create table tx normal
+	CREATE TABLE IF NOT EXISTS "rsv_tx_normal"
 (
-    tx_hash text  NOT NULL PRIMARY KEY,
+	  id SERIAL PRIMARY KEY,
+    tx_hash text  UNIQUE NOT NULL,
     data    JSONB NOT NULL
 );
-CREATE INDEX IF NOT EXISTS "%[1]s_time_idx" ON "%[1]s" ((data ->> 'timestamp'));
+CREATE INDEX IF NOT EXISTS "rsv_tx_normal_time_idx" ON "rsv_tx_normal" ((data ->> 'timestamp'));
 
-CREATE TABLE IF NOT EXISTS "%[2]s"
+-- create table tx internal
+CREATE TABLE IF NOT EXISTS "rsv_tx_internal"
 (
+		id SERIAL PRIMARY KEY,
     data JSONB NOT NULL UNIQUE
 );
 
-CREATE INDEX IF NOT EXISTS "%[2]s_time_idx" ON "%[2]s" ((data ->> 'timestamp'));
+CREATE INDEX IF NOT EXISTS "rsv_tx_internal_time_idx" ON "rsv_tx_internal" ((data ->> 'timestamp'));
 
-CREATE TABLE IF NOT EXISTS "%[3]s"
+-- create table tx erc20
+CREATE TABLE IF NOT EXISTS "rsv_tx_erc20"
 (
-    data JSONB NOT NULL UNIQUE
+	  id SERIAL PRIMARY KEY,
+		data JSONB NOT NULL UNIQUE
 );
 
-CREATE INDEX IF NOT EXISTS "%[3]s_time_idx" ON "%[3]s" ((data ->> 'timestamp'));
+CREATE INDEX IF NOT EXISTS "rsv_tx_erc20_time_idx" ON "rsv_tx_erc20" ((data ->> 'timestamp'),
+(data ->> 'contractAddress'),(data ->> 'from'),(data ->> 'to'));
 
-CREATE TABLE IF NOT EXISTS "%[4]s"
+-- create table reserves
+CREATE TABLE IF NOT EXISTS "rsv_tx_reserve"
 (
-    address       text   NOT NULL PRIMARY KEY,
-    last_inserted BIGINT NOT NULL
-);`
+	address text NOT NULL PRIMARY KEY,
+	address_type text NOT NULL
+);
+
+-- create table last inserted
+CREATE TABLE IF NOT EXISTS "rsv_tx_last_inserted"
+(
+	address_key text UNIQUE REFERENCES "rsv_tx_reserve" (address),
+	last_inserted BIGINT NOT NULL
+);
+
+-- create table link from tx to reserve
+CREATE TABLE IF NOT EXISTS "rsv_tx_normal_tx_reserve"
+(
+	tx_id int REFERENCES "rsv_tx_normal" (id),
+	address_key text REFERENCES "rsv_tx_reserve" (address),
+	PRIMARY KEY (tx_id, address_key)
+);
+
+-- create table link from tx to reserve
+CREATE TABLE IF NOT EXISTS rsv_tx_internal_tx_reserve
+(
+	tx_id int REFERENCES "rsv_tx_internal" (id),
+	address_key text REFERENCES "rsv_tx_reserve" (address),
+	PRIMARY KEY (tx_id, address_key)
+);
+
+-- create table link from tx to reserve
+CREATE TABLE IF NOT EXISTS rsv_tx_erc20_tx_reserve
+(
+	tx_id int REFERENCES "rsv_tx_erc20" (id),
+	address_key text REFERENCES "rsv_tx_reserve" (address),
+	PRIMARY KEY (tx_id, address_key)
+);
+`
 
 	s := &Storage{sugar: sugar, db: db}
-	for _, option := range options {
-		option(s)
-	}
-	if s.tableNames == nil {
-		s.tableNames = defaultTableNames
-	}
 
-	query := fmt.Sprintf(schemaFmt,
-		s.tableNames.Normal,
-		s.tableNames.Internal,
-		s.tableNames.ERC20,
-		s.tableNames.LastInserted)
-	logger.Infow("initializing database schema", "query", query)
-	if _, err := db.Exec(query); err != nil {
+	logger.Infow("initializing database schema", "query", schemaFmt)
+	if _, err := db.Exec(schemaFmt); err != nil {
 		return nil, err
 	}
 	return s, nil
 }
 
-// TearDown removes all in used tables of reserve transaction storage.
-func (s *Storage) TearDown() error {
-	var logger = s.sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.TearDown")
-	const dropFmt = `
-	DROP TABLE %[1]s CASCADE;
-	DROP TABLE %[2]s CASCADE;
-	DROP TABLE %[3]s CASCADE;
-	DROP TABLE %[4]s CASCADE;
-	`
-	query := fmt.Sprintf(dropFmt,
-		s.tableNames.Normal,
-		s.tableNames.Internal,
-		s.tableNames.ERC20,
-		s.tableNames.LastInserted,
+//StoreReserve save fetching reserve address into database
+func (s *Storage) StoreReserve(reserve ethereum.Address, reserveType string) error {
+	var (
+		logger = s.sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreReserve")
 	)
-	logger.Debugw("cleanup database", "query", query)
-	_, err := s.db.Exec(query)
-	return err
+	const storeReserve = `INSERT INTO "rsv_tx_reserve" (address, address_type)
+	VALUES ($1, $2) 
+	ON CONFLICT (address) DO UPDATE SET address_type = EXCLUDED.address_type;`
+
+	logger.Debugw("query to store reserve into database", "query", storeReserve)
+
+	if _, err := s.db.Exec(storeReserve, reserve.Hex(), reserveType); err != nil {
+		return err
+	}
+	return nil
 }
 
 //StoreNormalTx store normal tx
-func (s *Storage) StoreNormalTx(txs []common.NormalTx) (err error) {
+func (s *Storage) StoreNormalTx(txs []common.NormalTx, reserve ethereum.Address) (err error) {
 	var (
 		logger = s.sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreNormalTx")
+		id     int64
 	)
-	const updateStmt = `INSERT INTO "%[1]s"(tx_hash, data)
+	const (
+		updateStmt = `INSERT INTO "rsv_tx_normal"(tx_hash, data)
 VALUES ($1, $2)
-ON CONFLICT ON CONSTRAINT "%[1]s_pkey" DO UPDATE SET data = EXCLUDED.data;
+ON CONFLICT (tx_hash) DO UPDATE SET data = EXCLUDED.data RETURNING id;
 `
+		insertStmt = `INSERT INTO "rsv_tx_normal_tx_reserve" (tx_id, address_key)
+	VALUES ($1, $2)
+		ON CONFLICT DO NOTHING;`
+	)
 
-	query := fmt.Sprintf(updateStmt, s.tableNames.Normal)
-	logger.Debugw("storing normal transactions to database", "query", query)
+	logger.Debugw("storing normal transactions to database", "query", updateStmt)
 
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -142,10 +150,20 @@ ON CONFLICT ON CONSTRAINT "%[1]s_pkey" DO UPDATE SET data = EXCLUDED.data;
 		if err != nil {
 			return
 		}
-		_, err = tx.Exec(query, t.BlockHash, data)
-		if err != nil {
+		if err = tx.Get(&id, updateStmt, t.BlockHash, data); err != nil && err != sql.ErrNoRows {
 			return
 		}
+		if err == sql.ErrNoRows {
+			err = nil
+		}
+
+		// insert into txs_reserves
+		if id != 0 {
+			if _, err = tx.Exec(insertStmt, id, reserve.Hex()); err != nil {
+				return
+			}
+		}
+
 	}
 
 	return nil
@@ -164,14 +182,13 @@ func (s *Storage) GetNormalTx(from time.Time, to time.Time) ([]common.NormalTx, 
 		t        common.NormalTx
 	)
 	const selectStmt = `SELECT data
-FROM "%[1]s"
+FROM "rsv_tx_normal"
 WHERE data ->> 'timestamp' >= $1
   AND data ->> 'timestamp' < $2`
-	query := fmt.Sprintf(selectStmt, s.tableNames.Normal)
-	logger.Debugw("querying normal transactions from database", "query", query)
+	logger.Debugw("querying normal transactions from database", "query", selectStmt)
 	if err := s.db.Select(
 		&dbResult,
-		query,
+		selectStmt,
 		timeutil.TimeToTimestampMs(from),
 		timeutil.TimeToTimestampMs(to)); err != nil {
 		return nil, err
@@ -186,18 +203,25 @@ WHERE data ->> 'timestamp' >= $1
 }
 
 //StoreInternalTx stores internal tx
-func (s *Storage) StoreInternalTx(txs []common.InternalTx) (err error) {
-	var logger = s.sugar.With(
-		"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreInternalTx",
+func (s *Storage) StoreInternalTx(txs []common.InternalTx, reserve ethereum.Address) (err error) {
+	var (
+		logger = s.sugar.With(
+			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreInternalTx",
+		)
+		id int64
 	)
 
-	const updateStmt = `INSERT INTO "%[1]s"(data)
+	const (
+		updateStmt = `INSERT INTO "rsv_tx_internal"(data)
 VALUES ($1)
-ON CONFLICT DO NOTHING;
+ON CONFLICT DO NOTHING RETURNING id;
 `
+		insertStmt = `INSERT INTO "rsv_tx_internal_tx_reserve" (tx_id, address_key)
+	VALUES ($1, $2)
+		ON CONFLICT DO NOTHING;`
+	)
 
-	query := fmt.Sprintf(updateStmt, s.tableNames.Internal)
-	logger.Debugw("storing internal transactions to database", "query", query)
+	logger.Debugw("storing internal transactions to database", "query", updateStmt)
 
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -211,8 +235,17 @@ ON CONFLICT DO NOTHING;
 			return
 		}
 
-		if _, err = tx.Exec(query, data); err != nil {
+		if err = tx.Get(&id, updateStmt, data); err != nil && err != sql.ErrNoRows {
 			return
+		}
+		if err == sql.ErrNoRows {
+			err = nil
+		}
+		// insert into txs_reserves
+		if id != 0 {
+			if _, err = tx.Exec(insertStmt, id, reserve.Hex()); err != nil {
+				return
+			}
 		}
 	}
 	return
@@ -231,14 +264,13 @@ func (s *Storage) GetInternalTx(from time.Time, to time.Time) ([]common.Internal
 		t        common.InternalTx
 	)
 	const selectStmt = `SELECT data
-FROM "%[1]s"
+FROM "rsv_tx_internal"
 WHERE data ->> 'timestamp' >= $1
   AND data ->> 'timestamp' < $2`
-	query := fmt.Sprintf(selectStmt, s.tableNames.Internal)
-	logger.Debugw("querying internal transactions from database", "query", query)
+	logger.Debugw("querying internal transactions from database", "query", selectStmt)
 	if err := s.db.Select(
 		&dbResult,
-		query,
+		selectStmt,
 		timeutil.TimeToTimestampMs(from),
 		timeutil.TimeToTimestampMs(to)); err != nil {
 		return nil, err
@@ -253,18 +285,25 @@ WHERE data ->> 'timestamp' >= $1
 }
 
 //StoreERC20Transfer save ERC20 transfer
-func (s *Storage) StoreERC20Transfer(txs []common.ERC20Transfer) (err error) {
-	var logger = s.sugar.With(
-		"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreERC20Transfer",
+func (s *Storage) StoreERC20Transfer(txs []common.ERC20Transfer, reserve ethereum.Address) (err error) {
+	var (
+		logger = s.sugar.With(
+			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreERC20Transfer",
+		)
+		id int64
 	)
 
-	const updateStmt = `INSERT INTO "%[1]s"(data)
+	const (
+		updateStmt = `INSERT INTO "rsv_tx_erc20"(data)
 VALUES ($1)
-ON CONFLICT DO NOTHING;
+ON CONFLICT DO NOTHING RETURNING id;
 `
+		insertStmt = `INSERT INTO "rsv_tx_erc20_tx_reserve" (tx_id, address_key)
+	VALUES ($1, $2)
+		ON CONFLICT DO NOTHING;`
+	)
 
-	query := fmt.Sprintf(updateStmt, s.tableNames.ERC20)
-	logger.Debugw("storing ERC20 transfers to database", "query", query)
+	logger.Debugw("storing ERC20 transfers to database", "query", updateStmt)
 
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -278,8 +317,20 @@ ON CONFLICT DO NOTHING;
 			return
 		}
 
-		if _, err = tx.Exec(query, data); err != nil {
+		// insert into rsv_erc20_txs
+		if err = tx.Get(&id, updateStmt, data); err != nil && err != sql.ErrNoRows {
 			return
+		}
+
+		if err == sql.ErrNoRows {
+			err = nil
+		}
+
+		// insert into txs_reserves
+		if id != 0 {
+			if _, err = tx.Exec(insertStmt, id, reserve.Hex()); err != nil {
+				return
+			}
 		}
 	}
 	return
@@ -298,16 +349,19 @@ func (s *Storage) GetERC20Transfer(from time.Time, to time.Time) ([]common.ERC20
 		t        common.ERC20Transfer
 	)
 	const selectStmt = `SELECT data
-FROM "%[1]s"
+FROM "rsv_tx_erc20"
+JOIN "rsv_tx_erc20_tx_reserve" AS a ON a.tx_id = rsv_tx_erc20.id
+JOIN "rsv_tx_reserve" AS reserve ON a.address_key = reserve.address 
 WHERE data ->> 'timestamp' >= $1
-  AND data ->> 'timestamp' < $2`
-	query := fmt.Sprintf(selectStmt, s.tableNames.ERC20)
-	logger.Debugw("querying ERC20 transfers from database", "query", query)
+	AND data ->> 'timestamp' < $2
+	AND reserve.address_type <> $3`
+	logger.Debugw("querying ERC20 transfers from database", "query", selectStmt)
 	if err := s.db.Select(
 		&dbResult,
-		query,
+		selectStmt,
 		timeutil.TimeToTimestampMs(from),
-		timeutil.TimeToTimestampMs(to)); err != nil {
+		timeutil.TimeToTimestampMs(to),
+		common.CompanyWallet.String()); err != nil {
 		return nil, err
 	}
 	for _, data := range dbResult {
@@ -328,15 +382,14 @@ func (s *Storage) StoreLastInserted(addr ethereum.Address, blockNumber *big.Int)
 			"block_number", blockNumber.String(),
 		)
 	)
-	const queryFmt = `INSERT INTO "%[1]s"(address, last_inserted)
+	const queryFmt = `INSERT INTO "rsv_tx_last_inserted"(address_key, last_inserted)
 VALUES ($1, $2)
-ON CONFLICT ON CONSTRAINT "%[1]s_pkey" DO UPDATE SET last_inserted = EXCLUDED.last_inserted;
+ON CONFLICT (address_key) DO UPDATE SET last_inserted = EXCLUDED.last_inserted;
 `
-	query := fmt.Sprintf(queryFmt, s.tableNames.LastInserted)
 
 	logger.Debugw("updating last inserted to database")
 
-	_, err := s.db.Exec(query, addr.String(), blockNumber.Uint64())
+	_, err := s.db.Exec(queryFmt, addr.String(), blockNumber.Uint64())
 	return err
 }
 
@@ -350,11 +403,10 @@ func (s *Storage) GetLastInserted(addr ethereum.Address) (*big.Int, error) {
 		lastInserted uint64
 	)
 	const queryFmt = `SELECT last_inserted
-FROM "%[1]s"
-WHERE address ILIKE $1`
-	query := fmt.Sprintf(queryFmt, s.tableNames.LastInserted)
+FROM "rsv_tx_last_inserted"
+WHERE address_key ILIKE $1`
 	logger.Debugw("fetching last inserted to database")
-	err := s.db.Get(&lastInserted, query, addr.String())
+	err := s.db.Get(&lastInserted, queryFmt, addr.String())
 	switch err {
 	case sql.ErrNoRows:
 		logger.Infow("no last inserted record exists")
@@ -364,4 +416,41 @@ WHERE address ILIKE $1`
 	default:
 		return nil, err
 	}
+}
+
+//GetWalletERC20Transfers return erc20 transfer between from.. to.. in its json []byte form
+func (s *Storage) GetWalletERC20Transfers(wallet, token ethereum.Address, from, to time.Time) ([]common.ERC20Transfer, error) {
+	var (
+		dbResult [][]byte
+		result   []common.ERC20Transfer
+		logger   = s.sugar.With(
+			"func", "accounting/wallet-erc20/storage/postgres..UpdateRatesRecords",
+			"from", from.UTC(),
+			"to", to.UTC(),
+			"wallet", wallet.Hex(),
+			"token", token.Hex(),
+		)
+		tmp common.ERC20Transfer
+	)
+	const selectStmt = `SELECT data FROM rsv_tx_erc20 
+	JOIN "rsv_tx_erc20_tx_reserve" as a ON a.tx_id = rsv_tx_erc20.id
+	JOIN "rsv_tx_reserve" as reserve ON a.address_key = reserve.address WHERE ((data->>'timestamp')>=$1::text AND (data->>'timestamp')<$2::text) AND
+	($3 OR (data->>'from'=$4 OR data->>'to'=$4)) AND
+	($5 OR data->>'contractAddress'=$6)
+	AND reserve.address_type = $7`
+	logger.Debugw("querying ERC20 transfers history...", "query", selectStmt)
+	walletFilter := blockchain.IsZeroAddress(wallet)
+	tokenFilter := blockchain.IsZeroAddress(token)
+	if err := s.db.Select(&dbResult, selectStmt, timeutil.TimeToTimestampMs(from), timeutil.TimeToTimestampMs(to),
+		walletFilter, wallet.Hex(), tokenFilter, token.Hex(), common.CompanyWallet.String()); err != nil {
+		return result, err
+	}
+	logger.Debugw("result", "len", len(dbResult))
+	for _, data := range dbResult {
+		if err := json.Unmarshal(data, &tmp); err != nil {
+			return result, err
+		}
+		result = append(result, tmp)
+	}
+	return result, nil
 }

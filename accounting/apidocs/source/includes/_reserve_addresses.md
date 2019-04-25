@@ -11,6 +11,7 @@ contract
 account. Therefore, we need to use a intermediate account when deposit/withdraw funds to reserve contract.
 - **centralized exchange deposit addresses:** Ethereum address to deposit funds to centralized exchanges
 (binance: 0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90, huobi: 0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66)
+- **company wallet**: ethereum address for company wallet
 
 ## Get all addresses 
 
@@ -76,7 +77,7 @@ id | integer | true | none | id of reserve
 ```shell
 curl -X POST "http://gateway.local/addresses" \ 
 -H "Content-Type: application/json" \ 
--D '{"address": "0x63825c174ab367968EC60f061753D3bbD36A0D8F", "type":"reserve", "description": "Kyber network reserve"}' 
+-d '{"address": "0x63825c174ab367968EC60f061753D3bbD36A0D8F", "type":"reserve", "description": "Kyber network reserve"}' 
 ```
 
 > the above request will return reponse like this:
@@ -94,7 +95,7 @@ curl -X POST "http://gateway.local/addresses" \
 Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
 address | integer | true | none | address value 
-type | string | true | including: "reserve", "pricing operator", "sanity operator", "intermediate operator", "centralized exchange deposit addresses", 
+type | string | true | including: "reserve", "pricing_operator", "sanity_operator", "intermediate_operator", "cex_depositaddress", "company_wallet"
 description | string | false | empty | description of the reserve address 
 
 ## Update an address
@@ -102,7 +103,7 @@ description | string | false | empty | description of the reserve address
 ```shell
 curl -X PUT "http://gateway.local/addresses/1" \ 
 -H "Content-Type: application/json" \ 
--D '{"address": "0x63825c174ab367968EC60f061753D3bbD36A0D8F", "type":"reserve", "description": "Kyber network reserve"}' 
+-d '{"address": "0x63825c174ab367968EC60f061753D3bbD36A0D8F", "type":"reserve", "description": "Kyber network reserve"}' 
 ```
 
 > the above request will return reponse like this:
@@ -121,5 +122,5 @@ Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
 id | integer | true | none | 
 address | string | true | none | address value 
-type | string | true | including: "reserve", "pricing operator", "sanity operator", "intermediate operator", "centralized exchange deposit addresses", 
+type | string | true | including: "reserve", "pricing_operator", "sanity_operator", "intermediate_operator", "cex_deposit_address", "company_wallet" 
 description | string | false | empty | description of the reserve address 

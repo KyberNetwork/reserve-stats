@@ -109,32 +109,49 @@ type getAppResult struct {
 }
 
 // GetAll return all app in storage
-func (adb *AppNameDB) GetAll(name *string, active *bool) ([]common.Application, error) {
+func (adb *AppNameDB) GetAll(filters ...Filter) ([]common.Application, error) {
 	var (
 		logger = adb.sugar.With(
 			"func", "app-names/storage.GetAll",
 		)
-		query = `SELECT apps.id, apps.name, ARRAY_AGG(address) FILTER ( WHERE address IS NOT NULL) AS addresses
-FROM app_names AS apps
-         LEFT JOIN addresses AS addrs on apps.id = addrs.app_name_id
-WHERE ($1::TEXT IS NULL OR apps.name = $1)
-  AND ($2::BOOLEAN IS NULL OR apps.active = $2)
-GROUP BY apps.id, apps.name;`
-		result []getAppResult
-		apps   []common.Application
+		query = `SELECT joined.id,
+       joined.name,
+       joined.addresses
+FROM (SELECT apps.id, apps.name, ARRAY_AGG(address) FILTER ( WHERE address IS NOT NULL) AS addresses
+      FROM app_names AS apps
+               LEFT JOIN addresses AS addrs on apps.id = addrs.app_name_id
+      WHERE ($1::TEXT IS NULL OR apps.name = $1)
+        AND ($3::BOOLEAN IS NULL OR apps.active = $3)
+      GROUP BY apps.id, apps.name) AS joined
+WHERE ($2::TEXT IS NULL OR $2 ILIKE ANY (joined.addresses));
+`
+		filterConf = &FilterConf{}
+		result     []getAppResult
+		apps       []common.Application
 	)
 	logger.With("query", query)
 
-	if name != nil {
-		logger.With("name", *name)
+	for _, filter := range filters {
+		filter(filterConf)
 	}
 
-	if active != nil {
-		logger.With("active", *active)
+	if filterConf.Name != nil {
+		logger.With("name", *filterConf.Name)
+	}
+
+	if filterConf.Address != nil {
+		logger.With("address", *filterConf.Address)
+	}
+
+	if filterConf.Active != nil {
+		logger.With("active", *filterConf.Active)
 	}
 
 	logger.Debug("get all applications")
-	if err := adb.db.Select(&result, query, name, active); err != nil {
+	if err := adb.db.Select(&result, query,
+		filterConf.Name,
+		filterConf.Address,
+		filterConf.Active); err != nil {
 		return nil, err
 	}
 

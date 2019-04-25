@@ -1,8 +1,11 @@
 # github.com/Knetic/govaluate v3.0.0+incompatible
 github.com/Knetic/govaluate
-# github.com/KyberNetwork/tokenrate v0.0.0-20181015045844-27abfb84ae1c
-github.com/KyberNetwork/tokenrate
+# github.com/KyberNetwork/httpsign-utils v0.1.1
+github.com/KyberNetwork/httpsign-utils/authenticator
+github.com/KyberNetwork/httpsign-utils/sign
+# github.com/KyberNetwork/tokenrate v0.0.0-20190327091843-b702f2d3511e
 github.com/KyberNetwork/tokenrate/coingecko
+github.com/KyberNetwork/tokenrate
 # github.com/aristanetworks/goarista v0.0.0-20181002214814-33151c4543a7
 github.com/aristanetworks/goarista/monotime
 # github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
@@ -27,18 +30,18 @@ github.com/davecgh/go-spew/spew
 # github.com/deckarep/golang-set v1.7.1
 github.com/deckarep/golang-set
 # github.com/ethereum/go-ethereum v1.8.17 => github.com/favadi/go-ethereum v1.8.16-fork
-github.com/ethereum/go-ethereum/accounts/abi/bind
 github.com/ethereum/go-ethereum/common
+github.com/ethereum/go-ethereum/accounts/abi/bind
 github.com/ethereum/go-ethereum/ethclient
 github.com/ethereum/go-ethereum
 github.com/ethereum/go-ethereum/core/types
 github.com/ethereum/go-ethereum/accounts/abi
 github.com/ethereum/go-ethereum/event
+github.com/ethereum/go-ethereum/common/hexutil
+github.com/ethereum/go-ethereum/crypto/sha3
 github.com/ethereum/go-ethereum/accounts/keystore
 github.com/ethereum/go-ethereum/crypto
 github.com/ethereum/go-ethereum/log
-github.com/ethereum/go-ethereum/common/hexutil
-github.com/ethereum/go-ethereum/crypto/sha3
 github.com/ethereum/go-ethereum/rlp
 github.com/ethereum/go-ethereum/rpc
 github.com/ethereum/go-ethereum/params
@@ -53,7 +56,7 @@ github.com/ethereum/go-ethereum/ethdb
 github.com/ethereum/go-ethereum/metrics
 # github.com/gin-contrib/cors v0.0.0-20181008113111-488de3ec974f
 github.com/gin-contrib/cors
-# github.com/gin-contrib/httpsign v0.0.0-20181102021455-787f0a566bf9
+# github.com/gin-contrib/httpsign v0.0.0-20190301062400-d644b4c2b4c5
 github.com/gin-contrib/httpsign
 github.com/gin-contrib/httpsign/crypto
 github.com/gin-contrib/httpsign/validator
@@ -124,8 +127,8 @@ github.com/rjeczalik/notify
 # github.com/rs/cors v1.6.0
 github.com/rs/cors
 # github.com/stretchr/testify v1.3.0
-github.com/stretchr/testify/require
 github.com/stretchr/testify/assert
+github.com/stretchr/testify/require
 # github.com/syndtr/goleveldb v0.0.0-20181012014443-6b91fda63f2e
 github.com/syndtr/goleveldb/leveldb
 github.com/syndtr/goleveldb/leveldb/errors

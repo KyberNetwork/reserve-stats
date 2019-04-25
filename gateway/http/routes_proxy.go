@@ -86,7 +86,7 @@ func WithCexTradesURL(cexTradeURL string) Option {
 		if err != nil {
 			return err
 		}
-		s.r.GET("/cex_trades", cexTradeURLMW)
+		s.r.GET("/trades", cexTradeURLMW)
 		return nil
 	}
 }

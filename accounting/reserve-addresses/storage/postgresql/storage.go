@@ -2,7 +2,6 @@ package postgresql
 
 import (
 	"database/sql"
-	"fmt"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
@@ -16,11 +15,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 )
 
-const (
-	addressesTableName      = "addresses"
-	addressVersionTableName = "addresses_version"
-)
-
 // Storage implements accounting reserve addresses storage.Interface with PostgreSQL as storage engine.
 type Storage struct {
 	sugar  *zap.SugaredLogger
@@ -31,7 +25,7 @@ type Storage struct {
 // NewStorage creates a new instance of Storage.
 func NewStorage(sugar *zap.SugaredLogger, db *sqlx.DB, resolv blockchain.ContractTimestampResolver) (*Storage, error) {
 	var logger = sugar.With("func", "accounting/reserve-addresses/storage/postgresql.NewStorage")
-	const schemaFmt = `CREATE TABLE IF NOT EXISTS "%[1]s"
+	const schemaFmt = `CREATE TABLE IF NOT EXISTS "addresses"
 (
   id           SERIAL PRIMARY KEY,
   address      TEXT      NOT NULL UNIQUE,
@@ -41,7 +35,7 @@ func NewStorage(sugar *zap.SugaredLogger, db *sqlx.DB, resolv blockchain.Contrac
   last_updated TIMESTAMP NOT NULL
 );
 --create version table
-CREATE TABLE IF NOT EXISTS "%[2]s"
+CREATE TABLE IF NOT EXISTS "addresses_version"
 (
 	id SERIAL PRIMARY KEY,
 	version integer NOT NULL,
@@ -53,25 +47,28 @@ $$
 DECLARE
     inc BOOLEAN = false;
 BEGIN
-    IF tg_op = 'INSERT' OR tg_op = 'UPDATE' THEN
+    IF tg_op = 'INSERT' THEN
         inc = TRUE;
-    END IF;
+	END IF;
+	IF tg_op = 'UPDATE' AND OLD IS DISTINCT FROM NEW THEN
+		inc = TRUE;
+	END IF;
 	IF inc THEN
-		INSERT INTO "%[2]s" (id, version, timestamp)
-		VALUES (1, 1, now()) ON CONFLICT (id) DO UPDATE SET version = %[2]s.version+1, timestamp = EXCLUDED.timestamp;
+		INSERT INTO "addresses_version" (id, version, timestamp)
+		VALUES (1, 1, now()) ON CONFLICT (id) DO UPDATE SET version = addresses_version.version+1, timestamp = EXCLUDED.timestamp;
 	END IF;
 	RETURN NULL;
 END;
 $$ LANGUAGE PLPGSQL;
-DROP TRIGGER IF EXISTS version_trigger ON %[1]s;
+DROP TRIGGER IF EXISTS version_trigger ON addresses;
 CREATE TRIGGER version_trigger
     AFTER INSERT OR UPDATE
-    ON %[1]s 
+    ON addresses
     FOR EACH ROW
 EXECUTE PROCEDURE inc_version();`
 
 	logger.Debugw("initializing database schema")
-	if _, err := db.Exec(fmt.Sprintf(schemaFmt, addressesTableName, addressVersionTableName)); err != nil {
+	if _, err := db.Exec(schemaFmt); err != nil {
 		return nil, err
 	}
 
@@ -87,7 +84,7 @@ func (s *Storage) Create(address ethereum.Address, addressType common.AddressTyp
 			"type", addressType.String(),
 			"description", description,
 		)
-		insertFmt = `INSERT INTO "%s" (address, type, description, timestamp, last_updated)
+		insertFmt = `INSERT INTO "addresses" (address, type, description, timestamp, last_updated)
 VALUES ($1, $2, $3, $4, NOW()) RETURNING id`
 		id uint64
 	)
@@ -110,7 +107,7 @@ VALUES ($1, $2, $3, $4, NOW()) RETURNING id`
 		return 0, err
 	}
 
-	if err = s.db.Get(&id, fmt.Sprintf(insertFmt, addressesTableName), params...); err != nil {
+	if err = s.db.Get(&id, insertFmt, params...); err != nil {
 		// check if return error is a known pq error
 		pErr, ok := err.(*pq.Error)
 		if !ok {
@@ -163,7 +160,7 @@ func (s *Storage) GetAll() ([]*common.ReserveAddress, int64, error) {
 		results   []*common.ReserveAddress
 		queryStmt = `SELECT id, address, type, description, timestamp
 FROM addresses`
-		queryVersionStmt = fmt.Sprintf(`SELECT version FROM %[1]s WHERE id = 1`, addressVersionTableName)
+		queryVersionStmt = `SELECT version FROM addresses_version WHERE id = 1`
 		version          int64
 	)
 

@@ -11,47 +11,19 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
-
-var defaultTableNames = newTableNames(
-	"listed_tokens_version",
-	"listed_tokens_reserves",
-	"listed_tokens_reserves_tokens",
-	"listed_tokens")
-
-type tableNames struct {
-	version        string
-	reserves       string
-	reservesTokens string
-	tokens         string
-}
-
-func newTableNames(version string, reserves string, reservesTokens string, tokens string) *tableNames {
-	return &tableNames{version: version, reserves: reserves, reservesTokens: reservesTokens, tokens: tokens}
-}
 
 //ListedTokenDB is storage for listed token
 type ListedTokenDB struct {
 	sugar *zap.SugaredLogger
 	db    *sqlx.DB
-
-	tb *tableNames
-}
-
-// Option is the ListedTokenDB constructor option.
-type Option func(*ListedTokenDB)
-
-// WithTableName is the option to use a non-default table name.
-func WithTableName(tb *tableNames) Option {
-	return func(db *ListedTokenDB) {
-		db.tb = tb
-	}
 }
 
 //NewDB open a new database connection an create initiated table if it is not exist
-func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*ListedTokenDB, error) {
+func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*ListedTokenDB, error) {
 	var (
 		logger = sugar.With("func", "accounting/storage.NewDB")
 		ltd    = &ListedTokenDB{
@@ -60,17 +32,8 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*ListedTok
 		}
 	)
 
-	for _, option := range options {
-		option(ltd)
-	}
-
-	if ltd.tb == nil {
-		ltd.tb = defaultTableNames
-	}
-
-	query := fmt.Sprintf(schemaFmt, ltd.tb.tokens, ltd.tb.version, ltd.tb.reserves, ltd.tb.reservesTokens)
-	logger.Debugw("initializing database schema", "query", query)
-	if _, err := db.Exec(query); err != nil {
+	logger.Debugw("initializing database schema", "query", schemaFmt)
+	if _, err := db.Exec(schemaFmt); err != nil {
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
@@ -83,11 +46,11 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens []common.ListedToken, blockNumbe
 		logger  = ltd.sugar.With("func", "accounting/listed_tokens/storage/ltd.CreateOrUpdate")
 		changed = false
 	)
-	saveTokenQuery := fmt.Sprintf(`SELECT save_token($1, $2, $3, $4, $5, $6)`)
+	saveTokenQuery := fmt.Sprintf(`SELECT save_token($1, $2, $3, $4, $5, $6, $7)`)
 
-	updateVersionQuery := fmt.Sprintf(`UPDATE "%[1]s"
+	updateVersionQuery := `UPDATE "listed_tokens_version"
 SET version      = CASE WHEN $1 THEN version + 1 ELSE version END,
-    block_number = $2;`, ltd.tb.version)
+    block_number = $2;`
 	logger.Debugw("update version", "query", updateVersionQuery)
 
 	tx, err := ltd.db.Beginx()
@@ -103,6 +66,7 @@ SET version      = CASE WHEN $1 THEN version + 1 ELSE version END,
 			token.Name,
 			token.Symbol,
 			token.Timestamp.UTC(),
+			token.Decimals,
 			nil,
 			reserve.Hex()); err != nil {
 			return
@@ -118,6 +82,7 @@ SET version      = CASE WHEN $1 THEN version + 1 ELSE version END,
 				token.Name,
 				token.Symbol,
 				oldToken.Timestamp.UTC(),
+				oldToken.Decimals,
 				token.Address.Hex(),
 				reserve.Hex()); err != nil {
 				return
@@ -143,8 +108,10 @@ type listedTokenRecord struct {
 	Symbol        string         `db:"symbol"`
 	Name          string         `db:"name"`
 	Timestamp     time.Time      `db:"timestamp"`
+	Decimals      uint8          `db:"decimals"`
 	OldAddresses  pq.StringArray `db:"old_addresses"`
 	OldTimestamps pq.Int64Array  `db:"old_timestamps"`
+	OldDecimals   pq.Int64Array  `db:"old_decimals"`
 }
 
 type listedTokenVersion struct {
@@ -159,6 +126,7 @@ func (r *listedTokenRecord) ListedToken() (common.ListedToken, error) {
 		Symbol:    r.Symbol,
 		Name:      r.Name,
 		Timestamp: r.Timestamp.UTC(),
+		Decimals:  r.Decimals,
 	}
 
 	if len(r.OldAddresses) != len(r.OldTimestamps) {
@@ -171,6 +139,7 @@ func (r *listedTokenRecord) ListedToken() (common.ListedToken, error) {
 		oldToken := common.OldListedToken{
 			Address:   ethereum.HexToAddress(r.OldAddresses[i]),
 			Timestamp: timeutil.TimestampMsToTime(uint64(r.OldTimestamps[i])).UTC(),
+			Decimals:  uint8(r.OldDecimals[i]),
 		}
 		if token.Old == nil {
 			token.Old = []common.OldListedToken{oldToken}
@@ -182,26 +151,29 @@ func (r *listedTokenRecord) ListedToken() (common.ListedToken, error) {
 }
 
 // GetTokens return all tokens listed
-func (ltd *ListedTokenDB) GetTokens() (result []common.ListedToken, version, blockNumber uint64, err error) {
+func (ltd *ListedTokenDB) GetTokens(reserve ethereum.Address) (result []common.ListedToken, version, blockNumber uint64, err error) {
 	var (
 		logger = ltd.sugar.With(
 			"func",
 			"accounting/listed-token-storage/listedtokenstorage.GetTokens",
+			"reserve", reserve,
 		)
 		records       []listedTokenRecord
 		versionRecord listedTokenVersion
 	)
 
-	getQuery := `SELECT address,
+	getQuery := `SELECT DISTINCT address,
        name,
        symbol,
-       timestamp,
+	   timestamp,
+	   decimals,
        old_addresses,
-       old_timestamps
-FROM "tokens_view";`
+	   old_timestamps,
+	   old_decimals
+FROM "tokens_view" WHERE ( $1 OR reserve_address = $2 );`
 	logger.Debugw("get tokens query", "query", getQuery)
 
-	getVersionQuery := fmt.Sprintf(`SELECT version, block_number FROM "%[1]s" LIMIT 1`, ltd.tb.version)
+	getVersionQuery := `SELECT version, block_number FROM "listed_tokens_version" LIMIT 1`
 	logger.Debugw("get token version", "query", getVersionQuery)
 
 	tx, err := ltd.db.Beginx()
@@ -211,7 +183,7 @@ FROM "tokens_view";`
 
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 
-	if err := tx.Select(&records, getQuery); err != nil {
+	if err := tx.Select(&records, getQuery, blockchain.IsZeroAddress(reserve), reserve.Hex()); err != nil {
 		logger.Errorw("error query token", "error", err)
 		return nil, 0, 0, err
 	}
@@ -241,16 +213,4 @@ func (ltd *ListedTokenDB) Close() error {
 		return ltd.db.Close()
 	}
 	return nil
-}
-
-//DeleteTable remove tables use for test
-func (ltd *ListedTokenDB) DeleteTable() error {
-	const dropQuery = `DROP VIEW "tokens_view";
-drop function save_token(text, text, text, timestamp, text, text);
-DROP TABLE "%[1]s", "%[2]s", "%[3]s", "%[4]s";`
-	query := fmt.Sprintf(dropQuery, ltd.tb.reservesTokens, ltd.tb.tokens, ltd.tb.version, ltd.tb.reserves)
-
-	ltd.sugar.Infow("Drop token table", "query", query)
-	_, err := ltd.db.Exec(query)
-	return err
 }

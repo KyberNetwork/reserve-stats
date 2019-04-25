@@ -15,9 +15,9 @@ const (
 	readSecretKey = "xxx123xxx"
 )
 
-func newTestGeoInfo(server *httptest.Server, readKeyID, readSecretKey string) (*Client, error) {
+func newTestGeoInfo(server *httptest.Server) *Client {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	return NewClient(sugar, server.URL, readKeyID, readSecretKey)
+	return NewClient(sugar, server.URL, WithAuth(readKeyID, readSecretKey))
 }
 
 func TestGetValidResponse(t *testing.T) {
@@ -46,10 +46,7 @@ func TestGetValidResponse(t *testing.T) {
 		}
 	}))
 
-	g, err := newTestGeoInfo(server, readKeyID, readSecretKey)
-	if err != nil {
-		t.Error("Could not create Client object", "err", err.Error())
-	}
+	g := newTestGeoInfo(server)
 	ip, country, err := g.GetTxInfo(tx)
 	if err != nil {
 		t.Error("Could not get ipInfo")
@@ -86,11 +83,8 @@ func TestInvalidResponse(t *testing.T) {
 		}
 	}))
 
-	g, err := newTestGeoInfo(server, readKeyID, readSecretKey)
-	if err != nil {
-		t.Error("Could not create Client object", "err", err.Error())
-	}
-	_, _, err = g.GetTxInfo(tx)
+	g := newTestGeoInfo(server)
+	_, _, err := g.GetTxInfo(tx)
 	if err != nil {
 		t.Errorf("Get unexpected error: %s", err.Error())
 	}

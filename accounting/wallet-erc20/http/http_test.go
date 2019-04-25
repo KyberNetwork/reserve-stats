@@ -13,14 +13,14 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
-	"github.com/KyberNetwork/reserve-stats/accounting/wallet-erc20/storage"
-	"github.com/KyberNetwork/reserve-stats/accounting/wallet-erc20/storage/postgres"
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/storage"
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/storage/postgres"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
-func newTestServer(rts storage.Interface, sugar *zap.SugaredLogger) (*Server, error) {
+func newTestServer(rts storage.ReserveTransactionStorage, sugar *zap.SugaredLogger) (*Server, error) {
 	return NewServer(
 		sugar,
 		"",
@@ -30,17 +30,24 @@ func newTestServer(rts storage.Interface, sugar *zap.SugaredLogger) (*Server, er
 }
 
 func TestERC20Transfer(t *testing.T) {
-	_, storage := testutil.MustNewDevelopmentDB()
+	storage, teardown := testutil.MustNewRandomDevelopmentDB()
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	rts, err := postgres.NewDB(sugar, storage)
+	rts, err := postgres.NewStorage(sugar, storage)
 	require.NoError(t, err)
+
+	defer func(t *testing.T) {
+		require.NoError(t, teardown())
+	}(t)
 
 	s, err := newTestServer(rts, sugar)
 	require.NoError(t, err)
 	s.register()
 
+	err = rts.StoreReserve(ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"), common.CompanyWallet.String())
+	require.NoError(t, err)
+
 	// prepare data
-	testReserveRates := []common.ERC20Transfer{
+	testWalletERC20Transfer := []common.ERC20Transfer{
 		{
 			Timestamp:       timeutil.TimestampMsToTime(1554094535000),
 			Hash:            ethereum.HexToHash("0xf18cc8635570d4be2ec39a89234219bce64785333978c56f98c6772a9a200942"),
@@ -67,7 +74,7 @@ func TestERC20Transfer(t *testing.T) {
 		},
 	}
 
-	err = rts.UpdateERC20Transfers(testReserveRates)
+	err = rts.StoreERC20Transfer(testWalletERC20Transfer, ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"))
 	require.NoError(t, err)
 
 	var tests = []httputil.HTTPTestCase{

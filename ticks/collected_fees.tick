@@ -1,0 +1,97 @@
+dbrp "trade_logs"."autogen"
+
+var precision = 's'
+var database = 'trade_logs'
+var measurement = 'collected_fees'
+
+var rsv_addr_tag = 'rsv_addr'
+var burn_amount_field = 'burn_amount'
+var wallet_fee_amount_field = 'wallet_fee_amount'
+
+var origin_tag = 'origin'
+
+var src_rsv_addr_tag = 'src_rsv_addr'
+var dst_rsv_addr_tag = 'dst_rsv_addr'
+
+var tx_hash_field = 'tx_hash'
+
+var data = stream
+    |from()
+        .database(database)
+        .measurement('trades')
+
+var src_burn = data
+    |where(lambda: "src_burn_amount" != 0 AND "src_rsv_addr" != '')
+    |eval(lambda: "src_burn_amount")
+        .as(burn_amount_field)
+        .keep(burn_amount_field, tx_hash_field)
+    |eval(lambda: "src_rsv_addr")
+        .as(rsv_addr_tag)
+        .keep(burn_amount_field, tx_hash_field)
+        .tags(rsv_addr_tag)
+    |delete()
+        .tag(src_rsv_addr_tag)
+    |delete()
+        .tag(dst_rsv_addr_tag)
+    |influxDBOut()
+        .database(database)
+        .measurement(measurement)
+        .precision(precision)
+        .tag(origin_tag, 'src_burn')
+
+var dst_burn = data
+    |where(lambda: "dst_burn_amount" != 0 AND "dst_rsv_addr" != '')
+    |eval(lambda: "dst_burn_amount")
+        .as(burn_amount_field)
+        .keep(burn_amount_field, tx_hash_field)
+    |eval(lambda: "dst_rsv_addr")
+        .as(rsv_addr_tag)
+        .keep(burn_amount_field, tx_hash_field)
+        .tags(rsv_addr_tag)
+    |delete()
+        .tag(src_rsv_addr_tag)
+    |delete()
+        .tag(dst_rsv_addr_tag)
+    |influxDBOut()
+        .database(database)
+        .measurement(measurement)
+        .precision(precision)
+        .tag(origin_tag, 'dst_burn')
+
+var src_wallet_fee = data
+    |where(lambda: "src_wallet_fee_amount" != 0 AND "src_rsv_addr" != '')
+    |eval(lambda: "src_wallet_fee_amount")
+        .as(wallet_fee_amount_field)
+        .keep(wallet_fee_amount_field, tx_hash_field)
+    |eval(lambda: "src_rsv_addr")
+        .as(rsv_addr_tag)
+        .keep(wallet_fee_amount_field, tx_hash_field)
+        .tags(rsv_addr_tag)
+    |delete()
+        .tag(src_rsv_addr_tag)
+    |delete()
+        .tag(dst_rsv_addr_tag)
+    |influxDBOut()
+        .database(database)
+        .measurement(measurement)
+        .precision(precision)
+        .tag(origin_tag, 'src_wallet_fee')
+
+var dst_wallet_fee = data
+    |where(lambda: "dst_wallet_fee_amount" != 0 AND "dst_rsv_addr" != '')
+    |eval(lambda: "dst_wallet_fee_amount")
+        .as(wallet_fee_amount_field)
+        .keep(wallet_fee_amount_field, tx_hash_field)
+    |eval(lambda: "dst_rsv_addr")
+        .as(rsv_addr_tag)
+        .keep(wallet_fee_amount_field, tx_hash_field)
+        .tags(rsv_addr_tag)
+    |delete()
+        .tag(src_rsv_addr_tag)
+    |delete()
+        .tag(dst_rsv_addr_tag)
+    |influxDBOut()
+        .database(database)
+        .measurement(measurement)
+        .precision(precision)
+        .tag(origin_tag, 'dst_wallet_fee')

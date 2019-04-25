@@ -1,25 +1,31 @@
-package http
+package authenticator
 
 import (
+	"errors"
+
 	"github.com/gin-contrib/httpsign"
 	"github.com/gin-contrib/httpsign/crypto"
 	"github.com/gin-contrib/httpsign/validator"
 )
 
-// NewAuthenticator create a httpsign.Authenticator to check the message signing is valid or not
-func NewAuthenticator(readKeyID, readKeySecret, writeKeyID, writeKeySecret string) (*httpsign.Authenticator, error) {
-	var (
-		secrets      = make(httpsign.Secrets)
-		mapKeySecret = map[string]string{
-			readKeyID:  readKeySecret,
-			writeKeyID: writeKeySecret,
-		}
-	)
+// KeyPair difine AccessKeyID and SecretAccessKey
+type KeyPair struct {
+	AccessKeyID     string
+	SecretAccessKey string
+}
 
-	for key, secret := range mapKeySecret {
-		signKeyID := httpsign.KeyID(key)
+// NewAuthenticator create a httpsign.Authenticator to check the message signing is valid or not
+func NewAuthenticator(keyPairs ...KeyPair) (*httpsign.Authenticator, error) {
+	var secrets = make(httpsign.Secrets)
+
+	if len(keyPairs) == 0 {
+		return nil, errors.New("keyPairs are required")
+	}
+
+	for _, keyPair := range keyPairs {
+		signKeyID := httpsign.KeyID(keyPair.AccessKeyID)
 		secrets[signKeyID] = &httpsign.Secret{
-			Key:       secret,
+			Key:       keyPair.SecretAccessKey,
 			Algorithm: &crypto.HmacSha512{},
 		}
 	}

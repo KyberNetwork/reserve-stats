@@ -16,17 +16,12 @@ import (
 
 func TestNormalTx(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	_, db := testutil.MustNewDevelopmentDB()
-	s, err := NewStorage(sugar, db, WithTableName(&tableNames{
-		Normal:       "normal_test_normal_tx",
-		Internal:     "internal_test_normal_tx",
-		ERC20:        "erc20_test_normal_tx",
-		LastInserted: "last_inserted_test_normal_tx",
-	}))
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 
 	defer func(t *testing.T) {
-		require.NoError(t, s.TearDown())
+		require.NoError(t, teardown())
 	}(t)
 
 	txTimestamp := timeutil.TimestampMsToTime(1439048640 * 1000).UTC()
@@ -34,6 +29,9 @@ func TestNormalTx(t *testing.T) {
 	require.True(t, ok)
 	txGasPrice, ok := big.NewInt(0).SetString("10000000000000", 10)
 	require.True(t, ok)
+
+	err = s.StoreReserve(ethereum.HexToAddress("0x5abfec25f74cd88437631a7731906932776356f9"), common.Reserve.String())
+	require.NoError(t, err)
 
 	testTxs := []common.NormalTx{
 		{
@@ -63,7 +61,7 @@ func TestNormalTx(t *testing.T) {
 			IsError:     0,
 		},
 	}
-	err = s.StoreNormalTx(testTxs)
+	err = s.StoreNormalTx(testTxs, ethereum.HexToAddress("0x5abfec25f74cd88437631a7731906932776356f9"))
 	require.NoError(t, err)
 	txs, err := s.GetNormalTx(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
@@ -72,7 +70,7 @@ func TestNormalTx(t *testing.T) {
 	// make sure we can safely insert duplicated transaction with value changed
 	testTxs[0].Gas++
 	testTxs[1].Gas++
-	err = s.StoreNormalTx(testTxs)
+	err = s.StoreNormalTx(testTxs, ethereum.HexToAddress("0x5abfec25f74cd88437631a7731906932776356f9"))
 	require.NoError(t, err)
 	txs, err = s.GetNormalTx(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
@@ -85,20 +83,18 @@ func TestNormalTx(t *testing.T) {
 
 func TestInternalTx(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	_, db := testutil.MustNewDevelopmentDB()
-	s, err := NewStorage(sugar, db, WithTableName(&tableNames{
-		Normal:       "normal_test_internal_tx",
-		Internal:     "internal_test_internal_tx",
-		ERC20:        "erc20_test_internal_tx",
-		LastInserted: "last_inserted_test_internal_tx",
-	}))
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 
 	defer func(t *testing.T) {
-		require.NoError(t, s.TearDown())
+		require.NoError(t, teardown())
 	}(t)
 
 	txTimestamp := timeutil.TimestampMsToTime(1477837690 * 1000).UTC()
+
+	err = s.StoreReserve(ethereum.HexToAddress("0x5abfec25f74cd88437631a7731906932776356f9"), common.Reserve.String())
+	require.NoError(t, err)
 
 	testTxs := []common.InternalTx{
 		{
@@ -114,13 +110,13 @@ func TestInternalTx(t *testing.T) {
 		},
 	}
 
-	err = s.StoreInternalTx(testTxs)
+	err = s.StoreInternalTx(testTxs, ethereum.HexToAddress("0x5abfec25f74cd88437631a7731906932776356f9"))
 	require.NoError(t, err)
 	txs, err := s.GetInternalTx(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
 	assert.Equal(t, testTxs, txs)
 
-	err = s.StoreInternalTx(testTxs)
+	err = s.StoreInternalTx(testTxs, ethereum.HexToAddress("0x5abfec25f74cd88437631a7731906932776356f9"))
 	require.NoError(t, err)
 	txs, err = s.GetInternalTx(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
@@ -133,22 +129,20 @@ func TestInternalTx(t *testing.T) {
 
 func TestERC20Transfer(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	_, db := testutil.MustNewDevelopmentDB()
-	s, err := NewStorage(sugar, db, WithTableName(&tableNames{
-		Normal:       "normal_test_erc20_transfer",
-		Internal:     "internal_test_erc20_transfer",
-		ERC20:        "erc20_test_erc20_transfer",
-		LastInserted: "last_inserted_erc20_transfer",
-	}))
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 
 	defer func(t *testing.T) {
-		require.NoError(t, s.TearDown())
+		require.NoError(t, teardown())
 	}(t)
 
 	txTimestamp := timeutil.TimestampMsToTime(1473433992 * 1000).UTC()
 	txVal, ok := big.NewInt(0).SetString("101000000000000000000", 10)
 	require.True(t, ok)
+
+	err = s.StoreReserve(ethereum.HexToAddress("0x4e83362442b8d1bec281594cea3050c8eb01311c"), common.Reserve.String())
+	require.NoError(t, err)
 
 	testTxs := []common.ERC20Transfer{
 		{
@@ -163,15 +157,27 @@ func TestERC20Transfer(t *testing.T) {
 			GasUsed:         93657,
 			GasPrice:        big.NewInt(20000000000),
 		},
+		{
+			BlockNumber:     2228258,
+			Timestamp:       txTimestamp,
+			Hash:            ethereum.HexToHash("0xf0ddb076798afba4fc507e96333aaa9a610b76b6774fdd94c10b78b06e18f9e6"),
+			From:            ethereum.HexToAddress("0x4e83362442b8d1bec281594cea3050c8eb01311c"),
+			ContractAddress: ethereum.HexToAddress("0xecf8f87f810ecf450940c9f60066b4a7a501d6a7"),
+			To:              ethereum.HexToAddress("0xac75b73394c329376c214663d92156afa864a77f"),
+			Value:           txVal,
+			Gas:             1000000,
+			GasUsed:         93657,
+			GasPrice:        big.NewInt(20000000000),
+		},
 	}
 
-	err = s.StoreERC20Transfer(testTxs)
+	err = s.StoreERC20Transfer(testTxs, ethereum.HexToAddress("0x4e83362442b8d1bec281594cea3050c8eb01311c"))
 	require.NoError(t, err)
 	txs, err := s.GetERC20Transfer(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
 	assert.Equal(t, testTxs, txs)
 
-	err = s.StoreERC20Transfer(testTxs)
+	err = s.StoreERC20Transfer(testTxs, ethereum.HexToAddress("0x4e83362442b8d1bec281594cea3050c8eb01311c"))
 	require.NoError(t, err)
 	txs, err = s.GetERC20Transfer(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
 	require.NoError(t, err)
@@ -184,18 +190,16 @@ func TestERC20Transfer(t *testing.T) {
 
 func TestLastInserted(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	_, db := testutil.MustNewDevelopmentDB()
-	s, err := NewStorage(sugar, db, WithTableName(&tableNames{
-		Normal:       "normal_test_last_inserted",
-		Internal:     "internal_test_last_inserted",
-		ERC20:        "erc20_test_last_inserted",
-		LastInserted: "last_inserted_test_last_inserted",
-	}))
+	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 
 	defer func(t *testing.T) {
-		require.NoError(t, s.TearDown())
+		require.NoError(t, teardown())
 	}(t)
+	err = s.StoreReserve(ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"), common.Reserve.String())
+	require.NoError(t, err)
+
 	var (
 		testAddr         = ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")
 		testLastInserted = big.NewInt(7461105)

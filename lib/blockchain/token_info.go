@@ -31,9 +31,10 @@ var cachedName = map[common.Address]string{
 
 // TokenInfoGetter is a helper to get token info
 type TokenInfoGetter struct {
-	ethClient    bind.ContractBackend // eth client
-	cachedSymbol sync.Map
-	cachedName   sync.Map
+	ethClient      bind.ContractBackend // eth client
+	cachedSymbol   sync.Map
+	cachedName     sync.Map
+	cachedDecimals sync.Map
 }
 
 // TokenSymbolOption is the option to configure TokenSymbol constructor.
@@ -121,6 +122,31 @@ func (t *TokenInfoGetter) Symbol(address common.Address) (string, error) {
 	symbol = strings.ToUpper(symbol)
 	t.cachedSymbol.Store(address, symbol)
 	return symbol, nil
+}
+
+//Decimals return token decimals
+func (t *TokenInfoGetter) Decimals(address common.Address) (uint8, error) {
+	var (
+		decimals uint8
+	)
+	if val, ok := t.cachedDecimals.Load(address); ok {
+		if decimals, ok = val.(uint8); !ok {
+			return 0, errors.New("invalid value stored in cached decimals")
+		}
+		return decimals, nil
+	}
+	tokenContract, err := contracts.NewERC20(address, t.ethClient)
+	if err != nil {
+		return 0, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	decimals, err = tokenContract.Decimals(&bind.CallOpts{Context: ctx})
+	if err != nil {
+		return 0, err
+	}
+	t.cachedDecimals.Store(address, decimals)
+	return decimals, nil
 }
 
 var getNameFns = []getNameOrSymbolFunc{

@@ -7,15 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/KyberNetwork/reserve-stats/accounting/wallet-erc20/storage"
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 const (
-	maxTimeFrame     = time.Hour * 24 * 365 * 1 // 1 year
-	defaultTimeFrame = time.Hour * 24           // 1 day
+	maxTimeFrame     = time.Hour * 24 * 30 // 30 days
+	defaultTimeFrame = time.Hour * 24      // 1 day
 )
 
 // Server is the HTTP server of accounting wallet-erc20-txs HTTP API.
@@ -23,7 +23,7 @@ type Server struct {
 	sugar *zap.SugaredLogger
 	r     *gin.Engine
 	host  string
-	st    storage.Interface
+	st    storage.ReserveTransactionStorage
 }
 
 type getTransactionsQuery struct {
@@ -59,7 +59,7 @@ func (s *Server) getTransactions(c *gin.Context) {
 		return
 	}
 
-	data, err := s.st.GetERC20Transfers(
+	data, err := s.st.GetWalletERC20Transfers(
 		ethereum.HexToAddress(query.Wallet),
 		ethereum.HexToAddress(query.Token),
 		fromTime,
@@ -78,7 +78,7 @@ func (s *Server) getTransactions(c *gin.Context) {
 }
 
 // NewServer creates a new instance of Server.
-func NewServer(sugar *zap.SugaredLogger, host string, st storage.Interface) *Server {
+func NewServer(sugar *zap.SugaredLogger, host string, st storage.ReserveTransactionStorage) *Server {
 	r := gin.Default()
 	return &Server{sugar: sugar, r: r, host: host, st: st}
 }

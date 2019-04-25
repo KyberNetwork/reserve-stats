@@ -7,12 +7,13 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	trlib "github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/tokenrate"
 )
@@ -40,17 +41,19 @@ type userQuery struct {
 
 //NewServer return new server instance
 func NewServer(
-	sugar *zap.SugaredLogger,
+	logger *zap.Logger,
 	host string,
 	rateProvider tokenrate.ETHUSDRateProvider,
 	storage *redis.Client,
 	userCapConf *common.UserCapConfiguration) *Server {
 	r := gin.Default()
+	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	sugar := logger.Sugar()
 	return &Server{
 		sugar:        sugar,
 		r:            r,
 		host:         host,
-		rateProvider: httputil.NewCachedRateProvider(sugar, rateProvider, time.Hour),
+		rateProvider: trlib.NewCachedRateProvider(sugar, rateProvider, trlib.WithTimeout(time.Hour)),
 		redisClient:  storage,
 		userCapConf:  userCapConf,
 	}

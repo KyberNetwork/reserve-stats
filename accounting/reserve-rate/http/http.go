@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	maxTimeFrame     = 365 * 24 * time.Hour // 1 year
-	defaultTimeFrame = 30 * 24 * time.Hour  // 30 days
+	maxTimeFrame     = time.Hour * 24 * 30 // 30 days
+	defaultTimeFrame = time.Hour * 24      // 1 days
 )
 
 // Server is the engine to serve reserve-rate API query

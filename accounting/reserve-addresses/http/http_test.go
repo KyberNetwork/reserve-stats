@@ -24,16 +24,17 @@ import (
 )
 
 var (
-	tdb *sqlx.DB
-	ts  *Server
-	tst *postgresql.Storage
-	tts time.Time
+	tdb      *sqlx.DB
+	ts       *Server
+	tst      *postgresql.Storage
+	tts      time.Time
+	teardown func() error
 )
 
 func TestReserveAddressGetAll(t *testing.T) {
 	var tests = []httputil.HTTPTestCase{
 		{
-			Msg:      "get a existing reserve address",
+			Msg:      "get an existing reserve address",
 			Endpoint: "/addresses",
 			Method:   http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -67,7 +68,7 @@ func TestReserveAddressGetAll(t *testing.T) {
 
 	tests = []httputil.HTTPTestCase{
 		{
-			Msg:      "get a existing reserve address",
+			Msg:      "get an existing reserve address",
 			Endpoint: "/addresses",
 			Method:   http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -98,7 +99,7 @@ func TestReserveAddressGetAll(t *testing.T) {
 
 	tests = []httputil.HTTPTestCase{
 		{
-			Msg:      "get a existing reserve address",
+			Msg:      "get an existing reserve address",
 			Endpoint: "/addresses",
 			Method:   http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -234,7 +235,7 @@ func TestReserveAddressesGet(t *testing.T) {
 
 	var tests = []httputil.HTTPTestCase{
 		{
-			Msg:      "get a existing reserve address",
+			Msg:      "get an existing reserve address",
 			Endpoint: fmt.Sprintf("/addresses/%d", id),
 			Method:   http.MethodGet,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -492,6 +493,58 @@ func TestVersion(t *testing.T) {
 				assert.Equal(t, currentVersion+1, response.Version)
 			},
 		},
+		{
+			Msg:      "test update no changes",
+			Endpoint: fmt.Sprintf("/addresses/%d", testID),
+			Method:   http.MethodPut,
+			Body: []byte(`{
+  "description": "main reserve 5"
+}`),
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusNoContent, resp.Code)
+			},
+		},
+		{
+			Msg:      "test version no changes",
+			Endpoint: "/addresses",
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusOK, resp.Code)
+
+				var response rcommon.AllAddressesResponse
+				err := json.NewDecoder(resp.Body).Decode(&response)
+				require.NoError(t, err)
+				assert.Equal(t, currentVersion+1, response.Version)
+			},
+		},
+		{
+			Msg:      "test update invalid id",
+			Endpoint: fmt.Sprintf("/addresses/%d", testID+99),
+			Method:   http.MethodPut,
+			Body: []byte(`{
+  "description": "main reserve 5"
+}`),
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusNotFound, resp.Code)
+			},
+		},
+		{
+			Msg:      "test version no changes",
+			Endpoint: "/addresses",
+			Method:   http.MethodGet,
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				t.Helper()
+				require.Equal(t, http.StatusOK, resp.Code)
+
+				var response rcommon.AllAddressesResponse
+				err := json.NewDecoder(resp.Body).Decode(&response)
+				require.NoError(t, err)
+				assert.Equal(t, currentVersion+1, response.Version)
+			},
+		},
 	}
 	for _, tc := range tests {
 		tc := tc
@@ -506,7 +559,7 @@ func TestMain(m *testing.M) {
 
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 
-	_, tdb = testutil.MustNewDevelopmentDB()
+	tdb, teardown = testutil.MustNewRandomDevelopmentDB()
 
 	tst, err = postgresql.NewStorage(sugar, tdb, resolv)
 	if err != nil {
@@ -518,7 +571,7 @@ func TestMain(m *testing.M) {
 
 	ret := m.Run()
 
-	if err = tst.DeleteAllTables(); err != nil {
+	if err = teardown(); err != nil {
 		log.Fatal(err)
 	}
 

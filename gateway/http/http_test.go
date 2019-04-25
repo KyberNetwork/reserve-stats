@@ -14,6 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/httpsign-utils/authenticator"
+	"github.com/KyberNetwork/httpsign-utils/sign"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 )
 
@@ -60,7 +62,7 @@ func runHTTPTestCase(t *testing.T, tc httputil.HTTPTestCase, handler http.Handle
 	}
 	req.URL.RawQuery = q.Encode()
 
-	req, err = httputil.Sign(req, key, signingKey)
+	req, err = sign.Sign(req, key, signingKey)
 	assert.Nil(t, err, "sign request should be success")
 
 	resp := NewWrappedRecorder()
@@ -128,7 +130,17 @@ func TestReverseProxy(t *testing.T) {
 
 	// assert.Nil(t, err, "mockserver should be start ok")
 	testURL := fmt.Sprintf("http://%s", tradeLogsURL)
-	auth, err := NewAuthenticator(readKeyID, readSigningKey, writeKeyID, writeSigningKey)
+	keyPairs := []authenticator.KeyPair{
+		{
+			AccessKeyID:     readKeyID,
+			SecretAccessKey: readSigningKey,
+		},
+		{
+			AccessKeyID:     writeKeyID,
+			SecretAccessKey: writeSigningKey,
+		},
+	}
+	auth, err := authenticator.NewAuthenticator(keyPairs...)
 	if err != nil {
 		t.Fatal(err)
 	}

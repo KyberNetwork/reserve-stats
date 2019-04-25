@@ -10,9 +10,14 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
-func newTestGeoInfo(server *httptest.Server) (*Client, error) {
+const (
+	readKeyID     = "readKeyID"
+	readSecretKey = "xxx123xxx"
+)
+
+func newTestGeoInfo(server *httptest.Server, readKeyID, readSecretKey string) (*Client, error) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	return NewClient(sugar, server.URL)
+	return NewClient(sugar, server.URL, readKeyID, readSecretKey)
 }
 
 func TestGetValidResponse(t *testing.T) {
@@ -41,7 +46,7 @@ func TestGetValidResponse(t *testing.T) {
 		}
 	}))
 
-	g, err := newTestGeoInfo(server)
+	g, err := newTestGeoInfo(server, readKeyID, readSecretKey)
 	if err != nil {
 		t.Error("Could not create Client object", "err", err.Error())
 	}
@@ -81,12 +86,37 @@ func TestInvalidResponse(t *testing.T) {
 		}
 	}))
 
-	g, err := newTestGeoInfo(server)
+	g, err := newTestGeoInfo(server, readKeyID, readSecretKey)
 	if err != nil {
 		t.Error("Could not create Client object", "err", err.Error())
 	}
 	_, _, err = g.GetTxInfo(tx)
 	if err != nil {
 		t.Errorf("Get unexpected error: %s", err.Error())
+	}
+}
+
+func TestFailedWhenSignWithWrongKey(t *testing.T) {
+	const (
+		tx = "0x18b7985314631687b09350698d6f8428ab003fa3abc1ce20b8cccfc48cb0700f"
+	)
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		if req.URL.String() != fmt.Sprintf("/get-tx-info/%s", tx) {
+			t.Error("Request to wrong endpoint", "result", req.URL.String())
+		}
+		rw.WriteHeader(http.StatusUnauthorized)
+		if _, err := rw.Write([]byte{}); err != nil {
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}))
+
+	g, err := newTestGeoInfo(server, "non-read-id", "non-read-secret")
+	if err != nil {
+		t.Error("Could not create Client object", "err", err.Error())
+	}
+	_, _, err = g.GetTxInfo(tx)
+	if err == nil {
+		t.Error("request must return error")
 	}
 }

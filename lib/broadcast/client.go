@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/KyberNetwork/httpsign-utils/sign"
 	"go.uber.org/zap"
 )
 
@@ -18,6 +19,9 @@ type Client struct {
 	host   string
 	sugar  *zap.SugaredLogger
 	client *http.Client
+
+	readKeyID     string
+	readSecretKey string
 }
 
 type tradeLogGeoInfoResp struct {
@@ -32,18 +36,28 @@ type tradeLogGeoInfoResp struct {
 const timeout = time.Minute * 5
 
 // NewClient creates a new broadcast client instance.
-func NewClient(sugar *zap.SugaredLogger, host string) (*Client, error) {
+func NewClient(sugar *zap.SugaredLogger, host, readKeyID, readSecretKey string) (*Client, error) {
 	return &Client{
-		host:   host,
-		sugar:  sugar,
-		client: &http.Client{Timeout: timeout},
+		host:          host,
+		sugar:         sugar,
+		client:        &http.Client{Timeout: timeout},
+		readKeyID:     readKeyID,
+		readSecretKey: readSecretKey,
 	}, nil
 }
 
 // GetTxInfo get ip, country info of a tx
 func (c *Client) GetTxInfo(tx string) (ip string, country string, err error) {
 	url := fmt.Sprintf("%s/get-tx-info/%s", c.host, tx)
-	resp, err := c.client.Get(url)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return "", "", err
+	}
+	signedReq, err := sign.Sign(req, c.readKeyID, c.readSecretKey)
+	if err != nil {
+		return "", "", err
+	}
+	resp, err := c.client.Do(signedReq)
 	if err != nil {
 		return "", "", err
 	}

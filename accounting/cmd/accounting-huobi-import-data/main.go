@@ -110,7 +110,9 @@ func run(c *cli.Context) error {
 		return err
 	}
 	if historyFile != "" {
-		importTradeHistory(sugar, historyFile, hdb)
+		if err := importTradeHistory(sugar, historyFile, hdb); err != nil {
+			return err
+		}
 	}
 	return nil
 }

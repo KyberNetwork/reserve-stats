@@ -12,9 +12,6 @@ import (
 const (
 	geoURLFlag         = "broadcast-url"
 	geoURLDefaultValue = "https://broadcast.kyber.network"
-
-	readAccessKeyFlag = "read-access-key"
-	readSecretKeyFlag = "read-secret-key"
 )
 
 // NewCliFlags returns cli flags to configure a broadcast client.
@@ -25,16 +22,6 @@ func NewCliFlags() []cli.Flag {
 			Usage:  "Fetch trade logs to block",
 			Value:  geoURLDefaultValue,
 			EnvVar: "GEO_URL",
-		},
-		cli.StringFlag{
-			Name:   readAccessKeyFlag,
-			Usage:  "key for access GET api",
-			EnvVar: "READ_ACCESS_KEY",
-		},
-		cli.StringFlag{
-			Name:   readSecretKeyFlag,
-			Usage:  "seceret key for GET api",
-			EnvVar: "READ_SECRET_KEY",
 		},
 	}
 }

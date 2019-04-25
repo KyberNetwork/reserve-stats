@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/KyberNetwork/httpsign-utils/sign"
 	"go.uber.org/zap"
 )
 
@@ -18,6 +19,9 @@ type Client struct {
 	host   string
 	sugar  *zap.SugaredLogger
 	client *http.Client
+
+	accessKeyID     string
+	secretAccessKey string
 }
 
 type tradeLogGeoInfoResp struct {
@@ -31,19 +35,44 @@ type tradeLogGeoInfoResp struct {
 
 const timeout = time.Minute * 5
 
+// ClientOption option to Client constructor
+type ClientOption func(*Client)
+
+// WithAuth is option to create Client with auth keys
+func WithAuth(accessKeyID, secretAccessKey string) ClientOption {
+	return func(c *Client) {
+		c.accessKeyID = accessKeyID
+		c.secretAccessKey = secretAccessKey
+	}
+}
+
 // NewClient creates a new broadcast client instance.
-func NewClient(sugar *zap.SugaredLogger, host string) (*Client, error) {
-	return &Client{
+func NewClient(sugar *zap.SugaredLogger, host string, options ...ClientOption) *Client {
+	c := &Client{
 		host:   host,
 		sugar:  sugar,
 		client: &http.Client{Timeout: timeout},
-	}, nil
+	}
+	for _, option := range options {
+		option(c)
+	}
+	return c
 }
 
 // GetTxInfo get ip, country info of a tx
 func (c *Client) GetTxInfo(tx string) (ip string, country string, err error) {
 	url := fmt.Sprintf("%s/get-tx-info/%s", c.host, tx)
-	resp, err := c.client.Get(url)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return "", "", err
+	}
+	if c.accessKeyID != "" && c.secretAccessKey != "" {
+		req, err = sign.Sign(req, c.accessKeyID, c.secretAccessKey)
+		if err != nil {
+			return "", "", err
+		}
+	}
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return "", "", err
 	}

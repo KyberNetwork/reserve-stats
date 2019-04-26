@@ -10,9 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// errNotFoundMsg is the error returned by broadcast API
-// if the given transaction address not found.
-var errNotFoundMsg = "Can not find the transaction. Check Tx again"
+const timeout = time.Minute * 5
 
 // Client is the the real implementation of broadcast client interface
 type Client struct {
@@ -25,15 +23,10 @@ type Client struct {
 }
 
 type tradeLogGeoInfoResp struct {
-	Success bool   `json:"success"`
-	Err     string `json:"err"`
-	Data    struct {
-		IP      string `json:"IP"`
-		Country string `json:"Country"`
-	} `json:"data"`
+	UID     string `json:"uid"`
+	IP      string `json:"ip"`
+	Country string `json:"country"`
 }
-
-const timeout = time.Minute * 5
 
 // ClientOption option to Client constructor
 type ClientOption func(*Client)
@@ -60,38 +53,38 @@ func NewClient(sugar *zap.SugaredLogger, host string, options ...ClientOption) *
 }
 
 // GetTxInfo get ip, country info of a tx
-func (c *Client) GetTxInfo(tx string) (ip string, country string, err error) {
+func (c *Client) GetTxInfo(tx string) (uid, ip, country string, err error) {
 	url := fmt.Sprintf("%s/get-tx-info/%s", c.host, tx)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	if c.accessKeyID != "" && c.secretAccessKey != "" {
 		req, err = sign.Sign(req, c.accessKeyID, c.secretAccessKey)
 		if err != nil {
-			return "", "", err
+			return "", "", "", err
 		}
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	defer func() {
 		if cErr := resp.Body.Close(); cErr != nil {
 			c.sugar.Errorw("failed to close body", "err", cErr.Error())
 		}
 	}()
-	response := tradeLogGeoInfoResp{}
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return "", "", err
-	}
-	if !response.Success {
-		if response.Err == errNotFoundMsg {
-			c.sugar.Debugw("transaction not found", "tx", tx, "err", response.Err)
-			return "", "", nil
+
+	switch resp.StatusCode {
+	case http.StatusNotFound:
+		c.sugar.Debugw("transaction not found", "tx", tx)
+		return "", "", "", nil
+	case http.StatusOK:
+		response := tradeLogGeoInfoResp{}
+		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			return "", "", "", err
 		}
-		c.sugar.Errorw("server returns unknown error")
-		return "", "", err
+		return response.UID, response.IP, response.Country, nil
 	}
-	return response.Data.IP, response.Data.Country, nil
+	return "", "", "", fmt.Errorf("unexpcted status code: %d", resp.StatusCode)
 }

@@ -28,9 +28,8 @@ func TestGetValidResponse(t *testing.T) {
 	)
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		var res tradeLogGeoInfoResp
-		res.Success = true
-		res.Data.IP = ipResponse
-		res.Data.Country = countryResponse
+		res.IP = ipResponse
+		res.Country = countryResponse
 		js, err := json.Marshal(res)
 		if err != nil {
 			http.Error(rw, err.Error(), http.StatusInternalServerError)
@@ -47,7 +46,7 @@ func TestGetValidResponse(t *testing.T) {
 	}))
 
 	g := newTestGeoInfo(server)
-	ip, country, err := g.GetTxInfo(tx)
+	_, ip, country, err := g.GetTxInfo(tx)
 	if err != nil {
 		t.Error("Could not get ipInfo")
 	}
@@ -64,27 +63,11 @@ func TestInvalidResponse(t *testing.T) {
 		tx = "0x18b7985314631687b09350698d6f8428ab003fa3abc1ce20b8cccfc48cb0700"
 	)
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		res := tradeLogGeoInfoResp{
-			Success: false,
-			Err:     "Can not find the transaction. Check Tx again",
-		}
-		js, err := json.Marshal(res)
-		if err != nil {
-			http.Error(rw, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if req.URL.String() != fmt.Sprintf("/get-tx-info/%s", tx) {
-			t.Error("Request to wrong endpoint", "result", req.URL.String())
-		}
-		rw.Header().Set("Content-Type", "application/json")
-		if _, err = rw.Write(js); err != nil {
-			http.Error(rw, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		http.Error(rw, "not found", http.StatusNotFound)
 	}))
 
 	g := newTestGeoInfo(server)
-	_, _, err := g.GetTxInfo(tx)
+	_, _, _, err := g.GetTxInfo(tx)
 	if err != nil {
 		t.Errorf("Get unexpected error: %s", err.Error())
 	}

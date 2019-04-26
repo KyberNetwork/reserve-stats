@@ -218,7 +218,7 @@ ON CONFLICT (data) DO NOTHING RETURNING id;
 `
 		insertStmt = `INSERT INTO "rsv_tx_internal_tx_reserve" (tx_id, address_key)
 	VALUES ($1, $2)
-		ON CONFLICT (tx_id, addres_key) DO NOTHING;`
+		ON CONFLICT (tx_id, address_key) DO NOTHING;`
 	)
 
 	logger.Debugw("storing internal transactions to database", "query", updateStmt)

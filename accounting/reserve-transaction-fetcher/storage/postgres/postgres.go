@@ -134,7 +134,7 @@ ON CONFLICT (tx_hash) DO UPDATE SET data = EXCLUDED.data RETURNING id;
 `
 		insertStmt = `INSERT INTO "rsv_tx_normal_tx_reserve" (tx_id, address_key)
 	VALUES ($1, $2)
-		ON CONFLICT DO NOTHING;`
+		ON CONFLICT (tx_id, address_key) DO NOTHING;`
 	)
 
 	logger.Debugw("storing normal transactions to database", "query", updateStmt)
@@ -150,7 +150,7 @@ ON CONFLICT (tx_hash) DO UPDATE SET data = EXCLUDED.data RETURNING id;
 		if err != nil {
 			return
 		}
-		if err = tx.Get(&id, updateStmt, t.BlockHash, data); err != nil && err != sql.ErrNoRows {
+		if err = tx.Get(&id, updateStmt, t.Hash, data); err != nil && err != sql.ErrNoRows {
 			return
 		}
 		if err == sql.ErrNoRows {
@@ -214,11 +214,11 @@ func (s *Storage) StoreInternalTx(txs []common.InternalTx, reserve ethereum.Addr
 	const (
 		updateStmt = `INSERT INTO "rsv_tx_internal"(data)
 VALUES ($1)
-ON CONFLICT DO NOTHING RETURNING id;
+ON CONFLICT (data) DO NOTHING RETURNING id;
 `
 		insertStmt = `INSERT INTO "rsv_tx_internal_tx_reserve" (tx_id, address_key)
 	VALUES ($1, $2)
-		ON CONFLICT DO NOTHING;`
+		ON CONFLICT (tx_id, addres_key) DO NOTHING;`
 	)
 
 	logger.Debugw("storing internal transactions to database", "query", updateStmt)
@@ -296,11 +296,11 @@ func (s *Storage) StoreERC20Transfer(txs []common.ERC20Transfer, reserve ethereu
 	const (
 		updateStmt = `INSERT INTO "rsv_tx_erc20"(data)
 VALUES ($1)
-ON CONFLICT DO NOTHING RETURNING id;
+ON CONFLICT (data) DO NOTHING RETURNING id;
 `
 		insertStmt = `INSERT INTO "rsv_tx_erc20_tx_reserve" (tx_id, address_key)
 	VALUES ($1, $2)
-		ON CONFLICT DO NOTHING;`
+		ON CONFLICT (tx_id, address_key) DO NOTHING;`
 	)
 
 	logger.Debugw("storing ERC20 transfers to database", "query", updateStmt)

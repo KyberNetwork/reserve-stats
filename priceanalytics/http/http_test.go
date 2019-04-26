@@ -19,7 +19,7 @@ func TestHTTPPriceAnalyticServer(t *testing.T) {
 	assert.Nil(t, err, "logger should be initiated successfully")
 
 	sugar := logger.Sugar()
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 	priceStorage, err := storage.NewPriceStorage(sugar, db)
 	assert.Nil(t, err, "price storage should be initiated successfully")
 

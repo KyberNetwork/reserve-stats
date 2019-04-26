@@ -77,7 +77,7 @@ func TestListedTokenStorage(t *testing.T) {
 		}
 	)
 
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 	storage, err := NewDB(logger, db)
 	require.NoError(t, err)
 

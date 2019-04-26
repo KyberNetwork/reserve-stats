@@ -16,7 +16,7 @@ import (
 
 func TestNormalTx(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 
@@ -83,7 +83,7 @@ func TestNormalTx(t *testing.T) {
 
 func TestInternalTx(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 
@@ -129,7 +129,7 @@ func TestInternalTx(t *testing.T) {
 
 func TestERC20Transfer(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 
@@ -190,7 +190,7 @@ func TestERC20Transfer(t *testing.T) {
 
 func TestLastInserted(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 

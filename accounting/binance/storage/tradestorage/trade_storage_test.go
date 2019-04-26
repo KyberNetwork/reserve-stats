@@ -44,7 +44,7 @@ func TestBinanceTradeStorage(t *testing.T) {
 		},
 	}
 
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 	binanceStorage, err := NewDB(logger, db)
 	require.NoError(t, err)
 

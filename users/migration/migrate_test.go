@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS "%[2]s" (
 }
 
 func TestMigrateDB(t *testing.T) {
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 	dbMigration, err := newTestMigrateDB(db)
 	if err != nil {
 		t.Fatal(err)

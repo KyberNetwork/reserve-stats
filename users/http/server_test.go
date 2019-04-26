@@ -31,7 +31,7 @@ func TestUserHTTPServer(t *testing.T) {
 	assert.Nil(t, err, "logger should be initiated successfully")
 
 	sugar := logger.Sugar()
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 	userStorage, err := storage.NewDB(sugar, db)
 	assert.Nil(t, err, "user database should be initiated successfully")
 

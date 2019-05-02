@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/go-redis/redis"
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
@@ -12,21 +11,16 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 	"github.com/KyberNetwork/reserve-stats/users/common"
-	"github.com/KyberNetwork/reserve-stats/users/storage"
 )
 
 const (
-	influxDB    = "trade_logs"
-	richPrefix  = "rich"
-	kycedPrefix = "kyced"
+	influxDB   = "trade_logs"
+	richPrefix = "rich"
 )
-
-var kycedAddresses map[string]int
 
 //RedisCacher is instance for redis cache
 type RedisCacher struct {
 	sugar          *zap.SugaredLogger
-	postgresDB     *storage.UserDB
 	influxDBClient client.Client
 	redisClient    *redis.Client
 	expiration     time.Duration
@@ -34,11 +28,10 @@ type RedisCacher struct {
 }
 
 //NewRedisCacher returns a new redis cacher instance
-func NewRedisCacher(sugar *zap.SugaredLogger, postgresDB *storage.UserDB,
-	influxDBClient client.Client, redisClient *redis.Client, expiration time.Duration, userCapConf *common.UserCapConfiguration) *RedisCacher {
+func NewRedisCacher(sugar *zap.SugaredLogger, influxDBClient client.Client,
+	redisClient *redis.Client, expiration time.Duration, userCapConf *common.UserCapConfiguration) *RedisCacher {
 	return &RedisCacher{
 		sugar:          sugar,
-		postgresDB:     postgresDB,
 		influxDBClient: influxDBClient,
 		redisClient:    redisClient,
 		expiration:     expiration,
@@ -48,44 +41,10 @@ func NewRedisCacher(sugar *zap.SugaredLogger, postgresDB *storage.UserDB,
 
 //CacheUserInfo save user info to redis cache
 func (rc *RedisCacher) CacheUserInfo() error {
-	if err := rc.cacheAllKycedUsers(); err != nil {
-		return err
-	}
 	if err := rc.cacheRichUser(); err != nil {
 		return err
 	}
 	return nil
-}
-
-func (rc *RedisCacher) cacheAllKycedUsers() error {
-	var (
-		logger    = rc.sugar.With("func", "user/cacher/cacheAllKycedUsers")
-		err       error
-		addresses []string
-	)
-	kycedAddresses = make(map[string]int)
-	// read all address from addresses table in postgres
-	if addresses, err = rc.postgresDB.GetAllAddresses(); err != nil {
-		logger.Errorw("error from query postgres db", "error", err.Error())
-		return err
-	}
-	logger.Debugw("addresses from postgres", "addresses", addresses)
-
-	pipe := rc.redisClient.Pipeline()
-	for _, address := range addresses {
-		// push to redis
-		addressHex := ethereum.HexToAddress(address).Hex()
-		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", kycedPrefix, addressHex), rc.expiration); err != nil {
-			if dErr := pipe.Discard(); dErr != nil {
-				err = fmt.Errorf("%s - %s", dErr.Error(), err.Error())
-			}
-			return err
-		}
-		// push to mem
-		kycedAddresses[address] = 1
-	}
-	_, err = pipe.Exec()
-	return err
 }
 
 func (rc *RedisCacher) cacheRichUser() error {
@@ -105,7 +64,6 @@ func (rc *RedisCacher) cacheRichUser() error {
 		return err
 	}
 
-	// loop all user, check kyced
 	if len(res) == 0 || len(res[0].Series) == 0 || len(res[0].Series[0].Values) == 0 || len(res[0].Series[0].Values[0]) < 2 {
 		logger.Debugw("influx db is empty", "result", res)
 		return nil
@@ -114,8 +72,6 @@ func (rc *RedisCacher) cacheRichUser() error {
 	pipe := rc.redisClient.Pipeline()
 	for _, serie := range res[0].Series {
 		userAddress := serie.Tags[logSchema.UserAddr.String()]
-		// check kyced
-		_, kyced := kycedAddresses[userAddress]
 
 		// check rich
 		userTradeAmount, err := influxdb.GetFloat64FromInterface(serie.Values[0][1])
@@ -124,7 +80,7 @@ func (rc *RedisCacher) cacheRichUser() error {
 			return nil
 		}
 
-		if !rc.userCapConf.IsRich(kyced, userTradeAmount) {
+		if !rc.userCapConf.IsRich(true, userTradeAmount) {
 			// if user is not rich then it is already cached before
 			continue
 		}

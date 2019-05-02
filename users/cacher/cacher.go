@@ -80,7 +80,7 @@ func (rc *RedisCacher) cacheRichUser() error {
 			return nil
 		}
 
-		if !rc.userCapConf.IsRich(true, userTradeAmount) {
+		if !rc.userCapConf.IsRich(userTradeAmount) {
 			// if user is not rich then it is already cached before
 			continue
 		}

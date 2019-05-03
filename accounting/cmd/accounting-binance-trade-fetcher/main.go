@@ -95,12 +95,23 @@ func run(c *cli.Context) error {
 		}
 	}()
 
+	exchangeInfo, err := binanceClient.GetExchangeInfo()
+	if err != nil {
+		return err
+	}
+	tokenPairs := exchangeInfo.Symbols
+
+	var fromIDs = make(map[string]uint64)
 	fromID := c.Uint64(fromIDFlag)
-	if fromID == 0 {
-		sugar.Info("from id is not provided, get latest from id stored in database")
-		fromID, err = binanceStorage.GetLastStoredID()
-		if err != nil {
-			return err
+	for _, pair := range tokenPairs {
+		fromIDs[pair.Symbol] = fromID
+		if fromID == 0 {
+			sugar.Info("from id is not provided, get latest from id stored in database")
+			from, err := binanceStorage.GetLastStoredID(pair.Symbol)
+			if err != nil {
+				return err
+			}
+			fromIDs[pair.Symbol] = from
 		}
 	}
 
@@ -111,7 +122,7 @@ func run(c *cli.Context) error {
 	batchSize := c.Int(batchSizeFlag)
 	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
 
-	tradeHistories, err := binanceFetcher.GetTradeHistory(fromID + 1)
+	tradeHistories, err := binanceFetcher.GetTradeHistory(fromIDs)
 	if err != nil {
 		return err
 	}

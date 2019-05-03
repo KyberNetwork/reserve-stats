@@ -31,6 +31,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 	  CONSTRAINT binance_trades_pk PRIMARY KEY(id)
 	);
 	CREATE INDEX IF NOT EXISTS binance_trades_time_idx ON binance_trades ((data ->> 'time'));
+	CREATE INDEX IF NOT EXISTS binance_trades_symbol_idx ON binance_trades ((data ->> 'symbol'));
 	`
 
 	s := &BinanceStorage{
@@ -120,16 +121,16 @@ func (bd *BinanceStorage) GetTradeHistory(fromTime, toTime time.Time) ([]binance
 }
 
 //GetLastStoredID return last stored id
-func (bd *BinanceStorage) GetLastStoredID() (uint64, error) {
+func (bd *BinanceStorage) GetLastStoredID(symbol string) (uint64, error) {
 	var (
 		logger = bd.sugar.With("func", "account/binance_storage.GetLastStoredID")
 		result uint64
 	)
-	const selectStmt = `SELECT COALESCE(MAX(id), 0) FROM binance_trades`
+	const selectStmt = `SELECT COALESCE(MAX(id), 0) FROM binance_trades WHERE data->>'symbol'=$1`
 
 	logger.Debugw("querying last stored id", "query", selectStmt)
 
-	if err := bd.db.Get(&result, selectStmt); err != nil {
+	if err := bd.db.Get(&result, selectStmt, symbol); err != nil {
 		return 0, err
 	}
 

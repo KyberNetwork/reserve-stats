@@ -52,14 +52,14 @@ func TestBinanceTradeStorage(t *testing.T) {
 		require.NoError(t, teardown())
 	}()
 
-	ts, err := binanceStorage.GetLastStoredID()
+	ts, err := binanceStorage.GetLastStoredID("KNCETH")
 	require.NoError(t, err)
 	assert.Zero(t, ts)
 
 	err = binanceStorage.UpdateTradeHistory(testData)
 	assert.NoError(t, err)
 
-	lastStoredID, err := binanceStorage.GetLastStoredID()
+	lastStoredID, err := binanceStorage.GetLastStoredID("KNCETH")
 	require.NoError(t, err)
 	assert.Equal(t, uint64(961633), lastStoredID)
 
@@ -71,7 +71,7 @@ func TestBinanceTradeStorage(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, testData, tradeHistories)
 
-	ts, err = binanceStorage.GetLastStoredID()
+	ts, err = binanceStorage.GetLastStoredID("KNCETH")
 	require.NoError(t, err)
 	assert.NotZero(t, ts)
 

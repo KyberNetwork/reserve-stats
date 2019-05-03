@@ -55,7 +55,7 @@ func TestUserHTTPServer(t *testing.T) {
 	)
 	assert.Nil(t, err, "influx storage should be created successfully")
 
-	s := NewServer(sugar, tokenrate.NewMock(), userStorage, "", influxStorage)
+	s := NewServer(sugar, tokenrate.NewMock(), userStorage, "", influxStorage, nil)
 	s.register()
 
 	// test case

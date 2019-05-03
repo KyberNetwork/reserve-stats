@@ -4,9 +4,9 @@ package tradelog
 
 import "strconv"
 
-const _FieldName_name = "timeblock_numbertx_hashuser_addrsrc_addrdst_addrcountryipuideth_rate_providerdst_rsv_addrsrc_rsv_addrsrc_amountdst_amounteth_usd_rateeth_amountfiat_amountintegration_appwallet_addrlog_indexsrc_burn_amountdst_burn_amountsrc_wallet_fee_amountdst_wallet_fee_amount"
+const _FieldName_name = "timeblock_numbertx_hashuser_addrsrc_addrdst_addrcountryipeth_rate_providerdst_rsv_addrsrc_rsv_addrsrc_amountdst_amounteth_usd_rateeth_amountfiat_amountintegration_appwallet_addrlog_indexsrc_burn_amountdst_burn_amountsrc_wallet_fee_amountdst_wallet_fee_amountuid"
 
-var _FieldName_index = [...]uint16{0, 4, 16, 23, 32, 40, 48, 55, 57, 60, 77, 89, 101, 111, 121, 133, 143, 154, 169, 180, 189, 204, 219, 240, 261}
+var _FieldName_index = [...]uint16{0, 4, 16, 23, 32, 40, 48, 55, 57, 74, 86, 98, 108, 118, 130, 140, 151, 166, 177, 186, 201, 216, 237, 258, 261}
 
 func (i FieldName) String() string {
 	if i < 0 || i >= FieldName(len(_FieldName_index)-1) {

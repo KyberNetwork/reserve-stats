@@ -53,6 +53,8 @@ const (
 	SourceWalletFeeAmount //src_wallet_fee_amount
 	//DestWalletFeeAmount is the name of dest wallet fee Amount for dest rsv
 	DestWalletFeeAmount //dst_wallet_fee_amount
+	// UID is id of KyberSWAP user.
+	UID //uid
 )
 
 //tradeLogSchemaFields translates the stringer of reserveRate fields into its enumerated form
@@ -81,4 +83,5 @@ var tradeLogSchemaFields = map[string]FieldName{
 	"dst_burn_amount":       DestBurnAmount,
 	"src_wallet_fee_amount": SourceWalletFeeAmount,
 	"dst_wallet_fee_amount": DestWalletFeeAmount,
+	"uid":                   UID,
 }

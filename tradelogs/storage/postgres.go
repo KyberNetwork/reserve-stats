@@ -46,13 +46,3 @@ func (c *UserKYCChecker) IsKYCedAtTime(userAddr common.Address, ts time.Time) (b
 	logger.Debugw("got result from database", "result", result)
 	return result != 0, nil
 }
-
-type mocKYCChecker struct{}
-
-func (*mocKYCChecker) IsKYCedAtTime(_ common.Address, _ time.Time) (bool, error) {
-	return true, nil
-}
-
-func newMockKYCChecker() *mocKYCChecker {
-	return &mocKYCChecker{}
-}

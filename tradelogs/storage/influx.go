@@ -363,15 +363,6 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		points = append(points, firstTradePoint)
 	}
 
-	kycedPoint, err := is.AssembleKYCPoint(log)
-	if err != nil {
-		return nil, err
-	}
-
-	if kycedPoint != nil {
-		points = append(points, kycedPoint)
-	}
-
 	return points, nil
 }
 

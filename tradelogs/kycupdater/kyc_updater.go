@@ -7,7 +7,6 @@ import (
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 
-	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -49,11 +48,6 @@ func (ku *KYCUpdateJob) update(sugar *zap.SugaredLogger) error {
 	if err != nil {
 		return err
 	}
-	db, err := libapp.NewDBFromContext(c)
-	if err != nil {
-		return err
-	}
-	kycChecker := storage.NewUserKYCChecker(sugar, db)
 
 	tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
 	if err != nil {
@@ -64,7 +58,6 @@ func (ku *KYCUpdateJob) update(sugar *zap.SugaredLogger) error {
 		common.DatabaseName,
 		influxClient,
 		tokenAmountFormatter,
-		kycChecker,
 	)
 
 	if err != nil {

@@ -216,6 +216,11 @@ func (is *InfluxStorage) rowToTradeLog(value []interface{},
 		country = ""
 	}
 
+	uid, ok := value[idxs[logschema.UID]].(string)
+	if !ok {
+		uid = ""
+	}
+
 	appName, ok := value[idxs[logschema.IntegrationApp]].(string)
 	if !ok {
 		appName = ""
@@ -273,6 +278,7 @@ func (is *InfluxStorage) rowToTradeLog(value []interface{},
 
 		IP:             ip,
 		Country:        country,
+		UID:            uid,
 		IntegrationApp: appName,
 		Index:          uint(logIndex),
 	}

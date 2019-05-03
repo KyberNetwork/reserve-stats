@@ -276,7 +276,6 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 	for i, tradeLog := range result {
 		var uid, ip, country string
 
-		// uid is ignored for now
 		uid, ip, country, err = crawler.broadcastClient.GetTxInfo(tradeLog.TransactionHash.Hex())
 		if err != nil {
 			return result, err

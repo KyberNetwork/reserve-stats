@@ -164,8 +164,7 @@ func requiredWorkers(fromBlock, toBlock *big.Int, maxBlocks, maxWorkers int) int
 
 func run(c *cli.Context) error {
 	var (
-		err        error
-		kycChecker storage.KycChecker
+		err error
 	)
 
 	sugar, flush, err := libapp.NewSugaredLogger(c)
@@ -182,11 +181,6 @@ func run(c *cli.Context) error {
 	if err = manageCQFromContext(c, influxClient, sugar); err != nil {
 		return err
 	}
-	db, err := libapp.NewDBFromContext(c)
-	if err != nil {
-		return err
-	}
-	kycChecker = storage.NewUserKYCChecker(sugar, db)
 
 	tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
 	if err != nil {
@@ -198,7 +192,6 @@ func run(c *cli.Context) error {
 		common.DatabaseName,
 		influxClient,
 		tokenAmountFormatter,
-		kycChecker,
 	)
 	if err != nil {
 		return err

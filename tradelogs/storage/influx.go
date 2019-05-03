@@ -35,13 +35,12 @@ type InfluxStorage struct {
 
 // NewInfluxStorage init an instance of InfluxStorage
 func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient client.Client,
-	tokenAmountFormatter blockchain.TokenAmountFormatterInterface, kycChecker KycChecker) (*InfluxStorage, error) {
+	tokenAmountFormatter blockchain.TokenAmountFormatterInterface) (*InfluxStorage, error) {
 	storage := &InfluxStorage{
 		sugar:                sugar,
 		dbName:               dbName,
 		influxClient:         influxClient,
 		tokenAmountFormatter: tokenAmountFormatter,
-		kycChecker:           kycChecker,
 		traded:               make(map[ethereum.Address]struct{}),
 	}
 	if err := storage.createDB(); err != nil {

@@ -27,7 +27,6 @@ type InfluxStorage struct {
 	dbName               string
 	influxClient         client.Client
 	tokenAmountFormatter blockchain.TokenAmountFormatterInterface
-	kycChecker           KycChecker
 
 	// traded stored traded addresses to use in a single SaveTradeLogs
 	traded map[ethereum.Address]struct{}
@@ -35,13 +34,12 @@ type InfluxStorage struct {
 
 // NewInfluxStorage init an instance of InfluxStorage
 func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient client.Client,
-	tokenAmountFormatter blockchain.TokenAmountFormatterInterface, kycChecker KycChecker) (*InfluxStorage, error) {
+	tokenAmountFormatter blockchain.TokenAmountFormatterInterface) (*InfluxStorage, error) {
 	storage := &InfluxStorage{
 		sugar:                sugar,
 		dbName:               dbName,
 		influxClient:         influxClient,
 		tokenAmountFormatter: tokenAmountFormatter,
-		kycChecker:           kycChecker,
 		traded:               make(map[ethereum.Address]struct{}),
 	}
 	if err := storage.createDB(); err != nil {
@@ -122,6 +120,7 @@ func prepareTradeLogQuery() string {
 			logschema.DstAmount,
 			logschema.IP,
 			logschema.Country,
+			logschema.UID,
 			logschema.IntegrationApp,
 			logschema.SourceBurnAmount,
 			logschema.DestBurnAmount,
@@ -343,6 +342,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.BlockNumber.String():           int64(log.BlockNumber),
 		logschema.TxHash.String():                log.TransactionHash.String(),
 		logschema.IP.String():                    log.IP,
+		logschema.UID.String():                   log.UID,
 		logschema.EthUSDProvider.String():        log.ETHUSDProvider,
 		logschema.SourceWalletFeeAmount.String(): srcWalletFee,
 		logschema.DestWalletFeeAmount.String():   dstWalletFee,
@@ -434,16 +434,18 @@ func (is *InfluxStorage) userTraded(addr ethereum.Address) (bool, error) {
 
 // AssembleKYCPoint constructs kyced InfluxDB data point from given trade log.
 func (is *InfluxStorage) AssembleKYCPoint(logItem common.TradeLog) (*client.Point, error) {
-	var logger = is.sugar.With(
-		"func", "tradelogs/storage/InfluxStorage.assembleKYCPoint",
-		"timestamp", logItem.Timestamp.String(),
-		"user_addr", logItem.UserAddress.Hex(),
-		"country", logItem.Country,
+	var (
+		logger = is.sugar.With(
+			"func", "tradelogs/storage/InfluxStorage.assembleKYCPoint",
+			"timestamp", logItem.Timestamp.String(),
+			"user_addr", logItem.UserAddress.Hex(),
+			"country", logItem.Country,
+		)
+		kyced bool
 	)
 
-	kyced, err := is.kycChecker.IsKYCedAtTime(logItem.UserAddress, logItem.Timestamp)
-	if err != nil {
-		return nil, err
+	if logItem.UID != "" {
+		kyced = true
 	}
 
 	if !kyced {

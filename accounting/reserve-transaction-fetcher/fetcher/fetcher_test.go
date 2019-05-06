@@ -72,7 +72,7 @@ func TestFetcher(t *testing.T) {
 		"0x35fe5bfff1127f9694785a000515c1291fe26965997a357759d508c43ada0488",
 	}
 	for i := range transfers {
-		assert.Equal(t, expectedHashes[i], transfers[i].Hash)
+		assert.Equal(t, expectedHashes[i], transfers[i].Hash.Hex())
 	}
 
 	// this test is to proved that Etherscan API can returns > 100000 ERC20 transfers.

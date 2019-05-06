@@ -17,7 +17,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
-	userkyced "github.com/KyberNetwork/reserve-stats/lib/userkyced"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
@@ -43,8 +42,6 @@ const (
 
 	blockConfirmationsFlag    = "wait-for-confirmations"
 	defaultBlockConfirmations = 7
-
-	defaultDB = "users"
 )
 
 func main() {
@@ -100,8 +97,6 @@ func main() {
 	app.Flags = append(app.Flags, broadcast.NewCliFlags()...)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, cq.NewCQFlags()...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
-	app.Flags = append(app.Flags, userkyced.NewCliFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -169,8 +164,7 @@ func requiredWorkers(fromBlock, toBlock *big.Int, maxBlocks, maxWorkers int) int
 
 func run(c *cli.Context) error {
 	var (
-		err        error
-		kycChecker storage.KycChecker
+		err error
 	)
 
 	sugar, flush, err := libapp.NewSugaredLogger(c)
@@ -187,21 +181,6 @@ func run(c *cli.Context) error {
 	if err = manageCQFromContext(c, influxClient, sugar); err != nil {
 		return err
 	}
-	userKycedClient, err := userkyced.NewClientFromContext(sugar, c)
-	switch err {
-	case userkyced.ErrNoClientURL:
-		sugar.Info("User kyced checker URL is not provided. Use default Postgres instead")
-		db, err := libapp.NewDBFromContext(c)
-		if err != nil {
-			return err
-		}
-		kycChecker = storage.NewUserKYCChecker(sugar, db)
-	case nil:
-		sugar.Info("User kyced checker URL provided. check KYCed status from userKYCed client")
-		kycChecker = userKycedClient
-	default:
-		return err
-	}
 
 	tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
 	if err != nil {
@@ -213,7 +192,6 @@ func run(c *cli.Context) error {
 		common.DatabaseName,
 		influxClient,
 		tokenAmountFormatter,
-		kycChecker,
 	)
 	if err != nil {
 		return err

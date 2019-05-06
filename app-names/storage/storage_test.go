@@ -20,7 +20,7 @@ func TestStorage(t *testing.T) {
 	)
 
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	db, fn := testutil.MustNewRandomDevelopmentDB()
+	db, fn := testutil.MustNewDevelopmentDB()
 	defer func() { assert.NoError(t, fn()) }()
 
 	s, err := NewAppNameDB(sugar, db)

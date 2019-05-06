@@ -30,7 +30,7 @@ func newTestServer(rts storage.ReserveTransactionStorage, sugar *zap.SugaredLogg
 }
 
 func TestERC20Transfer(t *testing.T) {
-	storage, teardown := testutil.MustNewRandomDevelopmentDB()
+	storage, teardown := testutil.MustNewDevelopmentDB()
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	rts, err := postgres.NewStorage(sugar, storage)
 	require.NoError(t, err)

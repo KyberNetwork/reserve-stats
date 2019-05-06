@@ -1,10 +1,10 @@
 package storage
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
 
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
@@ -27,37 +27,42 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 	return storage, nil
 }
 
-//IsExceedDailyLimit return if add address trade over daily limit or not
-func (inf *InfluxStorage) IsExceedDailyLimit(address string, dailyLimit float64) (bool, error) {
+// Last24hVolume returns last 24h eth volume of user with given uid.
+func (inf *InfluxStorage) Last24hVolume(uid string) (float64, error) {
 	var (
-		query = fmt.Sprintf(`SELECT SUM(amount) as daily_fiat_amount FROM (SELECT eth_amount*eth_usd_rate as amount 
-FROM trades WHERE user_addr='%s' AND time <= now() AND time >= (now()-24h))`,
-			address)
-		userTradeAmount float64
-		err             error
+		logger = inf.sugar.With("func", "users/storage/InfluxStorage.Last24hVolume",
+			"uid", uid)
+
+		influxQueryFmt = `SELECT SUM(amount) FROM (SELECT %[1]s * %[2]s AS amount FROM trades WHERE time >= now() - 24h AND "%[3]s" = '%[4]s')`
+		query          string
 	)
 
+	query = fmt.Sprintf(influxQueryFmt,
+		tradelog.EthAmount.String(),
+		tradelog.EthUSDRate.String(),
+		tradelog.UID.String(),
+		uid,
+	)
+
+	logger = logger.With("query", query)
+
+	logger.Debugw("querying InfluxDB for last 24h ETH volume")
 	res, err := influxdb.QueryDB(inf.influxClient, query, inf.dbName)
 	if err != nil {
-		inf.sugar.Debugw("error from query", "error", err)
-		return false, err
+		return 0, err
 	}
-	inf.sugar.Debugw("result from query", "result", res)
 
 	if len(res) == 0 || len(res[0].Series) == 0 || len(res[0].Series[0].Values) == 0 || len(res[0].Series[0].Values[0]) < 2 {
-		inf.sugar.Debugw("user address was not found from trade db", "user address", address)
-		return false, nil
+		logger.Debugw("no record found")
+		return 0, nil
 	}
 
-	userTradeAmount, err = influxdb.GetFloat64FromInterface(res[0].Series[0].Values[0][1])
+	volume, err := influxdb.GetFloat64FromInterface(res[0].Series[0].Values[0][1])
 	if err != nil {
-		inf.sugar.Debugw("values second should be float", "value", res[0].Series[0].Values[0][1], "error", err.Error())
-		return false, errors.New("trade amount values is not a float")
+		logger.Debugw("invalid volume returned by query",
+			"value", res[0].Series[0].Values[0][1],
+			"error", err.Error())
+		return 0, nil
 	}
-
-	inf.sugar.Debugw("got last 24h total transaction",
-		"address", address,
-		"user trade amount", userTradeAmount,
-		"daily limit", dailyLimit)
-	return userTradeAmount >= dailyLimit, nil
+	return volume, nil
 }

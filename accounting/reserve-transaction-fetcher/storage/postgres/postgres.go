@@ -150,7 +150,7 @@ ON CONFLICT (tx_hash) DO UPDATE SET data = EXCLUDED.data RETURNING id;
 		if err != nil {
 			return
 		}
-		if err = tx.Get(&id, updateStmt, t.BlockHash, data); err != nil && err != sql.ErrNoRows {
+		if err = tx.Get(&id, updateStmt, t.Hash, data); err != nil && err != sql.ErrNoRows {
 			return
 		}
 		if err == sql.ErrNoRows {

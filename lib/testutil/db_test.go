@@ -7,7 +7,7 @@ import (
 )
 
 func TestMustNewDevelopmentDB(t *testing.T) {
-	db, fn := MustNewRandomDevelopmentDB()
+	db, fn := MustNewDevelopmentDB()
 	require.NotNil(t, db)
 	require.NotNil(t, fn)
 	require.NoError(t, fn())

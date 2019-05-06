@@ -8,9 +8,9 @@ go:
   # /usr/bin/ld: final link failed: Bad value
   # collect2: error: ld returned 1 exit status
   # happens with
+  # - 1.11.6
   # - go 1.11.7
-  # - go 1.12.2
-  - 1.11.6
+  - 1.12.4
 
 services:
   - docker

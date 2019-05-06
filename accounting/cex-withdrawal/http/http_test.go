@@ -143,7 +143,7 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 func TestMain(m *testing.M) {
 	var err error
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	tdb, teardown = testutil.MustNewRandomDevelopmentDB()
+	tdb, teardown = testutil.MustNewDevelopmentDB()
 
 	hdb, err = huobiPostgres.NewDB(sugar, tdb)
 	if err != nil {

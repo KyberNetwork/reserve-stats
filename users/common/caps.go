@@ -56,9 +56,6 @@ func (c *UserCapConfiguration) UserCap(kyced bool) UserCap {
 
 // IsRich returns true if user volume is greater or equal to daily limit.
 func (c *UserCapConfiguration) IsRich(kyced bool, volume float64) bool {
-	if kyced {
-		return volume >= c.KYC.DailyLimit
-	}
 	return volume >= c.NonKYC.DailyLimit
 }
 
@@ -79,13 +76,13 @@ func NewUserCapCliFlags() []cli.Flag {
 		},
 		cli.Float64Flag{
 			Name:   kycDailyLimitFlag,
-			Usage:  "Daily limit for kyced user",
+			Usage:  "Daily limit for kyc user",
 			EnvVar: "KYC_DAILY_LIMIT",
 			Value:  defaultKYCDailyLimitValue,
 		},
 		cli.Float64Flag{
 			Name:   kycTxLimitFlag,
-			Usage:  "Tx limit for kyced user",
+			Usage:  "Tx limit for kyc user",
 			EnvVar: "KYC_TX_LIMIT",
 			Value:  defaultKYCTxLimitValue,
 		},

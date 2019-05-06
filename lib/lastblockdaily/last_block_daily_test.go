@@ -78,7 +78,7 @@ func TestRun(t *testing.T) {
 
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	ethClient := testutil.MustNewDevelopmentwEthereumClient()
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 	bldb, err := postgres.NewDB(sugar, db)
 	require.NoError(t, err)
 	blkTimeRsv, err := blockchain.NewBlockTimeResolver(sugar, ethClient)

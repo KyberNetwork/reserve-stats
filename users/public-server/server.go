@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum/common"
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
@@ -19,8 +18,7 @@ import (
 )
 
 const (
-	richPrefix  = "rich"
-	kycedPrefix = "kyced"
+	richPrefix = "rich"
 )
 
 //Server is server to serve api
@@ -75,10 +73,10 @@ func (s *Server) getUsers(c *gin.Context) {
 		logger = s.sugar.With(
 			"func", "users-public-stats/Server.getUser",
 		)
-		query       userQuery
-		kyced, rich bool
-		userCap     *big.Int
-		err         error
+		query   userQuery
+		rich    bool
+		userCap *big.Int
+		err     error
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -90,17 +88,6 @@ func (s *Server) getUsers(c *gin.Context) {
 	}
 
 	logger.Info("query", "user query", query)
-
-	address := ethereum.HexToAddress(query.Address)
-
-	kyced, err = s.getUserByKey(kycedPrefix, address.Hex())
-	if err != nil {
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"error": err.Error()},
-		)
-		return
-	}
 
 	rich, err = s.getUserByKey(richPrefix, query.Address)
 	if err != nil {
@@ -120,14 +107,13 @@ func (s *Server) getUsers(c *gin.Context) {
 		return
 	}
 
-	userCap = blockchain.EthToWei(s.userCapConf.UserCap(kyced).TxLimit / rate)
+	userCap = blockchain.EthToWei(s.userCapConf.UserCap(false).TxLimit / rate)
 
 	c.JSON(
 		http.StatusOK,
 		common.UserResponse{
-			Cap:   userCap,
-			KYCed: kyced,
-			Rich:  rich,
+			Cap:  userCap,
+			Rich: rich,
 		},
 	)
 }

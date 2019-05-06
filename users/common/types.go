@@ -15,9 +15,8 @@ type Info struct {
 
 //UserResponse is reponse to user api
 type UserResponse struct {
-	Cap   *big.Int `json:"cap"`
-	KYCed bool     `json:"kyced"`
-	Rich  bool     `json:"rich"`
+	Cap  *big.Int `json:"cap"`
+	Rich bool     `json:"rich"`
 }
 
 //UserData user data post through post request to store in stats database

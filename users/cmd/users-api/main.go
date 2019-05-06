@@ -23,7 +23,6 @@ func main() {
 	app.Action = run
 	app.Version = "0.0.1"
 
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(usercommon.DefaultDB)...)
 	app.Flags = append(app.Flags, usercommon.NewUserCapCliFlags()...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.UsersPort)...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
@@ -45,20 +44,6 @@ func run(c *cli.Context) error {
 
 	sugar.Info("Run user module")
 
-	db, err := libapp.NewDBFromContext(c)
-	if err != nil {
-		return err
-	}
-
-	userDB, err := storage.NewDB(
-		sugar,
-		db,
-	)
-	if err != nil {
-		return err
-	}
-	defer userDB.Close()
-
 	// Store trade logs into influx DB
 	influxClient, err := influxdb.NewClientFromContext(c)
 	if err != nil {
@@ -79,7 +64,6 @@ func run(c *cli.Context) error {
 	server := http.NewServer(
 		sugar,
 		coingecko.New(),
-		userDB,
 		httputil.NewHTTPAddressFromContext(c),
 		influxStorage,
 		userCapConf)

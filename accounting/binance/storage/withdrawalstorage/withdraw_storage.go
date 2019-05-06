@@ -7,6 +7,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/lib/pq"
 
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
@@ -62,11 +63,13 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 	var (
 		logger       = bd.sugar.With("func", "accounting/binance_storage.UpdateWithdrawHistory")
 		withdrawJSON []byte
+		ids          []string
+		dataJSON     [][]byte
 	)
 	const updateQuery = `INSERT INTO binance_withdrawals (id, data)
 	VALUES(
-		$1,
-		$2
+		unnest($1::TEXT[]),
+		unnest($2::JSONB[])
 	) ON CONFLICT ON CONSTRAINT binance_withdrawals_pk DO NOTHING;
 	`
 
@@ -79,14 +82,18 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 
 	logger.Debugw("query update withdraw history", "query", updateQuery)
 
+	// prepare data to insert into db
 	for _, withdraw := range withdrawHistories {
 		withdrawJSON, err = json.Marshal(withdraw)
 		if err != nil {
 			return
 		}
-		if _, err = tx.Exec(updateQuery, withdraw.ID, withdrawJSON); err != nil {
-			return
-		}
+		ids = append(ids, withdraw.ID)
+		dataJSON = append(dataJSON, withdrawJSON)
+	}
+
+	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON)); err != nil {
+		return
 	}
 
 	return

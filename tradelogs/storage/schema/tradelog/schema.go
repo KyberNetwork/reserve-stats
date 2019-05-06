@@ -21,8 +21,6 @@ const (
 	Country //country
 	//IP is enumerated field name for TradeLog.IP
 	IP //ip
-	//UID is kyberswap uid
-	UID //uid
 	//EthUSDProvider is the enumerated field name for TradeLog.ETHUSDProvider
 	EthUSDProvider //eth_rate_provider
 	//DstReserveAddr is enumerated fieldname for destination reserve Address
@@ -53,6 +51,8 @@ const (
 	SourceWalletFeeAmount //src_wallet_fee_amount
 	//DestWalletFeeAmount is the name of dest wallet fee Amount for dest rsv
 	DestWalletFeeAmount //dst_wallet_fee_amount
+	// UID is id of KyberSWAP user.
+	UID //uid
 )
 
 //tradeLogSchemaFields translates the stringer of reserveRate fields into its enumerated form
@@ -65,7 +65,6 @@ var tradeLogSchemaFields = map[string]FieldName{
 	"dst_addr":              DstAddr,
 	"country":               Country,
 	"ip":                    IP,
-	"uid":                   UID,
 	"eth_rate_provider":     EthUSDProvider,
 	"dst_rsv_addr":          DstReserveAddr,
 	"src_rsv_addr":          SrcReserveAddr,
@@ -81,4 +80,5 @@ var tradeLogSchemaFields = map[string]FieldName{
 	"dst_burn_amount":       DestBurnAmount,
 	"src_wallet_fee_amount": SourceWalletFeeAmount,
 	"dst_wallet_fee_amount": DestWalletFeeAmount,
+	"uid":                   UID,
 }

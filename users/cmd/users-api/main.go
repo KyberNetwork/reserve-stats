@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/KyberNetwork/tokenrate/coingecko"
 	"github.com/urfave/cli"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
@@ -13,7 +14,6 @@ import (
 	usercommon "github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/reserve-stats/users/http"
 	"github.com/KyberNetwork/reserve-stats/users/storage"
-	"github.com/KyberNetwork/tokenrate/coingecko"
 )
 
 func main() {
@@ -24,6 +24,7 @@ func main() {
 	app.Version = "0.0.1"
 
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(usercommon.DefaultDB)...)
+	app.Flags = append(app.Flags, usercommon.NewUserCapCliFlags()...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.UsersPort)...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	if err := app.Run(os.Args); err != nil {
@@ -73,7 +74,14 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	server := http.NewServer(sugar, coingecko.New(), userDB,
-		httputil.NewHTTPAddressFromContext(c), influxStorage)
+	userCapConf := usercommon.NewUserCapConfigurationFromContext(c)
+
+	server := http.NewServer(
+		sugar,
+		coingecko.New(),
+		userDB,
+		httputil.NewHTTPAddressFromContext(c),
+		influxStorage,
+		userCapConf)
 	return server.Run()
 }

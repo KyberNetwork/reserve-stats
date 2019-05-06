@@ -74,7 +74,6 @@ BEGIN
     IF _name IS NOT NULL AND LENGTH(_name) <> 0 THEN
         UPDATE app_names SET name = _name WHERE id = _id;
     END IF;
-
     IF _addresses IS NOT NULL THEN
         IF _addresses IS NOT NULL AND ARRAY_LENGTH(_addresses, 1) <> 0 THEN
             FOREACH _address IN ARRAY _addresses

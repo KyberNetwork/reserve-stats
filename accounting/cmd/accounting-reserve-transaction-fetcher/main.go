@@ -51,7 +51,8 @@ func fetchTx(
 	if addr.Type == common.Reserve ||
 		addr.Type == common.IntermediateOperator ||
 		addr.Type == common.PricingOperator ||
-		addr.Type == common.SanityOperator {
+		addr.Type == common.SanityOperator ||
+		addr.Type == common.DepositOperator {
 		logger.Infow("fetching normal transactions")
 		normalTxs, err := f.NormalTx(addr.Address, fromBlock, toBlock, normalOffset)
 		if err != nil {

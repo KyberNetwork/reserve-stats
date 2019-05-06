@@ -192,7 +192,7 @@ func TestTrades(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 
 	hs, err := huobistorage.NewDB(sugar, db)
 	if err != nil {

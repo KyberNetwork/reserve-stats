@@ -16,7 +16,7 @@ import (
 
 func TestNormalTx(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 
@@ -79,11 +79,47 @@ func TestNormalTx(t *testing.T) {
 	txs, err = s.GetNormalTx(txTimestamp.Add(time.Second*2), txTimestamp.Add(time.Second*3))
 	require.NoError(t, err)
 	assert.Len(t, txs, 0)
+
+	// test different hash same timestamp
+	newTestTxs := []common.NormalTx{
+		{
+			BlockNumber: 54092,
+			Timestamp:   txTimestamp,
+			Hash:        "0x842344940f4fd42c251416fb92df18fa968c5734c1c52c4f9fbbaeeb2e4d1a5e",
+			BlockHash:   "0xd3cabad6adab0b52eb632c386ea194036805713682c62cb589b5abcd76de2159",
+			From:        "0x5abfec25f74cd88437631a7731906932776356f9",
+			To:          "",
+			Value:       txVal,
+			Gas:         2000000,
+			GasUsed:     1436963,
+			GasPrice:    txGasPrice,
+			IsError:     0,
+		},
+		{
+			BlockNumber: 54092,
+			Timestamp:   txTimestamp,
+			Hash:        "0x5c3b393f31a709dc5bc0fd827deb36f758d6f3150468254503aa9a4af233c4ab",
+			BlockHash:   "0x373d339e45a701447367d7b9c7cef84aab79c2b2714271b908cda0ab3ad0849b",
+			From:        "0x3fb1cd2cd96c6d5c0b5eb3322d807b34482481d4",
+			To:          "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
+			Value:       txVal,
+			Gas:         122261,
+			GasUsed:     122207,
+			GasPrice:    txGasPrice,
+			IsError:     0,
+		},
+	}
+	err = s.StoreNormalTx(newTestTxs, ethereum.HexToAddress("0x5abfec25f74cd88437631a7731906932776356f9"))
+	require.NoError(t, err)
+	txs, err = s.GetNormalTx(txTimestamp.Add(-time.Second), txTimestamp.Add(time.Second*10))
+	require.NoError(t, err)
+	// expect the storage would save all 4 txs
+	assert.Equal(t, 4, len(txs))
 }
 
 func TestInternalTx(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 
@@ -129,7 +165,7 @@ func TestInternalTx(t *testing.T) {
 
 func TestERC20Transfer(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 
@@ -190,7 +226,7 @@ func TestERC20Transfer(t *testing.T) {
 
 func TestLastInserted(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 	s, err := NewStorage(sugar, db)
 	require.NoError(t, err)
 

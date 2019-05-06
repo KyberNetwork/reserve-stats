@@ -559,7 +559,7 @@ func TestMain(m *testing.M) {
 
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 
-	tdb, teardown = testutil.MustNewRandomDevelopmentDB()
+	tdb, teardown = testutil.MustNewDevelopmentDB()
 
 	tst, err = postgresql.NewStorage(sugar, tdb, resolv)
 	if err != nil {

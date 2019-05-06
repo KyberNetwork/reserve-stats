@@ -36,7 +36,7 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 		}
 	)
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 
 	for i := 0; i < 10; i++ {
 		td := testData[0]

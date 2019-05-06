@@ -22,8 +22,8 @@ func newMockBroadCastClient() *mockBroadCastClient {
 	return &mockBroadCastClient{}
 }
 
-func (*mockBroadCastClient) GetTxInfo(tx string) (string, string, error) {
-	return "8.8.8.8", "US", nil
+func (*mockBroadCastClient) GetTxInfo(tx string) (string, string, string, error) {
+	return "123", "8.8.8.8", "US", nil
 }
 
 func assertTradeLog(t *testing.T, tradeLog common.TradeLog) {

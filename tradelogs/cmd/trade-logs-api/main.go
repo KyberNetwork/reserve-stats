@@ -45,7 +45,6 @@ func main() {
 			"trade_logs",
 			influxClient,
 			tokenAmountFormatter,
-			nil,
 		)
 		if err != nil {
 			return err

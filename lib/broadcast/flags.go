@@ -27,7 +27,7 @@ func NewCliFlags() []cli.Flag {
 }
 
 // NewClientFromContext returns new core client from cli flags.
-func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, error) {
+func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context, options ...ClientOption) (*Client, error) {
 	geoURL := c.String(geoURLFlag)
 	err := validation.Validate(geoURL,
 		validation.Required,
@@ -37,5 +37,5 @@ func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context) (*Client, er
 		return nil, fmt.Errorf("invalid geo url: %q, error: %s", geoURL, err)
 	}
 
-	return NewClient(sugar, geoURL)
+	return NewClient(sugar, geoURL, options...), nil
 }

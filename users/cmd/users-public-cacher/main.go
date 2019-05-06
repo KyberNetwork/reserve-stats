@@ -12,13 +12,11 @@ import (
 	libredis "github.com/KyberNetwork/reserve-stats/lib/redis"
 	"github.com/KyberNetwork/reserve-stats/users/cacher"
 	"github.com/KyberNetwork/reserve-stats/users/common"
-	"github.com/KyberNetwork/reserve-stats/users/storage"
 )
 
 const (
 	expireTimeFlag    = "expire-time"
 	defaultExpireTime = 3600 // 1 hour
-
 )
 
 func main() {
@@ -28,7 +26,6 @@ func main() {
 	app.Action = run
 	app.Version = "0.1"
 
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultDB)...)
 	app.Flags = append(app.Flags, libredis.NewCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, common.NewUserCapCliFlags()...)
@@ -59,20 +56,6 @@ func run(c *cli.Context) error {
 
 	sugar.Info("Run user public cacher")
 
-	postgresDB, err := libapp.NewDBFromContext(c)
-	if err != nil {
-		return err
-	}
-
-	userDB, err := storage.NewDB(
-		sugar,
-		postgresDB,
-	)
-	if err != nil {
-		return err
-	}
-	sugar.Debugw("Initiated postgres client", "client", userDB)
-
 	influxDBClient, err := influxdb.NewClientFromContext(c)
 	if err != nil {
 		return err
@@ -88,7 +71,7 @@ func run(c *cli.Context) error {
 	userCapConf := common.NewUserCapConfigurationFromContext(c)
 	sugar.Debugw("Initiated redis cached", "cache", redisCacheClient)
 
-	redisCacher := cacher.NewRedisCacher(sugar, userDB, influxDBClient, redisCacheClient, expireTime, userCapConf)
+	redisCacher := cacher.NewRedisCacher(sugar, influxDBClient, redisCacheClient, expireTime, userCapConf)
 
 	return redisCacher.CacheUserInfo()
 }

@@ -48,7 +48,7 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	require.NoError(t, err)
 	sugar := logger.Sugar()
 
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 	hdb, err := NewDB(sugar, db)
 	require.NoError(t, err)
 

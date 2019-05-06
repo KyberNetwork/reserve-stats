@@ -19,7 +19,7 @@ func TestRatesStorage(t *testing.T) {
 	// assume that a test never takes more than this amount of time
 	const truncateDuration = 10 * time.Second
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	db, teardown := testutil.MustNewRandomDevelopmentDB()
+	db, teardown := testutil.MustNewDevelopmentDB()
 
 	rs, err := NewDB(sugar, db)
 	require.NoError(t, err)

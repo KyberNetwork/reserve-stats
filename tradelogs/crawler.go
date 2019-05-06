@@ -274,14 +274,15 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 	}
 
 	for i, tradeLog := range result {
-		var ip, country string
+		var uid, ip, country string
 
-		ip, country, err = crawler.broadcastClient.GetTxInfo(tradeLog.TransactionHash.Hex())
+		uid, ip, country, err = crawler.broadcastClient.GetTxInfo(tradeLog.TransactionHash.Hex())
 		if err != nil {
 			return result, err
 		}
 		result[i].IP = ip
 		result[i].Country = country
+		result[i].UID = uid
 
 		if tradeLog.IsKyberSwap() {
 			result[i].IntegrationApp = appname.KyberSwapAppName

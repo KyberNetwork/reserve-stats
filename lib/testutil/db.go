@@ -12,32 +12,18 @@ const (
 	postgresPort     = 5432
 	postgresUser     = "reserve_stats"
 	postgresPassword = "reserve_stats"
-	postgresDatabase = "reserve_stats"
 )
 
-// MustNewDevelopmentDB returns a new development db instance.
-func MustNewDevelopmentDB() (dbName string, db *sqlx.DB) {
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		postgresHost,
-		postgresPort,
-		postgresUser,
-		postgresPassword,
-		postgresDatabase,
-	)
-	db = sqlx.MustConnect("postgres", connStr)
-	return postgresDatabase, db
-}
-
-// MustNewRandomDevelopmentDB creates a new development DB.
+// MustNewDevelopmentDB creates a new development DB.
 // It also returns a function to teardown it after the test.
-func MustNewRandomDevelopmentDB() (ddlDB *sqlx.DB, teardown func() error) {
+func MustNewDevelopmentDB() (ddlDB *sqlx.DB, teardown func() error) {
 	dbName := RandomString(8)
 
 	ddlDBConnStr := fmt.Sprintf("host=%s port=%d user=%s password=%s sslmode=disable",
 		postgresHost,
 		postgresPort,
 		postgresUser,
-		postgresDatabase,
+		postgresPassword,
 	)
 	ddlDB = sqlx.MustConnect("postgres", ddlDBConnStr)
 	ddlDB.MustExec(fmt.Sprintf(`CREATE DATABASE "%s"`, dbName))

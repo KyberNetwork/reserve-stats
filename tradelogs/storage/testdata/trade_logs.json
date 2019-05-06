@@ -19,7 +19,8 @@
         ],
         "wallet_fees": null,
         "ip": "",
-        "country": ""
+        "country": "",
+        "uid": ""
     },
     {
         "timestamp": 1554367631,
@@ -41,7 +42,8 @@
         ],
         "wallet_fees": null,
         "ip": "",
-        "country": ""
+        "country": "",
+        "uid": "12"
     },
     {
         "timestamp": 1554382031,
@@ -69,7 +71,8 @@
             }
         ],
         "ip": "2601:282:4101:6e1c:c13:da49:3b7e:522f",
-        "country": "US"
+        "country": "US",
+        "uid": "123"
     },
     {
         "timestamp": 1554410831,
@@ -91,7 +94,8 @@
         ],
         "wallet_fees": null,
         "ip": "",
-        "country": ""
+        "country": "",
+        "uid": "1234"
     },
     {
         "timestamp": 1554414431,
@@ -113,6 +117,7 @@
         ],
         "wallet_fees": null,
         "ip": "",
-        "country": ""
+        "country": "",
+        "uid": "1"
     }
 ]

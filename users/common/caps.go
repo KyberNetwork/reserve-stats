@@ -8,6 +8,12 @@ const (
 
 	nonKYCTxLimitFlag         = "non-kyc-tx-limit"
 	defaultNonKYCTxLimitValue = 15000
+
+	kycDailyLimitFlag         = "kyc-daily-limit"
+	defaultKYCDailyLimitValue = 1000000
+
+	kycTxLimitFlag         = "kyc-tx-limit"
+	defaultKYCTxLimitValue = 1000000
 )
 
 //UserCap is users transaction cap.
@@ -23,25 +29,33 @@ type UserCap struct {
 // UserCapConfiguration is the cap configuration for KYC and non-KYC users.
 type UserCapConfiguration struct {
 	NonKYC UserCap
+	KYC    UserCap
 }
 
 // NewUserCapConfiguration creates new instance of UserCapConfiguration from given parameters.
-func NewUserCapConfiguration(nonKYCDailyLimit, nonKYCTxLimit float64) *UserCapConfiguration {
+func NewUserCapConfiguration(nonKYCDailyLimit, nonKYCTxLimit, kycDailyLimit, kycTxLimit float64) *UserCapConfiguration {
 	return &UserCapConfiguration{
 		NonKYC: UserCap{
 			DailyLimit: nonKYCDailyLimit,
 			TxLimit:    nonKYCTxLimit,
 		},
+		KYC: UserCap{
+			DailyLimit: kycDailyLimit,
+			TxLimit:    kycTxLimit,
+		},
 	}
 }
 
 // UserCap returns UserCap of user for either kyced or non kyced.
-func (c *UserCapConfiguration) UserCap() UserCap {
+func (c *UserCapConfiguration) UserCap(kyced bool) UserCap {
+	if kyced {
+		return c.KYC
+	}
 	return c.NonKYC
 }
 
 // IsRich returns true if user volume is greater or equal to daily limit.
-func (c *UserCapConfiguration) IsRich(volume float64) bool {
+func (c *UserCapConfiguration) IsRich(kyced bool, volume float64) bool {
 	return volume >= c.NonKYC.DailyLimit
 }
 
@@ -60,6 +74,18 @@ func NewUserCapCliFlags() []cli.Flag {
 			EnvVar: "NON_KYC_TX_LIMIT",
 			Value:  defaultNonKYCTxLimitValue,
 		},
+		cli.Float64Flag{
+			Name:   kycDailyLimitFlag,
+			Usage:  "Daily limit for kyc user",
+			EnvVar: "KYC_DAILY_LIMIT",
+			Value:  defaultKYCDailyLimitValue,
+		},
+		cli.Float64Flag{
+			Name:   kycTxLimitFlag,
+			Usage:  "Tx limit for kyc user",
+			EnvVar: "KYC_TX_LIMIT",
+			Value:  defaultKYCTxLimitValue,
+		},
 	}
 }
 
@@ -68,5 +94,7 @@ func NewUserCapConfigurationFromContext(c *cli.Context) *UserCapConfiguration {
 	return NewUserCapConfiguration(
 		c.Float64(nonKYCDailyLimitFlag),
 		c.Float64(nonKYCTxLimitFlag),
+		c.Float64(kycDailyLimitFlag),
+		c.Float64(kycTxLimitFlag),
 	)
 }

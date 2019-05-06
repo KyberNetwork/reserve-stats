@@ -107,7 +107,7 @@ func (s *Server) getUsers(c *gin.Context) {
 		return
 	}
 
-	userCap = blockchain.EthToWei(s.userCapConf.UserCap().TxLimit / rate)
+	userCap = blockchain.EthToWei(s.userCapConf.UserCap(false).TxLimit / rate)
 
 	c.JSON(
 		http.StatusOK,

@@ -50,6 +50,8 @@ const (
 	CEXDepositAddress // cex_deposit_address
 	// CompanyWallet is Ethereum address used by the company as a wallet
 	CompanyWallet // company_wallet
+	//DepositOperator is Ethereum address used to deposit
+	DepositOperator // deposit_operator
 )
 
 var validAddressTypes = map[string]AddressType{
@@ -59,6 +61,7 @@ var validAddressTypes = map[string]AddressType{
 	IntermediateOperator.String(): IntermediateOperator,
 	CEXDepositAddress.String():    CEXDepositAddress,
 	CompanyWallet.String():        CompanyWallet,
+	DepositOperator.String():      DepositOperator,
 }
 
 // IsValidAddressType returns true if given

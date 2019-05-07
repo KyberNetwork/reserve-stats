@@ -101,7 +101,6 @@ func updateUsers(c *gin.Context) {
 func mockServer() error {
 	r := gin.Default()
 	r.GET("/trade-logs", getTradeLogs)
-	r.POST("/users", updateUsers)
 	return r.Run(tradeLogsURL)
 }
 
@@ -178,65 +177,10 @@ func TestReverseProxy(t *testing.T) {
 			},
 		},
 	}
-	var testCaseWriteKey = []httputil.HTTPTestCase{
-		{
-			Msg:      "test sign request body is empty",
-			Endpoint: fmt.Sprintf("/users"),
-			Method:   http.MethodPost,
-			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, resp.Code)
-			},
-		},
-		{
-			Msg:      "test sign request body is not empty",
-			Endpoint: fmt.Sprintf("/users"),
-			Method:   http.MethodPost,
-			Body:     []byte(`{"user":"something"}`),
-			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusOK, resp.Code)
-			},
-		},
-	}
-
-	var testsFailedWithoutKey = []httputil.HTTPTestCase{
-		{
-			Msg:      "test sign request without body",
-			Endpoint: fmt.Sprintf("/users"),
-			Method:   http.MethodPost,
-			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusUnauthorized, resp.Code)
-			},
-		},
-	}
-
-	var testFailedWhenWriteWithReadKey = []httputil.HTTPTestCase{
-		{
-			Msg:      "test sign write request with read Key",
-			Endpoint: fmt.Sprintf("/users"),
-			Method:   http.MethodPost,
-			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusUnauthorized, resp.Code)
-			},
-		},
-	}
 
 	for _, tc := range testCaseReadKey {
 		tc := tc
 		t.Run(tc.Msg, func(t *testing.T) { runHTTPTestCase(t, tc, testServer.r, readKeyID, readSigningKey) })
 	}
 
-	for _, tc := range testCaseWriteKey {
-		tc := tc
-		t.Run(tc.Msg, func(t *testing.T) { runHTTPTestCase(t, tc, testServer.r, writeKeyID, writeSigningKey) })
-	}
-
-	for _, tc := range testsFailedWithoutKey {
-		tc := tc
-		t.Run(tc.Msg, func(t *testing.T) { runHTTPTestCase(t, tc, testServer.r, "", "") })
-	}
-
-	for _, tc := range testFailedWhenWriteWithReadKey {
-		tc := tc
-		t.Run(tc.Msg, func(t *testing.T) { runHTTPTestCase(t, tc, testServer.r, readKeyID, readSigningKey) })
-	}
 }

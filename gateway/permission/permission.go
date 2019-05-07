@@ -38,7 +38,7 @@ func NewPermissioner(e *casbin.Enforcer) gin.HandlerFunc {
 	p := &Permissioner{enforcer: e}
 	return func(c *gin.Context) {
 		if !p.checkPermission(c.Request) {
-			c.AbortWithError(http.StatusUnauthorized, ErrPermissionNotAllow)
+			_ = c.AbortWithError(http.StatusUnauthorized, ErrPermissionNotAllow)
 			return
 		}
 	}

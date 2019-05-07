@@ -10,8 +10,6 @@ github.com/KyberNetwork/tokenrate
 github.com/aristanetworks/goarista/monotime
 # github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
 github.com/asaskevich/govalidator
-# github.com/boltdb/bolt v1.3.1
-github.com/boltdb/bolt
 # github.com/btcsuite/btcd v0.0.0-20181013004428-67e573d211ac
 github.com/btcsuite/btcd/btcec
 # github.com/casbin/casbin v1.7.0
@@ -62,7 +60,7 @@ github.com/gin-contrib/httpsign/crypto
 github.com/gin-contrib/httpsign/validator
 # github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7
 github.com/gin-contrib/sse
-# github.com/gin-contrib/zap v0.0.0-20180827024651-a4f331736217
+# github.com/gin-contrib/zap v0.0.0-20190405225521-7c4b822813e7
 github.com/gin-contrib/zap
 # github.com/gin-gonic/gin v1.3.0
 github.com/gin-gonic/gin
@@ -142,7 +140,7 @@ github.com/syndtr/goleveldb/leveldb/journal
 github.com/syndtr/goleveldb/leveldb/memdb
 github.com/syndtr/goleveldb/leveldb/storage
 github.com/syndtr/goleveldb/leveldb/table
-# github.com/ugorji/go/codec v0.0.0-20181022190402-e5e69e061d4f
+# github.com/ugorji/go/codec v0.0.0-20181209151446-772ced7fd4c2
 github.com/ugorji/go/codec
 # github.com/urfave/cli v1.20.0
 github.com/urfave/cli

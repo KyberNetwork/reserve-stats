@@ -46,7 +46,6 @@ func WithUserURL(userURL string) Option {
 			return err
 		}
 		s.r.GET("/users", userProxyMW)
-		s.r.POST("/users", userProxyMW)
 		return nil
 	}
 }

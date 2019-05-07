@@ -46,6 +46,7 @@ func NewServer(
 	userCapConf *common.UserCapConfiguration) *Server {
 	r := gin.Default()
 	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	r.Use(ginzap.RecoveryWithZap(logger, true))
 	sugar := logger.Sugar()
 	return &Server{
 		sugar:        sugar,

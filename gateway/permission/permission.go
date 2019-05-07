@@ -20,6 +20,9 @@ var (
 	ErrCouldNotGetKeyID = errors.New("could not get key id in header")
 	//kvRegex is the regex to find key-value in a string
 	kvRegex = regexp.MustCompile(`(\w+)="([^"]*)"`)
+
+	//ErrPermissionNotAllow error when user does not have permission
+	ErrPermissionNotAllow = errors.New("user does not have permission")
 )
 
 //KeyID is the abstract key needed for authentication
@@ -35,7 +38,7 @@ func NewPermissioner(e *casbin.Enforcer) gin.HandlerFunc {
 	p := &Permissioner{enforcer: e}
 	return func(c *gin.Context) {
 		if !p.checkPermission(c.Request) {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithError(http.StatusUnauthorized, ErrPermissionNotAllow)
 			return
 		}
 	}

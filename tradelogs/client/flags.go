@@ -27,7 +27,7 @@ func NewTradeLogCliFlags() []cli.Flag {
 }
 
 // NewClientFromContext returns new core client from cli flags.
-func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context, options ...TradeLogClientOption) (*TradeLogClient, error) {
+func NewClientFromContext(sugar *zap.SugaredLogger, c *cli.Context, options ...TradeLogClientOption) (*Client, error) {
 	tradeLogURL := c.String(tradeLogURLFlag)
 	err := validation.Validate(tradeLogURL,
 		validation.Required,

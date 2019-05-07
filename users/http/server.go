@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/tokenrate"
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -19,13 +20,16 @@ import (
 )
 
 //NewServer return new server instance
-func NewServer(sugar *zap.SugaredLogger,
+func NewServer(logger *zap.Logger,
 	rateProvider tokenrate.ETHUSDRateProvider,
 	host string,
 	influxStorage *storage.InfluxStorage,
 	userCapConf *common.UserCapConfiguration,
 ) *Server {
 	r := gin.Default()
+	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	r.Use(ginzap.RecoveryWithZap(logger, true))
+	sugar := logger.Sugar()
 	return &Server{
 		sugar:         sugar,
 		rateProvider:  trlib.NewCachedRateProvider(sugar, rateProvider, trlib.WithTimeout(time.Hour)),

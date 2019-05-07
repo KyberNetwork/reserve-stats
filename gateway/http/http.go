@@ -48,8 +48,8 @@ func NewServer(addr string,
 	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
 	r.Use(ginzap.RecoveryWithZap(logger, true))
 	r.Use(cors.New(corsConfig))
-	r.Use(auth.Authenticated())
-	r.Use(perm)
+	// r.Use(auth.Authenticated())
+	// r.Use(perm)
 
 	server := Server{
 		addr: addr,

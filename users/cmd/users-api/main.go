@@ -36,12 +36,12 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	sugar, flush, err := libapp.NewSugaredLogger(c)
+	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
 	}
-	defer flush()
-
+	defer libapp.NewFlusher(logger)()
+	sugar := logger.Sugar()
 	sugar.Info("Run user module")
 
 	// Store trade logs into influx DB
@@ -62,7 +62,7 @@ func run(c *cli.Context) error {
 	userCapConf := usercommon.NewUserCapConfigurationFromContext(c)
 
 	server := http.NewServer(
-		sugar,
+		logger,
 		coingecko.New(),
 		httputil.NewHTTPAddressFromContext(c),
 		influxStorage,

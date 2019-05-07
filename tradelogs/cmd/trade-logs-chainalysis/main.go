@@ -8,6 +8,7 @@ import (
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/chainalysis"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/client"
 )
 
@@ -36,6 +37,7 @@ func main() {
 
 	app.Flags = append(app.Flags, timeutil.NewMilliTimeRangeCliFlags()...)
 	app.Flags = append(app.Flags, client.NewTradeLogCliFlags()...)
+	app.Flags = append(app.Flags, chainalysis.NewChainAlysisCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -67,16 +69,20 @@ func run(c *cli.Context) error {
 	}
 
 	opt := client.WithAuth(c.String(readTradeLogAccessKeyIDFlag), c.String(readTradeLogSecretAccessKeyFlag))
-	cli, err := client.NewClientFromContext(sugar, c, opt)
+	tradeLogCli, err := client.NewClientFromContext(sugar, c, opt)
 	if err != nil {
 		return err
 	}
 
-	tradeLogs, err := cli.GetTradeLogs(fromTime, toTime)
+	tradeLogs, err := tradeLogCli.GetTradeLogs(fromTime, toTime)
 	if err != nil {
 		return err
 	}
 
-	err := chainalysis.PushETHSentTransfer(tradeLogs)
-	return nil
+	chainAlysisCli, err := chainalysis.NewClientFromContext(sugar, c)
+	if err != nil {
+		return err
+	}
+
+	return chainAlysisCli.PushETHSentTransferEvent(tradeLogs)
 }

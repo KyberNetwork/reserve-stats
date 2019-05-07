@@ -13,8 +13,8 @@ import (
 
 const timeout = time.Minute * 5
 
-// TradeLogClient is implementation of tradelog client
-type TradeLogClient struct {
+// Client is implementation of tradelog client
+type Client struct {
 	host   string
 	sugar  *zap.SugaredLogger
 	client *http.Client
@@ -24,19 +24,19 @@ type TradeLogClient struct {
 }
 
 // TradeLogClientOption option to Client constructor
-type TradeLogClientOption func(*TradeLogClient)
+type TradeLogClientOption func(*Client)
 
 // WithAuth is option to create Client with auth keys
 func WithAuth(accessKeyID, secretAccessKey string) TradeLogClientOption {
-	return func(c *TradeLogClient) {
+	return func(c *Client) {
 		c.accessKeyID = accessKeyID
 		c.secretAccessKey = secretAccessKey
 	}
 }
 
 // NewTradeLogClient creates a new tradelog client instance.
-func NewTradeLogClient(sugar *zap.SugaredLogger, host string, options ...TradeLogClientOption) *TradeLogClient {
-	c := &TradeLogClient{
+func NewTradeLogClient(sugar *zap.SugaredLogger, host string, options ...TradeLogClientOption) *Client {
+	c := &Client{
 		host:   host,
 		sugar:  sugar,
 		client: &http.Client{Timeout: timeout},
@@ -48,7 +48,7 @@ func NewTradeLogClient(sugar *zap.SugaredLogger, host string, options ...TradeLo
 }
 
 // GetTradeLogs get trade logs from `fromTime` to `toTime`
-func (c *TradeLogClient) GetTradeLogs(fromTime, toTime uint64) ([]common.TradeLog, error) {
+func (c *Client) GetTradeLogs(fromTime, toTime uint64) ([]common.TradeLog, error) {
 	var (
 		tradeLogs []common.TradeLog
 		url       = fmt.Sprintf("%s/trade-logs", c.host)

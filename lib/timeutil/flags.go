@@ -71,6 +71,24 @@ func ToTimeMillisFromContext(c *cli.Context) (time.Time, error) {
 	return millisTimeFlagFromContext(c, toMillisTimeFlag)
 }
 
+func millisTimestampFlagFromContext(c *cli.Context, flag string) (uint64, error) {
+	timeUint := c.Uint64(flag)
+	if timeUint == 0 {
+		return 0, ErrEmptyFlag
+	}
+	return timeUint, nil
+}
+
+//FromTimestampMillisFromContext return from time (in them timestamp) from context. Return err=ErrEmptyFlag if no flag is provided
+func FromTimestampMillisFromContext(c *cli.Context) (uint64, error) {
+	return millisTimestampFlagFromContext(c, fromMillisTimeFlag)
+}
+
+//ToTimestampMillisFromContext return to time (in them timestamp) from context. Return err=ErrEmptyFlag if no flag is provided
+func ToTimestampMillisFromContext(c *cli.Context) (uint64, error) {
+	return millisTimestampFlagFromContext(c, toMillisTimeFlag)
+}
+
 //NewMilliTimeRangeCliFlags return clit flags to input from/to time in millisecond from terminal
 func NewMilliTimeRangeCliFlags() []cli.Flag {
 	return []cli.Flag{

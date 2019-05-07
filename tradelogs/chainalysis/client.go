@@ -27,9 +27,6 @@ type Client struct {
 	apiKey string
 	sugar  *zap.SugaredLogger
 	client *http.Client
-
-	accessKeyID     string
-	secretAccessKey string
 }
 
 // NewChainAlysisClient creates a new tradelog client instance.

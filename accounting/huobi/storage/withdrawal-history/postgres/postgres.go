@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
@@ -64,11 +65,13 @@ func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory
 			"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
 			"len(withdraws)", len(withdraws),
 		)
+		ids      []uint64
+		dataJSON [][]byte
 	)
 	const updateStmt = `INSERT INTO huobi_withdrawals(id, data)
 	VALUES ( 
-		$1,
-		$2
+		unnest($1::BIGINT[]),
+		unnest($2::JSONB[])
 	)
 	ON CONFLICT ON CONSTRAINT huobi_withdrawals_pk DO NOTHING;`
 	logger.Debugw("updating tradeHistory...", "query", updateStmt)
@@ -78,15 +81,18 @@ func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory
 		return err
 	}
 	defer pgsql.CommitOrRollback(tx, logger, &err)
+	//prepare data to insert into db
 	for _, withdraw := range withdraws {
 		data, err := json.Marshal(withdraw)
 		if err != nil {
 			return err
 		}
-		_, err = tx.Exec(updateStmt, withdraw.ID, data)
-		if err != nil {
-			return err
-		}
+		ids = append(ids, withdraw.ID)
+		dataJSON = append(dataJSON, data)
+	}
+	_, err = tx.Exec(updateStmt, pq.Array(ids), pq.Array(dataJSON))
+	if err != nil {
+		return err
 	}
 
 	return err

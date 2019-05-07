@@ -88,16 +88,6 @@ func getTradeLogs(c *gin.Context) {
 	)
 }
 
-// this function is to test http signing
-// if request come here then it pass signing
-// return ok
-func updateUsers(c *gin.Context) {
-	c.JSON(
-		http.StatusOK,
-		gin.H{},
-	)
-}
-
 func mockServer() error {
 	r := gin.Default()
 	r.GET("/trade-logs", getTradeLogs)

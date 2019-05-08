@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
 	"github.com/urfave/cli"
 
@@ -15,6 +16,11 @@ import (
 const (
 	tradeLogAccessKeyIDFlag     = "trade-log-access-key-id"
 	tradeLogSecretAccessKeyFlag = "trade-log-secret-access-key"
+
+	retryTimesFlag        = "retry-times"
+	defaultRetryTimesFlag = 3
+
+	delayTimeRetry = 5 * time.Second
 )
 
 func main() {
@@ -33,6 +39,12 @@ func main() {
 			Usage:  "secret access key for read trade log",
 			EnvVar: "READ_TRADE_LOG_SECRET_ACCESS_KEY",
 		},
+		cli.IntFlag{
+			Name:   retryTimesFlag,
+			Usage:  "number times retry when func get error",
+			EnvVar: "RETRY_TIMES",
+			Value:  defaultRetryTimesFlag,
+		},
 	}
 
 	app.Flags = append(app.Flags, timeutil.NewMilliTimeRangeCliFlags()...)
@@ -47,6 +59,8 @@ func main() {
 func run(c *cli.Context) error {
 	var (
 		err error
+
+		retryTimes = c.Int(retryTimesFlag)
 	)
 	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
@@ -84,5 +98,14 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	return chainAlysisCli.PushETHSentTransferEvent(tradeLogs)
+	for i := 1; i <= retryTimes; i++ {
+		err = chainAlysisCli.PushETHSentTransferEvent(tradeLogs)
+		if err != nil {
+			sugar.Infof("times retry: %d", i)
+			time.Sleep(delayTimeRetry)
+			continue
+		}
+		return nil
+	}
+	return err
 }

@@ -146,7 +146,7 @@ func (c *Client) registerWithdrawalAddress(userAddr ethereum.Address, rw []regis
 	return nil
 }
 
-// registerSentTransfer register withdrawal address
+// registerSentTransfer register sent transfer
 func (c *Client) registerSentTransfer(userAddr ethereum.Address, rst []registerSentTransfer) error {
 	url := fmt.Sprintf("%s/users/%s/transfers/sent", c.host, userAddr.Hex())
 	body, err := json.Marshal(rst)

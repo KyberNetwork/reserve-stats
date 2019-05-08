@@ -21,6 +21,9 @@ const (
 	defaultRetryTimesFlag = 3
 
 	delayTimeRetry = 5 * time.Second
+
+	maxTimeFrameGetTradeLog     = uint64(24 * time.Hour / time.Millisecond)
+	defaultTimeFrameGetTradeLog = uint64(time.Hour / time.Millisecond)
 )
 
 func main() {
@@ -70,7 +73,8 @@ func run(c *cli.Context) error {
 
 	fromTime, err := timeutil.FromTimestampMillisFromContext(c)
 	if err == timeutil.ErrEmptyFlag {
-		sugar.Infof("no from time is provided, using default from time on trade log api")
+		sugar.Infof("no from time is provided, from time will be set to time stamp at one hour ago")
+		fromTime = timeutil.TimeToTimestampMs(time.Now()) - defaultTimeFrameGetTradeLog
 	} else if err != nil {
 		return err
 	}
@@ -88,24 +92,36 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	tradeLogs, err := tradeLogCli.GetTradeLogs(fromTime, toTime)
-	if err != nil {
-		return err
-	}
+	var tempToTime uint64
 
-	chainAlysisCli, err := chainalysis.NewClientFromContext(sugar, c)
-	if err != nil {
-		return err
-	}
-
-	for i := 1; i <= retryTimes; i++ {
-		err = chainAlysisCli.PushETHSentTransferEvent(tradeLogs)
-		if err != nil {
-			sugar.Infof("times retry: %d", i)
-			time.Sleep(delayTimeRetry)
-			continue
+	for {
+		tempToTime = fromTime + maxTimeFrameGetTradeLog
+		if tempToTime >= toTime {
+			tempToTime = toTime
 		}
-		return nil
+		sugar.Debugf("get trade log from %d to %d", fromTime, tempToTime)
+		tradeLogs, err := tradeLogCli.GetTradeLogs(fromTime, tempToTime)
+		if err != nil {
+			return err
+		}
+
+		chainAlysisCli, err := chainalysis.NewClientFromContext(sugar, c)
+		if err != nil {
+			return err
+		}
+
+		for i := 1; i <= retryTimes; i++ {
+			err = chainAlysisCli.PushETHSentTransferEvent(tradeLogs)
+			switch true {
+			case err != nil && i == retryTimes:
+				return err
+			case err != nil:
+				time.Sleep(delayTimeRetry)
+				continue
+			case tempToTime == toTime:
+				return nil
+			}
+		}
+		fromTime = tempToTime
 	}
-	return err
 }

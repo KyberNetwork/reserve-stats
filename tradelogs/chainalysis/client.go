@@ -3,6 +3,7 @@ package chainalysis
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -55,6 +56,10 @@ type registerSentTransfer struct {
 	TransferReference string `json:"transferReference"`
 }
 
+type errorResponse struct {
+	Message string
+}
+
 func updateRegisterData(rd registerData, asset, txHash, receiverAdderss string) registerData {
 	rd.RwData = append(rd.RwData, registerWithdrawal{
 		Asset:   asset,
@@ -69,7 +74,11 @@ func updateRegisterData(rd registerData, asset, txHash, receiverAdderss string) 
 
 // PushETHSentTransferEvent push eth sent transfer to chainalysis api
 func (c *Client) PushETHSentTransferEvent(tradeLogs []common.TradeLog) error {
-	mapRegisterData := make(map[ethereum.Address]registerData)
+	var (
+		logger = c.sugar.With("func", "tradelogs/chainalysis/Client.PushETHSentTransferEvent")
+
+		mapRegisterData = make(map[ethereum.Address]registerData)
+	)
 	for _, log := range tradeLogs {
 		var (
 			userAddress = log.UserAddress
@@ -81,10 +90,6 @@ func (c *Client) PushETHSentTransferEvent(tradeLogs []common.TradeLog) error {
 			continue
 		}
 
-		c.sugar.Debugw("sent transfer data",
-			"user addr", userAddress,
-			"receive addr", receiverAdderss,
-			"tx hash", txHash)
 		if rd, ok := mapRegisterData[userAddress]; ok {
 			mapRegisterData[userAddress] = updateRegisterData(rd, ethSymbol, txHash, receiverAdderss)
 		} else {
@@ -106,17 +111,11 @@ func (c *Client) PushETHSentTransferEvent(tradeLogs []common.TradeLog) error {
 	}
 	for userAddress, registerData := range mapRegisterData {
 		if err := c.registerWithdrawalAddress(userAddress, registerData.RwData); err != nil {
-			c.sugar.Errorw("got error when register withdrawal address",
-				"error", err.Error(),
-				"user address", userAddress,
-				"register withdrawal data", registerData.RwData)
+			logger.Errorw("got error when register withdrawal address", "error", err.Error())
 			return err
 		}
 		if err := c.registerSentTransfer(userAddress, registerData.RstData); err != nil {
-			c.sugar.Errorw("got error when register sent transfer",
-				"error", err.Error(),
-				"user address", userAddress,
-				"register sent transfer data", registerData.RstData)
+			logger.Errorw("got error when register sent transfer", "error", err.Error())
 			return err
 		}
 	}
@@ -125,24 +124,35 @@ func (c *Client) PushETHSentTransferEvent(tradeLogs []common.TradeLog) error {
 
 // registerWithdrawalAddress register withdrawal address
 func (c *Client) registerWithdrawalAddress(userAddr ethereum.Address, rw []registerWithdrawal) error {
-	url := fmt.Sprintf("%s/users/%s/withdrawaladdresses", c.host, userAddr.Hex())
-	c.sugar.Debugw("register withdrawal",
+	var (
+		logger = c.sugar.With("func", "tradelogs/chainalysis/Client.registerWithdrawalAddress")
+
+		url = fmt.Sprintf("%s/users/%s/withdrawaladdresses", c.host, userAddr.Hex())
+	)
+	logger.Debugw("register withdrawal",
 		"url", url,
+		"user address", userAddr,
 		"body", rw)
 	return c.registerChainAlysis(url, rw)
 }
 
 // registerSentTransfer register sent transfer
 func (c *Client) registerSentTransfer(userAddr ethereum.Address, rst []registerSentTransfer) error {
-	url := fmt.Sprintf("%s/users/%s/transfers/sent", c.host, userAddr.Hex())
-	c.sugar.Debugw("register sent transfer",
+	var (
+		logger = c.sugar.With("func", "tradelogs/chainalysis/Client.registerWithdrawalAddress")
+
+		url = fmt.Sprintf("%s/users/%s/transfers/sent", c.host, userAddr.Hex())
+	)
+	logger.Debugw("register sent transfer",
 		"url", url,
+		"user address", userAddr,
 		"body", rst)
 	return c.registerChainAlysis(url, rst)
 }
 
 // registerChainAlysis common function to register to chain alysis api
 func (c *Client) registerChainAlysis(url string, data interface{}) error {
+	var logger = c.sugar.With("func", "tradelogs/chainalysis/Client.registerChainAlysis")
 	body, err := json.Marshal(data)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
 	if err != nil {
@@ -159,5 +169,17 @@ func (c *Client) registerChainAlysis(url string, data interface{}) error {
 			c.sugar.Errorw("failed to close body", "err", cErr.Error())
 		}
 	}()
+	switch resp.StatusCode {
+	case http.StatusOK:
+		logger.Info("register successfully")
+	case http.StatusBadRequest, http.StatusForbidden:
+		eResp := errorResponse{}
+		if err := json.NewDecoder(resp.Body).Decode(&eResp); err != nil {
+			return err
+		}
+		return errors.New(eResp.Message)
+	default:
+		return errors.New("got unexpected code")
+	}
 	return nil
 }

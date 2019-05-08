@@ -56,7 +56,7 @@ func run(c *cli.Context) error {
 
 	fromTime, err := timeutil.FromTimestampMillisFromContext(c)
 	if err == timeutil.ErrEmptyFlag {
-		sugar.Error("no from time is provided, using default from time on trade log api")
+		sugar.Infof("no from time is provided, using default from time on trade log api")
 	} else if err != nil {
 		return err
 	}

@@ -46,16 +46,16 @@ type registerData struct {
 }
 
 type registerWithdrawal struct {
-	Asset   string
-	Address ethereum.Address
+	Asset   string `json:"asset"`
+	Address string `json:"address"`
 }
 
 type registerSentTransfer struct {
-	Asset             string
-	TransferReference ethereum.Hash
+	Asset             string `json:"asset"`
+	TransferReference string `json:"transferReference"`
 }
 
-func updateRegisterData(rd registerData, asset string, txHash ethereum.Hash, receiverAdderss ethereum.Address) registerData {
+func updateRegisterData(rd registerData, asset, txHash, receiverAdderss string) registerData {
 	rd.RwData = append(rd.RwData, registerWithdrawal{
 		Asset:   asset,
 		Address: receiverAdderss,
@@ -72,9 +72,10 @@ func (c *Client) PushETHSentTransferEvent(tradeLogs []common.TradeLog) error {
 	mapRegisterData := make(map[ethereum.Address]registerData)
 	for _, log := range tradeLogs {
 		var (
-			txHash          = log.TransactionHash
-			userAddress     = log.UserAddress
-			receiverAdderss = log.ReceiverAddress
+			userAddress = log.UserAddress
+
+			txHash          = log.TransactionHash.Hex()
+			receiverAdderss = log.ReceiverAddress.Hex()
 		)
 		if strings.ToLower(log.DestAddress.Hex()) != ethAddress {
 			continue
@@ -125,39 +126,30 @@ func (c *Client) PushETHSentTransferEvent(tradeLogs []common.TradeLog) error {
 // registerWithdrawalAddress register withdrawal address
 func (c *Client) registerWithdrawalAddress(userAddr ethereum.Address, rw []registerWithdrawal) error {
 	url := fmt.Sprintf("%s/users/%s/withdrawaladdresses", c.host, userAddr.Hex())
-	body, err := json.Marshal(rw)
-	if err != nil {
-		return err
-	}
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Token", c.apiKey)
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if cErr := resp.Body.Close(); cErr != nil {
-			c.sugar.Errorw("failed to close body", "err", cErr.Error())
-		}
-	}()
-	return nil
+	c.sugar.Debugw("register withdrawal",
+		"url", url,
+		"body", rw)
+	return c.registerChainAlysis(url, rw)
 }
 
 // registerSentTransfer register sent transfer
 func (c *Client) registerSentTransfer(userAddr ethereum.Address, rst []registerSentTransfer) error {
 	url := fmt.Sprintf("%s/users/%s/transfers/sent", c.host, userAddr.Hex())
-	body, err := json.Marshal(rst)
-	if err != nil {
-		return err
-	}
+	c.sugar.Debugw("register sent transfer",
+		"url", url,
+		"body", rst)
+	return c.registerChainAlysis(url, rst)
+}
+
+// registerChainAlysis common function to register to chain alysis api
+func (c *Client) registerChainAlysis(url string, data interface{}) error {
+	body, err := json.Marshal(data)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
 	req.Header.Add("Token", c.apiKey)
+	req.Header.Add("Content-Type", "application/json")
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return err

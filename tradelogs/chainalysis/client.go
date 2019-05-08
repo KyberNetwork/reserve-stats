@@ -21,7 +21,7 @@ const (
 	ethAddress = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 )
 
-// Client is implementation of tradelog client
+// Client is implementation of chainalysis client
 type Client struct {
 	host   string
 	apiKey string
@@ -29,7 +29,7 @@ type Client struct {
 	client *http.Client
 }
 
-// NewChainAlysisClient creates a new tradelog client instance.
+// NewChainAlysisClient creates a new chainalysis client instance.
 func NewChainAlysisClient(sugar *zap.SugaredLogger, host, apiKey string) *Client {
 	c := &Client{
 		host:   host,

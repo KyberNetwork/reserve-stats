@@ -95,7 +95,7 @@ curl -X POST "http://gateway.local/addresses" \
 Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
 address | integer | true | none | address value 
-type | string | true | including: "reserve", "pricing_operator", "sanity_operator", "intermediate_operator", "cex_depositaddress", "company_wallet"
+type | string | true | including: "reserve", "pricing_operator", "sanity_operator", "intermediate_operator", "cex_deposit_address", "company_wallet", "deposit_operator"
 description | string | false | empty | description of the reserve address 
 
 ## Update an address
@@ -122,5 +122,5 @@ Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
 id | integer | true | none | 
 address | string | true | none | address value 
-type | string | true | including: "reserve", "pricing_operator", "sanity_operator", "intermediate_operator", "cex_deposit_address", "company_wallet" 
+type | string | true | including: "reserve", "pricing_operator", "sanity_operator", "intermediate_operator", "cex_deposit_address", "company_wallet", "deposit_operator" 
 description | string | false | empty | description of the reserve address 

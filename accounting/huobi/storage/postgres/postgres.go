@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
@@ -61,12 +62,14 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trades []huobi.TradeHistory) error {
 			"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
 			"number of records", nTrades,
 		)
+		ids      []int64
+		dataJSON [][]byte
 	)
 
 	const updateStmt = `INSERT INTO huobi_trades (id, data)
 	VALUES ( 
-		$1,
-		$2
+		unnest($1::BIGINT[]),
+		unnest($2::JSONB[])
 	)
 	ON CONFLICT ON CONSTRAINT huobi_trades_pk DO NOTHING;`
 	logger.Debugw("updating tradeHistory...", "query", updateStmt)
@@ -81,10 +84,12 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trades []huobi.TradeHistory) error {
 		if err != nil {
 			return err
 		}
-		_, err = tx.Exec(updateStmt, trade.ID, data)
-		if err != nil {
-			return err
-		}
+		ids = append(ids, trade.ID)
+		dataJSON = append(dataJSON, data)
+	}
+	_, err = tx.Exec(updateStmt, pq.Array(ids), pq.Array(dataJSON))
+	if err != nil {
+		return err
 	}
 
 	return err

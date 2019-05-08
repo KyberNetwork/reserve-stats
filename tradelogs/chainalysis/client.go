@@ -79,6 +79,11 @@ func (c *Client) PushETHSentTransferEvent(tradeLogs []common.TradeLog) error {
 		if strings.ToLower(log.DestAddress.Hex()) != ethAddress {
 			continue
 		}
+
+		c.sugar.Debugw("sent transfer data",
+			"user addr", userAddress,
+			"receive addr", receiveAdderss,
+			"tx hash", txHash)
 		if rd, ok := mapRegisterData[userAddress]; ok {
 			mapRegisterData[userAddress] = updateRegisterData(rd, ethSymbol, txHash, receiveAdderss)
 		} else {
@@ -99,11 +104,18 @@ func (c *Client) PushETHSentTransferEvent(tradeLogs []common.TradeLog) error {
 		}
 	}
 	for userAddress, registerData := range mapRegisterData {
-		err := c.registerWithdrawalAddress(userAddress, registerData.RwData)
-		if err != nil {
+		if err := c.registerWithdrawalAddress(userAddress, registerData.RwData); err != nil {
+			c.sugar.Errorw("got error when register withdrawal address",
+				"user address", userAddress,
+				"register withdrawal data", registerData.RwData)
 			return err
 		}
-		return c.registerSentTransfer(userAddress, registerData.RstData)
+		if err := c.registerSentTransfer(userAddress, registerData.RstData); err != nil {
+			c.sugar.Errorw("got error when register sent transfer",
+				"user address", userAddress,
+				"register sent transfer data", registerData.RstData)
+			return err
+		}
 	}
 	return nil
 }

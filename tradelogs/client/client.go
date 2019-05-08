@@ -51,16 +51,9 @@ func NewTradeLogClient(sugar *zap.SugaredLogger, host string, options ...TradeLo
 func (c *Client) GetTradeLogs(fromTime, toTime uint64) ([]common.TradeLog, error) {
 	var (
 		tradeLogs []common.TradeLog
-		url       = fmt.Sprintf("%s/trade-logs", c.host)
+		url       = fmt.Sprintf("%s/trade-logs?from=%d&to=%d", c.host, fromTime, toTime)
 	)
-	if fromTime != 0 {
-		url = fmt.Sprintf("%s?from=%d", url, fromTime)
-	} else {
-		url = fmt.Sprintf("%s?from=", url)
-	}
-	if toTime != 0 {
-		url = fmt.Sprintf("%s&to=%d", url, toTime)
-	}
+
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return tradeLogs, err

@@ -44,11 +44,12 @@ func runHTTPServer(c *cli.Context) error {
 		return err
 	}
 
-	sugar, flush, err := libapp.NewSugaredLogger(c)
+	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
 	}
-	defer flush()
+	defer libapp.NewFlusher(logger)()
+	sugar := logger.Sugar()
 
 	err = validation.Validate(
 		c.String(httputil.PortFlag),
@@ -59,7 +60,7 @@ func runHTTPServer(c *cli.Context) error {
 		return err
 	}
 
-	server, err := ipinfo.NewHTTPServer(sugar, c.String(dataDirFlag), httputil.NewHTTPAddressFromContext(c))
+	server, err := ipinfo.NewHTTPServer(logger, c.String(dataDirFlag), httputil.NewHTTPAddressFromContext(c))
 	if err != nil {
 		return err
 	}

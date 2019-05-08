@@ -39,7 +39,7 @@ func NewServer(addr string,
 	logger *zap.Logger,
 	options ...Option,
 ) (*Server, error) {
-	r := gin.Default()
+	r := gin.New()
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AddAllowHeaders("Digest", "Authorization", "Signature", "Nonce")

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -224,7 +225,10 @@ func (sv *Server) getBurnFee(c *gin.Context) {
 }
 
 func (sv *Server) setupRouter() *gin.Engine {
-	r := gin.Default()
+	logger := sv.sugar.Desugar()
+	r := gin.New()
+	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	r.Use(ginzap.RecoveryWithZap(logger, true))
 	r.GET("/trade-logs", sv.getTradeLogs)
 	r.GET("/burn-fee", sv.getBurnFee)
 	r.GET("/asset-volume", sv.getAssetVolume)

@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	trlib "github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/tokenrate"
@@ -44,7 +45,7 @@ func NewServer(
 	rateProvider tokenrate.ETHUSDRateProvider,
 	storage *redis.Client,
 	userCapConf *common.UserCapConfiguration) *Server {
-	r := gin.Default()
+	r := gin.New()
 	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
 	r.Use(ginzap.RecoveryWithZap(logger, true))
 	sugar := logger.Sugar()
@@ -81,9 +82,10 @@ func (s *Server) getUsers(c *gin.Context) {
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
@@ -92,18 +94,20 @@ func (s *Server) getUsers(c *gin.Context) {
 
 	rich, err = s.getUserByKey(richPrefix, query.Address)
 	if err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
 
 	rate, err := s.rateProvider.USDRate(time.Now())
 	if err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
-			gin.H{"error": fmt.Sprintf("failed  to get usd rate: %s", err.Error())},
+			err,
 		)
 		return
 	}

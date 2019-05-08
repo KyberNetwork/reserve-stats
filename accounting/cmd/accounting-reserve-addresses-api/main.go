@@ -35,11 +35,12 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	sugar, flush, err := libapp.NewSugaredLogger(c)
+	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
 	}
-	defer flush()
+	defer libapp.NewFlusher(logger)()
+	sugar := logger.Sugar()
 
 	etherscanClient, err := etherscan.NewEtherscanClientFromContext(c)
 	if err != nil {
@@ -58,7 +59,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	s := http.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), st)
+	s := http.NewServer(logger, httputil.NewHTTPAddressFromContext(c), st)
 
 	return s.Run()
 }

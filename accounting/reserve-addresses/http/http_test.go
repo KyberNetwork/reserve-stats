@@ -565,8 +565,8 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	ts = NewServer(sugar, "", tst)
+	logger := sugar.Desugar()
+	ts = NewServer(logger, "", tst)
 	ts.register()
 
 	ret := m.Run()

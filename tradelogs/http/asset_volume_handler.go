@@ -19,18 +19,20 @@ func (sv *Server) getAssetVolume(c *gin.Context) {
 		query assetVolumeQuery
 	)
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
 
 	from, to, err := query.Validate()
 	if err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
@@ -39,9 +41,10 @@ func (sv *Server) getAssetVolume(c *gin.Context) {
 
 	result, err := sv.storage.GetAssetVolume(token, from, to, query.Freq)
 	if err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}

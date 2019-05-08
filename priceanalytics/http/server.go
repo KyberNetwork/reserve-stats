@@ -4,11 +4,13 @@ import (
 	"net/http"
 	"time"
 
+	ginzap "github.com/gin-contrib/zap"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/priceanalytics/common"
 	"github.com/KyberNetwork/reserve-stats/priceanalytics/storage"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 //Server for price analytic service
@@ -20,8 +22,11 @@ type Server struct {
 }
 
 //NewHTTPServer return new server instance
-func NewHTTPServer(sugar *zap.SugaredLogger, host string, storage storage.Interface) *Server {
-	r := gin.Default()
+func NewHTTPServer(logger *zap.Logger, host string, storage storage.Interface) *Server {
+	r := gin.New()
+	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	r.Use(ginzap.RecoveryWithZap(logger, true))
+	sugar := logger.Sugar()
 	return &Server{
 		sugar:   sugar,
 		r:       r,

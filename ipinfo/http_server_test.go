@@ -21,7 +21,8 @@ type responseError struct {
 
 func TestIPLocatorHTTPServer(t *testing.T) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	s, err := NewHTTPServer(sugar, "testdata", fmt.Sprintf(":%d", httputil.IPLocatorPort))
+	logger := sugar.Desugar()
+	s, err := NewHTTPServer(logger, "testdata", fmt.Sprintf(":%d", httputil.IPLocatorPort))
 	if err != nil {
 		t.Error("Could not create HTTP server", "error", err.Error())
 	}

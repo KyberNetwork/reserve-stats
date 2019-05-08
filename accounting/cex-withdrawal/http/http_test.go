@@ -154,8 +154,8 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	ts, err = NewServer("", hdb, bdb, sugar)
+	logger := sugar.Desugar()
+	ts, err = NewServer("", hdb, bdb, logger)
 	if err != nil {
 		log.Fatal(err)
 	}

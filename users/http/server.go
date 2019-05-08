@@ -26,7 +26,7 @@ func NewServer(logger *zap.Logger,
 	influxStorage *storage.InfluxStorage,
 	userCapConf *common.UserCapConfiguration,
 ) *Server {
-	r := gin.Default()
+	r := gin.New()
 	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
 	r.Use(ginzap.RecoveryWithZap(logger, true))
 	sugar := logger.Sugar()

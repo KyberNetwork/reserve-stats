@@ -18,11 +18,10 @@ type countryStatsQuery struct {
 func (sv *Server) getCountryStats(c *gin.Context) {
 	var query countryStatsQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
-			gin.H{
-				"error": err.Error(),
-			},
+			err,
 		)
 		return
 	}

@@ -1,6 +1,9 @@
 package http
 
 import (
+	"time"
+
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -18,8 +21,11 @@ type Server struct {
 }
 
 // NewServer creates a new instance of Server.
-func NewServer(sugar *zap.SugaredLogger, host string, hs huobistorage.Interface, bs tradestorage.Interface) *Server {
-	r := gin.Default()
+func NewServer(logger *zap.Logger, host string, hs huobistorage.Interface, bs tradestorage.Interface) *Server {
+	r := gin.New()
+	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	r.Use(ginzap.RecoveryWithZap(logger, true))
+	sugar := logger.Sugar()
 	return &Server{sugar: sugar, r: r, host: host, hs: hs, bs: bs}
 
 }

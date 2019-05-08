@@ -20,11 +20,10 @@ func (ha *Server) getWalletFee(c *gin.Context) {
 	var query walletFeeQuery
 
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
-			gin.H{
-				"error": err.Error(),
-			},
+			err,
 		)
 		return
 	}

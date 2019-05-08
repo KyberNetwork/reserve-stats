@@ -2,14 +2,17 @@ package http
 
 import (
 	"net/http"
+	"time"
+
+	ethereum "github.com/ethereum/go-ethereum/common"
+	ginzap "github.com/gin-contrib/zap"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 // Server is the engine to serve reserve-rate API query
@@ -33,18 +36,20 @@ func (sv *Server) reserveRates(c *gin.Context) {
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
 
 	_, _, err := query.Validate()
 	if err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
@@ -57,9 +62,10 @@ func (sv *Server) reserveRates(c *gin.Context) {
 	result, err := sv.db.GetRatesByTimePoint(rsvAddrs, query.From, query.To)
 	if err != nil {
 		sv.sugar.Errorw(err.Error(), "query", query)
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
@@ -82,8 +88,11 @@ func (sv *Server) Run() error {
 }
 
 // NewServer create an instance of Server to serve API query
-func NewServer(host string, db storage.ReserveRatesStorage, sugar *zap.SugaredLogger) (*Server, error) {
-	r := gin.Default()
+func NewServer(host string, db storage.ReserveRatesStorage, logger *zap.Logger) (*Server, error) {
+	r := gin.New()
+	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	r.Use(ginzap.RecoveryWithZap(logger, true))
+	sugar := logger.Sugar()
 	return &Server{
 		r:     r,
 		db:    db,

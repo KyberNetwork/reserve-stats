@@ -33,11 +33,12 @@ func run(c *cli.Context) error {
 	if err := libapp.Validate(c); err != nil {
 		return err
 	}
-	sugar, flush, err := libapp.NewSugaredLogger(c)
+	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
 	}
-	defer flush()
+	defer libapp.NewFlusher(logger)()
+	sugar := logger.Sugar()
 
 	db, err := libapp.NewDBFromContext(c)
 	if err != nil {
@@ -55,7 +56,7 @@ func run(c *cli.Context) error {
 		}
 	}()
 
-	server, err := http.NewServer(httputil.NewHTTPAddressFromContext(c), appNameDB, sugar)
+	server, err := http.NewServer(httputil.NewHTTPAddressFromContext(c), appNameDB, logger)
 	if err != nil {
 		return err
 	}

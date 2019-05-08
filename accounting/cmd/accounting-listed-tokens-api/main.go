@@ -28,12 +28,12 @@ func main() {
 }
 
 func run(c *cli.Context) error {
-	sugar, flusher, err := libapp.NewSugaredLogger(c)
+	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
 	}
-
-	defer flusher()
+	defer libapp.NewFlusher(logger)()
+	sugar := logger.Sugar()
 
 	db, err := libapp.NewDBFromContext(c)
 	if err != nil {
@@ -50,7 +50,7 @@ func run(c *cli.Context) error {
 		}
 	}()
 
-	s := server.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), listedTokenStorage)
+	s := server.NewServer(logger, httputil.NewHTTPAddressFromContext(c), listedTokenStorage)
 	if err = s.Run(); err != nil {
 		return err
 	}

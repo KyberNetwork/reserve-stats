@@ -17,6 +17,7 @@ func MiddlewareHandler(c *gin.Context) {
 
 //ResponseFailure sets response code and error to the given one in parameter.
 func ResponseFailure(c *gin.Context, code int, err error) {
+	_ = c.Error(err)
 	c.JSON(
 		code,
 		gin.H{"error": err.Error()},

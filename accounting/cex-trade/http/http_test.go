@@ -211,8 +211,8 @@ func TestMain(m *testing.M) {
 	if err = bs.UpdateTradeHistory(binanceTrades); err != nil {
 		log.Fatal(err)
 	}
-
-	ts = NewServer(sugar, "", hs, bs)
+	logger := sugar.Desugar()
+	ts = NewServer(logger, "", hs, bs)
 	ts.register()
 
 	ret := m.Run()

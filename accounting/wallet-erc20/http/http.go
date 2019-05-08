@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -78,8 +79,11 @@ func (s *Server) getTransactions(c *gin.Context) {
 }
 
 // NewServer creates a new instance of Server.
-func NewServer(sugar *zap.SugaredLogger, host string, st storage.ReserveTransactionStorage) *Server {
-	r := gin.Default()
+func NewServer(logger *zap.Logger, host string, st storage.ReserveTransactionStorage) *Server {
+	r := gin.New()
+	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	r.Use(ginzap.RecoveryWithZap(logger, true))
+	sugar := logger.Sugar()
 	return &Server{sugar: sugar, r: r, host: host, st: st}
 }
 

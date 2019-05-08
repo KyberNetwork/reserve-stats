@@ -30,9 +30,10 @@ func (sv *Server) getTradeSummary(c *gin.Context) {
 	)
 
 	if err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}

@@ -29,11 +29,12 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	sugar, flusher, err := libapp.NewSugaredLogger(c)
+	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
 	}
-	defer flusher()
+	defer libapp.NewFlusher(logger)()
+	sugar := logger.Sugar()
 
 	db, err := libapp.NewDBFromContext(c)
 	if err != nil {
@@ -57,7 +58,7 @@ func run(c *cli.Context) error {
 	}
 
 	host := httputil.NewHTTPAddressFromContext(c)
-	server, err := http.NewServer(host, huobiDB, binanceDB, sugar)
+	server, err := http.NewServer(host, huobiDB, binanceDB, logger)
 	if err != nil {
 		return err
 	}

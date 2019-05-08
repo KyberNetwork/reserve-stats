@@ -25,8 +25,8 @@ func TestAppNameHTTPServer(t *testing.T) {
 
 	appNameStorage, err := storage.NewAppNameDB(sugar, db)
 	assert.Nil(t, err, "database should be initiated successfully")
-
-	s, err := NewServer("", appNameStorage, sugar)
+	logger := sugar.Desugar()
+	s, err := NewServer("", appNameStorage, logger)
 	assert.Nil(t, err, "server should be create successfully")
 	s.register()
 

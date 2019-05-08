@@ -52,7 +52,8 @@ func newTestServer(sugar *zap.SugaredLogger, dbInstance storage.ReserveRatesStor
 	if err := dbInstance.UpdateRatesRecords(123, testRates); err != nil {
 		return nil, err
 	}
-	return NewServer(host, dbInstance, sugar)
+	logger := sugar.Desugar()
+	return NewServer(host, dbInstance, logger)
 }
 
 func tearDownTestDB(t *testing.T, influxClient client.Client) {

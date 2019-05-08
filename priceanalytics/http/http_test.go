@@ -11,14 +11,10 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/priceanalytics/storage"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 )
 
 func TestHTTPPriceAnalyticServer(t *testing.T) {
-	logger, err := zap.NewDevelopment()
-	assert.Nil(t, err, "logger should be initiated successfully")
-
-	sugar := logger.Sugar()
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	db, teardown := testutil.MustNewDevelopmentDB()
 	priceStorage, err := storage.NewPriceStorage(sugar, db)
 	assert.Nil(t, err, "price storage should be initiated successfully")
@@ -26,8 +22,8 @@ func TestHTTPPriceAnalyticServer(t *testing.T) {
 	defer func() {
 		assert.NoError(t, teardown())
 	}()
-
-	s := NewHTTPServer(sugar, "", priceStorage)
+	logger := sugar.Desugar()
+	s := NewHTTPServer(logger, "", priceStorage)
 	s.register()
 
 	const (

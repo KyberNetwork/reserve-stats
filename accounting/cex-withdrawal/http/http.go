@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -121,8 +122,11 @@ func (sv *Server) Run() error {
 }
 
 // NewServer create an instance of Server to serve API query
-func NewServer(host string, huobiDB huobiStorage.Interface, binanceDB withdrawalstorage.Interface, sugar *zap.SugaredLogger) (*Server, error) {
-	r := gin.Default()
+func NewServer(host string, huobiDB huobiStorage.Interface, binanceDB withdrawalstorage.Interface, logger *zap.Logger) (*Server, error) {
+	r := gin.New()
+	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	r.Use(ginzap.RecoveryWithZap(logger, true))
+	sugar := logger.Sugar()
 	return &Server{
 		r:         r,
 		huobiDB:   huobiDB,

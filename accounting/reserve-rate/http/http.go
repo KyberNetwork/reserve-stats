@@ -4,12 +4,13 @@ import (
 	"net/http"
 	"time"
 
+	ginzap "github.com/gin-contrib/zap"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
-
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 var (
@@ -32,9 +33,10 @@ func (sv *Server) reserveRates(c *gin.Context) {
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
@@ -44,9 +46,10 @@ func (sv *Server) reserveRates(c *gin.Context) {
 		httputil.TimeRangeQueryWithDefaultTimeFrame(defaultTimeFrame),
 	)
 	if err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
@@ -57,9 +60,10 @@ func (sv *Server) reserveRates(c *gin.Context) {
 	reserveRate, err := sv.db.GetRates(from, to)
 	if err != nil {
 		sv.sugar.Errorw(err.Error(), "query", query)
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
@@ -67,9 +71,10 @@ func (sv *Server) reserveRates(c *gin.Context) {
 	ethUsdRate, err := sv.db.GetETHUSDRates(from, to)
 	if err != nil {
 		sv.sugar.Errorw(err.Error(), "query", query)
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusInternalServerError,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}
@@ -93,8 +98,11 @@ func (sv *Server) Run() error {
 }
 
 // NewServer create an instance of Server to serve API query
-func NewServer(host string, db storage.Interface, sugar *zap.SugaredLogger) (*Server, error) {
-	r := gin.Default()
+func NewServer(host string, db storage.Interface, logger *zap.Logger) (*Server, error) {
+	r := gin.New()
+	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	r.Use(ginzap.RecoveryWithZap(logger, true))
+	sugar := logger.Sugar()
 	return &Server{
 		r:     r,
 		db:    db,

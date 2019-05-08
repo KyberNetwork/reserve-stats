@@ -21,8 +21,9 @@ import (
 )
 
 func newTestServer(rts storage.ReserveTransactionStorage, sugar *zap.SugaredLogger) (*Server, error) {
+	logger := sugar.Desugar()
 	return NewServer(
-		sugar,
+		logger,
 		"",
 		rts,
 	), nil

@@ -29,9 +29,10 @@ func (sv *Server) getIntegrationVolume(c *gin.Context) {
 		httputil.TimeRangeQueryWithDefaultTimeFrame(defaultTimeFrame),
 	)
 	if err != nil {
-		c.JSON(
+		httputil.ResponseFailure(
+			c,
 			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
+			err,
 		)
 		return
 	}

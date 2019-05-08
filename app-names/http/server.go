@@ -4,8 +4,10 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -250,8 +252,11 @@ func (sv *Server) Run() error {
 }
 
 // NewServer create an instance of Server to serve API query
-func NewServer(host string, appNameDB storage.Interface, sugar *zap.SugaredLogger) (*Server, error) {
-	r := gin.Default()
+func NewServer(host string, appNameDB storage.Interface, logger *zap.Logger) (*Server, error) {
+	r := gin.New()
+	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	r.Use(ginzap.RecoveryWithZap(logger, true))
+	sugar := logger.Sugar()
 	return &Server{
 		r:     r,
 		db:    appNameDB,

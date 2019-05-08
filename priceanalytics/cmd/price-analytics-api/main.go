@@ -31,12 +31,12 @@ func main() {
 }
 
 func run(c *cli.Context) error {
-	sugar, flush, err := libapp.NewSugaredLogger(c)
+	logger, err := libapp.NewLogger(c)
 	if err != nil {
 		return err
 	}
-	defer flush()
-
+	defer libapp.NewFlusher(logger)()
+	sugar := logger.Sugar()
 	sugar.Info("Run price analytic module")
 
 	db, err := libapp.NewDBFromContext(c)
@@ -53,7 +53,7 @@ func run(c *cli.Context) error {
 	}
 	defer priceDB.Close()
 
-	server := http.NewHTTPServer(sugar, httputil.NewHTTPAddressFromContext(c),
+	server := http.NewHTTPServer(logger, httputil.NewHTTPAddressFromContext(c),
 		priceDB)
 
 	return server.Run()

@@ -106,12 +106,14 @@ func (c *Client) PushETHSentTransferEvent(tradeLogs []common.TradeLog) error {
 	for userAddress, registerData := range mapRegisterData {
 		if err := c.registerWithdrawalAddress(userAddress, registerData.RwData); err != nil {
 			c.sugar.Errorw("got error when register withdrawal address",
+				"error", err.Error(),
 				"user address", userAddress,
 				"register withdrawal data", registerData.RwData)
 			return err
 		}
 		if err := c.registerSentTransfer(userAddress, registerData.RstData); err != nil {
 			c.sugar.Errorw("got error when register sent transfer",
+				"error", err.Error(),
 				"user address", userAddress,
 				"register sent transfer data", registerData.RstData)
 			return err

@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	readTradeLogAccessKeyIDFlag     = "trade-log-read-access-key-id"
-	readTradeLogSecretAccessKeyFlag = "trade-logread-secret-access-key"
+	tradeLogAccessKeyIDFlag     = "trade-log-access-key-id"
+	tradeLogSecretAccessKeyFlag = "trade-log-secret-access-key"
 )
 
 func main() {
@@ -24,12 +24,12 @@ func main() {
 	app.Action = run
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name:   readTradeLogAccessKeyIDFlag,
+			Name:   tradeLogAccessKeyIDFlag,
 			Usage:  "access key id for read trade log",
 			EnvVar: "READ_TRADE_LOG_ACCESS_KEY_ID",
 		},
 		cli.StringFlag{
-			Name:   readTradeLogSecretAccessKeyFlag,
+			Name:   tradeLogSecretAccessKeyFlag,
 			Usage:  "secret access key for read trade log",
 			EnvVar: "READ_TRADE_LOG_SECRET_ACCESS_KEY",
 		},
@@ -68,7 +68,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	opt := client.WithAuth(c.String(readTradeLogAccessKeyIDFlag), c.String(readTradeLogSecretAccessKeyFlag))
+	opt := client.WithAuth(c.String(tradeLogAccessKeyIDFlag), c.String(tradeLogSecretAccessKeyFlag))
 	tradeLogCli, err := client.NewClientFromContext(sugar, c, opt)
 	if err != nil {
 		return err

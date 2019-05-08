@@ -55,10 +55,10 @@ type registerSentTransfer struct {
 	TransferReference ethereum.Hash
 }
 
-func updateRegisterData(rd registerData, asset string, txHash ethereum.Hash, receiveAdderss ethereum.Address) registerData {
+func updateRegisterData(rd registerData, asset string, txHash ethereum.Hash, receiverAdderss ethereum.Address) registerData {
 	rd.RwData = append(rd.RwData, registerWithdrawal{
 		Asset:   asset,
-		Address: receiveAdderss,
+		Address: receiverAdderss,
 	})
 	rd.RstData = append(rd.RstData, registerSentTransfer{
 		Asset:             asset,
@@ -72,9 +72,9 @@ func (c *Client) PushETHSentTransferEvent(tradeLogs []common.TradeLog) error {
 	mapRegisterData := make(map[ethereum.Address]registerData)
 	for _, log := range tradeLogs {
 		var (
-			txHash         = log.TransactionHash
-			userAddress    = log.UserAddress
-			receiveAdderss = log.ReceiveAddress
+			txHash          = log.TransactionHash
+			userAddress     = log.UserAddress
+			receiverAdderss = log.ReceiverAddress
 		)
 		if strings.ToLower(log.DestAddress.Hex()) != ethAddress {
 			continue
@@ -82,16 +82,16 @@ func (c *Client) PushETHSentTransferEvent(tradeLogs []common.TradeLog) error {
 
 		c.sugar.Debugw("sent transfer data",
 			"user addr", userAddress,
-			"receive addr", receiveAdderss,
+			"receive addr", receiverAdderss,
 			"tx hash", txHash)
 		if rd, ok := mapRegisterData[userAddress]; ok {
-			mapRegisterData[userAddress] = updateRegisterData(rd, ethSymbol, txHash, receiveAdderss)
+			mapRegisterData[userAddress] = updateRegisterData(rd, ethSymbol, txHash, receiverAdderss)
 		} else {
 			mapRegisterData[userAddress] = registerData{
 				RwData: []registerWithdrawal{
 					{
 						ethSymbol,
-						receiveAdderss,
+						receiverAdderss,
 					},
 				},
 				RstData: []registerSentTransfer{

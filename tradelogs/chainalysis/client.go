@@ -182,7 +182,7 @@ func (c *Client) registerChainAlysis(url string, data interface{}) error {
 		}
 		return errors.New(eResp.Message)
 	default:
-		return errors.New("got unexpected code")
+		return fmt.Errorf("got unexpected code: %d", resp.StatusCode)
 	}
 	return nil
 }

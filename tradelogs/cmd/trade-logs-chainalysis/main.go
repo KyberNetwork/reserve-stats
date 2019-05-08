@@ -112,7 +112,7 @@ func run(c *cli.Context) error {
 
 		for i := 1; i <= retryTimes; i++ {
 			err = chainAlysisCli.PushETHSentTransferEvent(tradeLogs)
-			switch true {
+			switch {
 			case err != nil && i == retryTimes:
 				return err
 			case err != nil:

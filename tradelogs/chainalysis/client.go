@@ -154,6 +154,9 @@ func (c *Client) registerSentTransfer(userAddr ethereum.Address, rst []registerS
 func (c *Client) registerChainAlysis(url string, data interface{}) error {
 	var logger = c.sugar.With("func", "tradelogs/chainalysis/Client.registerChainAlysis")
 	body, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
 	if err != nil {
 		return err

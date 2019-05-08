@@ -38,7 +38,7 @@ type TradeLog struct {
 	DestSymbol  string           `json:"dst_symbol,omitempty"`
 
 	UserAddress       ethereum.Address `json:"user_addr"`
-	ReceiveAddress    ethereum.Address `json:"receive_address"`
+	ReceiverAddress   ethereum.Address `json:"receiver_address"`
 	SrcReserveAddress ethereum.Address `json:"src_reserve_addr"`
 	DstReserveAddress ethereum.Address `json:"dst_reserve_addr"`
 	SrcAmount         *big.Int         `json:"src_amount"`

@@ -36,7 +36,7 @@ func TestValidRegisterWithdrawalAddress(t *testing.T) {
 			t.Error("Request to wrong endpoint", "result", req.URL.String())
 		}
 		if req.Header.Get("Token") != apiKey {
-			t.Error("Invalid api key", "api key", req.Header["Token"])
+			t.Error("Invalid api key", "api key", req.Header.Get("Token"))
 		}
 		rw.WriteHeader(http.StatusOK)
 		if _, err := rw.Write([]byte{}); err != nil {

@@ -31,7 +31,7 @@ func main() {
 	app.Name = "Trade Logs chainalysis"
 	app.Version = "0.0.1"
 	app.Action = run
-	app.Flags = []cli.Flag{
+	app.Flags = append(app.Flags,
 		cli.StringFlag{
 			Name:   tradeLogAccessKeyIDFlag,
 			Usage:  "access key id for read trade log",
@@ -48,7 +48,7 @@ func main() {
 			EnvVar: "RETRY_TIMES",
 			Value:  defaultRetryTimesFlag,
 		},
-	}
+	)
 
 	app.Flags = append(app.Flags, timeutil.NewMilliTimeRangeCliFlags()...)
 	app.Flags = append(app.Flags, client.NewTradeLogCliFlags()...)

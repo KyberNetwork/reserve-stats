@@ -73,7 +73,7 @@ func run(c *cli.Context) error {
 
 	fromTime, err := timeutil.FromTimestampMillisFromContext(c)
 	if err == timeutil.ErrEmptyFlag {
-		sugar.Infof("no from time is provided, from time will be set to time stamp at one hour ago")
+		sugar.Infof("no from time is provided, from time will be set to timestamp at one hour ago")
 		fromTime = timeutil.TimeToTimestampMs(time.Now()) - defaultTimeFrameGetTradeLog
 	} else if err != nil {
 		return err

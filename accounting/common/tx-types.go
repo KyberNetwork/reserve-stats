@@ -131,6 +131,7 @@ type ERC20Transfer struct {
 	Gas             int              `json:"gas,string"`
 	GasUsed         int              `json:"gasUsed,string"`
 	GasPrice        *big.Int         `json:"gasPrice"`
+	IsTrade         bool             `json:"isTrade"`
 }
 
 //MarshalJSON return marshal form of erc20transfer

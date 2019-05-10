@@ -56,6 +56,18 @@ CREATE TABLE IF NOT EXISTS "rsv_tx_erc20"
 CREATE INDEX IF NOT EXISTS "rsv_tx_erc20_time_idx" ON "rsv_tx_erc20" ((data ->> 'timestamp'),
 (data ->> 'contractAddress'),(data ->> 'from'),(data ->> 'to'));
 
+DO $$ 
+    BEGIN
+        BEGIN
+            ALTER TABLE rsv_tx_erc20 ADD COLUMN is_trade boolean;
+        EXCEPTION
+            WHEN duplicate_column THEN RAISE NOTICE 'column is_trade already exists in rsv_tx_erc20.';
+        END;
+    END;
+$$;
+
+CREATE INDEX IF NOT EXISTS "rsv_tx_erc20_is_trade_idx" ON "rsv_tx_erc20" (is_trade);
+
 -- create table reserves
 CREATE TABLE IF NOT EXISTS "rsv_tx_reserve"
 (
@@ -453,4 +465,58 @@ func (s *Storage) GetWalletERC20Transfers(wallet, token ethereum.Address, from, 
 		result = append(result, tmp)
 	}
 	return result, nil
+}
+
+//ERC20Record is a record for erc20 transfer transaction
+type ERC20Record struct {
+	ID   int64  `json:"id"`
+	Data []byte `json:"data"`
+}
+
+//GetERC20WithTradeNull return all trade with field is_trade null
+func (s *Storage) GetERC20WithTradeNull() (map[int64]common.ERC20Transfer, error) {
+	var (
+		dbResult []ERC20Record
+		result   = make(map[int64]common.ERC20Transfer)
+		logger   = s.sugar.With(
+			"func", "accounting/wallet-erc20/storage/postgres.GetERC20WithTradeNull",
+		)
+		tmp common.ERC20Transfer
+	)
+	const selectStmt = `SELECT id, data FROM rsv_tx_erc20 WHERE is_trade IS NULL`
+	logger.Debugw("query txs where is_trade is null", "query", selectStmt)
+
+	if err := s.db.Select(&dbResult, selectStmt); err != nil {
+		return result, err
+	}
+	logger.Debugw("number of result txs with is_trade is null", "number", len(dbResult))
+
+	for _, data := range dbResult {
+		if err := json.Unmarshal(data.Data, &tmp); err != nil {
+			return result, err
+		}
+		result[data.ID] = tmp
+	}
+	return result, nil
+}
+
+//UpdateERC20IsTrade update is_trade field for table rsv_tx_erc20
+func (s *Storage) UpdateERC20IsTrade(txs map[int64]bool) error {
+	var (
+		logger = s.sugar.With(
+			"func", "accounting/wallet-erc20/storage/postgres.UpdateERC20IsTrade",
+		)
+	)
+	const updateStmt = `UPDATE rsv_tx_erc20 SET is_trade = $1 WHERE id = $2`
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer pgsql.CommitOrRollback(tx, logger, &err)
+	for id, isTrade := range txs {
+		if _, err := tx.Exec(updateStmt, isTrade, id); err != nil {
+			return err
+		}
+	}
+	return nil
 }

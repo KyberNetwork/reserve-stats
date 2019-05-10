@@ -60,10 +60,10 @@ type errorResponse struct {
 	Message string
 }
 
-func updateRegisterData(rd registerData, asset, txHash, receiverAdderss string) registerData {
+func updateRegisterData(rd registerData, asset, txHash, receiverAddress string) registerData {
 	rd.RwData = append(rd.RwData, registerWithdrawal{
 		Asset:   asset,
-		Address: receiverAdderss,
+		Address: receiverAddress,
 	})
 	rd.RstData = append(rd.RstData, registerSentTransfer{
 		Asset:             asset,
@@ -84,20 +84,20 @@ func (c *Client) PushETHSentTransferEvent(tradeLogs []common.TradeLog) error {
 			userAddress = log.UserAddress
 
 			txHash          = log.TransactionHash.Hex()
-			receiverAdderss = log.ReceiverAddress.Hex()
+			receiverAddress = log.ReceiverAddress.Hex()
 		)
 		if strings.ToLower(log.DestAddress.Hex()) != ethAddress {
 			continue
 		}
 
 		if rd, ok := mapRegisterData[userAddress]; ok {
-			mapRegisterData[userAddress] = updateRegisterData(rd, ethSymbol, txHash, receiverAdderss)
+			mapRegisterData[userAddress] = updateRegisterData(rd, ethSymbol, txHash, receiverAddress)
 		} else {
 			mapRegisterData[userAddress] = registerData{
 				RwData: []registerWithdrawal{
 					{
 						ethSymbol,
-						receiverAdderss,
+						receiverAddress,
 					},
 				},
 				RstData: []registerSentTransfer{

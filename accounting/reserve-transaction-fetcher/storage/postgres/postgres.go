@@ -356,11 +356,11 @@ func (s *Storage) GetERC20Transfer(from time.Time, to time.Time) ([]common.ERC20
 			"from", from.String(),
 			"to", to.String(),
 		)
-		dbResult [][]byte
+		dbResult []WalletERC20Record
 		results  []common.ERC20Transfer
 		t        common.ERC20Transfer
 	)
-	const selectStmt = `SELECT data
+	const selectStmt = `SELECT data, is_trade
 FROM "rsv_tx_erc20"
 JOIN "rsv_tx_erc20_tx_reserve" AS a ON a.tx_id = rsv_tx_erc20.id
 JOIN "rsv_tx_reserve" AS reserve ON a.address_key = reserve.address 
@@ -377,9 +377,10 @@ WHERE data ->> 'timestamp' >= $1
 		return nil, err
 	}
 	for _, data := range dbResult {
-		if err := json.Unmarshal(data, &t); err != nil {
+		if err := json.Unmarshal(data.Data, &t); err != nil {
 			return nil, err
 		}
+		t.IsTrade = data.IsTrade
 		results = append(results, t)
 	}
 	return results, nil
@@ -430,10 +431,16 @@ WHERE address_key ILIKE $1`
 	}
 }
 
+//WalletERC20Record is record for erc20 record
+type WalletERC20Record struct {
+	Data    []byte `db:"data"`
+	IsTrade bool   `db:"is_trade"`
+}
+
 //GetWalletERC20Transfers return erc20 transfer between from.. to.. in its json []byte form
 func (s *Storage) GetWalletERC20Transfers(wallet, token ethereum.Address, from, to time.Time) ([]common.ERC20Transfer, error) {
 	var (
-		dbResult [][]byte
+		dbResult []WalletERC20Record
 		result   []common.ERC20Transfer
 		logger   = s.sugar.With(
 			"func", "accounting/wallet-erc20/storage/postgres..UpdateRatesRecords",
@@ -444,7 +451,7 @@ func (s *Storage) GetWalletERC20Transfers(wallet, token ethereum.Address, from, 
 		)
 		tmp common.ERC20Transfer
 	)
-	const selectStmt = `SELECT data FROM rsv_tx_erc20 
+	const selectStmt = `SELECT data, is_trade FROM rsv_tx_erc20 
 	JOIN "rsv_tx_erc20_tx_reserve" as a ON a.tx_id = rsv_tx_erc20.id
 	JOIN "rsv_tx_reserve" as reserve ON a.address_key = reserve.address WHERE ((data->>'timestamp')>=$1::text AND (data->>'timestamp')<$2::text) AND
 	($3 OR (data->>'from'=$4 OR data->>'to'=$4)) AND
@@ -459,9 +466,10 @@ func (s *Storage) GetWalletERC20Transfers(wallet, token ethereum.Address, from, 
 	}
 	logger.Debugw("result", "len", len(dbResult))
 	for _, data := range dbResult {
-		if err := json.Unmarshal(data, &tmp); err != nil {
+		if err := json.Unmarshal(data.Data, &tmp); err != nil {
 			return result, err
 		}
+		tmp.IsTrade = data.IsTrade
 		result = append(result, tmp)
 	}
 	return result, nil
@@ -469,8 +477,8 @@ func (s *Storage) GetWalletERC20Transfers(wallet, token ethereum.Address, from, 
 
 //ERC20Record is a record for erc20 transfer transaction
 type ERC20Record struct {
-	ID   int64  `json:"id"`
-	Data []byte `json:"data"`
+	ID   int64  `db:"id"`
+	Data []byte `db:"data"`
 }
 
 //GetERC20WithTradeNull return all trade with field is_trade null

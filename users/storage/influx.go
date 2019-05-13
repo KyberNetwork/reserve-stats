@@ -33,7 +33,7 @@ func (inf *InfluxStorage) Last24hVolume(uid string) (float64, error) {
 		logger = inf.sugar.With("func", "users/storage/InfluxStorage.Last24hVolume",
 			"uid", uid)
 
-		influxQueryFmt = `SELECT SUM(amount) FROM (SELECT %[1]s * %[2]s AS amount FROM trades WHERE time >= now() - 24h AND "%[3]s" = '%[4]s')`
+		influxQueryFmt = `SELECT SUM(amount) FROM (SELECT %[1]s * %[2]s AS amount FROM trades WHERE time >= now() - 24h AND "%[3]s" = '%[4]s') WHERE time >= now() - 24h`
 		query          string
 	)
 

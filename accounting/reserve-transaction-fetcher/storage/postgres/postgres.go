@@ -304,6 +304,62 @@ WHERE data ->> 'timestamp' >= $1
 	return results, nil
 }
 
+//InternalTxIsTradeNullRecord is response from db query
+type InternalTxIsTradeNullRecord struct {
+	ID   int64  `db:"id"`
+	Data []byte `db:"data"`
+}
+
+//GetInternalTxIsTradeNull return list common.InternalTx with IsTrade null
+func (s *Storage) GetInternalTxIsTradeNull() (map[int64]common.InternalTx, error) {
+	var (
+		logger = s.sugar.With(
+			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.GetInternalTxIsTradeNull",
+		)
+		result   = make(map[int64]common.InternalTx)
+		dbResult []InternalTxIsTradeNullRecord
+		tmp      common.InternalTx
+	)
+	const (
+		getStmt = `SELECT id, data FROM rsv_tx_internal WHERE is_trade IS NULL`
+	)
+	logger.Infow("Get internal tx is trade null", "query", getStmt)
+	if err := s.db.Select(&dbResult, getStmt); err != nil {
+		return result, err
+	}
+	for _, data := range dbResult {
+		if err := json.Unmarshal(data.Data, &tmp); err != nil {
+			return result, err
+		}
+		result[data.ID] = tmp
+	}
+	return result, nil
+}
+
+//UpdateInternalTxIsTrade update field isTrade
+func (s *Storage) UpdateInternalTxIsTrade(txs map[int64]bool) error {
+	var (
+		logger = s.sugar.With(
+			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.GetInternalTxIsTradeNull",
+		)
+	)
+	const (
+		updateStmt = "UPDATE rsv_tx_internal SET is_trade = $1 WHERE id = $2"
+	)
+	logger.Debugw("update transaction", "query", updateStmt)
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return nil
+	}
+	defer pgsql.CommitOrRollback(tx, logger, &err)
+	for id, isTrade := range txs {
+		if _, err := tx.Exec(updateStmt, id, isTrade); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 //StoreERC20Transfer save ERC20 transfer
 func (s *Storage) StoreERC20Transfer(txs []common.ERC20Transfer, reserve ethereum.Address) (err error) {
 	var (

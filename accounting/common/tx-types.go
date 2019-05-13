@@ -131,7 +131,7 @@ type ERC20Transfer struct {
 	Gas             int              `json:"gas,string"`
 	GasUsed         int              `json:"gasUsed,string"`
 	GasPrice        *big.Int         `json:"gasPrice"`
-	IsTrade         bool             `json:"isTrade,omitempty"`
+	IsTrade         bool             `json:"isTrade"`
 }
 
 //MarshalJSON return marshal form of erc20transfer
@@ -269,8 +269,31 @@ func DetectTradeTransaction(txHash ethereum.Hash, ethClient *ethclient.Client) (
 	return false, nil
 }
 
+//DetectTradeTransaction detect if a provided txHash is belong to a trade transaction or not
+func DetectTradeTransaction(txHash ethereum.Hash, ethClient *ethclient.Client) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	receipt, err := ethClient.TransactionReceipt(ctx, txHash)
+	if err != nil {
+		return false, err
+	}
+	for _, log := range receipt.Logs {
+		for _, topic := range log.Topics {
+			if topic == ethereum.HexToHash(tradeExecuteEvent) {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
 //EtherscanERC20TransferToCommon transforms etherScan.ERC20Trasnfer to accounting's ERC20Transfer
-func EtherscanERC20TransferToCommon(tx etherscan.ERC20Transfer) ERC20Transfer {
+func EtherscanERC20TransferToCommon(tx etherscan.ERC20Transfer, ethClient *ethclient.Client) (ERC20Transfer, error) {
+	//Detect if a transfer transaction is a trade or not
+	isTrade, err := DetectTradeTransaction(ethereum.HexToHash(tx.Hash), ethClient)
+	if err != nil {
+		return ERC20Transfer{}, err
+	}
 	return ERC20Transfer{
 		BlockNumber:     tx.BlockNumber,
 		Timestamp:       tx.TimeStamp.Time(),
@@ -282,7 +305,8 @@ func EtherscanERC20TransferToCommon(tx etherscan.ERC20Transfer) ERC20Transfer {
 		Gas:             tx.Gas,
 		GasUsed:         tx.GasUsed,
 		GasPrice:        tx.GasPrice.Int(),
-	}
+		IsTrade:         isTrade,
+	}, nil
 }
 
 //EtherscanNormalTxToCommon transform etherScan.NormalTx to accounting's normalTx

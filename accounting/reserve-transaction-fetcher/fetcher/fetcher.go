@@ -200,7 +200,10 @@ func (f *EtherscanTransactionFetcher) ERC20Transfer(addr ethereum.Address, from,
 	transfers := make([]common.ERC20Transfer, len(results))
 	for i, v := range results {
 		transfer := v.(etherscan.ERC20Transfer)
-		transfers[i] = common.EtherscanERC20TransferToCommon(transfer)
+		transfers[i], err = common.EtherscanERC20TransferToCommon(transfer, f.ethClient)
+		if err != nil {
+			return transfers, err
+		}
 	}
 	return transfers, nil
 }

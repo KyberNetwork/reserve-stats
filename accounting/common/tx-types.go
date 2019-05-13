@@ -73,6 +73,7 @@ type InternalTx struct {
 	Gas         int       `json:"gas,string"`
 	GasUsed     int       `json:"gasUsed,string"`
 	IsError     int       `json:"isError,string"`
+	IsTrade     bool      `json:"isTrade"`
 }
 
 // UnmarshalJSON is the custom unmarshaller that read timestamp in unix milliseconds.

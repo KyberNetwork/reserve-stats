@@ -46,6 +46,17 @@ CREATE TABLE IF NOT EXISTS "rsv_tx_internal"
 
 CREATE INDEX IF NOT EXISTS "rsv_tx_internal_time_idx" ON "rsv_tx_internal" ((data ->> 'timestamp'));
 
+DO $$ 
+    BEGIN
+        BEGIN
+            ALTER TABLE rsv_tx_internal ADD COLUMN is_trade boolean;
+        EXCEPTION
+            WHEN duplicate_column THEN RAISE NOTICE 'column is_trade already exists in rsv_tx_internal.';
+        END;
+    END;
+$$;
+CREATE INDEX IF NOT EXISTS "rsv_tx_internal_is_trade_idx" ON "rsv_tx_internal" (is_trade);
+
 -- create table tx erc20
 CREATE TABLE IF NOT EXISTS "rsv_tx_erc20"
 (
@@ -251,6 +262,12 @@ ON CONFLICT DO NOTHING RETURNING id;
 	return
 }
 
+//InternalTxRecord is a record for internal tx
+type InternalTxRecord struct {
+	Data    []byte       `db:"data"`
+	IsTrade sql.NullBool `db:"is_trade"`
+}
+
 //GetInternalTx get internal txs between a period of time
 func (s *Storage) GetInternalTx(from time.Time, to time.Time) ([]common.InternalTx, error) {
 	var (
@@ -259,7 +276,7 @@ func (s *Storage) GetInternalTx(from time.Time, to time.Time) ([]common.Internal
 			"from", from.String(),
 			"to", to.String(),
 		)
-		dbResult [][]byte
+		dbResult []InternalTxRecord
 		results  []common.InternalTx
 		t        common.InternalTx
 	)
@@ -276,8 +293,11 @@ WHERE data ->> 'timestamp' >= $1
 		return nil, err
 	}
 	for _, data := range dbResult {
-		if err := json.Unmarshal(data, &t); err != nil {
+		if err := json.Unmarshal(data.Data, &t); err != nil {
 			return nil, err
+		}
+		if data.IsTrade.Valid {
+			t.IsTrade = data.IsTrade.Bool
 		}
 		results = append(results, t)
 	}

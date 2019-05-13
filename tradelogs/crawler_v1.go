@@ -54,29 +54,25 @@ func (crawler *Crawler) getTransactionReceiptV1(tradeLog common.TradeLog, timeou
 		return tradeLog, err
 	}
 
-	for index := mathutil.MinUint64(uint64(len(receipt.Logs)-1), uint64(logIndex)); index >= 0; index-- {
+	for index := mathutil.MinInt64(int64(len(receipt.Logs)-1), int64(logIndex)); index >= 0; index-- {
 		log := receipt.Logs[index]
 		if len(log.Topics) == 0 {
 			continue
 		}
 		topic := log.Topics[0].Hex()
-		if tradeLog.DestAddress == blockchain.ETHAddr {
-
-		} else {
-			switch {
-			case topic == transferEvent && blockchain.IsZeroAddress(tradeLog.ReceiverAddress):
-				if len(log.Topics) != 3 {
-					return tradeLog, errors.New("invalid transfer event topics data")
-				}
-				tradeLog.ReceiverAddress = ethereum.BytesToAddress(log.Topics[2].Bytes())
-				if !shouldGetReserveAddr {
-					break
-				}
-			case shouldGetReserveAddr && topic == tradeExecuteEvent:
-				tradeLog.SrcReserveAddress = log.Address
-				if !blockchain.IsZeroAddress(tradeLog.ReceiverAddress) {
-					break
-				}
+		switch {
+		case topic == transferEvent && blockchain.IsZeroAddress(tradeLog.ReceiverAddress):
+			if len(log.Topics) != 3 {
+				return tradeLog, errors.New("invalid transfer event topics data")
+			}
+			tradeLog.ReceiverAddress = ethereum.BytesToAddress(log.Topics[2].Bytes())
+			if !shouldGetReserveAddr {
+				break
+			}
+		case shouldGetReserveAddr && topic == tradeExecuteEvent:
+			tradeLog.SrcReserveAddress = log.Address
+			if !blockchain.IsZeroAddress(tradeLog.ReceiverAddress) {
+				break
 			}
 		}
 	}
@@ -156,6 +152,9 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 				// if transaction is from token to eth
 				// get internal transaction to detect receiver address
 				tradeLog, err = crawler.getInternalTransaction(tradeLog)
+				if err != nil {
+					return nil, err
+				}
 			}
 
 			// set tradeLog.EthAmount

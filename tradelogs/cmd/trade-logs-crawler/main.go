@@ -15,6 +15,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
+	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
 	userkyced "github.com/KyberNetwork/reserve-stats/lib/userkyced"
@@ -102,6 +103,7 @@ func main() {
 	app.Flags = append(app.Flags, cq.NewCQFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
 	app.Flags = append(app.Flags, userkyced.NewCliFlags()...)
+	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}

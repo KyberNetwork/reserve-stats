@@ -16,6 +16,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
+	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
@@ -92,7 +93,12 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 	addresses = append(addresses, contracts.OldBurnerContractAddress().MustGetFromContext(fj.c)...)
 	addresses = append(addresses, contracts.OldNetworkContractAddress().MustGetFromContext(fj.c)...)
 
-	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks)
+	etherscanClient, err := etherscan.NewEtherscanClientFromContext(fj.c)
+	if err != nil {
+		return nil, err
+	}
+
+	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks, etherscanClient)
 	if err != nil {
 		return nil, err
 	}

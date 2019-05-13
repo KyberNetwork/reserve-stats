@@ -8,7 +8,6 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
@@ -16,15 +15,15 @@ import (
 )
 
 const (
-	//TradeExecute(address sender, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
-	tradeExecuteEvent = "0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de"
+	// KyberTrade (address srcAddress, address srcToken, uint256 srcAmount, address destAddress, address destToken, uint256 destAmount)
+	kyberTradeEventV2 = "0x1c8399ecc5c956b9cb18c820248b10b634cca4af308755e07cd467655e8ec3c7"
 )
 
 func (crawler *Crawler) fetchTradeLogV2(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
 	var result []common.TradeLog
 	topics := [][]ethereum.Hash{
 		{
-			ethereum.HexToHash(executeTradeEvent),
+			ethereum.HexToHash(kyberTradeEventV2),
 			ethereum.HexToHash(burnFeeEvent),
 			ethereum.HexToHash(feeToWalletEvent),
 			ethereum.HexToHash(etherReceivalEvent),
@@ -69,41 +68,6 @@ func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time
 	return reserveAddr, nil
 }
 
-func assembleTradeLogsReserveAddr(log common.TradeLog, sugar *zap.SugaredLogger) common.TradeLog {
-	switch {
-	case blockchain.IsBurnable(log.SrcAddress):
-		if blockchain.IsBurnable(log.DestAddress) {
-			if len(log.BurnFees) == 2 {
-				log.SrcReserveAddress = log.BurnFees[0].ReserveAddress
-				log.DstReserveAddress = log.BurnFees[1].ReserveAddress
-			} else {
-				sugar.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "2 burn fees (src-dst)")
-			}
-		} else {
-			if len(log.BurnFees) == 1 {
-				log.SrcReserveAddress = log.BurnFees[0].ReserveAddress
-			} else {
-				sugar.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (src)")
-			}
-		}
-	case blockchain.IsBurnable(log.DestAddress):
-		if len(log.BurnFees) == 1 {
-			log.DstReserveAddress = log.BurnFees[0].ReserveAddress
-		} else {
-			sugar.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
-		}
-	case len(log.WalletFees) != 0:
-		if len(log.WalletFees) == 1 {
-			log.SrcReserveAddress = log.WalletFees[0].ReserveAddress
-		} else {
-			log.SrcReserveAddress = log.WalletFees[0].ReserveAddress
-			log.DstReserveAddress = log.WalletFees[1].ReserveAddress
-		}
-	}
-
-	return log
-}
-
 func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.TradeLog, error) {
 	var (
 		result   []common.TradeLog
@@ -139,8 +103,8 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			if tradeLog, err = fillEtherReceival(tradeLog, log); err != nil {
 				return nil, err
 			}
-		case executeTradeEvent:
-			if tradeLog, err = fillExecuteTrade(tradeLog, log); err != nil {
+		case kyberTradeEventV2:
+			if tradeLog, err = fillKyberTradeV2(tradeLog, log); err != nil {
 				return nil, err
 			}
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {

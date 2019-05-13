@@ -380,7 +380,9 @@ WHERE data ->> 'timestamp' >= $1
 		if err := json.Unmarshal(data.Data, &t); err != nil {
 			return nil, err
 		}
-		t.IsTrade = data.IsTrade
+		if data.IsTrade.Valid {
+			t.IsTrade = data.IsTrade.Bool
+		}
 		results = append(results, t)
 	}
 	return results, nil
@@ -433,8 +435,8 @@ WHERE address_key ILIKE $1`
 
 //WalletERC20Record is record for erc20 record
 type WalletERC20Record struct {
-	Data    []byte `db:"data"`
-	IsTrade bool   `db:"is_trade"`
+	Data    []byte       `db:"data"`
+	IsTrade sql.NullBool `db:"is_trade"`
 }
 
 //GetWalletERC20Transfers return erc20 transfer between from.. to.. in its json []byte form
@@ -469,7 +471,9 @@ func (s *Storage) GetWalletERC20Transfers(wallet, token ethereum.Address, from, 
 		if err := json.Unmarshal(data.Data, &tmp); err != nil {
 			return result, err
 		}
-		tmp.IsTrade = data.IsTrade
+		if data.IsTrade.Valid {
+			tmp.IsTrade = data.IsTrade.Bool
+		}
 		result = append(result, tmp)
 	}
 	return result, nil

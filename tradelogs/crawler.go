@@ -361,11 +361,12 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 
 	// fetchTradeLogV2 also works for v3 trades, so to keep it simple, we only use fetchTradeLogV3 if both
 	// from, to blocks are >= starting block v3
-	if fromBlock.Uint64() >= crawler.startingBlocks.V3() && toBlock.Uint64() >= crawler.startingBlocks.V3() {
+	switch {
+	case fromBlock.Uint64() >= crawler.startingBlocks.V3() && toBlock.Uint64() >= crawler.startingBlocks.V3():
 		fetchFn = crawler.fetchTradeLogV3
-	} else if fromBlock.Uint64() >= crawler.startingBlocks.V2() && toBlock.Uint64() >= crawler.startingBlocks.V2() {
+	case fromBlock.Uint64() >= crawler.startingBlocks.V2() && toBlock.Uint64() >= crawler.startingBlocks.V2():
 		fetchFn = crawler.fetchTradeLogV2
-	} else {
+	default:
 		fetchFn = crawler.fetchTradeLogV1
 	}
 

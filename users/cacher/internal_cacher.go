@@ -49,7 +49,7 @@ func (irc *InternalRedisCacher) cache24hVolumeByUID() error {
 	)
 
 	// read total trade 24h
-	query := fmt.Sprintf(`SELECT SUM(amount) FROM (SELECT %s*%s as amount FROM trades WHERE time >= (now()-24h)) GROUP BY uid`,
+	query := fmt.Sprintf(`SELECT SUM(amount) FROM (SELECT %s*%s as amount FROM trades WHERE time >= (now()-24h) and uid != '') GROUP BY uid`,
 		logSchema.EthAmount.String(),
 		logSchema.EthUSDRate.String())
 

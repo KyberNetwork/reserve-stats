@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -201,7 +202,27 @@ func DetectTradeInternalTransaction(txHash ethereum.Hash, ethAmount *big.Int, et
 	for _, log := range receipt.Logs {
 		for _, topic := range log.Topics {
 			if topic == ethereum.HexToHash(tradeExecuteEvent) {
-				return true, nil
+				//check if the amount is match then it is belong to this trade
+				destAddress := ethereum.BytesToAddress(log.Data[64:96])
+
+				//only compare if the destAddress is ethereum
+				if destAddress == blockchain.ETHAddr {
+					destAmount := ethereum.BytesToHash(log.Data[96:128])
+					if destAmount.Big().Cmp(ethAmount) == 0 {
+						return true, nil
+					}
+				}
+
+				//check if the amount is match then it is belong to this trade
+				srcAddress := ethereum.BytesToAddress(log.Data[0:32])
+
+				//only compare if the destAddress is ethereum
+				if srcAddress == blockchain.ETHAddr {
+					srcAmount := ethereum.BytesToHash(log.Data[32:64])
+					if srcAmount.Big().Cmp(ethAmount) == 0 {
+						return true, nil
+					}
+				}
 			}
 		}
 	}

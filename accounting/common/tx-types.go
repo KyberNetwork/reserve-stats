@@ -190,9 +190,31 @@ func (et *ERC20Transfer) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+//DetectTradeInternalTransaction detect if a provided txHash is belong to a trade transaction or not
+func DetectTradeInternalTransaction(txHash ethereum.Hash, ethAmount *big.Int, ethClient *ethclient.Client) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	receipt, err := ethClient.TransactionReceipt(ctx, txHash)
+	if err != nil {
+		return false, err
+	}
+	for _, log := range receipt.Logs {
+		for _, topic := range log.Topics {
+			if topic == ethereum.HexToHash(tradeExecuteEvent) {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
 //EtherscanInternalTxToCommon transforms etherScan.InternalTx to accounting's InternalTx
-func EtherscanInternalTxToCommon(tx etherscan.InternalTx) InternalTx {
+func EtherscanInternalTxToCommon(tx etherscan.InternalTx, ethClient *ethclient.Client) (InternalTx, error) {
 	// Detect if an internal tx is belong to a trade or not
+	isTrade, err := DetectTradeInternalTransaction(ethereum.HexToHash(tx.Hash), tx.Value.Int(), ethClient)
+	if err != nil {
+		return InternalTx{}, err
+	}
 	return InternalTx{
 		BlockNumber: tx.BlockNumber,
 		Timestamp:   tx.TimeStamp.Time(),
@@ -203,7 +225,8 @@ func EtherscanInternalTxToCommon(tx etherscan.InternalTx) InternalTx {
 		Gas:         tx.Gas,
 		GasUsed:     tx.GasUsed,
 		IsError:     tx.IsError,
-	}
+		IsTrade:     isTrade,
+	}, nil
 }
 
 //DetectTradeTransaction detect if a provided txHash is belong to a trade transaction or not

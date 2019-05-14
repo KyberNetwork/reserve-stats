@@ -18,8 +18,6 @@ type ReserveTransactionStorage interface {
 
 	StoreInternalTx([]common.InternalTx, ethereum.Address) error
 	GetInternalTx(from, to time.Time) ([]common.InternalTx, error)
-	GetInternalTxIsTradeNul() (map[int64]common.InternalTx, error)
-	UpdateInternalTxIsTrade(map[int64]bool) error
 
 	StoreERC20Transfer([]common.ERC20Transfer, ethereum.Address) error
 	GetERC20Transfer(from, to time.Time) ([]common.ERC20Transfer, error)

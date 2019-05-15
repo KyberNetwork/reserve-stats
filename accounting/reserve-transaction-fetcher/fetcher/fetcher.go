@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	etherscan "github.com/nanmu42/etherscan-api"
 	"go.uber.org/zap"
 
@@ -14,14 +15,15 @@ import (
 
 // EtherscanTransactionFetcher is an implementation of TransactionFetcher that uses Etherscan API.
 type EtherscanTransactionFetcher struct {
-	sugar   *zap.SugaredLogger
-	client  *etherscan.Client
-	attempt int
+	sugar     *zap.SugaredLogger
+	client    *etherscan.Client
+	ethClient *ethclient.Client
+	attempt   int
 }
 
 // NewEtherscanTransactionFetcher returns a new EtherscanTransactionFetcher instance.
-func NewEtherscanTransactionFetcher(sugar *zap.SugaredLogger, client *etherscan.Client, attempt int) *EtherscanTransactionFetcher {
-	return &EtherscanTransactionFetcher{sugar: sugar, client: client, attempt: attempt}
+func NewEtherscanTransactionFetcher(sugar *zap.SugaredLogger, client *etherscan.Client, ethClient *ethclient.Client, attempt int) *EtherscanTransactionFetcher {
+	return &EtherscanTransactionFetcher{sugar: sugar, client: client, ethClient: ethClient, attempt: attempt}
 }
 
 type fetchFn struct {
@@ -168,7 +170,10 @@ func (f *EtherscanTransactionFetcher) InternalTx(addr ethereum.Address, from, to
 	txs := make([]common.InternalTx, len(results))
 	for i, v := range results {
 		tx := v.(etherscan.InternalTx)
-		txs[i] = common.EtherscanInternalTxToCommon(tx)
+		txs[i], err = common.EtherscanInternalTxToCommon(tx, f.ethClient)
+		if err != nil {
+			return txs, err
+		}
 	}
 	return txs, nil
 }

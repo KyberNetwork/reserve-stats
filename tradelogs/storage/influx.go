@@ -294,6 +294,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.Country.String(): log.Country,
 
 		logschema.LogIndex.String(): strconv.FormatUint(uint64(log.Index), 10),
+		logschema.UID.String():      log.UID,
 	}
 
 	if !blockchain.IsZeroAddress(log.SrcReserveAddress) {
@@ -342,7 +343,6 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.BlockNumber.String():           int64(log.BlockNumber),
 		logschema.TxHash.String():                log.TransactionHash.String(),
 		logschema.IP.String():                    log.IP,
-		logschema.UID.String():                   log.UID,
 		logschema.EthUSDProvider.String():        log.ETHUSDProvider,
 		logschema.SourceWalletFeeAmount.String(): srcWalletFee,
 		logschema.DestWalletFeeAmount.String():   dstWalletFee,

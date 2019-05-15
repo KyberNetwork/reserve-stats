@@ -2,12 +2,14 @@ package storage
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
@@ -45,9 +47,8 @@ func newTestInfluxStorage(db string) (*InfluxStorage, error) {
 
 // tearDown remove the database that storing trade logs measurements.
 func (is *InfluxStorage) tearDown() error {
-	// _, err := influxdb.QueryDB(is.influxClient, fmt.Sprintf("DROP DATABASE %s", is.dbName), is.dbName)
-	// return err
-	return nil
+	_, err := influxdb.QueryDB(is.influxClient, fmt.Sprintf("DROP DATABASE %s", is.dbName), is.dbName)
+	return err
 }
 
 func getSampleTradeLogs(dataPath string) ([]common.TradeLog, error) {

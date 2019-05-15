@@ -214,11 +214,6 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	ethClient, err := blockchain.NewEthereumClientFromFlag(c)
-	if err != nil {
-		return err
-	}
-
 	if len(c.String(toBlockFlag)) == 0 {
 		header, err := ethClient.HeaderByNumber(context.Background(), nil)
 		if err != nil {

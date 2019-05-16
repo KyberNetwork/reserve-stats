@@ -9,11 +9,9 @@ import (
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	libredis "github.com/KyberNetwork/reserve-stats/lib/redis"
 	usercommon "github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/reserve-stats/users/http"
-	"github.com/KyberNetwork/reserve-stats/users/storage"
 )
 
 func main() {
@@ -25,7 +23,7 @@ func main() {
 
 	app.Flags = append(app.Flags, usercommon.NewUserCapCliFlags()...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.UsersPort)...)
-	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
+	app.Flags = append(app.Flags, libredis.NewCliFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -44,28 +42,17 @@ func run(c *cli.Context) error {
 
 	sugar.Info("Run user module")
 
-	// Store trade logs into influx DB
-	influxClient, err := influxdb.NewClientFromContext(c)
+	redisCacheClient, err := libredis.NewClientFromContext(c)
 	if err != nil {
 		return err
 	}
-
-	influxStorage, err := storage.NewInfluxStorage(
-		sugar,
-		common.DatabaseName,
-		influxClient,
-	)
-	if err != nil {
-		return err
-	}
-
 	userCapConf := usercommon.NewUserCapConfigurationFromContext(c)
 
 	server := http.NewServer(
 		sugar,
 		coingecko.New(),
 		httputil.NewHTTPAddressFromContext(c),
-		influxStorage,
+		redisCacheClient,
 		userCapConf)
 	return server.Run()
 }

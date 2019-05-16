@@ -209,12 +209,12 @@ func run(c *cli.Context) error {
 			return err
 		}
 	}
+	ethClient, err := blockchain.NewEthereumClientFromFlag(c)
+	if err != nil {
+		return err
+	}
 
 	if len(c.String(toBlockFlag)) == 0 {
-		ethClient, err := blockchain.NewEthereumClientFromFlag(c)
-		if err != nil {
-			return err
-		}
 		header, err := ethClient.HeaderByNumber(context.Background(), nil)
 		if err != nil {
 			return err
@@ -247,7 +247,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	f := fetcher.NewEtherscanTransactionFetcher(sugar, etherscanClient, attempt)
+	f := fetcher.NewEtherscanTransactionFetcher(sugar, etherscanClient, ethClient, attempt)
 	for _, addr := range addrs {
 		fromBlock, toBlock, addr := fromBlock, toBlock, addr
 		if err := s.StoreReserve(addr.Address, addr.Type.String()); err != nil {

@@ -4,8 +4,6 @@ import (
 	"encoding/csv"
 	"log"
 	"os"
-	"path/filepath"
-	"runtime"
 	"strconv"
 
 	"github.com/urfave/cli"
@@ -45,11 +43,6 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func currentLocation() string {
-	_, fileName, _, _ := runtime.Caller(0)
-	return filepath.Dir(fileName)
 }
 
 func importTradeHistory(sugar *zap.SugaredLogger, historyFile string, hdb *postgres.HuobiStorage) error {

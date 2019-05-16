@@ -3,11 +3,13 @@ package fetcher
 import (
 	"fmt"
 	"math/big"
+	"sync"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	etherscan "github.com/nanmu42/etherscan-api"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
@@ -150,6 +152,11 @@ func (f *EtherscanTransactionFetcher) NormalTx(addr ethereum.Address, from, to *
 
 // InternalTx returns all internal transaction of given address between block range.
 func (f *EtherscanTransactionFetcher) InternalTx(addr ethereum.Address, from, to *big.Int, offset int) ([]common.InternalTx, error) {
+	var (
+		logger = f.sugar.With("func", "reserve-transaction-fetcher/InternalTx")
+		temp   sync.Map
+		g      errgroup.Group
+	)
 	fn := newFetchFunction("internal", func(address string, startBlock *int, endBlock *int, page int, offset int) ([]interface{}, error) {
 		internalTxs, err := f.client.InternalTxByAddress(address, startBlock, endBlock, page, offset, false)
 		if err != nil {
@@ -170,10 +177,38 @@ func (f *EtherscanTransactionFetcher) InternalTx(addr ethereum.Address, from, to
 	txs := make([]common.InternalTx, len(results))
 	for i, v := range results {
 		tx := v.(etherscan.InternalTx)
-		txs[i], err = common.EtherscanInternalTxToCommon(tx, f.ethClient, f.sugar)
-		if err != nil {
-			return txs, err
+		g.Go(func(index int) func() error {
+			return func() error {
+				internalTx, err := common.EtherscanInternalTxToCommon(tx, f.ethClient, f.sugar)
+				if err != nil {
+					logger.Errorw("convert from Etherscan internal tx to common failed", "error", err)
+				}
+				temp.Store(index, internalTx)
+				return nil
+			}
+		}(i),
+		)
+	}
+	if err = g.Wait(); err != nil {
+		return txs, err
+	}
+
+	temp.Range(func(index, value interface{}) bool {
+		i, ok := index.(int)
+		if !ok {
+			err = fmt.Errorf("index (%vl) cannot be asserted to integer", index)
+			return false
 		}
+		tx, ok := value.(common.InternalTx)
+		if !ok {
+			err = fmt.Errorf("value (%v) cannot be asserted to common.InternalTx", value)
+			return false
+		}
+		txs[i] = tx
+		return true
+	})
+	if err != nil {
+		return txs, err
 	}
 	return txs, nil
 }

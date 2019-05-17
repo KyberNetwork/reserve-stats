@@ -34,6 +34,13 @@ const (
 	defaultAttemptValue        = 4
 )
 
+func minBig(a, b *big.Int) *big.Int {
+	if a.Cmp(b) != 1 {
+		return a
+	}
+	return b
+}
+
 func fetchTx(
 	sugar *zap.SugaredLogger,
 	f fetcher.TransactionFetcher,
@@ -41,6 +48,9 @@ func fetchTx(
 	addr common.ReserveAddress,
 	fromBlock, toBlock *big.Int,
 	normalOffset, internalOffset, transferOffset int) error {
+	if fromBlock == nil {
+		fromBlock = big.NewInt(0)
+	}
 	var logger = sugar.With(
 		"func", "fetchTx",
 		"addr", addr.Address.String(),
@@ -48,57 +58,71 @@ func fetchTx(
 		"to", toBlock.String(),
 	)
 
-	if addr.Type == common.Reserve ||
-		addr.Type == common.IntermediateOperator ||
-		addr.Type == common.PricingOperator ||
-		addr.Type == common.SanityOperator ||
-		addr.Type == common.DepositOperator {
-		logger.Infow("fetching normal transactions")
-		normalTxs, err := f.NormalTx(addr.Address, fromBlock, toBlock, normalOffset)
-		if err != nil {
-			return err
-		}
+	logger.Infow("start fetching")
 
-		if len(normalTxs) > 0 {
-			logger.Infow("storing normal transactions to database", "transactions", len(normalTxs))
-			if err = s.StoreNormalTx(normalTxs, addr.Address); err != nil {
+	// batch 1000 block
+	batch := big.NewInt(50000)
+	endBlock := big.NewInt(fromBlock.Int64())
+	for endBlock.Add(endBlock, batch); endBlock.Cmp(toBlock) != 1; endBlock = minBig(endBlock.Add(endBlock, batch), toBlock) {
+		if addr.Type == common.Reserve ||
+			addr.Type == common.IntermediateOperator ||
+			addr.Type == common.PricingOperator ||
+			addr.Type == common.SanityOperator ||
+			addr.Type == common.DepositOperator {
+			logger.Infow("fetching normal transactions", "fromBlock", fromBlock, "toBlock", endBlock)
+			normalTxs, err := f.NormalTx(addr.Address, fromBlock, endBlock, normalOffset)
+			if err != nil {
 				return err
+			}
+
+			if len(normalTxs) > 0 {
+				logger.Infow("storing normal transactions to database", "transactions", len(normalTxs))
+				if err = s.StoreNormalTx(normalTxs, addr.Address); err != nil {
+					return err
+				}
+			}
+
+			logger.Infow("fetching internal transactions", "fromBlock", fromBlock, "toBlock", endBlock)
+			internalTxs, err := f.InternalTx(addr.Address, fromBlock, endBlock, internalOffset)
+			if err != nil {
+				return err
+			}
+
+			if len(internalTxs) > 0 {
+				logger.Infow("storing internal transactions to database", "transactions", len(internalTxs))
+				if err = s.StoreInternalTx(internalTxs, addr.Address); err != nil {
+					return err
+				}
 			}
 		}
 
-		logger.Infow("fetching internal transactions")
-		internalTxs, err := f.InternalTx(addr.Address, fromBlock, toBlock, internalOffset)
-		if err != nil {
-			return err
-		}
-
-		if len(internalTxs) > 0 {
-			logger.Infow("storing internal transactions to database", "transactions", len(internalTxs))
-			if err = s.StoreInternalTx(internalTxs, addr.Address); err != nil {
+		// for reserve, intermediate address type, need to fetch: normal, internal, ERC20 transactions.
+		// for pricing operator, sanity operator, we need to fetch: normal, internal transactions as they are not supposed
+		// to hold any ERC20 tokens.
+		if addr.Type == common.Reserve || addr.Type == common.IntermediateOperator || addr.Type == common.CompanyWallet {
+			logger.Infow("fetching ERC20 transactions", "fromBlock", fromBlock, "toBlock", endBlock)
+			transfers, err := f.ERC20Transfer(addr.Address, fromBlock, endBlock, transferOffset)
+			if err != nil {
 				return err
 			}
+			logger.Infow("storing ERC20 transfers to database", "transfers", len(transfers))
+			if len(transfers) > 0 {
+				if err = s.StoreERC20Transfer(transfers, addr.Address); err != nil {
+					return err
+				}
+			}
 		}
+
+		logger.Infow("storing last inserted block to database")
+		if err := s.StoreLastInserted(addr.Address, endBlock); err != nil {
+			return err
+		}
+		if endBlock.Cmp(toBlock) == 0 {
+			break
+		}
+		fromBlock = big.NewInt(0).Set(endBlock)
 	}
-
-	// for reserve, intermediate address type, need to fetch: normal, internal, ERC20 transactions.
-	// for pricing operator, sanity operator, we need to fetch: normal, internal transactions as they are not supposed
-	// to hold any ERC20 tokens.
-	if addr.Type == common.Reserve || addr.Type == common.IntermediateOperator || addr.Type == common.CompanyWallet {
-		logger.Infow("fetching ERC20 transactions")
-		transfers, err := f.ERC20Transfer(addr.Address, fromBlock, toBlock, transferOffset)
-		if err != nil {
-			return err
-		}
-		logger.Infow("storing ERC20 transfers to database", "transfers", len(transfers))
-		if len(transfers) > 0 {
-			if err = s.StoreERC20Transfer(transfers, addr.Address); err != nil {
-				return err
-			}
-		}
-	}
-
-	logger.Infow("storing last inserted block to database")
-	return s.StoreLastInserted(addr.Address, toBlock)
+	return nil
 }
 
 func main() {

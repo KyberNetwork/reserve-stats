@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	etherscan "github.com/nanmu42/etherscan-api"
 	"go.uber.org/zap"
@@ -21,6 +22,7 @@ const (
 	transferEvent = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
 	timeout = 10 * time.Second
+	attempt = 4
 )
 
 // NormalTx holds info from normal tx query.
@@ -198,9 +200,19 @@ func (et *ERC20Transfer) UnmarshalJSON(data []byte) error {
 
 //DetectTradeInternalTransaction detect if a provided txHash is belong to a trade transaction or not
 func DetectTradeInternalTransaction(txHash ethereum.Hash, ethAmount *big.Int, ethClient *ethclient.Client) (bool, error) {
+	var (
+		err     error
+		receipt *types.Receipt
+	)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	receipt, err := ethClient.TransactionReceipt(ctx, txHash)
+	for i := 0; i < attempt; i++ {
+		receipt, err = ethClient.TransactionReceipt(ctx, txHash)
+		if err == nil {
+			break
+		}
+		time.Sleep(3 * time.Second)
+	}
 	if err != nil {
 		return false, err
 	}
@@ -235,10 +247,13 @@ func DetectTradeInternalTransaction(txHash ethereum.Hash, ethAmount *big.Int, et
 }
 
 //EtherscanInternalTxToCommon transforms etherScan.InternalTx to accounting's InternalTx
-func EtherscanInternalTxToCommon(tx etherscan.InternalTx, ethClient *ethclient.Client, sugar *zap.SugaredLogger) (InternalTx, error) {
+func EtherscanInternalTxToCommon(tx etherscan.InternalTx, ethClient *ethclient.Client, sugar *zap.SugaredLogger, throttle chan int) (InternalTx, error) {
 	var (
 		logger = sugar.With("func", "tx-types/EtherscanInternalTxToCommon")
 	)
+	defer func() {
+		<-throttle
+	}()
 	// Detect if an internal tx is belong to a trade or not
 	isTrade, err := DetectTradeInternalTransaction(ethereum.HexToHash(tx.Hash), tx.Value.Int(), ethClient)
 	if err != nil {
@@ -263,11 +278,19 @@ func EtherscanInternalTxToCommon(tx etherscan.InternalTx, ethClient *ethclient.C
 func DetectTradeTransaction(tx etherscan.ERC20Transfer, ethClient *ethclient.Client) (bool, error) {
 	var (
 		transferEventIndex uint
+		receipt            *types.Receipt
+		err                error
 	)
 	txHash := ethereum.HexToHash(tx.Hash)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	receipt, err := ethClient.TransactionReceipt(ctx, txHash)
+	for i := 0; i < attempt; i++ {
+		receipt, err = ethClient.TransactionReceipt(ctx, txHash)
+		if err == nil {
+			break
+		}
+		time.Sleep(3 * time.Second)
+	}
 	if err != nil {
 		return false, err
 	}
@@ -314,10 +337,13 @@ func DetectTradeTransaction(tx etherscan.ERC20Transfer, ethClient *ethclient.Cli
 }
 
 //EtherscanERC20TransferToCommon transforms etherScan.ERC20Trasnfer to accounting's ERC20Transfer
-func EtherscanERC20TransferToCommon(tx etherscan.ERC20Transfer, ethClient *ethclient.Client, sugar *zap.SugaredLogger) (ERC20Transfer, error) {
+func EtherscanERC20TransferToCommon(tx etherscan.ERC20Transfer, ethClient *ethclient.Client, sugar *zap.SugaredLogger, throttle chan int) (ERC20Transfer, error) {
 	var (
 		logger = sugar.With("func", "tx-types/EtherscanERC20TransferToCommon")
 	)
+	defer func() {
+		<-throttle
+	}()
 	//Detect if a transfer transaction is a trade or not
 	isTrade, err := DetectTradeTransaction(tx, ethClient)
 	if err != nil {

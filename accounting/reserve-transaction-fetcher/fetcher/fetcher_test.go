@@ -19,11 +19,12 @@ func TestFetcher(t *testing.T) {
 		sugar     = testutil.MustNewDevelopmentSugaredLogger()
 		testAddr1 = ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")
 		//testAddr2 = ethereum.HexToAddress("0xdd974d5c2e2928dea5f71b9825b8b646686bd200") // KNC ERC20 contract
-		client = etherscan.New(etherscan.Mainnet, "")
-		offset = 500
+		client    = etherscan.New(etherscan.Mainnet, "")
+		ethClient = testutil.MustNewDevelopmentwEthereumClient()
+		offset    = 500
 	)
 
-	f := NewEtherscanTransactionFetcher(sugar, client, 2)
+	f := NewEtherscanTransactionFetcher(sugar, client, ethClient, 2)
 
 	// the result should not included the to block: 7358394
 	expected := []int{7356442, 7356961, 7357002, 7357451, 7357872, 7358016, 7358169, 7358208}

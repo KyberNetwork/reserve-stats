@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
@@ -63,11 +64,13 @@ func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err
 	var (
 		logger    = bd.sugar.With("func", "accounting/binance_storage.UpdateTradeHistory")
 		tradeJSON []byte
+		dataJSON  [][]byte
+		ids       []uint64
 	)
 	const updateQuery = `INSERT INTO binance_trades (id, data)
 	VALUES(
-		$1,
-		$2
+		unnest($1::BIGINT[]),
+		unnest($2::JSONB[])
 	) ON CONFLICT ON CONSTRAINT binance_trades_pk DO NOTHING;
 	`
 
@@ -77,16 +80,20 @@ func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err
 	}
 
 	defer pgsql.CommitOrRollback(tx, bd.sugar, &err)
-
 	logger.Debugw("query update trade history", "query", updateQuery)
+
+	// prepare data for insert into db
 	for _, trade := range trades {
 		tradeJSON, err = json.Marshal(trade)
 		if err != nil {
 			return
 		}
-		if _, err = tx.Exec(updateQuery, trade.ID, tradeJSON); err != nil {
-			return
-		}
+		ids = append(ids, trade.ID)
+		dataJSON = append(dataJSON, tradeJSON)
+	}
+
+	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON)); err != nil {
+		return
 	}
 
 	return err

@@ -51,7 +51,8 @@ func fetchTx(
 	if addr.Type == common.Reserve ||
 		addr.Type == common.IntermediateOperator ||
 		addr.Type == common.PricingOperator ||
-		addr.Type == common.SanityOperator {
+		addr.Type == common.SanityOperator ||
+		addr.Type == common.DepositOperator {
 		logger.Infow("fetching normal transactions")
 		normalTxs, err := f.NormalTx(addr.Address, fromBlock, toBlock, normalOffset)
 		if err != nil {
@@ -208,12 +209,12 @@ func run(c *cli.Context) error {
 			return err
 		}
 	}
+	ethClient, err := blockchain.NewEthereumClientFromFlag(c)
+	if err != nil {
+		return err
+	}
 
 	if len(c.String(toBlockFlag)) == 0 {
-		ethClient, err := blockchain.NewEthereumClientFromFlag(c)
-		if err != nil {
-			return err
-		}
 		header, err := ethClient.HeaderByNumber(context.Background(), nil)
 		if err != nil {
 			return err
@@ -246,7 +247,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	f := fetcher.NewEtherscanTransactionFetcher(sugar, etherscanClient, attempt)
+	f := fetcher.NewEtherscanTransactionFetcher(sugar, etherscanClient, ethClient, attempt)
 	for _, addr := range addrs {
 		fromBlock, toBlock, addr := fromBlock, toBlock, addr
 		if err := s.StoreReserve(addr.Address, addr.Type.String()); err != nil {

@@ -9,6 +9,7 @@ Returns Ethereum addresses related to KyberNetwork's reserve. An address will ha
 contract
 - **intermediate operator**: some centralized exchanges (Huobi) does not allow deposit/withdraw directly to contract
 account. Therefore, we need to use a intermediate account when deposit/withdraw funds to reserve contract.
+- **deposit operator**: operator responsible for doing deposit directly into centralized exchanges
 - **centralized exchange deposit addresses:** Ethereum address to deposit funds to centralized exchanges
 (binance: 0x44d34a119ba21a42167ff8b77a88f0fc7bb2db90, huobi: 0x0c8fd73eaf6089ef1b91231d0a07d0d2ca2b9d66)
 - **company wallet**: ethereum address for company wallet
@@ -95,7 +96,7 @@ curl -X POST "http://gateway.local/addresses" \
 Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
 address | integer | true | none | address value 
-type | string | true | including: "reserve", "pricing_operator", "sanity_operator", "intermediate_operator", "cex_depositaddress", "company_wallet"
+type | string | true | including: "reserve", "pricing_operator", "sanity_operator", "intermediate_operator", "cex_deposit_address", "company_wallet", "deposit_operator"
 description | string | false | empty | description of the reserve address 
 
 ## Update an address
@@ -122,5 +123,5 @@ Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
 id | integer | true | none | 
 address | string | true | none | address value 
-type | string | true | including: "reserve", "pricing_operator", "sanity_operator", "intermediate_operator", "cex_deposit_address", "company_wallet" 
+type | string | true | including: "reserve", "pricing_operator", "sanity_operator", "intermediate_operator", "cex_deposit_address", "company_wallet", "deposit_operator" 
 description | string | false | empty | description of the reserve address 

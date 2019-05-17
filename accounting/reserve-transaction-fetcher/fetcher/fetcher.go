@@ -3,25 +3,33 @@ package fetcher
 import (
 	"fmt"
 	"math/big"
+	"sync"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	etherscan "github.com/nanmu42/etherscan-api"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 )
 
+const (
+	maxConcurrentRequest = 50
+)
+
 // EtherscanTransactionFetcher is an implementation of TransactionFetcher that uses Etherscan API.
 type EtherscanTransactionFetcher struct {
-	sugar   *zap.SugaredLogger
-	client  *etherscan.Client
-	attempt int
+	sugar     *zap.SugaredLogger
+	client    *etherscan.Client
+	ethClient *ethclient.Client
+	attempt   int
 }
 
 // NewEtherscanTransactionFetcher returns a new EtherscanTransactionFetcher instance.
-func NewEtherscanTransactionFetcher(sugar *zap.SugaredLogger, client *etherscan.Client, attempt int) *EtherscanTransactionFetcher {
-	return &EtherscanTransactionFetcher{sugar: sugar, client: client, attempt: attempt}
+func NewEtherscanTransactionFetcher(sugar *zap.SugaredLogger, client *etherscan.Client, ethClient *ethclient.Client, attempt int) *EtherscanTransactionFetcher {
+	return &EtherscanTransactionFetcher{sugar: sugar, client: client, ethClient: ethClient, attempt: attempt}
 }
 
 type fetchFn struct {
@@ -148,6 +156,12 @@ func (f *EtherscanTransactionFetcher) NormalTx(addr ethereum.Address, from, to *
 
 // InternalTx returns all internal transaction of given address between block range.
 func (f *EtherscanTransactionFetcher) InternalTx(addr ethereum.Address, from, to *big.Int, offset int) ([]common.InternalTx, error) {
+	var (
+		logger   = f.sugar.With("func", "reserve-transaction-fetcher/InternalTx")
+		temp     sync.Map
+		g        errgroup.Group
+		throttle = make(chan int, maxConcurrentRequest)
+	)
 	fn := newFetchFunction("internal", func(address string, startBlock *int, endBlock *int, page int, offset int) ([]interface{}, error) {
 		internalTxs, err := f.client.InternalTxByAddress(address, startBlock, endBlock, page, offset, false)
 		if err != nil {
@@ -167,14 +181,53 @@ func (f *EtherscanTransactionFetcher) InternalTx(addr ethereum.Address, from, to
 
 	txs := make([]common.InternalTx, len(results))
 	for i, v := range results {
+		throttle <- 1
 		tx := v.(etherscan.InternalTx)
-		txs[i] = common.EtherscanInternalTxToCommon(tx)
+		g.Go(func(index int) func() error {
+			return func() error {
+				internalTx, err := common.EtherscanInternalTxToCommon(tx, f.ethClient, f.sugar, throttle)
+				if err != nil {
+					logger.Errorw("convert from Etherscan internal tx to common failed", "error", err, "tx", tx.Hash)
+					return err
+				}
+				temp.Store(index, internalTx)
+				return nil
+			}
+		}(i),
+		)
+	}
+	if err = g.Wait(); err != nil {
+		return txs, err
+	}
+
+	temp.Range(func(index, value interface{}) bool {
+		i, ok := index.(int)
+		if !ok {
+			err = fmt.Errorf("index (%vl) cannot be asserted to integer", index)
+			return false
+		}
+		tx, ok := value.(common.InternalTx)
+		if !ok {
+			err = fmt.Errorf("value (%v) cannot be asserted to common.InternalTx", value)
+			return false
+		}
+		txs[i] = tx
+		return true
+	})
+	if err != nil {
+		return txs, err
 	}
 	return txs, nil
 }
 
 // ERC20Transfer returns all ERC20 transfers of given address between given block range.
 func (f *EtherscanTransactionFetcher) ERC20Transfer(addr ethereum.Address, from, to *big.Int, offset int) ([]common.ERC20Transfer, error) {
+	var (
+		logger   = f.sugar.With("func", "reserve-transaction-fetcher/InternalTx")
+		temp     sync.Map
+		g        errgroup.Group
+		throttle = make(chan int, maxConcurrentRequest)
+	)
 	fn := newFetchFunction("transfer", func(address string, startBlock *int, endBlock *int, page int, offset int) ([]interface{}, error) {
 		transfers, err := f.client.ERC20Transfers(nil, &address, startBlock, endBlock, page, offset)
 		if err != nil {
@@ -195,7 +248,39 @@ func (f *EtherscanTransactionFetcher) ERC20Transfer(addr ethereum.Address, from,
 	transfers := make([]common.ERC20Transfer, len(results))
 	for i, v := range results {
 		transfer := v.(etherscan.ERC20Transfer)
-		transfers[i] = common.EtherscanERC20TransferToCommon(transfer)
+		throttle <- 1
+		g.Go(func(index int) func() error {
+			return func() error {
+				transferTx, err := common.EtherscanERC20TransferToCommon(transfer, f.ethClient, f.sugar, throttle)
+				if err != nil {
+					logger.Errorw("convert from Etherscan erc20 tx to common failed", "error", err, "tx", transfer.Hash)
+					return err
+				}
+				temp.Store(index, transferTx)
+				return nil
+			}
+		}(i),
+		)
+	}
+	if err = g.Wait(); err != nil {
+		return transfers, err
+	}
+	temp.Range(func(index, value interface{}) bool {
+		i, ok := index.(int)
+		if !ok {
+			err = fmt.Errorf("index (%v) cannot be asserted to integer", index)
+			return false
+		}
+		tx, ok := value.(common.ERC20Transfer)
+		if !ok {
+			err = fmt.Errorf("value (%v) cannot be asserted to common.InternalTx", value)
+			return false
+		}
+		transfers[i] = tx
+		return true
+	})
+	if err != nil {
+		return transfers, err
 	}
 	return transfers, nil
 }

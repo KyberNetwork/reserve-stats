@@ -28,10 +28,12 @@ const (
 	internalOffsetFlag         = "internal-offset"
 	transferOffsetFlag         = "transfer-offset"
 	attemptFlag                = "attempt"
+	batchFlag                  = "batch"
 	defaultNormalOffsetValue   = 500
 	defaultInternalOffsetValue = 500
 	defaultTransferOffsetValue = 200
 	defaultAttemptValue        = 4
+	defaultBatchValue          = "50000"
 )
 
 func minBig(a, b *big.Int) *big.Int {
@@ -47,7 +49,8 @@ func fetchTx(
 	s storage.ReserveTransactionStorage,
 	addr common.ReserveAddress,
 	fromBlock, toBlock *big.Int,
-	normalOffset, internalOffset, transferOffset int) error {
+	normalOffset, internalOffset, transferOffset int,
+	batch *big.Int) error {
 	if fromBlock == nil {
 		fromBlock = big.NewInt(0)
 	}
@@ -60,8 +63,6 @@ func fetchTx(
 
 	logger.Infow("start fetching")
 
-	// batch 1000 block
-	batch := big.NewInt(50000)
 	endBlock := big.NewInt(fromBlock.Int64())
 	for endBlock.Add(endBlock, batch); endBlock.Cmp(toBlock) != 1; endBlock = minBig(endBlock.Add(endBlock, batch), toBlock) {
 		if addr.Type == common.Reserve ||
@@ -172,6 +173,12 @@ func main() {
 			EnvVar: "ATTEMPT",
 			Value:  defaultAttemptValue,
 		},
+		cli.StringFlag{
+			Name:   batchFlag,
+			Usage:  "number of block to request in one batch",
+			EnvVar: "BATCH",
+			Value:  defaultBatchValue,
+		},
 	)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultTransactionsDB)...)
 	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
@@ -255,6 +262,10 @@ func run(c *cli.Context) error {
 	internalOffset := c.Int(internalOffsetFlag)
 	transferOffset := c.Int(transferOffsetFlag)
 	attempt := c.Int(attemptFlag)
+	batch, err := libapp.ParseBigIntFlag(c, batchFlag)
+	if err != nil {
+		return err
+	}
 
 	etherscanClient, err := etherscan.NewEtherscanClientFromContext(c)
 	if err != nil {
@@ -292,7 +303,7 @@ func run(c *cli.Context) error {
 			)
 		}
 
-		if err = fetchTx(sugar, f, s, addr, fromBlock, toBlock, normalOffset, internalOffset, transferOffset); err != nil {
+		if err = fetchTx(sugar, f, s, addr, fromBlock, toBlock, normalOffset, internalOffset, transferOffset, batch); err != nil {
 			return err
 		}
 	}

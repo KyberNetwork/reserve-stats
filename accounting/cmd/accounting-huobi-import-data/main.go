@@ -69,11 +69,12 @@ func importTradeHistory(sugar *zap.SugaredLogger, historyFile string, hdb *postg
 		}
 		orderID, err := strconv.ParseInt(line[0], 10, 64)
 		if err != nil {
+			logger.Debugw("get order id error", "error", err, "id", id)
 			return err
 		}
 		logger.Infow("order id", "id", orderID)
 
-		updatedAt, err := strconv.ParseUint(line[9], 10, 64)
+		updatedAt, err := strconv.ParseUint(line[8], 10, 64)
 		if err != nil {
 			return err
 		}
@@ -81,22 +82,26 @@ func importTradeHistory(sugar *zap.SugaredLogger, historyFile string, hdb *postg
 
 		orderType, err := strconv.ParseInt(line[2], 10, 64)
 		if err != nil {
+			logger.Debugw("get order type error", "error", err, "id", id)
 			return err
 		}
 		logger.Infow("order type", "type", orderType)
 
 		orderState, err := strconv.ParseInt(line[4], 10, 64)
 		if err != nil {
+			logger.Debugw("get order state error", "error", err, "id", id)
 			return err
 		}
 
 		orderAmount, err := strconv.ParseFloat(line[6], 64)
 		if err != nil {
+			logger.Debugw("get order amount error", "error", err, "id", id)
 			return err
 		}
 
 		orderFee, err := strconv.ParseFloat(line[7], 64)
 		if err != nil {
+			logger.Debugw("get order fee error", "error", err, "id", id)
 			return err
 		}
 
@@ -110,6 +115,10 @@ func importTradeHistory(sugar *zap.SugaredLogger, historyFile string, hdb *postg
 				State:     states[orderState],
 				FieldFees: line[7],
 				Amount:    strconv.FormatFloat(orderAmount, 'f', -1, 64),
+				// because we use created-at as timestamp to detect the latest time stored
+				// however, the data huobi sent us only have one field updated-at related to time then
+				// we use this field as created timestamp also
+				CreatedAt: updatedAt,
 			}
 			switch orderState {
 			case 5, 6:
@@ -118,7 +127,7 @@ func importTradeHistory(sugar *zap.SugaredLogger, historyFile string, hdb *postg
 				order.CanceledAt = updatedAt
 			}
 			tradeHistories[orderID] = order
-		} else if orderState == 4 || orderState == 6 {
+		} else if orderState == 4 || (orderState == 6 && tradeHistories[orderID].State != "filled") {
 			// if order is partial-filled or filled, then the amount should be the sum of all
 			order := tradeHistories[orderID]
 			amount, err := strconv.ParseFloat(order.Amount, 64)
@@ -144,7 +153,6 @@ func importWithdrawHistory(sugar *zap.SugaredLogger, historyFile string, hdb *wi
 	var (
 		logger            = sugar.With("func", "accounting-huobi-import-data/importWithdrawHistory")
 		withdrawHistories []huobi.WithdrawHistory
-		// withdrawStates    = []string{""}
 	)
 	logger.Infow("import withdraw history from file", "file", historyFile)
 
@@ -193,7 +201,7 @@ func importWithdrawHistory(sugar *zap.SugaredLogger, historyFile string, hdb *wi
 			TxHash:    line[7],
 			Address:   line[6],
 			UpdatedAt: updatedAt,
-			// State:    withdrawStates[state],
+			State:     "confirmed",
 		})
 	}
 	return hdb.UpdateWithdrawHistory(withdrawHistories)

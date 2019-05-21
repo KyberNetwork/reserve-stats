@@ -130,7 +130,7 @@ func run(c *cli.Context) error {
 			for _, trade := range record {
 				if _, exist := trades[trade.ID]; !exist {
 					trades[trade.ID] = trade
-				} else if trade.State == "partial-filled" || trade.State == "filled" {
+				} else if trade.State == "partial-filled" || (trade.State == "filled" && trades[trade.ID].State != "filled") {
 					tempTrade := trades[trade.ID]
 					amount, err := strconv.ParseFloat(tempTrade.Amount, 64)
 					if err != nil {

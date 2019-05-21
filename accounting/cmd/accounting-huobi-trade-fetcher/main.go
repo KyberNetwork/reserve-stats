@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/urfave/cli"
@@ -124,9 +125,37 @@ func run(c *cli.Context) error {
 			return err
 		}
 
-		var trades []huobi.TradeHistory
+		var trades = make(map[int64]huobi.TradeHistory)
 		for _, record := range data {
-			trades = append(trades, record...)
+			for _, trade := range record {
+				if _, exist := trades[trade.ID]; !exist {
+					trades[trade.ID] = trade
+				} else if trade.State == "partial-filled" || trade.State == "filled" {
+					tempTrade := trades[trade.ID]
+					amount, err := strconv.ParseFloat(tempTrade.Amount, 64)
+					if err != nil {
+						return err
+					}
+					orderAmount, err := strconv.ParseFloat(trade.FieldAmount, 64)
+					if err != nil {
+						return err
+					}
+					amount += orderAmount
+					fee, err := strconv.ParseFloat(tempTrade.FieldFees, 64)
+					if err != nil {
+						return err
+					}
+					orderFee, err := strconv.ParseFloat(trade.FieldFees, 64)
+					if err != nil {
+						return err
+					}
+					fee += orderFee
+					tempTrade.Amount = strconv.FormatFloat(amount, 'f', -1, 64)
+					tempTrade.FieldFees = strconv.FormatFloat(fee, 'f', -1, 64)
+					tempTrade.State = trade.State
+					trades[trade.ID] = tempTrade
+				}
+			}
 		}
 
 		if err = hdb.UpdateTradeHistory(trades); err != nil {

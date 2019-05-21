@@ -15,8 +15,8 @@ import (
 
 func TestSaveAndGetAccountingRates(t *testing.T) {
 	var (
-		testData = []huobi.TradeHistory{
-			{
+		testData = map[int64]huobi.TradeHistory{
+			15584072551: {
 				ID:              15584072551,
 				Symbol:          "cmtetsh",
 				AccountID:       3375841,
@@ -42,7 +42,7 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 		td := testData[0]
 		td.ID++
 		td.CreatedAt += 100
-		testData = append(testData, td)
+		testData[td.ID] = td
 	}
 	sugar.Debug(len(testData))
 

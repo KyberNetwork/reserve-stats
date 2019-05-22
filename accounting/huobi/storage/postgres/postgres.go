@@ -55,7 +55,7 @@ func (hdb *HuobiStorage) Close() error {
 }
 
 //UpdateTradeHistory store the TradeHistory rate at that blockInfo
-func (hdb *HuobiStorage) UpdateTradeHistory(trades []huobi.TradeHistory) error {
+func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory) error {
 	var (
 		nTrades = len(trades)
 		logger  = hdb.sugar.With(

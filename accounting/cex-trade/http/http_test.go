@@ -21,7 +21,28 @@ import (
 
 var (
 	ts          *Server
-	huobiTrades = []huobi.TradeHistory{
+	huobiTrades = map[int64]huobi.TradeHistory{
+		59378: {
+			ID:              59378,
+			Symbol:          "ethusdt",
+			AccountID:       100009,
+			Amount:          "10.1000000000",
+			Price:           "100.1000000000",
+			CreatedAt:       1526428800000,
+			Type:            "buy-limit",
+			FieldAmount:     "10.1000000000",
+			FieldCashAmount: "1011.0100000000",
+			FieldFees:       "0.0202000000",
+			FinishedAt:      1526428800000,
+			UserID:          1000,
+			Source:          "api",
+			State:           "filled",
+			CanceledAt:      0,
+			Exchange:        "huobi",
+			Batch:           "",
+		},
+	}
+	expectedHuobiTrades = []huobi.TradeHistory{
 		{
 			ID:              59378,
 			Symbol:          "ethusdt",
@@ -79,7 +100,7 @@ func TestTrades(t *testing.T) {
 				err := json.NewDecoder(resp.Body).Decode(&trades)
 				require.NoError(t, err)
 				assert.Equal(t, getTradesResponse{
-					Huobi:   huobiTrades,
+					Huobi:   expectedHuobiTrades,
 					Binance: binanceTrades,
 				}, trades)
 			},
@@ -142,7 +163,7 @@ func TestTrades(t *testing.T) {
 				err := json.NewDecoder(resp.Body).Decode(&trades)
 				require.NoError(t, err)
 				assert.Equal(t, getTradesResponse{
-					Huobi: huobiTrades,
+					Huobi: expectedHuobiTrades,
 				}, trades)
 			},
 		},

@@ -49,7 +49,6 @@ func importTradeHistory(sugar *zap.SugaredLogger, historyFile string, hdb *postg
 	var (
 		logger         = sugar.With("func", "accounting-huobi-import-data/importTradeHistory")
 		types          = []string{"", "buy-market", "sell-market", "buy-limit", "sell-limit"}
-		states         = []string{"", "pre-submitted", "submitting", "submitted", "partial-filled", "partial-canceled", "filled", "canceled", "failed"}
 		tradeHistories = make(map[int64]huobi.TradeHistory)
 	)
 	csvFile, err := os.Open(historyFile)
@@ -112,7 +111,7 @@ func importTradeHistory(sugar *zap.SugaredLogger, historyFile string, hdb *postg
 				Source:    "api",
 				Type:      types[orderType],
 				Price:     line[5],
-				State:     states[orderState],
+				State:     common.OrderState(orderState).String(),
 				FieldFees: line[7],
 				Amount:    strconv.FormatFloat(orderAmount, 'f', -1, 64),
 				// because we use created-at as timestamp to detect the latest time stored
@@ -120,14 +119,14 @@ func importTradeHistory(sugar *zap.SugaredLogger, historyFile string, hdb *postg
 				// we use this field as created timestamp also
 				CreatedAt: updatedAt,
 			}
-			switch orderState {
-			case 5, 6:
+			switch common.OrderState(orderState) {
+			case common.PartialCanceled, common.Filled:
 				order.FinishedAt = updatedAt
-			case 7:
+			case common.Canceled:
 				order.CanceledAt = updatedAt
 			}
 			tradeHistories[orderID] = order
-		} else if orderState == 4 || (orderState == 6 && tradeHistories[orderID].State != "filled") {
+		} else if orderState == int64(common.PartialFilled) || (orderState == int64(common.Filled) && tradeHistories[orderID].State != common.Filled.String()) {
 			// if order is partial-filled or filled, then the amount should be the sum of all
 			order := tradeHistories[orderID]
 			amount, err := strconv.ParseFloat(order.Amount, 64)
@@ -142,7 +141,7 @@ func importTradeHistory(sugar *zap.SugaredLogger, historyFile string, hdb *postg
 			fee += orderFee
 			order.Amount = strconv.FormatFloat(amount, 'f', -1, 64)
 			order.FieldFees = strconv.FormatFloat(fee, 'f', -1, 64)
-			order.State = states[orderState]
+			order.State = common.OrderState(orderState).String()
 			tradeHistories[orderID] = order
 		}
 	}

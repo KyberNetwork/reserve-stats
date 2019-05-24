@@ -102,15 +102,21 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 	return
 }
 
+//WithdrawRecord represent a record of binace withdraw
+type WithdrawRecord struct {
+	ID   string `db:"id"`
+	Data []byte `db:"data"`
+}
+
 //GetWithdrawHistory return list of withdraw fromTime to toTime
 func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.WithdrawHistory, error) {
 	var (
 		logger   = bd.sugar.With("func", "account/binance_storage.GetTradeHistory")
 		result   []binance.WithdrawHistory
-		dbResult [][]byte
+		dbResult []WithdrawRecord
 		tmp      binance.WithdrawHistory
 	)
-	const selectStmt = `SELECT data FROM binance_withdrawals WHERE data->>'applyTime'>=$1 AND data->>'applyTime'<=$2`
+	const selectStmt = `SELECT id, data FROM binance_withdrawals WHERE data->>'applyTime'>=$1 AND data->>'applyTime'<=$2`
 
 	logger.Debugw("querying trade history...", "query", selectStmt)
 
@@ -121,9 +127,10 @@ func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) ([]bina
 	}
 
 	for _, data := range dbResult {
-		if err := json.Unmarshal(data, &tmp); err != nil {
+		if err := json.Unmarshal(data.Data, &tmp); err != nil {
 			return result, err
 		}
+		tmp.ID = data.ID
 		result = append(result, tmp)
 	}
 

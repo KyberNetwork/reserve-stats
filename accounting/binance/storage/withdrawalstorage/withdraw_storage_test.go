@@ -36,7 +36,7 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 				Status:    6,
 			},
 			{
-				ID:        "53bb6b37ce61443f9d7fd99c21652baa",
+				ID:        "53bb6b37ce61443f9d7fd99c21652baaa",
 				Amount:    0.64,
 				Address:   "0xe813dee553d09567D4873d9bd5A 4914796367082",
 				Asset:     "ETH",
@@ -57,6 +57,15 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 			},
 			{
 				ID:        "53bb6b37ce61443f9d7fd99c21652baa",
+				Amount:    0.64,
+				Address:   "0xe813dee553d09567D4873d9bd5A 4914796367082",
+				Asset:     "ETH",
+				TxID:      "0x679d514dafb4c8eee1fce3b00a984167bed02bf69ca278e49fa4c4a8fb2308ed",
+				ApplyTime: 1522037352000,
+				Status:    6,
+			},
+			{
+				ID:        "53bb6b37ce61443f9d7fd99c21652baaa",
 				Amount:    0.64,
 				Address:   "0xe813dee553d09567D4873d9bd5A 4914796367082",
 				Asset:     "ETH",

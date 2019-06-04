@@ -55,6 +55,8 @@ const (
 	UID //uid
 	// TxSender is address of tx sender
 	TxSender //tx_sender
+	// ReceiverAddress is address that receipt dst token
+	ReceiverAddress // receiver_addr
 )
 
 //tradeLogSchemaFields translates the stringer of reserveRate fields into its enumerated form
@@ -84,4 +86,5 @@ var tradeLogSchemaFields = map[string]FieldName{
 	"dst_wallet_fee_amount": DestWalletFeeAmount,
 	"uid":                   UID,
 	"tx_sender":             TxSender,
+	"receiver_addr":         ReceiverAddress,
 }

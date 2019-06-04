@@ -50,6 +50,11 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 			return result, errors.New("log item has no topic")
 		}
 
+		tradeLog.Sender, err = crawler.getTxSender(log, 10*time.Second)
+		if err != nil {
+			return result, errors.New("could not get trade log sender")
+		}
+
 		topic := log.Topics[0]
 		switch topic.Hex() {
 		case feeToWalletEvent:

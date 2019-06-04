@@ -253,6 +253,18 @@ func (crawler *Crawler) fetchLogsWithTopics(fromBlock, toBlock *big.Int, timeout
 
 }
 
+func (crawler *Crawler) getTxSender(log types.Log, timeout time.Duration) (ethereum.Address, error) {
+	var txSender ethereum.Address
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	tx, _, err := crawler.ethClient.TransactionByHash(ctx, log.TxHash)
+	if err != nil {
+		return txSender, err
+	}
+	txSender, err = crawler.ethClient.TransactionSender(ctx, tx, log.BlockHash, log.TxIndex)
+	return txSender, err
+}
+
 // GetTradeLogs returns trade logs from KyberNetwork.
 func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
 	var (

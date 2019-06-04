@@ -54,10 +54,10 @@ type TradeLog struct {
 	WalletFees     []WalletFee `json:"-"`
 	IntegrationApp string      `json:"integration_app"`
 
-	IP      string           `json:"ip"`
-	Country string           `json:"country"`
-	UID     string           `json:"uid"`
-	Sender  ethereum.Address `json:"tx_sender"`
+	IP       string           `json:"ip"`
+	Country  string           `json:"country"`
+	UID      string           `json:"uid"`
+	TxSender ethereum.Address `json:"tx_sender"`
 
 	ETHUSDRate     float64 `json:"-"`
 	ETHUSDProvider string  `json:"-"`

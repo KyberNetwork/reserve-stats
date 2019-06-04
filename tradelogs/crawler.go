@@ -43,6 +43,7 @@ const (
 	kyberTradeEvent = "0xd30ca399cb43507ecec6a629a35cf45eb98cda550c27696dcb0d8c4a3873ce6c"
 )
 
+var defaultTimeout = 10 * time.Second
 var errUnknownLogTopic = errors.New("unknown log topic")
 
 type tradeLogFetcher func(*big.Int, *big.Int, time.Duration) ([]common.TradeLog, error)

@@ -32,7 +32,7 @@ func _() {
 	_ = x[SourceWalletFeeAmount-21]
 	_ = x[DestWalletFeeAmount-22]
 	_ = x[UID-23]
-	_ = x[Sender-24]
+	_ = x[TxSender-24]
 }
 
 const _FieldName_name = "timeblock_numbertx_hashuser_addrsrc_addrdst_addrcountryipeth_rate_providerdst_rsv_addrsrc_rsv_addrsrc_amountdst_amounteth_usd_rateeth_amountfiat_amountintegration_appwallet_addrlog_indexsrc_burn_amountdst_burn_amountsrc_wallet_fee_amountdst_wallet_fee_amountuidtx_sender"

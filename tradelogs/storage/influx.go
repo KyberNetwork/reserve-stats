@@ -131,7 +131,7 @@ func prepareTradeLogQuery() string {
 			logschema.SourceWalletFeeAmount,
 			logschema.DestWalletFeeAmount,
 			logschema.WalletAddress,
-			logschema.Sender,
+			logschema.TxSender,
 		}
 		tradeLogQuery string
 	)
@@ -296,7 +296,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 
 		logschema.LogIndex.String(): strconv.FormatUint(uint64(log.Index), 10),
 		logschema.UID.String():      log.UID,
-		logschema.Sender.String():   log.Sender.String(),
+		logschema.TxSender.String(): log.TxSender.String(),
 	}
 
 	if !blockchain.IsZeroAddress(log.SrcReserveAddress) {

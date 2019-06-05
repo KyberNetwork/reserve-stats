@@ -120,6 +120,11 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			return result, errors.New("log item has no topic")
 		}
 
+		tradeLog.TxSender, err = crawler.getTxSender(log, defaultTimeout)
+		if err != nil {
+			return result, errors.New("could not get trade log sender")
+		}
+
 		topic := log.Topics[0]
 		switch topic.Hex() {
 		case feeToWalletEvent:
@@ -148,7 +153,7 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			// get tx receipt to get reserve address
 			if len(tradeLog.BurnFees) == 0 && blockchain.IsZeroAddress(tradeLog.SrcReserveAddress) {
 				crawler.sugar.Debug("trade logs has no burn fee, no ethReceival event, no wallet fee, getting reserve address from tx receipt")
-				tradeLog.SrcReserveAddress, err = crawler.getTransactionReceipt(tradeLog.TransactionHash, 10*time.Second, log.Index)
+				tradeLog.SrcReserveAddress, err = crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout, log.Index)
 				if err != nil {
 					return nil, err
 				}
@@ -166,6 +171,7 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 		default:
 			return nil, errUnknownLogTopic
 		}
+
 	}
 
 	return result, nil

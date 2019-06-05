@@ -43,6 +43,7 @@ const (
 	kyberTradeEvent = "0xd30ca399cb43507ecec6a629a35cf45eb98cda550c27696dcb0d8c4a3873ce6c"
 )
 
+var defaultTimeout = 10 * time.Second
 var errUnknownLogTopic = errors.New("unknown log topic")
 
 type tradeLogFetcher func(*big.Int, *big.Int, time.Duration) ([]common.TradeLog, error)
@@ -251,6 +252,18 @@ func (crawler *Crawler) fetchLogsWithTopics(fromBlock, toBlock *big.Int, timeout
 	defer cancel()
 	return crawler.ethClient.FilterLogs(ctx, query)
 
+}
+
+func (crawler *Crawler) getTxSender(log types.Log, timeout time.Duration) (ethereum.Address, error) {
+	var txSender ethereum.Address
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	tx, _, err := crawler.ethClient.TransactionByHash(ctx, log.TxHash)
+	if err != nil {
+		return txSender, err
+	}
+	txSender, err = crawler.ethClient.TransactionSender(ctx, tx, log.BlockHash, log.TxIndex)
+	return txSender, err
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.

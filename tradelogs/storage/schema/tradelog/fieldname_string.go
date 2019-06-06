@@ -33,13 +33,12 @@ func _() {
 	_ = x[DestWalletFeeAmount-22]
 	_ = x[UID-23]
 	_ = x[TxSender-24]
-	_ = x[DestAddress-25]
-	_ = x[ReceiverAddress-26]
+	_ = x[ReceiverAddress-25]
 }
 
-const _FieldName_name = "timeblock_numbertx_hashuser_addrsrc_addrdst_addrcountryipeth_rate_providerdst_rsv_addrsrc_rsv_addrsrc_amountdst_amounteth_usd_rateeth_amountfiat_amountintegration_appwallet_addrlog_indexsrc_burn_amountdst_burn_amountsrc_wallet_fee_amountdst_wallet_fee_amountuidtx_senderdst_addrreceiver_addr"
+const _FieldName_name = "timeblock_numbertx_hashuser_addrsrc_addrdst_addrcountryipeth_rate_providerdst_rsv_addrsrc_rsv_addrsrc_amountdst_amounteth_usd_rateeth_amountfiat_amountintegration_appwallet_addrlog_indexsrc_burn_amountdst_burn_amountsrc_wallet_fee_amountdst_wallet_fee_amountuidtx_senderreceiver_addr"
 
-var _FieldName_index = [...]uint16{0, 4, 16, 23, 32, 40, 48, 55, 57, 74, 86, 98, 108, 118, 130, 140, 151, 166, 177, 186, 201, 216, 237, 258, 261, 270, 278, 291}
+var _FieldName_index = [...]uint16{0, 4, 16, 23, 32, 40, 48, 55, 57, 74, 86, 98, 108, 118, 130, 140, 151, 166, 177, 186, 201, 216, 237, 258, 261, 270, 283}
 
 func (i FieldName) String() string {
 	if i < 0 || i >= FieldName(len(_FieldName_index)-1) {

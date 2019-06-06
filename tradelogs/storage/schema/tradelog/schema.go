@@ -55,8 +55,6 @@ const (
 	UID //uid
 	// TxSender is address of tx sender
 	TxSender //tx_sender
-	//DestAddress
-	DestAddress //dst_addr
 	//ReceiverAddress
 	ReceiverAddress //receiver_addr
 )

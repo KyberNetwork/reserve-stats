@@ -6,6 +6,7 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/nanmu42/etherscan-api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -17,6 +18,8 @@ import (
 )
 
 type mockBroadCastClient struct{}
+
+var ec = etherscan.New(etherscan.Mainnet, "")
 
 func newMockBroadCastClient() *mockBroadCastClient {
 	return &mockBroadCastClient{}
@@ -42,6 +45,7 @@ func assertTradeLog(t *testing.T, tradeLog common.TradeLog) {
 	assert.NotZero(t, tradeLog.DestAddress)
 	assert.NotZero(t, tradeLog.SrcAmount)
 	assert.NotZero(t, tradeLog.DestAmount)
+	assert.NotZero(t, tradeLog.ReceiverAddress)
 	assert.True(t, !blockchain.IsZeroAddress(tradeLog.SrcReserveAddress) || !blockchain.IsZeroAddress(tradeLog.DstReserveAddress))
 
 	if blockchain.IsBurnable(tradeLog.SrcAddress) || blockchain.IsBurnable(tradeLog.DestAddress) {
@@ -71,7 +75,8 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		newMockBroadCastClient(),
 		tokenrate.NewMock(),
 		v3Addresses,
-		deployment.StartingBlocks[deployment.Production])
+		deployment.StartingBlocks[deployment.Production],
+		ec)
 	require.NoError(t, err)
 
 	tradeLogs, err := c.GetTradeLogs(big.NewInt(7025000), big.NewInt(7025100), time.Minute)
@@ -94,8 +99,16 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		newMockBroadCastClient(),
 		tokenrate.NewMock(),
 		v2Addresses,
-		deployment.StartingBlocks[deployment.Production])
+		deployment.StartingBlocks[deployment.Production],
+		ec)
 	require.NoError(t, err)
+
+	tradeLogs, err = c.GetTradeLogs(big.NewInt(6343120), big.NewInt(6343220), time.Minute)
+	require.NoError(t, err)
+	require.Len(t, tradeLogs, 8)
+	for _, tradeLog := range tradeLogs {
+		assertTradeLog(t, tradeLog)
+	}
 
 	tradeLogs, err = c.GetTradeLogs(big.NewInt(6343120), big.NewInt(6343220), time.Minute)
 	require.NoError(t, err)
@@ -114,6 +127,9 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 			found = true
 			assert.Equal(t, ethereum.HexToAddress("0x57f8160e1c59d16c01bbe181fd94db4e56b60495"), tradeLog.SrcReserveAddress,
 				"WETH --> ETH trade log must have source reserve address")
+
+			assert.Equal(t, ethereum.HexToAddress("0xd064e4c8f55cff3f45f2e5af5d24bdf0107fe40e"), tradeLog.ReceiverAddress,
+				"Tradelog must have receiver address")
 		}
 	}
 	assert.True(t, found, "transaction %s not found", sampleTxHash)
@@ -137,6 +153,9 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 				ethereum.HexToAddress("0x57f8160e1c59d16c01bbe181fd94db4e56b60495"),
 				tradeLog.SrcReserveAddress,
 				"ETH --> WETH trade log must have dest reserve address")
+
+			assert.Equal(t, ethereum.HexToAddress("0xf214dde57f32f3f34492ba3148641693058d4a9e"), tradeLog.ReceiverAddress,
+				"Tradelog must have receiver address")
 		}
 	}
 	assert.True(t, found, "transaction %s not found", sampleTxHash)
@@ -160,8 +179,48 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 				big.NewInt(749378067533693720),
 				tradeLog.EthAmount,
 				"trade log's ETH amount must equal to the 749378067533693720")
+
+			assert.Equal(t, ethereum.HexToAddress("0x85c5c26dc2af5546341fc1988b9d178148b4838b"), tradeLog.ReceiverAddress,
+				"Tradelog must have receiver address")
 		}
 	}
 	assert.True(t, found, "transaction %s not found", sampleTxHash)
 
+	// v1 contract addresses
+	v1Addresses := []ethereum.Address{
+		ethereum.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755"), // network contract
+		ethereum.HexToAddress("0x964F35fAe36d75B1e72770e244F6595B68508CF5"), // internal network contract
+		ethereum.HexToAddress("0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706"), // burner contract
+	}
+
+	c, err = NewCrawler(
+		sugar,
+		client,
+		newMockBroadCastClient(),
+		tokenrate.NewMock(),
+		v1Addresses,
+		deployment.StartingBlocks[deployment.Production],
+		ec)
+	require.NoError(t, err)
+
+	tradeLogs, err = c.GetTradeLogs(big.NewInt(5877442), big.NewInt(5877500), time.Minute)
+	require.NoError(t, err)
+	require.Len(t, tradeLogs, 7)
+	for _, tradeLog := range tradeLogs {
+		assertTradeLog(t, tradeLog)
+	}
+
+	// block: 5877442
+	// tx: 0xe9316215b35fd6c7ba9e8e770a90f67ce6b9332c04bf67d272c04cb26fb43ec0
+	// conversion: DAI --> ETH
+	sampleTxHash = "0xe9316215b35fd6c7ba9e8e770a90f67ce6b9332c04bf67d272c04cb26fb43ec0"
+	found = false
+	for _, tradeLog := range tradeLogs {
+		if tradeLog.TransactionHash == ethereum.HexToHash(sampleTxHash) {
+			found = true
+			assert.Equal(t, ethereum.HexToAddress("0xfb0f16663c71a2f92bf009c7dc7b401ad372b6de"), tradeLog.ReceiverAddress,
+				"Tradelog must have receiver address")
+		}
+	}
+	assert.True(t, found, "transaction %s not found", sampleTxHash)
 }

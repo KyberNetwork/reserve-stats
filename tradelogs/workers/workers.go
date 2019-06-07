@@ -11,12 +11,12 @@ import (
 
 	"github.com/KyberNetwork/tokenrate/coingecko"
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/nanmu42/etherscan-api"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
-	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
@@ -30,23 +30,25 @@ type job interface {
 }
 
 // NewFetcherJob return an instance of fetcherJob
-func NewFetcherJob(c *cli.Context, order int, from, to *big.Int, attempts int) *FetcherJob {
+func NewFetcherJob(c *cli.Context, order int, from, to *big.Int, attempts int, etherscanClient *etherscan.Client) *FetcherJob {
 	return &FetcherJob{
-		c:        c,
-		order:    order,
-		from:     from,
-		to:       to,
-		attempts: attempts,
+		c:               c,
+		order:           order,
+		from:            from,
+		to:              to,
+		attempts:        attempts,
+		etherscanClient: etherscanClient,
 	}
 }
 
 // FetcherJob represent a job to crawl trade logs from block to block
 type FetcherJob struct {
-	c        *cli.Context
-	order    int
-	from     *big.Int
-	to       *big.Int
-	attempts int
+	c               *cli.Context
+	order           int
+	from            *big.Int
+	to              *big.Int
+	attempts        int
+	etherscanClient *etherscan.Client
 }
 
 // retry the given fn function for attempts time with sleep duration between before returns an error.
@@ -93,12 +95,7 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 	addresses = append(addresses, contracts.OldBurnerContractAddress().MustGetFromContext(fj.c)...)
 	addresses = append(addresses, contracts.OldNetworkContractAddress().MustGetFromContext(fj.c)...)
 
-	etherscanClient, err := etherscan.NewEtherscanClientFromContext(fj.c)
-	if err != nil {
-		return nil, err
-	}
-
-	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks, etherscanClient)
+	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks, fj.etherscanClient)
 	if err != nil {
 		return nil, err
 	}

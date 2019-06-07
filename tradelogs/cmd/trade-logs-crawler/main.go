@@ -199,6 +199,11 @@ func run(c *cli.Context) error {
 		return err
 	}
 
+	etherscanClient, err := etherscan.NewEtherscanClientFromContext(c)
+	if err != nil {
+		return err
+	}
+
 	maxWorkers := c.Int(maxWorkersFlag)
 	maxBlocks := c.Int(maxBlocksFlag)
 	attempts := c.Int(attemptsFlag) // exit if failed to fetch logs after attempts times
@@ -231,7 +236,7 @@ func run(c *cli.Context) error {
 			var jobOrder = p.GetLastCompleteJobOrder()
 			for i := fromBlock; i < toBlock; i += maxBlocks {
 				jobOrder++
-				p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(mathutil.MinInt64(i+maxBlocks, toBlock)), attempts))
+				p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(mathutil.MinInt64(i+maxBlocks, toBlock)), attempts, etherscanClient))
 			}
 			for p.GetLastCompleteJobOrder() < jobOrder {
 				time.Sleep(time.Second)

@@ -1,4 +1,4 @@
-package storage
+package influxstorage
 
 import (
 	"fmt"
@@ -6,12 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
-	ethereum "github.com/ethereum/go-ethereum/common"
-
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
+	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/cq"
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
 )
 
 func aggregationBurnFeeTestData(is *InfluxStorage) error {

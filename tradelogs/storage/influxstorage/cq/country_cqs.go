@@ -7,11 +7,11 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	libcq "github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	countryStatSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/country_stats"
-	firstTradedSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/first_traded"
-	heatMapSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/heatmap"
-	kycedschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/kyced"
-	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
+	countryStatSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/country_stats"
+	firstTradedSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/first_traded"
+	heatMapSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/heatmap"
+	kycedschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/kyced"
+	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/tradelog"
 )
 
 func executeCountryVolumeTemplate(templateString, amountType, amountTypeAddr string) (string, error) {

@@ -1,4 +1,4 @@
-package storage
+package influxstorage
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ func loadTestData(db string) error {
 		return fmt.Errorf("wrong status code, expected: %d, got: %d", http.StatusOK, rsp.StatusCode)
 	}
 
-	exported, err := os.Open("./testdata/export.dat")
+	exported, err := os.Open("../testdata/export.dat")
 	if err != nil {
 		return err
 	}

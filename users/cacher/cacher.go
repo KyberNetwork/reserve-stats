@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
+	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/tradelog"
 	"github.com/KyberNetwork/reserve-stats/users/common"
 )
 

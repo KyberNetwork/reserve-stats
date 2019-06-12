@@ -1,4 +1,4 @@
-package storage
+package influxstorage
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	walletStatSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/walletstats"
+	walletStatSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/walletstats"
 )
 
 //GetWalletStats return stats of a wallet address from time to time by a frequency

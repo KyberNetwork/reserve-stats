@@ -1,15 +1,14 @@
-package storage
+package influxstorage
 
 import (
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/cq"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
 )
 
 func aggregationTestData(is *InfluxStorage) error {

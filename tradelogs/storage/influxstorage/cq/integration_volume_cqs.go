@@ -7,8 +7,8 @@ import (
 	appnames "github.com/KyberNetwork/reserve-stats/app-names"
 	libcq "github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	integrationVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/integrationvolume"
-	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
+	integrationVolumeSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/integrationvolume"
+	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/tradelog"
 )
 
 func executeIntegrationVolumeTemplate(templateString, integrationAppVolume string) (string, error) {

@@ -2,6 +2,7 @@ package postgrestorage
 
 import (
 	"database/sql"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	"strconv"
 	"time"
 
@@ -56,7 +57,7 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error)
 		return nil, err
 	}
 
-	srcBurnAmount, dstBurnAmount, err := tldb.getBurnAmount(log)
+	srcBurnAmount, dstBurnAmount, err := storage.GetBurnAmount(tldb.sugar, tldb.tokenAmountFormatter, log)
 	if err != nil {
 		return nil, err
 	}
@@ -89,55 +90,6 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error)
 		ETHUSDProvider:     log.ETHUSDProvider,
 		Index:              strconv.FormatUint(uint64(log.Index), 10),
 	}, nil
-}
-
-//getBurnAmount return the burn amount in float for src and
-func (tldb *TradeLogDB) getBurnAmount(log common.TradeLog) (float64, float64, error) {
-	var (
-		logger = tldb.sugar.With(
-			"func", "tradelogs/storage/postgrestorage/getBurnAmount",
-			"log", log,
-		)
-		srcAmount float64
-		dstAmount float64
-	)
-	if blockchain.IsBurnable(log.SrcAddress) {
-		if len(log.BurnFees) < 1 {
-			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "at least 1 burn fees (src)")
-			return srcAmount, dstAmount, nil
-		}
-		srcAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
-		if err != nil {
-			return srcAmount, dstAmount, err
-		}
-
-		if blockchain.IsBurnable(log.DestAddress) {
-			if len(log.BurnFees) < 2 {
-				logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "2 burn fees (src-dst)")
-				return srcAmount, dstAmount, nil
-			}
-			dstAmount, err = tldb.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[1].Amount)
-			if err != nil {
-				return srcAmount, dstAmount, err
-			}
-			return srcAmount, dstAmount, nil
-		}
-		return srcAmount, dstAmount, nil
-	}
-
-	if blockchain.IsBurnable(log.DestAddress) {
-		if len(log.BurnFees) < 1 {
-			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "at least 1 burn fees (dst)")
-			return srcAmount, dstAmount, nil
-		}
-		dstAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
-		if err != nil {
-			return srcAmount, dstAmount, err
-		}
-		return srcAmount, dstAmount, nil
-	}
-
-	return srcAmount, dstAmount, nil
 }
 
 func (tldb *TradeLogDB) getWalletFeeAmount(log common.TradeLog) (float64, float64, error) {

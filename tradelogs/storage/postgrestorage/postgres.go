@@ -16,6 +16,9 @@ import (
 
 const (
 	tradeLogsTableName = "tradelogs"
+	reserveTableName   = "reserve"
+	tokenTableName     = "token"
+	walletTableName    = "wallet"
 )
 
 // TradeLogDB is storage of tradelog data
@@ -28,16 +31,9 @@ type TradeLogDB struct {
 //NewTradeLogDB create a new instance of TradeLogDB
 func NewTradeLogDB(sugar *zap.SugaredLogger, db *sqlx.DB, tokenAmountFormatter blockchain.TokenAmountFormatterInterface) (*TradeLogDB, error) {
 	var logger = sugar.With("func", "tradelogs/storage.NewTradeLogDB")
-
-	tx, err := db.Beginx()
-	if err != nil {
-		return nil, err
-	}
-
-	defer pgsql.CommitOrRollback(tx, logger, &err)
-
+	var err error
 	logger.Debug("initializing database schema")
-	if _, err = tx.Exec(schema.TradeLogsSchema); err != nil {
+	if _, err = db.Exec(schema.TradeLogsSchema); err != nil {
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
@@ -75,7 +71,7 @@ func (tldb *TradeLogDB) saveReserveAddress(tx *sqlx.Tx, reserveAddressArray []st
 	var logger = tldb.sugar.With(
 		"func", "tradelogs/storage/postgrestorage/TradeLogDB.saveReserveAddress",
 	)
-	query := fmt.Sprintf(insertionAddressTemplate, "reserve")
+	query := fmt.Sprintf(insertionAddressTemplate, reserveTableName)
 	logger.Debugw("updating rsv...", "query", query)
 	_, err := tx.Exec(query, pq.StringArray(reserveAddressArray))
 	return err
@@ -85,7 +81,7 @@ func (tldb *TradeLogDB) saveTokens(tx *sqlx.Tx, tokensArray []string) error {
 	var logger = tldb.sugar.With(
 		"func", "tradelogs/storage/postgrestorage/TradeLogDB.saveTokens",
 	)
-	query := fmt.Sprintf(insertionAddressTemplate, "token")
+	query := fmt.Sprintf(insertionAddressTemplate, tokenTableName)
 	logger.Debugw("updating rsv...", "query", query)
 	_, err := tx.Exec(query, pq.StringArray(tokensArray))
 	return err
@@ -95,7 +91,7 @@ func (tldb *TradeLogDB) saveWallets(tx *sqlx.Tx, walletAddressArray []string) er
 	var logger = tldb.sugar.With(
 		"func", "tradelogs/storage/postgrestorage/TradeLogDB.saveWallets",
 	)
-	query := fmt.Sprintf(insertionAddressTemplate, "wallet")
+	query := fmt.Sprintf(insertionAddressTemplate, walletTableName)
 	logger.Debugw("updating rsv...", "query", query)
 	_, err := tx.Exec(query, pq.StringArray(walletAddressArray))
 	return err

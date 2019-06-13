@@ -1,13 +1,12 @@
 package postgrestorage
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/lib/pq"
-	"strings"
-
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -53,11 +52,11 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 		)
 		result int64
 	)
-	stmt := fmt.Sprintf(`SELECT "block_number" FROM "%s" ORDER BY timestamp DESC limit 1`, tradeLogsTableName)
+	stmt := fmt.Sprintf(`SELECT "MAX(block_number)" FROM "%s"`, tradeLogsTableName)
 	logger = logger.With("query", stmt)
 	logger.Debug("Start query")
 	if err := tldb.db.Get(&result, stmt); err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if err == sql.ErrNoRows {
 			logger.Info("No log saved")
 			return 0, nil
 		}

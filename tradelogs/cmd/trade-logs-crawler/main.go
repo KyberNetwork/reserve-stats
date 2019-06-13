@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"math"
 	"math/big"
@@ -19,8 +20,10 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	storage "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/cq"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
 )
 
@@ -43,6 +46,11 @@ const (
 
 	blockConfirmationsFlag    = "wait-for-confirmations"
 	defaultBlockConfirmations = 7
+
+	dbEngineFlag    = "db-engine"
+	defaultDbEngine = "influx"
+	influxDbEngine  = "influx"
+	postgreDbEngine = "postgre"
 )
 
 func main() {
@@ -92,6 +100,12 @@ func main() {
 			Usage:  "The number of block confirmations to latest known block",
 			EnvVar: "WAIT_FOR_CONFIRMATIONS",
 			Value:  defaultBlockConfirmations,
+		},
+		cli.StringFlag{
+			Name:   dbEngineFlag,
+			Usage:  "db engine to write trade logs, pls select influx or postgre",
+			EnvVar: "DB_ENGINE",
+			Value:  defaultDbEngine,
 		},
 	)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
@@ -164,9 +178,58 @@ func requiredWorkers(fromBlock, toBlock *big.Int, maxBlocks, maxWorkers int) int
 	return maxWorkers
 }
 
-func run(c *cli.Context) error {
+func newStorageInterface(sugar *zap.SugaredLogger, c *cli.Context) (storage.SaveInterface, error) {
 	var (
 		err error
+	)
+
+	tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
+	if err != nil {
+		return nil, err
+	}
+
+	dbEngine := c.String(dbEngineFlag)
+	switch dbEngine {
+	case influxDbEngine:
+		influxClient, err := influxdb.NewClientFromContext(c)
+		if err != nil {
+			return nil, err
+		}
+
+		if err = manageCQFromContext(c, influxClient, sugar); err != nil {
+			return nil, err
+		}
+
+		influxStorage, err := influxstorage.NewInfluxStorage(
+			sugar,
+			common.DatabaseName,
+			influxClient,
+			tokenAmountFormatter,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return influxStorage, nil
+	case postgreDbEngine:
+		db, err := libapp.NewDBFromContext(c)
+		if err != nil {
+			return nil, err
+		}
+		postgresStorage, err := postgrestorage.NewTradeLogDB(sugar, db, tokenAmountFormatter)
+		if err != nil {
+			sugar.Infow("error", err)
+			return nil, err
+		}
+		return postgresStorage, nil
+	default:
+		return nil, fmt.Errorf("invalid db engine: %q", dbEngine)
+	}
+}
+
+func run(c *cli.Context) error {
+	var (
+		err              error
+		storageInterface storage.SaveInterface
 	)
 
 	sugar, flush, err := libapp.NewSugaredLogger(c)
@@ -175,26 +238,7 @@ func run(c *cli.Context) error {
 	}
 	defer flush()
 
-	influxClient, err := influxdb.NewClientFromContext(c)
-	if err != nil {
-		return err
-	}
-
-	if err = manageCQFromContext(c, influxClient, sugar); err != nil {
-		return err
-	}
-
-	tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
-	if err != nil {
-		return err
-	}
-
-	influxStorage, err := storage.NewInfluxStorage(
-		sugar,
-		common.DatabaseName,
-		influxClient,
-		tokenAmountFormatter,
-	)
+	storageInterface, err = newStorageInterface(sugar, c)
 	if err != nil {
 		return err
 	}
@@ -207,7 +251,7 @@ func run(c *cli.Context) error {
 	maxWorkers := c.Int(maxWorkersFlag)
 	maxBlocks := c.Int(maxBlocksFlag)
 	attempts := c.Int(attemptsFlag) // exit if failed to fetch logs after attempts times
-	planner, err := newCrawlerPlanner(sugar, c, influxStorage)
+	planner, err := newCrawlerPlanner(sugar, c, storageInterface)
 	if err != nil {
 		return nil
 	}
@@ -225,7 +269,7 @@ func run(c *cli.Context) error {
 		}
 
 		requiredWorkers := requiredWorkers(fromBlock, toBlock, maxBlocks, maxWorkers)
-		p := workers.NewPool(sugar, requiredWorkers, influxStorage)
+		p := workers.NewPool(sugar, requiredWorkers, storageInterface)
 		sugar.Debugw("number of fetcher jobs",
 			"from_block", fromBlock.String(),
 			"to_block", toBlock.String(),

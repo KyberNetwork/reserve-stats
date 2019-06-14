@@ -178,7 +178,7 @@ func requiredWorkers(fromBlock, toBlock *big.Int, maxBlocks, maxWorkers int) int
 	return maxWorkers
 }
 
-func newStorageInterface(sugar *zap.SugaredLogger, c *cli.Context) (storage.SaveInterface, error) {
+func newStorageInterface(sugar *zap.SugaredLogger, c *cli.Context) (storage.Interface, error) {
 	var (
 		err error
 	)
@@ -229,7 +229,7 @@ func newStorageInterface(sugar *zap.SugaredLogger, c *cli.Context) (storage.Save
 func run(c *cli.Context) error {
 	var (
 		err              error
-		storageInterface storage.SaveInterface
+		storageInterface storage.Interface
 	)
 
 	sugar, flush, err := libapp.NewSugaredLogger(c)

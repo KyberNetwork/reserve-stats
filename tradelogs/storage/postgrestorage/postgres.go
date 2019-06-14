@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
+	"time"
 
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
@@ -182,6 +183,11 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) error {
 	}
 
 	return err
+}
+
+// TODO: implement this
+func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
+	return nil, nil
 }
 
 const insertionAddressTemplate = `INSERT INTO %[1]s(

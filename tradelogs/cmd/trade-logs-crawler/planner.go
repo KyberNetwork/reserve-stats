@@ -23,7 +23,7 @@ type crawlPlanner struct {
 	sugar *zap.SugaredLogger
 
 	ethClient *ethclient.Client
-	st        storage.SaveInterface
+	st        storage.Interface
 
 	fromBlock *big.Int
 	toBlock   *big.Int
@@ -35,7 +35,7 @@ type crawlPlanner struct {
 }
 
 // newCrawlerPlanner returns new crawler planner instance with given context.
-func newCrawlerPlanner(sugar *zap.SugaredLogger, c *cli.Context, st storage.SaveInterface) (*crawlPlanner, error) {
+func newCrawlerPlanner(sugar *zap.SugaredLogger, c *cli.Context, st storage.Interface) (*crawlPlanner, error) {
 	var (
 		fromBlock *big.Int
 		toBlock   *big.Int

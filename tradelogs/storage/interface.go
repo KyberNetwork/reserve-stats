@@ -8,10 +8,10 @@ import (
 )
 
 // SaveInterface represent a storage save method for TradeLog data
-type SaveInterface interface {
-	LastBlock() (int64, error)
-	SaveTradeLogs(logs []common.TradeLog) error
-}
+//type SaveInterface interface {
+//	LastBlock() (int64, error)
+//	SaveTradeLogs(logs []common.TradeLog) error
+//}
 
 // Interface represent a storage for TradeLogs data
 type Interface interface {
@@ -28,4 +28,6 @@ type Interface interface {
 	GetCountryStats(countryCode string, from, to time.Time, timezone int8) (map[uint64]*common.CountryStats, error)
 	GetTokenHeatmap(asset ethereum.Address, from, to time.Time, timezone int8) (map[string]common.Heatmap, error)
 	GetIntegrationVolume(fromTime, toTime time.Time) (map[uint64]*common.IntegrationVolume, error)
+	LastBlock() (int64, error)
+	SaveTradeLogs(logs []common.TradeLog) error
 }

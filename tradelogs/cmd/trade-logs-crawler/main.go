@@ -51,6 +51,8 @@ const (
 	defaultDbEngine = "influx"
 	influxDbEngine  = "influx"
 	postgreDbEngine = "postgre"
+
+	defaultDb = "reserve_stats"
 )
 
 func main() {
@@ -109,6 +111,7 @@ func main() {
 		},
 	)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDb)...)
 	app.Flags = append(app.Flags, broadcast.NewCliFlags()...)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, cq.NewCQFlags()...)

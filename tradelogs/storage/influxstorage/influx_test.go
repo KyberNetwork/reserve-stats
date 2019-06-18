@@ -1,8 +1,8 @@
 package influxstorage
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 	"log"
 	"os"
 	"testing"
@@ -16,8 +16,6 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/influxdata/influxdb/client/v2"
-
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 var testStorage *InfluxStorage
@@ -51,20 +49,8 @@ func (is *InfluxStorage) tearDown() error {
 	return err
 }
 
-func getSampleTradeLogs(dataPath string) ([]common.TradeLog, error) {
-	var tradeLogs []common.TradeLog
-	byteValue, err := os.Open(dataPath)
-	if err != nil {
-		return nil, err
-	}
-	if err = json.NewDecoder(byteValue).Decode(&tradeLogs); err != nil {
-		return nil, err
-	}
-	return tradeLogs, nil
-}
-
 func TestSaveTradeLogs(t *testing.T) {
-	tradeLogs, err := getSampleTradeLogs("../testdata/trade_logs.json")
+	tradeLogs, err := utils.GetSampleTradeLogs("../testdata/trade_logs.json")
 	require.NoError(t, err)
 	if err = testStorage.SaveTradeLogs(tradeLogs); err != nil {
 		t.Error("get unexpected error when save trade logs", "err", err.Error())
@@ -72,7 +58,7 @@ func TestSaveTradeLogs(t *testing.T) {
 }
 
 func TestSaveFirstTradeLogs(t *testing.T) {
-	tradeLogs, err := getSampleTradeLogs("../testdata/trade_logs.json")
+	tradeLogs, err := utils.GetSampleTradeLogs("../testdata/trade_logs.json")
 	require.NoError(t, err)
 	if err = testStorage.SaveTradeLogs(tradeLogs); err != nil {
 		t.Error("get unexpected error when save trade logs", "err", err.Error())

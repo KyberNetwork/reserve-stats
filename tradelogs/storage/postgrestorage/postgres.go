@@ -26,6 +26,7 @@ type TradeLogDB struct {
 	sugar                *zap.SugaredLogger
 	db                   *sqlx.DB
 	tokenAmountFormatter blockchain.TokenAmountFormatterInterface
+	dbName               string
 }
 
 //NewTradeLogDB create a new instance of TradeLogDB
@@ -51,20 +52,22 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 		logger = tldb.sugar.With(
 			"func", "tradelog/storage/postgrestorage/TradeLogDB.SaveTradeLogs",
 		)
-		result int64
+		result sql.NullInt64
 	)
-	stmt := fmt.Sprintf(`SELECT "MAX(block_number)" FROM "%s"`, tradeLogsTableName)
+	stmt := fmt.Sprintf(`SELECT MAX("block_number") FROM "%s"`, tradeLogsTableName)
 	logger = logger.With("query", stmt)
 	logger.Debug("Start query")
 	if err := tldb.db.Get(&result, stmt); err != nil {
-		if err == sql.ErrNoRows {
-			logger.Info("No log saved")
-			return 0, nil
-		}
 		logger.Errorw("Get error ", "error", err)
 		return 0, err
 	}
-	return result, nil
+
+	if !result.Valid {
+		logger.Info("No log saved")
+		return 0, nil
+	}
+
+	return result.Int64, nil
 }
 
 func (tldb *TradeLogDB) saveReserveAddress(tx *sqlx.Tx, reserveAddressArray []string) error {

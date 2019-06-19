@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS "reserve" (
 	id SERIAL PRIMARY KEY,
 	address TEXT UNIQUE NOT NULL
 );
-CREATE TABLE IF NOT EXISTS "tradelogs" (
+CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	id SERIAL PRIMARY KEY,
 	timestamp TIMESTAMP,
 	block_number INTEGER,
@@ -45,3 +45,5 @@ CREATE TABLE IF NOT EXISTS "tradelogs" (
 	index INTEGER
 );
 `
+
+const DefaultDateFormat = "2006-01-02 15:04:05"

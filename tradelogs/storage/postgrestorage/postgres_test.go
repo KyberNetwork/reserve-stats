@@ -1,9 +1,11 @@
 package postgrestorage
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
@@ -16,11 +18,20 @@ import (
 var testStorage *TradeLogDB
 
 const (
-	driverName = "postgres"
+	driverName   = "postgres"
+	testDbName   = "test_log_db"
+	testDataFile = "../testdata/postgresql/export.sql"
 )
 
 func newTestTradeLogPostgresql(dbName string) (*TradeLogDB, error) {
+	var err error
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
+	if err = dropDatabaseIfExists(dbName); err != nil {
+		return nil, err
+	}
+	if err = createDatabase(dbName); err != nil {
+		return nil, err
+	}
 
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		"127.0.0.1", 5432, "reserve_stats", "reserve_stats", dbName,
@@ -34,6 +45,7 @@ func newTestTradeLogPostgresql(dbName string) (*TradeLogDB, error) {
 	if err != nil {
 		return nil, err
 	}
+	sugar.Debugw("create test database object successful", "db_name", dbName)
 	return storage, nil
 }
 
@@ -83,13 +95,41 @@ func dropDatabaseIfExists(dbName string) error {
 	return nil
 }
 
+func loadTestData(db *sqlx.DB, path string) error {
+	_, err := sqlx.LoadFile(db, path)
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("SET search_path = public")
+	return err
+}
+
 func TestNewTradeLogDB(t *testing.T) {
 	blockNumber, err := testStorage.LastBlock()
-	if err != nil {
-		t.Fatal("call max block failed: ", err)
-	}
-	var assertion = assert.New(t)
-	assertion.Equal(blockNumber, int64(0))
+	require.NoError(t, err, "call max block failed")
+	t.Log(blockNumber)
+	assert.Equal(t, blockNumber, int64(0))
+	err = loadTestData(testStorage.db, testDataFile)
+	require.NoError(t, err)
+	// call lastBlock after load test storage
+	blockNumber, err = testStorage.LastBlock()
+	require.NoError(t, err, "call max block failed after load data")
+	t.Log(blockNumber)
+}
+
+func TestTradeLogDB_LastBlock(t *testing.T) {
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		"127.0.0.1", 5432, "reserve_stats", "reserve_stats", testDbName,
+	)
+	db, err := sqlx.Connect(driverName, connStr)
+	require.NoError(t, err)
+	stmt := fmt.Sprintf(`SELECT MAX("block_number") FROM "%v"`, schema.TradeLogsTableName)
+	t.Log(stmt)
+	var result sql.NullInt64
+	row := db.QueryRow(stmt)
+	err = row.Scan(&result)
+	require.NoError(t, err)
+	t.Log(result.Int64)
 }
 
 func TestSaveTradeLogs(t *testing.T) {
@@ -102,18 +142,11 @@ func TestSaveTradeLogs(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	var err error
-	var dbName = "test_log_db"
-	if err = dropDatabaseIfExists(dbName); err != nil {
-		log.Fatal("create database failed ", "error ", err.Error())
-	}
-	if err = createDatabase(dbName); err != nil {
-		log.Fatal("create database failed ", "error ", err.Error())
-	}
-	if testStorage, err = newTestTradeLogPostgresql(dbName); err != nil {
+	if testStorage, err = newTestTradeLogPostgresql(testDbName); err != nil {
 		log.Fatal("get unexpected error when create storage ", "error ", err.Error())
 	}
 	ret := m.Run()
-	if err = testStorage.tearDown(dbName); err != nil {
+	if err = testStorage.tearDown(testDbName); err != nil {
 		log.Fatal(err)
 	}
 	os.Exit(ret)

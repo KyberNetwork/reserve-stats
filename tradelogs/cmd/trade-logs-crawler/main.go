@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"log"
 	"math"
 	"math/big"
@@ -20,7 +21,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/cq"

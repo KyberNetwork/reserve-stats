@@ -28,7 +28,7 @@ echo "start"
 echo "done"
 popd
 
-docker exec "$container_name" bin/bash -c "pg_dump -U reserve_stats > /var/lib/postgresql/data/export.sql"
+docker exec "$container_name" bin/bash -c "pg_dump -U reserve_stats --attribute-inserts --data-only reserve_stats > /var/lib/postgresql/data/export.sql"
 
 cp "$data_dir/export.sql" export.sql
 

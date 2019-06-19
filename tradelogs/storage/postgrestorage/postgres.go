@@ -14,13 +14,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
 )
 
-const (
-	tradeLogsTableName = "tradelogs"
-	reserveTableName   = "reserve"
-	tokenTableName     = "token"
-	walletTableName    = "wallet"
-)
-
 // TradeLogDB is storage of tradelog data
 type TradeLogDB struct {
 	sugar                *zap.SugaredLogger
@@ -54,10 +47,15 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 		)
 		result sql.NullInt64
 	)
-	stmt := fmt.Sprintf(`SELECT MAX("block_number") FROM "%s"`, tradeLogsTableName)
+	stmt := fmt.Sprintf(`SELECT MAX("block_number") FROM "%v"`, schema.TradeLogsTableName)
 	logger = logger.With("query", stmt)
 	logger.Debug("Start query")
-	if err := tldb.db.Get(&result, stmt); err != nil {
+	//if err := tldb.db.QueryRow(&result, stmt); err != nil {
+	//	logger.Errorw("Get error ", "error", err)
+	//	return 0, err
+	//}
+	row := tldb.db.QueryRow(stmt)
+	if err := row.Scan(&result); err != nil {
 		logger.Errorw("Get error ", "error", err)
 		return 0, err
 	}
@@ -74,7 +72,7 @@ func (tldb *TradeLogDB) saveReserveAddress(tx *sqlx.Tx, reserveAddressArray []st
 	var logger = tldb.sugar.With(
 		"func", "tradelogs/storage/postgrestorage/TradeLogDB.saveReserveAddress",
 	)
-	query := fmt.Sprintf(insertionAddressTemplate, reserveTableName)
+	query := fmt.Sprintf(insertionAddressTemplate, schema.ReserveTableName)
 	logger.Debugw("updating rsv...", "query", query)
 	_, err := tx.Exec(query, pq.StringArray(reserveAddressArray))
 	return err
@@ -84,7 +82,7 @@ func (tldb *TradeLogDB) saveTokens(tx *sqlx.Tx, tokensArray []string) error {
 	var logger = tldb.sugar.With(
 		"func", "tradelogs/storage/postgrestorage/TradeLogDB.saveTokens",
 	)
-	query := fmt.Sprintf(insertionAddressTemplate, tokenTableName)
+	query := fmt.Sprintf(insertionAddressTemplate, schema.TokenTableName)
 	logger.Debugw("updating rsv...", "query", query)
 	_, err := tx.Exec(query, pq.StringArray(tokensArray))
 	return err
@@ -94,7 +92,7 @@ func (tldb *TradeLogDB) saveWallets(tx *sqlx.Tx, walletAddressArray []string) er
 	var logger = tldb.sugar.With(
 		"func", "tradelogs/storage/postgrestorage/TradeLogDB.saveWallets",
 	)
-	query := fmt.Sprintf(insertionAddressTemplate, walletTableName)
+	query := fmt.Sprintf(insertionAddressTemplate, schema.WalletTableName)
 	logger.Debugw("updating rsv...", "query", query)
 	_, err := tx.Exec(query, pq.StringArray(walletAddressArray))
 	return err

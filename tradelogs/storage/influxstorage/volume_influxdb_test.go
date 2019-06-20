@@ -1,7 +1,7 @@
 package influxstorage
 
 import (
-	"fmt"
+	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 
@@ -45,12 +45,13 @@ func TestGetAssetVolume(t *testing.T) {
 	const (
 		dbName = "test_volume"
 		// These params are expected to be change when export.dat changes.
-		fromTime   = 1539248043000
-		toTime     = 1539248666000
-		ethAmount  = 238.33849929550047
-		freq       = "h"
-		timeStamp  = "2018-10-11T09:00:00Z"
-		ethAddress = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+		fromTime    = 1539248043000
+		toTime      = 1539248666000
+		ethAmount   = 238.33849929550047
+		totalVolume = 1.056174642648189277
+		freq        = "h"
+		timeStamp   = "2018-10-11T09:00:00Z"
+		ethAddress  = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 	)
 
 	is, err := newTestInfluxStorage(dbName)
@@ -77,9 +78,8 @@ func TestGetAssetVolume(t *testing.T) {
 		t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))
 	}
 
-	if result.USDAmount != ethAmount {
-		t.Fatal(fmt.Errorf("Expect USD amount to be %.18f, got %.18f", ethAmount, result.USDAmount))
-	}
+	require.Equal(t, ethAmount, result.USDAmount)
+	require.Equal(t, totalVolume, result.Volume)
 }
 
 func TestGetReserveVolume(t *testing.T) {
@@ -87,13 +87,14 @@ func TestGetReserveVolume(t *testing.T) {
 		dbName = "test_rsv_volume"
 
 		// These params are expected to be change when export.dat changes.
-		fromTime   = 1539248043000
-		toTime     = 1539248666000
-		ethAmount  = 227.05539848662738
-		freq       = "h"
-		timeStamp  = "2018-10-11T09:00:00Z"
-		rsvAddrStr = "0x63825c174ab367968EC60f061753D3bbD36A0D8F"
-		ethAddress = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+		fromTime    = 1539248043000
+		toTime      = 1539248666000
+		ethAmount   = 227.05539848662738
+		totalVolume = 1.006174642648189232
+		freq        = "h"
+		timeStamp   = "2018-10-11T09:00:00Z"
+		rsvAddrStr  = "0x63825c174ab367968EC60f061753D3bbD36A0D8F"
+		ethAddress  = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 	)
 
 	is, err := newTestInfluxStorage(dbName)
@@ -128,7 +129,7 @@ func TestGetReserveVolume(t *testing.T) {
 		t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))
 	}
 
-	if result.USDAmount != ethAmount {
-		t.Fatal(fmt.Errorf("Expect USD amount to be %.18f, got %.18f", ethAmount, result.USDAmount))
-	}
+	require.Equal(t, ethAmount, result.USDAmount)
+	require.Equal(t, totalVolume, result.Volume)
+
 }

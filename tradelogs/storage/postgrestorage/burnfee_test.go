@@ -24,13 +24,11 @@ func TestTradeLogDB_GetAggregatedBurnFee(t *testing.T) {
 
 	tldb, err := newTestTradeLogPostgresql(dbName)
 	require.NoError(t, err)
-	err = loadTestData(tldb.db, testDataFile)
-	require.NoError(t, err)
-
-	require.NoError(t, err)
 	defer func() {
 		require.NoError(t, tldb.tearDown(dbName))
 	}()
+	err = loadTestData(tldb.db, testDataFile)
+	require.NoError(t, err)
 
 	var (
 		rsvAddr  = ethereum.HexToAddress(reserveAddrHex)

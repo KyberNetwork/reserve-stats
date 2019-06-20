@@ -10,5 +10,5 @@ const (
 	// Table for id and wallet address
 	WalletTableName = "wallet"
 	// Table for id and user address
-	UserTableName = "user"
+	UserTableName = "users"
 )

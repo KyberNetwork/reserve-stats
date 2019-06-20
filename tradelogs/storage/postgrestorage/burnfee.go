@@ -56,8 +56,8 @@ func (tldb *TradeLogDB) GetAggregatedBurnFee(from, to time.Time, freq string, re
 	for _, param := range []struct {
 		AmountColumn    string
 		AddressIdColumn string
-	}{{AmountColumn: "src_burn_amount", AddressIdColumn: "src_reserveaddress_id"},
-		{AmountColumn: "dst_burn_amount", AddressIdColumn: "dst_reserveaddress_id"}} {
+	}{{AmountColumn: "src_burn_amount", AddressIdColumn: "src_reserve_address_id"},
+		{AmountColumn: "dst_burn_amount", AddressIdColumn: "dst_reserve_address_id"}} {
 		var queryStmtBuf bytes.Buffer
 		if err = tpl.Execute(&queryStmtBuf, struct {
 			DateParam          string
@@ -91,8 +91,8 @@ func (tldb *TradeLogDB) GetAggregatedBurnFee(from, to time.Time, freq string, re
 			Time    time.Time `db:"time"`
 		}
 
-		if err = tldb.db.Select(&burnFees, queryStmtBuf.String(), from.Format(schema.DefaultDateFormat),
-			to.Format(schema.DefaultDateFormat), pq.Array(addressHexs)); err != nil {
+		if err = tldb.db.Select(&burnFees, queryStmtBuf.String(), from.UTC().Format(schema.DefaultDateFormat),
+			to.UTC().Format(schema.DefaultDateFormat), pq.Array(addressHexs)); err != nil {
 			return nil, err
 		}
 

@@ -1,0 +1,51 @@
+package postgrestorage
+
+import (
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"testing"
+	"time"
+
+	ethereum "github.com/ethereum/go-ethereum/common"
+)
+
+func TestTradeLogDB_GetAssetVolume(t *testing.T) {
+	const (
+		dbName = "test_volume"
+		// These params are expected to be change when export.dat changes.
+		fromTime    = 1539248043000
+		toTime      = 1539248666000
+		ethAmount   = 238.33849929550047
+		totalVolume = 1.006174642648189232
+		freq        = "h"
+		timeStamp   = "2018-10-11T09:00:00Z"
+		ethAddress  = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+	)
+
+	tldb, err := newTestTradeLogPostgresql(dbName)
+	require.NoError(t, err)
+
+	from := timeutil.TimestampMsToTime(fromTime)
+	to := timeutil.TimestampMsToTime(toTime)
+	defer func() {
+		require.NoError(t, tldb.tearDown(dbName))
+	}()
+	require.NoError(t, loadTestData(tldb.db, testDataFile))
+
+	volume, err := tldb.GetAssetVolume(ethereum.HexToAddress(ethAddress), from, to, freq)
+	require.NoError(t, err)
+
+	t.Logf("Volume result %v", volume)
+
+	timeUnix, err := time.Parse(time.RFC3339, timeStamp)
+	assert.NoError(t, err)
+	timeUint := timeutil.TimeToTimestampMs(timeUnix)
+	result, ok := volume[timeUint]
+	if !ok {
+		t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))
+	}
+
+	require.Equal(t, ethAmount, result.USDAmount)
+	//require.Equal(t, totalVolume, result.Volume)
+}

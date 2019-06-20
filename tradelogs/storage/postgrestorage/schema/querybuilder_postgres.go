@@ -17,8 +17,11 @@ var DateFunctionParams = map[string]string{
 const (
 	timeConditionTemplate = `date_trunc('{{.DateParam}}',{{.TimeColumn}}) >= '{{.StartTime}}'` +
 		` AND '{{.EndTime}}' >= date_trunc('{{.DateParam}}',{{.TimeColumn}})`
-	ethWETHExcludingTmpl = `({{.SrcAddr}}!='{{.ETHTokenAddr}}' OR {{.DstAddr}}!='{{.WETHTokenAddr}}')` +
-		` AND ({{.SrcAddr}}!='{{.WETHTokenAddr}}' OR {{.DstAddr}}!='{{.ETHTokenAddr}}')`
+
+	ethWETHExcludingTmpl = `( NOT EXISTS (SELECT NULL FROM token WHERE address = '{{.ETHTokenAddr}}' AND src_address_id != id )` +
+		` OR NOT EXISTS (SELECT NULL FROM token WHERE address = '{{.WETHTokenAddr}}' AND dst_address_id != id ))` +
+		` AND ( NOT EXISTS (SELECT NULL FROM token WHERE address = '{{.WETHTokenAddr}}' AND src_address_id != id )` +
+		` OR NOT EXISTS (SELECT NULL FROM token WHERE address = '{{.ETHTokenAddr}}' AND dst_address_id != id ))`
 )
 
 func BuildTimeCondition(start time.Time, end time.Time, frequency string) (string, error) {
@@ -53,7 +56,7 @@ func BuildTimeCondition(start time.Time, end time.Time, frequency string) (strin
 	return resultBuffer.String(), nil
 }
 
-func BuildEthWethExcludingCondition(srcTable string, dstTable string) (string, error) {
+func BuildEthWethExcludingCondition() (string, error) {
 	var resultBuffer bytes.Buffer
 
 	tpl, err := template.New("exclude eth template").Parse(ethWETHExcludingTmpl)
@@ -61,13 +64,9 @@ func BuildEthWethExcludingCondition(srcTable string, dstTable string) (string, e
 		return "", nil
 	}
 	err = tpl.Execute(&resultBuffer, struct {
-		SrcAddr       string
-		DstAddr       string
 		ETHTokenAddr  string
 		WETHTokenAddr string
 	}{
-		SrcAddr:       srcTable + ".address",
-		DstAddr:       dstTable + ".address",
 		ETHTokenAddr:  blockchain.ETHAddr.Hex(),
 		WETHTokenAddr: blockchain.WETHAddr.Hex(),
 	})
@@ -76,8 +75,4 @@ func BuildEthWethExcludingCondition(srcTable string, dstTable string) (string, e
 		return "", nil
 	}
 	return resultBuffer.String(), nil
-}
-
-func BuildAddressCondition(srcTable string, dstTable string, address string) (string, error) {
-	return "", nil
 }

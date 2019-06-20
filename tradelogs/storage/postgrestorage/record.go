@@ -19,11 +19,11 @@ type record struct {
 	EthAmount          float64        `db:"eth_amount"`
 	UserAddress        string         `db:"user_address"`
 	SrcAddress         string         `db:"src_address"`
-	DestAddress        string         `db:"dest_address"`
-	SrcReserveAddress  string         `db:"src_reserveaddress"`
-	DstReserveAddress  string         `db:"dst_reserveaddress"`
+	DestAddress        string         `db:"dst_address"`
+	SrcReserveAddress  string         `db:"src_reserve_address"`
+	DstReserveAddress  string         `db:"dst_reserve_address"`
 	SrcAmount          float64        `db:"src_amount"`
-	DestAmount         float64        `db:"dest_amount"`
+	DestAmount         float64        `db:"dst_amount"`
 	WalletAddress      string         `db:"wallet_address"`
 	SrcBurnAmount      float64        `db:"src_burn_amount"`
 	DstBurnAmount      float64        `db:"dst_burn_amount"`
@@ -32,8 +32,8 @@ type record struct {
 	IntegrationApp     string         `db:"integration_app"`
 	IP                 sql.NullString `db:"ip"`
 	Country            sql.NullString `db:"country"`
-	ETHUSDRate         float64        `db:"ethusd_rate"`
-	ETHUSDProvider     string         `db:"ethusd_provider"`
+	ETHUSDRate         float64        `db:"eth_usd_rate"`
+	ETHUSDProvider     string         `db:"eth_usd_provider"`
 	Index              string         `db:"index"`
 }
 

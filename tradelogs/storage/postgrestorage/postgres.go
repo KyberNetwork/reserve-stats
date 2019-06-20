@@ -178,7 +178,7 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) error {
 		}
 		_, err = tx.NamedExec(insertionTradelogsTemplate, r)
 		if err != nil {
-			logger.Debugw("Error while add tradelogs", "error", err)
+			logger.Debugw("Error while add trade logs", "error", err)
 			return err
 		}
 	}
@@ -188,6 +188,10 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) error {
 
 // TODO: implement this
 func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
+	var queryResult []struct {
+	}
+	tldb.db.Select(&queryResult, `SELECT timestamp, block_number, eth_amount, eth_amount, user_addr`)
+
 	return nil, nil
 }
 
@@ -209,18 +213,18 @@ INSERT INTO users(
 ON CONFLICT (address) 
 DO NOTHING;`
 const insertionTradelogsTemplate string = `
-INSERT INTO tradelogs(
+INSERT INTO "` + schema.TradeLogsTableName + `"(
 	timestamp,
  	block_number,
  	tx_hash,
  	eth_amount,
  	user_address_id,
  	src_address_id,
- 	dest_address_id,
- 	src_reserveaddress_id,
- 	dst_reserveaddress_id,
+ 	dst_address_id,
+ 	src_reserve_address_id,
+ 	dst_reserve_address_id,
  	src_amount,
- 	dest_amount,
+ 	dst_amount,
  	wallet_address_id,
  	src_burn_amount,
  	dst_burn_amount,
@@ -229,8 +233,8 @@ INSERT INTO tradelogs(
  	integration_app,
  	ip,
  	country,
- 	ethusd_rate,
- 	ethusd_provider,
+ 	eth_usd_rate,
+ 	eth_usd_provider,
 	index
 ) VALUES (
  	:timestamp,
@@ -239,11 +243,11 @@ INSERT INTO tradelogs(
  	:eth_amount,
  	(SELECT id FROM users WHERE address=:user_address),
  	(SELECT id FROM token WHERE address=:src_address),
- 	(SELECT id FROM token WHERE address=:dest_address),
- 	(SELECT id FROM reserve WHERE address=:src_reserveaddress),
- 	(SELECT id FROM reserve WHERE address=:dst_reserveaddress),
+ 	(SELECT id FROM token WHERE address=:dst_address),
+ 	(SELECT id FROM reserve WHERE address=:src_reserve_address),
+ 	(SELECT id FROM reserve WHERE address=:dst_reserve_address),
  	:src_amount,
- 	:dest_amount,
+ 	:dst_amount,
  	(SELECT id FROM wallet WHERE address=:wallet_address),
  	:src_burn_amount,
  	:dst_burn_amount,
@@ -252,7 +256,22 @@ INSERT INTO tradelogs(
  	:integration_app,
  	:ip,
  	:country,
- 	:ethusd_rate,
- 	:ethusd_provider,
+ 	:eth_usd_rate,
+ 	:eth_usd_provider,
  	:index
 );`
+
+const selectTradeLogsQuery = `
+SELECT timestamp, block_number, eth_amount, d.address AS user_addr, e.address AS src_addr, f.address AS dst_addr,
+src_amount, dst_amount, ip, country, uid, integration_app, src_burn_amount, dst_burn_amount,
+log_index, tx_hash, b.address AS src_rsv_addr, c.address AS dst_rsv_addr, src_wallet_fee_amount, dst_wallet_fee_amount,
+g.address AS wallet_addr, tx_sender, receiver_addr 
+FROM "` + schema.TradeLogsTableName + `" AS a
+INNER JOIN reserve AS b where a.src_reserve_address_id = b.id
+INNER JOIN reserve AS c where a.dst_reserve_address_id = c.id
+INNER JOIN user AS d where a.user_address_id = d.id
+INNER JOIN token AS e where a.src_address_id = e.id
+INNER JOIN token AS f where f.dst_address_id = f.id
+INNER JOIN wallet AS g where a.wallet_address_id = g.id
+WHERE timestamp >= $1 and timestamp <= $2
+`

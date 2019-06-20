@@ -27,11 +27,11 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	eth_amount FLOAT(32),
 	user_address_id BIGINT NOT NULL REFERENCES users,
 	src_address_id BIGINT NOT NULL REFERENCES token,
-	dest_address_id BIGINT NOT NULL REFERENCES token,
-	src_reserveaddress_id BIGINT NOT NULL REFERENCES reserve,
-	dst_reserveaddress_id BIGINT NOT NULL REFERENCES reserve,
+	dst_address_id BIGINT NOT NULL REFERENCES token,
+	src_reserve_address_id BIGINT NOT NULL REFERENCES reserve,
+	dst_reserve_address_id BIGINT NOT NULL REFERENCES reserve,
 	src_amount FLOAT(32),
-	dest_amount FLOAT(32),
+	dst_amount FLOAT(32),
 	wallet_address_id BIGINT NOT NULL REFERENCES wallet,
 	src_burn_amount FLOAT(32),
 	dst_burn_amount FLOAT(32),
@@ -40,10 +40,16 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	integration_app TEXT,
 	ip TEXT,
 	country TEXT,
-	ethusd_rate FLOAT(32),
-	ethusd_provider TEXT,
+	eth_usd_rate FLOAT(32),
+	eth_usd_provider TEXT,
 	index INTEGER
 );
+
+CREATE INDEX "trade_timestamp" on "` + TradeLogsTableName + `"(timestamp);
+CREATE INDEX "trade_src_address" ON "` + TradeLogsTableName + `"(src_address_id);
+CREATE INDEX "trade_dst_address" ON "` + TradeLogsTableName + `"(dst_address_id);
+CREATE INDEX "trade_src_reserve_address" ON "` + TradeLogsTableName + `"(src_reserve_address_id);
+CREATE INDEX "trade_dst_reserve_address" ON "` + TradeLogsTableName + `"(dst_reserve_address_id);
 `
 
 const DefaultDateFormat = "2006-01-02 15:04:05"

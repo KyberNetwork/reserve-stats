@@ -12,7 +12,7 @@ import (
 
 func TestTradeLogDB_GetAggregatedBurnFee(t *testing.T) {
 	const (
-		dbName = "test_burnfee"
+		dbName = "test_burn_fee"
 		// These params are expected to be change when export.dat changes.
 		fromTime       = 1539000000000
 		toTime         = 1539250666000
@@ -23,12 +23,13 @@ func TestTradeLogDB_GetAggregatedBurnFee(t *testing.T) {
 	)
 
 	tldb, err := newTestTradeLogPostgresql(dbName)
+	require.NoError(t, err)
 	err = loadTestData(tldb.db, testDataFile)
 	require.NoError(t, err)
 
 	require.NoError(t, err)
 	defer func() {
-		require.NoError(t, tldb.tearDown(testDbName))
+		require.NoError(t, tldb.tearDown(dbName))
 	}()
 
 	var (

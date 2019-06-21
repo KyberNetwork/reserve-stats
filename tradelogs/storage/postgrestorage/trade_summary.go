@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-//TODO implement this
 func (tldb *TradeLogDB) GetTradeSummary(from, to time.Time, timezone int8) (map[uint64]*common.TradeSummary, error) {
 	var (
 		err           error

@@ -15,11 +15,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var dateFunctionParams = map[string]string{
-	"h": "hour",
-	"d": "day",
-}
-
 // Get aggregated Burn fee by hour or day
 func (tldb *TradeLogDB) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[ethereum.Address]map[string]float64, error) {
 	var (
@@ -33,7 +28,7 @@ func (tldb *TradeLogDB) GetAggregatedBurnFee(from, to time.Time, freq string, re
 	}
 	logger := tldb.sugar.With("from", from, "to", to, "freq", freq, "reserveAddrs", reserveAddrs)
 
-	if dateFunctionParam, ok = dateFunctionParams[strings.ToLower(freq)]; !ok {
+	if dateFunctionParam, ok = schema.DateFunctionParams[strings.ToLower(freq)]; !ok {
 		return nil, fmt.Errorf("invalid burn fee frequency %s", freq)
 	}
 

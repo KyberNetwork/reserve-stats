@@ -30,19 +30,21 @@ func (tldb *TradeLogDB) GetTokenHeatmap(asset ethereum.Address, from, to time.Ti
 			SUM(token_volume) AS token_volume,
 			SUM(usd_volume) AS usd_volume 
 		FROM (
-			SELECT coalesce(country::text, 'NULL') AS country, 
-				src_amount AS token_volume, eth_amount, eth_amount * eth_usd_rate AS usd_volume
+			SELECT country, src_amount AS token_volume, 
+				eth_amount, eth_amount * eth_usd_rate AS usd_volume
 			FROM "` + schema.TradeLogsTableName + `"
 			WHERE timestamp >= $1 and timestamp < $2
 			AND EXISTS (SELECT NULL FROM "` + schema.TokenTableName + `" WHERE address = $3 and id = src_address_id)
 			AND ` + ethCondition + `
+			AND country IS NOT NULL
 		UNION ALL
-			SELECT coalesce(country::text, 'NULL') AS country, 
-				dst_amount AS token_volume, eth_amount, eth_amount*eth_usd_rate AS usd_volume
+			SELECT country, dst_amount AS token_volume, eth_amount, 
+				eth_amount*eth_usd_rate AS usd_volume
 			FROM "` + schema.TradeLogsTableName + `"
 			WHERE timestamp >= $1 and timestamp < $2
 			AND EXISTS (SELECT NULL FROM "` + schema.TokenTableName + `" WHERE address = $3 and id = dst_address_id)
 			AND ` + ethCondition + `
+			AND country IS NOT NULL
 		)a GROUP BY country
 	`
 

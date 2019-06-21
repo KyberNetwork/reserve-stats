@@ -24,7 +24,7 @@ sleep 5
 pushd ../../cmd/trade-logs-crawler
 go build
 ./trade-logs-crawler --influxdb-endpoint=http://127.0.0.1:8087 \
-    --from-block "$from_block" --to-block "$to_block"
+    --from-block "$from_block" --to-block "$to_block" $TL_CRAWLER_PARAMS
 popd
 
 docker exec "$container_name" influx_inspect export -datadir /var/lib/influxdb/data \

@@ -72,7 +72,7 @@ func (tldb *TradeLogDB) GetAssetVolume(token ethereum.Address, fromTime, toTime 
 	}
 	logger.Debugw("execute template successful", "prepare statement", resultBuffer.String())
 
-	//fmt.Println(len(datas), "\t", timeCondition, resultBuffer.String())
+	//fmt.Println(len(datas), "\Timestamp", timeCondition, resultBuffer.String())
 
 	err = tldb.db.Select(&datas, resultBuffer.String(), token.Hex())
 	if err != nil {

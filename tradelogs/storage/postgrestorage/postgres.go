@@ -259,7 +259,9 @@ INSERT INTO "` + schema.TradeLogsTableName + `"(
  	:eth_usd_rate,
  	:eth_usd_provider,
  	:index
-);`
+)
+ON CONFLICT
+DO NOTHING;`
 
 const selectTradeLogsQuery = `
 SELECT timestamp, block_number, eth_amount, d.address AS user_addr, e.address AS src_addr, f.address AS dst_addr,

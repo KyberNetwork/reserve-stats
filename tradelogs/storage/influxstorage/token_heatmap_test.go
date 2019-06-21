@@ -1,13 +1,29 @@
-package postgrestorage
+package influxstorage
 
 import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 	"testing"
+
+	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/cq"
+	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
-func TestTradeLogDB_GetTokenHeatmap(t *testing.T) {
+func aggregateHeatMap(is *InfluxStorage) error {
+	cqs, err := tradelogcq.CreateCountryCqs(is.dbName)
+	if err != nil {
+		return err
+	}
+	for _, cq := range cqs {
+		err = cq.Execute(is.influxClient, is.sugar)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func TestInfluxStorage_GetTokenHeatmap(t *testing.T) {
 	const (
 		dbName = "test_heat_map_volume"
 		// These params are expected to be change when export.dat changes.
@@ -24,15 +40,15 @@ func TestTradeLogDB_GetTokenHeatmap(t *testing.T) {
 		toTime   = timeutil.TimestampMsToTime(1539254666000)
 	)
 
-	tldb, err := newTestTradeLogPostgresql(dbName)
+	is, err := newTestInfluxStorage(dbName)
 	require.NoError(t, err)
-
 	defer func() {
-		require.NoError(t, tldb.tearDown(dbName))
+		require.NoError(t, is.tearDown())
 	}()
+	require.NoError(t, loadTestData(dbName))
+	require.NoError(t, aggregateHeatMap(is))
 
-	require.NoError(t, loadTestData(tldb.db, testDataFile))
-	integrationVol, err := tldb.GetTokenHeatmap(ethereum.HexToAddress(accessAddress),
+	integrationVol, err := is.GetTokenHeatmap(ethereum.HexToAddress(accessAddress),
 		fromTime, toTime, 0)
 	require.NoError(t, err)
 	require.Contains(t, integrationVol, country)
@@ -41,4 +57,5 @@ func TestTradeLogDB_GetTokenHeatmap(t *testing.T) {
 	require.Equal(t, ethExpectedValue, integrationVol[country].TotalETHValue)
 	require.Equal(t, tokenExpectedValue, integrationVol[country].TotalTokenValue)
 	require.Equal(t, usdExpectedValue, integrationVol[country].TotalFiatValue)
+
 }

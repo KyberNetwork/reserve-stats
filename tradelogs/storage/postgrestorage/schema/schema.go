@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS "reserve" (
 	address TEXT UNIQUE NOT NULL
 );
 CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
-	id SERIAL PRIMARY KEY,
+	id SERIAL,
 	timestamp TIMESTAMP,
 	block_number INTEGER,
 	tx_hash TEXT,
@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	country TEXT,
 	eth_usd_rate FLOAT(32),
 	eth_usd_provider TEXT,
-	index INTEGER
+	index INTEGER,
+	PRIMARY KEY (tx_hash,index)
 );
 
 CREATE INDEX IF NOT EXISTS "trade_timestamp" ON "` + TradeLogsTableName + `"(timestamp);

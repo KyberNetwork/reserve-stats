@@ -24,6 +24,22 @@ const (
 		` OR NOT EXISTS (SELECT NULL FROM token WHERE address = '{{.ETHTokenAddr}}' AND dst_address_id != id ))`
 )
 
+func BuildDateTruncField(dateTruncParam string, timeZone int8) string {
+	if timeZone != 0 && dateTruncParam == "day" {
+		var intervalParse = fmt.Sprintf("interval '%d hour'", timeZone)
+		return "date_trunc('" + dateTruncParam + "', timestamp + " + intervalParse + ") - " + intervalParse
+	}
+	return `date_trunc('` + dateTruncParam + `', timestamp)`
+}
+
+func RoundTime(t time.Time, freq string, timeZone int8) time.Time {
+	if freq == "h" {
+		return t.Truncate(time.Hour)
+	}
+
+	return t.Add(time.Duration(timeZone) * time.Hour).Truncate(time.Hour * 24).Add(time.Duration(-timeZone) * time.Hour)
+}
+
 func BuildTimeCondition(start time.Time, end time.Time, frequency string) (string, error) {
 	var (
 		dateFunctionParam string

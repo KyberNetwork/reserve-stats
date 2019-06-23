@@ -43,10 +43,15 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	eth_usd_rate FLOAT(32),
 	eth_usd_provider TEXT,
 	index INTEGER,
+	kyced BOOLEAN,
+	is_first_trade BOOLEAN,
+	tx_sender	TEXT,
+	receiver_address	TEXT,
 	PRIMARY KEY (tx_hash,index)
 );
 
 CREATE INDEX IF NOT EXISTS "trade_timestamp" ON "` + TradeLogsTableName + `"(timestamp);
+CREATE INDEX IF NOT EXISTS "trade_user_address" ON "` + TradeLogsTableName + `"(user_address_id);
 CREATE INDEX IF NOT EXISTS "trade_src_address" ON "` + TradeLogsTableName + `"(src_address_id);
 CREATE INDEX IF NOT EXISTS "trade_dst_address" ON "` + TradeLogsTableName + `"(dst_address_id);
 CREATE INDEX IF NOT EXISTS "trade_src_reserve_address" ON "` + TradeLogsTableName + `"(src_reserve_address_id);

@@ -35,6 +35,10 @@ type record struct {
 	ETHUSDRate         float64        `db:"eth_usd_rate"`
 	ETHUSDProvider     string         `db:"eth_usd_provider"`
 	Index              string         `db:"index"`
+	Kyced              bool           `db:"kyced"`
+	IsFirstTrade       bool           `db:"is_first_trade"`
+	TxSender           string         `db:"tx_sender"`
+	ReceiverAddress    string         `db:"receiver_address"`
 }
 
 func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error) {
@@ -89,6 +93,9 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error)
 		ETHUSDRate:         log.ETHUSDRate,
 		ETHUSDProvider:     log.ETHUSDProvider,
 		Index:              strconv.FormatUint(uint64(log.Index), 10),
+		Kyced:              log.UID != "",
+		TxSender:           log.TxSender.Hex(),
+		ReceiverAddress:    log.ReceiverAddress.Hex(),
 	}, nil
 }
 

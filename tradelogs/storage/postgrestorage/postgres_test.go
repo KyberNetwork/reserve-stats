@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 	"github.com/jmoiron/sqlx"
@@ -138,6 +139,17 @@ func TestSaveTradeLogs(t *testing.T) {
 	if err = testStorage.SaveTradeLogs(tradeLogs); err != nil {
 		t.Error("get unexpected error when save trade logs", "err", err.Error())
 	}
+}
+
+func TestTradeLogDB_LoadTradeLogs(t *testing.T) {
+	const (
+		fromTime = 1539000000000
+		toTime   = 1539250666000
+	)
+	require.NoError(t, loadTestData(testStorage.db, testDataFile))
+	tradeLogs, err := testStorage.LoadTradeLogs(timeutil.TimestampMsToTime(fromTime), timeutil.TimestampMsToTime(toTime))
+	require.NoError(t, err)
+	t.Log(len(tradeLogs))
 }
 
 func TestMain(m *testing.M) {

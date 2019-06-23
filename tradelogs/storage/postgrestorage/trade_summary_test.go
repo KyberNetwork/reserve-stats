@@ -57,6 +57,8 @@ func TestTradeLogDB_GetTradeSummary(t *testing.T) {
 	require.Equal(t, totalTrade, result.TotalTrade)
 	require.Equal(t, uniqueAddress, result.UniqueAddresses)
 	require.Equal(t, totalBurnFee, result.TotalBurnFee)
+	require.Equal(t, kycedAddress, result.KYCEDAddresses)
+	require.Equal(t, newUniqueAddress, result.NewUniqueAddresses)
 
 	t.Logf("%+v", result)
 

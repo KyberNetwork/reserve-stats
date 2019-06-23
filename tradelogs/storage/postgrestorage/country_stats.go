@@ -28,16 +28,20 @@ func (tldb *TradeLogDB) GetCountryStats(countryCode string, from, to time.Time, 
 
 	tradelogQuery = `SELECT ` + timeField + ` AS time, 
 		COUNT(DISTINCT(user_address_id)) AS unique_address,
-		SUM(src_burn_amount) + SUM(dst_burn_amount) AS total_burn_fee
+		SUM(src_burn_amount) + SUM(dst_burn_amount) AS total_burn_fee,
+		COUNT(CASE WHEN kyced THEN 1 END) AS kyced,
+		COUNT(CASE WHEN is_first_trade THEN 1 END) AS count_new_trades
 		FROM "` + schema.TradeLogsTableName + `"
 		WHERE timestamp >= $1 AND timestamp < $2 AND country = $3
 		GROUP BY time
 	`
 	logger.Debugw("prepare statement", "stmt", tradelogQuery)
 	var datas2 []struct {
-		Time          time.Time `db:"time"`
-		UniqueAddress uint64    `db:"unique_address"`
-		TotalBurnFee  float64   `db:"total_burn_fee"`
+		Time           time.Time `db:"time"`
+		UniqueAddress  uint64    `db:"unique_address"`
+		TotalBurnFee   float64   `db:"total_burn_fee"`
+		CountNewTrades uint64    `db:"count_new_trades"`
+		Kyced          uint64    `db:"kyced"`
 	}
 	if err = tldb.db.Select(&datas2, tradelogQuery, from.UTC().Format(schema.DefaultDateFormat),
 		to.UTC().Format(schema.DefaultDateFormat), countryCode); err != nil {
@@ -51,8 +55,10 @@ func (tldb *TradeLogDB) GetCountryStats(countryCode string, from, to time.Time, 
 	for _, data := range datas2 {
 		ts := timeutil.TimeToTimestampMs(data.Time)
 		results[ts] = &common.CountryStats{
-			UniqueAddresses: data.UniqueAddress,
-			TotalBurnFee:    data.TotalBurnFee,
+			UniqueAddresses:    data.UniqueAddress,
+			TotalBurnFee:       data.TotalBurnFee,
+			KYCEDAddresses:     data.Kyced,
+			NewUniqueAddresses: data.CountNewTrades,
 		}
 	}
 

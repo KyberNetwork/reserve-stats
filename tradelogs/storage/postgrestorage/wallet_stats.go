@@ -26,7 +26,9 @@ func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, ti
 	walletStatsQuery := `
 		SELECT ` + timeField + ` as time,
 			COUNT(DISTINCT(user_address_id)) AS unique_address,
-			SUM(src_burn_amount) + SUM(dst_burn_amount) AS total_burn_fee
+			SUM(src_burn_amount) + SUM(dst_burn_amount) AS total_burn_fee,
+			COUNT(CASE WHEN kyced THEN 1 END) AS kyced,
+			COUNT(CASE WHEN is_first_trade THEN 1 END) AS count_new_trades
 		FROM "` + schema.TradeLogsTableName + `" 
 		WHERE timestamp >= $1 AND timestamp < $2
 		AND EXISTS (SELECT NULL FROM "` + schema.WalletTableName + `" WHERE address = $3 AND id=wallet_address_id)
@@ -35,9 +37,11 @@ func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, ti
 
 	logger.Debugw("prepare statement", "stmt", walletStatsQuery)
 	var records []struct {
-		TimeStamp     time.Time `db:"time"`
-		UniqueAddress int64     `db:"unique_address"`
-		TotalBurnFee  float64   `db:"total_burn_fee"`
+		TimeStamp      time.Time `db:"time"`
+		UniqueAddress  int64     `db:"unique_address"`
+		TotalBurnFee   float64   `db:"total_burn_fee"`
+		CountNewTrades int64     `db:"count_new_trades"`
+		Kyced          int64     `db:"kyced"`
 	}
 	err = tldb.db.Select(&records, walletStatsQuery, from.UTC().Format(schema.DefaultDateFormat),
 		to.UTC().Format(schema.DefaultDateFormat), walletAddr)
@@ -53,8 +57,10 @@ func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, ti
 	for _, record := range records {
 		ts := timeutil.TimeToTimestampMs(record.TimeStamp)
 		results[ts] = common.WalletStats{
-			UniqueAddresses: record.UniqueAddress,
-			BurnFee:         record.TotalBurnFee,
+			UniqueAddresses:    record.UniqueAddress,
+			BurnFee:            record.TotalBurnFee,
+			KYCEDAddresses:     record.Kyced,
+			NewUniqueAddresses: record.CountNewTrades,
 		}
 	}
 

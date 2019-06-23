@@ -8,10 +8,12 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
+	"math/big"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
+	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 // TradeLogDB is storage of tradelog data
@@ -50,10 +52,6 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 	stmt := fmt.Sprintf(`SELECT MAX("block_number") FROM "%v"`, schema.TradeLogsTableName)
 	logger = logger.With("query", stmt)
 	logger.Debug("Start query")
-	//if err := tldb.db.QueryRow(&result, stmt); err != nil {
-	//	logger.Errorw("Get error ", "error", err)
-	//	return 0, err
-	//}
 	row := tldb.db.QueryRow(stmt)
 	if err := row.Scan(&result); err != nil {
 		logger.Errorw("Get error ", "error", err)
@@ -111,13 +109,26 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) error {
 		walletAddress       = make(map[string]struct{})
 		walletAddressArray  []string
 		records             []*record
+
+		users = make(map[ethereum.Address]struct{})
 	)
 	for _, log := range logs {
 		r, err := tldb.recordFromTradeLog(log)
 		if err != nil {
 			return err
 		}
+
+		if _, ok := users[log.UserAddress]; ok {
+			r.IsFirstTrade = false
+		} else {
+			isFirstTrade, err := tldb.isFirstTrade(log.UserAddress)
+			if err != nil {
+				return err
+			}
+			r.IsFirstTrade = isFirstTrade
+		}
 		records = append(records, r)
+		users[log.UserAddress] = struct{}{}
 	}
 
 	for _, r := range records {
@@ -186,13 +197,100 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) error {
 	return err
 }
 
-// TODO: implement this
+func (tldb *TradeLogDB) isFirstTrade(userAddr ethereum.Address) (bool, error) {
+	query := `SELECT NOT EXISTS(SELECT NULL FROM "` + schema.UserTableName + `" WHERE address=$1);`
+	row := tldb.db.QueryRow(query, userAddr.Hex())
+	var result bool
+	if err := row.Scan(&result); err != nil {
+		tldb.sugar.Error(err)
+		return false, err
+	}
+	return result, nil
+}
+
 func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
 	var queryResult []struct {
+		Timestamp          time.Time      `db:"timestamp"`
+		BlockNumber        uint64         `db:"block_number"`
+		EthAmount          float64        `db:"eth_amount"`
+		EthUsdRate         float64        `db:"eth_usd_rate"`
+		UserAddress        string         `db:"user_address"`
+		SrcAddress         string         `db:"src_address"`
+		DstAddress         string         `db:"dst_address"`
+		SrcAmount          float64        `db:"src_amount"`
+		DstAmount          float64        `db:"dst_amount"`
+		LogIndex           uint           `db:"index"`
+		TxHash             string         `db:"tx_hash"`
+		Ip                 sql.NullString `db:"ip"`
+		Country            sql.NullString `db:"country"`
+		IntegrationApp     string         `db:"integration_app"`
+		SrcBurnAmount      float64        `db:"src_burn_amount"`
+		DstBurnAmount      float64        `db:"dst_burn_amount"`
+		SrcReserveAddress  string         `db:"src_rsv_address"`
+		DstReserveAddress  string         `db:"dst_rsv_address"`
+		SrcWalletFeeAmount float64        `db:"src_wallet_fee_amount"`
+		DstWalletFeeAmount float64        `db:"dst_wallet_fee_amount"`
+		WalletAddress      string         `db:"wallet_addr"`
+		TxSender           string         `db:"tx_sender"`
+		ReceiverAddr       string         `db:"receiver_address"`
 	}
-	tldb.db.Select(&queryResult, `SELECT timestamp, block_number, eth_amount, eth_amount, user_addr`)
+	err := tldb.db.Select(&queryResult, selectTradeLogsQuery, from.UTC().Format(schema.DefaultDateFormat),
+		to.UTC().Format(schema.DefaultDateFormat))
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	if len(queryResult) == 0 {
+		tldb.sugar.Debugw("empty result returned", "query", selectTradeLogsQuery)
+		return nil, nil
+	}
+
+	result := make([]common.TradeLog, 0)
+
+	for _, r := range queryResult {
+
+		var (
+			ethAmountInWei *big.Int
+			srcAmountInWei *big.Int
+			dstAmountInWei *big.Int
+		)
+
+		if ethAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.EthAmount); err != nil {
+			return nil, err
+		}
+		SrcAddress := ethereum.HexToAddress(r.SrcAddress)
+		if srcAmountInWei, err = tldb.tokenAmountFormatter.ToWei(SrcAddress, r.SrcAmount); err != nil {
+			return nil, err
+		}
+		DstAddress := ethereum.HexToAddress(r.DstAddress)
+		if dstAmountInWei, err = tldb.tokenAmountFormatter.ToWei(DstAddress, r.SrcAmount); err != nil {
+			return nil, err
+		}
+
+		tradeLog := common.TradeLog{
+			TransactionHash:   ethereum.HexToHash(r.TxHash),
+			Index:             r.LogIndex,
+			Timestamp:         r.Timestamp,
+			BlockNumber:       r.BlockNumber,
+			EthAmount:         ethAmountInWei,
+			UserAddress:       ethereum.HexToAddress(r.UserAddress),
+			SrcAddress:        SrcAddress,
+			DestAddress:       DstAddress,
+			SrcAmount:         srcAmountInWei,
+			DestAmount:        dstAmountInWei,
+			SrcReserveAddress: ethereum.HexToAddress(r.SrcReserveAddress),
+			DstReserveAddress: ethereum.HexToAddress(r.DstReserveAddress),
+			IP:                r.Ip.String,
+			Country:           r.Country.String,
+			IntegrationApp:    r.IntegrationApp,
+			FiatAmount:        r.EthAmount * r.EthUsdRate,
+			TxSender:          ethereum.HexToAddress(r.TxSender),
+			ReceiverAddress:   ethereum.HexToAddress(r.ReceiverAddr),
+		}
+
+		result = append(result, tradeLog)
+	}
+	return result, nil
 }
 
 const insertionAddressTemplate = `INSERT INTO %[1]s(
@@ -235,7 +333,11 @@ INSERT INTO "` + schema.TradeLogsTableName + `"(
  	country,
  	eth_usd_rate,
  	eth_usd_provider,
-	index
+	index,
+	kyced,
+	is_first_trade,
+	tx_sender,
+	receiver_address
 ) VALUES (
  	:timestamp,
  	:block_number,
@@ -258,22 +360,27 @@ INSERT INTO "` + schema.TradeLogsTableName + `"(
  	:country,
  	:eth_usd_rate,
  	:eth_usd_provider,
- 	:index
+ 	:index,
+	:kyced,
+	:is_first_trade,
+	:tx_sender,
+ 	:receiver_address
 )
 ON CONFLICT
 DO NOTHING;`
 
 const selectTradeLogsQuery = `
-SELECT timestamp, block_number, eth_amount, d.address AS user_addr, e.address AS src_addr, f.address AS dst_addr,
-src_amount, dst_amount, ip, country, uid, integration_app, src_burn_amount, dst_burn_amount,
-log_index, tx_hash, b.address AS src_rsv_addr, c.address AS dst_rsv_addr, src_wallet_fee_amount, dst_wallet_fee_amount,
-g.address AS wallet_addr, tx_sender, receiver_addr 
+SELECT a.timestamp AS timestamp, block_number, eth_amount, eth_usd_rate, d.address AS user_address,
+e.address AS src_address, f.address AS dst_address,
+src_amount, dst_amount, ip, country, integration_app, src_burn_amount, dst_burn_amount,
+index, tx_hash, b.address AS src_rsv_address, c.address AS dst_rsv_address, src_wallet_fee_amount, dst_wallet_fee_amount,
+g.address AS wallet_addr, tx_sender, receiver_address
 FROM "` + schema.TradeLogsTableName + `" AS a
-INNER JOIN reserve AS b where a.src_reserve_address_id = b.id
-INNER JOIN reserve AS c where a.dst_reserve_address_id = c.id
-INNER JOIN user AS d where a.user_address_id = d.id
-INNER JOIN token AS e where a.src_address_id = e.id
-INNER JOIN token AS f where f.dst_address_id = f.id
-INNER JOIN wallet AS g where a.wallet_address_id = g.id
-WHERE timestamp >= $1 and timestamp <= $2
+INNER JOIN reserve AS b ON a.src_reserve_address_id = b.id
+INNER JOIN reserve AS c ON a.dst_reserve_address_id = c.id
+INNER JOIN users AS d ON a.user_address_id = d.id
+INNER JOIN token AS e ON a.src_address_id = e.id
+INNER JOIN token AS f ON a.dst_address_id = f.id
+INNER JOIN wallet AS g ON a.wallet_address_id = g.id
+WHERE a.timestamp >= $1 and a.timestamp <= $2;
 `

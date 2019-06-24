@@ -40,8 +40,8 @@ func TestTradeLogDB_GetAggregatedBurnFee(t *testing.T) {
 	)
 
 	burnFee, err := tldb.GetAggregatedBurnFee(from, to, freq, rsvAddrs)
-	require.Equal(t, 1, len(burnFee))
 	require.NoError(t, err)
+	require.Equal(t, 1, len(burnFee))
 
 	timeUnix, err := time.Parse(time.RFC3339, timeStamp)
 	require.NoError(t, err)

@@ -2,7 +2,7 @@ package influxstorage
 
 import (
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 	"strconv"
 	"time"
 
@@ -278,7 +278,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		return nil, err
 	}
 
-	srcBurnAmount, dstBurnAmount, err := storage.GetBurnAmount(is.sugar, is.tokenAmountFormatter, log)
+	srcBurnAmount, dstBurnAmount, err := utils.GetBurnAmount(is.sugar, is.tokenAmountFormatter, log)
 	if err != nil {
 		return nil, err
 	}

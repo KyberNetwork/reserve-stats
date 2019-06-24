@@ -1,6 +1,7 @@
 package main
 
 import (
+	storage "github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	"log"
 	"os"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/http"
-	storage "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage"
 	"github.com/urfave/cli"
 )
 
@@ -31,21 +31,7 @@ func main() {
 		}
 		defer flush()
 
-		tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
-		if err != nil {
-			return err
-		}
-		influxClient, err := influxdb.NewClientFromContext(c)
-		if err != nil {
-			return err
-		}
-
-		influxStorage, err := storage.NewInfluxStorage(
-			sugar,
-			"trade_logs",
-			influxClient,
-			tokenAmountFormatter,
-		)
+		storageInterface, err := storage.NewStorageInterface(sugar, c)
 		if err != nil {
 			return err
 		}
@@ -74,7 +60,7 @@ func main() {
 			return err
 		}
 
-		api := http.NewServer(influxStorage, httputil.NewHTTPAddressFromContext(c),
+		api := http.NewServer(storageInterface, httputil.NewHTTPAddressFromContext(c),
 			sugar, symbolResolver, options...)
 		err = api.Start()
 		if err != nil {
@@ -88,8 +74,10 @@ func main() {
 		return nil
 	}
 
+	app.Flags = append(app.Flags, storage.NewCliFlags()...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.TradeLogsPort)...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.PostgresDefaultDb)...)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, appnames.NewCliFlags()...)
 	app.Flags = append(app.Flags, userprofile.NewCliFlags()...)

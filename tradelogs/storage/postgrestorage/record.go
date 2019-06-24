@@ -2,7 +2,7 @@ package postgrestorage
 
 import (
 	"database/sql"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 	"strconv"
 	"time"
 
@@ -61,7 +61,7 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error)
 		return nil, err
 	}
 
-	srcBurnAmount, dstBurnAmount, err := storage.GetBurnAmount(tldb.sugar, tldb.tokenAmountFormatter, log)
+	srcBurnAmount, dstBurnAmount, err := utils.GetBurnAmount(tldb.sugar, tldb.tokenAmountFormatter, log)
 	if err != nil {
 		return nil, err
 	}

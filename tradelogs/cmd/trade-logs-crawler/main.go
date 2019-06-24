@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"log"
 	"math"
@@ -21,9 +20,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/cq"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
 )
 
@@ -46,13 +43,6 @@ const (
 
 	blockConfirmationsFlag    = "wait-for-confirmations"
 	defaultBlockConfirmations = 7
-
-	dbEngineFlag    = "db-engine"
-	defaultDbEngine = "influx"
-	influxDbEngine  = "influx"
-	postgreDbEngine = "postgre"
-
-	defaultDb = "reserve_stats"
 )
 
 func main() {
@@ -103,15 +93,11 @@ func main() {
 			EnvVar: "WAIT_FOR_CONFIRMATIONS",
 			Value:  defaultBlockConfirmations,
 		},
-		cli.StringFlag{
-			Name:   dbEngineFlag,
-			Usage:  "db engine to write trade logs, pls select influx or postgre",
-			EnvVar: "DB_ENGINE",
-			Value:  defaultDbEngine,
-		},
 	)
+
+	app.Flags = append(app.Flags, storage.NewCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDb)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.PostgresDefaultDb)...)
 	app.Flags = append(app.Flags, broadcast.NewCliFlags()...)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, cq.NewCQFlags()...)
@@ -181,54 +167,6 @@ func requiredWorkers(fromBlock, toBlock *big.Int, maxBlocks, maxWorkers int) int
 	return maxWorkers
 }
 
-func newStorageInterface(sugar *zap.SugaredLogger, c *cli.Context) (storage.Interface, error) {
-	var (
-		err error
-	)
-
-	tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
-	if err != nil {
-		return nil, err
-	}
-
-	dbEngine := c.String(dbEngineFlag)
-	switch dbEngine {
-	case influxDbEngine:
-		influxClient, err := influxdb.NewClientFromContext(c)
-		if err != nil {
-			return nil, err
-		}
-
-		if err = manageCQFromContext(c, influxClient, sugar); err != nil {
-			return nil, err
-		}
-
-		influxStorage, err := influxstorage.NewInfluxStorage(
-			sugar,
-			common.DatabaseName,
-			influxClient,
-			tokenAmountFormatter,
-		)
-		if err != nil {
-			return nil, err
-		}
-		return influxStorage, nil
-	case postgreDbEngine:
-		db, err := libapp.NewDBFromContext(c)
-		if err != nil {
-			return nil, err
-		}
-		postgresStorage, err := postgrestorage.NewTradeLogDB(sugar, db, tokenAmountFormatter)
-		if err != nil {
-			sugar.Infow("error", err)
-			return nil, err
-		}
-		return postgresStorage, nil
-	default:
-		return nil, fmt.Errorf("invalid db engine: %q", dbEngine)
-	}
-}
-
 func run(c *cli.Context) error {
 	var (
 		err              error
@@ -241,9 +179,21 @@ func run(c *cli.Context) error {
 	}
 	defer flush()
 
-	storageInterface, err = newStorageInterface(sugar, c)
+	storageInterface, err = storage.NewStorageInterface(sugar, c)
 	if err != nil {
 		return err
+	}
+
+	//if db = influx check cq flags
+	if c.String(storage.DbEngineFlag) == storage.InfluxDbEngine {
+		influxClient, err := influxdb.NewClientFromContext(c)
+		if err != nil {
+			return err
+		}
+
+		if err = manageCQFromContext(c, influxClient, sugar); err != nil {
+			return err
+		}
 	}
 
 	etherscanClient, err := etherscan.NewEtherscanClientFromContext(c)

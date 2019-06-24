@@ -33,7 +33,7 @@ func BuildDateTruncField(dateTruncParam string, timeZone int8) string {
 }
 
 func RoundTime(t time.Time, freq string, timeZone int8) time.Time {
-	if freq == "h" {
+	if freq == "hour" {
 		return t.Truncate(time.Hour)
 	}
 

@@ -1,17 +1,28 @@
 package storage
 
 import (
+	"fmt"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage"
+	"github.com/urfave/cli"
+	"go.uber.org/zap"
 	"time"
 
+	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
-// SaveInterface represent a storage save method for TradeLog data
-//type SaveInterface interface {
-//	LastBlock() (int64, error)
-//	SaveTradeLogs(logs []common.TradeLog) error
-//}
+const (
+	DbEngineFlag    = "db-engine"
+	defaultDbEngine = "influx"
+	InfluxDbEngine  = "influx"
+	PostgreDbEngine = "postgre"
+
+	PostgresDefaultDb = "reserve_stats"
+)
 
 // Interface represent a storage for TradeLogs data
 type Interface interface {
@@ -30,4 +41,59 @@ type Interface interface {
 	GetIntegrationVolume(fromTime, toTime time.Time) (map[uint64]*common.IntegrationVolume, error)
 	LastBlock() (int64, error)
 	SaveTradeLogs(logs []common.TradeLog) error
+}
+
+func NewCliFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:   DbEngineFlag,
+			Usage:  "db engine to write trade logs, pls select influx or postgre",
+			EnvVar: "DB_ENGINE",
+			Value:  defaultDbEngine,
+		},
+	}
+}
+
+func NewStorageInterface(sugar *zap.SugaredLogger, c *cli.Context) (Interface, error) {
+	var (
+		err error
+	)
+
+	tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
+	if err != nil {
+		return nil, err
+	}
+
+	dbEngine := c.String(DbEngineFlag)
+	switch dbEngine {
+	case InfluxDbEngine:
+		influxClient, err := influxdb.NewClientFromContext(c)
+		if err != nil {
+			return nil, err
+		}
+
+		influxStorage, err := influxstorage.NewInfluxStorage(
+			sugar,
+			common.DatabaseName,
+			influxClient,
+			tokenAmountFormatter,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return influxStorage, nil
+	case PostgreDbEngine:
+		db, err := libapp.NewDBFromContext(c)
+		if err != nil {
+			return nil, err
+		}
+		postgresStorage, err := postgrestorage.NewTradeLogDB(sugar, db, tokenAmountFormatter)
+		if err != nil {
+			sugar.Infow("error", err)
+			return nil, err
+		}
+		return postgresStorage, nil
+	default:
+		return nil, fmt.Errorf("invalid db engine: %q", dbEngine)
+	}
 }

@@ -5,8 +5,9 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	ethereum "github.com/ethereum/go-ethereum/common"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 // BurnFee represent burnFee event on KyberNetwork
@@ -68,7 +69,7 @@ type TradeLog struct {
 	Index     uint   `json:"index"` // the index of event log in transaction receipt
 }
 
-// MarshalJSON implements custom JSON marshaler for TradeLog to format timestamp in unix millis instead of RFC3339.
+// MarshalJSON implements custom JSON marshaller for TradeLog to format timestamp in unix millis instead of RFC3339.
 func (tl *TradeLog) MarshalJSON() ([]byte, error) {
 	type AliasTradeLog TradeLog
 	return json.Marshal(struct {

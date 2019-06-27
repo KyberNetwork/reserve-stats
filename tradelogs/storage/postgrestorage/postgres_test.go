@@ -1,26 +1,19 @@
 package postgrestorage
 
 import (
-	"database/sql"
 	"fmt"
+	"testing"
+
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 	"github.com/jmoiron/sqlx"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"log"
-	"os"
-	"testing"
 )
-
-var testStorage *TradeLogDB
 
 const (
 	driverName   = "postgres"
-	testDbName   = "test_log_db"
 	testDataFile = "../testdata/postgresql/export.sql"
 )
 
@@ -105,61 +98,60 @@ func loadTestData(db *sqlx.DB, path string) error {
 	return err
 }
 
-func TestNewTradeLogDB(t *testing.T) {
+func TestTradeLogDB_LastBlock(t *testing.T) {
+	const (
+		dbName = "test_last_block"
+	)
+
+	testStorage, err := newTestTradeLogPostgresql(dbName)
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, testStorage.tearDown(dbName))
+	}()
+
 	blockNumber, err := testStorage.LastBlock()
 	require.NoError(t, err, "call max block failed")
 	t.Log(blockNumber)
-	assert.Equal(t, blockNumber, int64(0))
-	err = loadTestData(testStorage.db, testDataFile)
-	require.NoError(t, err)
+	require.Equal(t, blockNumber, int64(0))
+	require.NoError(t, loadTestData(testStorage.db, testDataFile))
 	// call lastBlock after load test storage
 	blockNumber, err = testStorage.LastBlock()
 	require.NoError(t, err, "call max block failed after load data")
-	t.Log(blockNumber)
-}
-
-func TestTradeLogDB_LastBlock(t *testing.T) {
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		"127.0.0.1", 5432, "reserve_stats", "reserve_stats", testDbName,
-	)
-	db, err := sqlx.Connect(driverName, connStr)
-	require.NoError(t, err)
-	stmt := fmt.Sprintf(`SELECT MAX("block_number") FROM "%v"`, schema.TradeLogsTableName)
-	t.Log(stmt)
-	var result sql.NullInt64
-	row := db.QueryRow(stmt)
-	err = row.Scan(&result)
-	require.NoError(t, err)
-	t.Log(result.Int64)
+	require.NotEqual(t, blockNumber, int64(0))
+	t.Logf("blocknumber: %v\n", blockNumber)
 }
 
 func TestSaveTradeLogs(t *testing.T) {
+	const (
+		dbName = "test_save_trade_log"
+	)
+	testStorage, err := newTestTradeLogPostgresql(dbName)
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, testStorage.tearDown(dbName))
+	}()
+
 	tradeLogs, err := utils.GetSampleTradeLogs("../testdata/trade_logs.json")
 	require.NoError(t, err)
-	if err = testStorage.SaveTradeLogs(tradeLogs); err != nil {
-		t.Error("get unexpected error when save trade logs", "err", err.Error())
-	}
+	require.NoError(t, testStorage.SaveTradeLogs(tradeLogs))
 }
 
 func TestTradeLogDB_LoadTradeLogs(t *testing.T) {
 	const (
 		fromTime = 1539000000000
 		toTime   = 1539250666000
+		dbName   = "test_load_trade_log"
 	)
+
+	testStorage, err := newTestTradeLogPostgresql(dbName)
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, testStorage.tearDown(dbName))
+	}()
+
 	require.NoError(t, loadTestData(testStorage.db, testDataFile))
+
 	tradeLogs, err := testStorage.LoadTradeLogs(timeutil.TimestampMsToTime(fromTime), timeutil.TimestampMsToTime(toTime))
 	require.NoError(t, err)
 	t.Log(len(tradeLogs))
-}
-
-func TestMain(m *testing.M) {
-	var err error
-	if testStorage, err = newTestTradeLogPostgresql(testDbName); err != nil {
-		log.Fatal("get unexpected error when create storage ", "error ", err.Error())
-	}
-	ret := m.Run()
-	if err = testStorage.tearDown(testDbName); err != nil {
-		log.Fatal(err)
-	}
-	os.Exit(ret)
 }

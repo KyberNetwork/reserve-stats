@@ -3,13 +3,14 @@ package postgrestorage
 import (
 	"database/sql"
 	"fmt"
+	"math/big"
+	"time"
+
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
-	"math/big"
-	"time"
 
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
@@ -21,7 +22,6 @@ type TradeLogDB struct {
 	sugar                *zap.SugaredLogger
 	db                   *sqlx.DB
 	tokenAmountFormatter blockchain.TokenAmountFormatterInterface
-	dbName               string
 }
 
 //NewTradeLogDB create a new instance of TradeLogDB
@@ -45,7 +45,7 @@ func NewTradeLogDB(sugar *zap.SugaredLogger, db *sqlx.DB, tokenAmountFormatter b
 func (tldb *TradeLogDB) LastBlock() (int64, error) {
 	var (
 		logger = tldb.sugar.With(
-			"func", "tradelog/storage/postgrestorage/TradeLogDB.SaveTradeLogs",
+			"func", "tradelogs/storage/postgrestorage/TradeLogDB.SaveTradeLogs",
 		)
 		result sql.NullInt64
 	)
@@ -221,7 +221,7 @@ func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, er
 		DstAmount          float64        `db:"dst_amount"`
 		LogIndex           uint           `db:"index"`
 		TxHash             string         `db:"tx_hash"`
-		Ip                 sql.NullString `db:"ip"`
+		IP                 sql.NullString `db:"ip"`
 		Country            sql.NullString `db:"country"`
 		IntegrationApp     string         `db:"integration_app"`
 		SrcBurnAmount      float64        `db:"src_burn_amount"`
@@ -280,7 +280,7 @@ func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, er
 			DestAmount:        dstAmountInWei,
 			SrcReserveAddress: ethereum.HexToAddress(r.SrcReserveAddress),
 			DstReserveAddress: ethereum.HexToAddress(r.DstReserveAddress),
-			IP:                r.Ip.String,
+			IP:                r.IP.String,
 			Country:           r.Country.String,
 			IntegrationApp:    r.IntegrationApp,
 			FiatAmount:        r.EthAmount * r.EthUsdRate,

@@ -3,9 +3,10 @@ package influxstorage
 import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/cq"
 	ethereum "github.com/ethereum/go-ethereum/common"

@@ -1,9 +1,10 @@
 package main
 
 import (
-	storage "github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	"log"
 	"os"
+
+	storage "github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/appnames"

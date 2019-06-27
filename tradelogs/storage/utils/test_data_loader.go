@@ -2,8 +2,9 @@ package utils
 
 import (
 	"encoding/json"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"os"
+
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 func GetSampleTradeLogs(dataPath string) ([]common.TradeLog, error) {

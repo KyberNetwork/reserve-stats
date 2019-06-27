@@ -1,9 +1,10 @@
 package postgrestorage
 
 import (
+	"time"
+
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
-	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 )

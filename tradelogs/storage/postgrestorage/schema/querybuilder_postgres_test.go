@@ -1,10 +1,11 @@
 package schema
 
 import (
+	"testing"
+
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestGetTimeCondition(t *testing.T) {

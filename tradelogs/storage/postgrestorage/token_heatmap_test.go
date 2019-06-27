@@ -1,10 +1,11 @@
 package postgrestorage
 
 import (
+	"testing"
+
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestTradeLogDB_GetTokenHeatmap(t *testing.T) {

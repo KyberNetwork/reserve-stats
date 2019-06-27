@@ -3,11 +3,12 @@ package postgrestorage
 import (
 	"bytes"
 	"fmt"
+	"html/template"
+	"time"
+
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
-	"html/template"
-	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 )

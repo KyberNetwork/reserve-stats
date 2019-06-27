@@ -1,11 +1,12 @@
 package postgrestorage
 
 import (
+	"testing"
+	"time"
+
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 )

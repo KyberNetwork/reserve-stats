@@ -3,10 +3,11 @@ package schema
 import (
 	"bytes"
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"html/template"
 	"strings"
 	"time"
+
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 )
 
 var DateFunctionParams = map[string]string{

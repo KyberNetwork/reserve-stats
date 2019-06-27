@@ -1,12 +1,13 @@
 package influxstorage
 
 import (
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"log"
 	"testing"
 	"time"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/cq"
 )

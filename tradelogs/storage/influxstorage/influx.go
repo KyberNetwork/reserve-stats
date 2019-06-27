@@ -2,9 +2,10 @@ package influxstorage
 
 import (
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 	"strconv"
 	"time"
+
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"

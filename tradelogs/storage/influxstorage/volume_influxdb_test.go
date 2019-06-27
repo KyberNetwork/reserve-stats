@@ -1,15 +1,15 @@
 package influxstorage
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/cq"
+	"github.com/stretchr/testify/assert"
 )
 
 func aggregationTestData(is *InfluxStorage) error {

@@ -1,17 +1,18 @@
 package postgrestorage
 
 import (
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/stretchr/testify/require"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 func TestTradeLogDB_GetUserVolume(t *testing.T) {
 	const (
-		dbName = "test_burn_fee"
+		dbName = "test_user_volume"
 		// These params are expected to be change when export.dat changes.
 		fromTime          = 1539000000000
 		toTime            = 1539250666000

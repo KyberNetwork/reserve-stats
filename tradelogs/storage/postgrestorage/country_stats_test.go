@@ -1,10 +1,11 @@
 package postgrestorage
 
 import (
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTradeLogDB_GetCountryStats(t *testing.T) {

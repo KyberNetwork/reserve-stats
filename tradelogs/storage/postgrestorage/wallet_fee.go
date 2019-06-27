@@ -2,10 +2,11 @@ package postgrestorage
 
 import (
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
 	"strings"
 	"time"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
 )
 
 func (tldb *TradeLogDB) GetAggregatedWalletFee(reserveAddr, walletAddr, freq string,

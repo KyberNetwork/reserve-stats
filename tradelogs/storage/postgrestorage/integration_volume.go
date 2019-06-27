@@ -1,11 +1,12 @@
 package postgrestorage
 
 import (
+	"time"
+
 	appname "github.com/KyberNetwork/reserve-stats/app-names"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
-	"time"
 )
 
 func (tldb *TradeLogDB) GetIntegrationVolume(fromTime, toTime time.Time) (map[uint64]*common.IntegrationVolume, error) {

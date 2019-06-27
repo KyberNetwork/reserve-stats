@@ -2,9 +2,10 @@ package postgrestorage
 
 import (
 	"database/sql"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 	"strconv"
 	"time"
+
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -115,12 +116,13 @@ func (tldb *TradeLogDB) getWalletFeeAmount(log common.TradeLog) (float64, float6
 			return dstAmount, srcAmount, err
 		}
 
-		if walletFee.ReserveAddress == log.SrcReserveAddress && !srcAmountSet {
+		switch {
+		case walletFee.ReserveAddress == log.SrcReserveAddress && !srcAmountSet:
 			srcAmount = amount
 			srcAmountSet = true
-		} else if walletFee.ReserveAddress == log.DstReserveAddress {
+		case walletFee.ReserveAddress == log.DstReserveAddress:
 			dstAmount = amount
-		} else {
+		default:
 			logger.Warnw("unexpected wallet fees with unrecognized reserve address", "wallet fee", walletFee)
 		}
 	}

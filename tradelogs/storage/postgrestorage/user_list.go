@@ -1,9 +1,10 @@
 package postgrestorage
 
 import (
+	"time"
+
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
-	"time"
 )
 
 func (tldb *TradeLogDB) GetUserList(fromTime, toTime time.Time, timezone int8) ([]common.UserInfo, error) {

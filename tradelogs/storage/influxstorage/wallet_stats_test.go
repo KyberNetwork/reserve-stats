@@ -1,15 +1,17 @@
 package influxstorage
 
 import (
+	"log"
+	"testing"
+	"time"
+
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/cq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"log"
-	"testing"
 )
 
-func aggregateWalletStats(is InfluxStorage) error {
+func aggregateWalletStats(is *InfluxStorage) error {
 	cqs, err := tradelogcq.CreateWalletStatsCqs(is.dbName)
 	if err != nil {
 		return err
@@ -46,20 +48,19 @@ func TestInfluxStorage_GetWalletStats(t *testing.T) {
 		assert.NoError(t, is.tearDown())
 	}()
 
-	assert.NoError(t, loadTestData(dbName))
-	assert.NoError(t, aggregateIntegrationVolume(is))
-	_, err = is.GetWalletStats(fromTime, toTime, walletAddress, 0)
-	//integrationVol, err := is.GetWalletStats(fromTime, toTime, walletAddress, 0)
+	require.NoError(t, loadTestData(dbName))
+	require.NoError(t, aggregateWalletStats(is))
+	integrationVol, err := is.GetWalletStats(fromTime, toTime, walletAddress, 0)
 
 	require.NoError(t, err)
 
-	//timeUnix, err := time.Parse(time.RFC3339, timeStamp)
-	//assert.NoError(t, err)
-	//timeUint := timeutil.TimeToTimestampMs(timeUnix)
-	//_, _ := integrationVol[timeUint]
-	//if !ok {
-	//	t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))
-	//}
-	//
-	//t.Logf("%+v", result)
+	timeUnix, err := time.Parse(time.RFC3339, timeStamp)
+	assert.NoError(t, err)
+	timeUint := timeutil.TimeToTimestampMs(timeUnix)
+	result, ok := integrationVol[timeUint]
+	if !ok {
+		t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))
+	}
+
+	t.Logf("%+v", result)
 }

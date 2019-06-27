@@ -1,10 +1,11 @@
 package postgrestorage
 
 import (
+	"testing"
+
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestTradeLogDB_GetUserList(t *testing.T) {

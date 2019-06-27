@@ -2,10 +2,11 @@ package influxstorage
 
 import (
 	"fmt"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 	"log"
 	"os"
 	"testing"
+
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 
 	"github.com/stretchr/testify/require"
 

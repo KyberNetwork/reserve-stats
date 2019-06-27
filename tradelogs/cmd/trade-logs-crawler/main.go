@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"log"
 	"math"
 	"math/big"
 	"os"
 	"time"
+
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/urfave/cli"

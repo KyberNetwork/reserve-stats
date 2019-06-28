@@ -55,16 +55,7 @@ func NewCliFlags() []cli.Flag {
 	}
 }
 
-func NewStorageInterface(sugar *zap.SugaredLogger, c *cli.Context) (Interface, error) {
-	var (
-		err error
-	)
-
-	tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
-	if err != nil {
-		return nil, err
-	}
-
+func NewStorageInterfaceFromContext(sugar *zap.SugaredLogger, c *cli.Context, tokenAmountFormatter blockchain.TokenAmountFormatterInterface) (Interface, error) {
 	dbEngine := c.String(DbEngineFlag)
 	switch dbEngine {
 	case InfluxDbEngine:

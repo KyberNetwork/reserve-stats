@@ -180,7 +180,12 @@ func run(c *cli.Context) error {
 	}
 	defer flush()
 
-	storageInterface, err = storage.NewStorageInterface(sugar, c)
+	tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	storageInterface, err = storage.NewStorageInterfaceFromContext(sugar, c, tokenAmountFormatter)
 	if err != nil {
 		return err
 	}

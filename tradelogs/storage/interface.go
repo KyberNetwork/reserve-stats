@@ -17,10 +17,10 @@ import (
 )
 
 const (
-	DbEngineFlag    = "db-engine"
-	defaultDbEngine = "influx"
-	InfluxDbEngine  = "influx"
-	PostgreDbEngine = "postgre"
+	DbEngineFlag     = "db-engine"
+	defaultDbEngine  = "influx"
+	InfluxDbEngine   = "influx"
+	PostgresDbEngine = "postgres"
 
 	PostgresDefaultDb = "reserve_stats"
 )
@@ -48,7 +48,7 @@ func NewCliFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
 			Name:   DbEngineFlag,
-			Usage:  "db engine to write trade logs, pls select influx or postgre",
+			Usage:  "db engine to write trade logs, pls select influx or postgres",
 			EnvVar: "DB_ENGINE",
 			Value:  defaultDbEngine,
 		},
@@ -74,7 +74,7 @@ func NewStorageInterfaceFromContext(sugar *zap.SugaredLogger, c *cli.Context, to
 			return nil, err
 		}
 		return influxStorage, nil
-	case PostgreDbEngine:
+	case PostgresDbEngine:
 		db, err := libapp.NewDBFromContext(c)
 		if err != nil {
 			return nil, err

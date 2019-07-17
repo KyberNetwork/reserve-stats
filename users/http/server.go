@@ -104,18 +104,20 @@ func (s *Server) userStats(c *gin.Context) {
 	}
 
 	userCap = blockchain.EthToWei(s.userCapConf.UserCap(input.KYCed).TxLimit / rate)
+	volumeInWei := blockchain.EthToWei(volume / rate)
 	rich = s.userCapConf.IsRich(input.KYCed, volume)
 
 	logger.Infow("got last 24h volume of user",
-		"volume", volume,
+		"volume", volumeInWei,
 		"cap", userCap,
 		"rich", rich,
 	)
 
 	c.JSON(http.StatusOK, gin.H{
-		"cap":   userCap,
-		"kyced": input.KYCed,
-		"rich":  rich,
+		"cap":    userCap,
+		"kyced":  input.KYCed,
+		"rich":   rich,
+		"volume": volumeInWei,
 	})
 }
 

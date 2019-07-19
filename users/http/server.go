@@ -22,8 +22,7 @@ import (
 )
 
 const (
-	uidPrefix    = "uid"
-	maxBatchSize = 1000
+	uidPrefix = "uid"
 )
 
 //NewServer return new server instance
@@ -32,6 +31,7 @@ func NewServer(sugar *zap.SugaredLogger,
 	host string,
 	redisClient *redis.Client,
 	userCapConf *common.UserCapConfiguration,
+	maxBatchSize int,
 ) *Server {
 	r := gin.Default()
 	return &Server{
@@ -41,6 +41,7 @@ func NewServer(sugar *zap.SugaredLogger,
 		host:         host,
 		redisClient:  redisClient,
 		userCapConf:  userCapConf,
+		maxBatchSize: maxBatchSize,
 	}
 }
 
@@ -52,6 +53,7 @@ type Server struct {
 	rateProvider tokenrate.ETHUSDRateProvider
 	redisClient  *redis.Client
 	userCapConf  *common.UserCapConfiguration
+	maxBatchSize int
 }
 
 type userStatsQuery struct {
@@ -106,7 +108,7 @@ func (s *Server) getUserVolumeByUIDs(uids []string) ([]float64, error) {
 	return result, nil
 }
 
-func convertQueryParams(query userStatsBatchQuery) ([]string, []bool, error) {
+func (s *Server) convertQueryParams(query userStatsBatchQuery) ([]string, []bool, error) {
 	var uidArr []string
 	uidArr = append(uidArr, strings.Split(query.UIDs, ",")...)
 	var kycedArr []bool
@@ -117,7 +119,7 @@ func convertQueryParams(query userStatsBatchQuery) ([]string, []bool, error) {
 		}
 		kycedArr = append(kycedArr, kyced)
 	}
-	if len(uidArr) >= maxBatchSize {
+	if len(uidArr) >= s.maxBatchSize {
 		return nil, nil, errors.New("batch size is too big")
 	}
 	if len(uidArr) != len(kycedArr) {
@@ -146,7 +148,7 @@ func (s *Server) userStatsBatch(c *gin.Context) {
 	)
 	logger.Debugw("querying stats batch for user")
 
-	uidArr, kycedArr, err := convertQueryParams(input)
+	uidArr, kycedArr, err := s.convertQueryParams(input)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,

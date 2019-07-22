@@ -186,7 +186,7 @@ func (s *Server) userStatsBatch(c *gin.Context) {
 
 		jsonOutput = append(jsonOutput, gin.H{
 			"cap":    userCap,
-			"kyced":  input.KYCed[i],
+			"kyced":  kycedArr[i],
 			"rich":   rich,
 			"volume": volumeInWei,
 		})

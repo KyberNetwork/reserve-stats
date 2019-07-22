@@ -58,12 +58,12 @@ type Server struct {
 
 type userStatsQuery struct {
 	UID   string `form:"uid" binding:"required"`
-	KYCed bool   `form:"kyced" binding:"required"`
+	KYCed bool   `form:"kyced"`
 }
 
 type userStatsBatchQuery struct {
 	UIDs  string `form:"uids" binding:"required"`
-	KYCed string `form:"kyced"`
+	KYCed string `form:"kyced"  binding:"required"`
 }
 
 func (s *Server) getUserVolumeByUID(uid string) (float64, error) {

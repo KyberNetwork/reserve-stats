@@ -146,18 +146,6 @@ func fillExecuteTrade(tradeLog common.TradeLog, logItem types.Log) (common.Trade
 	return tradeLog, nil
 }
 
-//func logDataToEtherReceivalParams(data []byte) (ethereum.Hash, error) {
-//	var amount ethereum.Hash
-//
-//	if len(data) != 32 {
-//		err := errors.New("invalid eth receival data")
-//		return amount, err
-//	}
-//
-//	amount = ethereum.BytesToHash(data[0:32])
-//	return amount, nil
-//}
-
 func fillEtherReceival(tradeLog common.TradeLog, logItem types.Log) (common.TradeLog, error) {
 	tradeLog.SrcReserveAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
 	return tradeLog, nil

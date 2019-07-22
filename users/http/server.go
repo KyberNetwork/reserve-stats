@@ -58,7 +58,7 @@ type Server struct {
 
 type userStatsQuery struct {
 	UID   string `form:"uid" binding:"required"`
-	KYCed bool   `form:"kyced"`
+	KYCed bool   `form:"kyced" binding:"required"`
 }
 
 type userStatsBatchQuery struct {
@@ -120,7 +120,7 @@ func (s *Server) convertQueryParams(query userStatsBatchQuery) ([]string, []bool
 		kycedArr = append(kycedArr, kyced)
 	}
 	if len(uidArr) >= s.maxBatchSize {
-		return nil, nil, errors.New("batch size is too big")
+		return nil, nil, errors.Errorf("batch size is too big (current size %v, max size=%v)", len(uidArr), s.maxBatchSize)
 	}
 	if len(uidArr) != len(kycedArr) {
 		return nil, nil, errors.New("len uids and kyced are not match")

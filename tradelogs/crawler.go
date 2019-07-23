@@ -2,6 +2,7 @@ package tradelogs
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"time"
 

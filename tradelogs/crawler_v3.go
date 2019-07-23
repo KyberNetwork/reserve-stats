@@ -74,16 +74,6 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 				return nil, err
 			}
 
-			receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
-			if err != nil {
-				return nil, errors.Wrap(err, "fail to get tx receipt")
-			}
-
-			tradeLog.EthAmount, err = getEthAmountFromReceipt(receipt)
-			if err != nil {
-				return nil, errors.Wrap(err, "fail to get eth amount")
-			}
-
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)

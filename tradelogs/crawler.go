@@ -45,10 +45,6 @@ const (
 	// tradeExecute(address sender, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
 	// use for crawler v1 and v2
 	tradeExecuteEvent = "0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de"
-
-	// tradeExecute(address sender, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress, bool useInternalInventory)
-	// overload function with useInternalInventory field
-	tradeExecuteWithInternalEvent = "0x3e5691bfb48667c037c1014f0b320bbf4095c37ad5cd1f0b2573366756f54ac6"
 )
 
 var defaultTimeout = 10 * time.Second
@@ -112,22 +108,6 @@ func logDataToExecuteTradeParams(data []byte) (ethereum.Address, ethereum.Addres
 	return srcAddr, desAddr, srcAmount, desAmount, nil
 }
 
-func logDataToTradeExecuteParams(data []byte) (ethereum.Address, ethereum.Hash, ethereum.Address, ethereum.Hash, error) {
-	var srcAddr, desAddr ethereum.Address
-	var srcAmount, desAmount ethereum.Hash
-
-	if len(data) < 128 {
-		err := errors.New("invalid trade data")
-		return srcAddr, srcAmount, desAddr, desAmount, err
-	}
-
-	srcAddr = ethereum.BytesToAddress(data[0:32])
-	srcAmount = ethereum.BytesToHash(data[32:64])
-	desAddr = ethereum.BytesToAddress(data[64:96])
-	desAmount = ethereum.BytesToHash(data[96:128])
-	return srcAddr, srcAmount, desAddr, desAmount, nil
-}
-
 func fillExecuteTrade(tradeLog common.TradeLog, logItem types.Log) (common.TradeLog, error) {
 	srcAddr, destAddr, srcAmount, destAmount, err := logDataToExecuteTradeParams(logItem.Data)
 	if err != nil {
@@ -146,8 +126,25 @@ func fillExecuteTrade(tradeLog common.TradeLog, logItem types.Log) (common.Trade
 	return tradeLog, nil
 }
 
+func logDataToEtherReceivalParams(data []byte) (ethereum.Hash, error) {
+	var amount ethereum.Hash
+
+	if len(data) != 32 {
+		err := errors.New("invalid eth receival data")
+		return amount, err
+	}
+
+	amount = ethereum.BytesToHash(data[0:32])
+	return amount, nil
+}
+
 func fillEtherReceival(tradeLog common.TradeLog, logItem types.Log) (common.TradeLog, error) {
+	amount, err := logDataToEtherReceivalParams(logItem.Data)
+	if err != nil {
+		return tradeLog, err
+	}
 	tradeLog.SrcReserveAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
+	tradeLog.EthAmount = amount.Big()
 	return tradeLog, nil
 }
 
@@ -232,7 +229,7 @@ func logDataToKyberTradeV3Params(data []byte) (
 }
 
 func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log) (common.TradeLog, error) {
-	srcAddress, destAddress, srcReserve, dstReserve, receiverAddress, srcAmount, destAmount, _, err := logDataToKyberTradeV3Params(logItem.Data)
+	srcAddress, destAddress, srcReserve, dstReserve, receiverAddress, srcAmount, destAmount, ethAmount, err := logDataToKyberTradeV3Params(logItem.Data)
 	if err != nil {
 		return common.TradeLog{}, err
 	}
@@ -240,6 +237,7 @@ func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log) (common.Trade
 	tradeLog.DestAddress = destAddress
 	tradeLog.SrcAmount = srcAmount.Big()
 	tradeLog.DestAmount = destAmount.Big()
+	tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(len(tradeLog.BurnFees))))
 	tradeLog.TransactionHash = logItem.TxHash
 	tradeLog.Index = logItem.Index
 	tradeLog.UserAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
@@ -350,34 +348,6 @@ func (crawler *Crawler) getTxSender(log types.Log, timeout time.Duration) (ether
 	}
 	txSender, err = crawler.ethClient.TransactionSender(ctx, tx, log.BlockHash, log.TxIndex)
 	return txSender, err
-}
-
-// function for v2, v3
-func getEthAmountFromReceipt(receipt *types.Receipt) (*big.Int, error) {
-	var ethAmount = big.NewInt(0)
-	for index := uint64(len(receipt.Logs) - 1); index > 0; index-- {
-		log := receipt.Logs[index]
-		for _, topic := range log.Topics {
-			if topic == ethereum.HexToHash(tradeExecuteEvent) || topic == ethereum.HexToHash(tradeExecuteWithInternalEvent) {
-				srcAddr, srcAmount, dstAddr, dstAmount, err := logDataToTradeExecuteParams(log.Data)
-				if err != nil {
-					return nil, err
-				}
-				var addedEthAmount *big.Int
-				if srcAddr == blockchain.ETHAddr {
-					addedEthAmount = srcAmount.Big()
-				} else {
-					if dstAddr == blockchain.ETHAddr {
-						addedEthAmount = dstAmount.Big()
-					} else {
-						return nil, errors.Errorf("failed to take eth amount src_addr = %v dst_addr = %v", srcAddr.Hex(), dstAddr.Hex())
-					}
-				}
-				ethAmount.Add(ethAmount, addedEthAmount)
-			}
-		}
-	}
-	return ethAmount, nil
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.

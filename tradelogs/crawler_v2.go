@@ -110,21 +110,25 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			}
 
 			tradeLog = assembleTradeLogsReserveAddr(tradeLog, crawler.sugar)
-			receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
-			if err != nil {
-				return nil, err
-			}
 
 			// when the tradelog does not contain burnfee and etherReceival event
 			// get tx receipt to get reserve address
 			if len(tradeLog.BurnFees) == 0 && blockchain.IsZeroAddress(tradeLog.SrcReserveAddress) {
 				crawler.sugar.Debug("trade logs has no burn fee, no ethReceival event, no wallet fee, getting reserve address from tx receipt")
+				receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
+				if err != nil {
+					return nil, err
+				}
 				tradeLog.SrcReserveAddress = getReserveFromReceipt(receipt, log.Index)
 			}
-			tradeLog.EthAmount, err = getEthAmountFromReceipt(receipt)
-			if err != nil {
-				return nil, err
+			// set tradeLog.EthAmount
+			if tradeLog.SrcAddress == blockchain.ETHAddr {
+				tradeLog.EthAmount = tradeLog.SrcAmount
+			} else if tradeLog.DestAddress == blockchain.ETHAddr {
+				tradeLog.EthAmount = tradeLog.DestAmount
 			}
+			tradeLog.EthAmount = big.NewInt(1).Mul(big.NewInt(int64(len(tradeLog.BurnFees))), tradeLog.EthAmount)
+
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)

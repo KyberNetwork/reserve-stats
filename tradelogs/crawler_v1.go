@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"math/big"
-	"strings"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -84,7 +83,7 @@ func (crawler *Crawler) getInternalTransaction(tradeLog common.TradeLog) (common
 	blockInt := int(tradeLog.BlockNumber)
 	internalTxs, err := crawler.etherscanClient.InternalTxByAddress(internalNetworkAddrV1, &blockInt, &blockInt, 0, 0, false)
 	if err != nil {
-		if strings.HasPrefix(err.Error(), "etherscan server:") {
+		if blockchain.IsEtherscanNotransactionFound(err) {
 			crawler.sugar.Warnw("failed to get internal transaction", "err", err,
 				"tx_hash", tradeLog.TransactionHash, "block_number", tradeLog.BlockNumber)
 			return tradeLog, nil

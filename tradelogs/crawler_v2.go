@@ -54,16 +54,22 @@ func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time
 }
 
 func getReserveFromReceipt(receipt *types.Receipt, logIndex uint) ethereum.Address {
+	var (
+		reserveAddr ethereum.Address
+	)
 	for index := mathutil.MinUint64(uint64(len(receipt.Logs)-1), uint64(logIndex)); ; index-- {
 		log := receipt.Logs[index]
 		for _, topic := range log.Topics {
 			if topic == ethereum.HexToHash(tradeExecuteEvent) {
-				if !blockchain.IsZeroAddress(log.Address) {
-					return log.Address
-				}
+				reserveAddr = log.Address
+				break
 			}
 		}
+		if !blockchain.IsZeroAddress(log.Address) {
+			return log.Address
+		}
 	}
+	return reserveAddr
 }
 
 func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.TradeLog, error) {

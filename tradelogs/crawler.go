@@ -2,17 +2,15 @@ package tradelogs
 
 import (
 	"context"
-	"errors"
 	"math/big"
 	"time"
 
-	"github.com/KyberNetwork/tokenrate"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/nanmu42/etherscan-api"
-
 	ether "github.com/ethereum/go-ethereum"
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/nanmu42/etherscan-api"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	appname "github.com/KyberNetwork/reserve-stats/app-names"
@@ -20,6 +18,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	"github.com/KyberNetwork/tokenrate"
 )
 
 const (
@@ -238,8 +237,7 @@ func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log) (common.Trade
 	tradeLog.DestAddress = destAddress
 	tradeLog.SrcAmount = srcAmount.Big()
 	tradeLog.DestAmount = destAmount.Big()
-	tradeLog.EthAmount = ethAmount.Big()
-
+	tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(len(tradeLog.BurnFees))))
 	tradeLog.TransactionHash = logItem.TxHash
 	tradeLog.Index = logItem.Index
 	tradeLog.UserAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())

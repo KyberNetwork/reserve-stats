@@ -2,12 +2,12 @@ package tradelogs
 
 import (
 	"context"
-	"errors"
 	"math/big"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/pkg/errors"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
@@ -43,16 +43,20 @@ func (crawler *Crawler) fetchTradeLogV2(fromBlock, toBlock *big.Int, timeout tim
 	return result, nil
 }
 
-func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time.Duration, logIndex uint) (ethereum.Address, error) {
-	var (
-		reserveAddr ethereum.Address
-	)
+func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time.Duration) (*types.Receipt, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	receipt, err := crawler.ethClient.TransactionReceipt(ctx, txHash)
 	if err != nil {
-		return reserveAddr, err
+		return nil, err
 	}
+	return receipt, nil
+}
+
+func getReserveFromReceipt(receipt *types.Receipt, logIndex uint) ethereum.Address {
+	var (
+		reserveAddr ethereum.Address
+	)
 	for index := mathutil.MinUint64(uint64(len(receipt.Logs)-1), uint64(logIndex)); ; index-- {
 		log := receipt.Logs[index]
 		for _, topic := range log.Topics {
@@ -61,11 +65,11 @@ func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time
 				break
 			}
 		}
-		if !blockchain.IsZeroAddress(reserveAddr) {
+		if !blockchain.IsZeroAddress(log.Address) {
 			break
 		}
 	}
-	return reserveAddr, nil
+	return reserveAddr
 }
 
 func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.TradeLog, error) {
@@ -117,10 +121,11 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			// get tx receipt to get reserve address
 			if len(tradeLog.BurnFees) == 0 && blockchain.IsZeroAddress(tradeLog.SrcReserveAddress) {
 				crawler.sugar.Debug("trade logs has no burn fee, no ethReceival event, no wallet fee, getting reserve address from tx receipt")
-				tradeLog.SrcReserveAddress, err = crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout, log.Index)
+				receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
 				if err != nil {
 					return nil, err
 				}
+				tradeLog.SrcReserveAddress = getReserveFromReceipt(receipt, log.Index)
 			}
 			// set tradeLog.EthAmount
 			if tradeLog.SrcAddress == blockchain.ETHAddr {
@@ -128,6 +133,8 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			} else if tradeLog.DestAddress == blockchain.ETHAddr {
 				tradeLog.EthAmount = tradeLog.DestAmount
 			}
+			tradeLog.EthAmount = big.NewInt(1).Mul(big.NewInt(int64(len(tradeLog.BurnFees))), tradeLog.EthAmount)
+
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)

@@ -83,6 +83,11 @@ func (crawler *Crawler) getInternalTransaction(tradeLog common.TradeLog) (common
 	blockInt := int(tradeLog.BlockNumber)
 	internalTxs, err := crawler.etherscanClient.InternalTxByAddress(internalNetworkAddrV1, &blockInt, &blockInt, 0, 0, false)
 	if err != nil {
+		if blockchain.IsEtherscanNotransactionFound(err) {
+			crawler.sugar.Warnw("failed to get internal transaction", "err", err,
+				"tx_hash", tradeLog.TransactionHash, "block_number", tradeLog.BlockNumber)
+			return tradeLog, nil
+		}
 		return tradeLog, err
 	}
 	for _, tx := range internalTxs {
@@ -156,6 +161,7 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 			if tradeLog.DestAddress == blockchain.ETHAddr {
 				// if transaction is from token to eth
 				// get internal transaction to detect receiver address
+				crawler.sugar.Debugw("get internal transaction", "tx_hash", tradeLog.TransactionHash.Hex(), "block_number", tradeLog.BlockNumber)
 				tradeLog, err = crawler.getInternalTransaction(tradeLog)
 				if err != nil {
 					return nil, err

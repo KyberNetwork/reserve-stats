@@ -224,3 +224,93 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 	}
 	assert.True(t, found, "transaction %s not found", sampleTxHash)
 }
+
+func newTestCrawler(t *testing.T, version string) *Crawler {
+	var addresses []ethereum.Address
+	switch version {
+	case "v1":
+		addresses = []ethereum.Address{
+			ethereum.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755"), // network contract
+			ethereum.HexToAddress("0x964F35fAe36d75B1e72770e244F6595B68508CF5"), // internal network contract
+			ethereum.HexToAddress("0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706"), // burner contract
+		}
+	case "v2":
+		addresses = []ethereum.Address{
+			ethereum.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755"), // network contract
+			ethereum.HexToAddress("0x91a502C678605fbCe581eae053319747482276b9"), // internal network contract
+			ethereum.HexToAddress("0xed4f53268bfdFF39B36E8786247bA3A02Cf34B04"), // burner contract
+		}
+	case "v3":
+		addresses = []ethereum.Address{
+			ethereum.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755"), // network contract
+			ethereum.HexToAddress("0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950"), // internal network contract
+			ethereum.HexToAddress("0x52166528FCC12681aF996e409Ee3a421a4e128A3"), // burner contract
+		}
+	default:
+		t.Fatal("not found crawler version")
+
+	}
+	sugar := testutil.MustNewDevelopmentSugaredLogger()
+	client := testutil.MustNewDevelopmentwEthereumClient()
+	c, err := NewCrawler(
+		sugar,
+		client,
+		newMockBroadCastClient(),
+		tokenrate.NewMock(),
+		addresses,
+		deployment.StartingBlocks[deployment.Production],
+		ec)
+	require.NoError(t, err)
+	return c
+}
+
+// test function for get eth amount (only run locally)
+func TestCrawler_GetEthAmount(t *testing.T) {
+	testutil.SkipExternal(t)
+	var (
+		c         *Crawler
+		tradeLogs []common.TradeLog
+		err       error
+	)
+	// test v3 token to token
+	c = newTestCrawler(t, "v3")
+	tradeLogs, err = c.GetTradeLogs(big.NewInt(8166246), big.NewInt(8166247), time.Minute)
+	require.NoError(t, err)
+	require.Len(t, tradeLogs, 1)
+	require.Equal(t, big.NewInt(0).Mul(big.NewInt(7543875834785386865), big.NewInt(2)), tradeLogs[0].EthAmount)
+	for _, tradeLog := range tradeLogs {
+		assertTradeLog(t, tradeLog)
+	}
+	// test v3 token to eth
+	c = newTestCrawler(t, "v3")
+	tradeLogs, err = c.GetTradeLogs(big.NewInt(8180001), big.NewInt(8180002), time.Minute)
+	require.NoError(t, err)
+	require.Len(t, tradeLogs, 2)
+	require.Equal(t, big.NewInt(682000000000000000), tradeLogs[0].EthAmount)
+	// eth to weth
+	require.Equal(t, int64(0), tradeLogs[1].EthAmount.Int64())
+	for _, tradeLog := range tradeLogs {
+		assertTradeLog(t, tradeLog)
+	}
+
+	// test v2
+	c = newTestCrawler(t, "v2")
+	tradeLogs, err = c.GetTradeLogs(big.NewInt(6325136), big.NewInt(6325137), time.Minute)
+	require.NoError(t, err)
+	require.Len(t, tradeLogs, 3)
+	for _, tradeLog := range tradeLogs {
+		assertTradeLog(t, tradeLog)
+	}
+	require.Equal(t, big.NewInt(int64(478695176421724747)*2), tradeLogs[0].EthAmount)
+	require.Equal(t, big.NewInt(int64(10000000000000000)), tradeLogs[1].EthAmount)
+	require.Equal(t, big.NewInt(int64(1249340978082777639)), tradeLogs[2].EthAmount)
+
+	// test v1
+	c = newTestCrawler(t, "v1")
+	tradeLogs, err = c.GetTradeLogs(big.NewInt(5877442), big.NewInt(5877500), time.Minute)
+	require.NoError(t, err)
+	require.Len(t, tradeLogs, 7)
+	for _, tradeLog := range tradeLogs {
+		assertTradeLog(t, tradeLog)
+	}
+}

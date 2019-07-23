@@ -2,12 +2,13 @@ package tradelogs
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"math/big"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/pkg/errors"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
@@ -34,7 +35,7 @@ func (crawler *Crawler) fetchTradeLogV1(fromBlock, toBlock *big.Int, timeout tim
 
 	typeLogs, err := crawler.fetchLogsWithTopics(fromBlock, toBlock, timeout, topics)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to fetch log by topic")
 	}
 
 	result, err = crawler.assembleTradeLogsV1(typeLogs)
@@ -83,12 +84,9 @@ func (crawler *Crawler) getInternalTransaction(tradeLog common.TradeLog) (common
 	blockInt := int(tradeLog.BlockNumber)
 	internalTxs, err := crawler.etherscanClient.InternalTxByAddress(internalNetworkAddrV1, &blockInt, &blockInt, 0, 0, false)
 	if err != nil {
-		if blockchain.IsEtherscanNotransactionFound(err) {
-			crawler.sugar.Warnw("failed to get internal transaction", "err", err,
-				"tx_hash", tradeLog.TransactionHash, "block_number", tradeLog.BlockNumber)
-			return tradeLog, nil
-		}
-		return tradeLog, err
+		crawler.sugar.Warnw("failed to get internal transaction", "err", err,
+			"tx_hash", tradeLog.TransactionHash, "block_number", tradeLog.BlockNumber)
+		return tradeLog, nil
 	}
 	for _, tx := range internalTxs {
 		txHash := ethereum.HexToHash(tx.Hash)
@@ -141,7 +139,7 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 				return nil, err
 			}
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, fmt.Sprintf("failed to resolve timestamp by block_number %v", log.BlockNumber))
 			}
 
 			tradeLog = assembleTradeLogsReserveAddr(tradeLog, crawler.sugar)
@@ -154,7 +152,7 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 				crawler.sugar.Debug("trade logs  has no burn fee, no ethReceival event, no wallet fee, getting reserve address from tx receipt")
 				tradeLog, err = crawler.getTransactionReceiptV1(tradeLog, 10*time.Second, log.Index, shouldGetReserveAddr)
 				if err != nil {
-					return nil, err
+					return nil, errors.Wrap(err, "failed to get info from transaction receipt")
 				}
 			}
 
@@ -164,7 +162,7 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 				crawler.sugar.Debugw("get internal transaction", "tx_hash", tradeLog.TransactionHash.Hex(), "block_number", tradeLog.BlockNumber)
 				tradeLog, err = crawler.getInternalTransaction(tradeLog)
 				if err != nil {
-					return nil, err
+					return nil, errors.Wrap(err, "failed to get internal transaction")
 				}
 			}
 

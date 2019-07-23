@@ -2,6 +2,7 @@ package tradelogs
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -370,7 +371,7 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 
 	result, err := fetchFn(fromBlock, toBlock, timeout)
 	if err != nil {
-		return result, err
+		return result, errors.Wrap(err, fmt.Sprintf("failed to fetch trade logs fromBlock: %v toBlock:%v", fromBlock, toBlock))
 	}
 
 	for i, tradeLog := range result {

@@ -66,7 +66,7 @@ func getReserveFromReceipt(receipt *types.Receipt, logIndex uint) ethereum.Addre
 			}
 		}
 		if !blockchain.IsZeroAddress(log.Address) {
-			return log.Address
+			break
 		}
 	}
 	return reserveAddr

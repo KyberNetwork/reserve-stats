@@ -2,6 +2,7 @@ package tradelogs
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -32,7 +33,7 @@ func (crawler *Crawler) fetchTradeLogV2(fromBlock, toBlock *big.Int, timeout tim
 
 	typeLogs, err := crawler.fetchLogsWithTopics(fromBlock, toBlock, timeout, topics)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to fetch log by topic")
 	}
 
 	result, err = crawler.assembleTradeLogsV2(typeLogs)
@@ -112,7 +113,7 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 				return nil, err
 			}
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, fmt.Sprintf("failed to resolve timestamp by block_number %v", log.BlockNumber))
 			}
 
 			tradeLog = assembleTradeLogsReserveAddr(tradeLog, crawler.sugar)
@@ -123,7 +124,7 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 				crawler.sugar.Debug("trade logs has no burn fee, no ethReceival event, no wallet fee, getting reserve address from tx receipt")
 				receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
 				if err != nil {
-					return nil, err
+					return nil, errors.Wrap(err, fmt.Sprintf("failed to get transaction receipt tx: %v", tradeLog.TransactionHash))
 				}
 				tradeLog.SrcReserveAddress = getReserveFromReceipt(receipt, log.Index)
 			}

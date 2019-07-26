@@ -123,7 +123,7 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 				crawler.sugar.Debug("trade logs has no burn fee, no ethReceival event, no wallet fee, getting reserve address from tx receipt")
 				receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
 				if err != nil {
-					return nil, errors.Wrapf(err, "ailed to get transaction receipt tx: %v", tradeLog.TransactionHash)
+					return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)
 				}
 				tradeLog.SrcReserveAddress = getReserveFromReceipt(receipt, log.Index)
 			}

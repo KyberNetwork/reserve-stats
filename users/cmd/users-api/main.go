@@ -14,6 +14,11 @@ import (
 	"github.com/KyberNetwork/reserve-stats/users/http"
 )
 
+const (
+	maxBatchSizeFlag    = "max-batch-size"
+	defaultMaxBatchSize = 1000
+)
+
 func main() {
 	app := libapp.NewApp()
 	app.Name = "User stat module"
@@ -24,6 +29,12 @@ func main() {
 	app.Flags = append(app.Flags, usercommon.NewUserCapCliFlags()...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.UsersPort)...)
 	app.Flags = append(app.Flags, libredis.NewCliFlags()...)
+	app.Flags = append(app.Flags, cli.IntFlag{
+		Name:   maxBatchSizeFlag,
+		Usage:  "max batch size is allowed",
+		Value:  defaultMaxBatchSize,
+		EnvVar: "MAX_BATCH_SIZE",
+	})
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -53,6 +64,7 @@ func run(c *cli.Context) error {
 		coingecko.New(),
 		httputil.NewHTTPAddressFromContext(c),
 		redisCacheClient,
-		userCapConf)
+		userCapConf,
+		c.Int(maxBatchSizeFlag))
 	return server.Run()
 }

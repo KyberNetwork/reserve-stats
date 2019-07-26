@@ -47,6 +47,7 @@ func WithUserURL(userURL string) Option {
 		}
 		s.r.GET("/users", userProxyMW)
 		s.r.POST("/users", userProxyMW)
+		s.r.GET("/users-batch", userProxyMW)
 		return nil
 	}
 }

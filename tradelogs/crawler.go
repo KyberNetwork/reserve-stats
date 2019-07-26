@@ -2,7 +2,6 @@ package tradelogs
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -238,7 +237,11 @@ func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log) (common.Trade
 	tradeLog.DestAddress = destAddress
 	tradeLog.SrcAmount = srcAmount.Big()
 	tradeLog.DestAmount = destAmount.Big()
-	tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(len(tradeLog.BurnFees))))
+	if len(tradeLog.BurnFees) >= 2 {
+		tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(len(tradeLog.BurnFees))))
+	} else {
+		tradeLog.EthAmount = ethAmount.Big()
+	}
 	tradeLog.TransactionHash = logItem.TxHash
 	tradeLog.Index = logItem.Index
 	tradeLog.UserAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
@@ -371,7 +374,7 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 
 	result, err := fetchFn(fromBlock, toBlock, timeout)
 	if err != nil {
-		return result, errors.Wrap(err, fmt.Sprintf("failed to fetch trade logs fromBlock: %v toBlock:%v", fromBlock, toBlock))
+		return result, errors.Wrapf(err, "failed to fetch trade logs fromBlock: %v toBlock:%v", fromBlock, toBlock)
 	}
 
 	for i, tradeLog := range result {

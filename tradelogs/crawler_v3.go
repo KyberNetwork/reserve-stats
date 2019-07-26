@@ -1,7 +1,6 @@
 package tradelogs
 
 import (
-	"fmt"
 	"math/big"
 	"time"
 
@@ -72,7 +71,7 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 				return nil, err
 			}
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
-				return nil, errors.Wrap(err, fmt.Sprintf("failed to resolve timestamp by block_number %v", log.BlockNumber))
+				return nil, errors.Wrapf(err, "failed to resolve timestamp by block_number %v", log.BlockNumber)
 			}
 
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)

@@ -24,7 +24,7 @@ func (crawler *Crawler) fetchTradeLogV3(fromBlock, toBlock *big.Int, timeout tim
 
 	typeLogs, err := crawler.fetchLogsWithTopics(fromBlock, toBlock, timeout, topics)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to fetch log by topic")
 	}
 
 	result, err = crawler.assembleTradeLogsV3(typeLogs)
@@ -71,7 +71,7 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 				return nil, err
 			}
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, "failed to resolve timestamp by block_number %v", log.BlockNumber)
 			}
 
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)

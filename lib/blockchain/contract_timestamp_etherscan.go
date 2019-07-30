@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"strings"
 	"time"
 
 	"github.com/nanmu42/etherscan-api"
@@ -12,6 +13,10 @@ import (
 // IsEtherscanNotransactionFound returns true if given error represents etherscan no transaction found error.
 func IsEtherscanNotransactionFound(err error) bool {
 	return err != nil && err.Error() == "etherscan server: No transactions found"
+}
+
+func IsEtherscanRateLimit(err error) bool {
+	return err != nil && strings.HasPrefix(err.Error(), "response status 403 403 Forbidden")
 }
 
 // EtherscanContractTimestampResolver is an implementation of EtherscanContractTimestampResolver

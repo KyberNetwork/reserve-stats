@@ -32,7 +32,7 @@ func (crawler *Crawler) fetchTradeLogV2(fromBlock, toBlock *big.Int, timeout tim
 
 	typeLogs, err := crawler.fetchLogsWithTopics(fromBlock, toBlock, timeout, topics)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to fetch log by topic")
 	}
 
 	result, err = crawler.assembleTradeLogsV2(typeLogs)
@@ -65,7 +65,7 @@ func getReserveFromReceipt(receipt *types.Receipt, logIndex uint) ethereum.Addre
 				break
 			}
 		}
-		if !blockchain.IsZeroAddress(log.Address) {
+		if !blockchain.IsZeroAddress(reserveAddr) {
 			break
 		}
 	}
@@ -112,7 +112,7 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 				return nil, err
 			}
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, "failed to resolve timestamp by block_number %v", log.BlockNumber)
 			}
 
 			tradeLog = assembleTradeLogsReserveAddr(tradeLog, crawler.sugar)
@@ -123,7 +123,7 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 				crawler.sugar.Debug("trade logs has no burn fee, no ethReceival event, no wallet fee, getting reserve address from tx receipt")
 				receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
 				if err != nil {
-					return nil, err
+					return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)
 				}
 				tradeLog.SrcReserveAddress = getReserveFromReceipt(receipt, log.Index)
 			}
@@ -133,7 +133,9 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			} else if tradeLog.DestAddress == blockchain.ETHAddr {
 				tradeLog.EthAmount = tradeLog.DestAmount
 			}
-			tradeLog.EthAmount = big.NewInt(1).Mul(big.NewInt(int64(len(tradeLog.BurnFees))), tradeLog.EthAmount)
+			if len(tradeLog.BurnFees) >= 2 {
+				tradeLog.EthAmount = tradeLog.EthAmount.Mul(tradeLog.EthAmount, big.NewInt(int64(len(tradeLog.BurnFees))))
+			}
 
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			// one trade only has one and only ExecuteTrade event

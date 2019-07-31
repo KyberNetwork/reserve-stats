@@ -39,6 +39,7 @@ type WithdrawHistory struct {
 	TxID      string  `json:"txId"`
 	ApplyTime uint64  `json:"applyTime"`
 	Status    int64   `json:"status"`
+	TxFee     float64 `json:"txFee,omitempty"`
 }
 
 //WithdrawHistoryList is a list of binance withdraw history

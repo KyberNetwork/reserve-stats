@@ -9,7 +9,7 @@ readonly core_signing_key=${2:-}
 
 readonly from_block=6494037
 readonly to_block=6494137
-readonly influxdb_image='influxdb:1.6.3-alpine'
+readonly influxdb_image='influxdb:1.7.1-alpine'
 readonly container_name='trade-logs-sample-data-exporter'
 readonly data_dir='/tmp/trade-logs-sample-data-exporter'
 

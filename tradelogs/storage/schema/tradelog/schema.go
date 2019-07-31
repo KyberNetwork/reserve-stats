@@ -53,6 +53,10 @@ const (
 	DestWalletFeeAmount //dst_wallet_fee_amount
 	// UID is id of KyberSWAP user.
 	UID //uid
+	// TxSender is address of tx sender
+	TxSender //tx_sender
+	//ReceiverAddress
+	ReceiverAddress //receiver_addr
 )
 
 //tradeLogSchemaFields translates the stringer of reserveRate fields into its enumerated form
@@ -81,4 +85,6 @@ var tradeLogSchemaFields = map[string]FieldName{
 	"src_wallet_fee_amount": SourceWalletFeeAmount,
 	"dst_wallet_fee_amount": DestWalletFeeAmount,
 	"uid":                   UID,
+	"tx_sender":             TxSender,
+	"receiver_addr":         ReceiverAddress,
 }

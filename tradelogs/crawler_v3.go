@@ -1,13 +1,14 @@
 package tradelogs
 
 import (
-	"errors"
 	"math/big"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/pkg/errors"
+
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 func (crawler *Crawler) fetchTradeLogV3(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
@@ -23,7 +24,7 @@ func (crawler *Crawler) fetchTradeLogV3(fromBlock, toBlock *big.Int, timeout tim
 
 	typeLogs, err := crawler.fetchLogsWithTopics(fromBlock, toBlock, timeout, topics)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to fetch log by topic")
 	}
 
 	result, err = crawler.assembleTradeLogsV3(typeLogs)
@@ -50,6 +51,11 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 			return result, errors.New("log item has no topic")
 		}
 
+		tradeLog.TxSender, err = crawler.getTxSender(log, defaultTimeout)
+		if err != nil {
+			return result, errors.New("could not get trade log sender")
+		}
+
 		topic := log.Topics[0]
 		switch topic.Hex() {
 		case feeToWalletEvent:
@@ -61,12 +67,13 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 				return nil, err
 			}
 		case kyberTradeEvent:
-			if tradeLog, err = fillKyberTrade(tradeLog, log); err != nil {
+			if tradeLog, err = fillKyberTradeV3(tradeLog, log); err != nil {
 				return nil, err
 			}
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, "failed to resolve timestamp by block_number %v", log.BlockNumber)
 			}
+
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)

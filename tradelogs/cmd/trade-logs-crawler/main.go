@@ -17,6 +17,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
+	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
@@ -229,17 +230,35 @@ func run(c *cli.Context) error {
 
 		requiredWorkers := requiredWorkers(fromBlock, toBlock, maxBlocks, maxWorkers)
 		p := workers.NewPool(sugar, requiredWorkers, storageInterface)
+		startingBlocks := deployment.MustGetStartingBlocksFromContext(c)
 		sugar.Debugw("number of fetcher jobs",
 			"from_block", fromBlock.String(),
 			"to_block", toBlock.String(),
 			"workers", requiredWorkers,
-			"max_blocks", maxBlocks)
+			"max_blocks", maxBlocks,
+			"starting_blocks", startingBlocks)
 
 		go func(fromBlock, toBlock, maxBlocks int64) {
 			var jobOrder = p.GetLastCompleteJobOrder()
 			for i := fromBlock; i < toBlock; i += maxBlocks {
-				jobOrder++
-				p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(mathutil.MinInt64(i+maxBlocks, toBlock)), attempts, etherscanClient))
+				end := mathutil.MinInt64(i+maxBlocks, toBlock)
+				switch {
+				//if job start at block v2 and end at block v3 then split job
+				case uint64(end) >= startingBlocks.V3() && uint64(i) < startingBlocks.V3():
+					jobOrder++
+					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(int64(startingBlocks.V3())), attempts, etherscanClient))
+					jobOrder++
+					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(int64(startingBlocks.V3())), big.NewInt(end), attempts, etherscanClient))
+				//if job start at block v1 and end at block v2 then split job
+				case uint64(end) >= startingBlocks.V2() && uint64(i) < startingBlocks.V2():
+					jobOrder++
+					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(int64(startingBlocks.V2())), attempts, etherscanClient))
+					jobOrder++
+					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(int64(startingBlocks.V2())), big.NewInt(end), attempts, etherscanClient))
+				default:
+					jobOrder++
+					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(end), attempts, etherscanClient))
+				}
 			}
 			for p.GetLastCompleteJobOrder() < jobOrder {
 				time.Sleep(time.Second)

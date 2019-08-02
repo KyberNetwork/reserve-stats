@@ -53,7 +53,13 @@ func TestEtherScanClientWithRateLimiter(t *testing.T) {
 
 	etherscanClient := etherscan.New(etherscan.Network("api"), etherscanAPIKey)
 	limiter := rate.NewLimiter(rate.Limit(float64(rps)), 1)
-	etherscanClient.BeforeRequest = limitRate(limiter)
+
+	// semaphore by buffer channel
+	semaphore := make(chan struct{}, rps)
+	etherscanClient.BeforeRequest = limitRate(limiter, semaphore)
+	etherscanClient.AfterRequest = func(module, action string, param map[string]interface{}, outcome interface{}, requestErr error) {
+		<-semaphore
+	}
 
 	for i := 0; i < 20; i++ {
 		wg.Add(1)

@@ -15,8 +15,8 @@ import (
 
 func TestSaveAndGetAccountingRates(t *testing.T) {
 	var (
-		testData = []huobi.TradeHistory{
-			{
+		testData = map[int64]huobi.TradeHistory{
+			15584072551: {
 				ID:              15584072551,
 				Symbol:          "cmtetsh",
 				AccountID:       3375841,
@@ -39,12 +39,12 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	db, teardown := testutil.MustNewDevelopmentDB()
 
 	for i := 0; i < 10; i++ {
-		td := testData[0]
+		td := testData[15584072551]
 		td.ID++
 		td.CreatedAt += 100
-		testData = append(testData, td)
+		testData[td.ID] = td
 	}
-	sugar.Debug(len(testData))
+	sugar.Debug(testData)
 
 	hdb, err := NewDB(sugar, db)
 	require.NoError(t, err)
@@ -60,18 +60,19 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	err = hdb.UpdateTradeHistory(testData)
 	require.NoError(t, err)
 
-	lastestTimestamp, err := hdb.GetLastStoredTimestamp()
+	latestTimestamp, err := hdb.GetLastStoredTimestamp()
 	require.NoError(t, err)
-	assert.Equal(t, uint64(1540793585778), timeutil.TimeToTimestampMs(lastestTimestamp))
-	sugar.Debugw("", "", timeutil.TimeToTimestampMs(lastestTimestamp))
+	assert.Equal(t, uint64(1540793585778), timeutil.TimeToTimestampMs(latestTimestamp))
+	sugar.Debugw("latest time stamp", "value", timeutil.TimeToTimestampMs(latestTimestamp))
+	sugar.Debugw("expect time stamp", "value", 1540793585778)
 
 	data, err := hdb.GetTradeHistory(timeutil.TimestampMsToTime(1540793585600), timeutil.TimestampMsToTime(1540793585699))
 	require.NoError(t, err)
 	assert.Equal(t, len(data), 1)
-	assert.Equal(t, testData[0].FieldAmount, data[0].FieldAmount)
+	assert.Equal(t, testData[15584072551].FieldAmount, data[0].FieldAmount)
 
 	// test database does not stored duplicated records(with the same id)
 	data, err = hdb.GetTradeHistory(timeutil.TimestampMsToTime(1540793585679), timeutil.TimestampMsToTime(1540793586000))
 	require.NoError(t, err)
-	assert.Equal(t, len(data), 1)
+	assert.Equal(t, 1, len(data))
 }

@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -14,6 +15,10 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
+)
+
+var (
+	errorCannotGetSupportedTokens = errors.New("cannot get supported token for reserve")
 )
 
 // ReserveRatesCrawler contains two wrapper contracts for V1 and V2 contract,
@@ -62,7 +67,8 @@ func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 			logger.Infow("reserve contract does not exist")
 			return nil, nil
 		}
-		return nil, fmt.Errorf("cannot get supported tokens for reserve %s. Error: %s", rsvAddr.Hex(), err)
+		logger.Errorw("cannot get supported token for reserve", "reserve", rsvAddr.Hex(), "error", err)
+		return nil, errorCannotGetSupportedTokens
 	}
 
 	for _, token := range tokens {
@@ -103,6 +109,10 @@ func (rrc *ReserveRatesCrawler) GetReserveRatesWithAddresses(addresses []ethereu
 		block, rsvAddr := block, rsvAddr
 		g.Go(func() error {
 			rates, err := rrc.getEachReserveRate(block, rsvAddr)
+			if err != nil && err == errorCannotGetSupportedTokens {
+				logger.Info("cannot get supported token from reserve, skipping")
+				return nil
+			}
 			if err != nil {
 				return err
 			}

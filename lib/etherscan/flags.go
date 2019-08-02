@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/nanmu42/etherscan-api"
 	"github.com/urfave/cli"
@@ -39,8 +40,9 @@ func NewCliFlags() []cli.Flag {
 	}
 }
 
-func limitRate(limiter *rate.Limiter) func(module, action string, param map[string]interface{}) error {
+func limitRate(limiter *rate.Limiter, semaphore chan struct{}) func(module, action string, param map[string]interface{}) error {
 	return func(module, action string, param map[string]interface{}) error {
+		semaphore <- struct{}{}
 		return limiter.Wait(context.Background())
 	}
 }
@@ -56,10 +58,17 @@ func NewEtherscanClientFromContext(c *cli.Context) (*etherscan.Client, error) {
 	//Etherscan doesn't  allow burst,  i.e: 5 request per second  really mean 1 request per 0.2  second
 	limiter := rate.NewLimiter(rate.Limit(rps), 1)
 
+	rpsInt := int(math.Round(rps))
+	// semaphore by buffer channel
+	semaphore := make(chan struct{}, rpsInt)
+
 	switch etherscan.Network(network) {
 	case etherscan.Mainnet, etherscan.Ropsten, etherscan.Kovan, etherscan.Tobalaba:
 		client := etherscan.New(etherscan.Network(network), apiKey)
-		client.BeforeRequest = limitRate(limiter)
+		client.BeforeRequest = limitRate(limiter, semaphore)
+		client.AfterRequest = func(module, action string, param map[string]interface{}, outcome interface{}, requestErr error) {
+			<-semaphore
+		}
 		return client, nil
 	default:
 		return nil, fmt.Errorf("unknown network: %s", network)

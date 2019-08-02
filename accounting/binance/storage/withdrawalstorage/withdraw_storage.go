@@ -2,15 +2,17 @@ package withdrawalstorage
 
 import (
 	"encoding/json"
+	"strconv"
 	"time"
 
+	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/lib/pq"
-
-	"github.com/jmoiron/sqlx"
-	"go.uber.org/zap"
 )
 
 //BinanceStorage is storage for binance fetcher including trade history and withdraw history
@@ -32,6 +34,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 	  CONSTRAINT binance_withdrawals_pk PRIMARY KEY(id)
 	);
 	CREATE INDEX IF NOT EXISTS binance_withdrawals_time_idx ON binance_withdrawals ((data ->> 'applyTime'));
+	CREATE INDEX IF NOT EXISTS binance_withdrawals_txid_idx ON binance_withdrawals ((data ->> 'txId'));
 	`
 
 	s := &BinanceStorage{
@@ -70,7 +73,7 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 	VALUES(
 		unnest($1::TEXT[]),
 		unnest($2::JSONB[])
-	) ON CONFLICT ON CONSTRAINT binance_withdrawals_pk DO NOTHING;
+	) ON CONFLICT ON CONSTRAINT binance_withdrawals_pk DO UPDATE SET data = EXCLUDED.data;
 	`
 
 	tx, err := bd.db.Beginx()
@@ -99,15 +102,21 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 	return
 }
 
+//WithdrawRecord represent a record of binace withdraw
+type WithdrawRecord struct {
+	ID   string `db:"id"`
+	Data []byte `db:"data"`
+}
+
 //GetWithdrawHistory return list of withdraw fromTime to toTime
 func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.WithdrawHistory, error) {
 	var (
 		logger   = bd.sugar.With("func", "account/binance_storage.GetTradeHistory")
 		result   []binance.WithdrawHistory
-		dbResult [][]byte
+		dbResult []WithdrawRecord
 		tmp      binance.WithdrawHistory
 	)
-	const selectStmt = `SELECT data FROM binance_withdrawals WHERE data->>'applyTime'>=$1 AND data->>'applyTime'<=$2`
+	const selectStmt = `SELECT id, data FROM binance_withdrawals WHERE data->>'applyTime'>=$1 AND data->>'applyTime'<=$2`
 
 	logger.Debugw("querying trade history...", "query", selectStmt)
 
@@ -118,9 +127,10 @@ func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) ([]bina
 	}
 
 	for _, data := range dbResult {
-		if err := json.Unmarshal(data, &tmp); err != nil {
+		if err := json.Unmarshal(data.Data, &tmp); err != nil {
 			return result, err
 		}
+		tmp.ID = data.ID
 		result = append(result, tmp)
 	}
 
@@ -133,13 +143,24 @@ func (bd *BinanceStorage) GetLastStoredTimestamp() (time.Time, error) {
 		logger   = bd.sugar.With("func", "account/binance_storage.GetLastStoredTimestamp")
 		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
 		dbResult uint64
+		statuses = []string{strconv.Itoa(int(common.AwaitingApproval)), strconv.Itoa(int(common.Processing))}
 	)
-	const selectStmt = `SELECT COALESCE(MAX(data->>'applyTime'), '0') FROM binance_withdrawals`
-
+	const (
+		selectStmt = `SELECT COALESCE(MAX(data->>'applyTime'), '0') FROM binance_withdrawals`
+		//handle not completed withdraw
+		latestNotCompleted = `SELECT COALESCE(MIN(data->>'applyTime'), '0') FROM binance_withdrawals WHERE data->>'status' = any($1)`
+	)
 	logger.Debugw("querying last stored timestamp", "query", selectStmt)
 
-	if err := bd.db.Get(&dbResult, selectStmt); err != nil {
+	if err := bd.db.Get(&dbResult, latestNotCompleted, pq.Array(statuses)); err != nil {
 		return result, err
+	}
+	logger.Debugw("min processing record time", "time", dbResult)
+
+	if dbResult == 0 {
+		if err := bd.db.Get(&dbResult, selectStmt); err != nil {
+			return result, err
+		}
 	}
 
 	if dbResult != 0 {
@@ -147,4 +168,33 @@ func (bd *BinanceStorage) GetLastStoredTimestamp() (time.Time, error) {
 	}
 
 	return result, nil
+}
+
+//UpdateWithdrawHistoryWithFee update fee into withdraw history table
+func (bd *BinanceStorage) UpdateWithdrawHistoryWithFee(withdrawHistories []binance.WithdrawHistory) error {
+	var (
+		logger = bd.sugar.With("func", "accounting/binance_storage.UpdateWithdrawHistoryWithFee")
+	)
+
+	const (
+		updateStmt = `UPDATE binance_withdrawals SET data = $1 WHERE data->>'txId' = $2`
+	)
+	logger.Debugw("update withdraw history", "query", updateStmt)
+	tx, err := bd.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer pgsql.CommitOrRollback(tx, bd.sugar, &err)
+
+	for _, withdraw := range withdrawHistories {
+		withdrawJSON, err := json.Marshal(withdraw)
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec(updateStmt, withdrawJSON, withdraw.TxID); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

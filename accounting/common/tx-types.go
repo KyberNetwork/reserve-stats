@@ -6,13 +6,14 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	etherscan "github.com/nanmu42/etherscan-api"
+	"github.com/nanmu42/etherscan-api"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
@@ -110,6 +111,7 @@ func (tx *InternalTx) UnmarshalJSON(data []byte) error {
 	tx.Gas = decoded.Gas
 	tx.GasUsed = decoded.GasUsed
 	tx.IsError = decoded.IsError
+	tx.IsTrade = decoded.IsTrade
 	return nil
 }
 
@@ -194,6 +196,7 @@ func (et *ERC20Transfer) UnmarshalJSON(data []byte) error {
 	et.Gas = decoded.Gas
 	et.GasUsed = decoded.GasUsed
 	et.GasPrice = decoded.GasPrice
+	et.IsTrade = decoded.IsTrade
 
 	return nil
 }

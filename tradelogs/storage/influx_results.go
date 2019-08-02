@@ -254,6 +254,16 @@ func (is *InfluxStorage) rowToTradeLog(value []interface{},
 	if err != nil {
 		return tradeLog, fmt.Errorf("failed to get wallet_addr: %s", err)
 	}
+
+	txSender, err := influxdb.GetAddressFromInterface(value[idxs[logschema.TxSender]])
+	if err != nil {
+		return tradeLog, fmt.Errorf("failded to get tx_sender: %s", err)
+	}
+	receiverAddr, err := influxdb.GetAddressFromInterface(value[idxs[logschema.ReceiverAddress]])
+	if err != nil {
+		return tradeLog, fmt.Errorf("failed to get receiver_addr: %s", err)
+	}
+
 	tradeLog = common.TradeLog{
 		Timestamp:       timestamp,
 		BlockNumber:     blockNumber,
@@ -281,6 +291,9 @@ func (is *InfluxStorage) rowToTradeLog(value []interface{},
 		UID:            uid,
 		IntegrationApp: appName,
 		Index:          uint(logIndex),
+
+		TxSender:        txSender,
+		ReceiverAddress: receiverAddr,
 	}
 
 	return tradeLog, nil

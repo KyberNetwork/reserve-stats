@@ -23,7 +23,6 @@ type RedisCacher struct {
 	influxDBClient client.Client
 	redisClient    *redis.Client
 	expiration     time.Duration
-	//userCapConf    *common.UserCapConfiguration
 }
 
 //NewRedisCacher returns a new redis cacher instance
@@ -78,11 +77,6 @@ func (rc *RedisCacher) cacheRichUser() error {
 			logger.Errorw("values second should be a float", "value", serie.Values[0][1])
 			return nil
 		}
-
-		/*if !rc.userCapConf.IsRich(false, userTradeAmount) {
-			// if user is not rich then it is already cached before
-			continue
-		}*/
 
 		// save to cache with configured expiration duration
 		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", richPrefix, userAddress), userTradeAmount, rc.expiration); err != nil {

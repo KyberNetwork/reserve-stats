@@ -10,7 +10,6 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
-	"github.com/KyberNetwork/reserve-stats/users/common"
 )
 
 const (
@@ -24,18 +23,18 @@ type RedisCacher struct {
 	influxDBClient client.Client
 	redisClient    *redis.Client
 	expiration     time.Duration
-	userCapConf    *common.UserCapConfiguration
+	//userCapConf    *common.UserCapConfiguration
 }
 
 //NewRedisCacher returns a new redis cacher instance
 func NewRedisCacher(sugar *zap.SugaredLogger, influxDBClient client.Client,
-	redisClient *redis.Client, expiration time.Duration, userCapConf *common.UserCapConfiguration) *RedisCacher {
+	redisClient *redis.Client, expiration time.Duration) *RedisCacher {
 	return &RedisCacher{
 		sugar:          sugar,
 		influxDBClient: influxDBClient,
 		redisClient:    redisClient,
 		expiration:     expiration,
-		userCapConf:    userCapConf,
+		//userCapConf:    userCapConf,
 	}
 }
 
@@ -80,13 +79,13 @@ func (rc *RedisCacher) cacheRichUser() error {
 			return nil
 		}
 
-		if !rc.userCapConf.IsRich(false, userTradeAmount) {
+		/*if !rc.userCapConf.IsRich(false, userTradeAmount) {
 			// if user is not rich then it is already cached before
 			continue
-		}
+		}*/
 
 		// save to cache with configured expiration duration
-		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", richPrefix, userAddress), rc.expiration); err != nil {
+		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", richPrefix, userAddress), userTradeAmount, rc.expiration); err != nil {
 			if dErr := pipe.Discard(); dErr != nil {
 				err = fmt.Errorf("%s - %s", dErr.Error(), err.Error())
 			}
@@ -101,8 +100,8 @@ func (rc *RedisCacher) cacheRichUser() error {
 	return err
 }
 
-func (rc *RedisCacher) pushToPipeline(pipeline redis.Pipeliner, key string, expireTime time.Duration) error {
-	if err := pipeline.Set(key, 1, expireTime).Err(); err != nil {
+func (rc *RedisCacher) pushToPipeline(pipeline redis.Pipeliner, key string, value float64, expireTime time.Duration) error {
+	if err := pipeline.Set(key, value, expireTime).Err(); err != nil {
 		rc.sugar.Debugw("set cache to redis error", "error", err)
 		return err
 	}

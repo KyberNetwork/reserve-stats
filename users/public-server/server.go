@@ -110,13 +110,6 @@ func (s *Server) getUsers(c *gin.Context) {
 
 	userCap = blockchain.EthToWei(s.userCapConf.UserCap(false).TxLimit / rate)
 	rich = s.userCapConf.IsRich(false, volume)
-	// calculate remaining cap daily
-	volumeInWei := blockchain.EthToWei(volume / rate)
-	userCapDaily := blockchain.EthToWei(s.userCapConf.UserCap(false).DailyLimit / rate)
-	availableUserCapDaily := big.NewInt(0).Sub(userCapDaily, volumeInWei)
-	if availableUserCapDaily.Cmp(userCap) < 0 {
-		userCap = availableUserCapDaily
-	}
 
 	c.JSON(
 		http.StatusOK,

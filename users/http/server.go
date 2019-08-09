@@ -176,8 +176,14 @@ func (s *Server) userStatsBatch(c *gin.Context) {
 	var jsonOutput []gin.H
 	for i := range uidArr {
 		userCap = blockchain.EthToWei(s.userCapConf.UserCap(kycedArr[i]).TxLimit / rate)
-		volumeInWei := blockchain.EthToWei(volume[i] / rate)
 		rich = s.userCapConf.IsRich(kycedArr[i], volume[i])
+		// calculate remaining cap daily
+		volumeInWei := blockchain.EthToWei(volume[i] / rate)
+		userCapDaily := blockchain.EthToWei(s.userCapConf.UserCap(kycedArr[i]).DailyLimit / rate)
+		availableUserCapDaily := big.NewInt(0).Sub(userCapDaily, volumeInWei)
+		if availableUserCapDaily.Cmp(userCap) < 0 {
+			userCap = availableUserCapDaily
+		}
 		userCap = big.NewInt(0).Sub(userCap, volumeInWei)
 		logger.Infow("got last 24h volume of user",
 			"volume", volumeInWei,
@@ -233,9 +239,14 @@ func (s *Server) userStats(c *gin.Context) {
 	}
 
 	userCap = blockchain.EthToWei(s.userCapConf.UserCap(input.KYCed).TxLimit / rate)
-	volumeInWei := blockchain.EthToWei(volume / rate)
 	rich = s.userCapConf.IsRich(input.KYCed, volume)
-	userCap = big.NewInt(0).Sub(userCap, volumeInWei)
+	// calculate remaining cap daily
+	volumeInWei := blockchain.EthToWei(volume / rate)
+	userCapDaily := blockchain.EthToWei(s.userCapConf.UserCap(input.KYCed).DailyLimit / rate)
+	availableUserCapDaily := big.NewInt(0).Sub(userCapDaily, volumeInWei)
+	if availableUserCapDaily.Cmp(userCap) < 0 {
+		userCap = availableUserCapDaily
+	}
 
 	logger.Infow("got last 24h volume of user",
 		"volume", volumeInWei,

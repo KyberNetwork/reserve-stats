@@ -187,16 +187,16 @@ func (s *Server) userStatsBatch(c *gin.Context) {
 		logger.Infow("got last 24h volume of user",
 			"volume", volumeInWei,
 			"cap", userCap,
-			"cap_daily", availableUserCapDaily,
+			"remaining_daily_cap", availableUserCapDaily,
 			"rich", rich,
 		)
 
 		jsonOutput = append(jsonOutput, gin.H{
-			"cap":       userCap,
-			"kyced":     kycedArr[i],
-			"rich":      rich,
-			"volume":    volumeInWei,
-			"cap_daily": availableUserCapDaily,
+			"cap":                 userCap,
+			"kyced":               kycedArr[i],
+			"rich":                rich,
+			"volume":              volumeInWei,
+			"remaining_daily_cap": availableUserCapDaily,
 		})
 	}
 	c.JSON(http.StatusOK, jsonOutput)
@@ -253,15 +253,15 @@ func (s *Server) userStats(c *gin.Context) {
 		"volume", volumeInWei,
 		"cap", userCap,
 		"rich", rich,
-		"cap_daily", availableUserCapDaily,
+		"remaining_daily_cap", availableUserCapDaily,
 	)
 
 	c.JSON(http.StatusOK, gin.H{
-		"cap":       userCap,
-		"kyced":     input.KYCed,
-		"rich":      rich,
-		"volume":    volumeInWei,
-		"cap_daily": availableUserCapDaily,
+		"cap":                 userCap,
+		"kyced":               input.KYCed,
+		"rich":                rich,
+		"volume":              volumeInWei,
+		"remaining_daily_cap": availableUserCapDaily,
 	})
 }
 

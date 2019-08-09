@@ -11,7 +11,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	libredis "github.com/KyberNetwork/reserve-stats/lib/redis"
 	"github.com/KyberNetwork/reserve-stats/users/cacher"
-	"github.com/KyberNetwork/reserve-stats/users/common"
 )
 
 const (
@@ -28,7 +27,6 @@ func main() {
 
 	app.Flags = append(app.Flags, libredis.NewCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
-	app.Flags = append(app.Flags, common.NewUserCapCliFlags()...)
 	app.Flags = append(app.Flags,
 		cli.IntFlag{
 			Name:   expireTimeFlag,
@@ -68,10 +66,9 @@ func run(c *cli.Context) error {
 
 	expireTimeSecond := c.Int64(expireTimeFlag)
 	expireTime := time.Duration(expireTimeSecond) * time.Second
-	userCapConf := common.NewUserCapConfigurationFromContext(c)
 	sugar.Debugw("Initiated redis cached", "cache", redisCacheClient)
 
-	redisCacher := cacher.NewRedisCacher(sugar, influxDBClient, redisCacheClient, expireTime, userCapConf)
+	redisCacher := cacher.NewRedisCacher(sugar, influxDBClient, redisCacheClient, expireTime)
 
 	return redisCacher.CacheUserInfo()
 }

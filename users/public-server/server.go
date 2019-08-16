@@ -57,15 +57,15 @@ func NewServer(
 	}
 }
 
-func (s *Server) getUserByKey(prefix, userAddress string) (bool, error) {
+func (s *Server) getAddressVolumeByKey(prefix, userAddress string) (float64, error) {
 	data := s.redisClient.Get(fmt.Sprintf("%s:%s", prefix, userAddress))
 	if data.Err() != nil {
 		if data.Err() == redis.Nil {
-			return false, nil
+			return 0, nil
 		}
-		return false, data.Err()
+		return 0, data.Err()
 	}
-	return true, nil
+	return data.Float64()
 }
 
 func (s *Server) getUsers(c *gin.Context) {
@@ -77,6 +77,7 @@ func (s *Server) getUsers(c *gin.Context) {
 		rich    bool
 		userCap *big.Int
 		err     error
+		volume  float64
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -89,7 +90,7 @@ func (s *Server) getUsers(c *gin.Context) {
 
 	logger.Info("query", "user query", query)
 
-	rich, err = s.getUserByKey(richPrefix, query.Address)
+	volume, err = s.getAddressVolumeByKey(richPrefix, query.Address)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
@@ -108,6 +109,7 @@ func (s *Server) getUsers(c *gin.Context) {
 	}
 
 	userCap = blockchain.EthToWei(s.userCapConf.UserCap(false).TxLimit / rate)
+	rich = s.userCapConf.IsRich(false, volume)
 
 	c.JSON(
 		http.StatusOK,

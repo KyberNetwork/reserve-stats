@@ -23,22 +23,23 @@ func _() {
 	_ = x[DstAmount-12]
 	_ = x[EthUSDRate-13]
 	_ = x[EthAmount-14]
-	_ = x[FiatAmount-15]
-	_ = x[IntegrationApp-16]
-	_ = x[WalletAddress-17]
-	_ = x[LogIndex-18]
-	_ = x[SourceBurnAmount-19]
-	_ = x[DestBurnAmount-20]
-	_ = x[SourceWalletFeeAmount-21]
-	_ = x[DestWalletFeeAmount-22]
-	_ = x[UID-23]
-	_ = x[TxSender-24]
-	_ = x[ReceiverAddress-25]
+	_ = x[TradeVolume-15]
+	_ = x[FiatAmount-16]
+	_ = x[IntegrationApp-17]
+	_ = x[WalletAddress-18]
+	_ = x[LogIndex-19]
+	_ = x[SourceBurnAmount-20]
+	_ = x[DestBurnAmount-21]
+	_ = x[SourceWalletFeeAmount-22]
+	_ = x[DestWalletFeeAmount-23]
+	_ = x[UID-24]
+	_ = x[TxSender-25]
+	_ = x[ReceiverAddress-26]
 }
 
-const _FieldName_name = "timeblock_numbertx_hashuser_addrsrc_addrdst_addrcountryipeth_rate_providerdst_rsv_addrsrc_rsv_addrsrc_amountdst_amounteth_usd_rateeth_amountfiat_amountintegration_appwallet_addrlog_indexsrc_burn_amountdst_burn_amountsrc_wallet_fee_amountdst_wallet_fee_amountuidtx_senderreceiver_addr"
+const _FieldName_name = "timeblock_numbertx_hashuser_addrsrc_addrdst_addrcountryipeth_rate_providerdst_rsv_addrsrc_rsv_addrsrc_amountdst_amounteth_usd_rateeth_amounttrade_volumefiat_amountintegration_appwallet_addrlog_indexsrc_burn_amountdst_burn_amountsrc_wallet_fee_amountdst_wallet_fee_amountuidtx_senderreceiver_addr"
 
-var _FieldName_index = [...]uint16{0, 4, 16, 23, 32, 40, 48, 55, 57, 74, 86, 98, 108, 118, 130, 140, 151, 166, 177, 186, 201, 216, 237, 258, 261, 270, 283}
+var _FieldName_index = [...]uint16{0, 4, 16, 23, 32, 40, 48, 55, 57, 74, 86, 98, 108, 118, 130, 140, 152, 163, 178, 189, 198, 213, 228, 249, 270, 273, 282, 295}
 
 func (i FieldName) String() string {
 	if i < 0 || i >= FieldName(len(_FieldName_index)-1) {

@@ -129,13 +129,12 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			}
 			// set tradeLog.EthAmount
 			if tradeLog.SrcAddress == blockchain.ETHAddr {
-				tradeLog.TradeVolume = tradeLog.SrcAmount
 				tradeLog.EthAmount = tradeLog.SrcAmount
 			} else if tradeLog.DestAddress == blockchain.ETHAddr {
-				tradeLog.TradeVolume = tradeLog.DestAmount
 				tradeLog.EthAmount = tradeLog.DestAmount
 			}
-			if len(tradeLog.BurnFees) >= 2 {
+			tradeLog.TradeVolume = tradeLog.EthAmount // keep TradeVolume as origin amount of EthAmount
+			if len(tradeLog.BurnFees) >= 2 { // EthAmount get multiply in case trade burnable token
 				tradeLog.EthAmount = tradeLog.EthAmount.Mul(tradeLog.EthAmount, big.NewInt(int64(len(tradeLog.BurnFees))))
 			}
 

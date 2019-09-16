@@ -35,8 +35,8 @@ const (
 	EthUSDRate // eth_usd_rate
 	//EthAmount is the enumerated field for ETH Amount
 	EthAmount // eth_amount
-	//TradeVolume is the enumerated field for Swap Volume
-	TradeVolume // trade_volume
+	//OriginalEthAmount is the enumerated field for Swap Volume
+	OriginalEthAmount // original_eth_amount
 	//FiatAmount is the enumerated field for fiat amount
 	FiatAmount // fiat_amount
 	//IntegrationApp is the name of apps integrated kyberswap

@@ -145,7 +145,7 @@ func fillEtherReceival(tradeLog common.TradeLog, logItem types.Log) (common.Trad
 	}
 	tradeLog.SrcReserveAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
 	tradeLog.EthAmount = amount.Big()
-	tradeLog.TradeVolume = amount.Big()
+	tradeLog.OriginalEthAmount = amount.Big()
 	return tradeLog, nil
 }
 
@@ -238,7 +238,7 @@ func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log) (common.Trade
 	tradeLog.DestAddress = destAddress
 	tradeLog.SrcAmount = srcAmount.Big()
 	tradeLog.DestAmount = destAmount.Big()
-	tradeLog.TradeVolume = ethAmount.Big()
+	tradeLog.OriginalEthAmount = ethAmount.Big()
 	if len(tradeLog.BurnFees) >= 2 {
 		tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(len(tradeLog.BurnFees))))
 	} else {

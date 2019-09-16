@@ -4,6 +4,23 @@ package walletstats
 
 import "strconv"
 
+func _() {
+	// An "invalid array index" compiler error signifies that the constant values have changed.
+	// Re-run the stringer command to generate them again.
+	var x [1]struct{}
+	_ = x[Time-0]
+	_ = x[UniqueAddresses-1]
+	_ = x[ETHVolume-2]
+	_ = x[USDVolume-3]
+	_ = x[TotalTrade-4]
+	_ = x[USDPerTrade-5]
+	_ = x[ETHPerTrade-6]
+	_ = x[TotalBurnFee-7]
+	_ = x[NewUniqueAddresses-8]
+	_ = x[KYCedAddresses-9]
+	_ = x[WalletAddress-10]
+}
+
 const _FieldName_name = "timeunique_addresseseth_volumeusd_volumetotal_tradeusd_per_tradeeth_per_tradetotal_burn_feenew_unique_addresseskycedwallet_addr"
 
 var _FieldName_index = [...]uint8{0, 4, 20, 30, 40, 51, 64, 77, 91, 111, 116, 127}

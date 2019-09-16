@@ -316,6 +316,11 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		return nil, err
 	}
 
+	originalEthAmount, err := is.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.OriginalEthAmount)
+	if err != nil {
+		return nil, err
+	}
+
 	srcAmount, err := is.tokenAmountFormatter.FromWei(log.SrcAddress, log.SrcAmount)
 	if err != nil {
 		return nil, err
@@ -344,6 +349,7 @@ func (is *InfluxStorage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, 
 		logschema.DestBurnAmount.String():   dstBurnAmount,
 
 		logschema.EthAmount.String():             ethAmount,
+		logschema.OriginalEthAmount.String():     originalEthAmount,
 		logschema.BlockNumber.String():           int64(log.BlockNumber),
 		logschema.TxHash.String():                log.TransactionHash.String(),
 		logschema.IP.String():                    log.IP,

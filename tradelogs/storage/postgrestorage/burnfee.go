@@ -6,10 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/lib/pq"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
 )
 
 // Get aggregated Burn fee by hour or day

@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage"
 )
 
 const (

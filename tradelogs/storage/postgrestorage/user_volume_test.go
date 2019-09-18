@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 
-	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 func TestTradeLogDB_GetUserVolume(t *testing.T) {

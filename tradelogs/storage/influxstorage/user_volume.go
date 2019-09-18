@@ -5,12 +5,13 @@ import (
 	"strings"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/tradelog"
 	volSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/volume"
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 //GetUserVolume return volume of an address from time to time by a frequency

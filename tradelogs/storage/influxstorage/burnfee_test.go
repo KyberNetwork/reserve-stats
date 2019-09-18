@@ -6,17 +6,11 @@ import (
 	"testing"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 
-	ethereum "github.com/ethereum/go-ethereum/common"
-
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-<<<<<<< HEAD:tradelogs/storage/burnfee_test.go
-	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
-=======
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/cq"
-	ethereum "github.com/ethereum/go-ethereum/common"
->>>>>>> interface for tradelog storage:tradelogs/storage/influxstorage/burnfee_test.go
 )
 
 func aggregationBurnFeeTestData(is *InfluxStorage) error {

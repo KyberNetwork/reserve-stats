@@ -7,8 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -21,6 +19,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"

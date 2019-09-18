@@ -1,15 +1,14 @@
 package influxstorage
 
 import (
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-
 	"testing"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/cq"
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 func getUserVolumeTestData(is *InfluxStorage) error {

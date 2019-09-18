@@ -6,17 +6,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	"github.com/KyberNetwork/reserve-stats/lib/testutil"
-
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/influxdata/influxdb/client/v2"
+	"github.com/stretchr/testify/require"
+
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 )
 
 var testStorage *InfluxStorage

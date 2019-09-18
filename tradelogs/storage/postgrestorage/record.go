@@ -5,12 +5,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
-
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	ethereum "github.com/ethereum/go-ethereum/common"
 
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 )
 
 type record struct {

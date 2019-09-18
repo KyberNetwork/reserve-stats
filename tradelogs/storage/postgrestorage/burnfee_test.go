@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 func TestTradeLogDB_GetAggregatedBurnFee(t *testing.T) {

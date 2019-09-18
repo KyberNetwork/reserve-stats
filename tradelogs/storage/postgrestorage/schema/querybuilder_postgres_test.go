@@ -3,9 +3,10 @@ package schema
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGetTimeCondition(t *testing.T) {

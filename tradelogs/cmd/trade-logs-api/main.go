@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	storage "github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	"github.com/urfave/cli"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/appnames"
@@ -13,7 +13,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/http"
-	"github.com/urfave/cli"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
 
 func main() {

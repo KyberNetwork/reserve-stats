@@ -3,8 +3,9 @@ package influxstorage
 import (
 	"time"
 
-	schema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/tradelogs-post-processor"
 	"github.com/influxdata/influxdb/client/v2"
+
+	schema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/tradelogs-post-processor"
 )
 
 const (

@@ -4,8 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/stretchr/testify/require"
+
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 func TestTradeLogDB_GetCountryStats(t *testing.T) {

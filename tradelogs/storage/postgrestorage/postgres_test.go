@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/jmoiron/sqlx"
+	"github.com/stretchr/testify/require"
+
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
-	"github.com/jmoiron/sqlx"
-	"github.com/stretchr/testify/require"
 )
 
 const (

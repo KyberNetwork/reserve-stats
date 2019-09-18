@@ -5,16 +5,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
+	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/influxdata/influxdb/client/v2"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	kycedschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/kyced"
 	logschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/tradelog"
-	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/influxdata/influxdb/client/v2"
-	"go.uber.org/zap"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 )
 
 const (

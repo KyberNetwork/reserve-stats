@@ -7,11 +7,12 @@ import (
 	"text/template"
 	"time"
 
+	influxModel "github.com/influxdata/influxdb/models"
+
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	countryStatSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/country_stats"
-	influxModel "github.com/influxdata/influxdb/models"
 )
 
 //GetCountryStats return stats of a country from time to time by daily fred in provided timezone

@@ -77,7 +77,7 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error)
 		return nil, err
 	}
 	return &record{
-		Timestamp:          log.Timestamp,
+		Timestamp:          log.Timestamp.UTC(),
 		BlockNumber:        log.BlockNumber,
 		TransactionHash:    log.TransactionHash.String(),
 		EthAmount:          ethAmount,

@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
 )
 
+// GetAggregatedWalletFee returns fee_amount filter by time, reserve addr, wallet addr group by hour or day
 func (tldb *TradeLogDB) GetAggregatedWalletFee(reserveAddr, walletAddr, freq string,
 	fromTime, toTime time.Time, timezone int8) (map[uint64]float64, error) {
 	var (
@@ -16,6 +17,7 @@ func (tldb *TradeLogDB) GetAggregatedWalletFee(reserveAddr, walletAddr, freq str
 		err       error
 	)
 	logger := tldb.sugar.With("from", fromTime, "to", toTime, "func",
+		"reserve", reserveAddr, "wallet", walletAddr,
 		"tradelogs/storage/postgresql/TradeLogDB.GetAggregatedWalletFee")
 
 	switch strings.ToLower(freq) {
@@ -32,26 +34,26 @@ func (tldb *TradeLogDB) GetAggregatedWalletFee(reserveAddr, walletAddr, freq str
 		return nil, fmt.Errorf("frequency not supported: %v", freq)
 	}
 
-	integrationQuery := `
+	integrationQuery := fmt.Sprintf(`
 		SELECT time, SUM(fee_amount) as fee_amount 
 		FROM (
-			SELECT ` + timeField + ` as time, src_wallet_fee_amount AS fee_amount 
-			FROM "` + schema.TradeLogsTableName + `"
+			SELECT %[1]s as time, src_wallet_fee_amount AS fee_amount 
+			FROM "%[2]s"
 			WHERE timestamp >= $1 and timestamp < $2
-			AND EXISTS (SELECT NULL FROM "` + schema.WalletTableName + `"
+			AND EXISTS (SELECT NULL FROM "%[3]s"
 				WHERE address = $3 and id = wallet_address_id)
-			AND EXISTS (SELECT NULL FROM "` + schema.ReserveTableName + `"
+			AND EXISTS (SELECT NULL FROM "%[4]s"
 				WHERE address = $4 and id = src_reserve_address_id)
 		UNION ALL
-			SELECT ` + timeField + ` as time, dst_wallet_fee_amount AS fee_amount 
-			FROM "` + schema.TradeLogsTableName + `"
+			SELECT %[1]s as time, dst_wallet_fee_amount AS fee_amount 
+			FROM "%[2]s"
 			WHERE timestamp >= $1 and timestamp < $2
-			AND EXISTS (SELECT NULL FROM "` + schema.WalletTableName + `"
+			AND EXISTS (SELECT NULL FROM "%[3]s"
 				WHERE address = $3 and id = wallet_address_id)
-			AND EXISTS (SELECT NULL FROM "` + schema.ReserveTableName + `"
+			AND EXISTS (SELECT NULL FROM "%[4]s"
 				WHERE address = $4 and id = dst_reserve_address_id)
 		) a GROUP BY time
-	`
+	`, timeField, schema.TradeLogsTableName, schema.WalletTableName, schema.ReserveTableName)
 
 	var records []struct {
 		Timestamp time.Time `db:"time"`

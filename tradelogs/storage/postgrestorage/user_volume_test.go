@@ -36,7 +36,6 @@ func TestTradeLogDB_GetUserVolume(t *testing.T) {
 		from        = timeutil.TimestampMsToTime(uint64(fromTime))
 		to          = timeutil.TimestampMsToTime(uint64(toTime))
 	)
-
 	userVolume, err := tldb.GetUserVolume(userAddress, from, to, freq)
 	require.NoError(t, err)
 	timeUnix, err := time.Parse(time.RFC3339, timeStamp)

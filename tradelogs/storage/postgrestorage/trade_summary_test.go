@@ -14,7 +14,6 @@ func TestTradeLogDB_GetTradeSummary(t *testing.T) {
 	const (
 		dbName = "test_trade_summary"
 		// These params are expected to be change when export.dat changes.
-
 		ethAmount        = 17.390905490542348
 		usdAmount        = 3924.466796147473
 		totalBurnFee     = 16.745037801749728
@@ -43,7 +42,6 @@ func TestTradeLogDB_GetTradeSummary(t *testing.T) {
 
 	summary, err := tldb.GetTradeSummary(fromTime, toTime, timezone)
 	require.NoError(t, err)
-
 	timeUnix, err := time.Parse(time.RFC3339, timeStamp)
 	assert.NoError(t, err)
 	timeUint := timeutil.TimeToTimestampMs(timeUnix)
@@ -61,7 +59,5 @@ func TestTradeLogDB_GetTradeSummary(t *testing.T) {
 	require.Equal(t, totalBurnFee, result.TotalBurnFee)
 	require.Equal(t, kycedAddress, result.KYCEDAddresses)
 	require.Equal(t, newUniqueAddress, result.NewUniqueAddresses)
-
 	t.Logf("%+v", result)
-
 }

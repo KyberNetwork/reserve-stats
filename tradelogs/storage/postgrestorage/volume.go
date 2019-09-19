@@ -1,9 +1,8 @@
 package postgrestorage
 
 import (
-	"bytes"
 	"fmt"
-	"html/template"
+	"strings"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -13,76 +12,73 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
 )
 
-// Get aggregated Burn fee by hour or day
+// GetAssetVolume returns eth_amount, usd_amount, volume filter by token addr in a time range group by day or hour
 func (tldb *TradeLogDB) GetAssetVolume(token ethereum.Address, fromTime, toTime time.Time,
 	frequency string) (map[uint64]*common.VolumeStats, error) {
 	var (
-		resultBuffer              bytes.Buffer
-		ok                        bool
-		dateParam                 string
-		timeCondition             string
-		ethWETHExcludingCondition string
-		queryTmpl                 = `SELECT time, SUM(token_volume) token_volume, SUM(eth_amount) eth_volume,
+		err       error
+		timeField string
+		logger    = tldb.sugar.With("from", fromTime, "to", toTime, "frequency", frequency, "token", token.Hex(),
+			"func", "tradelogs/storage/postgrestorage/TradeLogDB.GetAssetVolume")
+	)
+
+	switch strings.ToLower(frequency) {
+	case "h":
+		timeField = schema.BuildDateTruncField("hour", 0)
+		fromTime = schema.RoundTime(fromTime, "hour", 0)
+		toTime = schema.RoundTime(toTime, "hour", 0).Add(time.Hour)
+	case "d":
+		timeField = schema.BuildDateTruncField("day", 0)
+		fromTime = schema.RoundTime(fromTime, "day", 0)
+		toTime = schema.RoundTime(toTime, "day", 0).Add(time.Hour * 24)
+
+	default:
+		return nil, fmt.Errorf("frequency not supported: %v", frequency)
+	}
+	ethCondition, err := schema.BuildEthWethExcludingCondition()
+	if err != nil {
+		return nil, err
+	}
+
+	queryStmt := fmt.Sprintf(`
+		SELECT time, 
+		SUM(token_volume) token_volume, 
+		SUM(eth_amount) eth_volume,
 		SUM(eth_amount * eth_usd_rate) usd_volume
 		FROM (
-		SELECT date_trunc('{{.DateParam}}',"timestamp") AS time, src_amount token_volume, eth_amount, eth_usd_rate
-		FROM "` + schema.TradeLogsTableName + `" 
-		WHERE EXISTS (SELECT NULL FROM ` + schema.TokenTableName + ` WHERE address = $1 AND id=src_address_id)
-		AND {{.TimeCondition}} AND {{.EthWETHExcludingCondition}}
-		UNION ALL
-		SELECT date_trunc('{{.DateParam}}',"timestamp") AS time, dst_amount token_volume, eth_amount, eth_usd_rate
-		FROM "` + schema.TradeLogsTableName + `"
-		WHERE EXISTS (SELECT NULL FROM ` + schema.TokenTableName + ` WHERE address = $1 AND id=dst_address_id)
-		AND {{.TimeCondition}} AND {{.EthWETHExcludingCondition}}
-		) a GROUP BY time`
-	)
-	logger := tldb.sugar.With("func", "tradelogs/storage/postgrestorage/TradeLogDB.GetAssetVolume",
-		"from", fromTime, "to", toTime, "frequency", frequency)
-	tmpl, err := template.New("asset volume template").Parse(queryTmpl)
-	if err != nil {
-		return nil, err
-	}
-	if timeCondition, err = schema.BuildTimeCondition(fromTime, toTime, frequency); err != nil {
-		return nil, err
-	}
-	if ethWETHExcludingCondition, err = schema.BuildEthWethExcludingCondition(); err != nil {
-		return nil, err
-	}
-	if dateParam, ok = schema.DateFunctionParams[frequency]; !ok {
-		return nil, fmt.Errorf("invalid frequency %s", frequency)
-	}
+			SELECT %[1]s AS time, src_amount token_volume, eth_amount, eth_usd_rate
+			FROM %[2]s 
+			WHERE EXISTS (SELECT NULL FROM %[3]s WHERE address = $3 AND id=src_address_id)
+				AND timestamp >= $1 AND timestamp < $2
+				AND %[4]s
+			UNION ALL
+			SELECT %[1]s AS time, dst_amount token_volume, eth_amount, eth_usd_rate
+			FROM %[2]s 
+			WHERE EXISTS (SELECT NULL FROM %[3]s WHERE address = $3 AND id=dst_address_id)
+				AND timestamp >= $1 AND timestamp < $2
+				AND %[4]s
+		) a GROUP BY time;
+	`, timeField, schema.TradeLogsTableName, schema.TokenTableName, ethCondition)
+	logger.Debugw("prepare statement", "stmt", queryStmt)
 
-	err = tmpl.Execute(&resultBuffer, struct {
-		DateParam                 string
-		TimeCondition             template.HTML
-		EthWETHExcludingCondition template.HTML
-	}{
-		DateParam:                 dateParam,
-		TimeCondition:             template.HTML(timeCondition),
-		EthWETHExcludingCondition: template.HTML(ethWETHExcludingCondition),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	var datas []struct {
+	var records []struct {
 		TokenVolume float64   `db:"token_volume"`
 		EthVolume   float64   `db:"eth_volume"`
 		USDVolume   float64   `db:"usd_volume"`
 		Time        time.Time `db:"time"`
 	}
-	logger.Debugw("execute template successful", "prepare statement", resultBuffer.String())
-	err = tldb.db.Select(&datas, resultBuffer.String(), token.Hex())
+	err = tldb.db.Select(&records, queryStmt,
+		fromTime.UTC().Format(schema.DefaultDateFormat),
+		toTime.UTC().Format(schema.DefaultDateFormat), token.Hex())
 	if err != nil {
 		return nil, err
 	}
-
-	if len(datas) == 0 {
-		logger.Debugw("return empty result", "prepare statement", resultBuffer.String())
+	if len(records) == 0 {
+		logger.Debugw("return empty result", "prepare statement", queryStmt)
 		return nil, nil
 	}
 	result := make(map[uint64]*common.VolumeStats)
-	for _, data := range datas {
+	for _, data := range records {
 		fmt.Println(data.TokenVolume, " ", data.USDVolume)
 		result[timeutil.TimeToTimestampMs(data.Time)] = &common.VolumeStats{
 			Volume:    data.TokenVolume,
@@ -93,87 +89,78 @@ func (tldb *TradeLogDB) GetAssetVolume(token ethereum.Address, fromTime, toTime 
 	return result, nil
 }
 
+// GetAssetVolume returns eth_amount, usd_amount, volume filter by reserve addr and token addr in a time range group by day or hour
 func (tldb *TradeLogDB) GetReserveVolume(rsvAddr ethereum.Address, token ethereum.Address,
 	fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
 	var (
-		resultBuffer              bytes.Buffer
-		ok                        bool
-		dateParam                 string
-		timeCondition             string
-		ethWETHExcludingCondition string
+		err       error
+		timeField string
+		logger    = tldb.sugar.With("from", fromTime, "to", toTime, "frequency", frequency,
+			"func", "tradelogs/storage/postgrestorage/TradeLogDB.GetAssetVolume")
 	)
 
-	logger := tldb.sugar.With("func", "tradelogs/storage/postgrestorage/TradeLogDB.GetReserveVolume",
-		"from", fromTime, "to", toTime, "frequency", frequency)
+	switch strings.ToLower(frequency) {
+	case "h":
+		timeField = schema.BuildDateTruncField("hour", 0)
+		fromTime = schema.RoundTime(fromTime, "hour", 0)
+		toTime = schema.RoundTime(toTime, "hour", 0).Add(time.Hour)
+	case "d":
+		timeField = schema.BuildDateTruncField("day", 0)
+		fromTime = schema.RoundTime(fromTime, "day", 0)
+		toTime = schema.RoundTime(toTime, "day", 0).Add(time.Hour * 24)
 
-	tmpl, err := template.New("asset volume template").Parse(reserveQueryTmpl)
-	if err != nil {
-		return nil, err
+	default:
+		return nil, fmt.Errorf("frequency not supported: %v", frequency)
 	}
-	if timeCondition, err = schema.BuildTimeCondition(fromTime, toTime, frequency); err != nil {
-		return nil, err
-	}
-	if ethWETHExcludingCondition, err = schema.BuildEthWethExcludingCondition(); err != nil {
-		return nil, err
-	}
-	if dateParam, ok = schema.DateFunctionParams[frequency]; !ok {
-		return nil, fmt.Errorf("invalid frequency %s", frequency)
-	}
-
-	err = tmpl.Execute(&resultBuffer, struct {
-		DateParam                 string
-		TimeCondition             template.HTML
-		EthWETHExcludingCondition template.HTML
-	}{
-		DateParam:                 dateParam,
-		TimeCondition:             template.HTML(timeCondition),
-		EthWETHExcludingCondition: template.HTML(ethWETHExcludingCondition),
-	})
+	ethCondition, err := schema.BuildEthWethExcludingCondition()
 	if err != nil {
 		return nil, err
 	}
 
-	var datas []struct {
+	reserveQuery := fmt.Sprintf(`
+		SELECT time, SUM(token_volume) token_volume, SUM(eth_amount) eth_volume,
+		SUM(eth_amount * eth_usd_rate) usd_volume
+		FROM (
+		SELECT %[1]s AS time, src_amount token_volume, eth_amount, eth_usd_rate
+		FROM "%[2]s" 
+		WHERE EXISTS (SELECT NULL FROM "%[3]s" WHERE address = $1 AND id=src_address_id)
+			AND EXISTS (SELECT NULL FROM "%[4]s" WHERE address = $2 AND (id= src_reserve_address_id OR id = dst_reserve_address_id))
+			AND timestamp >= $3 AND timestamp < $4 
+			AND %[5]s
+		UNION ALL
+		SELECT %[1]s AS time, dst_amount token_volume, eth_amount, eth_usd_rate
+		FROM "%[2]s"
+			WHERE EXISTS (SELECT NULL FROM "%[3]s" WHERE address = $1 AND id=dst_address_id)
+			AND EXISTS (SELECT NULL FROM "%[4]s" WHERE address = $2 AND (id= src_reserve_address_id OR id = dst_reserve_address_id))
+			AND timestamp >= $3 AND timestamp < $4
+			AND %[5]s
+		) a GROUP BY time
+	`, timeField, schema.TradeLogsTableName, schema.TokenTableName, schema.ReserveTableName, ethCondition)
+	logger.Debugw("prepare statement", "stmt", reserveQuery)
+	var records []struct {
 		TokenVolume float64   `db:"token_volume"`
 		EthVolume   float64   `db:"eth_volume"`
 		USDVolume   float64   `db:"usd_volume"`
 		Time        time.Time `db:"time"`
 	}
-	logger.Debugw("execute template successful", "prepare statement", resultBuffer.String())
 
-	err = tldb.db.Select(&datas, resultBuffer.String(), token.Hex(), rsvAddr.Hex())
+	err = tldb.db.Select(&records, reserveQuery, token.Hex(), rsvAddr.Hex(),
+		fromTime.UTC().Format(schema.DefaultDateFormat), toTime.UTC().Format(schema.DefaultDateFormat))
 	if err != nil {
 		return nil, err
 	}
 
-	if len(datas) == 0 {
-		logger.Debugw("return empty result", "prepare statement", resultBuffer.String())
+	if len(records) == 0 {
+		logger.Debugw("return empty result", "prepare statement", reserveQuery)
 		return nil, nil
 	}
 	result := make(map[uint64]*common.VolumeStats)
-	for _, data := range datas {
-		fmt.Println(data.TokenVolume, " ", data.USDVolume)
-		result[timeutil.TimeToTimestampMs(data.Time)] = &common.VolumeStats{
-			Volume:    data.TokenVolume,
-			ETHAmount: data.EthVolume,
-			USDAmount: data.USDVolume,
+	for _, r := range records {
+		result[timeutil.TimeToTimestampMs(r.Time)] = &common.VolumeStats{
+			Volume:    r.TokenVolume,
+			ETHAmount: r.EthVolume,
+			USDAmount: r.USDVolume,
 		}
 	}
 	return result, nil
 }
-
-const reserveQueryTmpl = `SELECT time, SUM(token_volume) token_volume, SUM(eth_amount) eth_volume,
-		SUM(eth_amount * eth_usd_rate) usd_volume
-		FROM (
-		SELECT date_trunc('{{.DateParam}}',"timestamp") AS time, src_amount token_volume, eth_amount, eth_usd_rate
-		FROM "` + schema.TradeLogsTableName + `" 
-		WHERE EXISTS (SELECT NULL FROM ` + schema.TokenTableName + ` WHERE address = $1 AND id=src_address_id)
-		AND EXISTS (SELECT NULL FROM ` + schema.ReserveTableName + ` WHERE address = $2 AND (id= src_reserve_address_id OR id = dst_reserve_address_id))
-		AND {{.TimeCondition}} AND {{.EthWETHExcludingCondition}}
-		UNION ALL
-		SELECT date_trunc('{{.DateParam}}',"timestamp") AS time, dst_amount token_volume, eth_amount, eth_usd_rate
-		FROM "` + schema.TradeLogsTableName + `"
-		WHERE EXISTS (SELECT NULL FROM ` + schema.TokenTableName + ` WHERE address = $1 AND id=dst_address_id)
-		AND EXISTS (SELECT NULL FROM ` + schema.ReserveTableName + ` WHERE address = $2 AND (id= src_reserve_address_id OR id = dst_reserve_address_id))
-		AND {{.TimeCondition}} AND {{.EthWETHExcludingCondition}}
-		) a GROUP BY time`

@@ -1,6 +1,7 @@
 package postgrestorage
 
 import (
+	"fmt"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -9,6 +10,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
 )
 
+// GetTokenHeatmap returns map of country to eth_volume, token_volume, usd_volume filter by timestamp and asset
 func (tldb *TradeLogDB) GetTokenHeatmap(asset ethereum.Address, from, to time.Time, timezone int8) (map[string]common.Heatmap, error) {
 	var (
 		err               error
@@ -24,8 +26,8 @@ func (tldb *TradeLogDB) GetTokenHeatmap(asset ethereum.Address, from, to time.Ti
 	}
 	from = schema.RoundTime(from, "day", timezone)
 	to = schema.RoundTime(to, "day", timezone).Add(time.Hour * 24)
-
-	tokenHeatMapQuery = `
+	// nested query with filter by src_address_id and dst_address_id
+	tokenHeatMapQuery = fmt.Sprintf(`
 		SELECT country, 
 			SUM(eth_amount) AS eth_volume,
 			SUM(token_volume) AS token_volume,
@@ -33,21 +35,22 @@ func (tldb *TradeLogDB) GetTokenHeatmap(asset ethereum.Address, from, to time.Ti
 		FROM (
 			SELECT country, src_amount AS token_volume, 
 				eth_amount, eth_amount * eth_usd_rate AS usd_volume
-			FROM "` + schema.TradeLogsTableName + `"
+			FROM "%[1]s"
 			WHERE timestamp >= $1 and timestamp < $2
-			AND EXISTS (SELECT NULL FROM "` + schema.TokenTableName + `" WHERE address = $3 and id = src_address_id)
-			AND ` + ethCondition + `
+			AND EXISTS (SELECT NULL FROM "%[2]s" WHERE address = $3 and id = src_address_id)
+			AND %[3]s
 			AND country IS NOT NULL
 		UNION ALL
 			SELECT country, dst_amount AS token_volume, eth_amount, 
 				eth_amount*eth_usd_rate AS usd_volume
-			FROM "` + schema.TradeLogsTableName + `"
+			FROM "%[1]s"
 			WHERE timestamp >= $1 and timestamp < $2
-			AND EXISTS (SELECT NULL FROM "` + schema.TokenTableName + `" WHERE address = $3 and id = dst_address_id)
-			AND ` + ethCondition + `
+			AND EXISTS (SELECT NULL FROM "%[2]s" WHERE address = $3 and id = dst_address_id)
+			AND %[3]s
 			AND country IS NOT NULL
 		)a GROUP BY country
-	`
+	`, schema.TradeLogsTableName, schema.TokenTableName, ethCondition)
+	logger.Debugw("prepare statement", "stmt", tokenHeatMapQuery)
 
 	var records []struct {
 		Country     string  `db:"country"`
@@ -55,8 +58,6 @@ func (tldb *TradeLogDB) GetTokenHeatmap(asset ethereum.Address, from, to time.Ti
 		EthVolume   float64 `db:"eth_volume"`
 		UsdVolume   float64 `db:"usd_volume"`
 	}
-
-	logger.Debugw("prepare statement", "stmt", tokenHeatMapQuery)
 	err = tldb.db.Select(&records, tokenHeatMapQuery, from.UTC().Format(schema.DefaultDateFormat),
 		to.UTC().Format(schema.DefaultDateFormat), asset.Hex())
 	if err != nil {

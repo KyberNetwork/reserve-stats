@@ -26,7 +26,6 @@ func TestTradeLogDB_GetAssetVolume(t *testing.T) {
 
 	tldb, err := newTestTradeLogPostgresql(dbName)
 	require.NoError(t, err)
-
 	from := timeutil.TimestampMsToTime(fromTime)
 	to := timeutil.TimestampMsToTime(toTime)
 	defer func() {
@@ -36,9 +35,7 @@ func TestTradeLogDB_GetAssetVolume(t *testing.T) {
 
 	volume, err := tldb.GetAssetVolume(ethereum.HexToAddress(ethAddress), from, to, freq)
 	require.NoError(t, err)
-
 	t.Logf("Volume result %v", volume)
-
 	timeUnix, err := time.Parse(time.RFC3339, timeStamp)
 	assert.NoError(t, err)
 	timeUint := timeutil.TimeToTimestampMs(timeUnix)
@@ -46,7 +43,6 @@ func TestTradeLogDB_GetAssetVolume(t *testing.T) {
 	if !ok {
 		t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))
 	}
-
 	require.Equal(t, ethAmount, result.USDAmount)
 	require.Equal(t, totalVolume, result.Volume)
 }

@@ -2,6 +2,7 @@ package postgrestorage
 
 import (
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -135,6 +136,12 @@ func TestSaveTradeLogs(t *testing.T) {
 	tradeLogs, err := utils.GetSampleTradeLogs("../testdata/trade_logs.json")
 	require.NoError(t, err)
 	require.NoError(t, testStorage.SaveTradeLogs(tradeLogs))
+
+	tls, err := testStorage.LoadTradeLogs(timeutil.TimestampMsToTime(1554353231000), timeutil.TimestampMsToTime(1554353231000))
+	require.NoError(t, err)
+	require.Equal(t, 1, len(tls))
+	require.Equal(t, big.NewInt(999995137653743774), tls[0].OriginalEthAmount)
+	require.Equal(t, big.NewInt(999995137653743773), tls[0].EthAmount)
 }
 
 func TestTradeLogDB_LoadTradeLogs(t *testing.T) {
@@ -149,10 +156,12 @@ func TestTradeLogDB_LoadTradeLogs(t *testing.T) {
 	defer func() {
 		require.NoError(t, testStorage.tearDown(dbName))
 	}()
-
 	require.NoError(t, loadTestData(testStorage.db, testDataFile))
 
 	tradeLogs, err := testStorage.LoadTradeLogs(timeutil.TimestampMsToTime(fromTime), timeutil.TimestampMsToTime(toTime))
 	require.NoError(t, err)
 	t.Log(len(tradeLogs))
+	for _, log := range tradeLogs {
+		t.Logf("%+v %+v", log.OriginalEthAmount, log.EthAmount)
+	}
 }

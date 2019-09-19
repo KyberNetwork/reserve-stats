@@ -14,15 +14,13 @@ func TestTradeLogDB_GetTradeSummary(t *testing.T) {
 	const (
 		dbName = "test_trade_summary"
 		// These params are expected to be change when export.dat changes.
-		ethAmount        = 17.390905490542348
-		usdAmount        = 3924.466796147473
+		ethAmount        = 17.392022969243367 // change from 17.390905490542348 because eth_amount is doubled for burnable trade
 		totalBurnFee     = 16.745037801749728
 		totalTrade       = uint64(11)
 		uniqueAddress    = uint64(6)
 		kycedAddress     = uint64(0)
 		newUniqueAddress = uint64(6)
-		usdPerTrade      = 356.76970874067933
-		ethPerTrade      = 1.5809914082311225
+		ethPerTrade      = 1.5810929972039425
 		timeStamp        = "2018-10-11T00:00:00Z"
 	)
 
@@ -52,8 +50,6 @@ func TestTradeLogDB_GetTradeSummary(t *testing.T) {
 
 	require.Equal(t, ethAmount, result.ETHVolume)
 	require.Equal(t, ethPerTrade, result.ETHPerTrade)
-	require.Equal(t, usdAmount, result.USDAmount)
-	require.Equal(t, usdPerTrade, result.USDPerTrade)
 	require.Equal(t, totalTrade, result.TotalTrade)
 	require.Equal(t, uniqueAddress, result.UniqueAddresses)
 	require.Equal(t, totalBurnFee, result.TotalBurnFee)

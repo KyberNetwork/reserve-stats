@@ -20,7 +20,9 @@
         "wallet_fees": null,
         "ip": "",
         "country": "",
-        "uid": ""
+        "uid": "",
+        "eth_amount": 999995137653743773,
+        "original_eth_amount": 999995137653743774
     },
     {
         "timestamp": 1554367631,

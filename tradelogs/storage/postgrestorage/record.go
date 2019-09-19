@@ -17,6 +17,7 @@ type record struct {
 	BlockNumber        uint64         `db:"block_number"`
 	TransactionHash    string         `db:"tx_hash"`
 	EthAmount          float64        `db:"eth_amount"`
+	OriginalEthAmount  float64        `db:"original_eth_amount"`
 	UserAddress        string         `db:"user_address"`
 	SrcAddress         string         `db:"src_address"`
 	DestAddress        string         `db:"dst_address"`
@@ -51,6 +52,11 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error)
 		return nil, err
 	}
 
+	originalEthAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.OriginalEthAmount)
+	if err != nil {
+		return nil, err
+	}
+
 	srcAmount, err := tldb.tokenAmountFormatter.FromWei(log.SrcAddress, log.SrcAmount)
 	if err != nil {
 		return nil, err
@@ -75,6 +81,7 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error)
 		BlockNumber:        log.BlockNumber,
 		TransactionHash:    log.TransactionHash.String(),
 		EthAmount:          ethAmount,
+		OriginalEthAmount:  originalEthAmount,
 		UserAddress:        log.UserAddress.String(),
 		SrcAddress:         log.SrcAddress.String(),
 		DestAddress:        log.DestAddress.String(),

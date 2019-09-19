@@ -5,7 +5,7 @@ const TradeLogsSchema = `
 CREATE TABLE IF NOT EXISTS "users" (
 	id SERIAL PRIMARY KEY,
 	address TEXT UNIQUE NOT NULL,
-	timestamp TIMESTAMP
+	timestamp TIMESTAMPTZ
 );
 CREATE TABLE IF NOT EXISTS "wallet" (
 	id SERIAL PRIMARY KEY,
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS "reserve" (
 );
 CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	id SERIAL,
-	timestamp TIMESTAMP,
+	timestamp TIMESTAMPTZ,
 	block_number INTEGER,
 	tx_hash TEXT,
 	eth_amount FLOAT(32),

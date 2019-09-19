@@ -48,8 +48,7 @@ func (tldb *TradeLogDB) GetUserVolume(userAddress ethereum.Address, from, to tim
 		EthAmount float64   `db:"eth_volume"`
 		UsdAmount float64   `db:"usd_volume"`
 	}
-	if err := tldb.db.Select(&records, query, from.UTC().Format(schema.DefaultDateFormat),
-		to.UTC().Format(schema.DefaultDateFormat), userAddress.Hex()); err != nil {
+	if err := tldb.db.Select(&records, query, from, to.UTC(), userAddress.Hex()); err != nil {
 		return nil, err
 	}
 

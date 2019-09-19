@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 var DateFunctionParams = map[string]string{
@@ -35,9 +36,7 @@ func RoundTime(t time.Time, freq string, timeZone int8) time.Time {
 	if freq == "hour" {
 		return t.Truncate(time.Hour)
 	}
-	// for example: 6h UTC we want to truncate to 0h in GMT +7
-	// 6h UTC  -> 13h GMT +7 -> 0h GMT +7 -> 17h UTC (the day before)
-	return t.Add(time.Duration(timeZone) * time.Hour).Truncate(time.Hour * 24).Add(time.Duration(-timeZone) * time.Hour)
+	return timeutil.Midnight(t.In(time.FixedZone("", int(timeZone)*60*60)))
 }
 
 // BuildEthWethExcludingCondition creates a condition that filter eth-weth trades

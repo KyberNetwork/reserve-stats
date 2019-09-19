@@ -46,8 +46,7 @@ func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, ti
 		CountNewTrades int64     `db:"count_new_trades"`
 		Kyced          int64     `db:"kyced"`
 	}
-	err = tldb.db.Select(&records, walletStatsQuery, from.UTC().Format(schema.DefaultDateFormat),
-		to.UTC().Format(schema.DefaultDateFormat), walletAddr)
+	err = tldb.db.Select(&records, walletStatsQuery, from, to, walletAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -87,8 +86,7 @@ func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, ti
 		UsdPerTrade    float64   `db:"usd_per_trade"`
 		TotalTrade     int64     `db:"total_trade"`
 	}
-	err = tldb.db.Select(&records2, walletStatsQuery, from.UTC().Format(schema.DefaultDateFormat),
-		to.UTC().Format(schema.DefaultDateFormat), walletAddr)
+	err = tldb.db.Select(&records2, walletStatsQuery, from, to, walletAddr)
 	if err != nil {
 		return nil, err
 	}

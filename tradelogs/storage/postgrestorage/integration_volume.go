@@ -31,8 +31,7 @@ func (tldb *TradeLogDB) GetIntegrationVolume(fromTime, toTime time.Time) (map[ui
 		IntegrationVolume    float64   `db:"integration_volume"`
 		NonIntegrationVolume float64   `db:"non_integration_volume"`
 	}
-	err := tldb.db.Select(&records, integrationQuery, fromTime.UTC().Format(schema.DefaultDateFormat),
-		toTime.UTC().Format(schema.DefaultDateFormat))
+	err := tldb.db.Select(&records, integrationQuery, fromTime, toTime)
 	if err != nil {
 		return nil, err
 	}

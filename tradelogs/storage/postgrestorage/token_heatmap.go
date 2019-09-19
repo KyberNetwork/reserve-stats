@@ -58,8 +58,7 @@ func (tldb *TradeLogDB) GetTokenHeatmap(asset ethereum.Address, from, to time.Ti
 		EthVolume   float64 `db:"eth_volume"`
 		UsdVolume   float64 `db:"usd_volume"`
 	}
-	err = tldb.db.Select(&records, tokenHeatMapQuery, from.UTC().Format(schema.DefaultDateFormat),
-		to.UTC().Format(schema.DefaultDateFormat), asset.Hex())
+	err = tldb.db.Select(&records, tokenHeatMapQuery, from, to, asset.Hex())
 	if err != nil {
 		return nil, err
 	}

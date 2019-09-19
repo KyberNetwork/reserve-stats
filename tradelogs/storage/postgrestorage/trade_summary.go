@@ -43,8 +43,7 @@ func (tldb *TradeLogDB) GetTradeSummary(from, to time.Time, timezone int8) (map[
 		CountNewTrades uint64    `db:"count_new_trades"`
 		Kyced          uint64    `db:"kyced"`
 	}
-	if err = tldb.db.Select(&countRecords, tradelogQuery, from.UTC().Format(schema.DefaultDateFormat),
-		to.UTC().Format(schema.DefaultDateFormat)); err != nil {
+	if err = tldb.db.Select(&countRecords, tradelogQuery, from, to); err != nil {
 		return nil, err
 	}
 
@@ -81,8 +80,7 @@ func (tldb *TradeLogDB) GetTradeSummary(from, to time.Time, timezone int8) (map[
 		UsdPerTrade    float64   `db:"usd_per_trade"`
 		TotalTrade     uint64    `db:"total_trade"`
 	}
-	err = tldb.db.Select(&records, tradelogQuery, from.UTC().Format(schema.DefaultDateFormat),
-		to.UTC().Format(schema.DefaultDateFormat))
+	err = tldb.db.Select(&records, tradelogQuery, from, to)
 	if err != nil {
 		return nil, err
 	}

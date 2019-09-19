@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"strings"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
@@ -16,9 +15,6 @@ var DateFunctionParams = map[string]string{
 }
 
 const (
-	timeConditionTemplate = `date_trunc('{{.DateParam}}',{{.TimeColumn}}) >= '{{.StartTime}}'` +
-		` AND '{{.EndTime}}' >= date_trunc('{{.DateParam}}',{{.TimeColumn}})`
-
 	ethWETHExcludingTmpl = `( NOT EXISTS (SELECT NULL FROM token WHERE address = '{{.ETHTokenAddr}}' AND src_address_id != id )` +
 		` OR NOT EXISTS (SELECT NULL FROM token WHERE address = '{{.WETHTokenAddr}}' AND dst_address_id != id ))` +
 		` AND ( NOT EXISTS (SELECT NULL FROM token WHERE address = '{{.WETHTokenAddr}}' AND src_address_id != id )` +
@@ -33,44 +29,15 @@ func BuildDateTruncField(dateTruncParam string, timeZone int8) string {
 	return `date_trunc('` + dateTruncParam + `', timestamp)`
 }
 
+// RoundTime returns time is rounded by day or hour
+// if time is rounded by day, it also use time zone.
 func RoundTime(t time.Time, freq string, timeZone int8) time.Time {
 	if freq == "hour" {
 		return t.Truncate(time.Hour)
 	}
-
+	// for example: 6h UTC we want to truncate to 0h in GMT +7
+	// 6h UTC  -> 13h GMT +7 -> 0h GMT +7 -> 17h UTC (the day before)
 	return t.Add(time.Duration(timeZone) * time.Hour).Truncate(time.Hour * 24).Add(time.Duration(-timeZone) * time.Hour)
-}
-
-func BuildTimeCondition(start time.Time, end time.Time, frequency string) (string, error) {
-	var (
-		dateFunctionParam string
-		resultBuffer      bytes.Buffer
-		ok                bool
-	)
-	tpl, err := template.New("time condition template").Parse(timeConditionTemplate)
-	if err != nil {
-		return "", err
-	}
-
-	if dateFunctionParam, ok = DateFunctionParams[strings.ToLower(frequency)]; !ok {
-		return "", fmt.Errorf("invalid burn fee frequency %s", frequency)
-	}
-
-	err = tpl.Execute(&resultBuffer, struct {
-		DateParam  string
-		TimeColumn string
-		StartTime  string
-		EndTime    string
-	}{
-		DateParam:  dateFunctionParam,
-		TimeColumn: "timestamp",
-		StartTime:  start.UTC().Format(DefaultDateFormat),
-		EndTime:    end.UTC().Format(DefaultDateFormat),
-	})
-	if err != nil {
-		return "", err
-	}
-	return resultBuffer.String(), nil
 }
 
 // BuildEthWethExcludingCondition creates a condition that filter eth-weth trades

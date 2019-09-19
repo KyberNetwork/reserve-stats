@@ -24,7 +24,6 @@ func aggregateCountryStats(is *InfluxStorage) error {
 	return nil
 }
 
-
 func TestInfluxStorage_GetCountryStats(t *testing.T) {
 	const (
 		dbName  = "test_country_stats_volume"

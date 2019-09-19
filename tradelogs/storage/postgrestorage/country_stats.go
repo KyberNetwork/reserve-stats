@@ -42,8 +42,7 @@ func (tldb *TradeLogDB) GetCountryStats(countryCode string, from, to time.Time, 
 		CountNewTrades uint64    `db:"count_new_trades"`
 		Kyced          uint64    `db:"kyced"`
 	}
-	if err = tldb.db.Select(&records, tradelogsQuery, from.UTC().Format(schema.DefaultDateFormat),
-		to.UTC().Format(schema.DefaultDateFormat), countryCode); err != nil {
+	if err = tldb.db.Select(&records, tradelogsQuery, from, to, countryCode); err != nil {
 		return nil, err
 	}
 
@@ -81,8 +80,7 @@ func (tldb *TradeLogDB) GetCountryStats(countryCode string, from, to time.Time, 
 		UsdPerTrade    float64   `db:"usd_per_trade"`
 		TotalTrade     uint64    `db:"total_trade"`
 	}
-	err = tldb.db.Select(&volumeRecords, tradelogsQuery, from.UTC().Format(schema.DefaultDateFormat),
-		to.UTC().Format(schema.DefaultDateFormat), countryCode)
+	err = tldb.db.Select(&volumeRecords, tradelogsQuery, from, to, countryCode)
 	if err != nil {
 		return nil, err
 	}

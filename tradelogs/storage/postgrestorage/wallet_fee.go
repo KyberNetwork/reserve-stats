@@ -61,8 +61,7 @@ func (tldb *TradeLogDB) GetAggregatedWalletFee(reserveAddr, walletAddr, freq str
 	}
 
 	logger.Debugw("prepare statement", "stmt", integrationQuery)
-	err = tldb.db.Select(&records, integrationQuery, fromTime.UTC().Format(schema.DefaultDateFormat),
-		toTime.UTC().Format(schema.DefaultDateFormat), walletAddr, reserveAddr)
+	err = tldb.db.Select(&records, integrationQuery, fromTime, toTime, walletAddr, reserveAddr)
 	if err != nil {
 		return nil, err
 	}

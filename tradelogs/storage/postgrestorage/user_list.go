@@ -24,8 +24,8 @@ func (tldb *TradeLogDB) GetUserList(fromTime, toTime time.Time, timezone int8) (
 	logger.Debugw("prepare statement", "stmt", userListQuery)
 
 	var result []common.UserInfo
-	if err := tldb.db.Select(&result, userListQuery, fromTime.Format(schema.DefaultDateFormat),
-		toTime.Format(schema.DefaultDateFormat)); err != nil {
+	if err := tldb.db.Select(&result, userListQuery, fromTime,
+		toTime); err != nil {
 		return nil, err
 	}
 	if len(result) == 0 {

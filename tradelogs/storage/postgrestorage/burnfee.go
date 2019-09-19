@@ -68,8 +68,7 @@ func (tldb *TradeLogDB) GetAggregatedBurnFee(from, to time.Time, freq string, re
 	}
 
 	logger.Debugw("prepare statement", "stmt", integrationQuery)
-	err = tldb.db.Select(&records, integrationQuery, from.UTC().Format(schema.DefaultDateFormat),
-		to.UTC().Format(schema.DefaultDateFormat), pq.Array(hexAddrs))
+	err = tldb.db.Select(&records, integrationQuery, from, to, pq.Array(hexAddrs))
 	if err != nil {
 		return nil, err
 	}

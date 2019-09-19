@@ -67,9 +67,7 @@ func (tldb *TradeLogDB) GetAssetVolume(token ethereum.Address, fromTime, toTime 
 		USDVolume   float64   `db:"usd_volume"`
 		Time        time.Time `db:"time"`
 	}
-	err = tldb.db.Select(&records, queryStmt,
-		fromTime.UTC().Format(schema.DefaultDateFormat),
-		toTime.UTC().Format(schema.DefaultDateFormat), token.Hex())
+	err = tldb.db.Select(&records, queryStmt, fromTime, toTime, token.Hex())
 	if err != nil {
 		return nil, err
 	}
@@ -144,8 +142,7 @@ func (tldb *TradeLogDB) GetReserveVolume(rsvAddr ethereum.Address, token ethereu
 		Time        time.Time `db:"time"`
 	}
 
-	err = tldb.db.Select(&records, reserveQuery, token.Hex(), rsvAddr.Hex(),
-		fromTime.UTC().Format(schema.DefaultDateFormat), toTime.UTC().Format(schema.DefaultDateFormat))
+	err = tldb.db.Select(&records, reserveQuery, token.Hex(), rsvAddr.Hex(), fromTime, toTime)
 	if err != nil {
 		return nil, err
 	}

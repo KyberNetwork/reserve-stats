@@ -1,6 +1,7 @@
 package postgrestorage
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -12,6 +13,16 @@ func (tldb *TradeLogDB) GetUserList(fromTime, toTime time.Time, timezone int8) (
 	fromTime = fromTime.UTC().Add(time.Duration(-timezone) * time.Hour)
 	toTime = toTime.UTC().Add(time.Duration(-timezone) * time.Hour)
 
+	userListQuery := fmt.Sprintf(`
+		SELECT b.address user_address,sum(eth_amount) total_eth_volume,
+			sum(eth_amount * eth_usd_rate) total_usd_volume
+		FROM "%[1]s" a
+		INNER JOIN "%[2]s" b ON a.user_address_id =b.id
+		WHERE a.timestamp >= $1 and a.timestamp <= $2
+		GROUP BY user_address
+	`, schema.TradeLogsTableName, schema.UserTableName)
+	logger.Debugw("prepare statement", "stmt", userListQuery)
+
 	var result []common.UserInfo
 	if err := tldb.db.Select(&result, userListQuery, fromTime.Format(schema.DefaultDateFormat),
 		toTime.Format(schema.DefaultDateFormat)); err != nil {
@@ -22,14 +33,4 @@ func (tldb *TradeLogDB) GetUserList(fromTime, toTime time.Time, timezone int8) (
 		return nil, nil
 	}
 	return result, nil
-
 }
-
-const userListQuery = `
-	SELECT b.address user_address,sum(eth_amount) total_eth_volume,
-		sum(eth_amount * eth_usd_rate) total_usd_volume
-	FROM "` + schema.TradeLogsTableName + `" a
-	INNER JOIN "` + schema.UserTableName + `" b ON a.user_address_id =b.id
-	WHERE a.timestamp >= $1 and a.timestamp <= $2
-	GROUP BY user_address
-`

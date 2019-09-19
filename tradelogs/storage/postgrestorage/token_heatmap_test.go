@@ -28,18 +28,16 @@ func TestTradeLogDB_GetTokenHeatmap(t *testing.T) {
 
 	tldb, err := newTestTradeLogPostgresql(dbName)
 	require.NoError(t, err)
-
 	defer func() {
 		require.NoError(t, tldb.tearDown(dbName))
 	}()
-
 	require.NoError(t, loadTestData(tldb.db, testDataFile))
+
 	integrationVol, err := tldb.GetTokenHeatmap(ethereum.HexToAddress(accessAddress),
 		fromTime, toTime, 0)
 	require.NoError(t, err)
 	require.Contains(t, integrationVol, country)
 	t.Logf("%+v", integrationVol[country])
-
 	require.Equal(t, ethExpectedValue, integrationVol[country].TotalETHValue)
 	require.Equal(t, tokenExpectedValue, integrationVol[country].TotalTokenValue)
 	require.Equal(t, usdExpectedValue, integrationVol[country].TotalFiatValue)

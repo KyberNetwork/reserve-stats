@@ -1,6 +1,7 @@
 package postgrestorage
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -8,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage/schema"
 )
 
+// GetWalletStats return wallet stats group by day
 func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, timezone int8) (map[uint64]common.WalletStats, error) {
 	var (
 		err          error
@@ -24,19 +26,19 @@ func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, ti
 		return nil, err
 	}
 
-	walletStatsQuery := `
-		SELECT ` + timeField + ` as time,
+	walletStatsQuery := fmt.Sprintf(`
+		SELECT %[1]s as time,
 			COUNT(DISTINCT(user_address_id)) AS unique_address,
 			SUM(src_burn_amount) + SUM(dst_burn_amount) AS total_burn_fee,
 			COUNT(CASE WHEN kyced THEN 1 END) AS kyced,
 			COUNT(CASE WHEN is_first_trade THEN 1 END) AS count_new_trades
-		FROM "` + schema.TradeLogsTableName + `" 
+		FROM "%[2]s" 
 		WHERE timestamp >= $1 AND timestamp < $2
-		AND EXISTS (SELECT NULL FROM "` + schema.WalletTableName + `" WHERE address = $3 AND id=wallet_address_id)
+		AND EXISTS (SELECT NULL FROM "%[3]s" WHERE address = $3 AND id=wallet_address_id)
 		GROUP BY time
-	`
-
+	`, timeField, schema.TradeLogsTableName, schema.WalletTableName)
 	logger.Debugw("prepare statement", "stmt", walletStatsQuery)
+
 	var records []struct {
 		TimeStamp      time.Time `db:"time"`
 		UniqueAddress  int64     `db:"unique_address"`
@@ -49,11 +51,9 @@ func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, ti
 	if err != nil {
 		return nil, err
 	}
-
 	if len(records) == 0 {
 		return nil, nil
 	}
-
 	results := make(map[uint64]common.WalletStats)
 	for _, record := range records {
 		ts := timeutil.TimeToTimestampMs(record.TimeStamp)
@@ -65,19 +65,20 @@ func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, ti
 		}
 	}
 
-	walletStatsQuery = `
-		SELECT ` + timeField + ` AS time, 
+	walletStatsQuery = fmt.Sprintf(`
+		SELECT %[1]s AS time, 
 		SUM(eth_amount) total_eth_volume, 
 		AVG(eth_amount) eth_per_trade,
 		SUM(eth_amount*eth_usd_rate) as total_usd_volume, 
 		AVG(eth_amount*eth_usd_rate) usd_per_trade, count(1) as total_trade
-		FROM "` + schema.TradeLogsTableName + `" 
+		FROM "%[2]s" 
 		WHERE timestamp >= $1 AND timestamp < $2
-		AND EXISTS (SELECT NULL FROM "` + schema.WalletTableName + `" WHERE address = $3 AND id=wallet_address_id)
-		AND ` + ethCondition + `
+		AND EXISTS (SELECT NULL FROM "%[3]s" WHERE address = $3 AND id=wallet_address_id)
+		AND %[4]s
 		GROUP BY time
-	`
+	`, timeField, schema.TradeLogsTableName, schema.WalletTableName, ethCondition)
 	logger.Debugw("prepare statement", "stmt", walletStatsQuery)
+
 	var records2 []struct {
 		Time           time.Time `db:"time"`
 		TotalEthVolume float64   `db:"total_eth_volume"`
@@ -86,7 +87,6 @@ func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, ti
 		UsdPerTrade    float64   `db:"usd_per_trade"`
 		TotalTrade     int64     `db:"total_trade"`
 	}
-
 	err = tldb.db.Select(&records2, walletStatsQuery, from.UTC().Format(schema.DefaultDateFormat),
 		to.UTC().Format(schema.DefaultDateFormat), walletAddr)
 	if err != nil {
@@ -96,7 +96,6 @@ func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, ti
 	if len(records2) == 0 {
 		logger.Debugw("no exclude eth weth trades")
 	}
-
 	for _, record := range records2 {
 		ts := timeutil.TimeToTimestampMs(record.Time)
 		walletStats, ok := results[ts]

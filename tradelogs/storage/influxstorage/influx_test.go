@@ -56,7 +56,7 @@ func TestSaveTradeLogs(t *testing.T) {
 }
 
 func TestSaveFirstTradeLogs(t *testing.T) {
-	tradeLogs, err := utils.GetSampleTradeLogs("testdata/trade_logs.json")
+	tradeLogs, err := utils.GetSampleTradeLogs("../testdata/trade_logs.json")
 	require.NoError(t, err)
 	if err = testStorage.SaveTradeLogs(tradeLogs); err != nil {
 		t.Error("get unexpected error when save trade logs", "err", err.Error())

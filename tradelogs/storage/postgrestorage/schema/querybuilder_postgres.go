@@ -73,6 +73,7 @@ func BuildTimeCondition(start time.Time, end time.Time, frequency string) (strin
 	return resultBuffer.String(), nil
 }
 
+// BuildEthWethExcludingCondition creates a condition that filter eth-weth trades
 func BuildEthWethExcludingCondition() (string, error) {
 	var resultBuffer bytes.Buffer
 

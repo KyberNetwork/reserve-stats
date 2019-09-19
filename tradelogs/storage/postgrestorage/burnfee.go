@@ -46,20 +46,20 @@ func (tldb *TradeLogDB) GetAggregatedBurnFee(from, to time.Time, freq string, re
 		addrCondition = " AND c.address = ANY($3)"
 	}
 
-	integrationQuery := `
+	integrationQuery := fmt.Sprintf(`
 		SELECT time, address , SUM(amount) as amount
 		FROM (
-			SELECT ` + timeField + ` as time, src_burn_amount AS amount, c.address AS address
-			FROM "` + schema.TradeLogsTableName + `" b
-			INNER JOIN "` + schema.ReserveTableName + `" c ON b.src_reserve_address_id=c.id
-			WHERE timestamp >= $1 AND timestamp < $2 ` + addrCondition + `
+			SELECT %[1]s as time, src_burn_amount AS amount, c.address AS address
+			FROM "%[2]s" b
+			INNER JOIN "%[3]s" c ON b.src_reserve_address_id=c.id
+			WHERE timestamp >= $1 AND timestamp < $2 %[4]s
 		UNION ALL
-			SELECT ` + timeField + ` as time, dst_burn_amount AS amount, c.address AS address
-			FROM "` + schema.TradeLogsTableName + `" b
-			INNER JOIN "` + schema.ReserveTableName + `" c ON b.dst_reserve_address_id=c.id
-			WHERE timestamp >= $1 AND timestamp < $2 ` + addrCondition + `
+			SELECT %[1]s as time, dst_burn_amount AS amount, c.address AS address
+			FROM "%[2]s" b
+			INNER JOIN "%[3]s" c ON b.dst_reserve_address_id=c.id
+			WHERE timestamp >= $1 AND timestamp < $2 %[4]s
 		) a GROUP BY time,address
-	`
+	`, timeField, schema.TradeLogsTableName, schema.ReserveTableName, addrCondition)
 
 	var records []struct {
 		Amount  float64   `db:"amount"`

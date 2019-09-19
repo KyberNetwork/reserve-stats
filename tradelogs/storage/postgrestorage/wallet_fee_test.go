@@ -14,9 +14,7 @@ func TestInfluxStorage_GetAggregatedWalletFee(t *testing.T) {
 	const (
 		dbName = "test_aggregated_wallet_fee"
 		// These params are expected to be change when export.dat changes.
-
-		timeStamp = "2018-10-11T00:00:00Z"
-
+		timeStamp               = "2018-10-11T00:00:00Z"
 		walletFeeExpectedAmount = float64(6.66)
 	)
 
@@ -32,17 +30,14 @@ func TestInfluxStorage_GetAggregatedWalletFee(t *testing.T) {
 	defer func() {
 		require.NoError(t, tldb.tearDown(dbName))
 	}()
-
 	require.NoError(t, loadTestData(tldb.db, testDataFile))
 
 	integrationVol, err := tldb.GetAggregatedWalletFee(reserveAddr, walletAddr, "d", fromTime, toTime, 0)
-
 	require.NoError(t, err)
 
 	timeUnix, err := time.Parse(time.RFC3339, timeStamp)
 	assert.NoError(t, err)
 	timeUint := timeutil.TimeToTimestampMs(timeUnix)
-
 	require.Contains(t, integrationVol, timeUint)
 	result := integrationVol[timeUint]
 	assert.Equal(t, walletFeeExpectedAmount, result)

@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	block_number INTEGER,
 	tx_hash TEXT,
 	eth_amount FLOAT(32),
+	original_eth_amount FLOAT(32),
 	user_address_id BIGINT NOT NULL REFERENCES users,
 	src_address_id BIGINT NOT NULL REFERENCES token,
 	dst_address_id BIGINT NOT NULL REFERENCES token,

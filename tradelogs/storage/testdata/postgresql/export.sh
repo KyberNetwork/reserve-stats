@@ -23,7 +23,7 @@ pushd ../../../cmd/trade-logs-crawler
 echo "start build"
 go build
 echo "start"
-./trade-logs-crawler --db-engine=postgre --postgres-host=127.0.0.1 --postgres-port=5433 \
+./trade-logs-crawler --db-engine=postgres --postgres-host=127.0.0.1 --postgres-port=5433 \
     --from-block "$from_block" --to-block "$to_block" $TL_CRAWLER_PARAMS
 echo "done"
 popd

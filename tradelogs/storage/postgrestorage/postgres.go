@@ -213,6 +213,7 @@ func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, er
 		Timestamp          time.Time      `db:"timestamp"`
 		BlockNumber        uint64         `db:"block_number"`
 		EthAmount          float64        `db:"eth_amount"`
+		OriginalEthAmount  float64        `db:"original_eth_amount"`
 		EthUsdRate         float64        `db:"eth_usd_rate"`
 		UserAddress        string         `db:"user_address"`
 		SrcAddress         string         `db:"src_address"`
@@ -250,12 +251,17 @@ func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, er
 	for _, r := range queryResult {
 
 		var (
-			ethAmountInWei *big.Int
-			srcAmountInWei *big.Int
-			dstAmountInWei *big.Int
+			ethAmountInWei         *big.Int
+			srcAmountInWei         *big.Int
+			dstAmountInWei         *big.Int
+			originalEthAmountInWei *big.Int
 		)
 
 		if ethAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.EthAmount); err != nil {
+			return nil, err
+		}
+
+		if originalEthAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.OriginalEthAmount); err != nil {
 			return nil, err
 		}
 		SrcAddress := ethereum.HexToAddress(r.SrcAddress)
@@ -273,6 +279,7 @@ func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, er
 			Timestamp:         r.Timestamp,
 			BlockNumber:       r.BlockNumber,
 			EthAmount:         ethAmountInWei,
+			OriginalEthAmount: originalEthAmountInWei,
 			UserAddress:       ethereum.HexToAddress(r.UserAddress),
 			SrcAddress:        SrcAddress,
 			DestAddress:       DstAddress,
@@ -316,6 +323,7 @@ INSERT INTO "` + schema.TradeLogsTableName + `"(
  	block_number,
  	tx_hash,
  	eth_amount,
+	original_eth_amount,
  	user_address_id,
  	src_address_id,
  	dst_address_id,
@@ -343,6 +351,7 @@ INSERT INTO "` + schema.TradeLogsTableName + `"(
  	:block_number,
  	:tx_hash,
  	:eth_amount,
+	:original_eth_amount,
  	(SELECT id FROM users WHERE address=:user_address),
  	(SELECT id FROM token WHERE address=:src_address),
  	(SELECT id FROM token WHERE address=:dst_address),
@@ -370,7 +379,7 @@ ON CONFLICT
 DO NOTHING;`
 
 const selectTradeLogsQuery = `
-SELECT a.timestamp AS timestamp, block_number, eth_amount, eth_usd_rate, d.address AS user_address,
+SELECT a.timestamp AS timestamp, block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
 e.address AS src_address, f.address AS dst_address,
 src_amount, dst_amount, ip, country, integration_app, src_burn_amount, dst_burn_amount,
 index, tx_hash, b.address AS src_rsv_address, c.address AS dst_rsv_address, src_wallet_fee_amount, dst_wallet_fee_amount,

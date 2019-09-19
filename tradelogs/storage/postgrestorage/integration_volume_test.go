@@ -36,6 +36,7 @@ func TestTradeLogDB_GetIntegrationVolume(t *testing.T) {
 	if !ok {
 		t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))
 	}
-	assert.Equal(t, float64(5.3909054905423455), result.KyberSwapVolume)
+	// change this number from 5.3909054905423455 because eth_amount is double for non-burnable trade
+	assert.Equal(t, float64(5.392022969243365), result.KyberSwapVolume)
 	assert.Equal(t, float64(12), result.NonKyberSwapVolume)
 }

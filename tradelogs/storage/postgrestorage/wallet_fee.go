@@ -16,9 +16,9 @@ func (tldb *TradeLogDB) GetAggregatedWalletFee(reserveAddr, walletAddr, freq str
 		timeField string
 		err       error
 	)
-	logger := tldb.sugar.With("from", fromTime, "to", toTime, "func",
+	logger := tldb.sugar.With("from", fromTime, "to", toTime,
 		"reserve", reserveAddr, "wallet", walletAddr,
-		"tradelogs/storage/postgresql/TradeLogDB.GetAggregatedWalletFee")
+		"func", "tradelogs/storage/postgresql/TradeLogDB.GetAggregatedWalletFee")
 
 	switch strings.ToLower(freq) {
 	case "h":

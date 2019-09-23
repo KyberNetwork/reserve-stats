@@ -25,6 +25,7 @@ func CommitOrRollback(tx *sqlx.Tx, sugar *zap.SugaredLogger, err *error) {
 	logger.Debugw("rolling back transaction")
 	if rErr := tx.Rollback(); rErr != nil {
 		logger.Errorw("failed to rollback transaction", "error", rErr)
+		return
 	}
 	logger.Infow("transaction roll backed", "error", *err)
 }

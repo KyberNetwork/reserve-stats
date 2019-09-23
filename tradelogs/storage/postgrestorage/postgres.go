@@ -52,17 +52,14 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 	stmt := fmt.Sprintf(`SELECT MAX("block_number") FROM "%v"`, schema.TradeLogsTableName)
 	logger = logger.With("query", stmt)
 	logger.Debug("Start query")
-	row := tldb.db.QueryRow(stmt)
-	if err := row.Scan(&result); err != nil {
+	err := tldb.db.Get(&result, stmt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
 		logger.Errorw("Get error ", "error", err)
 		return 0, err
 	}
-
-	if !result.Valid {
-		logger.Info("No log saved")
-		return 0, nil
-	}
-
 	return result.Int64, nil
 }
 
@@ -235,8 +232,7 @@ func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, er
 		TxSender           string         `db:"tx_sender"`
 		ReceiverAddr       string         `db:"receiver_address"`
 	}
-	err := tldb.db.Select(&queryResult, selectTradeLogsQuery, from.UTC().Format(schema.DefaultDateFormat),
-		to.UTC().Format(schema.DefaultDateFormat))
+	err := tldb.db.Select(&queryResult, selectTradeLogsQuery, from, to)
 	if err != nil {
 		return nil, err
 	}

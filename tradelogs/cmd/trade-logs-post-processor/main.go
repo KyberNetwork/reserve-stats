@@ -14,8 +14,8 @@ import (
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	storage "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage"
-	schema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/schema/tradelogs-post-processor"
+	storage "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx"
+	schema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx/schema/tradelogs-post-processor"
 )
 
 func main() {

@@ -12,8 +12,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgrestorage"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres"
 )
 
 const (
@@ -64,7 +64,7 @@ func NewStorageInterfaceFromContext(sugar *zap.SugaredLogger, c *cli.Context, to
 			return nil, err
 		}
 
-		influxStorage, err := influxstorage.NewInfluxStorage(
+		influxStorage, err := influx.NewInfluxStorage(
 			sugar,
 			common.DatabaseName,
 			influxClient,
@@ -79,7 +79,7 @@ func NewStorageInterfaceFromContext(sugar *zap.SugaredLogger, c *cli.Context, to
 		if err != nil {
 			return nil, err
 		}
-		postgresStorage, err := postgrestorage.NewTradeLogDB(sugar, db, tokenAmountFormatter)
+		postgresStorage, err := postgres.NewTradeLogDB(sugar, db, tokenAmountFormatter)
 		if err != nil {
 			sugar.Infow("error", err)
 			return nil, err

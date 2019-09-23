@@ -21,7 +21,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
-	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influxstorage/cq"
+	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
 )
 

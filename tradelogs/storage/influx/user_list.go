@@ -9,14 +9,12 @@ import (
 )
 
 //GetUserList return list of user info
-func (is *Storage) GetUserList(fromTime, toTime time.Time, timezone int8) ([]common.UserInfo, error) {
+func (is *Storage) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo, error) {
 	var (
 		err             error
 		result          []common.UserInfo
 		measurementName = "trades"
 	)
-
-	measurementName = getMeasurementName(measurementName, timezone)
 
 	logger := is.sugar.With("from time", fromTime, "to time", toTime, "func", "/tradelogs/storage.GetUserList")
 

@@ -31,7 +31,7 @@ func TestTradeSummary(t *testing.T) {
 		dbName = "test_trade_summary"
 		// These params are expected to be change when export.dat changes.
 
-		ethAmount = 17.390905490542348
+		ethAmount = 17.392022969243367 // change from 17.390905490542348 because eth_amount is doubled for burnable trade
 		timeStamp = "2018-10-11T00:00:00Z"
 	)
 

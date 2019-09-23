@@ -12,9 +12,8 @@ import (
 func TestTradeLogDB_GetUserList(t *testing.T) {
 	const (
 		dbName   = "test_user_list"
-		fromTime = 1539244443000
-		toTime   = 1539245066000
-		timezone = -1
+		fromTime = 1539248043000
+		toTime   = 1539248666000
 	)
 
 	tldb, err := newTestTradeLogPostgresql(dbName)
@@ -27,8 +26,7 @@ func TestTradeLogDB_GetUserList(t *testing.T) {
 
 	from := timeutil.TimestampMsToTime(fromTime)
 	to := timeutil.TimestampMsToTime(toTime)
-
-	users, err := tldb.GetUserList(from, to, timezone)
+	users, err := tldb.GetUserList(from, to)
 	require.NoError(t, err)
 	require.Contains(t, users, common.UserInfo{
 		Addr:      "0x8fA07F46353A2B17E92645592a94a0Fc1CEb783F",

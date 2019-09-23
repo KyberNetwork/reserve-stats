@@ -8,10 +8,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 )
 
-func (tldb *TradeLogDB) GetUserList(fromTime, toTime time.Time, timezone int8) ([]common.UserInfo, error) {
-	logger := tldb.sugar.With("from", fromTime, "to", toTime, "timezone", timezone)
-	fromTime = fromTime.UTC().Add(time.Duration(-timezone) * time.Hour)
-	toTime = toTime.UTC().Add(time.Duration(-timezone) * time.Hour)
+func (tldb *TradeLogDB) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo, error) {
+	logger := tldb.sugar.With("from", fromTime, "to", toTime)
 
 	userListQuery := fmt.Sprintf(`
 		SELECT b.address user_address,sum(eth_amount) total_eth_volume,

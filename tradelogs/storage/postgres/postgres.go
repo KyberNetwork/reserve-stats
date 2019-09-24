@@ -94,7 +94,7 @@ func (tldb *TradeLogDB) saveWallets(tx *sqlx.Tx, walletAddressArray []string) er
 }
 
 // SaveTradeLogs persist trade logs to DB
-func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) error {
+func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
 	var (
 		logger = tldb.sugar.With(
 			"func", "tradelogs/storage/postgres/TradeLogDB.SaveTradeLogs",

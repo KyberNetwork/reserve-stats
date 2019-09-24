@@ -83,7 +83,7 @@ func (rdb *RatesStorage) updateQuotes(tx *sqlx.Tx, quotes []string) error {
 }
 
 //UpdateRatesRecords update mutiple rate records from a block with mutiple reserve address into the DB
-func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lbdCommon.BlockInfo, rateRecords map[string]map[string]float64, ethusdRate float64) error {
+func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lbdCommon.BlockInfo, rateRecords map[string]map[string]float64, ethusdRate float64) (err error) {
 	var (
 		rsvAddrs    = make(map[string]bool)
 		rsvAddrsArr []string

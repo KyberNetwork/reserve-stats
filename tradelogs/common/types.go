@@ -155,9 +155,9 @@ type WalletStats struct {
 
 // UserInfo represent trade stats of an address
 type UserInfo struct {
-	Addr      string  `json:"user_address"`
-	ETHVolume float64 `json:"total_eth_volume"`
-	USDVolume float64 `json:"total_usd_volume"`
+	Addr      string  `json:"user_address" db:"user_address"`
+	ETHVolume float64 `json:"total_eth_volume" db:"total_eth_volume"`
+	USDVolume float64 `json:"total_usd_volume" db:"total_usd_volume"`
 }
 
 //UserList - list of user

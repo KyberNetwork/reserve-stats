@@ -11,6 +11,7 @@ import (
 // - commit if given error is nil
 // - rollback if given error is not nil
 // Any error happens when commit/rollback is assigned to the given error instance.
+// Caller function should be named function when calling this function with defer
 func CommitOrRollback(tx *sqlx.Tx, sugar *zap.SugaredLogger, err *error) {
 	var logger = sugar.With("func", "lib/pgsql/CommitOrRollback")
 
@@ -25,6 +26,7 @@ func CommitOrRollback(tx *sqlx.Tx, sugar *zap.SugaredLogger, err *error) {
 	logger.Debugw("rolling back transaction")
 	if rErr := tx.Rollback(); rErr != nil {
 		logger.Errorw("failed to rollback transaction", "error", rErr)
+		return
 	}
 	logger.Infow("transaction roll backed", "error", *err)
 }

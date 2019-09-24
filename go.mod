@@ -1,13 +1,11 @@
 module github.com/KyberNetwork/reserve-stats
 
 require (
-	cloud.google.com/go v0.36.0 // indirect
 	github.com/Knetic/govaluate v3.0.0+incompatible // indirect
 	github.com/KyberNetwork/httpsign-utils v0.1.1
 	github.com/KyberNetwork/tokenrate v0.0.0-20190327091843-b702f2d3511e
 	github.com/aristanetworks/goarista v0.0.0-20181002214814-33151c4543a7 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
-	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/btcsuite/btcd v0.0.0-20181013004428-67e573d211ac // indirect
 	github.com/casbin/casbin v1.7.0
 	github.com/cespare/cp v1.0.0 // indirect
@@ -24,7 +22,6 @@ require (
 	github.com/go-sql-driver/mysql v1.4.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
-	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/hashicorp/golang-lru v0.5.0 // indirect
 	github.com/huin/goupnp v1.0.0 // indirect
 	github.com/influxdata/influxdb v1.6.3
@@ -32,6 +29,7 @@ require (
 	github.com/jinzhu/now v0.0.0-20181116074157-8ec929ed50c3
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
 	github.com/karalabe/hid v0.0.0-20180420081245-2b4488a37358 // indirect
+	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lib/pq v1.0.0
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-sqlite3 v1.9.0 // indirect

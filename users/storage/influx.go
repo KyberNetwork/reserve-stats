@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelog"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx/schema/tradelog"
 
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"

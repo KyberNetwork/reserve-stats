@@ -17,7 +17,7 @@ type PriceAnalyticDB struct {
 }
 
 //NewPriceStorage return new storage for price analytics
-func NewPriceStorage(sugar *zap.SugaredLogger, db *sqlx.DB) (*PriceAnalyticDB, error) {
+func NewPriceStorage(sugar *zap.SugaredLogger, db *sqlx.DB) (pa *PriceAnalyticDB, err error) {
 	const schema = `CREATE TABLE IF NOT EXISTS "price_analytics"
 (
     id               SERIAL PRIMARY KEY,
@@ -54,10 +54,11 @@ CREATE TABLE IF NOT EXISTS "price_analytics_data"
 	}
 	logger.Debug("database schema initialized successfully")
 
-	return &PriceAnalyticDB{
+	pa, err = &PriceAnalyticDB{
 		sugar: sugar,
 		db:    db,
 	}, nil
+	return
 }
 
 //Close close db connection and return error if any
@@ -66,7 +67,7 @@ func (pad *PriceAnalyticDB) Close() error {
 }
 
 // UpdatePriceAnalytic store price analytic to db
-func (pad *PriceAnalyticDB) UpdatePriceAnalytic(data common.PriceAnalytic) error {
+func (pad *PriceAnalyticDB) UpdatePriceAnalytic(data common.PriceAnalytic) (err error) {
 	var (
 		logger = pad.sugar.With(
 			"func", "priceanalytics/storage.UpdatePriceAnalytic",

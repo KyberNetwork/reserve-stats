@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	lbdCommon "github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
 )
 
@@ -26,7 +27,8 @@ func (fc *Fetcher) getLastCompletedJobOrder() uint64 {
 }
 
 func (fc *Fetcher) serialDataStore(blockInfo lbdCommon.BlockInfo, rates map[string]map[string]float64, ethUSDRate float64, jobOrder uint64) error {
-	var logger = fc.sugar.With("func", "accounting/reserve-rate/fetcher/fetcher.serialDataStore", "block", blockInfo.Block, "job_order", jobOrder)
+	var logger = fc.sugar.With("func", caller.GetCurrentFunctionName(),
+		"block", blockInfo.Block, "job_order", jobOrder)
 	for {
 		if fc.isFailed() {
 			return fmt.Errorf("fetcher has failed before job order %d", jobOrder)

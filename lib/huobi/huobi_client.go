@@ -17,6 +17,8 @@ import (
 
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
+
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 )
 
 const (
@@ -110,7 +112,7 @@ func (hc *Client) fillRequest(req *http.Request, signNeeded bool) error {
 func (hc *Client) sendRequest(method, requestURL string, params map[string]string,
 	signNeeded bool) ([]byte, error) {
 	var (
-		logger = hc.sugar.With("func", "huobi_client/sendRequest")
+		logger = hc.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	client := &http.Client{
 		Timeout: 30 * time.Second,

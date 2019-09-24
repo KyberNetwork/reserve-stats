@@ -11,6 +11,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/app-names/common"
 	"github.com/KyberNetwork/reserve-stats/app-names/storage"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 )
@@ -25,7 +26,7 @@ type Server struct {
 
 func (sv *Server) getApps(c *gin.Context) {
 	var (
-		logger  = sv.sugar.With("func", "app-names/http/Server.getAddrToAppName")
+		logger  = sv.sugar.With("func", caller.GetCurrentFunctionName())
 		filters []storage.Filter
 	)
 
@@ -110,7 +111,7 @@ func (sv *Server) getAddressFromAppID(c *gin.Context) {
 
 func (sv *Server) createApp(c *gin.Context) {
 	var (
-		logger = sv.sugar.With("func", "app-names/server.createApp")
+		logger = sv.sugar.With("func", caller.GetCurrentFunctionName())
 		q      common.Application
 		err    error
 		id     int64

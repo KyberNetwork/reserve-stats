@@ -5,9 +5,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/accounting/common"
-	lbdCommon "github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
 	ethereum "github.com/ethereum/go-ethereum/common"
+
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
+	lbdCommon "github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
 )
 
 //ReserveBlockInfo contain the reserveAddress and the blockInfo where it's last resolved
@@ -37,7 +39,7 @@ func (rbis ReserveBlockInfos) Less(i, j int) bool {
 func (fc *Fetcher) getLastFetchedBlockPerReserve() (ReserveBlockInfos, error) {
 	var (
 		result ReserveBlockInfos
-		logger = fc.sugar.With("func", "accounting/reserve-rate/fetcher/planer.go/getLastFetchedBlockPerReserve")
+		logger = fc.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	addresses, err := fc.addressClient.ReserveAddresses(common.Reserve)
 	if err != nil {
@@ -68,7 +70,7 @@ func (fc *Fetcher) Run() error {
 	var (
 		toTime   time.Time
 		fromTime time.Time
-		logger   = fc.sugar.With("func", "accounting/reserve-rate/Fetcher.Run")
+		logger   = fc.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	for {
 		rbis, err := fc.getLastFetchedBlockPerReserve()

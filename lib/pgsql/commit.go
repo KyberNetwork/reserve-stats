@@ -5,6 +5,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 )
 
 // CommitOrRollback is a deferred function that:
@@ -13,7 +15,7 @@ import (
 // Any error happens when commit/rollback is assigned to the given error instance.
 // Caller function should be named function when calling this function with defer
 func CommitOrRollback(tx *sqlx.Tx, sugar *zap.SugaredLogger, err *error) {
-	var logger = sugar.With("func", "lib/pgsql/CommitOrRollback")
+	var logger = sugar.With("func", caller.GetCurrentFunctionName())
 
 	if *err == nil {
 		logger.Debugw("committing transaction")

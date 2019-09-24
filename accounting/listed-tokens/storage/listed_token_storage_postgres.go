@@ -12,6 +12,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
@@ -25,7 +26,7 @@ type ListedTokenDB struct {
 //NewDB open a new database connection an create initiated table if it is not exist
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*ListedTokenDB, error) {
 	var (
-		logger = sugar.With("func", "accounting/storage.NewDB")
+		logger = sugar.With("func", caller.GetCurrentFunctionName())
 		ltd    = &ListedTokenDB{
 			sugar: sugar,
 			db:    db,
@@ -43,7 +44,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*ListedTokenDB, error) {
 //CreateOrUpdate add or edit an record in the tokens table
 func (ltd *ListedTokenDB) CreateOrUpdate(tokens []common.ListedToken, blockNumber *big.Int, reserve ethereum.Address) (err error) {
 	var (
-		logger  = ltd.sugar.With("func", "accounting/listed_tokens/storage/ltd.CreateOrUpdate")
+		logger  = ltd.sugar.With("func", caller.GetCurrentFunctionName())
 		changed = false
 	)
 	saveTokenQuery := fmt.Sprintf(`SELECT save_token($1, $2, $3, $4, $5, $6, $7)`)
@@ -154,8 +155,7 @@ func (r *listedTokenRecord) ListedToken() (common.ListedToken, error) {
 func (ltd *ListedTokenDB) GetTokens(reserve ethereum.Address) (result []common.ListedToken, version, blockNumber uint64, err error) {
 	var (
 		logger = ltd.sugar.With(
-			"func",
-			"accounting/listed-token-storage/listedtokenstorage.GetTokens",
+			"func", caller.GetCurrentFunctionName(),
 			"reserve", reserve,
 		)
 		records       []listedTokenRecord

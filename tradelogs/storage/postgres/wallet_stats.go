@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
@@ -16,7 +17,7 @@ func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, ti
 		ethCondition string
 	)
 	logger := tldb.sugar.With("from", from, "to", to, "walletAddr", walletAddr,
-		"timezone", timezone, "func", "tradelogs/storage/postgres/TradeLogDB.GetWalletStats")
+		"timezone", timezone, "func", caller.GetCurrentFunctionName())
 
 	from = schema.RoundTime(from, "day", timezone)
 	to = schema.RoundTime(to, "day", timezone).Add(time.Hour * 24)

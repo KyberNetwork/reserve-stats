@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
@@ -16,7 +17,8 @@ func (is *Storage) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo, e
 		measurementName = "trades"
 	)
 
-	logger := is.sugar.With("from time", fromTime, "to time", toTime, "func", "/tradelogs/storage.GetUserList")
+	logger := is.sugar.With("from time", fromTime, "to time", toTime,
+		"func", caller.GetCurrentFunctionName())
 
 	q := fmt.Sprintf(`
 		SELECT sum(eth_volume) as eth_amount, sum(usd_volume) as usd_amount

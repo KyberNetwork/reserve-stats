@@ -9,6 +9,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/lib/pq"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 )
@@ -19,8 +20,8 @@ func (tldb *TradeLogDB) GetAggregatedBurnFee(from, to time.Time, freq string, re
 		timeField string
 		err       error
 	)
-	logger := tldb.sugar.With("from", from, "to", to, "func",
-		"tradelogs/storage/postgresql/TradeLogDB.GetAggregatedBurnFee")
+	logger := tldb.sugar.With("from", from, "to", to,
+		"func", caller.GetCurrentFunctionName())
 
 	switch strings.ToLower(freq) {
 	case "h":

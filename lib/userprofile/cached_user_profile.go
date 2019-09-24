@@ -7,6 +7,8 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	ethereum "github.com/ethereum/go-ethereum/common"
+
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 )
 
 // CachedClient is the wrapper of User Profile Client with caching ability.
@@ -46,7 +48,7 @@ func (cc *CachedClient) LookUpCache(addr ethereum.Address) (UserProfile, bool) {
 // If this fail then it will query from endpoint
 func (cc *CachedClient) LookUpUserProfile(addr ethereum.Address) (UserProfile, error) {
 	logger := cc.sugar.With(
-		"func", "lib/userprofile/LookUpUserProfile.Token",
+		"func", caller.GetCurrentFunctionName(),
 		"address", addr.Hex(),
 	)
 	p, ok := cc.LookUpCache(addr)

@@ -5,12 +5,13 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/tokenrate"
-	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum"
 	ethereumCommon "github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/client"
 	rrstorage "github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily"
 	lbdCommon "github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
@@ -73,7 +74,7 @@ func (fc *Fetcher) Fetch(fromTime, toTime time.Time, addresses []ethereumCommon.
 		rateErrChn     = make(chan error)
 		lastBlockBlCh  = make(chan lbdCommon.BlockInfo)
 		wg             = &sync.WaitGroup{}
-		logger         = fc.sugar.With("func", "accounting/reserve-rate/fetcher/Fetcher.fetch",
+		logger         = fc.sugar.With("func", caller.GetCurrentFunctionName(),
 			"from", fromTime.String(),
 			"to", toTime.String())
 		jobOrder = fc.getLastCompletedJobOrder()
@@ -131,7 +132,7 @@ func retryFetchTokenRate(maxAttempt int,
 	var (
 		result = make(map[string]map[string]float64)
 		err    error
-		logger = sugar.With("func", "accounting/reserve-rate/fetcher/retryFetchTokenRate", "block", block)
+		logger = sugar.With("func", caller.GetCurrentFunctionName(), "block", block)
 	)
 
 	for i := 0; i < maxAttempt; i++ {
@@ -161,7 +162,7 @@ func retryFetchETHUSDRate(maxAttempt int,
 	var (
 		result float64
 		err    error
-		logger = sugar.With("func", "accounting/reserve-rate/fetcher/retryFetchETHUSDRate", "time", timestamp.String())
+		logger = sugar.With("func", caller.GetCurrentFunctionName(), "time", timestamp.String())
 	)
 
 	for i := 0; i < maxAttempt; i++ {

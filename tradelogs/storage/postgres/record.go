@@ -8,6 +8,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 )
@@ -109,7 +110,7 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error)
 func (tldb *TradeLogDB) getWalletFeeAmount(log common.TradeLog) (float64, float64, error) {
 	var (
 		logger = tldb.sugar.With(
-			"func", "tradelogs/storage/postgres/getWalletFeeAmount",
+			"func", caller.GetCurrentFunctionName(),
 			"log", log,
 		)
 		dstAmount    float64

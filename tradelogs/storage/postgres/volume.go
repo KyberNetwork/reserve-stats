@@ -7,6 +7,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
@@ -19,7 +20,7 @@ func (tldb *TradeLogDB) GetAssetVolume(token ethereum.Address, fromTime, toTime 
 		err       error
 		timeField string
 		logger    = tldb.sugar.With("from", fromTime, "to", toTime, "frequency", frequency, "token", token.Hex(),
-			"func", "tradelogs/storage/postgres/TradeLogDB.GetAssetVolume")
+			"func", caller.GetCurrentFunctionName())
 	)
 
 	switch strings.ToLower(frequency) {
@@ -94,7 +95,7 @@ func (tldb *TradeLogDB) GetReserveVolume(rsvAddr ethereum.Address, token ethereu
 		err       error
 		timeField string
 		logger    = tldb.sugar.With("from", fromTime, "to", toTime, "frequency", frequency,
-			"func", "tradelogs/storage/postgres/TradeLogDB.GetAssetVolume")
+			"func", caller.GetCurrentFunctionName())
 	)
 
 	switch strings.ToLower(frequency) {

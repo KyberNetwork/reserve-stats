@@ -9,6 +9,8 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 )
 
 // Client is the the real implementation of addr to integration app name  interface.
@@ -20,7 +22,8 @@ type Client struct {
 
 func (c *Client) newRequest(method, endpoint string) (*http.Request, error) {
 	var (
-		logger = c.sugar.With("func", "lib/appname/appname/Client.newRequest()", "method", method, "endpoint", endpoint)
+		logger = c.sugar.With("func", caller.GetCurrentFunctionName(),
+			"method", method, "endpoint", endpoint)
 	)
 	logger.Debug("creating new Intergration app name HTTP request")
 

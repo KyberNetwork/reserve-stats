@@ -16,6 +16,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-transaction-fetcher/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
 )
 
@@ -55,7 +56,7 @@ func fetchTx(
 		fromBlock = big.NewInt(0)
 	}
 	var logger = sugar.With(
-		"func", "fetchTx",
+		"func", caller.GetCurrentFunctionName(),
 		"addr", addr.Address.String(),
 		"from", fromBlock.String(),
 		"to", toBlock.String(),

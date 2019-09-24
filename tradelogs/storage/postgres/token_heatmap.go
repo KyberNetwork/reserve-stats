@@ -6,6 +6,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 )
@@ -19,7 +20,7 @@ func (tldb *TradeLogDB) GetTokenHeatmap(asset ethereum.Address, from, to time.Ti
 	)
 
 	logger := tldb.sugar.With("from", from, "to", to, "timezone", timezone,
-		"func", "tradelogs/storage/postgres/TradeLogDB.GetTokenHeatMap")
+		"func", caller.GetCurrentFunctionName())
 
 	if ethCondition, err = schema.BuildEthWethExcludingCondition(); err != nil {
 		return nil, err

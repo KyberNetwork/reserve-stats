@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 )
@@ -18,7 +19,7 @@ func (tldb *TradeLogDB) GetAggregatedWalletFee(reserveAddr, walletAddr, freq str
 	)
 	logger := tldb.sugar.With("from", fromTime, "to", toTime,
 		"reserve", reserveAddr, "wallet", walletAddr,
-		"func", "tradelogs/storage/postgresql/TradeLogDB.GetAggregatedWalletFee")
+		"func", caller.GetCurrentFunctionName())
 
 	switch strings.ToLower(freq) {
 	case "h":

@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	_ "github.com/KyberNetwork/reserve-stats/accounting/common/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 )
@@ -31,7 +32,7 @@ type getTradesResponse struct {
 // getTrades returns list of trades from centralized exchanges.
 func (s *Server) getTrades(c *gin.Context) {
 	var (
-		logger        = s.sugar.With("func", "accounting/cex-trade/http/Server.getTrades")
+		logger        = s.sugar.With("func", caller.GetCurrentFunctionName())
 		query         getTradesQuery
 		huobiTrades   []huobi.TradeHistory
 		binanceTrades []binance.TradeHistory

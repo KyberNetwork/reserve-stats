@@ -5,6 +5,7 @@ import (
 	"time"
 
 	appname "github.com/KyberNetwork/reserve-stats/app-names"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
@@ -12,8 +13,8 @@ import (
 
 // GetIntegrationVolume returns integration_volume and non_integration_volume groups by day
 func (tldb *TradeLogDB) GetIntegrationVolume(fromTime, toTime time.Time) (map[uint64]*common.IntegrationVolume, error) {
-	logger := tldb.sugar.With("from", fromTime, "to", toTime, "func",
-		"tradelogs/storage/postgresql/TradeLogDB.GetIntegrationVolume")
+	logger := tldb.sugar.With("from", fromTime, "to", toTime,
+		"func", caller.GetCurrentFunctionName())
 	integrationQuery := fmt.Sprintf(
 		`SELECT
 			SUM(eth_amount * (CASE WHEN integration_app = '%[1]s' then 1 else 0 end)) as integration_volume,

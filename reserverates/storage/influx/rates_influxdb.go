@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
@@ -114,7 +115,7 @@ func (rs *RateStorage) LastBlock() (int64, error) {
 func (rs *RateStorage) lastRates(reserveAddr string) (map[string]common.LastRate, error) {
 	var (
 		logger = rs.sugar.With(
-			"func", "reserverates/storage/influx/RateStorage.lastRates",
+			"func", caller.GetCurrentFunctionName(),
 			"reserve_addr", reserveAddr,
 		)
 		lastRates = make(map[string]common.LastRate)
@@ -234,7 +235,7 @@ func (rs *RateStorage) constructDataPoint(rsvAddr, pair string, fromBlock, toBlo
 // It take a map[reserveAddress] ReserveRates and return error if occurs.
 func (rs *RateStorage) UpdateRatesRecords(blockNumber uint64, rateRecords map[string]map[string]common.ReserveRateEntry) error {
 	var logger = rs.sugar.With(
-		"func", "reserverates/storage/influx/RateStorage.UpdateRatesRecord",
+		"func", caller.GetCurrentFunctionName(),
 		"block_number", blockNumber,
 	)
 	bp, err := influxClient.NewBatchPoints(

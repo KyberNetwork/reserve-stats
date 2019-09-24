@@ -6,6 +6,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/priceanalytics/common"
 )
@@ -38,7 +39,7 @@ CREATE TABLE IF NOT EXISTS "price_analytics_data"
     price_analytic_id SERIAL NOT NULL REFERENCES price_analytics (id)
 );
 `
-	var logger = sugar.With("func", "priceanalytics/storage.NewPriceStorage")
+	var logger = sugar.With("func", caller.GetCurrentFunctionName())
 
 	tx, err := db.Beginx()
 	if err != nil {
@@ -69,9 +70,7 @@ func (pad *PriceAnalyticDB) Close() error {
 // UpdatePriceAnalytic store price analytic to db
 func (pad *PriceAnalyticDB) UpdatePriceAnalytic(data common.PriceAnalytic) (err error) {
 	var (
-		logger = pad.sugar.With(
-			"func", "priceanalytics/storage.UpdatePriceAnalytic",
-		)
+		logger          = pad.sugar.With("func", caller.GetCurrentFunctionName())
 		priceAnalyticID int
 	)
 
@@ -123,7 +122,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 
 // GetPriceAnalytic get price analytic data to return to api
 func (pad *PriceAnalyticDB) GetPriceAnalytic(fromTime, toTime time.Time) ([]common.PriceAnalytic, error) {
-	logger := pad.sugar.With("func", "priceanalytics/storage.GetPriceAnalytic",
+	logger := pad.sugar.With("func", caller.GetCurrentFunctionName(),
 		"fromTime", fromTime,
 		"toTime", toTime)
 

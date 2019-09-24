@@ -10,6 +10,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/storage"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 )
@@ -22,7 +23,7 @@ type createInput struct {
 
 func (s *Server) create(c *gin.Context) {
 	var (
-		logger = s.sugar.With("func", "accounting/reserve-addresses/http/*Server.create")
+		logger = s.sugar.With("func", caller.GetCurrentFunctionName())
 		input  createInput
 	)
 
@@ -87,7 +88,7 @@ func getIDParam(c *gin.Context) (uint64, error) {
 
 func (s *Server) get(c *gin.Context) {
 	var (
-		logger = s.sugar.With("func", "accounting/reserve-addresses/http/*Server.get")
+		logger = s.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 
 	id, err := getIDParam(c)
@@ -155,7 +156,7 @@ type updateInput struct {
 
 func (s *Server) update(c *gin.Context) {
 	var (
-		logger      = s.sugar.With("func", "accounting/reserve-addresses/http/*Server.update")
+		logger      = s.sugar.With("func", caller.GetCurrentFunctionName())
 		input       updateInput
 		addressType *common.AddressType
 	)

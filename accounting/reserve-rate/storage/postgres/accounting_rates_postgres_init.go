@@ -4,6 +4,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 )
 
@@ -71,7 +72,7 @@ CREATE OR REPLACE VIEW rates_view AS
 		LEFT JOIN reserves AS rs ON rt.reserve_id=rs.id;
 `
 	var (
-		logger     = sugar.With("func", "reserverates/storage/postgres")
+		logger     = sugar.With("func", caller.GetCurrentFunctionName())
 		tableNames = make(map[string]string)
 	)
 

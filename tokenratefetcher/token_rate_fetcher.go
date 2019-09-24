@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tokenratefetcher/common"
 	"github.com/KyberNetwork/reserve-stats/tokenratefetcher/storage"
 	"github.com/KyberNetwork/tokenrate"
-	"go.uber.org/zap"
 )
 
 //RateFetcher represent fetcher for anyToken-USD rate
@@ -33,7 +35,7 @@ func NewRateFetcher(sugar *zap.SugaredLogger, str storage.Interface, rp tokenrat
 func (rf *RateFetcher) FetchRatesInRanges(from, to time.Time, tokenID, currency string) error {
 	var (
 		logger = rf.sugar.With(
-			"func", "tokenratefetcher/RateFetcher.FetchRatesInRanges",
+			"func", caller.GetCurrentFunctionName(),
 			"from", from,
 			"to", to,
 			"token_id", tokenID,

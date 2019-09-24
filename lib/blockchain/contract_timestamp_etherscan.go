@@ -4,10 +4,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/nanmu42/etherscan-api"
 	"go.uber.org/zap"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 )
 
 // IsEtherscanNotransactionFound returns true if given error represents etherscan no transaction found error.
@@ -33,7 +34,7 @@ func NewEtherscanContractTimestampResolver(sugar *zap.SugaredLogger, client *eth
 
 func (r *EtherscanContractTimestampResolver) resolveUsingInternalTx(address common.Address) (time.Time, error) {
 	var logger = r.sugar.With(
-		"func", "lib/blockchain/EtherscanContractTimestampResolver.resolveUsingInternalTx",
+		"func", caller.GetCurrentFunctionName(),
 		"address", address.String(),
 	)
 
@@ -69,7 +70,7 @@ func (r *EtherscanContractTimestampResolver) resolveUsingInternalTx(address comm
 // Resolve returns the creation timestamp of given contract address using Etherscan API.
 func (r *EtherscanContractTimestampResolver) Resolve(address common.Address) (time.Time, error) {
 	var logger = r.sugar.With(
-		"func", "lib/blockchain/EtherscanContractTimestampResolver.Resolve",
+		"func", caller.GetCurrentFunctionName(),
 		"address", address.String(),
 	)
 

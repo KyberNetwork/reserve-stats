@@ -5,9 +5,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/huobi"
-
 	"golang.org/x/sync/errgroup"
+
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
+	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 )
 
 type withdrawalHistoryFetcher func(string, uint64) (huobi.WithdrawHistoryList, error)
@@ -16,7 +17,7 @@ func (fc *Fetcher) retryGetWithdrawal(fn withdrawalHistoryFetcher, symbol string
 	var (
 		result huobi.WithdrawHistoryList
 		err    error
-		logger = fc.sugar.With("func", "accounting/huobi/fetcher/withdrawal-history.retryGetWithdrawal")
+		logger = fc.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	for i := 0; i < fc.attempt; i++ {
 		result, err = fn(symbol, fromID)
@@ -57,7 +58,7 @@ func (fc *Fetcher) getWithdrawHistoryWithSymbol(symbol string, fromID uint64) ([
 func (fc *Fetcher) GetWithdrawHistory(fromID uint64) (map[string][]huobi.WithdrawHistory, error) {
 	var (
 		logger = fc.sugar.With(
-			"func", "accounting/accounting-huobi-fetcher/GetWithdrawHistory",
+			"func", caller.GetCurrentFunctionName(),
 			"from", fromID,
 		)
 		result      = make(map[string][]huobi.WithdrawHistory)

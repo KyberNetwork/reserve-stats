@@ -8,6 +8,7 @@ import (
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx/schema/tradelog"
 )
@@ -47,7 +48,7 @@ func (rc *RedisCacher) CacheUserInfo() error {
 
 func (rc *RedisCacher) cacheRichUser() error {
 	var (
-		logger = rc.sugar.With("func", "user/cacher/cacheRichUser")
+		logger = rc.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 
 	// read total trade 24h

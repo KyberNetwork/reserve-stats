@@ -55,7 +55,7 @@ func (hdb *HuobiStorage) Close() error {
 }
 
 //UpdateTradeHistory store the TradeHistory rate at that blockInfo
-func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory) error {
+func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory) (err error) {
 	var (
 		nTrades = len(trades)
 		logger  = hdb.sugar.With(
@@ -76,22 +76,22 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory)
 
 	tx, err := hdb.db.Beginx()
 	if err != nil {
-		return err
+		return
 	}
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 	for _, trade := range trades {
-		data, err := json.Marshal(trade)
+		var data []byte
+		data, err = json.Marshal(trade)
 		if err != nil {
-			return err
+			return
 		}
 		ids = append(ids, trade.ID)
 		dataJSON = append(dataJSON, data)
 	}
 	_, err = tx.Exec(updateStmt, pq.Array(ids), pq.Array(dataJSON))
 	if err != nil {
-		return err
+		return
 	}
-
 	return err
 }
 

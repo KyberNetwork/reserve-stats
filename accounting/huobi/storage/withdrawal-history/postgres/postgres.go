@@ -59,7 +59,7 @@ func (hdb *HuobiStorage) Close() error {
 }
 
 //UpdateWithdrawHistory store the WithdrawHistory rate at that blockInfo
-func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory) error {
+func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory) (err error) {
 	var (
 		logger = hdb.sugar.With(
 			"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",

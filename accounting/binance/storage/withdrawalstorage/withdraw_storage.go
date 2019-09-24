@@ -171,7 +171,7 @@ func (bd *BinanceStorage) GetLastStoredTimestamp() (time.Time, error) {
 }
 
 //UpdateWithdrawHistoryWithFee update fee into withdraw history table
-func (bd *BinanceStorage) UpdateWithdrawHistoryWithFee(withdrawHistories []binance.WithdrawHistory) error {
+func (bd *BinanceStorage) UpdateWithdrawHistoryWithFee(withdrawHistories []binance.WithdrawHistory) (err error) {
 	var (
 		logger = bd.sugar.With("func", "accounting/binance_storage.UpdateWithdrawHistoryWithFee")
 	)
@@ -182,7 +182,7 @@ func (bd *BinanceStorage) UpdateWithdrawHistoryWithFee(withdrawHistories []binan
 	logger.Debugw("update withdraw history", "query", updateStmt)
 	tx, err := bd.db.Beginx()
 	if err != nil {
-		return err
+		return
 	}
 	defer pgsql.CommitOrRollback(tx, bd.sugar, &err)
 

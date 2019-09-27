@@ -8,6 +8,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 )
 
 //Fetcher is a fetcher for get binance data
@@ -34,7 +35,7 @@ func (f *Fetcher) getTradeHistoryWithRetry(symbol string, fromID uint64) ([]bina
 	var (
 		tradeHistoriesResponse []binance.TradeHistory
 		err                    error
-		logger                 = f.sugar.With("func", "accounting/binance/fetcher/Fetcher.getTradeHistoryWithRetry")
+		logger                 = f.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	for attempt := 0; attempt < f.attempt; attempt++ {
 		tradeHistoriesResponse, err = f.client.GetTradeHistory(symbol, fromID)
@@ -53,7 +54,7 @@ func (f *Fetcher) getTradeHistoryWithRetry(symbol string, fromID uint64) ([]bina
 
 func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]binance.TradeHistory, error) {
 	var (
-		logger = f.sugar.With("func", "accounting/binance/fetcher/Fetcher.getTradeHistoryForOneSymbol")
+		logger = f.sugar.With("func", caller.GetCurrentFunctionName())
 		result []binance.TradeHistory
 	)
 	for {
@@ -78,7 +79,7 @@ func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]b
 func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64) ([]binance.TradeHistory, error) {
 	var (
 		tradeHistories sync.Map
-		logger         = f.sugar.With("func", "accounting/binance/fetcher/Fetcher.getTradeHistory")
+		logger         = f.sugar.With("func", caller.GetCurrentFunctionName())
 		errGroup       errgroup.Group
 		result         []binance.TradeHistory
 	)
@@ -132,9 +133,7 @@ func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (bin
 	var (
 		withdrawHistory binance.WithdrawHistoryList
 		err             error
-		logger          = f.sugar.With(
-			"func", "accounting/binance/fetcher/Fetcher.getWithdrawHistoryWithRetry",
-		)
+		logger          = f.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	for attempt := 0; attempt < f.attempt; attempt++ {
 		logger.Debugw("attempt to get withdraw history", "attempt", attempt, "startTime", startTime, "endTime", endTime)
@@ -152,7 +151,7 @@ func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (bin
 func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.WithdrawHistory, error) {
 	var (
 		result []binance.WithdrawHistory
-		logger = f.sugar.With("func", "accounting/binance/fetcher/Fetcher.GetWithdrawHistory")
+		logger = f.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	logger.Info("Start get withdraw history")
 	withdrawHistory, err := f.getWithdrawHistoryWithRetry(fromTime, toTime)

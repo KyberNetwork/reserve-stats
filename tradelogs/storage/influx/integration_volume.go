@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -16,7 +17,7 @@ import (
 // between a period
 func (is *Storage) GetIntegrationVolume(fromTime, toTime time.Time) (map[uint64]*common.IntegrationVolume, error) {
 	var (
-		logger = is.sugar.With("func", "tradelogs/storage/Storage.GetIntegrationVolume", "from", fromTime, "to", toTime)
+		logger = is.sugar.With("func", caller.GetCurrentFunctionName(), "from", fromTime, "to", toTime)
 	)
 	timeFilter := fmt.Sprintf("(time >='%s' AND time <= '%s')", fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
 	cmd := fmt.Sprintf(

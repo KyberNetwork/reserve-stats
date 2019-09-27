@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/storage"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -81,7 +82,7 @@ func nextDayBlock(
 	known common.BlockInfo) (common.BlockInfo, error) {
 	var (
 		logger = sugar.With(
-			"func", "lib/lastblockdaily/nextDayBlock",
+			"func", caller.GetCurrentFunctionName(),
 		)
 		next uint64
 	)
@@ -138,7 +139,7 @@ func (lbr *LastBlockResolver) Next() (common.BlockInfo, error) {
 
 	var (
 		logger = lbr.sugar.With(
-			"func", "lib/lastblockdaily/LastBlockResolver.Next",
+			"func", caller.GetCurrentFunctionName(),
 		)
 		start common.BlockInfo
 		end   common.BlockInfo
@@ -202,7 +203,7 @@ func (lbr *LastBlockResolver) Next() (common.BlockInfo, error) {
 // searchLastBlock returns the last block of the day before end block.
 func (lbr *LastBlockResolver) searchLastBlock(start, end common.BlockInfo) (common.BlockInfo, error) {
 	var logger = lbr.sugar.With(
-		"func", "lib/lastblockdaily.LastBlockResolver.searchLastBlock",
+		"func", caller.GetCurrentFunctionName(),
 		"start", start.Block,
 		"start_time", start.Timestamp.String(),
 		"end", end.Block,

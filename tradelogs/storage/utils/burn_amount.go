@@ -1,16 +1,18 @@
 package utils
 
 import (
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 // GetBurnAmount return the burn amount in float for src and
 func GetBurnAmount(sugar *zap.SugaredLogger, tokenAmountFormatter blockchain.TokenAmountFormatterInterface, log common.TradeLog) (float64, float64, error) {
 	var (
 		logger = sugar.With(
-			"func", "tradelogs/storage/getBurnAmount",
+			"func", caller.GetCurrentFunctionName(),
 			"log", log,
 		)
 		srcAmount float64

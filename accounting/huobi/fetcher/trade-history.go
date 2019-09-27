@@ -6,10 +6,11 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-
-	"golang.org/x/sync/errgroup"
 )
 
 type tradeHistoryFetcher func(string, time.Time, time.Time, ...huobi.ExtrasTradeHistoryParams) (huobi.TradeHistoryList, error)
@@ -18,7 +19,7 @@ func (fc *Fetcher) retry(fn tradeHistoryFetcher, symbol string, startTime, endTi
 	var (
 		result huobi.TradeHistoryList
 		err    error
-		logger = fc.sugar.With("func", "accounting/huobi/fetcher/trade-history.retry")
+		logger = fc.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	for i := 0; i < fc.attempt; i++ {
 		result, err = fn(symbol, startTime, endTime, extras)
@@ -78,7 +79,7 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time) 
 func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.TradeHistory, error) {
 	var (
 		logger = fc.sugar.With(
-			"func", "accounting/accounting-huobi-fetcher/GetTradeHistory",
+			"func", caller.GetCurrentFunctionName(),
 			"from", from,
 			"to", to,
 		)

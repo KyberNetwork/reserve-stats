@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -20,7 +21,7 @@ const (
 func (is *Storage) GetTradeSummary(from, to time.Time, timezone int8) (map[uint64]*common.TradeSummary, error) {
 	var (
 		logger = is.sugar.With(
-			"func", "tradelogs/storage/Storage.GetTradeSummary",
+			"func", caller.GetCurrentFunctionName(),
 			"from", from,
 			"to", to,
 		)

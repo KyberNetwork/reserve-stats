@@ -15,6 +15,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
@@ -43,7 +44,7 @@ func main() {
 
 func importWithdrawHistory(sugar *zap.SugaredLogger, historyFile string, hdb *withdrawstorage.BinanceStorage) error {
 	var (
-		logger            = sugar.With("func", "accounting-binance-import-data/importWithdrawHistory")
+		logger            = sugar.With("func", caller.GetCurrentFunctionName())
 		withdrawHistories []binance.WithdrawHistory
 	)
 	logger.Infow("import withdraw history from file", "file", historyFile)

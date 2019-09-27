@@ -4,8 +4,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/KyberNetwork/tokenrate"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
+	"github.com/KyberNetwork/tokenrate"
 )
 
 const defaultTimeout = time.Hour
@@ -69,7 +71,7 @@ func (crp *CachedRateProvider) isCacheExpired() bool {
 //USDRate return usd rate
 func (crp *CachedRateProvider) USDRate(timestamp time.Time) (float64, error) {
 	logger := crp.sugar.With(
-		"func", "users/http/cachedRateProvider.USDRate",
+		"func", caller.GetCurrentFunctionName(),
 		"timestamp", timestamp,
 	)
 

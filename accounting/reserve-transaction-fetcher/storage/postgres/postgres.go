@@ -12,6 +12,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
@@ -25,7 +26,7 @@ type Storage struct {
 // NewStorage creates new instance of Storage.
 func NewStorage(sugar *zap.SugaredLogger, db *sqlx.DB) (*Storage, error) {
 	var (
-		logger = sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/NewStorage")
+		logger = sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	const schemaFmt = `
 	-- create table tx normal
@@ -107,7 +108,7 @@ CREATE TABLE IF NOT EXISTS rsv_tx_erc20_tx_reserve
 //StoreReserve save fetching reserve address into database
 func (s *Storage) StoreReserve(reserve ethereum.Address, reserveType string) error {
 	var (
-		logger = s.sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreReserve")
+		logger = s.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	const storeReserve = `INSERT INTO "rsv_tx_reserve" (address, address_type)
 	VALUES ($1, $2) 
@@ -124,7 +125,7 @@ func (s *Storage) StoreReserve(reserve ethereum.Address, reserveType string) err
 //StoreNormalTx store normal tx
 func (s *Storage) StoreNormalTx(txs []common.NormalTx, reserve ethereum.Address) (err error) {
 	var (
-		logger = s.sugar.With("func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreNormalTx")
+		logger = s.sugar.With("func", caller.GetCurrentFunctionName())
 		id     int64
 	)
 	const (
@@ -173,7 +174,7 @@ ON CONFLICT (tx_hash) DO UPDATE SET data = EXCLUDED.data RETURNING id;
 func (s *Storage) GetNormalTx(from time.Time, to time.Time) ([]common.NormalTx, error) {
 	var (
 		logger = s.sugar.With(
-			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.GetNormalTx",
+			"func", caller.GetCurrentFunctionName(),
 			"from", from.String(),
 			"to", to.String(),
 		)
@@ -206,7 +207,7 @@ WHERE data ->> 'timestamp' >= $1
 func (s *Storage) StoreInternalTx(txs []common.InternalTx, reserve ethereum.Address) (err error) {
 	var (
 		logger = s.sugar.With(
-			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreInternalTx",
+			"func", caller.GetCurrentFunctionName(),
 		)
 		id int64
 	)
@@ -255,7 +256,7 @@ ON CONFLICT DO NOTHING RETURNING id;
 func (s *Storage) GetInternalTx(from time.Time, to time.Time) ([]common.InternalTx, error) {
 	var (
 		logger = s.sugar.With(
-			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.GetInternalTx",
+			"func", caller.GetCurrentFunctionName(),
 			"from", from.String(),
 			"to", to.String(),
 		)
@@ -288,7 +289,7 @@ WHERE data ->> 'timestamp' >= $1
 func (s *Storage) StoreERC20Transfer(txs []common.ERC20Transfer, reserve ethereum.Address) (err error) {
 	var (
 		logger = s.sugar.With(
-			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreERC20Transfer",
+			"func", caller.GetCurrentFunctionName(),
 		)
 		id int64
 	)
@@ -340,7 +341,7 @@ ON CONFLICT DO NOTHING RETURNING id;
 func (s *Storage) GetERC20Transfer(from time.Time, to time.Time) ([]common.ERC20Transfer, error) {
 	var (
 		logger = s.sugar.With(
-			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.GetERC20Transfer",
+			"func", caller.GetCurrentFunctionName(),
 			"from", from.String(),
 			"to", to.String(),
 		)
@@ -377,7 +378,7 @@ WHERE data ->> 'timestamp' >= $1
 func (s *Storage) StoreLastInserted(addr ethereum.Address, blockNumber *big.Int) error {
 	var (
 		logger = s.sugar.With(
-			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.StoreLastInserted",
+			"func", caller.GetCurrentFunctionName(),
 			"address", addr.Hex(),
 			"block_number", blockNumber.String(),
 		)
@@ -397,7 +398,7 @@ ON CONFLICT (address_key) DO UPDATE SET last_inserted = EXCLUDED.last_inserted;
 func (s *Storage) GetLastInserted(addr ethereum.Address) (*big.Int, error) {
 	var (
 		logger = s.sugar.With(
-			"func", "accounting/reserve-transaction-fetcher/storage/postgres/Storage.GetLastInserted",
+			"func", caller.GetCurrentFunctionName(),
 			"address", addr.Hex(),
 		)
 		lastInserted uint64
@@ -424,7 +425,7 @@ func (s *Storage) GetWalletERC20Transfers(wallet, token ethereum.Address, from, 
 		dbResult [][]byte
 		result   []common.ERC20Transfer
 		logger   = s.sugar.With(
-			"func", "accounting/wallet-erc20/storage/postgres..UpdateRatesRecords",
+			"func", caller.GetCurrentFunctionName(),
 			"from", from.UTC(),
 			"to", to.UTC(),
 			"wallet", wallet.Hex(),

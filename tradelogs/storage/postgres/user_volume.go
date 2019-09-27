@@ -5,11 +5,12 @@ import (
 	"strings"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
-
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 // GetUserVolume returns user volume filter by user address in a time range group by day or hour
@@ -17,7 +18,7 @@ func (tldb *TradeLogDB) GetUserVolume(userAddress ethereum.Address, from, to tim
 	var (
 		timeField string
 		logger    = tldb.sugar.With("from", from, "to", to,
-			"userAddress", userAddress, "freq", freq)
+			"userAddress", userAddress, "freq", freq, "func", caller.GetCurrentFunctionName())
 	)
 	switch strings.ToLower(freq) {
 	case "h":

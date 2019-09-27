@@ -13,6 +13,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
 
@@ -73,7 +74,7 @@ func newCrawlerPlanner(sugar *zap.SugaredLogger, c *cli.Context, st storage.Inte
 // This method will return errEOF if there is no next block range to fetch.
 func (p *crawlPlanner) next() (*big.Int, *big.Int, error) {
 	var (
-		logger   = p.sugar.With("func", "tradelogs/cmd/trade-logs-crawler/crawlPlanner.Next")
+		logger   = p.sugar.With("func", caller.GetCurrentFunctionName())
 		err      error
 		dstBlock *big.Int
 	)

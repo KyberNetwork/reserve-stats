@@ -4,12 +4,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
-	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
-
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 )
 
 var (
@@ -28,7 +29,7 @@ type Server struct {
 func (sv *Server) reserveRates(c *gin.Context) {
 	var (
 		query  httputil.TimeRangeQuery
-		logger = sv.sugar.With("func", "accounting/reserve-rate/http/Server.reserveRates")
+		logger = sv.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {

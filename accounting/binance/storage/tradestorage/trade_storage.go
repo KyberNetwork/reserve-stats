@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
@@ -22,7 +23,7 @@ type BinanceStorage struct {
 //NewDB return a new instance of binance storage
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 	var (
-		logger = sugar.With("func", "accounting/binance-storage/binancestorage.NewDB")
+		logger = sugar.With("func", caller.GetCurrentFunctionName())
 	)
 
 	const schemaFmt = `CREATE TABLE IF NOT EXISTS "binance_trades"
@@ -62,7 +63,7 @@ func (bd *BinanceStorage) Close() error {
 //UpdateTradeHistory save trade history into a postgres db
 func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err error) {
 	var (
-		logger    = bd.sugar.With("func", "accounting/binance_storage.UpdateTradeHistory")
+		logger    = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		tradeJSON []byte
 		dataJSON  [][]byte
 		ids       []uint64
@@ -102,7 +103,7 @@ func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err
 //GetTradeHistory return trade history from binance storage
 func (bd *BinanceStorage) GetTradeHistory(fromTime, toTime time.Time) ([]binance.TradeHistory, error) {
 	var (
-		logger   = bd.sugar.With("func", "account/binance_storage.GetTradeHistory")
+		logger   = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		result   []binance.TradeHistory
 		dbResult [][]byte
 		tmp      binance.TradeHistory
@@ -130,7 +131,7 @@ func (bd *BinanceStorage) GetTradeHistory(fromTime, toTime time.Time) ([]binance
 //GetLastStoredID return last stored id
 func (bd *BinanceStorage) GetLastStoredID(symbol string) (uint64, error) {
 	var (
-		logger = bd.sugar.With("func", "account/binance_storage.GetLastStoredID")
+		logger = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		result uint64
 	)
 	const selectStmt = `SELECT COALESCE(MAX(id), 0) FROM binance_trades WHERE data->>'symbol'=$1`

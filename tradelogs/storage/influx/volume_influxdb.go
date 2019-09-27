@@ -9,6 +9,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	influxModel "github.com/influxdata/influxdb/models"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -44,7 +45,8 @@ func (is *Storage) GetReserveVolume(rsvAddr ethereum.Address, token ethereum.Add
 	var (
 		rsvAddrHex   = rsvAddr.Hex()
 		tokenAddrHex = token.Hex()
-		logger       = is.sugar.With("reserve Address", rsvAddr.Hex(), "func", "tradelogs/storage/Storage.GetReserveVolume", "token Address", token.Hex(), "from", fromTime, "to", toTime)
+		logger       = is.sugar.With("reserve Address", rsvAddr.Hex(), "from", fromTime, "to", toTime,
+			"func", caller.GetCurrentFunctionName(), "token Address", token.Hex())
 	)
 	mName, ok := rsvMeasurementName[strings.ToLower(frequency)]
 	if !ok {
@@ -84,7 +86,7 @@ func (is *Storage) GetAssetVolume(token ethereum.Address, fromTime, toTime time.
 	frequency string) (map[uint64]*common.VolumeStats, error) {
 	var (
 		logger = is.sugar.With(
-			"func", "tradelogs/storage/Storage.GetAssetVolume",
+			"func", caller.GetCurrentFunctionName(),
 			"token", token.Hex(),
 			"from", fromTime,
 			"to", toTime,

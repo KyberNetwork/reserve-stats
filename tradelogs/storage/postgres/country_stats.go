@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
@@ -18,7 +19,7 @@ func (tldb *TradeLogDB) GetCountryStats(countryCode string, from, to time.Time, 
 		results        = make(map[uint64]*common.CountryStats)
 	)
 	logger := tldb.sugar.With("from", from, "to", to,
-		"func", "tradelogs/storage/postgresql/TradeLogDB.GetCountryStats")
+		"func", caller.GetCurrentFunctionName())
 	from = schema.RoundTime(from, "day", timezone)
 	to = schema.RoundTime(to, "day", timezone).Add(time.Hour * 24)
 	if ethCondition, err = schema.BuildEthWethExcludingCondition(); err != nil {

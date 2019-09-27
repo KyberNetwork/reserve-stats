@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	kycedschema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx/schema/kyced"
@@ -52,9 +53,7 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 
 // SaveTradeLogs persist trade logs to DB
 func (is *Storage) SaveTradeLogs(logs []common.TradeLog) error {
-	logger := is.sugar.With(
-		"func", "tradelogs/storage/influx/Storage.SaveTradeLogs",
-	)
+	logger := is.sugar.With("func", caller.GetCurrentFunctionName())
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  is.dbName,
 		Precision: timePrecision,
@@ -161,7 +160,7 @@ func (is *Storage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) 
 		)
 
 		logger = is.sugar.With(
-			"func", "tradelogs/storage/Storage.LoadTradLogs",
+			"func", caller.GetCurrentFunctionName(),
 			"from", from,
 			"to", to,
 		)
@@ -203,7 +202,7 @@ func (is *Storage) createDB() error {
 func (is *Storage) getWalletFeeAmount(log common.TradeLog) (float64, float64, error) {
 	var (
 		logger = is.sugar.With(
-			"func", "tradelogs/storage/getWalletFeeAmount",
+			"func", caller.GetCurrentFunctionName(),
 			"log", log,
 		)
 		dstAmount    float64
@@ -339,7 +338,7 @@ func (is *Storage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error)
 
 func (is *Storage) assembleFirstTradePoint(logItem common.TradeLog) (*client.Point, error) {
 	var logger = is.sugar.With(
-		"func", "tradelogs/storage/Storage.assembleFirstTradePoint",
+		"func", caller.GetCurrentFunctionName(),
 		"timestamp", logItem.Timestamp.String(),
 		"user_addr", logItem.UserAddress.Hex(),
 		"country", logItem.Country,
@@ -399,7 +398,7 @@ func (is *Storage) userTraded(addr ethereum.Address) (bool, error) {
 func (is *Storage) AssembleKYCPoint(logItem common.TradeLog) (*client.Point, error) {
 	var (
 		logger = is.sugar.With(
-			"func", "tradelogs/storage/Storage.assembleKYCPoint",
+			"func", caller.GetCurrentFunctionName(),
 			"timestamp", logItem.Timestamp.String(),
 			"user_addr", logItem.UserAddress.Hex(),
 			"country", logItem.Country,

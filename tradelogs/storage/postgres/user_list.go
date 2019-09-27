@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 )
 
 func (tldb *TradeLogDB) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo, error) {
-	logger := tldb.sugar.With("from", fromTime, "to", toTime)
+	logger := tldb.sugar.With("from", fromTime, "to", toTime, "func", caller.GetCurrentFunctionName())
 
 	userListQuery := fmt.Sprintf(`
 		SELECT b.address user_address,sum(eth_amount) total_eth_volume,

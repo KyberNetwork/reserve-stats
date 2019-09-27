@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
+
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	heatMapSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx/schema/heatmap"
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 //GetTokenHeatmap return list ordered country by asset volume
@@ -22,7 +24,7 @@ func (is *Storage) GetTokenHeatmap(asset ethereum.Address, from, to time.Time, t
 	measurementName := getMeasurementName(common.VolumeCountryStatsMeasurement, timezone)
 
 	logger := is.sugar.With(
-		"func", "tradelogs/storage/Storage.GetTokenHeatmap",
+		"func", caller.GetCurrentFunctionName(),
 		"asset", asset.Hex(),
 		"from", from,
 		"to", to,

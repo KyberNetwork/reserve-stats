@@ -8,11 +8,10 @@ import (
 	"github.com/lib/pq"
 	"go.uber.org/zap"
 
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-
-	"github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/storage"
-
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
+	"github.com/KyberNetwork/reserve-stats/accounting/reserve-addresses/storage"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 )
 
 // Storage implements accounting reserve addresses storage.Interface with PostgreSQL as storage engine.
@@ -24,7 +23,7 @@ type Storage struct {
 
 // NewStorage creates a new instance of Storage.
 func NewStorage(sugar *zap.SugaredLogger, db *sqlx.DB, resolv blockchain.ContractTimestampResolver) (*Storage, error) {
-	var logger = sugar.With("func", "accounting/reserve-addresses/storage/postgresql.NewStorage")
+	var logger = sugar.With("func", caller.GetCurrentFunctionName())
 	const schemaFmt = `CREATE TABLE IF NOT EXISTS "addresses"
 (
   id           SERIAL PRIMARY KEY,
@@ -79,7 +78,7 @@ EXECUTE PROCEDURE inc_version();`
 func (s *Storage) Create(address ethereum.Address, addressType common.AddressType, description string) (uint64, error) {
 	var (
 		logger = s.sugar.With(
-			"func", "accounting/reserve-addresses/storage/postgresql.Storage.Create",
+			"func", caller.GetCurrentFunctionName(),
 			"address", address.String(),
 			"type", addressType.String(),
 			"description", description,
@@ -128,7 +127,7 @@ VALUES ($1, $2, $3, $4, NOW()) RETURNING id`
 // Get returns the stored reserve address with matching id.
 func (s *Storage) Get(id uint64) (*common.ReserveAddress, error) {
 	var (
-		logger = s.sugar.With("func", "accounting/reserve-addresses/storage/postgresql/Storage.Get",
+		logger = s.sugar.With("func", caller.GetCurrentFunctionName(),
 			"id", id,
 		)
 		addr      = &ReserveAddress{}
@@ -155,7 +154,7 @@ WHERE id = $1`
 // It returns no error if there is nothing in database.
 func (s *Storage) GetAll() ([]*common.ReserveAddress, int64, error) {
 	var (
-		logger    = s.sugar.With("func", "accounting/reserve-addresses/storage/postgresql/Storage.GetAll")
+		logger    = s.sugar.With("func", caller.GetCurrentFunctionName())
 		stored    []*ReserveAddress
 		results   []*common.ReserveAddress
 		queryStmt = `SELECT id, address, type, description, timestamp
@@ -187,7 +186,7 @@ FROM addresses`
 // Update updates the reserve address with given information. If given data is zero, it won't be updated to database.
 func (s *Storage) Update(id uint64, address ethereum.Address, addressType *common.AddressType, description string) error {
 	var (
-		logger = s.sugar.With("func", "accounting/reserve-addresses/storage/postgresql/Storage.Update",
+		logger = s.sugar.With("func", caller.GetCurrentFunctionName(),
 			"id", id,
 			"address", address.String(),
 			"description", description,

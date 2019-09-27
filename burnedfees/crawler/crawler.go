@@ -7,6 +7,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/burnedfees/common"
 	"github.com/KyberNetwork/reserve-stats/burnedfees/storage"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
 	"github.com/ethereum/go-ethereum"
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -53,7 +54,7 @@ func logDataToBurnedFeesParams(data []byte) (ethcommon.Address, *big.Int, error)
 func (c *BurnedFeesCrawler) crawl(fromBlock, toBlock uint64) ([]common.BurnAssignedFeesEvent, error) {
 	var (
 		logger = c.sugar.With(
-			"func", "burnedfees/crawler/BurnedFeesCrawler.crawl",
+			"func", caller.GetCurrentFunctionName(),
 			"from_block", fromBlock,
 			"to_block", toBlock,
 		)
@@ -98,7 +99,7 @@ func (c *BurnedFeesCrawler) crawl(fromBlock, toBlock uint64) ([]common.BurnAssig
 func (c *BurnedFeesCrawler) Crawl(fromBlock, toBlock, maxBlocks uint64) error {
 	var (
 		logger = c.sugar.With(
-			"func", "burnedfees/crawler/BurnedFeesCrawler.Crawl",
+			"func", caller.GetCurrentFunctionName(),
 			"from_block", fromBlock,
 			"to_block", toBlock,
 		)

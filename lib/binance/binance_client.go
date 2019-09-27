@@ -17,6 +17,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
@@ -146,7 +147,7 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 
 	var (
 		respBody []byte
-		logger   = bc.sugar.With("func", "binance_client/sendRequest")
+		logger   = bc.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	client := &http.Client{
 		Timeout: 30 * time.Second,

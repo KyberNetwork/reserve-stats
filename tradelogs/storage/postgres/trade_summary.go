@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
@@ -18,7 +19,7 @@ func (tldb *TradeLogDB) GetTradeSummary(from, to time.Time, timezone int8) (map[
 		timeField     = schema.BuildDateTruncField("day", timezone)
 	)
 	logger := tldb.sugar.With("from", from, "to", to, "time_zone", timezone,
-		"func", "tradelogs/storage/postgres/TradeLogDB.GetTradeSummary")
+		"func", caller.GetCurrentFunctionName())
 	from = schema.RoundTime(from, "day", timezone)
 	to = schema.RoundTime(to, "day", timezone).Add(time.Hour * 24)
 	results := make(map[uint64]*common.TradeSummary)

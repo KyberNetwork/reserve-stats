@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
@@ -252,7 +253,7 @@ func DetectTradeInternalTransaction(txHash ethereum.Hash, ethAmount *big.Int, et
 //EtherscanInternalTxToCommon transforms etherScan.InternalTx to accounting's InternalTx
 func EtherscanInternalTxToCommon(tx etherscan.InternalTx, ethClient *ethclient.Client, sugar *zap.SugaredLogger, throttle chan int) (InternalTx, error) {
 	var (
-		logger = sugar.With("func", "tx-types/EtherscanInternalTxToCommon")
+		logger = sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	defer func() {
 		<-throttle
@@ -342,7 +343,7 @@ func DetectTradeTransaction(tx etherscan.ERC20Transfer, ethClient *ethclient.Cli
 //EtherscanERC20TransferToCommon transforms etherScan.ERC20Trasnfer to accounting's ERC20Transfer
 func EtherscanERC20TransferToCommon(tx etherscan.ERC20Transfer, ethClient *ethclient.Client, sugar *zap.SugaredLogger, throttle chan int) (ERC20Transfer, error) {
 	var (
-		logger = sugar.With("func", "tx-types/EtherscanERC20TransferToCommon")
+		logger = sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	defer func() {
 		<-throttle

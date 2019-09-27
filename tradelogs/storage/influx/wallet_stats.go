@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -15,7 +16,7 @@ import (
 func (is *Storage) GetWalletStats(from, to time.Time, walletAddr string, timezone int8) (map[uint64]common.WalletStats, error) {
 	var (
 		logger = is.sugar.With(
-			"func", "tradelogs/storage/Storage.GetWalletStats",
+			"func", caller.GetCurrentFunctionName(),
 			"from", from,
 			"to", to,
 		)

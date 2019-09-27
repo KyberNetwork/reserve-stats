@@ -3,11 +3,12 @@ package storage
 import (
 	"fmt"
 
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx/schema/tradelog"
-
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx/schema/tradelog"
 )
 
 // InfluxStorage represent a client to store trade data to influx DB
@@ -30,7 +31,7 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 // Last24hVolume returns last 24h eth volume of user with given uid.
 func (inf *InfluxStorage) Last24hVolume(uid string) (float64, error) {
 	var (
-		logger = inf.sugar.With("func", "users/storage/InfluxStorage.Last24hVolume",
+		logger = inf.sugar.With("func", caller.GetCurrentFunctionName(),
 			"uid", uid)
 
 		influxQueryFmt = `SELECT SUM(amount) FROM (SELECT %[1]s * %[2]s AS amount FROM trades WHERE time >= now() - 24h AND "%[3]s" = '%[4]s') WHERE time >= now() - 24h`

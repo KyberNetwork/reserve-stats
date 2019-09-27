@@ -8,6 +8,7 @@ import (
 	"github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx/schema/tradelog"
 )
@@ -45,7 +46,7 @@ func (irc *InternalRedisCacher) Cache24hVolume() error {
 
 func (irc *InternalRedisCacher) cache24hVolumeByUID() error {
 	var (
-		logger = irc.sugar.With("func", "user/cacher/cache24hVolumeByUID")
+		logger = irc.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 
 	// read total trade 24h
@@ -95,7 +96,7 @@ func (irc *InternalRedisCacher) cache24hVolumeByUID() error {
 
 func (irc *InternalRedisCacher) pushToPipeline(pipeline redis.Pipeliner, key string, value float64, expireTime time.Duration) error {
 	var (
-		logger = irc.sugar.With("func", "user/cacher/pushToPipeline")
+		logger = irc.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	if err := pipeline.Set(key, value, expireTime).Err(); err != nil {
 		logger.Debugw("set cache to redis error", "error", err)

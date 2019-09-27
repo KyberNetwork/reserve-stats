@@ -13,6 +13,8 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
+
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 )
 
 // Client is the the implementation to query userprofile info.
@@ -25,7 +27,7 @@ type Client struct {
 
 func (c *Client) newRequest(method, endpoint string, params map[string]string) (*http.Request, error) {
 	logger := c.sugar.With(
-		"func", "lib/userprofile/client.go/newRequest",
+		"func", caller.GetCurrentFunctionName(),
 		"method", method,
 		"endpoint", endpoint,
 	)

@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
@@ -26,7 +27,7 @@ type TradeLogDB struct {
 
 //NewTradeLogDB create a new instance of TradeLogDB
 func NewTradeLogDB(sugar *zap.SugaredLogger, db *sqlx.DB, tokenAmountFormatter blockchain.TokenAmountFormatterInterface) (*TradeLogDB, error) {
-	var logger = sugar.With("func", "tradelogs/storage.NewTradeLogDB")
+	var logger = sugar.With("func", caller.GetCurrentFunctionName())
 	var err error
 	logger.Debug("initializing database schema")
 	if _, err = db.Exec(schema.TradeLogsSchema); err != nil {
@@ -44,9 +45,7 @@ func NewTradeLogDB(sugar *zap.SugaredLogger, db *sqlx.DB, tokenAmountFormatter b
 // LastBlock returns last stored trade log block number from database.
 func (tldb *TradeLogDB) LastBlock() (int64, error) {
 	var (
-		logger = tldb.sugar.With(
-			"func", "tradelogs/storage/postgres/TradeLogDB.SaveTradeLogs",
-		)
+		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 		result sql.NullInt64
 	)
 	stmt := fmt.Sprintf(`SELECT MAX("block_number") FROM "%v"`, schema.TradeLogsTableName)
@@ -64,9 +63,7 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 }
 
 func (tldb *TradeLogDB) saveReserveAddress(tx *sqlx.Tx, reserveAddressArray []string) error {
-	var logger = tldb.sugar.With(
-		"func", "tradelogs/storage/postgres/TradeLogDB.saveReserveAddress",
-	)
+	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 	query := fmt.Sprintf(insertionAddressTemplate, schema.ReserveTableName)
 	logger.Debugw("updating rsv...", "query", query)
 	_, err := tx.Exec(query, pq.StringArray(reserveAddressArray))
@@ -74,9 +71,7 @@ func (tldb *TradeLogDB) saveReserveAddress(tx *sqlx.Tx, reserveAddressArray []st
 }
 
 func (tldb *TradeLogDB) saveTokens(tx *sqlx.Tx, tokensArray []string) error {
-	var logger = tldb.sugar.With(
-		"func", "tradelogs/storage/postgres/TradeLogDB.saveTokens",
-	)
+	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 	query := fmt.Sprintf(insertionAddressTemplate, schema.TokenTableName)
 	logger.Debugw("updating rsv...", "query", query)
 	_, err := tx.Exec(query, pq.StringArray(tokensArray))
@@ -84,9 +79,7 @@ func (tldb *TradeLogDB) saveTokens(tx *sqlx.Tx, tokensArray []string) error {
 }
 
 func (tldb *TradeLogDB) saveWallets(tx *sqlx.Tx, walletAddressArray []string) error {
-	var logger = tldb.sugar.With(
-		"func", "tradelogs/storage/postgres/TradeLogDB.saveWallets",
-	)
+	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 	query := fmt.Sprintf(insertionAddressTemplate, schema.WalletTableName)
 	logger.Debugw("updating rsv...", "query", query)
 	_, err := tx.Exec(query, pq.StringArray(walletAddressArray))
@@ -96,9 +89,7 @@ func (tldb *TradeLogDB) saveWallets(tx *sqlx.Tx, walletAddressArray []string) er
 // SaveTradeLogs persist trade logs to DB
 func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
 	var (
-		logger = tldb.sugar.With(
-			"func", "tradelogs/storage/postgres/TradeLogDB.SaveTradeLogs",
-		)
+		logger              = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 		reserveAddress      = make(map[string]struct{})
 		reserveAddressArray []string
 		tokens              = make(map[string]struct{})
@@ -206,6 +197,7 @@ func (tldb *TradeLogDB) isFirstTrade(userAddr ethereum.Address) (bool, error) {
 }
 
 func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
+	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 	var queryResult []struct {
 		Timestamp          time.Time      `db:"timestamp"`
 		BlockNumber        uint64         `db:"block_number"`
@@ -238,7 +230,7 @@ func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, er
 	}
 
 	if len(queryResult) == 0 {
-		tldb.sugar.Debugw("empty result returned", "query", selectTradeLogsQuery)
+		logger.Debugw("empty result returned", "query", selectTradeLogsQuery)
 		return nil, nil
 	}
 

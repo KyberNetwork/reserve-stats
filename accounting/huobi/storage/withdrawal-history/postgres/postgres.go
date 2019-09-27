@@ -8,6 +8,7 @@ import (
 	"github.com/lib/pq"
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -22,7 +23,7 @@ type HuobiStorage struct {
 // NewDB return the HuobiStorage instance. User must call Close() before exit.
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*HuobiStorage, error) {
 	var (
-		logger = sugar.With("func", "reserverates/storage/postgres/NewDB")
+		logger = sugar.With("func", caller.GetCurrentFunctionName())
 	)
 
 	const schemaFMT = `
@@ -62,7 +63,7 @@ func (hdb *HuobiStorage) Close() error {
 func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory) (err error) {
 	var (
 		logger = hdb.sugar.With(
-			"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
+			"func", caller.GetCurrentFunctionName(),
 			"len(withdraws)", len(withdraws),
 		)
 		ids      []uint64
@@ -104,7 +105,7 @@ func (hdb *HuobiStorage) GetWithdrawHistory(from, to time.Time) ([]huobi.Withdra
 		dbResult [][]byte
 		result   []huobi.WithdrawHistory
 		logger   = hdb.sugar.With(
-			"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
+			"func", caller.GetCurrentFunctionName(),
 			"from", from.String(),
 			"to", to.String(),
 		)
@@ -129,7 +130,7 @@ func (hdb *HuobiStorage) GetLastIDStored() (uint64, error) {
 	var (
 		result uint64
 		logger = hdb.sugar.With(
-			"func", "reserverates/storage/postgres/RateStorage.GetLastIDStored",
+			"func", caller.GetCurrentFunctionName(),
 		)
 	)
 	const selectStmt = `SELECT COALESCE(MAX(id),0) FROM huobi_withdrawals`

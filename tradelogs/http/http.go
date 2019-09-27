@@ -11,6 +11,7 @@ import (
 	appname "github.com/KyberNetwork/reserve-stats/app-names"
 	lipappnames "github.com/KyberNetwork/reserve-stats/lib/appnames"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
@@ -28,7 +29,7 @@ func NewServer(
 	sugar *zap.SugaredLogger,
 	symbolResolver blockchain.TokenSymbolResolver, options ...ServerOption) *Server {
 	var (
-		logger = sugar.With("func", "tradelogs/http/NewServer")
+		logger = sugar.With("func", caller.GetCurrentFunctionName())
 		sv     = &Server{
 			storage:        storage,
 			host:           host,

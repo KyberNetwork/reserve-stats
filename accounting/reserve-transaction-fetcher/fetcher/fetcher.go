@@ -7,12 +7,13 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	etherscan "github.com/nanmu42/etherscan-api"
+	"github.com/nanmu42/etherscan-api"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 )
 
 const (
@@ -45,9 +46,7 @@ func (f *EtherscanTransactionFetcher) fetchWithRetry(fn *fetchFn, addr ethereum.
 	var (
 		txs    []interface{}
 		err    error
-		logger = f.sugar.With(
-			"func", "accounting-reserve-transaction/fetcher/fetchWithRetry",
-		)
+		logger = f.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	for i := 0; i < f.attempt; i++ {
 		txs, err = fn.fetch(addr.String(), startBlock, endBlock, page, offset)
@@ -69,8 +68,7 @@ func (f *EtherscanTransactionFetcher) fetch(fn *fetchFn, addr ethereum.Address, 
 	// Too small value will increase the fetching time, too big value will result in a timed out response.
 	var (
 		logger = f.sugar.With(
-			"func",
-			"accounting/reserve-transaction-fetcher/fetcher.EtherscanTransactionFetcher.fetch",
+			"func", caller.GetCurrentFunctionName(),
 			"fetch_function", fn.name,
 			"address", addr.String(),
 			"offset", offset,
@@ -157,7 +155,7 @@ func (f *EtherscanTransactionFetcher) NormalTx(addr ethereum.Address, from, to *
 // InternalTx returns all internal transaction of given address between block range.
 func (f *EtherscanTransactionFetcher) InternalTx(addr ethereum.Address, from, to *big.Int, offset int) ([]common.InternalTx, error) {
 	var (
-		logger   = f.sugar.With("func", "reserve-transaction-fetcher/InternalTx")
+		logger   = f.sugar.With("func", caller.GetCurrentFunctionName())
 		temp     sync.Map
 		g        errgroup.Group
 		throttle = make(chan int, maxConcurrentRequest)
@@ -223,7 +221,7 @@ func (f *EtherscanTransactionFetcher) InternalTx(addr ethereum.Address, from, to
 // ERC20Transfer returns all ERC20 transfers of given address between given block range.
 func (f *EtherscanTransactionFetcher) ERC20Transfer(addr ethereum.Address, from, to *big.Int, offset int) ([]common.ERC20Transfer, error) {
 	var (
-		logger   = f.sugar.With("func", "reserve-transaction-fetcher/InternalTx")
+		logger   = f.sugar.With("func", caller.GetCurrentFunctionName())
 		temp     sync.Map
 		g        errgroup.Group
 		throttle = make(chan int, maxConcurrentRequest)

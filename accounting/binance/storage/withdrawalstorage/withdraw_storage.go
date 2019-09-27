@@ -10,6 +10,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/lib/pq"
@@ -24,7 +25,7 @@ type BinanceStorage struct {
 //NewDB return a new instance of binance storage
 func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 	var (
-		logger = sugar.With("func", "accounting/binance-storage/binancestorage.NewDB")
+		logger = sugar.With("func", caller.GetCurrentFunctionName())
 	)
 
 	const schemaFmt = `CREATE TABLE IF NOT EXISTS "binance_withdrawals"
@@ -64,7 +65,7 @@ func (bd *BinanceStorage) Close() error {
 //UpdateWithdrawHistory save withdraw history to db
 func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.WithdrawHistory) (err error) {
 	var (
-		logger       = bd.sugar.With("func", "accounting/binance_storage.UpdateWithdrawHistory")
+		logger       = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		withdrawJSON []byte
 		ids          []string
 		dataJSON     [][]byte
@@ -111,7 +112,7 @@ type WithdrawRecord struct {
 //GetWithdrawHistory return list of withdraw fromTime to toTime
 func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.WithdrawHistory, error) {
 	var (
-		logger   = bd.sugar.With("func", "account/binance_storage.GetTradeHistory")
+		logger   = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		result   []binance.WithdrawHistory
 		dbResult []WithdrawRecord
 		tmp      binance.WithdrawHistory
@@ -140,7 +141,7 @@ func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) ([]bina
 //GetLastStoredTimestamp return last timestamp stored in database
 func (bd *BinanceStorage) GetLastStoredTimestamp() (time.Time, error) {
 	var (
-		logger   = bd.sugar.With("func", "account/binance_storage.GetLastStoredTimestamp")
+		logger   = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
 		dbResult uint64
 		statuses = []string{strconv.Itoa(int(common.AwaitingApproval)), strconv.Itoa(int(common.Processing))}
@@ -173,7 +174,7 @@ func (bd *BinanceStorage) GetLastStoredTimestamp() (time.Time, error) {
 //UpdateWithdrawHistoryWithFee update fee into withdraw history table
 func (bd *BinanceStorage) UpdateWithdrawHistoryWithFee(withdrawHistories []binance.WithdrawHistory) (err error) {
 	var (
-		logger = bd.sugar.With("func", "accounting/binance_storage.UpdateWithdrawHistoryWithFee")
+		logger = bd.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 
 	const (

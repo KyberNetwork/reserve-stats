@@ -13,6 +13,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/huobi/storage/postgres"
 	withdrawstorage "github.com/KyberNetwork/reserve-stats/accounting/huobi/storage/withdrawal-history/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 )
 
@@ -47,7 +48,7 @@ func main() {
 
 func importTradeHistory(sugar *zap.SugaredLogger, historyFile string, hdb *postgres.HuobiStorage) error {
 	var (
-		logger         = sugar.With("func", "accounting-huobi-import-data/importTradeHistory")
+		logger         = sugar.With("func", caller.GetCurrentFunctionName())
 		types          = []string{"", "buy-market", "sell-market", "buy-limit", "sell-limit"}
 		tradeHistories = make(map[int64]huobi.TradeHistory)
 	)
@@ -150,7 +151,7 @@ func importTradeHistory(sugar *zap.SugaredLogger, historyFile string, hdb *postg
 
 func importWithdrawHistory(sugar *zap.SugaredLogger, historyFile string, hdb *withdrawstorage.HuobiStorage) error {
 	var (
-		logger            = sugar.With("func", "accounting-huobi-import-data/importWithdrawHistory")
+		logger            = sugar.With("func", caller.GetCurrentFunctionName())
 		withdrawHistories []huobi.WithdrawHistory
 	)
 	logger.Infow("import withdraw history from file", "file", historyFile)

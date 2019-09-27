@@ -2,6 +2,7 @@ package caller
 
 import (
 	"runtime"
+	"strings"
 )
 
 func getFrame(skipFrames int) runtime.Frame {
@@ -26,14 +27,23 @@ func getFrame(skipFrames int) runtime.Frame {
 	return frame
 }
 
+// stripName removes the 2 parts of the fullname
+func stripName(functionName string) string {
+	splits := strings.Split(functionName, "/")
+	if len(splits) >= 3 {
+		return strings.Join(splits[2:], "/")
+	}
+	return functionName
+}
+
 // GetCurrentFunctionName returns the full name of the function call it
 func GetCurrentFunctionName() string {
 	// Skip GetCurrentFunctionName
-	return getFrame(1).Function
+	return stripName(getFrame(1).Function)
 }
 
 // GetCurrentFunctionName returns the full name of the parent function call it
 func GetCallerFunctionName() string {
 	// Skip GetCallerFunctionName and the function to get the caller of
-	return getFrame(2).Function
+	return stripName(getFrame(2).Function)
 }

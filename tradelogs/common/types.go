@@ -213,7 +213,7 @@ func (tl TradeLog) IsKyberSwap() bool {
 		}
 		return false
 	}
-	// with older block we use logic below to detech if a tx is a KyberSwap tx
+	// with older block we use logic below to detect if a tx is a KyberSwap tx
 	// if a trade log has no feeToWalletEvent, it is KyberSwap
 	if len(tl.WalletFees) == 0 {
 		return true

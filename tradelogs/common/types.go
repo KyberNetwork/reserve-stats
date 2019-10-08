@@ -203,7 +203,18 @@ func isKyberWallet(addr ethereum.Address) bool {
 
 //IsKyberSwap determine if the tradelog is through KyberSwap
 func (tl TradeLog) IsKyberSwap() bool {
-	//if a trade log has no feeToWalletEvent, it is KyberSwap
+	// since block 6715130 KyberSwap add wallet_addr to its tx
+	// then we use only this logic to detect if a tx a KyberSwap tx or not
+	if tl.BlockNumber >= 6715130 {
+		for _, fee := range tl.WalletFees {
+			if isKyberWallet(fee.WalletAddress) {
+				return true
+			}
+		}
+		return false
+	}
+	// with older block we use logic below to detech if a tx is a KyberSwap tx
+	// if a trade log has no feeToWalletEvent, it is KyberSwap
 	if len(tl.WalletFees) == 0 {
 		return true
 	}

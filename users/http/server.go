@@ -15,6 +15,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"              // import custom validator functions
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	trlib "github.com/KyberNetwork/reserve-stats/lib/tokenrate"
@@ -131,7 +132,7 @@ func (s *Server) convertQueryParams(query userStatsBatchQuery) ([]string, []bool
 // stats-batch returns cap of the user with given uids, max size = 1k
 func (s *Server) userStatsBatch(c *gin.Context) {
 	var (
-		logger = s.sugar.With("func", "users/http/Server.userStats")
+		logger = s.sugar.With("func", caller.GetCurrentFunctionName())
 		input  userStatsBatchQuery
 
 		userCap *big.Int
@@ -205,7 +206,7 @@ func (s *Server) userStatsBatch(c *gin.Context) {
 // stats returns cap of the user with given uid.
 func (s *Server) userStats(c *gin.Context) {
 	var (
-		logger = s.sugar.With("func", "users/http/Server.userStats")
+		logger = s.sugar.With("func", caller.GetCurrentFunctionName())
 		input  userStatsQuery
 
 		userCap *big.Int

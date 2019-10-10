@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/app-names/common"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 )
 
@@ -26,7 +27,7 @@ type AppNameDB struct {
 
 // NewAppNameDB return new app name constance
 func NewAppNameDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*AppNameDB, error) {
-	var logger = sugar.With("func", "app-names/storage.NewAppNameDB")
+	var logger = sugar.With("func", caller.GetCurrentFunctionName())
 
 	logger.Debug("initializing app name database")
 	if _, err := db.Exec(schemaFmt); err != nil {
@@ -49,7 +50,7 @@ type createOrUpdateResult struct {
 func (adb *AppNameDB) CreateOrUpdate(app common.Application) (int64, bool, error) {
 	var (
 		logger = adb.sugar.With(
-			"func", "app-names/storage.CreateOrUpdate",
+			"func", caller.GetCurrentFunctionName(),
 			"app name", app.Name,
 		)
 		addresses []string
@@ -74,7 +75,7 @@ func (adb *AppNameDB) CreateOrUpdate(app common.Application) (int64, bool, error
 //Update add addresses to list address of appID
 func (adb *AppNameDB) Update(app common.Application) error {
 	var (
-		logger    = adb.sugar.With("func", "app-names/storage.Update")
+		logger    = adb.sugar.With("func", caller.GetCurrentFunctionName())
 		addresses []string
 	)
 	logger.Debugw("update app address", "id", app.ID)
@@ -112,7 +113,7 @@ type getAppResult struct {
 func (adb *AppNameDB) GetAll(filters ...Filter) ([]common.Application, error) {
 	var (
 		logger = adb.sugar.With(
-			"func", "app-names/storage.GetAll",
+			"func", caller.GetCurrentFunctionName(),
 		)
 		query = `SELECT joined.id,
        joined.name,
@@ -172,7 +173,7 @@ WHERE ($2::TEXT IS NULL OR $2 ILIKE ANY (joined.addresses));
 func (adb *AppNameDB) Get(appID int64) (common.Application, error) {
 	var (
 		logger = adb.sugar.With(
-			"func", "app-names/storage.GetAppAddresses",
+			"func", caller.GetCurrentFunctionName(),
 		)
 		result getAppResult
 		app    common.Application
@@ -208,7 +209,7 @@ GROUP BY apps.id, apps.name;`, appID)
 func (adb *AppNameDB) Delete(appID int64) (err error) {
 	var (
 		logger = adb.sugar.With(
-			"func", "appname/storage.Delete",
+			"func", caller.GetCurrentFunctionName(),
 		)
 		storedID int64
 	)

@@ -12,6 +12,7 @@ import (
 	_ "github.com/KyberNetwork/reserve-stats/accounting/common/validators" // import custom validator functions
 	huobiStorage "github.com/KyberNetwork/reserve-stats/accounting/huobi/storage/withdrawal-history"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 )
@@ -43,7 +44,7 @@ type response struct {
 func (sv *Server) get(c *gin.Context) {
 	var (
 		query              queryInput
-		logger             = sv.sugar.With("func", "accounting/cex-withdrawal/http/Server.get")
+		logger             = sv.sugar.With("func", caller.GetCurrentFunctionName())
 		huobiWithdrawals   []huobi.WithdrawHistory
 		binanceWithdrawals []binance.WithdrawHistory
 	)

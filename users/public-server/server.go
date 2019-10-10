@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	trlib "github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/tokenrate"
@@ -70,9 +71,7 @@ func (s *Server) getAddressVolumeByKey(prefix, userAddress string) (float64, err
 
 func (s *Server) getUsers(c *gin.Context) {
 	var (
-		logger = s.sugar.With(
-			"func", "users-public-stats/Server.getUser",
-		)
+		logger  = s.sugar.With("func", caller.GetCurrentFunctionName())
 		query   userQuery
 		rich    bool
 		userCap *big.Int

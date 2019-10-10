@@ -21,7 +21,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
-	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/cq"
+	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
 )
 
@@ -95,7 +95,10 @@ func main() {
 			Value:  defaultBlockConfirmations,
 		},
 	)
+
+	app.Flags = append(app.Flags, storage.NewCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.PostgresDefaultDb)...)
 	app.Flags = append(app.Flags, broadcast.NewCliFlags()...)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, cq.NewCQFlags()...)
@@ -167,7 +170,8 @@ func requiredWorkers(fromBlock, toBlock *big.Int, maxBlocks, maxWorkers int) int
 
 func run(c *cli.Context) error {
 	var (
-		err error
+		err              error
+		storageInterface storage.Interface
 	)
 
 	sugar, flush, err := libapp.NewSugaredLogger(c)
@@ -176,28 +180,26 @@ func run(c *cli.Context) error {
 	}
 	defer flush()
 
-	influxClient, err := influxdb.NewClientFromContext(c)
-	if err != nil {
-		return err
-	}
-
-	if err = manageCQFromContext(c, influxClient, sugar); err != nil {
-		return err
-	}
-
 	tokenAmountFormatter, err := blockchain.NewToKenAmountFormatterFromContext(c)
 	if err != nil {
 		return err
 	}
 
-	influxStorage, err := storage.NewInfluxStorage(
-		sugar,
-		common.DatabaseName,
-		influxClient,
-		tokenAmountFormatter,
-	)
+	storageInterface, err = storage.NewStorageInterfaceFromContext(sugar, c, tokenAmountFormatter)
 	if err != nil {
 		return err
+	}
+
+	//if db = influx check cq flags
+	if c.String(storage.DbEngineFlag) == storage.InfluxDbEngine {
+		influxClient, err := influxdb.NewClientFromContext(c)
+		if err != nil {
+			return err
+		}
+
+		if err = manageCQFromContext(c, influxClient, sugar); err != nil {
+			return err
+		}
 	}
 
 	etherscanClient, err := etherscan.NewEtherscanClientFromContext(c)
@@ -208,7 +210,7 @@ func run(c *cli.Context) error {
 	maxWorkers := c.Int(maxWorkersFlag)
 	maxBlocks := c.Int(maxBlocksFlag)
 	attempts := c.Int(attemptsFlag) // exit if failed to fetch logs after attempts times
-	planner, err := newCrawlerPlanner(sugar, c, influxStorage)
+	planner, err := newCrawlerPlanner(sugar, c, storageInterface)
 	if err != nil {
 		return nil
 	}
@@ -226,8 +228,8 @@ func run(c *cli.Context) error {
 		}
 
 		requiredWorkers := requiredWorkers(fromBlock, toBlock, maxBlocks, maxWorkers)
-		p := workers.NewPool(sugar, requiredWorkers, influxStorage)
 		startingBlocks := deployment.MustGetStartingBlocksFromContext(c)
+		p := workers.NewPool(sugar, requiredWorkers, storageInterface)
 		sugar.Debugw("number of fetcher jobs",
 			"from_block", fromBlock.String(),
 			"to_block", toBlock.String(),

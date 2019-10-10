@@ -4,12 +4,13 @@ import (
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 )
 
 // NewDB return the Ratestorage instance. User must call ratestorage.Close() before exit.
 // tableNames is a list of 5 string for 5 tablename[reserve,token,quote, rate,usdrate]. It can be optional
-func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*RatesStorage, error) {
+func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (rs *RatesStorage, err error) {
 	const schemaFMT = `--reserves table definition
 	CREATE TABLE IF NOT EXISTS reserves
 (
@@ -71,7 +72,7 @@ CREATE OR REPLACE VIEW rates_view AS
 		LEFT JOIN reserves AS rs ON rt.reserve_id=rs.id;
 `
 	var (
-		logger     = sugar.With("func", "reserverates/storage/postgres")
+		logger     = sugar.With("func", caller.GetCurrentFunctionName())
 		tableNames = make(map[string]string)
 	)
 
@@ -86,9 +87,10 @@ CREATE OR REPLACE VIEW rates_view AS
 		return nil, err
 	}
 	logger.Debug("database schema initialized successfully")
-	return &RatesStorage{
+	rs, err = &RatesStorage{
 		sugar:      sugar,
 		db:         db,
 		tableNames: tableNames,
 	}, nil
+	return
 }

@@ -11,7 +11,6 @@ import (
 
 type userListQuery struct {
 	httputil.TimeRangeQuery
-	Timezone int8 `form:"timezone" binding:"isSupportedTimezone"`
 }
 
 func (sv *Server) getUserList(c *gin.Context) {
@@ -34,7 +33,7 @@ func (sv *Server) getUserList(c *gin.Context) {
 		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
-	userList, err := sv.storage.GetUserList(fromTime, toTime, query.Timezone)
+	userList, err := sv.storage.GetUserList(fromTime, toTime)
 	sort.Sort(sort.Reverse(common.UserList(userList)))
 	if err != nil {
 		httputil.ResponseFailure(

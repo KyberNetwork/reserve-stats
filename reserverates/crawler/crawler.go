@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"sync"
 
-	"golang.org/x/sync/errgroup"
-
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	rsvRateCommon "github.com/KyberNetwork/reserve-stats/reserverates/common"
 )
@@ -55,7 +54,7 @@ func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 	)
 
 	logger := rrc.sugar.With(
-		"func", "reserverates/crawler/ReserveRatesCrawler.getEachReserveRate",
+		"func", caller.GetCurrentFunctionName(),
 		"block", block,
 		"reserve_address", rsvAddr.Hex(),
 	)
@@ -99,7 +98,7 @@ func (rrc *ReserveRatesCrawler) GetReserveRatesWithAddresses(addresses []ethereu
 	)
 
 	logger := rrc.sugar.With(
-		"func", "reserverates/crawler/ReserveRatesCrawler.GetReserveRatesWithAddresses",
+		"func", caller.GetCurrentFunctionName(),
 		"block", block,
 		"reserves", len(addresses),
 	)

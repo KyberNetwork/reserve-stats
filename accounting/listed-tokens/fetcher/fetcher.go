@@ -12,6 +12,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 )
 
@@ -70,7 +71,7 @@ func updateListedToken(listedToken map[string]common.ListedToken, symbol, name s
 func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
 	tokenSymbol *blockchain.TokenInfoGetter) ([]common.ListedToken, error) {
 	var (
-		logger       = f.sugar.With("func", "accounting/cmd/accounting-listed-token-fetcher")
+		logger       = f.sugar.With("func", caller.GetCurrentFunctionName())
 		result       = make(map[string]common.ListedToken)
 		returnResult []common.ListedToken
 	)

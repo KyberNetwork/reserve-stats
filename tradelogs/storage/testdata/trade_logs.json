@@ -1,6 +1,6 @@
 [
     {
-        "timestamp": 1554353231,
+        "timestamp": 1554353231000,
         "block_number": 6100010,
         "tx_hash": "0x33dcdbed63556a1d90b7e0f626bfaf20f6f532d2ae8bf24c22abb15c4e1fff01",
         "eth_receival_sender": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
@@ -20,7 +20,9 @@
         "wallet_fees": null,
         "ip": "",
         "country": "",
-        "uid": ""
+        "uid": "",
+        "eth_amount": 999995137653743773,
+        "original_eth_amount": 999995137653743774
     },
     {
         "timestamp": 1554367631,

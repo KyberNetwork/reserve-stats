@@ -6,20 +6,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/deployment"
-
-	"github.com/KyberNetwork/tokenrate/coingecko"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/nanmu42/etherscan-api"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
+	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
+	"github.com/KyberNetwork/tokenrate/coingecko"
 )
 
 type executeJob func(*zap.SugaredLogger) ([]common.TradeLog, error)
@@ -147,7 +147,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 		go func(sugar *zap.SugaredLogger, workerID int) {
 			logger := sugar.With("worker_id", workerID)
 			logger.Infow("starting worker",
-				"func", "tradelogs/workers/NewPool",
+				"func", caller.GetCurrentFunctionName(),
 				"max_workers", maxWorkers,
 			)
 			for j := range p.jobCh {
@@ -179,7 +179,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 
 			}
 			logger.Infow("worker stopped",
-				"func", "tradelogs/workers/NewPool",
+				"func", caller.GetCurrentFunctionName(),
 				"max_workers", maxWorkers,
 			)
 			p.wg.Done()
@@ -191,7 +191,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 func (p *Pool) markAsFailed(order int) {
 	var (
 		logger = p.sugar.With(
-			"func", "tradelogs/workers/Pool.markAsFailed",
+			"func", caller.GetCurrentFunctionName(),
 			"order", order,
 		)
 	)
@@ -213,7 +213,7 @@ func (p *Pool) markAsFailed(order int) {
 func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradeLog) error {
 	var (
 		logger = p.sugar.With(
-			"func", "tradelogs/workers/Pool.serialSaveTradeLogs",
+			"func", caller.GetCurrentFunctionName(),
 			"order", order,
 		)
 		err error
@@ -262,7 +262,7 @@ func (p *Pool) GetLastCompleteJobOrder() int {
 func (p *Pool) Run(j job) {
 	_, from, to := j.info()
 	p.sugar.Infow("putting new job to queue",
-		"func", "tradelogs/workers/Run",
+		"func", caller.GetCurrentFunctionName(),
 		"from", from.String(),
 		"to", to.String())
 	p.jobCh <- j
@@ -271,7 +271,7 @@ func (p *Pool) Run(j job) {
 // Shutdown stops the workers pool
 func (p *Pool) Shutdown() {
 	p.sugar.Infow("workers pool shutting down",
-		"func", "tradelogs/workers/Shutdown")
+		"func", caller.GetCurrentFunctionName())
 	close(p.jobCh)
 	p.wg.Wait()
 	close(p.errCh)

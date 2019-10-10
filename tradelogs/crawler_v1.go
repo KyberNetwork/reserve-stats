@@ -180,6 +180,8 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 			} else if tradeLog.DestAddress == blockchain.ETHAddr {
 				tradeLog.EthAmount = tradeLog.DestAmount
 			}
+			tradeLog.OriginalEthAmount = tradeLog.EthAmount // some case EthAmount
+			// will be multiple so we keep OriginalEthAmount as a copy of original amount.
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)

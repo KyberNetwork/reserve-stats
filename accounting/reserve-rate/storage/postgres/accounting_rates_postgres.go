@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/reserve-rate/storage"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	lbdCommon "github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 )
@@ -44,9 +45,7 @@ func (rdb *RatesStorage) updateRsvAddrs(tx *sqlx.Tx, rsvs []string) error {
 	const rsvStmt = `INSERT INTO reserves (address)
 	VALUES(unnest($1::TEXT[]))
 	ON CONFLICT ON CONSTRAINT reserves_address_key DO NOTHING`
-	var logger = rdb.sugar.With(
-		"func", "reserverates/storage/postgres/RateStorage.updateRsvAddr",
-	)
+	var logger = rdb.sugar.With("func", caller.GetCurrentFunctionName())
 
 	logger.Debugw("updating rsv...", "query", rsvStmt)
 
@@ -58,9 +57,7 @@ func (rdb *RatesStorage) updateTokens(tx *sqlx.Tx, tokens []string) error {
 	const tkStmt = `INSERT INTO tokens(symbol)
 	VALUES(unnest($1::TEXT[]))
 	ON CONFLICT ON CONSTRAINT tokens_symbol_key DO NOTHING`
-	var logger = rdb.sugar.With(
-		"func", "reserverates/storage/postgres/RateStorage.updateToken",
-	)
+	var logger = rdb.sugar.With("func", caller.GetCurrentFunctionName())
 
 	logger.Debugw("updating tokens...", "query", tkStmt)
 
@@ -72,9 +69,7 @@ func (rdb *RatesStorage) updateQuotes(tx *sqlx.Tx, quotes []string) error {
 	const bsStmt = `INSERT INTO quotes(symbol) 
 	VALUES(unnest($1::TEXT[]))
 	ON CONFLICT ON CONSTRAINT quotes_symbol_key DO NOTHING`
-	var logger = rdb.sugar.With(
-		"func", "reserverates/storage/postgres/RateStorage.updateQuotes",
-	)
+	var logger = rdb.sugar.With("func", caller.GetCurrentFunctionName())
 
 	logger.Debugw("updating quotes...", "query", bsStmt)
 
@@ -83,7 +78,7 @@ func (rdb *RatesStorage) updateQuotes(tx *sqlx.Tx, quotes []string) error {
 }
 
 //UpdateRatesRecords update mutiple rate records from a block with mutiple reserve address into the DB
-func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lbdCommon.BlockInfo, rateRecords map[string]map[string]float64, ethusdRate float64) error {
+func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lbdCommon.BlockInfo, rateRecords map[string]map[string]float64, ethusdRate float64) (err error) {
 	var (
 		rsvAddrs    = make(map[string]bool)
 		rsvAddrsArr []string
@@ -92,7 +87,7 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lbdCommon.BlockInfo, rateR
 		quotes      = make(map[string]bool)
 		quotesArr   []string
 		logger      = rdb.sugar.With(
-			"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
+			"func", caller.GetCurrentFunctionName(),
 			"block_number", blockInfo.Block,
 			"timestamp", blockInfo.Timestamp.String(),
 		)
@@ -189,7 +184,7 @@ func (rdb *RatesStorage) GetETHUSDRates(from, to time.Time) (storage.AccountingR
 
 		dbResult []usdRateFromDB
 		logger   = rdb.sugar.With(
-			"func", "reserverates/storage/postgres/RateStorage.GetUSDRate",
+			"func", caller.GetCurrentFunctionName(),
 			"from", from.String(),
 			"to", to.String(),
 		)
@@ -217,7 +212,7 @@ func (rdb *RatesStorage) GetRates(from, to time.Time) (map[string]storage.Accoun
 		result  = make(map[string]storage.AccountingReserveRates)
 		rowData = ratesFromDB{}
 		logger  = rdb.sugar.With(
-			"func", "reserverates/storage/postgres/RateStorage.GetRates",
+			"func", caller.GetCurrentFunctionName(),
 			"from", from.String(),
 			"to", to.String(),
 		)
@@ -268,7 +263,7 @@ func (rdb *RatesStorage) GetRates(from, to time.Time) (map[string]storage.Accoun
 //updateETHUSDPrice store the ETHUSD rate at that blockInfo
 func (rdb *RatesStorage) updateETHUSDPrice(blockInfo lbdCommon.BlockInfo, ethusdRate float64, tx *sqlx.Tx) error {
 	var logger = rdb.sugar.With(
-		"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
+		"func", caller.GetCurrentFunctionName(),
 		"block_number", blockInfo.Block,
 		"timestamp", blockInfo.Timestamp.String(),
 	)
@@ -297,7 +292,7 @@ func (rdb *RatesStorage) GetLastResolvedBlockInfo(reserveAddr ethereum.Address) 
 	)
 	var (
 		rateTableResult = lbdCommon.BlockInfo{}
-		logger          = rdb.sugar.With("func", "accounting/reserve-rate/storage/postgres/RatesStorage.GetLastResolvedBlockInfo")
+		logger          = rdb.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 
 	logger.Debugw("Querying last resolved block from rates table...", "query", selectStmt)

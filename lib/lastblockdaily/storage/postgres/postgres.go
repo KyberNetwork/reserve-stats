@@ -7,6 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
@@ -48,7 +49,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB, options ...Option) (*BlockInfo
 CREATE INDEX IF NOT EXISTS %[1]s_time_idx ON %[1]s (time);
 `
 	var (
-		logger     = sugar.With("func", "lib/blockstorage/storage/postgres/Newdb")
+		logger     = sugar.With("func", caller.GetCurrentFunctionName())
 		tableNames = map[string]string{blockInfoTable: blockInfoTable}
 	)
 	hs := &BlockInfoStorage{
@@ -83,7 +84,7 @@ func (bidb *BlockInfoStorage) Close() error {
 func (bidb *BlockInfoStorage) UpdateBlockInfo(blockInfo common.BlockInfo) error {
 	var (
 		logger = bidb.sugar.With(
-			"func", "lib/last-block-daily/storage/postgres/BlockInfoStorage.UpdateBlockInfo",
+			"func", caller.GetCurrentFunctionName(),
 			"Block", blockInfo.Block,
 		)
 	)
@@ -107,7 +108,7 @@ func (bidb *BlockInfoStorage) UpdateBlockInfo(blockInfo common.BlockInfo) error 
 func (bidb *BlockInfoStorage) GetBlockInfo(atTime time.Time) (common.BlockInfo, error) {
 	var (
 		logger = bidb.sugar.With(
-			"func", "lib/last-block-daily/storage/postgres/BlockInfoStorage.Resolve",
+			"func", caller.GetCurrentFunctionName(),
 			"time", atTime.String(),
 		)
 		result common.BlockInfo

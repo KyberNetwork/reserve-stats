@@ -9,6 +9,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 )
 
 var (
@@ -53,7 +55,7 @@ func NewVersionedWrapperFallback(sugar *zap.SugaredLogger, client bind.ContractB
 
 func (vwf *VersionedWrapperFallback) getReserveRateFallback(block uint64, rsvAddr common.Address, srcs, dsts []common.Address) ([]*big.Int, []*big.Int, error) {
 	var (
-		logger = vwf.sugar.With("func", "lib/contracts/VersionedWrapperFallback.GetReserveRate",
+		logger = vwf.sugar.With("func", caller.GetCurrentFunctionName(),
 			"block", block,
 			"reserve_addr", rsvAddr.Hex(),
 		)
@@ -160,7 +162,7 @@ func (vwf *VersionedWrapperFallback) getReserveRateFallback(block uint64, rsvAdd
 // GetReserveRate is the same as VersionedWrapper.GetReserveRate but fallback to calling each reserve contract
 // directly in case of an exception happens.
 func (vwf *VersionedWrapperFallback) GetReserveRate(block uint64, rsvAddr common.Address, srcs, dsts []common.Address) ([]*big.Int, []*big.Int, error) {
-	var logger = vwf.sugar.With("func", "lib/contracts/VersionedWrapperFallback.GetReserveRate",
+	var logger = vwf.sugar.With("func", caller.GetCurrentFunctionName(),
 		"block", block,
 		"reserve_addr", rsvAddr.Hex(),
 	)

@@ -8,6 +8,7 @@ import (
 	"github.com/lib/pq"
 	"go.uber.org/zap"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -32,7 +33,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*HuobiStorage, error) {
 CREATE INDEX IF NOT EXISTS huobi_trades_time_idx ON huobi_trades ((data ->> 'created-at'));
 `
 	var (
-		logger = sugar.With("func", "reserverates/storage/postgres/Newdb")
+		logger = sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	hs := &HuobiStorage{
 		sugar: sugar,
@@ -55,11 +56,11 @@ func (hdb *HuobiStorage) Close() error {
 }
 
 //UpdateTradeHistory store the TradeHistory rate at that blockInfo
-func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory) error {
+func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory) (err error) {
 	var (
 		nTrades = len(trades)
 		logger  = hdb.sugar.With(
-			"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
+			"func", caller.GetCurrentFunctionName(),
 			"number of records", nTrades,
 		)
 		ids      []int64
@@ -76,22 +77,22 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory)
 
 	tx, err := hdb.db.Beginx()
 	if err != nil {
-		return err
+		return
 	}
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 	for _, trade := range trades {
-		data, err := json.Marshal(trade)
+		var data []byte
+		data, err = json.Marshal(trade)
 		if err != nil {
-			return err
+			return
 		}
 		ids = append(ids, trade.ID)
 		dataJSON = append(dataJSON, data)
 	}
 	_, err = tx.Exec(updateStmt, pq.Array(ids), pq.Array(dataJSON))
 	if err != nil {
-		return err
+		return
 	}
-
 	return err
 }
 
@@ -101,7 +102,7 @@ func (hdb *HuobiStorage) GetTradeHistory(from, to time.Time) ([]huobi.TradeHisto
 		dbResult [][]byte
 		result   []huobi.TradeHistory
 		logger   = hdb.sugar.With(
-			"func", "reserverates/storage/postgres/RateStorage.UpdateRatesRecords",
+			"func", caller.GetCurrentFunctionName(),
 			"from", from.String(),
 			"to", to.String(),
 		)
@@ -126,9 +127,7 @@ func (hdb *HuobiStorage) GetLastStoredTimestamp() (time.Time, error) {
 	var (
 		dbResult uint64
 		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
-		logger   = hdb.sugar.With(
-			"func", "accounting/huobi/storage/postgres/RateStorage.GetLastStoredTimestamp",
-		)
+		logger   = hdb.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	const selectStmt = `SELECT COALESCE(MAX(data->>'created-at'), '0') FROM huobi_trades`
 	logger.Debugw("querying trade history...", "query", selectStmt)

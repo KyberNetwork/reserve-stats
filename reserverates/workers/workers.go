@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
 	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
@@ -124,7 +125,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, rateStorage storage.Reser
 		go func(sugar *zap.SugaredLogger, workerID int) {
 			logger := sugar.With("worker_id", workerID)
 			logger.Infow("starting worker",
-				"func", "reserverates/workers/NewPool",
+				"func", caller.GetCurrentFunctionName(),
 				"max_workers", maxWorkers)
 
 			for j := range pool.jobCh {
@@ -148,7 +149,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, rateStorage storage.Reser
 			}
 
 			logger.Infow("worker stopped",
-				"func", "reserverates/workers/NewPool",
+				"func", caller.GetCurrentFunctionName(),
 				"max_workers", maxWorkers)
 			pool.wg.Done()
 		}(sugar, i)
@@ -160,7 +161,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, rateStorage storage.Reser
 func (p *Pool) markAsFailed(order int) {
 	var (
 		logger = p.sugar.With(
-			"func", "reserverates/workers/Pool.markAsFailed",
+			"func", caller.GetCurrentFunctionName(),
 			"order", order,
 		)
 	)
@@ -184,7 +185,7 @@ func (p *Pool) serialSaveTradeLogs(
 	rates map[string]map[string]common.ReserveRateEntry) error {
 	var (
 		logger = p.sugar.With(
-			"func", "reserverates/workers/Pool.serialSaveTradeLogs",
+			"func", caller.GetCurrentFunctionName(),
 			"order", order,
 			"block_number", blockNumber,
 		)
@@ -233,7 +234,7 @@ func (p *Pool) GetLastCompleteJobOrder() int {
 func (p *Pool) Run(j job) {
 	order, block := j.info()
 	p.sugar.Infow("putting new job to queue",
-		"func", "reserverates/workers/Run",
+		"func", caller.GetCurrentFunctionName(),
 		"order", order,
 		"block", block)
 	p.jobCh <- j
@@ -242,7 +243,7 @@ func (p *Pool) Run(j job) {
 // Shutdown stops the workers pool
 func (p *Pool) Shutdown() {
 	p.sugar.Infow("workers pool shutting down",
-		"func", "reserverates/workers/Shutdown")
+		"func", caller.GetCurrentFunctionName())
 	close(p.jobCh)
 	p.wg.Wait()
 	close(p.errCh)

@@ -6,15 +6,16 @@ import (
 	"os"
 	"time"
 
-	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
-	schema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/schema/tradelogs-post-processor"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/jinzhu/now"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
+
+	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
+	storage "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx"
+	schema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx/schema/tradelogs-post-processor"
 )
 
 func main() {

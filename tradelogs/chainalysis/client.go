@@ -9,10 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 
-	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 const (
@@ -75,7 +76,7 @@ func updateRegisterData(rd registerData, asset, txHash, receiverAddress string) 
 // PushETHSentTransferEvent push eth sent transfer to chainalysis api
 func (c *Client) PushETHSentTransferEvent(tradeLogs []common.TradeLog) error {
 	var (
-		logger = c.sugar.With("func", "tradelogs/chainalysis/Client.PushETHSentTransferEvent")
+		logger = c.sugar.With("func", caller.GetCurrentFunctionName())
 
 		mapRegisterData = make(map[ethereum.Address]registerData)
 	)
@@ -125,7 +126,7 @@ func (c *Client) PushETHSentTransferEvent(tradeLogs []common.TradeLog) error {
 // registerWithdrawalAddress register withdrawal address
 func (c *Client) registerWithdrawalAddress(userAddr ethereum.Address, rw []registerWithdrawal) error {
 	var (
-		logger = c.sugar.With("func", "tradelogs/chainalysis/Client.registerWithdrawalAddress")
+		logger = c.sugar.With("func", caller.GetCurrentFunctionName())
 
 		url = fmt.Sprintf("%s/users/%s/withdrawaladdresses", c.host, userAddr.Hex())
 	)
@@ -139,9 +140,8 @@ func (c *Client) registerWithdrawalAddress(userAddr ethereum.Address, rw []regis
 // registerSentTransfer register sent transfer
 func (c *Client) registerSentTransfer(userAddr ethereum.Address, rst []registerSentTransfer) error {
 	var (
-		logger = c.sugar.With("func", "tradelogs/chainalysis/Client.registerWithdrawalAddress")
-
-		url = fmt.Sprintf("%s/users/%s/transfers/sent", c.host, userAddr.Hex())
+		logger = c.sugar.With("func", caller.GetCurrentFunctionName())
+		url    = fmt.Sprintf("%s/users/%s/transfers/sent", c.host, userAddr.Hex())
 	)
 	logger.Debugw("register sent transfer",
 		"url", url,
@@ -152,7 +152,7 @@ func (c *Client) registerSentTransfer(userAddr ethereum.Address, rst []registerS
 
 // registerChainAlysis common function to register to chain alysis api
 func (c *Client) registerChainAlysis(url string, data interface{}) error {
-	var logger = c.sugar.With("func", "tradelogs/chainalysis/Client.registerChainAlysis")
+	var logger = c.sugar.With("func", caller.GetCurrentFunctionName())
 	body, err := json.Marshal(data)
 	if err != nil {
 		return err

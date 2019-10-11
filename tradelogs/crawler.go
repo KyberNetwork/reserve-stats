@@ -173,6 +173,7 @@ func fillWalletFees(tradeLog common.TradeLog, logItem types.Log) (common.TradeLo
 	walletFee := common.WalletFee{
 		ReserveAddress: reserveAddr,
 		WalletAddress:  walletAddr,
+		WalletName:     WalletAddrToName(walletAddr),
 		Amount:         fee.Big(),
 		Index:          logItem.Index,
 	}

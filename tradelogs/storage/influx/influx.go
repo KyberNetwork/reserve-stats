@@ -232,8 +232,10 @@ func (is *Storage) getWalletFeeAmount(log common.TradeLog) (float64, float64, er
 func (is *Storage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error) {
 	var points []*client.Point
 	var walletAddr ethereum.Address
+	var walletName string
 	if len(log.WalletFees) > 0 {
 		walletAddr = log.WalletFees[0].WalletAddress
+		walletName = log.WalletFees[0].WalletName
 	}
 
 	tags := map[string]string{
@@ -261,6 +263,10 @@ func (is *Storage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error)
 	}
 	if !blockchain.IsZeroAddress(walletAddr) {
 		tags[logschema.WalletAddress.String()] = walletAddr.String()
+	}
+
+	if len(walletName) != 0 {
+		tags[logschema.WalletName.String()] = walletName
 	}
 
 	ethAmount, err := is.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)

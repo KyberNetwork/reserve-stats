@@ -27,6 +27,7 @@ type record struct {
 	SrcAmount          float64        `db:"src_amount"`
 	DestAmount         float64        `db:"dst_amount"`
 	WalletAddress      string         `db:"wallet_address"`
+	WalletName         string         `db:"wallet_name"`
 	SrcBurnAmount      float64        `db:"src_burn_amount"`
 	DstBurnAmount      float64        `db:"dst_burn_amount"`
 	SrcWalletFeeAmount float64        `db:"src_wallet_fee_amount"`
@@ -45,8 +46,10 @@ type record struct {
 
 func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error) {
 	var walletAddr ethereum.Address
+	var walletName string
 	if len(log.WalletFees) > 0 {
 		walletAddr = log.WalletFees[0].WalletAddress
+		walletName = log.WalletFees[0].WalletName
 	}
 	ethAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)
 	if err != nil {
@@ -91,6 +94,7 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error)
 		SrcAmount:          srcAmount,
 		DestAmount:         dstAmount,
 		WalletAddress:      walletAddr.String(),
+		WalletName:         walletName,
 		SrcBurnAmount:      srcBurnAmount,
 		DstBurnAmount:      dstBurnAmount,
 		SrcWalletFeeAmount: srcWalletFee,

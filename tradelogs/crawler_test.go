@@ -289,7 +289,8 @@ func TestCrawler_GetEthAmount(t *testing.T) {
 	require.Len(t, tradeLogs, 2)
 	require.Equal(t, big.NewInt(682000000000000000), tradeLogs[0].EthAmount)
 	// eth to weth
-	require.Equal(t, big.NewInt(500000000000000000), tradeLogs[1].EthAmount)
+	require.Equal(t, big.NewInt(500000000000000000), tradeLogs[1].OriginalEthAmount)
+	require.Equal(t, int64(0), tradeLogs[1].EthAmount.Int64())
 	for _, tradeLog := range tradeLogs {
 		assertTradeLog(t, tradeLog)
 	}
@@ -304,7 +305,8 @@ func TestCrawler_GetEthAmount(t *testing.T) {
 	}
 	require.Equal(t, big.NewInt(int64(478695176421724747)), tradeLogs[0].OriginalEthAmount)
 	require.Equal(t, big.NewInt(int64(478695176421724747)*2), tradeLogs[0].EthAmount)
-	require.Equal(t, big.NewInt(10000000000000000), tradeLogs[1].EthAmount)
+	require.Equal(t, int64(0), tradeLogs[1].EthAmount.Int64())
+	require.Equal(t, big.NewInt(10000000000000000), tradeLogs[1].OriginalEthAmount)
 	require.Equal(t, big.NewInt(int64(1249340978082777639)), tradeLogs[2].EthAmount)
 
 	// test v1

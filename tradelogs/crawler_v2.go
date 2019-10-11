@@ -135,9 +135,7 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			}
 			// keep OriginalEthAmount as origin amount of EthAmount
 			tradeLog.OriginalEthAmount = big.NewInt(0).Set(tradeLog.EthAmount)
-			if len(tradeLog.BurnFees) >= 2 { // EthAmount get multiply in case trade burnable token
-				tradeLog.EthAmount = tradeLog.EthAmount.Mul(tradeLog.EthAmount, big.NewInt(int64(len(tradeLog.BurnFees))))
-			}
+			tradeLog.EthAmount = tradeLog.EthAmount.Mul(tradeLog.EthAmount, big.NewInt(int64(len(tradeLog.BurnFees))))
 
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			// one trade only has one and only ExecuteTrade event

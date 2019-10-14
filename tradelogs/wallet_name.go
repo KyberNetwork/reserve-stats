@@ -50,8 +50,5 @@ var walletNamingMap = map[ethereum.Address]string{
 
 // WalletAddrToName convert eth addr to name
 func WalletAddrToName(addr ethereum.Address) string {
-	if name, ok := walletNamingMap[addr]; ok {
-		return name
-	}
-	return ""
+	return walletNamingMap[addr]
 }

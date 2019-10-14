@@ -78,14 +78,6 @@ func (tldb *TradeLogDB) saveTokens(tx *sqlx.Tx, tokensArray []string) error {
 	return err
 }
 
-func (tldb *TradeLogDB) saveWallets(tx *sqlx.Tx, walletAddressArray []string) error {
-	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
-	query := fmt.Sprintf(insertionAddressTemplate, schema.WalletTableName)
-	logger.Debugw("updating rsv...", "query", query)
-	_, err := tx.Exec(query, pq.StringArray(walletAddressArray))
-	return err
-}
-
 // SaveTradeLogs persist trade logs to DB
 func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
 	var (
@@ -94,8 +86,6 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
 		reserveAddressArray []string
 		tokens              = make(map[string]struct{})
 		tokensArray         []string
-		walletAddress       = make(map[string]struct{})
-		walletAddressArray  []string
 		records             []*record
 
 		users = make(map[ethereum.Address]struct{})
@@ -140,11 +130,6 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
 			tokens[token] = struct{}{}
 			tokensArray = append(tokensArray, token)
 		}
-		wallet := r.WalletAddress
-		if _, ok := walletAddress[wallet]; !ok {
-			walletAddress[wallet] = struct{}{}
-			walletAddressArray = append(walletAddressArray, wallet)
-		}
 	}
 
 	tx, err := tldb.db.Beginx()
@@ -163,11 +148,6 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
 		return err
 	}
 
-	err = tldb.saveWallets(tx, walletAddressArray)
-	if err != nil {
-		return err
-	}
-
 	for _, r := range records {
 		logger.Debugw("Record", "record", r)
 		_, err = tx.NamedExec(insertionUserTemplate, r)
@@ -175,6 +155,13 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
 			logger.Debugw("Error while add users", "error", err)
 			return err
 		}
+
+		_, err = tx.NamedExec(insertionWalletTemplate, r)
+		if err != nil {
+			logger.Debugw("Error while add wallet", "error", err)
+			return err
+		}
+
 		_, err = tx.NamedExec(insertionTradelogsTemplate, r)
 		if err != nil {
 			logger.Debugw("Error while add trade logs", "error", err)
@@ -294,6 +281,17 @@ const insertionAddressTemplate = `INSERT INTO %[1]s(
 	unnest($1::TEXT[])
 )
 ON CONFLICT ON CONSTRAINT %[1]s_address_key DO NOTHING`
+
+const insertionWalletTemplate string = `
+INSERT INTO wallet(
+	address,
+	name
+) VALUES (
+	:wallet_address,
+	:wallet_name
+)
+ON CONFLICT (address) 
+DO NOTHING;`
 
 const insertionUserTemplate string = `
 INSERT INTO users(

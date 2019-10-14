@@ -255,6 +255,11 @@ func (is *Storage) rowToTradeLog(value []interface{},
 		return tradeLog, fmt.Errorf("failed to get wallet_addr: %s", err)
 	}
 
+	walletName, ok := value[idxs[logschema.IntegrationApp]].(string)
+	if !ok {
+		walletName = ""
+	}
+
 	txSender, err := influxdb.GetAddressFromInterface(value[idxs[logschema.TxSender]])
 	if err != nil {
 		return tradeLog, fmt.Errorf("failded to get tx_sender: %s", err)
@@ -280,6 +285,7 @@ func (is *Storage) rowToTradeLog(value []interface{},
 		DestAmount:        dstAmountInWei,
 		FiatAmount:        fiatAmount,
 		WalletAddress:     walletAddr,
+		WalletName:        walletName,
 
 		SrcBurnAmount:      srcBurnFee,
 		DstBurnAmount:      dstBurnFee,

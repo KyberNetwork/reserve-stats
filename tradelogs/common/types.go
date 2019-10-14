@@ -21,6 +21,7 @@ type BurnFee struct {
 type WalletFee struct {
 	ReserveAddress ethereum.Address `json:"reserve_addr"`
 	WalletAddress  ethereum.Address `json:"wallet_addr"`
+	WalletName     string           `json:"wallet_name"`
 	Amount         *big.Int         `json:"amount"`
 	Index          uint             `json:"index"` // the index of event log in transaction receipt
 }
@@ -47,6 +48,7 @@ type TradeLog struct {
 	DestAmount        *big.Int         `json:"dst_amount"`
 	FiatAmount        float64          `json:"fiat_amount"`
 	WalletAddress     ethereum.Address `json:"wallet_addr"`
+	WalletName        string           `json:"wallet_name"`
 
 	SrcBurnAmount      float64 `json:"src_burn_amount"`
 	DstBurnAmount      float64 `json:"dst_burn_amount"`

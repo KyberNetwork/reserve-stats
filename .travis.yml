@@ -63,6 +63,11 @@ deploy:
     on:
       tags: true
 
+  - provider: script
+    script: bash .travis/awx_job_launch.sh $TRAVIS_BRANCH
+    on:
+      all_branches: true
+
   - provider: s3
     access_key_id: $AWS_ACCESS_KEY_ID
     secret_access_key: $AWS_SECRET_ACCESS_KEY

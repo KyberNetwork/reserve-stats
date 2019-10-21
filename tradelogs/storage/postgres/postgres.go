@@ -361,8 +361,34 @@ INSERT INTO "` + schema.TradeLogsTableName + `"(
 	:tx_sender,
  	:receiver_address
 )
-ON CONFLICT
-DO NOTHING;`
+ON CONFLICT (tx_hash, index)
+DO 
+UPDATE SET -- update every fields if record exists (except field is_first_trade)
+	timestamp = :timestamp,
+	block_number = :block_number,
+	eth_amount = :eth_amount,
+	original_eth_amount = :original_eth_amount,
+ 	user_address_id = (SELECT id FROM users WHERE address=:user_address),
+ 	src_address_id = (SELECT id FROM token WHERE address=:src_address),
+ 	dst_address_id = (SELECT id FROM token WHERE address=:dst_address),
+ 	src_reserve_address_id = (SELECT id FROM reserve WHERE address=:src_reserve_address),
+ 	dst_reserve_address_id = (SELECT id FROM reserve WHERE address=:dst_reserve_address),
+ 	src_amount = :src_amount,
+ 	dst_amount = :dst_amount,
+ 	wallet_address_id = (SELECT id FROM wallet WHERE address=:wallet_address),
+ 	src_burn_amount = :src_burn_amount,
+ 	dst_burn_amount = :dst_burn_amount,
+ 	src_wallet_fee_amount = :src_wallet_fee_amount,
+ 	dst_wallet_fee_amount = :dst_wallet_fee_amount,
+ 	integration_app = :integration_app,
+ 	ip = :ip,
+ 	country = :country,
+ 	eth_usd_rate = :eth_usd_rate,
+ 	eth_usd_provider = :eth_usd_provider,
+	kyced = :kyced,
+	tx_sender = :tx_sender,
+	receiver_address = :receiver_address
+;`
 
 const selectTradeLogsQuery = `
 SELECT a.timestamp AS timestamp, block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,

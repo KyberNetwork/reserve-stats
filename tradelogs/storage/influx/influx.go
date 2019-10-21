@@ -113,6 +113,7 @@ func prepareTradeLogQuery() string {
 		tradeLogQueryFields = []logschema.FieldName{
 			logschema.Time,
 			logschema.BlockNumber,
+			logschema.OriginalEthAmount,
 			logschema.EthAmount,
 			logschema.UserAddr,
 			logschema.SrcAddr,

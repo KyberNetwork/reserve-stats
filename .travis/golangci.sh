@@ -43,7 +43,7 @@ case "$build_part" in
     3)
         build_file .travis/build_part_3
         ;;
-    3)
+    4)
         build_file .travis/build_part_4
         ;;
     *)

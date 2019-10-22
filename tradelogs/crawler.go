@@ -173,6 +173,7 @@ func fillWalletFees(tradeLog common.TradeLog, logItem types.Log) (common.TradeLo
 	walletFee := common.WalletFee{
 		ReserveAddress: reserveAddr,
 		WalletAddress:  walletAddr,
+		WalletName:     WalletAddrToName(walletAddr),
 		Amount:         fee.Big(),
 		Index:          logItem.Index,
 	}
@@ -239,11 +240,7 @@ func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log) (common.Trade
 	tradeLog.SrcAmount = srcAmount.Big()
 	tradeLog.DestAmount = destAmount.Big()
 	tradeLog.OriginalEthAmount = ethAmount.Big()
-	if len(tradeLog.BurnFees) >= 2 {
-		tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(len(tradeLog.BurnFees))))
-	} else {
-		tradeLog.EthAmount = ethAmount.Big()
-	}
+	tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(len(tradeLog.BurnFees))))
 	tradeLog.TransactionHash = logItem.TxHash
 	tradeLog.Index = logItem.Index
 	tradeLog.UserAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())

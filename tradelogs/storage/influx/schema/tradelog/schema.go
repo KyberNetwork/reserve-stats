@@ -43,6 +43,8 @@ const (
 	IntegrationApp //integration_app
 	//WalletAddress is the address of wallet associated with trade log
 	WalletAddress //wallet_addr
+	// WalletName is the name of wallet
+	WalletName //wallet_name
 	//LogIndex is the index of the log in that block
 	LogIndex //log_index
 	//SourceBurnAmount is the name of burnFee amount  for source rsv
@@ -78,10 +80,12 @@ var tradeLogSchemaFields = map[string]FieldName{
 	"dst_amount":            DstAmount,
 	"eth_usd_rate":          EthUSDRate,
 	"eth_amount":            EthAmount,
+	"original_eth_amount":   OriginalEthAmount,
 	"fiat_amount":           FiatAmount,
 	"log_index":             LogIndex,
 	"integration_app":       IntegrationApp,
 	"wallet_addr":           WalletAddress,
+	"wallet_name":           WalletName,
 	"src_burn_amount":       SourceBurnAmount,
 	"dst_burn_amount":       DestBurnAmount,
 	"src_wallet_fee_amount": SourceWalletFeeAmount,

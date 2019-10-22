@@ -78,14 +78,6 @@ func (tldb *TradeLogDB) saveTokens(tx *sqlx.Tx, tokensArray []string) error {
 	return err
 }
 
-func (tldb *TradeLogDB) saveWallets(tx *sqlx.Tx, walletAddressArray []string) error {
-	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
-	query := fmt.Sprintf(insertionAddressTemplate, schema.WalletTableName)
-	logger.Debugw("updating rsv...", "query", query)
-	_, err := tx.Exec(query, pq.StringArray(walletAddressArray))
-	return err
-}
-
 // SaveTradeLogs persist trade logs to DB
 func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
 	var (
@@ -94,8 +86,6 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
 		reserveAddressArray []string
 		tokens              = make(map[string]struct{})
 		tokensArray         []string
-		walletAddress       = make(map[string]struct{})
-		walletAddressArray  []string
 		records             []*record
 
 		users = make(map[ethereum.Address]struct{})
@@ -140,11 +130,6 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
 			tokens[token] = struct{}{}
 			tokensArray = append(tokensArray, token)
 		}
-		wallet := r.WalletAddress
-		if _, ok := walletAddress[wallet]; !ok {
-			walletAddress[wallet] = struct{}{}
-			walletAddressArray = append(walletAddressArray, wallet)
-		}
 	}
 
 	tx, err := tldb.db.Beginx()
@@ -163,11 +148,6 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
 		return err
 	}
 
-	err = tldb.saveWallets(tx, walletAddressArray)
-	if err != nil {
-		return err
-	}
-
 	for _, r := range records {
 		logger.Debugw("Record", "record", r)
 		_, err = tx.NamedExec(insertionUserTemplate, r)
@@ -175,6 +155,13 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
 			logger.Debugw("Error while add users", "error", err)
 			return err
 		}
+
+		_, err = tx.NamedExec(insertionWalletTemplate, r)
+		if err != nil {
+			logger.Debugw("Error while add wallet", "error", err)
+			return err
+		}
+
 		_, err = tx.NamedExec(insertionTradelogsTemplate, r)
 		if err != nil {
 			logger.Debugw("Error while add trade logs", "error", err)
@@ -295,6 +282,17 @@ const insertionAddressTemplate = `INSERT INTO %[1]s(
 )
 ON CONFLICT ON CONSTRAINT %[1]s_address_key DO NOTHING`
 
+const insertionWalletTemplate string = `
+INSERT INTO wallet(
+	address,
+	name
+) VALUES (
+	:wallet_address,
+	:wallet_name
+)
+ON CONFLICT (address) 
+DO NOTHING;`
+
 const insertionUserTemplate string = `
 INSERT INTO users(
 	address,
@@ -363,8 +361,34 @@ INSERT INTO "` + schema.TradeLogsTableName + `"(
 	:tx_sender,
  	:receiver_address
 )
-ON CONFLICT
-DO NOTHING;`
+ON CONFLICT (tx_hash, index)
+DO 
+UPDATE SET -- update every fields if record exists (except field is_first_trade)
+	timestamp = :timestamp,
+	block_number = :block_number,
+	eth_amount = :eth_amount,
+	original_eth_amount = :original_eth_amount,
+ 	user_address_id = (SELECT id FROM users WHERE address=:user_address),
+ 	src_address_id = (SELECT id FROM token WHERE address=:src_address),
+ 	dst_address_id = (SELECT id FROM token WHERE address=:dst_address),
+ 	src_reserve_address_id = (SELECT id FROM reserve WHERE address=:src_reserve_address),
+ 	dst_reserve_address_id = (SELECT id FROM reserve WHERE address=:dst_reserve_address),
+ 	src_amount = :src_amount,
+ 	dst_amount = :dst_amount,
+ 	wallet_address_id = (SELECT id FROM wallet WHERE address=:wallet_address),
+ 	src_burn_amount = :src_burn_amount,
+ 	dst_burn_amount = :dst_burn_amount,
+ 	src_wallet_fee_amount = :src_wallet_fee_amount,
+ 	dst_wallet_fee_amount = :dst_wallet_fee_amount,
+ 	integration_app = :integration_app,
+ 	ip = :ip,
+ 	country = :country,
+ 	eth_usd_rate = :eth_usd_rate,
+ 	eth_usd_provider = :eth_usd_provider,
+	kyced = :kyced,
+	tx_sender = :tx_sender,
+	receiver_address = :receiver_address
+;`
 
 const selectTradeLogsQuery = `
 SELECT a.timestamp AS timestamp, block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,

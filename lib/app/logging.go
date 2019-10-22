@@ -12,13 +12,14 @@ import (
 )
 
 const (
+	infoLevel  = "info"
+	warnLevel  = "warn"
+	errorLevel = "error"
+	fatalLevel = "fatal"
+
 	sentryDSNFlag      = "sentry-dsn"
 	sentryLevelFlag    = "sentry-lv"
-	defaultSentryLevel = "error"
-	errorLevel         = "error"
-	warnLevel          = "warn"
-	fatalLevel         = "fatal"
-	infoLevel          = "info"
+	defaultSentryLevel = errorLevel
 )
 
 // NewSentryFlags returns flags to init sentry client

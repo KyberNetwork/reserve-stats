@@ -76,6 +76,6 @@ func TestPostProcessor_Run(t *testing.T) {
 	fee, err := p.getFeeData(start, end)
 	require.NoError(t, err)
 	assert.Contains(t, fee, "0x63825c174ab367968EC60f061753D3bbD36A0D8F")
-	assert.NoError(t, p.writeReserveVolumeMonthly(start, volume))
+	assert.NoError(t, p.writeReserveFeeMonthly(start, fee))
 
 }

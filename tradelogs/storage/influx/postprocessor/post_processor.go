@@ -107,9 +107,9 @@ func (p *PostProcessor) fromInfluxResultToMap(res []client.Result, tagKeys strin
 	return result, nil
 }
 
-// reserve volume monthly for dst reserve
 func (p *PostProcessor) getVolumeData(beginOfLastMonth, beginOfThisMonth time.Time) (map[string]ReserveVolume, error) {
 	var logger = p.logger.With("func", caller.GetCurrentFunctionName())
+	// reserve volume monthly for src reserve
 	query := fmt.Sprintf(`SELECT SUM(eth_amount) AS eth_volume, SUM(usd_amount) AS usd_volume FROM 
 		(SELECT eth_amount, eth_amount*eth_usd_rate as usd_amount FROM trades WHERE time >= '%s' AND time < '%s' AND src_rsv_addr != '' 
 		AND ((src_addr != '%s' OR dst_addr != '%s') 
@@ -117,7 +117,7 @@ func (p *PostProcessor) getVolumeData(beginOfLastMonth, beginOfThisMonth time.Ti
 		GROUP BY src_rsv_addr) GROUP BY src_rsv_addr FILL(0)`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339),
 		blockchain.ETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.ETHAddr.Hex())
 
-	logger.Debug("src query ", query)
+	logger.Debugw("get src reserve volume ", "query", query)
 
 	res, err := influxdb.QueryDB(p.influxClient, query, p.dbName)
 	if err != nil {
@@ -137,7 +137,7 @@ func (p *PostProcessor) getVolumeData(beginOfLastMonth, beginOfThisMonth time.Ti
 		GROUP BY dst_rsv_addr) GROUP BY dst_rsv_addr FILL(0)`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339),
 		blockchain.ETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.WETHAddr.Hex(), blockchain.ETHAddr.Hex())
 
-	logger.Debug("dst query ", query)
+	logger.Debugw("get dst reserve volume ", "query", query)
 
 	res, err = influxdb.QueryDB(p.influxClient, query, p.dbName)
 	if err != nil {
@@ -192,9 +192,9 @@ func (p *PostProcessor) fromInfluxResultToMapWalletFee(res []client.Result, tagK
 	return result, nil
 }
 
-// reserve volume monthly for dst reserve
 func (p *PostProcessor) getFeeData(beginOfLastMonth time.Time, beginOfThisMonth time.Time) (map[string]FeeVolume, error) {
 	var logger = p.logger.With("func", caller.GetCurrentFunctionName())
+	// reserve fee monthly for src reserve
 	query := fmt.Sprintf(`SELECT SUM(src_burn_amount) AS burn_amount, SUM(src_wallet_fee_amount) AS wallet_fee_amount 
 		FROM trades 
 		WHERE time >= '%s' AND time < '%s' AND src_rsv_addr != ''  
@@ -210,12 +210,12 @@ func (p *PostProcessor) getFeeData(beginOfLastMonth time.Time, beginOfThisMonth 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert result")
 	}
-	// reserve volume monthly for dst reserve
+	// reserve fee monthly for dst reserve
 	query = fmt.Sprintf(`SELECT SUM(dst_burn_amount) AS burn_amount, SUM(dst_wallet_fee_amount) AS wallet_fee_amount 
 		FROM trades 
 		WHERE time >= '%s' AND time < '%s' AND dst_rsv_addr != ''  
 		GROUP BY dst_rsv_addr FILL(0)`, beginOfLastMonth.Format(time.RFC3339), beginOfThisMonth.Format(time.RFC3339))
-	logger.Debug("get dst reserve fee ", "query", query)
+	logger.Debugw("get dst reserve fee ", "query", query)
 
 	res, err = influxdb.QueryDB(p.influxClient, query, p.dbName)
 	if err != nil {

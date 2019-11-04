@@ -19,28 +19,19 @@ func (sv *Server) getMonthlyVolume(c *gin.Context) {
 		query monthlyVolumeQuery
 	)
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
 
 	from, to, err := query.Validate()
 	if err != nil {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
 
 	result, err := sv.storage.GetMonthlyVolume(common.HexToAddress(query.Reserve), from, to)
 	if err != nil {
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.JSON(http.StatusOK, result)

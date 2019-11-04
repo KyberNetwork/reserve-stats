@@ -9,6 +9,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	influxModel "github.com/influxdata/influxdb/models"
 
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -137,10 +138,10 @@ func convertQueryResultToVolume(row influxModel.Row) (map[uint64]*common.VolumeS
 		if err != nil {
 			return nil, err
 		}
-		if result[ts] != nil {
-			result[ts].ETHAmount += vol.ETHAmount
-			result[ts].USDAmount += vol.USDAmount
-			result[ts].Volume += vol.Volume
+		if preVol, ok := result[ts]; ok {
+			preVol.ETHAmount += vol.ETHAmount
+			preVol.USDAmount += vol.USDAmount
+			preVol.Volume += vol.Volume
 		} else {
 			result[ts] = vol
 		}
@@ -199,7 +200,7 @@ func (is *Storage) GetMonthlyVolume(reserveAddr ethereum.Address, fromTime, toTi
 		reserveFilter string
 	)
 
-	if reserveAddr.Hex() != (ethereum.Address{}.Hex()) {
+	if !blockchain.IsZeroAddress(reserveAddr) {
 		reserveFilter = fmt.Sprintf("AND reserve_addr='%s'", reserveAddr.Hex())
 	}
 

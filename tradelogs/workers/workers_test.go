@@ -91,6 +91,10 @@ func (s *mockStorage) GetTokenHeatmap(token ethereum.Address, fromTime, toTime t
 	return nil, nil
 }
 
+func (s *mockStorage) GetMonthlyVolume(rsvAddr ethereum.Address, from, to time.Time) (map[uint64]*common.VolumeStats, error) {
+	return nil, nil
+}
+
 type mockJob struct {
 	order   int
 	failure bool

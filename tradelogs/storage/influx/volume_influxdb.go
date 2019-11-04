@@ -137,7 +137,13 @@ func convertQueryResultToVolume(row influxModel.Row) (map[uint64]*common.VolumeS
 		if err != nil {
 			return nil, err
 		}
-		result[ts] = vol
+		if result[ts] != nil {
+			result[ts].ETHAmount += vol.ETHAmount
+			result[ts].USDAmount += vol.USDAmount
+			result[ts].Volume += vol.Volume
+		} else {
+			result[ts] = vol
+		}
 	}
 	return result, nil
 }
@@ -199,7 +205,7 @@ func (is *Storage) GetMonthlyVolume(reserveAddr ethereum.Address, fromTime, toTi
 
 	var (
 		timeFilter = fmt.Sprintf("(time >='%s' AND time <= '%s')", fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
-		cmd        = fmt.Sprintf("SELECT SUM(%[2]s) AS %[1]s, SUM(%[2]s) AS %[2]s FROM %[3]s WHERE %[4]s %[5]s GROUP BY time FILL(none)",
+		cmd        = fmt.Sprintf("SELECT %[2]s AS %[1]s, %[2]s AS %[2]s, %[3]s AS %[3]s FROM %[4]s WHERE %[5]s %[6]s",
 			volSchema.TokenVolume.String(),
 			volSchema.ETHVolume.String(),
 			volSchema.USDVolume.String(),

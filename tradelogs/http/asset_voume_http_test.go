@@ -28,6 +28,10 @@ func (s *mockStorage) GetReserveVolume(rsvAddr ethereum.Address, token ethereum.
 	return nil, nil
 }
 
+func (s *mockStorage) GetMonthlyVolume(reserveAddr ethereum.Address, fromTime, toTime time.Time) (map[uint64]*common.VolumeStats, error) {
+	return nil, nil
+}
+
 func (s *mockStorage) GetAssetVolume(token ethereum.Address, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
 	from := timeutil.TimeToTimestampMs(fromTime)
 	to := timeutil.TimeToTimestampMs(toTime)

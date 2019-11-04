@@ -27,6 +27,7 @@ var (
 		"h": "rsv_volume_hour",
 		"d": "rsv_volume_day",
 	}
+	monthlyReportMeasurementName = "monthly_report"
 )
 
 func getMeasurementName(baseMeasurement string, timezone int8) string {
@@ -177,4 +178,43 @@ func convertRowValueToVolume(v []interface{}, idxs volSchema.FieldsRegistrar) (u
 		ETHAmount: ethVolume,
 		USDAmount: usdVolume,
 	}, nil
+}
+
+// GetMonthlyVolume returns monthly reserve volume
+func (is *Storage) GetMonthlyVolume(reserveAddr ethereum.Address, fromTime, toTime time.Time) (map[uint64]*common.VolumeStats, error) {
+	var (
+		logger = is.sugar.With(
+			"func", caller.GetCurrentFunctionName(),
+			"reserve", reserveAddr.Hex(),
+			"from", fromTime,
+			"to", toTime,
+		)
+		result        = make(map[uint64]*common.VolumeStats)
+		reserveFilter string
+	)
+
+	if reserveAddr.Hex() != (ethereum.Address{}.Hex()) {
+		reserveFilter = fmt.Sprintf("AND reserve_addr='%s'", reserveAddr.Hex())
+	}
+
+	var (
+		timeFilter = fmt.Sprintf("(time >='%s' AND time <= '%s')", fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
+		cmd        = fmt.Sprintf("SELECT SUM(%[2]s) AS %[1]s, SUM(%[2]s) AS %[2]s FROM %[3]s WHERE %[4]s %[5]s GROUP BY time FILL(none)",
+			volSchema.TokenVolume.String(),
+			volSchema.ETHVolume.String(),
+			volSchema.USDVolume.String(),
+			monthlyReportMeasurementName, timeFilter, reserveFilter)
+	)
+
+	logger.Debugw("get monthly volume query rendered", "query", cmd)
+	response, err := influxdb.QueryDB(is.influxClient, cmd, is.dbName)
+
+	if err != nil {
+		return result, err
+	}
+
+	if len(response) == 0 || len(response[0].Series) == 0 {
+		return result, nil
+	}
+	return convertQueryResultToVolume(response[0].Series[0])
 }

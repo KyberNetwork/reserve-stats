@@ -31,6 +31,7 @@ type Interface interface {
 	GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[ethereum.Address]map[string]float64, error)
 	GetAssetVolume(token ethereum.Address, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error)
 	GetReserveVolume(rsvAddr ethereum.Address, token ethereum.Address, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error)
+	GetMonthlyVolume(rsvAddr ethereum.Address, from, to time.Time) (map[uint64]*common.VolumeStats, error)
 	GetAggregatedWalletFee(reserveAddr, walletAddr, freq string,
 		fromTime, toTime time.Time, timezone int8) (map[uint64]float64, error)
 	GetTradeSummary(from, to time.Time, timezone int8) (map[uint64]*common.TradeSummary, error)

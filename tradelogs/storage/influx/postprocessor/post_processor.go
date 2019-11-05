@@ -47,7 +47,7 @@ func New(influxClient client.Client, logger *zap.SugaredLogger, dbName string) *
 	}
 }
 func (p *PostProcessor) Run(beginOfLastMonth, beginOfThisMonth time.Time) error {
-	volume, err := p.getVolumeData(beginOfThisMonth, beginOfLastMonth)
+	volume, err := p.getVolumeData(beginOfLastMonth, beginOfThisMonth)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (p *PostProcessor) Run(beginOfLastMonth, beginOfThisMonth time.Time) error 
 		return err
 	}
 
-	fee, err := p.getFeeData(beginOfThisMonth, beginOfLastMonth)
+	fee, err := p.getFeeData(beginOfLastMonth, beginOfThisMonth)
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func (p *PostProcessor) Run(beginOfLastMonth, beginOfThisMonth time.Time) error 
 		ReportMeasurement,
 	)
 	p.logger.Debug("query ", query)
-	_, err = influxdb.QueryDB(p.influxClient, query, TradeLogsDatabase)
+	_, err = influxdb.QueryDB(p.influxClient, query, p.dbName)
 	return errors.Wrap(err, "failed to execute fill zero query")
 }
 

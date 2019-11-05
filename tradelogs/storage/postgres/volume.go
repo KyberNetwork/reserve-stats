@@ -162,3 +162,8 @@ func (tldb *TradeLogDB) GetReserveVolume(rsvAddr ethereum.Address, token ethereu
 	}
 	return result, nil
 }
+
+// GetMonthlyVolume returns monthly volume
+func (tldb *TradeLogDB) GetMonthlyVolume(rsvAddr ethereum.Address, from, to time.Time) (map[uint64]*common.VolumeStats, error) {
+	return nil, nil
+}

@@ -2,11 +2,17 @@ package http
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
+)
+
+var (
+	monthlyMaxTimeFrame = time.Hour * 24 * 365 * 10 // ~ 10 years
+	monthlyTimeFrame    = time.Hour * 31 * 24       // 31 days
 )
 
 type monthlyVolumeQuery struct {
@@ -23,7 +29,7 @@ func (sv *Server) getMonthlyVolume(c *gin.Context) {
 		return
 	}
 
-	from, to, err := query.Validate()
+	from, to, err := query.Validate(httputil.TimeRangeQueryWithMaxTimeFrame(monthlyMaxTimeFrame), httputil.TimeRangeQueryWithDefaultTimeFrame(monthlyTimeFrame))
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return

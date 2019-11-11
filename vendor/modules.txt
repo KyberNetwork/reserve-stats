@@ -6,6 +6,8 @@ github.com/KyberNetwork/httpsign-utils/sign
 # github.com/KyberNetwork/tokenrate v0.0.0-20190327091843-b702f2d3511e
 github.com/KyberNetwork/tokenrate/coingecko
 github.com/KyberNetwork/tokenrate
+# github.com/TheZeroSlave/zapsentry v0.0.0-20190902083357-8d59d83a8818
+github.com/TheZeroSlave/zapsentry
 # github.com/aristanetworks/goarista v0.0.0-20181002214814-33151c4543a7
 github.com/aristanetworks/goarista/monotime
 # github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
@@ -52,20 +54,22 @@ github.com/ethereum/go-ethereum/ethdb
 github.com/ethereum/go-ethereum/metrics
 github.com/ethereum/go-ethereum/p2p/netutil
 github.com/ethereum/go-ethereum/accounts
+# github.com/getsentry/sentry-go v0.3.0
+github.com/getsentry/sentry-go
 # github.com/gin-contrib/cors v0.0.0-20181008113111-488de3ec974f
 github.com/gin-contrib/cors
 # github.com/gin-contrib/httpsign v0.0.0-20190301062400-d644b4c2b4c5
 github.com/gin-contrib/httpsign
 github.com/gin-contrib/httpsign/crypto
 github.com/gin-contrib/httpsign/validator
-# github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7
+# github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3
 github.com/gin-contrib/sse
 # github.com/gin-contrib/zap v0.0.0-20180827024651-a4f331736217
 github.com/gin-contrib/zap
-# github.com/gin-gonic/gin v1.3.0
+# github.com/gin-gonic/gin v1.4.0
 github.com/gin-gonic/gin
 github.com/gin-gonic/gin/binding
-github.com/gin-gonic/gin/json
+github.com/gin-gonic/gin/internal/json
 github.com/gin-gonic/gin/render
 # github.com/go-ozzo/ozzo-validation v3.5.0+incompatible
 github.com/go-ozzo/ozzo-validation
@@ -80,7 +84,7 @@ github.com/go-redis/redis/internal/proto
 github.com/go-redis/redis/internal/util
 # github.com/go-stack/stack v1.8.0
 github.com/go-stack/stack
-# github.com/golang/protobuf v1.2.0
+# github.com/golang/protobuf v1.3.1
 github.com/golang/protobuf/proto
 # github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db
 github.com/golang/snappy
@@ -95,12 +99,12 @@ github.com/jinzhu/now
 # github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
 github.com/jmoiron/sqlx
 github.com/jmoiron/sqlx/reflectx
-# github.com/json-iterator/go v1.1.5
+# github.com/json-iterator/go v1.1.6
 github.com/json-iterator/go
 # github.com/lib/pq v1.0.0
 github.com/lib/pq
 github.com/lib/pq/oid
-# github.com/mattn/go-isatty v0.0.4
+# github.com/mattn/go-isatty v0.0.9
 github.com/mattn/go-isatty
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 github.com/modern-go/concurrent
@@ -124,7 +128,7 @@ github.com/qiangmzsx/string-adapter
 github.com/rjeczalik/notify
 # github.com/rs/cors v1.6.0
 github.com/rs/cors
-# github.com/stretchr/testify v1.3.0
+# github.com/stretchr/testify v1.4.0
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
 # github.com/syndtr/goleveldb v0.0.0-20181012014443-6b91fda63f2e
@@ -150,19 +154,19 @@ go.uber.org/atomic
 go.uber.org/multierr
 # go.uber.org/zap v1.9.1
 go.uber.org/zap
-go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/zapcore
+go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/buffer
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
-# golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
+# golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
-# golang.org/x/net v0.0.0-20190311183353-d8887717615a
+# golang.org/x/net v0.0.0-20190503192946-f4e77d36d62c
 golang.org/x/net/websocket
 # golang.org/x/sync v0.0.0-20190423024810-112230192c58
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a
+# golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/time v0.0.0-20190308202827-9d24e82272b4

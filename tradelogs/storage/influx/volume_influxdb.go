@@ -9,6 +9,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	influxModel "github.com/influxdata/influxdb/models"
 
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -27,6 +28,7 @@ var (
 		"h": "rsv_volume_hour",
 		"d": "rsv_volume_day",
 	}
+	monthlyReportMeasurementName = "monthly_report"
 )
 
 func getMeasurementName(baseMeasurement string, timezone int8) string {
@@ -136,7 +138,13 @@ func convertQueryResultToVolume(row influxModel.Row) (map[uint64]*common.VolumeS
 		if err != nil {
 			return nil, err
 		}
-		result[ts] = vol
+		if preVol, ok := result[ts]; ok {
+			preVol.ETHAmount += vol.ETHAmount
+			preVol.USDAmount += vol.USDAmount
+			preVol.Volume += vol.Volume
+		} else {
+			result[ts] = vol
+		}
 	}
 	return result, nil
 }
@@ -177,4 +185,43 @@ func convertRowValueToVolume(v []interface{}, idxs volSchema.FieldsRegistrar) (u
 		ETHAmount: ethVolume,
 		USDAmount: usdVolume,
 	}, nil
+}
+
+// GetMonthlyVolume returns monthly reserve volume
+func (is *Storage) GetMonthlyVolume(reserveAddr ethereum.Address, fromTime, toTime time.Time) (map[uint64]*common.VolumeStats, error) {
+	var (
+		logger = is.sugar.With(
+			"func", caller.GetCurrentFunctionName(),
+			"reserve", reserveAddr.Hex(),
+			"from", fromTime,
+			"to", toTime,
+		)
+		result        = make(map[uint64]*common.VolumeStats)
+		reserveFilter string
+	)
+
+	if !blockchain.IsZeroAddress(reserveAddr) {
+		reserveFilter = fmt.Sprintf("AND reserve_addr='%s'", reserveAddr.Hex())
+	}
+
+	var (
+		timeFilter = fmt.Sprintf("(time >='%s' AND time <= '%s')", fromTime.UTC().Format(time.RFC3339), toTime.UTC().Format(time.RFC3339))
+		cmd        = fmt.Sprintf("SELECT %[2]s AS %[1]s, %[2]s AS %[2]s, %[3]s AS %[3]s FROM %[4]s WHERE %[5]s %[6]s",
+			volSchema.TokenVolume.String(),
+			volSchema.ETHVolume.String(),
+			volSchema.USDVolume.String(),
+			monthlyReportMeasurementName, timeFilter, reserveFilter)
+	)
+
+	logger.Debugw("get monthly volume query rendered", "query", cmd)
+	response, err := influxdb.QueryDB(is.influxClient, cmd, is.dbName)
+
+	if err != nil {
+		return result, err
+	}
+
+	if len(response) == 0 || len(response[0].Series) == 0 {
+		return result, nil
+	}
+	return convertQueryResultToVolume(response[0].Series[0])
 }

@@ -229,6 +229,7 @@ func (sv *Server) setupRouter() *gin.Engine {
 	r.GET("/trade-logs", sv.getTradeLogs)
 	r.GET("/burn-fee", sv.getBurnFee)
 	r.GET("/asset-volume", sv.getAssetVolume)
+	r.GET("/monthly-volume", sv.getMonthlyVolume)
 	r.GET("/reserve-volume", sv.getReserveVolume)
 	r.GET("/wallet-fee", sv.getWalletFee)
 	r.GET("/trade-summary", sv.getTradeSummary)

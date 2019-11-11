@@ -37,6 +37,7 @@ func NewApp() *cli.App {
 			Value: productionMode,
 		},
 	}
+	app.Flags = append(app.Flags, NewSentryFlags()...)
 	return app
 }
 

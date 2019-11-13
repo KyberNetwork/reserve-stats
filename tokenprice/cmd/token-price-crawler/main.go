@@ -103,7 +103,7 @@ func run(c *cli.Context) error {
 		timeW8PerRequest = 1 * time.Second
 	)
 
-	logger := sugar.With("token", ethID, "currency", usdID, "from time", fromTimeS, "to time", toTimeS)
+	logger := sugar.With("token", ethID, "currency", usdID)
 
 	if len(fromTimeS) == 0 && len(toTimeS) == 0 {
 		logger.Info("from-time and to-time are blank, run get token rate daily...")
@@ -112,6 +112,8 @@ func run(c *cli.Context) error {
 			return err
 		}
 	}
+
+	logger = logger.With("from time", fromTimeS, "to time", toTimeS)
 
 	fromeTime, toTime, err := validateTime(fromTimeS, toTimeS)
 	if err != nil {
@@ -162,13 +164,11 @@ func crawlTokenRateDaily(sugar *zap.SugaredLogger, token, currency string, p pro
 	// get rate today
 	job()
 
-	sJob, err := scheduler.Every().Day().At("00:00:01").Run(job)
-	if err != nil {
+	if _, err := scheduler.Every().Day().At("00:00:01").Run(job); err != nil {
 		return err
 	}
-	select {
-	case err := <-errCh:
-		sJob.Quit <- true
+	if err := <-errCh; err != nil {
 		return err
 	}
+	return nil
 }

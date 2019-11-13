@@ -46,7 +46,7 @@ func (sv *Server) getPrice(c *gin.Context) {
 	if len(date) == 0 {
 		date = common.TimeToDateString(time.Now().UTC())
 	}
-	t, err := common.DateStringToTime(query.Date)
+	t, err := common.DateStringToTime(date)
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return

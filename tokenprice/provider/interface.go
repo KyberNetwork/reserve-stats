@@ -12,14 +12,14 @@ const (
 	Coinbase = "coinbase"
 )
 
-// Provider provide token rate
-type Provider interface {
+// PriceProvider provide token price
+type PriceProvider interface {
 	Rate(token, currency string, timestamp time.Time) (float64, error)
 	Name() string
 }
 
-// NewProvider return provider interface
-func NewProvider(provider string) (Provider, error) {
+// NewPriceProvider return provider interface
+func NewPriceProvider(provider string) (PriceProvider, error) {
 	switch provider {
 	case Coinbase:
 		return coinbase.New(), nil

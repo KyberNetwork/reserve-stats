@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -49,6 +50,10 @@ func (sv *Server) getPrice(c *gin.Context) {
 	t, err := common.DateStringToTime(date)
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
+	if query.Token != common.ETHID || query.Currency != common.USDID {
+		httputil.ResponseFailure(c, http.StatusBadRequest, errors.New("api just support token: ETH and currency: USD"))
 		return
 	}
 	price, err := sv.storage.GetTokenRate(query.Token, query.Currency, t)

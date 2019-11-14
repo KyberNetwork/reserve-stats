@@ -2,13 +2,12 @@ package postgres
 
 import (
 	"database/sql"
-	"errors"
-	"fmt"
 	"log"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
@@ -29,24 +28,32 @@ type TokenRateDB struct {
 
 // NewTokenRateDB return instance of TokenRateDB
 func NewTokenRateDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*TokenRateDB, error) {
-	const (
-		tokenRateSchema = `
-			CREATE TABLE IF NOT EXISTS "tokenrates" (
-				date DATE PRIMARY KEY,
-				source TEXT NOT NULL,
-				token TEXT NOT NULL,
-				currency TEXT NOT NULL,
-				value FLOAT(32) NOT NULL
-			);
-		`
-	)
-	if _, err := db.Exec(tokenRateSchema); err != nil {
+	if err := initTable(db); err != nil {
 		return nil, err
 	}
 	return &TokenRateDB{
 		sugar: sugar,
 		db:    db,
 	}, nil
+}
+
+func initTable(db *sqlx.DB) error {
+	const (
+		tokenRateSchema = `
+			CREATE TABLE IF NOT EXISTS "tokenrates" (
+				date DATE,
+				source TEXT NOT NULL,
+				token TEXT NOT NULL,
+				currency TEXT NOT NULL,
+				value FLOAT(32) NOT NULL,
+				PRIMARY KEY (date, source, token, currency)
+			);
+		`
+	)
+	if _, err := db.Exec(tokenRateSchema); err != nil {
+		return err
+	}
+	return nil
 }
 
 // SaveTokenRate save token rate data
@@ -68,10 +75,10 @@ func (trdb *TokenRateDB) SaveTokenRate(token, currency, source string, timestamp
 		// check if return error is a known pq error
 		pErr, ok := err.(*pq.Error)
 		if !ok {
-			return err
+			return errors.Wrap(err, "failed to save token rate to db")
 		}
 
-		logger.Infow("got error from database",
+		logger.Errorw("got error from database",
 			"code", pErr.Code, "message", pErr.Message)
 
 		// https://www.postgresql.org/docs/9.3/errcodes-appendix.html
@@ -80,7 +87,7 @@ func (trdb *TokenRateDB) SaveTokenRate(token, currency, source string, timestamp
 			return ErrExists
 		}
 
-		return fmt.Errorf("failed to store token rate to database, err=%s", err.Error())
+		return errors.Wrap(err, "failed to store token rate to database")
 	}
 	return nil
 }
@@ -106,11 +113,8 @@ func (trdb *TokenRateDB) GetTokenRate(token, currency string, timestamp time.Tim
 	if err := trdb.db.Get(&dbResult, query, token, currency, timestamp); err == sql.ErrNoRows {
 		return 0, ErrNotFound
 	} else if err != nil {
-		logger.Errorw("got error from database", "error", err.Error())
+		logger.Errorw("got error from database", "error", err)
 		return 0, errors.New("failed to query token rate in database")
-	}
-	if !dbResult.Rate.Valid {
-		return 0, errors.New("invalid data return")
 	}
 	return dbResult.Rate.Float64, nil
 }

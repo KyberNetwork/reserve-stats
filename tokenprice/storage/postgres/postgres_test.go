@@ -30,7 +30,7 @@ func TestSaveNewTokenRate(t *testing.T) {
 	err = trdb.SaveTokenRate(token, currency, source, timestamp, rate)
 	require.NoError(t, err)
 
-	err = trdb.SaveTokenRate("KNC", currency, source, timestamp, rate)
+	err = trdb.SaveTokenRate(token, currency, source, timestamp, 1000)
 	require.EqualError(t, err, ErrExists.Error())
 
 	rateDB, err := trdb.GetTokenRate(token, currency, timestamp)

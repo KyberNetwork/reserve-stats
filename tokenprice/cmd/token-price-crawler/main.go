@@ -25,20 +25,20 @@ const (
 
 func main() {
 	app := libapp.NewApp()
-	app.Name = "Token rate crawler"
-	app.Usage = "Crawl token rate from some EX"
+	app.Name = "Token price crawler"
+	app.Usage = "Crawl token price from other exchanges"
 	app.Version = "0.0.1"
 	app.Action = run
 
 	app.Flags = append(app.Flags,
 		cli.StringFlag{
 			Name:   fromTimeFlag,
-			Usage:  "provide from time to crawl token rate",
+			Usage:  "provide from time to crawl token price with format YYYY-MM-DD, e.g: 2019-10-11",
 			EnvVar: "FROM_TIME",
 		},
 		cli.StringFlag{
 			Name:   toTimeFlag,
-			Usage:  "provide to time to crawl token rate",
+			Usage:  "provide to time to crawl token price wiht format YYYY-MM-DD, e.g: 2019-10-12",
 			EnvVar: "TO_TIME",
 		},
 	)
@@ -82,7 +82,7 @@ func run(c *cli.Context) error {
 	}
 	defer flush()
 
-	p, err := provider.NewProvider(provider.Coinbase)
+	p, err := provider.NewPriceProvider(provider.Coinbase)
 	if err != nil {
 		sugar.Errorw("failed to init provider", "error", err)
 		return err
@@ -96,23 +96,30 @@ func run(c *cli.Context) error {
 	var (
 		fromTimeS = c.String(fromTimeFlag)
 		toTimeS   = c.String(toTimeFlag)
-
-		ethID = "ETH"
-		usdID = "USD"
-
-		timeW8PerRequest = 1 * time.Second
 	)
 
-	logger := sugar.With("token", ethID, "currency", usdID)
+	logger := sugar.With("token", common.ETHID, "currency", common.USDID)
 
 	if len(fromTimeS) == 0 && len(toTimeS) == 0 {
 		logger.Info("from-time and to-time are blank, run get token rate daily...")
-		if err := crawlTokenRateDaily(sugar, ethID, usdID, p, s); err != nil {
-			logger.Errorw("failed to crawl token rate daily", "error", err)
+		if err := crawlTokenRateDaily(sugar, common.ETHID, common.USDID, p, s); err != nil {
+			logger.Errorw("failed to crawl price daily", "error", err)
 			return err
 		}
 	}
+	if err := crawlETHPriceWithTimeRange(sugar, fromTimeS, toTimeS, p, s); err != nil {
+		logger.Errorw("failed to crawl price with time range", "error", err)
+		return err
+	}
+	return nil
+}
 
+func crawlETHPriceWithTimeRange(sugar *zap.SugaredLogger, fromTimeS, toTimeS string, p provider.PriceProvider, s storage.Storage) error {
+	var (
+		logger = sugar.With("func", caller.GetCurrentFunctionName())
+
+		timeW8PerRequest = 1 * time.Second
+	)
 	logger = logger.With("from time", fromTimeS, "to time", toTimeS)
 
 	fromeTime, toTime, err := validateTime(fromTimeS, toTimeS)
@@ -122,13 +129,14 @@ func run(c *cli.Context) error {
 	}
 
 	for t := fromeTime; t.Sub(toTime) <= 0; t = t.Add(24 * time.Hour) {
-		rate, err := p.Rate(ethID, usdID, t)
+		rate, err := p.Rate(common.ETHID, common.USDID, t)
 		if err != nil {
 			logger.Errorw("failed to get token rate", "error", err)
 			return err
 		}
 		logger.Infow("get token rate successfully", "time", t, "rate", rate)
-		if err := s.SaveTokenRate(ethID, usdID, p.Name(), t, rate); err != nil && err != postgres.ErrExists {
+
+		if err := s.SaveTokenRate(common.ETHID, common.USDID, p.Name(), t, rate); err != nil && err != postgres.ErrExists {
 			logger.Errorw("failed to save data to database", "error", err)
 			return err
 		}
@@ -139,7 +147,7 @@ func run(c *cli.Context) error {
 	return nil
 }
 
-func crawlTokenRateDaily(sugar *zap.SugaredLogger, token, currency string, p provider.Provider, s storage.Storage) error {
+func crawlTokenRateDaily(sugar *zap.SugaredLogger, token, currency string, p provider.PriceProvider, s storage.Storage) error {
 	var (
 		errCh  = make(chan error, 2)
 		logger = sugar.With("func", caller.GetCurrentFunctionName(),
@@ -161,10 +169,13 @@ func crawlTokenRateDaily(sugar *zap.SugaredLogger, token, currency string, p pro
 		}
 		logger.Info("save token rate successfully")
 	}
-	// get rate today
+	// get price today
 	job()
 
-	if _, err := scheduler.Every().Day().At("00:00:01").Run(job); err != nil {
+	// run job get price daily
+	l, _ := time.LoadLocation("Local")
+	firstMomentOfDay := time.Now().Truncate(24 * time.Hour).In(l).Format("15:04:05")
+	if _, err := scheduler.Every().Day().At(firstMomentOfDay).Run(job); err != nil {
 		return err
 	}
 	if err := <-errCh; err != nil {

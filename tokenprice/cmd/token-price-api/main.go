@@ -12,21 +12,24 @@ import (
 )
 
 const (
-	hostFlag = "host"
+	bindAddressFlag = "bindAddress"
+
+	defaultBindAddress = "127.0.0.1:8000"
 )
 
 func main() {
 	app := libapp.NewApp()
-	app.Name = "Token rate crawler"
-	app.Usage = "Crawl token rate from some EX"
+	app.Name = "Token price API"
+	app.Usage = "Serve api for token price"
 	app.Version = "0.0.1"
 	app.Action = run
 
 	app.Flags = append(app.Flags,
 		cli.StringFlag{
-			Name:   hostFlag,
-			Usage:  "provide host for token price api",
-			EnvVar: "HOST",
+			Name:   bindAddressFlag,
+			Usage:  "Address to serve ETH price endpoint",
+			Value:  defaultBindAddress,
+			EnvVar: "BIND_ADDRESS",
 		},
 	)
 
@@ -47,6 +50,6 @@ func run(c *cli.Context) error {
 		sugar.Errorw("failed to init storage", "error", err)
 		return err
 	}
-	sv := server.NewServer(sugar, c.String(hostFlag), s)
+	sv := server.NewServer(sugar, c.String(bindAddressFlag), s)
 	return sv.Start()
 }

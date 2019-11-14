@@ -101,20 +101,20 @@ func run(c *cli.Context) error {
 	logger := sugar.With("token", common.ETHID, "currency", common.USDID)
 
 	if len(fromTimeS) == 0 && len(toTimeS) == 0 {
-		logger.Info("from-time and to-time are blank, run get token rate daily...")
-		if err := crawlTokenRateDaily(sugar, common.ETHID, common.USDID, p, s); err != nil {
+		logger.Info("from-time and to-time are blank, run get token price daily...")
+		if err := crawlTokenPriceDaily(sugar, common.ETHID, common.USDID, p, s); err != nil {
 			logger.Errorw("failed to crawl price daily", "error", err)
 			return err
 		}
 	}
-	if err := crawlETHPriceWithTimeRange(sugar, fromTimeS, toTimeS, p, s); err != nil {
+	if err := crawlTokenPriceWithTimeRange(sugar, fromTimeS, toTimeS, p, s); err != nil {
 		logger.Errorw("failed to crawl price with time range", "error", err)
 		return err
 	}
 	return nil
 }
 
-func crawlETHPriceWithTimeRange(sugar *zap.SugaredLogger, fromTimeS, toTimeS string, p provider.PriceProvider, s storage.Storage) error {
+func crawlTokenPriceWithTimeRange(sugar *zap.SugaredLogger, fromTimeS, toTimeS string, p provider.PriceProvider, s storage.Storage) error {
 	var (
 		logger = sugar.With("func", caller.GetCurrentFunctionName())
 
@@ -129,25 +129,25 @@ func crawlETHPriceWithTimeRange(sugar *zap.SugaredLogger, fromTimeS, toTimeS str
 	}
 
 	for t := fromeTime; t.Sub(toTime) <= 0; t = t.Add(24 * time.Hour) {
-		rate, err := p.Rate(common.ETHID, common.USDID, t)
+		price, err := p.Price(common.ETHID, common.USDID, t)
 		if err != nil {
-			logger.Errorw("failed to get token rate", "error", err)
+			logger.Errorw("failed to get token price", "error", err)
 			return err
 		}
-		logger.Infow("get token rate successfully", "time", t, "rate", rate)
+		logger.Infow("get token price successfully", "time", t, "price", price)
 
-		if err := s.SaveTokenRate(common.ETHID, common.USDID, p.Name(), t, rate); err != nil && err != postgres.ErrExists {
+		if err := s.SaveTokenPrice(common.ETHID, common.USDID, p.Name(), t, price); err != nil && err != postgres.ErrExists {
 			logger.Errorw("failed to save data to database", "error", err)
 			return err
 		}
-		logger.Info("save token rate successfully")
+		logger.Info("save token price successfully")
 		// sleep for a second to avoid rate limit
 		time.Sleep(timeW8PerRequest)
 	}
 	return nil
 }
 
-func crawlTokenRateDaily(sugar *zap.SugaredLogger, token, currency string, p provider.PriceProvider, s storage.Storage) error {
+func crawlTokenPriceDaily(sugar *zap.SugaredLogger, token, currency string, p provider.PriceProvider, s storage.Storage) error {
 	var (
 		errCh  = make(chan error, 2)
 		logger = sugar.With("func", caller.GetCurrentFunctionName(),
@@ -156,18 +156,18 @@ func crawlTokenRateDaily(sugar *zap.SugaredLogger, token, currency string, p pro
 	job := func() {
 		logger.Info("Running job")
 		var now = time.Now().UTC()
-		rate, err := p.Rate(token, currency, now)
+		price, err := p.Price(token, currency, now)
 		if err != nil {
-			logger.Errorw("failed to get token rate", "error", err)
+			logger.Errorw("failed to get token price", "error", err)
 			errCh <- err
 			return
 		}
-		logger.Infow("get token rate successfully", "time", now, "rate", rate)
-		if err := s.SaveTokenRate(token, currency, p.Name(), now, rate); err != nil && err != postgres.ErrExists {
+		logger.Infow("get token price successfully", "time", now, "price", price)
+		if err := s.SaveTokenPrice(token, currency, p.Name(), now, price); err != nil && err != postgres.ErrExists {
 			logger.Errorw("failed to save data to database", "error", err)
 			errCh <- err
 		}
-		logger.Info("save token rate successfully")
+		logger.Info("save token price successfully")
 	}
 	// get price today
 	job()

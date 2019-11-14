@@ -44,8 +44,8 @@ type responseData struct {
 	}
 }
 
-// Rate returns the rate of given token in real world currency at given timestamp.
-func (cb *CoinBase) Rate(token, currency string, timestamp time.Time) (float64, error) {
+// Price returns the price of given token in real world currency at given timestamp.
+func (cb *CoinBase) Price(token, currency string, timestamp time.Time) (float64, error) {
 	var url string
 	currentDate := time.Now().UTC().Format(timeLayout)
 	queryDate := timestamp.UTC().Format(timeLayout)
@@ -76,20 +76,11 @@ func (cb *CoinBase) Rate(token, currency string, timestamp time.Time) (float64, 
 		return 0, err
 	}
 
-	rate, err := strconv.ParseFloat(resp.Data.Amount, 64)
+	price, err := strconv.ParseFloat(resp.Data.Amount, 64)
 	if err != nil {
 		return 0, err
 	}
-	return rate, nil
-}
-
-// USDRate returns the historical price of ETH.
-func (cb *CoinBase) USDRate(timestamp time.Time) (float64, error) {
-	const (
-		ethereumID = "ETH"
-		usdID      = "USD"
-	)
-	return cb.Rate(ethereumID, usdID, timestamp)
+	return price, nil
 }
 
 //Name return name of CoinBase provider name

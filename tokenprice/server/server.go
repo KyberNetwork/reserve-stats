@@ -56,7 +56,7 @@ func (sv *Server) getPrice(c *gin.Context) {
 		httputil.ResponseFailure(c, http.StatusBadRequest, errors.New("api just support token: ETH and currency: USD"))
 		return
 	}
-	price, err := sv.storage.GetTokenRate(query.Token, query.Currency, t)
+	price, err := sv.storage.GetTokenPrice(query.Token, query.Currency, t)
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return

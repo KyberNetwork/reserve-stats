@@ -17,8 +17,8 @@ const (
 
 // Storage storage interface
 type Storage interface {
-	SaveTokenRate(token, currency, source string, timestamp time.Time, rate float64) error
-	GetTokenRate(token, currency string, timestamp time.Time) (float64, error)
+	SaveTokenPrice(token, currency, source string, timestamp time.Time, price float64) error
+	GetTokenPrice(token, currency string, timestamp time.Time) (float64, error)
 }
 
 // NewStorageFromContext return storage interface from context
@@ -27,5 +27,5 @@ func NewStorageFromContext(sugar *zap.SugaredLogger, c *cli.Context) (Storage, e
 	if err != nil {
 		return nil, err
 	}
-	return postgres.NewTokenRateDB(sugar, db)
+	return postgres.NewTokenPriceDB(sugar, db)
 }

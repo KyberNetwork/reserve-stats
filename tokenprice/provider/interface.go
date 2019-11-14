@@ -14,7 +14,7 @@ const (
 
 // PriceProvider provide token price
 type PriceProvider interface {
-	Rate(token, currency string, timestamp time.Time) (float64, error)
+	Price(token, currency string, timestamp time.Time) (float64, error)
 	Name() string
 }
 

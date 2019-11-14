@@ -23,7 +23,7 @@ func TestSaveNewTokenPrice(t *testing.T) {
 		currency = "USD"
 		source   = "coinbase"
 		timeS    = "2019-02-06"
-		price     = 100.1
+		price    = 100.1
 	)
 	timestamp, err := time.Parse("2006-01-02", timeS)
 	require.NoError(t, err)

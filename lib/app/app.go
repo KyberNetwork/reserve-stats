@@ -41,6 +41,19 @@ func NewApp() *cli.App {
 	return app
 }
 
+// NewAppWithMode creates a new cli App instance with mode flag
+func NewAppWithMode() *cli.App {
+	app := cli.NewApp()
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:  modeFlag,
+			Usage: "app running mode",
+			Value: developmentMode,
+		},
+	}
+	return app
+}
+
 // Validate validates common application configuration flags.
 func Validate(c *cli.Context) error {
 	mode := c.GlobalString(modeFlag)

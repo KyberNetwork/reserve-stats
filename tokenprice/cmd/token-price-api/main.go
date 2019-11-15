@@ -18,7 +18,7 @@ const (
 )
 
 func main() {
-	app := libapp.NewApp()
+	app := libapp.NewAppWithMode()
 	app.Name = "Token price API"
 	app.Usage = "Serve api for token price"
 	app.Version = "0.0.1"
@@ -34,6 +34,7 @@ func main() {
 	)
 
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.DefaultDB)...)
+	app.Flags = append(app.Flags, libapp.NewSentryFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}

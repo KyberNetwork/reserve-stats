@@ -24,18 +24,23 @@ func TestSaveNewTokenPrice(t *testing.T) {
 		source   = "coinbase"
 		timeS    = "2019-02-06"
 		price    = 100.1
+		newPrice = 101.2
 	)
 	timestamp, err := time.Parse("2006-01-02", timeS)
 	require.NoError(t, err)
 	err = trdb.SaveTokenPrice(token, currency, source, timestamp, price)
 	require.NoError(t, err)
 
-	err = trdb.SaveTokenPrice(token, currency, source, timestamp, 1000)
-	require.EqualError(t, err, ErrExists.Error())
-
 	priceDB, err := trdb.GetTokenPrice(token, currency, timestamp)
 	require.NoError(t, err)
 	require.Equal(t, price, priceDB)
+
+	err = trdb.SaveTokenPrice(token, currency, source, timestamp, newPrice)
+	require.NoError(t, err)
+
+	newPriceDB, err := trdb.GetTokenPrice(token, currency, timestamp)
+	require.NoError(t, err)
+	require.Equal(t, newPrice, newPriceDB)
 
 	_, err = trdb.GetTokenPrice("KNC", currency, timestamp)
 	require.EqualError(t, err, ErrNotFound.Error())

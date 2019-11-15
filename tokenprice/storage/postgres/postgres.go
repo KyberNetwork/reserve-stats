@@ -2,11 +2,9 @@ package postgres
 
 import (
 	"database/sql"
-	"log"
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -14,8 +12,6 @@ import (
 )
 
 var (
-	// ErrExists return when data already exist
-	ErrExists = errors.New("already exist")
 	// ErrNotFound return when data not found
 	ErrNotFound = errors.New("not found")
 )
@@ -65,28 +61,17 @@ func (trdb *TokenPriceDB) SaveTokenPrice(token, currency, source string, timesta
 			"source", source,
 			"currency", currency,
 		)
-		query = `INSERT INTO "tokenprices"(date, source, token, currency, value) 
-		VALUES (DATE($1), $2, $3, $4, $5)`
+		query = `
+		INSERT INTO "tokenprices"(date, source, token, currency, value) 
+		VALUES (DATE($1), $2, $3, $4, $5) 
+		ON CONFLICT (date, source, token, currency) 
+		DO 
+		UPDATE SET value=$5;
+		`
 	)
 	logger.Infow("save new token price", "query", query)
-	log.Println(query)
 	_, err := trdb.db.Exec(query, timestamp, source, token, currency, price)
 	if err != nil {
-		// check if return error is a known pq error
-		pErr, ok := err.(*pq.Error)
-		if !ok {
-			return errors.Wrap(err, "failed to save token price to db")
-		}
-
-		logger.Errorw("got error from database",
-			"code", pErr.Code, "message", pErr.Message)
-
-		// https://www.postgresql.org/docs/9.3/errcodes-appendix.html
-		// 23505: unique_violation
-		if pErr.Code == "23505" {
-			return ErrExists
-		}
-
 		return errors.Wrap(err, "failed to store token price to database")
 	}
 	return nil

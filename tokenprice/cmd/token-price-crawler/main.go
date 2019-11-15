@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/carlescere/scheduler"
@@ -15,7 +16,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tokenprice/common"
 	"github.com/KyberNetwork/reserve-stats/tokenprice/provider"
 	"github.com/KyberNetwork/reserve-stats/tokenprice/storage"
-	"github.com/KyberNetwork/reserve-stats/tokenprice/storage/postgres"
 )
 
 const (
@@ -24,7 +24,7 @@ const (
 )
 
 func main() {
-	app := libapp.NewApp()
+	app := libapp.NewAppWithMode()
 	app.Name = "Token price crawler"
 	app.Usage = "Crawl token price from other exchanges"
 	app.Version = "0.0.1"
@@ -44,6 +44,7 @@ func main() {
 	)
 
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.DefaultDB)...)
+	app.Flags = append(app.Flags, libapp.NewSentryFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -54,23 +55,23 @@ func validateTime(fromTimeS, toTimeS string) (time.Time, time.Time, error) {
 		fromTime, toTime time.Time
 		err              error
 	)
-	if len(fromTimeS) == 0 {
-		return fromTime, toTime, errors.New("from-time cannot be blank")
+	if len(fromTimeS) != 0 {
+		fromTime, err = common.DateStringToTime(fromTimeS)
+		if err != nil {
+			return fromTime, toTime, err
+		}
 	}
-	if len(toTimeS) == 0 {
-		toTimeS = common.TimeToDateString(time.Now().UTC())
-	}
-
-	fromTime, err = common.DateStringToTime(fromTimeS)
-	if err != nil {
-		return fromTime, toTime, err
-	}
-	toTime, err = common.DateStringToTime(toTimeS)
-	if err != nil {
-		return fromTime, toTime, err
-	}
-	if toTime.Sub(fromTime) < 0 {
-		return fromTime, toTime, errors.New("from-time must be smaller than to-time")
+	if len(toTimeS) != 0 {
+		if len(fromTimeS) == 0 {
+			return fromTime, toTime, errors.New("from-time cannot be blank")
+		}
+		toTime, err = common.DateStringToTime(toTimeS)
+		if err != nil {
+			return fromTime, toTime, err
+		}
+		if toTime.Sub(fromTime) < 0 {
+			return fromTime, toTime, errors.New("from-time must be smaller than to-time")
+		}
 	}
 	return fromTime, toTime, nil
 }
@@ -100,35 +101,42 @@ func run(c *cli.Context) error {
 
 	logger := sugar.With("token", common.ETHID, "currency", common.USDID)
 
-	if len(fromTimeS) == 0 && len(toTimeS) == 0 {
-		logger.Info("from-time and to-time are blank, run get token price daily...")
-		if err := crawlTokenPriceDaily(sugar, common.ETHID, common.USDID, p, s); err != nil {
-			logger.Errorw("failed to crawl price daily", "error", err)
+	fromTime, toTime, err := validateTime(fromTimeS, toTimeS)
+	if err != nil {
+		return err
+	}
+
+	if len(toTimeS) != 0 {
+		return crawlTokenPriceWithTimeRange(sugar, fromTime, toTime, p, s)
+	}
+	if len(fromTimeS) != 0 {
+		logger.Info("to-time is blank, get price from from-time and run get price daily...")
+		toTime = time.Now().UTC()
+		if err := crawlTokenPriceWithTimeRange(sugar, fromTime, toTime, p, s); err != nil {
+			logger.Errorw("failed to get rate with time range", "from-time", fromTime, "to-time", toTime)
 			return err
 		}
 	}
-	if err := crawlTokenPriceWithTimeRange(sugar, fromTimeS, toTimeS, p, s); err != nil {
-		logger.Errorw("failed to crawl price with time range", "error", err)
-		return err
+
+	if err := crawlTokenPriceDaily(sugar, common.ETHID, common.USDID, p, s); err != nil {
+		logger.Errorw("failed to get rate daily", "error", err)
 	}
+	cs := make(chan os.Signal, 1)
+	signal.Notify(cs, os.Interrupt)
+	<-cs
+	logger.Info("got interrupt signal, program exited")
 	return nil
 }
 
-func crawlTokenPriceWithTimeRange(sugar *zap.SugaredLogger, fromTimeS, toTimeS string, p provider.PriceProvider, s storage.Storage) error {
+func crawlTokenPriceWithTimeRange(sugar *zap.SugaredLogger, fromTime, toTime time.Time, p provider.PriceProvider, s storage.Storage) error {
 	var (
 		logger = sugar.With("func", caller.GetCurrentFunctionName())
 
 		timeW8PerRequest = 1 * time.Second
 	)
-	logger = logger.With("from time", fromTimeS, "to time", toTimeS)
+	logger = logger.With("from time", fromTime, "to time", toTime)
 
-	fromeTime, toTime, err := validateTime(fromTimeS, toTimeS)
-	if err != nil {
-		logger.Errorw("times are invalids", "error", err)
-		return err
-	}
-
-	for t := fromeTime; t.Sub(toTime) <= 0; t = t.Add(24 * time.Hour) {
+	for t := fromTime; t.Sub(toTime) <= 0; t = t.Add(24 * time.Hour) {
 		price, err := p.Price(common.ETHID, common.USDID, t)
 		if err != nil {
 			logger.Errorw("failed to get token price", "error", err)
@@ -136,7 +144,7 @@ func crawlTokenPriceWithTimeRange(sugar *zap.SugaredLogger, fromTimeS, toTimeS s
 		}
 		logger.Infow("get token price successfully", "time", t, "price", price)
 
-		if err := s.SaveTokenPrice(common.ETHID, common.USDID, p.Name(), t, price); err != nil && err != postgres.ErrExists {
+		if err := s.SaveTokenPrice(common.ETHID, common.USDID, p.Name(), t, price); err != nil {
 			logger.Errorw("failed to save data to database", "error", err)
 			return err
 		}
@@ -149,7 +157,6 @@ func crawlTokenPriceWithTimeRange(sugar *zap.SugaredLogger, fromTimeS, toTimeS s
 
 func crawlTokenPriceDaily(sugar *zap.SugaredLogger, token, currency string, p provider.PriceProvider, s storage.Storage) error {
 	var (
-		errCh  = make(chan error, 2)
 		logger = sugar.With("func", caller.GetCurrentFunctionName(),
 			"token", token, "currency", currency, "provider", p.Name())
 	)
@@ -159,13 +166,11 @@ func crawlTokenPriceDaily(sugar *zap.SugaredLogger, token, currency string, p pr
 		price, err := p.Price(token, currency, now)
 		if err != nil {
 			logger.Errorw("failed to get token price", "error", err)
-			errCh <- err
 			return
 		}
 		logger.Infow("get token price successfully", "time", now, "price", price)
-		if err := s.SaveTokenPrice(token, currency, p.Name(), now, price); err != nil && err != postgres.ErrExists {
+		if err := s.SaveTokenPrice(token, currency, p.Name(), now, price); err != nil {
 			logger.Errorw("failed to save data to database", "error", err)
-			errCh <- err
 		}
 		logger.Info("save token price successfully")
 	}
@@ -176,9 +181,6 @@ func crawlTokenPriceDaily(sugar *zap.SugaredLogger, token, currency string, p pr
 	l, _ := time.LoadLocation("Local")
 	firstMomentOfDay := time.Now().Truncate(24 * time.Hour).In(l).Format("15:04:05")
 	if _, err := scheduler.Every().Day().At(firstMomentOfDay).Run(job); err != nil {
-		return err
-	}
-	if err := <-errCh; err != nil {
 		return err
 	}
 	return nil

@@ -19,8 +19,13 @@ import (
 )
 
 const (
-	fromTimeFlag = "from-time"
-	toTimeFlag   = "to-time"
+	fromTimeFlag       = "from-time"
+	toTimeFlag         = "to-time"
+	reqWaitingTimeFlag = "req-waiting-time"
+	jobRunningTimeFlag = "job-running-time"
+
+	defaultReqWaitingTime = 1 * time.Second
+	defaultJobRunningTime = "07:00:00"
 )
 
 func main() {
@@ -41,6 +46,18 @@ func main() {
 			Usage:  "provide to time to crawl token price wiht format YYYY-MM-DD, e.g: 2019-10-12",
 			EnvVar: "TO_TIME",
 		},
+		cli.DurationFlag{
+			Name:   reqWaitingTimeFlag,
+			Usage:  "sleeping time after each request to avoid rate limit",
+			EnvVar: "REQ_WAITING_TIME",
+			Value:  defaultReqWaitingTime,
+		},
+		cli.StringFlag{
+			Name:   jobRunningTimeFlag,
+			Usage:  "crawler will fetch the price daily at this time, e.g: 07:00:00",
+			EnvVar: "JOB_RUNNING_TIME",
+			Value:  defaultJobRunningTime,
+		},
 	)
 
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.DefaultDB)...)
@@ -54,24 +71,29 @@ func validateTime(fromTimeS, toTimeS string) (time.Time, time.Time, error) {
 	var (
 		fromTime, toTime time.Time
 		err              error
+		currentTime      = time.Now().UTC()
 	)
 	if len(fromTimeS) != 0 {
 		fromTime, err = common.DateStringToTime(fromTimeS)
 		if err != nil {
 			return fromTime, toTime, err
 		}
+	} else {
+		fromTime = currentTime
 	}
 	if len(toTimeS) != 0 {
-		if len(fromTimeS) == 0 {
-			return fromTime, toTime, errors.New("from-time cannot be blank")
-		}
 		toTime, err = common.DateStringToTime(toTimeS)
 		if err != nil {
 			return fromTime, toTime, err
 		}
+		if toTime.Sub(currentTime) > 0 {
+			toTime = currentTime
+		}
 		if toTime.Sub(fromTime) < 0 {
 			return fromTime, toTime, errors.New("from-time must be smaller than to-time")
 		}
+	} else {
+		toTime = currentTime
 	}
 	return fromTime, toTime, nil
 }
@@ -107,18 +129,14 @@ func run(c *cli.Context) error {
 	}
 
 	if len(toTimeS) != 0 {
-		return crawlTokenPriceWithTimeRange(sugar, fromTime, toTime, p, s)
+		return crawlTokenPriceWithTimeRange(sugar, fromTime, toTime, p, s, c.Duration(reqWaitingTimeFlag))
 	}
-	if len(fromTimeS) != 0 {
-		logger.Info("to-time is blank, get price from from-time and run get price daily...")
-		toTime = time.Now().UTC()
-		if err := crawlTokenPriceWithTimeRange(sugar, fromTime, toTime, p, s); err != nil {
-			logger.Errorw("failed to get rate with time range", "from-time", fromTime, "to-time", toTime)
-			return err
-		}
+	logger.Info("to-time is blank, get history price from from-time and run get price daily...")
+	if err := crawlTokenPriceWithTimeRange(sugar, fromTime, toTime, p, s, c.Duration(reqWaitingTimeFlag)); err != nil {
+		logger.Errorw("failed to get rate with time range", "from-time", fromTime, "to-time", toTime)
+		return err
 	}
-
-	if err := crawlTokenPriceDaily(sugar, common.ETHID, common.USDID, p, s); err != nil {
+	if err := crawlTokenPriceDaily(sugar, p, s, c.String(jobRunningTimeFlag)); err != nil {
 		logger.Errorw("failed to get rate daily", "error", err)
 	}
 	cs := make(chan os.Signal, 1)
@@ -128,13 +146,16 @@ func run(c *cli.Context) error {
 	return nil
 }
 
-func crawlTokenPriceWithTimeRange(sugar *zap.SugaredLogger, fromTime, toTime time.Time, p provider.PriceProvider, s storage.Storage) error {
+func crawlTokenPriceWithTimeRange(
+	sugar *zap.SugaredLogger,
+	fromTime, toTime time.Time,
+	p provider.PriceProvider,
+	s storage.Storage,
+	timeW8PerRequest time.Duration) error {
 	var (
-		logger = sugar.With("func", caller.GetCurrentFunctionName())
-
-		timeW8PerRequest = 1 * time.Second
+		logger = sugar.With("func", caller.GetCurrentFunctionName(),
+			"from time", fromTime, "to time", toTime)
 	)
-	logger = logger.With("from time", fromTime, "to time", toTime)
 
 	for t := fromTime; t.Sub(toTime) <= 0; t = t.Add(24 * time.Hour) {
 		price, err := p.Price(common.ETHID, common.USDID, t)
@@ -155,32 +176,33 @@ func crawlTokenPriceWithTimeRange(sugar *zap.SugaredLogger, fromTime, toTime tim
 	return nil
 }
 
-func crawlTokenPriceDaily(sugar *zap.SugaredLogger, token, currency string, p provider.PriceProvider, s storage.Storage) error {
+func crawlTokenPriceDaily(sugar *zap.SugaredLogger, p provider.PriceProvider, s storage.Storage, jobRunningTime string) error {
 	var (
 		logger = sugar.With("func", caller.GetCurrentFunctionName(),
-			"token", token, "currency", currency, "provider", p.Name())
+			"token", common.ETHID,
+			"currency", common.USDID,
+			"provider", p.Name(),
+			"job running time", jobRunningTime)
 	)
+	if _, err := time.Parse("15:04:05", jobRunningTime); err != nil {
+		return err
+	}
 	job := func() {
 		logger.Info("Running job")
 		var now = time.Now().UTC()
-		price, err := p.Price(token, currency, now)
+		price, err := p.Price(common.ETHID, common.USDID, now)
 		if err != nil {
 			logger.Errorw("failed to get token price", "error", err)
 			return
 		}
 		logger.Infow("get token price successfully", "time", now, "price", price)
-		if err := s.SaveTokenPrice(token, currency, p.Name(), now, price); err != nil {
+		if err := s.SaveTokenPrice(common.ETHID, common.USDID, p.Name(), now, price); err != nil {
 			logger.Errorw("failed to save data to database", "error", err)
 		}
 		logger.Info("save token price successfully")
 	}
-	// get price today
-	job()
-
 	// run job get price daily
-	l, _ := time.LoadLocation("Local")
-	firstMomentOfDay := time.Now().Truncate(24 * time.Hour).In(l).Format("15:04:05")
-	if _, err := scheduler.Every().Day().At(firstMomentOfDay).Run(job); err != nil {
+	if _, err := scheduler.Every().Day().At(jobRunningTime).Run(job); err != nil {
 		return err
 	}
 	return nil

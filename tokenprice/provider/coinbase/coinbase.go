@@ -83,6 +83,15 @@ func (cb *CoinBase) Price(token, currency string, timestamp time.Time) (float64,
 	return price, nil
 }
 
+// ETHPrice returns the historical price of ETH in USD.
+func (cb *CoinBase) ETHPrice(timestamp time.Time) (float64, error) {
+	const (
+		ethereumID = "ETH"
+		usdID      = "USD"
+	)
+	return cb.Price(ethereumID, usdID, timestamp)
+}
+
 //Name return name of CoinBase provider name
 func (cb *CoinBase) Name() string {
 	return providerName

@@ -82,7 +82,7 @@ type tokenPriceDB struct {
 }
 
 // GetTokenPrice save token price data
-func (trdb *TokenPriceDB) GetTokenPrice(token, currency string, timestamp time.Time) (float64, error) {
+func (trdb *TokenPriceDB) GetTokenPrice(token, currency, source string, timestamp time.Time) (float64, error) {
 	var (
 		logger = trdb.sugar.With("func", caller.GetCurrentFunctionName(),
 			"date", timestamp,
@@ -90,12 +90,12 @@ func (trdb *TokenPriceDB) GetTokenPrice(token, currency string, timestamp time.T
 			"currency", currency,
 		)
 		query = `SELECT value FROM "tokenprices" 
-			WHERE token=$1 AND currency=$2 AND date=DATE($3)`
+			WHERE token=$1 AND currency=$2 AND source=$3 AND date=DATE($4)`
 
 		dbResult tokenPriceDB
 	)
 	logger.Infow("get token price", "query", query)
-	if err := trdb.db.Get(&dbResult, query, token, currency, timestamp); err == sql.ErrNoRows {
+	if err := trdb.db.Get(&dbResult, query, token, currency, source, timestamp); err == sql.ErrNoRows {
 		return 0, ErrNotFound
 	} else if err != nil {
 		logger.Errorw("got error from database", "error", err)

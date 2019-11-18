@@ -6,12 +6,12 @@ const (
 	timeLayout = "2006-01-02"
 )
 
-// DateStringToTime convert date string to time with format timeLayout
-func DateStringToTime(date string) (time.Time, error) {
+// YYYYMMDDToTime convert date string in format YYYY-MM-DD to time
+func YYYYMMDDToTime(date string) (time.Time, error) {
 	return time.Parse(timeLayout, date)
 }
 
-// TimeToDateString convert time to date string with format timeLayout
-func TimeToDateString(t time.Time) string {
+// TimeToYYYYMMDD convert time to date string with format YYYY-MM-DD
+func TimeToYYYYMMDD(t time.Time) string {
 	return t.Format(timeLayout)
 }

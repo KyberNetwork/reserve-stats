@@ -1,0 +1,102 @@
+package coingecko
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
+)
+
+const providerName = "coingecko"
+
+const (
+	timeLayout         = "02-01-2006"
+	currentEndpoint    = "%s/coins/%s"
+	historicalEndpoint = "%s/coins/%s/history"
+)
+
+// CoinGecko is the CoinGecko implementation of Provider. The
+// precision of CoinGecko provider is up to day.
+type CoinGecko struct {
+	client  *http.Client
+	baseURL string
+}
+
+// New creates a new CoinGecko instance.
+func New() *CoinGecko {
+	const (
+		defaultTimeout = time.Second * 10
+		baseURL        = "https://api.coingecko.com/api/v3"
+	)
+	client := &http.Client{
+		Timeout: defaultTimeout,
+	}
+	return &CoinGecko{
+		client:  client,
+		baseURL: baseURL,
+	}
+}
+
+type historyResponse struct {
+	MarketData marketData `json:"market_data"`
+}
+
+type marketData struct {
+	CurrentPrice map[string]float64 `json:"current_price"`
+}
+
+// Price returns the price of given token in real world currency at given timestamp.
+func (cg *CoinGecko) Price(token, currency string, timestamp time.Time) (float64, error) {
+	var endpoint string
+	currentDate := time.Now().UTC().Format(timeLayout)
+	queryDate := timestamp.UTC().Format(timeLayout)
+
+	if currentDate == queryDate {
+		endpoint = currentEndpoint
+	} else {
+		endpoint = historicalEndpoint
+	}
+
+	url := fmt.Sprintf(endpoint, cg.baseURL, token)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Add("Accept", "application/json")
+	q := req.URL.Query()
+	q.Add("date", timestamp.UTC().Format(timeLayout))
+	req.URL.RawQuery = q.Encode()
+	rsp, err := cg.client.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer rsp.Body.Close()
+
+	if rsp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("unexpected status code: %s", rsp.Status)
+	}
+
+	var history = &historyResponse{}
+	if err = json.NewDecoder(rsp.Body).Decode(history); err != nil {
+		return 0, err
+	}
+	rate, ok := history.MarketData.CurrentPrice[currency]
+	if !ok {
+		return 0, fmt.Errorf("currency %q not found in market data", currency)
+	}
+	return rate, nil
+}
+
+// ETHPrice returns the historical price of ETH in USD.
+func (cg *CoinGecko) ETHPrice(timestamp time.Time) (float64, error) {
+	const (
+		ethereumID = "ethereum"
+		usdID      = "usd"
+	)
+	return cg.Price(ethereumID, usdID, timestamp)
+}
+
+//Name return name of CoinGecko provider name
+func (cg *CoinGecko) Name() string {
+	return providerName
+}

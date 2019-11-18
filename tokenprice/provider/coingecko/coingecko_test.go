@@ -8,7 +8,7 @@ import (
 const cgName = "coingecko"
 
 func TestCoinGecko(t *testing.T) {
-	cg := New()
+	cg := New(defaultReqTimeWaiting)
 	rate, err := cg.Price("bitcoin", "usd", time.Now())
 	if err != nil {
 		t.Fatal(err)

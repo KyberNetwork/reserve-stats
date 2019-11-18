@@ -8,7 +8,7 @@ import (
 const cbName = "coinbase"
 
 func TestCoinBase(t *testing.T) {
-	cb := New()
+	cb := New(defaultReqTimeWaiting)
 	rate, err := cb.Price("BTC", "USD", time.Now())
 	if err != nil {
 		t.Fatal(err)

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/urfave/cli"
+
 	"github.com/KyberNetwork/reserve-stats/tokenprice/provider/coinbase"
 	"github.com/KyberNetwork/reserve-stats/tokenprice/provider/coingecko"
 )
@@ -19,24 +21,25 @@ const (
 type PriceProvider interface {
 	ETHPrice(timestamp time.Time) (float64, error)
 	Name() string
+	Wait()
 }
 
 // NewPriceProvider return provider interface
-func NewPriceProvider(provider string) (PriceProvider, error) {
+func NewPriceProvider(c *cli.Context, provider string) (PriceProvider, error) {
 	switch provider {
 	case Coinbase:
-		return coinbase.New(), nil
+		return coinbase.NewCoinBaseFromContext(c), nil
 	case Coingecko:
-		return coingecko.New(), nil
+		return coingecko.NewCoinGeckoFromContext(c), nil
 	default:
 		return nil, fmt.Errorf("invalide provider provider=%s", provider)
 	}
 }
 
 // AllProvider return all provider interface
-func AllProvider() []PriceProvider {
+func AllProvider(c *cli.Context) []PriceProvider {
 	return []PriceProvider{
-		coinbase.New(),
-		coingecko.New(),
+		coinbase.NewCoinBaseFromContext(c),
+		coingecko.NewCoinGeckoFromContext(c),
 	}
 }

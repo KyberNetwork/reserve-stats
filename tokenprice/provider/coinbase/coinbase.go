@@ -19,12 +19,13 @@ const (
 // CoinBase is the CoinBase implementation of Provider. The
 // precision of CoinBase provider is up to day.
 type CoinBase struct {
-	client  *http.Client
-	baseURL string
+	client         *http.Client
+	baseURL        string
+	reqWaitingTime time.Duration
 }
 
 // New creates a new CoinBase instance.
-func New() *CoinBase {
+func New(reqWaitingTime time.Duration) *CoinBase {
 	const (
 		defaultTimeout = time.Second * 10
 		baseURL        = "https://api.coinbase.com/v2"
@@ -35,6 +36,16 @@ func New() *CoinBase {
 	return &CoinBase{
 		client:  client,
 		baseURL: baseURL,
+	}
+}
+
+// Option option when init coinbase instance
+type Option func(cb *CoinBase)
+
+// WithReqWaitingTime set waiting time to avoid rate limit
+func WithReqWaitingTime(reqWaitingTime time.Duration) Option {
+	return func(cb *CoinBase) {
+		cb.reqWaitingTime = reqWaitingTime
 	}
 }
 
@@ -90,6 +101,11 @@ func (cb *CoinBase) ETHPrice(timestamp time.Time) (float64, error) {
 		usdID      = "USD"
 	)
 	return cb.Price(ethereumID, usdID, timestamp)
+}
+
+// Wait sleep in reqWaitingTime to avoid rate limit
+func (cb *CoinBase) Wait() {
+	time.Sleep(cb.reqWaitingTime)
 }
 
 //Name return name of CoinBase provider name

@@ -18,12 +18,13 @@ const (
 // CoinGecko is the CoinGecko implementation of Provider. The
 // precision of CoinGecko provider is up to day.
 type CoinGecko struct {
-	client  *http.Client
-	baseURL string
+	client         *http.Client
+	baseURL        string
+	reqWaitingTime time.Duration
 }
 
 // New creates a new CoinGecko instance.
-func New() *CoinGecko {
+func New(reqWaitingTime time.Duration) *CoinGecko {
 	const (
 		defaultTimeout = time.Second * 10
 		baseURL        = "https://api.coingecko.com/api/v3"
@@ -32,8 +33,9 @@ func New() *CoinGecko {
 		Timeout: defaultTimeout,
 	}
 	return &CoinGecko{
-		client:  client,
-		baseURL: baseURL,
+		client:         client,
+		baseURL:        baseURL,
+		reqWaitingTime: reqWaitingTime,
 	}
 }
 
@@ -94,6 +96,11 @@ func (cg *CoinGecko) ETHPrice(timestamp time.Time) (float64, error) {
 		usdID      = "usd"
 	)
 	return cg.Price(ethereumID, usdID, timestamp)
+}
+
+// Wait sleep in reqWaitingTime to avoid rate limit
+func (cg *CoinGecko) Wait() {
+	time.Sleep(cg.reqWaitingTime)
 }
 
 //Name return name of CoinGecko provider name

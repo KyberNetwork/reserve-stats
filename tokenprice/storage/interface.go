@@ -17,8 +17,8 @@ const (
 
 // Storage storage interface
 type Storage interface {
-	SaveTokenPrice(token, currency, source string, timestamp time.Time, price float64) error
-	GetTokenPrice(token, currency, source string, timestamp time.Time) (float64, error)
+	SaveTokenPrice(token, currency, provider string, timestamp time.Time, price float64) error
+	GetTokenPrice(token, currency, provider string, timestamp time.Time) (float64, error)
 }
 
 // NewStorageFromContext return storage interface from context

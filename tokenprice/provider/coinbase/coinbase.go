@@ -34,8 +34,9 @@ func New(reqWaitingTime time.Duration) *CoinBase {
 		Timeout: defaultTimeout,
 	}
 	return &CoinBase{
-		client:  client,
-		baseURL: baseURL,
+		client:         client,
+		baseURL:        baseURL,
+		reqWaitingTime: reqWaitingTime,
 	}
 }
 

@@ -38,11 +38,11 @@ func initTable(db *sqlx.DB) error {
 		tokenPricesSchema = `
 			CREATE TABLE IF NOT EXISTS "tokenprices" (
 				date DATE,
-				source TEXT NOT NULL,
+				provider TEXT NOT NULL,
 				token TEXT NOT NULL,
 				currency TEXT NOT NULL,
 				value FLOAT(32) NOT NULL,
-				PRIMARY KEY (date, source, token, currency)
+				PRIMARY KEY (date, provider, token, currency)
 			);
 		`
 	)
@@ -53,24 +53,24 @@ func initTable(db *sqlx.DB) error {
 }
 
 // SaveTokenPrice save token price data
-func (trdb *TokenPriceDB) SaveTokenPrice(token, currency, source string, timestamp time.Time, price float64) error {
+func (trdb *TokenPriceDB) SaveTokenPrice(token, currency, provider string, timestamp time.Time, price float64) error {
 	var (
 		logger = trdb.sugar.With("func", caller.GetCurrentFunctionName(),
 			"date", timestamp,
 			"token", token,
-			"source", source,
+			"provider", provider,
 			"currency", currency,
 		)
 		query = `
-		INSERT INTO "tokenprices"(date, source, token, currency, value) 
+		INSERT INTO "tokenprices"(date, provider, token, currency, value) 
 		VALUES (DATE($1), $2, $3, $4, $5) 
-		ON CONFLICT (date, source, token, currency) 
+		ON CONFLICT (date, provider, token, currency) 
 		DO 
 		UPDATE SET value=$5;
 		`
 	)
 	logger.Infow("save new token price", "query", query)
-	_, err := trdb.db.Exec(query, timestamp, source, token, currency, price)
+	_, err := trdb.db.Exec(query, timestamp, provider, token, currency, price)
 	if err != nil {
 		return errors.Wrap(err, "failed to store token price to database")
 	}
@@ -82,7 +82,7 @@ type tokenPriceDB struct {
 }
 
 // GetTokenPrice save token price data
-func (trdb *TokenPriceDB) GetTokenPrice(token, currency, source string, timestamp time.Time) (float64, error) {
+func (trdb *TokenPriceDB) GetTokenPrice(token, currency, provider string, timestamp time.Time) (float64, error) {
 	var (
 		logger = trdb.sugar.With("func", caller.GetCurrentFunctionName(),
 			"date", timestamp,
@@ -90,12 +90,12 @@ func (trdb *TokenPriceDB) GetTokenPrice(token, currency, source string, timestam
 			"currency", currency,
 		)
 		query = `SELECT value FROM "tokenprices" 
-			WHERE token=$1 AND currency=$2 AND source=$3 AND date=DATE($4)`
+			WHERE token=$1 AND currency=$2 AND provider=$3 AND date=DATE($4)`
 
 		dbResult tokenPriceDB
 	)
 	logger.Infow("get token price", "query", query)
-	if err := trdb.db.Get(&dbResult, query, token, currency, source, timestamp); err == sql.ErrNoRows {
+	if err := trdb.db.Get(&dbResult, query, token, currency, provider, timestamp); err == sql.ErrNoRows {
 		return 0, ErrNotFound
 	} else if err != nil {
 		logger.Errorw("got error from database", "error", err)

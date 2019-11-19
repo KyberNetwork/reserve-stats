@@ -32,7 +32,7 @@ func NewServer(sugar *zap.SugaredLogger, host string, storage storage.Storage) *
 type queryPrice struct {
 	Token    string `form:"token" binding:"required"`
 	Currency string `form:"currency" binding:"required"`
-	Source   string `form:"source" binding:"required"`
+	Provider string `form:"provider" binding:"required"`
 	Date     string `form:"date"`
 }
 
@@ -57,7 +57,7 @@ func (sv *Server) getPrice(c *gin.Context) {
 		httputil.ResponseFailure(c, http.StatusBadRequest, errors.New("api just support token: ETH and currency: USD"))
 		return
 	}
-	price, err := sv.storage.GetTokenPrice(query.Token, query.Currency, query.Source, t)
+	price, err := sv.storage.GetTokenPrice(query.Token, query.Currency, query.Provider, t)
 	if err != nil {
 		httputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return

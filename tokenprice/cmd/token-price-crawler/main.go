@@ -17,6 +17,8 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/tokenprice/common"
 	"github.com/KyberNetwork/reserve-stats/tokenprice/provider"
+	"github.com/KyberNetwork/reserve-stats/tokenprice/provider/coinbase"
+	"github.com/KyberNetwork/reserve-stats/tokenprice/provider/coingecko"
 	"github.com/KyberNetwork/reserve-stats/tokenprice/storage"
 )
 
@@ -24,7 +26,7 @@ const (
 	fromTimeFlag       = "from-time"
 	toTimeFlag         = "to-time"
 	jobRunningTimeFlag = "job-running-time"
-	sourceFlag         = "source"
+	providerFlag       = "provider"
 
 	defaultJobRunningTime = "07:00:00"
 )
@@ -54,12 +56,14 @@ func main() {
 			Value:  defaultJobRunningTime,
 		},
 		cli.StringFlag{
-			Name:   sourceFlag,
-			Usage:  "provide source to get price",
-			EnvVar: "SOURCE",
+			Name:   providerFlag,
+			Usage:  "provide provider to get price (coingecko, coinbase)",
+			EnvVar: "PROVIDER",
 		},
 	)
 
+	app.Flags = append(app.Flags, coinbase.NewFlags()...)
+	app.Flags = append(app.Flags, coingecko.NewFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.DefaultDB)...)
 	app.Flags = append(app.Flags, libapp.NewSentryFlags()...)
 	if err := app.Run(os.Args); err != nil {
@@ -106,12 +110,12 @@ func run(c *cli.Context) error {
 	defer flush()
 
 	var (
-		source = c.String(sourceFlag)
-		ps     []provider.PriceProvider
+		providerName = c.String(providerFlag)
+		ps           []provider.PriceProvider
 	)
 
-	if len(source) != 0 {
-		p, err := provider.NewPriceProvider(c, source)
+	if len(providerName) != 0 {
+		p, err := provider.NewPriceProvider(c, providerName)
 		if err != nil {
 			sugar.Errorw("failed to init provider", "error", err)
 			return err

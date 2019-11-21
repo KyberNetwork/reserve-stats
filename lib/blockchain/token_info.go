@@ -19,9 +19,11 @@ var cachedSymbols = map[deployment.Deployment]map[common.Address]string{
 		ETHAddr: "ETH",
 		BQXAddr: "BQX",
 		OSTAddr: "OST",
+		SAIAddr: "SAI",
 	},
 	deployment.Staging: {
 		ETHAddr: "ETH",
+		SAIAddr: "SAI",
 	},
 }
 

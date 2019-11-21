@@ -88,7 +88,7 @@ func (tldb *TradeLogDB) GetTokenSymbol(address string) (string, error) {
 	logger.Debugw("get token symbol", "token", address, "query", query)
 	if err := tldb.db.Get(&symbol, query, ethereum.HexToAddress(address).Hex()); err != nil {
 		if err != sql.ErrNoRows {
-			return symbol, err
+			return symbol, fmt.Errorf("failed to get token symbol: %s", err.Error())
 		}
 	}
 	return symbol, nil

@@ -27,6 +27,8 @@ func TestTokenUpdate(t *testing.T) {
 	assert.Equal(t, "", symbol)
 
 	err = is.UpdateTokens([]string{ethAddress}, []string{"ETH"})
+	assert.NoError(t, err)
+
 	symbol, err = is.GetTokenSymbol(ethAddress)
 	assert.NoError(t, err)
 	assert.Equal(t, "ETH", symbol)

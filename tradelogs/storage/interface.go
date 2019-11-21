@@ -17,11 +17,15 @@ import (
 )
 
 const (
-	DbEngineFlag     = "db-engine"
-	defaultDbEngine  = "influx"
-	InfluxDbEngine   = "influx"
+	// DbEngineFlag flag option
+	DbEngineFlag    = "db-engine"
+	defaultDbEngine = "influx"
+	// InfluxDbEngine influxdb
+	InfluxDbEngine = "influx"
+	// PostgresDbEngine postgres db
 	PostgresDbEngine = "postgres"
 
+	// PostgresDefaultDb default db name when choosing Postgres
 	PostgresDefaultDb = "reserve_stats"
 )
 
@@ -43,8 +47,11 @@ type Interface interface {
 	GetIntegrationVolume(fromTime, toTime time.Time) (map[uint64]*common.IntegrationVolume, error)
 	LastBlock() (int64, error)
 	SaveTradeLogs(logs []common.TradeLog) error
+	GetTokenSymbol(address string) (string, error)
+	UpdateTokens(tokenAddresses, symbols []string) error
 }
 
+// NewCliFlags return dbEngine flag option
 func NewCliFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
@@ -82,7 +89,7 @@ func NewStorageInterfaceFromContext(sugar *zap.SugaredLogger, c *cli.Context, to
 		}
 		postgresStorage, err := postgres.NewTradeLogDB(sugar, db, tokenAmountFormatter)
 		if err != nil {
-			sugar.Infow("error", err)
+			sugar.Infow("error", "error", err)
 			return nil, err
 		}
 		return postgresStorage, nil

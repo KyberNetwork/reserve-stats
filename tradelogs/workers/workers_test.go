@@ -21,6 +21,14 @@ type mockStorage struct {
 	m       sync.Mutex
 }
 
+func (s *mockStorage) GetTokenSymbol(address string) (string, error) {
+	return "", nil
+}
+
+func (s *mockStorage) UpdateTokens(address, symbol []string) error {
+	return nil
+}
+
 func (s *mockStorage) Counter() int {
 	s.m.Lock()
 	defer s.m.Unlock()

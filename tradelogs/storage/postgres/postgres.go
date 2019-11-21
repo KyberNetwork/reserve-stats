@@ -73,8 +73,33 @@ func (tldb *TradeLogDB) saveReserveAddress(tx *sqlx.Tx, reserveAddressArray []st
 func (tldb *TradeLogDB) saveTokens(tx *sqlx.Tx, tokensArray []string) error {
 	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 	query := fmt.Sprintf(insertionAddressTemplate, schema.TokenTableName)
-	logger.Debugw("updating rsv...", "query", query)
+	logger.Debugw("updating tokens...", "query", query)
 	_, err := tx.Exec(query, pq.StringArray(tokensArray))
+	return err
+}
+
+// GetTokenSymbol return symbol of provided token address
+func (tldb *TradeLogDB) GetTokenSymbol(address string) (string, error) {
+	var (
+		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
+		symbol string
+	)
+	query := fmt.Sprintf("SELECT symbol FROM %1s WHERE address = $1;", schema.TokenTableName)
+	logger.Debugw("get token symbol", "token", address, "query", query)
+	if err := tldb.db.Get(&symbol, query, ethereum.HexToAddress(address).Hex()); err != nil {
+		if err != sql.ErrNoRows {
+			return symbol, err
+		}
+	}
+	return symbol, nil
+}
+
+// UpdateTokens update token symbol, insert new record if the token have not yet added to the table
+func (tldb *TradeLogDB) UpdateTokens(tokensArray []string, symbolArray []string) error {
+	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
+	query := fmt.Sprintf(updateTokenSymbolTemplate, schema.TokenTableName)
+	logger.Debugw("updating token symbols ...", "query", query)
+	_, err := tldb.db.Exec(query, pq.StringArray(tokensArray), pq.StringArray(symbolArray))
 	return err
 }
 
@@ -183,6 +208,7 @@ func (tldb *TradeLogDB) isFirstTrade(userAddr ethereum.Address) (bool, error) {
 	return result, nil
 }
 
+// LoadTradeLogs get list of tradelogs by timestamp from time to time
 func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
 	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 	var queryResult []struct {
@@ -281,6 +307,14 @@ const insertionAddressTemplate = `INSERT INTO %[1]s(
 	unnest($1::TEXT[])
 )
 ON CONFLICT ON CONSTRAINT %[1]s_address_key DO NOTHING`
+
+const updateTokenSymbolTemplate = `INSERT INTO %[1]s(
+	address,
+	symbol
+) VALUES (
+	unnest($1::TEXT[]), 
+	unnest($2::TEXT[])
+) ON CONFLICT ON CONSTRAINT %[1]s_address_key DO UPDATE SET symbol = EXCLUDED.symbol`
 
 const insertionWalletTemplate string = `
 INSERT INTO wallet(

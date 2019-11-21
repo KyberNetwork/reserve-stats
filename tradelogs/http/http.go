@@ -87,6 +87,31 @@ type burnFeeQuery struct {
 	ReserveAddrs []string `form:"reserve" binding:"dive,isAddress"`
 }
 
+func (sv *Server) getTokenSymbol(tokenAddress ethereum.Address) (string, error) {
+	symbol, err := sv.storage.GetTokenSymbol(tokenAddress.Hex())
+	if err != nil {
+		// we only log error here to notify about failed interact with db
+		// we can get symbol from blockchain later
+		sv.sugar.Errorw("get token symbol from database failed", "error", err)
+	}
+	if symbol == "" { // if cannot get symbol from database, then we get it from blockchain and save to db
+		symbol, err = sv.symbolResolver.Symbol(tokenAddress)
+		if err != nil {
+			return "", err
+		}
+		// save srcSymbol token to db
+		addresses := []string{tokenAddress.Hex()}
+		symbols := []string{symbol}
+		if err := sv.storage.UpdateTokens(addresses, symbols); err != nil {
+			// we only log here as we already get token symbol from blockchain
+			// we log error then sentry can trigger to notify us, the http flow should not
+			// be broken
+			sv.sugar.Errorw("cannot update token symbol", "error", err)
+		}
+	}
+	return symbol, nil
+}
+
 func (sv *Server) getTradeLogs(c *gin.Context) {
 	var query libhttputil.TimeRangeQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -147,7 +172,7 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 
 		// resolve token symbol
 		if !blockchain.IsZeroAddress(log.SrcAddress) {
-			srcSymbol, err := sv.symbolResolver.Symbol(log.SrcAddress)
+			srcSymbol, err := sv.getTokenSymbol(log.SrcAddress)
 			if err != nil {
 				libhttputil.ResponseFailure(
 					c,
@@ -160,7 +185,7 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 		}
 
 		if !blockchain.IsZeroAddress(log.DestAddress) {
-			dstSymbol, err := sv.symbolResolver.Symbol(log.DestAddress)
+			dstSymbol, err := sv.getTokenSymbol(log.DestAddress)
 			if err != nil {
 				libhttputil.ResponseFailure(
 					c,
@@ -224,6 +249,74 @@ func (sv *Server) getBurnFee(c *gin.Context) {
 	)
 }
 
+type getSymbolRequest struct {
+	Address string `form:"address" binding:"required"`
+}
+
+func (sv *Server) getSymbol(c *gin.Context) {
+	var query getSymbolRequest
+	if err := c.ShouldBindQuery(&query); err != nil {
+		libhttputil.ResponseFailure(
+			c,
+			http.StatusBadRequest,
+			err,
+		)
+		return
+	}
+
+	symbol, err := sv.storage.GetTokenSymbol(query.Address)
+	if err != nil {
+		libhttputil.ResponseFailure(
+			c, http.StatusInternalServerError, err,
+		)
+		return
+	}
+
+	c.JSON(
+		http.StatusOK,
+		gin.H{
+			"symbol": symbol,
+		},
+	)
+}
+
+type tokenDetail struct {
+	Address string `json:"address"`
+	Symbol  string `json:"symbol"`
+}
+
+type updateSymbolRequest []tokenDetail
+
+func (sv *Server) updateSymbol(c *gin.Context) {
+	var (
+		addresses, symbol []string
+		query             updateSymbolRequest
+	)
+	if err := c.ShouldBindJSON(&query); err != nil {
+		libhttputil.ResponseFailure(
+			c,
+			http.StatusBadRequest,
+			err,
+		)
+		return
+	}
+	for _, token := range query {
+		addresses = append(addresses, token.Address)
+		symbol = append(symbol, token.Symbol)
+	}
+
+	if err := sv.storage.UpdateTokens(addresses, symbol); err != nil {
+		libhttputil.ResponseFailure(
+			c, http.StatusInternalServerError, err,
+		)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		nil,
+	)
+}
+
 func (sv *Server) setupRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/trade-logs", sv.getTradeLogs)
@@ -239,6 +332,11 @@ func (sv *Server) setupRouter() *gin.Engine {
 	r.GET("/country-stats", sv.getCountryStats)
 	r.GET("/heat-map", sv.getTokenHeatMap)
 	r.GET("/integration-volume", sv.getIntegrationVolume)
+
+	// token symbol
+	r.GET("/symbol", sv.getSymbol)
+	r.POST("/update-symbol", sv.updateSymbol)
+
 	return r
 }
 

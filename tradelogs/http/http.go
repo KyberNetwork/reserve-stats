@@ -281,8 +281,8 @@ func (sv *Server) getSymbol(c *gin.Context) {
 }
 
 type tokenDetail struct {
-	Address string `json:"address"`
-	Symbol  string `json:"symbol"`
+	Address string `json:"address" binding:"required"`
+	Symbol  string `json:"symbol" binding:"required"`
 }
 
 type updateSymbolRequest []tokenDetail
@@ -335,7 +335,7 @@ func (sv *Server) setupRouter() *gin.Engine {
 
 	// token symbol
 	r.GET("/symbol", sv.getSymbol)
-	r.POST("/update-symbol", sv.updateSymbol)
+	r.POST("/symbol", sv.updateSymbol)
 
 	return r
 }

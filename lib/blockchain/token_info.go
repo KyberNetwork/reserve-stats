@@ -125,7 +125,7 @@ func (t *TokenInfoGetter) Symbol(address common.Address) (string, error) {
 	if t.tokenStorage != nil {
 		// get symbol from storage
 		symbol, err = t.tokenStorage.GetTokenSymbol(address.Hex())
-		if err == nil {
+		if err == nil && symbol != "" {
 			// save to cached
 			t.cachedSymbol.Store(address, symbol)
 			return symbol, nil

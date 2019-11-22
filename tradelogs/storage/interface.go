@@ -89,7 +89,7 @@ func NewStorageInterfaceFromContext(sugar *zap.SugaredLogger, c *cli.Context, to
 		}
 		postgresStorage, err := postgres.NewTradeLogDB(sugar, db, tokenAmountFormatter)
 		if err != nil {
-			sugar.Errorw("error", "error", err)
+			sugar.Errorw("failed to initiate postgres storage", "error", err)
 			return nil, err
 		}
 		return postgresStorage, nil

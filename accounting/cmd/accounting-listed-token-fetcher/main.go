@@ -97,7 +97,7 @@ func run(c *cli.Context) error {
 		}
 	}
 
-	tokenSymbol, err := blockchain.NewTokenInfoGetterFromContext(c)
+	tokenSymbol, err := blockchain.NewTokenInfoGetterFromContext(c, nil)
 	if err != nil {
 		return err
 	}

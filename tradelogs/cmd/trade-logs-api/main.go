@@ -61,7 +61,7 @@ func main() {
 			options = append(options, http.WithUserProfile(cachedUserClient))
 		}
 
-		symbolResolver, err := blockchain.NewTokenInfoGetterFromContext(c)
+		symbolResolver, err := blockchain.NewTokenInfoGetterFromContext(c, storageInterface)
 		if err != nil {
 			return err
 		}

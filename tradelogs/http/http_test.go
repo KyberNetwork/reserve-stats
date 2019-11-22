@@ -23,6 +23,14 @@ func (s *mockStorage) GetIntegrationVolume(fromTime, toTime time.Time) (map[uint
 type mockStorage struct {
 }
 
+func (s *mockStorage) GetTokenSymbol(address string) (string, error) {
+	return "", nil
+}
+
+func (s *mockStorage) UpdateTokens(addresses, symbols []string) error {
+	return nil
+}
+
 func (s *mockStorage) LastBlock() (int64, error) {
 	return 0, nil
 }

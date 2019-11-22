@@ -23,6 +23,8 @@ func WithTradeLogURL(tradeLogsURL string) Option {
 		s.r.GET("/country-stats", tradeLogsProxyMW)
 		s.r.GET("/heat-map", tradeLogsProxyMW)
 		s.r.GET("/integration-volume", tradeLogsProxyMW)
+		s.r.GET("/symbol", tradeLogsProxyMW)
+		s.r.POST("/symbol", tradeLogsProxyMW)
 		return nil
 	}
 }

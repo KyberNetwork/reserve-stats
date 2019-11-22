@@ -89,7 +89,7 @@ func NewStorageInterfaceFromContext(sugar *zap.SugaredLogger, c *cli.Context, to
 		}
 		postgresStorage, err := postgres.NewTradeLogDB(sugar, db, tokenAmountFormatter)
 		if err != nil {
-			sugar.Infow("error", "error", err)
+			sugar.Errorw("error", "error", err)
 			return nil, err
 		}
 		return postgresStorage, nil

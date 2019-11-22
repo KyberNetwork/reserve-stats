@@ -67,7 +67,7 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (map[string]map[string]com
 		return nil, err
 	}
 
-	symbolResolver, err := blockchain.NewTokenInfoGetterFromContext(fj.c)
+	symbolResolver, err := blockchain.NewTokenInfoGetterFromContext(fj.c, nil)
 	if err != nil {
 		return nil, err
 	}

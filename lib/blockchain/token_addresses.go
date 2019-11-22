@@ -25,4 +25,7 @@ var (
 
 	// PTAddr is Promotion Token address
 	PTAddr = common.HexToAddress("0x094c875704c14783049ddf8136e298b3a099c446")
+
+	// SAIAddr is Sai Stablecoin address
+	SAIAddr = common.HexToAddress("0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359")
 )

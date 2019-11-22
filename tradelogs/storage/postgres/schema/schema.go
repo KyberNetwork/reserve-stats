@@ -16,6 +16,17 @@ CREATE TABLE IF NOT EXISTS "token" (
 	id SERIAL PRIMARY KEY,
 	address TEXT UNIQUE NOT NULL
 );
+
+DO $$ 
+    BEGIN
+        BEGIN
+            ALTER TABLE "token" ADD COLUMN symbol TEXT DEFAULT '';
+        EXCEPTION
+            WHEN duplicate_column THEN RAISE NOTICE 'column symbol already exists in token.';
+        END;
+    END;
+$$;
+
 CREATE TABLE IF NOT EXISTS "reserve" (
 	id SERIAL PRIMARY KEY,
 	address TEXT UNIQUE NOT NULL

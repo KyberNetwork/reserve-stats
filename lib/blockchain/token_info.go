@@ -3,6 +3,7 @@ package blockchain
 import (
 	"context"
 	"errors"
+	"log"
 	"strings"
 	"sync"
 
@@ -19,9 +20,11 @@ var cachedSymbols = map[deployment.Deployment]map[common.Address]string{
 		ETHAddr: "ETH",
 		BQXAddr: "BQX",
 		OSTAddr: "OST",
+		SAIAddr: "SAI",
 	},
 	deployment.Staging: {
 		ETHAddr: "ETH",
+		SAIAddr: "SAI",
 	},
 }
 
@@ -32,6 +35,7 @@ var cachedName = map[common.Address]string{
 // TokenInfoGetter is a helper to get token info
 type TokenInfoGetter struct {
 	ethClient      bind.ContractBackend // eth client
+	tokenStorage   tokenStorageInterface
 	cachedSymbol   sync.Map
 	cachedName     sync.Map
 	cachedDecimals sync.Map
@@ -52,9 +56,10 @@ func TokenSymbolWithSymbols(symbols map[common.Address]string) TokenSymbolOption
 }
 
 // NewTokenSymbol returns a new TokenSymbol instance.
-func NewTokenSymbol(client bind.ContractBackend, options ...TokenSymbolOption) *TokenInfoGetter {
+func NewTokenSymbol(client bind.ContractBackend, tokenStorage tokenStorageInterface, options ...TokenSymbolOption) *TokenInfoGetter {
 	ts := &TokenInfoGetter{
-		ethClient: client,
+		ethClient:    client,
+		tokenStorage: tokenStorage,
 	}
 
 	for _, option := range options {
@@ -69,7 +74,7 @@ func NewTokenSymbol(client bind.ContractBackend, options ...TokenSymbolOption) *
 }
 
 // NewTokenInfoGetterFromContext return new instance of TokenInfoGetter
-func NewTokenInfoGetterFromContext(c *cli.Context) (*TokenInfoGetter, error) {
+func NewTokenInfoGetterFromContext(c *cli.Context, tokenStorage tokenStorageInterface) (*TokenInfoGetter, error) {
 	var options []TokenSymbolOption
 	client, err := NewEthereumClientFromFlag(c)
 	if err != nil {
@@ -82,7 +87,7 @@ func NewTokenInfoGetterFromContext(c *cli.Context) (*TokenInfoGetter, error) {
 		options = append(options, TokenSymbolWithSymbols(symbols))
 	}
 
-	return NewTokenSymbol(client, options...), nil
+	return NewTokenSymbol(client, tokenStorage, options...), nil
 }
 
 func (t *TokenInfoGetter) getNameOrSymbol(fns []getNameOrSymbolFunc, address common.Address) (string, error) {
@@ -109,18 +114,45 @@ func (t *TokenInfoGetter) Symbol(address common.Address) (string, error) {
 		err    error
 	)
 
+	// get symbol from cached
 	if val, ok := t.cachedSymbol.Load(address); ok {
 		if symbol, ok = val.(string); !ok {
 			return "", errors.New("invalid value stored in cached symbol")
 		}
 		return symbol, nil
 	}
+
+	if t.tokenStorage != nil {
+		// get symbol from storage
+		symbol, err = t.tokenStorage.GetTokenSymbol(address.Hex())
+		if err == nil {
+			// save to cached
+			t.cachedSymbol.Store(address, symbol)
+			return symbol, nil
+		}
+		// just logging
+		// TODO: using zap log with sentry
+		log.Printf("cannot get token symbol from storage: %s", err)
+	}
+
+	// get symbol from blockchain
 	symbol, err = t.getNameOrSymbol(getSymbolFns, address)
 	if err != nil {
 		return symbol, err
 	}
 	symbol = strings.ToUpper(symbol)
+	// save to cached
 	t.cachedSymbol.Store(address, symbol)
+
+	if t.tokenStorage != nil {
+		// save to persistent storage
+		err = t.tokenStorage.UpdateTokens([]string{address.Hex()}, []string{symbol})
+		if err != nil {
+			// TODO: using zap log with sentry
+			log.Printf("cannot update token symbol to persistent storage")
+		}
+	}
+
 	return symbol, nil
 }
 

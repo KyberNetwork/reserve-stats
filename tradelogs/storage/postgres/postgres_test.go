@@ -214,3 +214,30 @@ func TestTradeLogDB_LoadTradeLogs(t *testing.T) {
 		t.Logf("%+v %+v", log.OriginalEthAmount, log.EthAmount)
 	}
 }
+
+func TestTokenSymbol(t *testing.T) {
+	const (
+		dbName = "test_get_token_symbol"
+	)
+	var (
+		ethAddress = ethereum.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee").Hex()
+	)
+
+	testStorage, err := newTestTradeLogPostgresql(dbName)
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, testStorage.tearDown(dbName))
+	}()
+	require.NoError(t, loadTestData(testStorage.db, testDataFile))
+
+	symbol, err := testStorage.GetTokenSymbol(ethAddress)
+	assert.NoError(t, err)
+	assert.Equal(t, "", symbol)
+
+	err = testStorage.UpdateTokens([]string{ethAddress}, []string{"ETH"})
+	assert.NoError(t, err)
+
+	symbol, err = testStorage.GetTokenSymbol(ethAddress)
+	assert.NoError(t, err)
+	assert.Equal(t, "ETH", symbol)
+}

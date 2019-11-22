@@ -101,7 +101,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	symbolResolver, err := blockchain.NewTokenInfoGetterFromContext(c)
+	symbolResolver, err := blockchain.NewTokenInfoGetterFromContext(c, nil)
 	if err != nil {
 		return fmt.Errorf("cannot create symbol Resolver, err: %v", err)
 	}

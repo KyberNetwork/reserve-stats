@@ -88,26 +88,9 @@ type burnFeeQuery struct {
 }
 
 func (sv *Server) getTokenSymbol(tokenAddress ethereum.Address) (string, error) {
-	symbol, err := sv.storage.GetTokenSymbol(tokenAddress.Hex())
+	symbol, err := sv.symbolResolver.Symbol(tokenAddress)
 	if err != nil {
-		// we only log error here to notify about failed interact with db
-		// we can get symbol from blockchain later
-		sv.sugar.Errorw("get token symbol from database failed", "error", err)
-	}
-	if symbol == "" { // if cannot get symbol from database, then we get it from blockchain and save to db
-		symbol, err = sv.symbolResolver.Symbol(tokenAddress)
-		if err != nil {
-			return "", err
-		}
-		// save srcSymbol token to db
-		addresses := []string{tokenAddress.Hex()}
-		symbols := []string{symbol}
-		if err := sv.storage.UpdateTokens(addresses, symbols); err != nil {
-			// we only log here as we already get token symbol from blockchain
-			// we log error then sentry can trigger to notify us, the http flow should not
-			// be broken
-			sv.sugar.Errorw("cannot update token symbol", "error", err)
-		}
+		return "", err
 	}
 	return symbol, nil
 }

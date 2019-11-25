@@ -2,6 +2,8 @@ package tokenrate
 
 import "time"
 
+const mockRate float64 = 100
+
 // NewMock returns a new Mock instance.
 func NewMock() *Mock {
 	return &Mock{}
@@ -12,7 +14,7 @@ type Mock struct{}
 
 // Rate is a mock method to satisfy the tokenrate.Provider interface.
 func (m *Mock) Rate(_, _ string, _ time.Time) (float64, error) {
-	return 100, nil
+	return mockRate, nil
 }
 
 // USDRate is a mock method to satisfy the tokenrate.USDRateProvider interface.

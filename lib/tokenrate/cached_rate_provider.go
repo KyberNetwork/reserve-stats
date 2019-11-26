@@ -10,38 +10,48 @@ import (
 	"github.com/KyberNetwork/tokenrate"
 )
 
-const defaultTimeout = time.Minute * 5
+const defaultExpire = time.Hour
+const todayDefaultExpire = time.Minute * 5
 
 // CachedRateProviderOption is option for CachedRateProvider constructor
 type CachedRateProviderOption func(*CachedRateProvider)
 
-// WithTimeout is option to create CachedRateProvider with timeout
-func WithTimeout(timeout time.Duration) CachedRateProviderOption {
+// WithExpires is option to create CachedRateProvider with expiresDuration
+func WithExpires(timeout time.Duration) CachedRateProviderOption {
 	return func(crp *CachedRateProvider) {
-		crp.timeout = timeout
+		crp.expiresDuration = timeout
+	}
+}
+
+// WithTodayExpires is option to create CachedRateProvider with todayExpiresDuration
+func WithTodayExpires(exp time.Duration) CachedRateProviderOption {
+	return func(crp *CachedRateProvider) {
+		crp.todayExpiresDuration = exp
 	}
 }
 
 //NewCachedRateProvider return cached provider for eth usd rate
 func NewCachedRateProvider(sugar *zap.SugaredLogger, provider tokenrate.ETHUSDRateProvider, options ...CachedRateProviderOption) *CachedRateProvider {
 	crp := &CachedRateProvider{
-		sugar:    sugar,
-		timeout:  defaultTimeout,
-		provider: provider,
+		sugar:                sugar,
+		expiresDuration:      defaultExpire,
+		todayExpiresDuration: todayDefaultExpire,
+		provider:             provider,
 	}
 	for _, option := range options {
 		option(crp)
 	}
-	crp.cache = gocache.New(crp.timeout, crp.timeout)
+	crp.cache = gocache.New(crp.expiresDuration, crp.expiresDuration)
 	return crp
 }
 
 //CachedRateProvider is cached provider for eth usd rate
 type CachedRateProvider struct {
-	sugar    *zap.SugaredLogger
-	timeout  time.Duration
-	provider tokenrate.ETHUSDRateProvider
-	cache    *gocache.Cache
+	sugar                *zap.SugaredLogger
+	expiresDuration      time.Duration
+	todayExpiresDuration time.Duration
+	provider             tokenrate.ETHUSDRateProvider
+	cache                *gocache.Cache
 }
 
 //USDRate return usd rate
@@ -53,13 +63,19 @@ func (crp *CachedRateProvider) USDRate(timestamp time.Time) (float64, error) {
 			"timestamp", timestamp,
 		)
 	)
-	if item, found := crp.cache.Get(timestamp.Format("2006-01-02")); !found {
+	cacheKey := timestamp.UTC().Format("2006-01-02")
+	if item, found := crp.cache.Get(cacheKey); !found {
 		logger.Debug("cache miss, calling rate provider")
 		if rate, err = crp.provider.USDRate(timestamp); err != nil {
 			return 0, err
 		}
 		logger.Debugw("got ETH/USD rate", "rate", rate)
-		crp.cache.Set(timestamp.Format("2006-01-02"), rate, crp.timeout)
+		today := time.Now().UTC().Format("2006-01-02")
+		if cacheKey == today {
+			crp.cache.Set(cacheKey, rate, crp.todayExpiresDuration)
+		} else {
+			crp.cache.Set(cacheKey, rate, crp.expiresDuration)
+		}
 	} else {
 		rate, _ = item.(float64)
 	}

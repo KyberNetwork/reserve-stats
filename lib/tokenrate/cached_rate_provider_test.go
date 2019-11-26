@@ -12,10 +12,10 @@ import (
 )
 
 func TestCachedRateProvider_USDRate(t *testing.T) {
-	cache := gocache.New(defaultTimeout, defaultTimeout)
-	cache.Set("test", 1, defaultTimeout)
+	cache := gocache.New(defaultExpire, defaultExpire)
+	cache.Set("test", 1, defaultExpire)
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	provider := NewCachedRateProvider(sugar, NewMock(), WithTimeout(defaultTimeout))
+	provider := NewCachedRateProvider(sugar, NewMock(), WithExpires(defaultExpire))
 	rate, err := provider.USDRate(timeutil.TimestampMsToTime(1574681881000))
 	require.NoError(t, err)
 	assert.Equal(t, mockRate, rate)

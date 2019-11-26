@@ -70,6 +70,10 @@ func (s *mockStorage) GetTokenHeatmap(token ethereum.Address, from, to time.Time
 	return nil, nil
 }
 
+func (s *mockStorage) LoadTradeLogsByTxHash(txHash ethereum.Hash) ([]common.TradeLogBasic, error) {
+	return nil, nil
+}
+
 func newTestServer() (*Server, error) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	return NewServer(

@@ -146,6 +146,11 @@ func prepareTradeLogQuery() string {
 	return tradeLogQuery
 }
 
+// LoadTradeLogsByTxHash get list of tradelogs by tx hash
+func (is *Storage) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradeLogBasic, error) {
+	return nil, nil
+}
+
 // LoadTradeLogs return trade logs from DB
 func (is *Storage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
 	var (

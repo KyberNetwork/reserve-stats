@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -300,9 +301,41 @@ func (sv *Server) updateSymbol(c *gin.Context) {
 	)
 }
 
+type tradeLogsByTxHashParam struct {
+	TxHash string `uri:"tx_hash" binding:"required"`
+}
+
+func (sv *Server) getTradeLogsByTx(c *gin.Context) {
+	var param tradeLogsByTxHashParam
+	if err := c.ShouldBindUri(&param); err != nil {
+		libhttputil.ResponseFailure(
+			c, http.StatusInternalServerError, err,
+		)
+		return
+	}
+	if !blockchain.IsValidTxHash(param.TxHash) {
+		libhttputil.ResponseFailure(
+			c, http.StatusBadRequest, errors.New("invalid transaction hash"),
+		)
+		return
+	}
+	tradeLogs, err := sv.storage.LoadTradeLogsByTxHash(ethereum.HexToHash(param.TxHash))
+	if err != nil {
+		libhttputil.ResponseFailure(
+			c, http.StatusInternalServerError, err,
+		)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		tradeLogs,
+	)
+}
+
 func (sv *Server) setupRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/trade-logs", sv.getTradeLogs)
+	r.GET("/trade-logs/:tx_hash", sv.getTradeLogsByTx)
 	r.GET("/burn-fee", sv.getBurnFee)
 	r.GET("/asset-volume", sv.getAssetVolume)
 	r.GET("/monthly-volume", sv.getMonthlyVolume)

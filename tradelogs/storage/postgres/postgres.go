@@ -14,6 +14,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 )
@@ -204,6 +205,49 @@ func (tldb *TradeLogDB) isFirstTrade(userAddr ethereum.Address) (bool, error) {
 	if err := row.Scan(&result); err != nil {
 		tldb.sugar.Error(err)
 		return false, err
+	}
+	return result, nil
+}
+
+// LoadTradeLogsByTxHash get list of tradelogs by tx hash
+func (tldb *TradeLogDB) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradeLogBasic, error) {
+	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
+	var queryResult []struct {
+		Timestamp         time.Time `db:"timestamp"`
+		OriginalEthAmount float64   `db:"original_eth_amount"`
+		EthUsdRate        float64   `db:"eth_usd_rate"`
+		SrcAddress        string    `db:"src_address"`
+		DstAddress        string    `db:"dst_address"`
+		SrcAmount         float64   `db:"src_amount"`
+		DstAmount         float64   `db:"dst_amount"`
+		LogIndex          uint      `db:"index"`
+		WalletAddress     string    `db:"wallet_addr"`
+	}
+	err := tldb.db.Select(&queryResult, selectTradeLogsWithTxHashQuery, tx.Hex())
+	if err != nil {
+		return nil, err
+	}
+
+	if len(queryResult) == 0 {
+		logger.Debugw("empty result returned", "query", selectTradeLogsWithTxHashQuery)
+		return nil, nil
+	}
+
+	var result []common.TradeLogBasic
+
+	for _, r := range queryResult {
+		tradeLog := common.TradeLogBasic{
+			Index:         r.LogIndex,
+			Timestamp:     timeutil.TimeToTimestampMs(r.Timestamp),
+			ETHVolume:     r.OriginalEthAmount,
+			USDVolume:     r.OriginalEthAmount * r.EthUsdRate,
+			SrcAddress:    r.SrcAddress,
+			DestAddress:   r.DstAddress,
+			SrcAmount:     r.SrcAmount,
+			DestAmount:    r.DstAmount,
+			WalletAddress: r.WalletAddress,
+		}
+		result = append(result, tradeLog)
 	}
 	return result, nil
 }
@@ -438,4 +482,15 @@ INNER JOIN token AS e ON a.src_address_id = e.id
 INNER JOIN token AS f ON a.dst_address_id = f.id
 INNER JOIN wallet AS g ON a.wallet_address_id = g.id
 WHERE a.timestamp >= $1 and a.timestamp <= $2;
+`
+
+const selectTradeLogsWithTxHashQuery = `
+SELECT a.timestamp AS timestamp, original_eth_amount, eth_usd_rate,
+b.address AS src_address, c.address AS dst_address, src_amount, dst_amount,
+index, d.address AS wallet_addr
+FROM "` + schema.TradeLogsTableName + `" AS a
+INNER JOIN token AS b ON a.src_address_id = b.id
+INNER JOIN token AS c ON a.dst_address_id = c.id
+INNER JOIN wallet AS d ON a.wallet_address_id = d.id
+WHERE a.tx_hash=$1;
 `

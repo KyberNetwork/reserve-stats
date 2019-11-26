@@ -70,6 +70,8 @@ CREATE INDEX IF NOT EXISTS "trade_dst_address" ON "` + TradeLogsTableName + `"(d
 CREATE INDEX IF NOT EXISTS "trade_src_reserve_address" ON "` + TradeLogsTableName + `"(src_reserve_address_id);
 CREATE INDEX IF NOT EXISTS "trade_dst_reserve_address" ON "` + TradeLogsTableName + `"(dst_reserve_address_id);
 CREATE INDEX IF NOT EXISTS "trade_wallet_address" ON "` + TradeLogsTableName + `"(wallet_address_id);
+CREATE INDEX IF NOT EXISTS "trade_tx_hash" ON "` + TradeLogsTableName + `"(tx_hash);
 `
 
+// DefaultDateFormat ...
 const DefaultDateFormat = "2006-01-02 15:04:05"

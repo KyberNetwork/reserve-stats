@@ -43,3 +43,14 @@ func IsBurnable(token ethereum.Address) bool {
 func IsZeroAddress(address ethereum.Address) bool {
 	return address.Hex() == "0x0000000000000000000000000000000000000000"
 }
+
+//IsValidTxHash return if address is zero
+func IsValidTxHash(tx string) bool {
+	if len(tx) != 66 {
+		return false
+	}
+	if tx[:2] != "0x" {
+		return false
+	}
+	return true
+}

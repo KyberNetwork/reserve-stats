@@ -72,6 +72,21 @@ type TradeLog struct {
 	Index     uint   `json:"index"` // the index of event log in transaction receipt
 }
 
+// TradeLogBasic tradelog with basic info
+type TradeLogBasic struct {
+	SrcAddress    string `json:"src_addr"`
+	DestAddress   string `json:"dst_addr"`
+	WalletAddress string `json:"wallet_addr"`
+
+	SrcAmount  float64 `json:"src_amount"`
+	DestAmount float64 `json:"dst_amount"`
+	ETHVolume  float64 `json:"eth_volume"`
+	USDVolume  float64 `json:"usd_volume"`
+
+	Index     uint   `json:"index"` // the index of event log in transaction receipt
+	Timestamp uint64 `json:"timestamp"`
+}
+
 // MarshalJSON implements custom JSON marshaller for TradeLog to format timestamp in unix millis instead of RFC3339.
 func (tl *TradeLog) MarshalJSON() ([]byte, error) {
 	type AliasTradeLog TradeLog

@@ -103,6 +103,10 @@ func (s *mockStorage) GetMonthlyVolume(rsvAddr ethereum.Address, from, to time.T
 	return nil, nil
 }
 
+func (s *mockStorage) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradeLogBasic, error) {
+	return nil, nil
+}
+
 type mockJob struct {
 	order   int
 	failure bool

@@ -1,6 +1,7 @@
 package influx
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -147,8 +148,8 @@ func prepareTradeLogQuery() string {
 }
 
 // LoadTradeLogsByTxHash get list of tradelogs by tx hash
-func (is *Storage) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradeLogBasic, error) {
-	return nil, nil
+func (is *Storage) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradeLog, error) {
+	return nil, errors.New("not supported")
 }
 
 // LoadTradeLogs return trade logs from DB

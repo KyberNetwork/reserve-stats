@@ -326,6 +326,7 @@ func (sv *Server) getTradeLogsByTx(c *gin.Context) {
 		)
 		return
 	}
+
 	c.JSON(
 		http.StatusOK,
 		tradeLogs,

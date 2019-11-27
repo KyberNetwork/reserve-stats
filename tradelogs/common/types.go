@@ -64,7 +64,7 @@ type TradeLog struct {
 	UID      string           `json:"uid"`
 	TxSender ethereum.Address `json:"tx_sender"`
 
-	ETHUSDRate     float64 `json:"-"`
+	ETHUSDRate     float64 `json:"eth_usd_rate"`
 	ETHUSDProvider string  `json:"-"`
 
 	UserName  string `json:"user_name"`

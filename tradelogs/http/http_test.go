@@ -70,7 +70,7 @@ func (s *mockStorage) GetTokenHeatmap(token ethereum.Address, from, to time.Time
 	return nil, nil
 }
 
-func (s *mockStorage) LoadTradeLogsByTxHash(txHash ethereum.Hash) ([]common.TradeLogBasic, error) {
+func (s *mockStorage) LoadTradeLogsByTxHash(txHash ethereum.Hash) ([]common.TradeLog, error) {
 	return nil, nil
 }
 

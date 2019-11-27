@@ -1,6 +1,7 @@
 package influx
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -148,6 +149,11 @@ func prepareTradeLogQuery() string {
 	fiatAmount := fmt.Sprintf("(%s * %s) AS %s", logschema.EthAmount.String(), logschema.EthUSDRate.String(), logschema.FiatAmount.String())
 	tradeLogQuery += fiatAmount
 	return tradeLogQuery
+}
+
+// LoadTradeLogsByTxHash get list of tradelogs by tx hash
+func (is *Storage) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradeLog, error) {
+	return nil, errors.New("not supported")
 }
 
 // LoadTradeLogs return trade logs from DB

@@ -11,6 +11,7 @@ func WithTradeLogURL(tradeLogsURL string) Option {
 			return err
 		}
 		s.r.GET("/trade-logs", tradeLogsProxyMW)
+		s.r.GET("/trade-logs/:tx_hash", tradeLogsProxyMW)
 		s.r.GET("/burn-fee", tradeLogsProxyMW)
 		s.r.GET("/asset-volume", tradeLogsProxyMW)
 		s.r.GET("/reserve-volume", tradeLogsProxyMW)

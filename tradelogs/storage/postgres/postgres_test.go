@@ -215,6 +215,29 @@ func TestTradeLogDB_LoadTradeLogs(t *testing.T) {
 	}
 }
 
+func TestTradeLogDB_LoadTradeLogsByTxHash(t *testing.T) {
+	const (
+		fromTime = 1539000000000
+		toTime   = 1539250666000
+		dbName   = "test_load_trade_log"
+	)
+
+	testStorage, err := newTestTradeLogPostgresql(dbName)
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, testStorage.tearDown(dbName))
+	}()
+	require.NoError(t, loadTestData(testStorage.db, testDataFile))
+
+	tradeLogs, err := testStorage.LoadTradeLogs(timeutil.TimestampMsToTime(fromTime), timeutil.TimestampMsToTime(toTime))
+	require.NoError(t, err)
+	require.NotZero(t, len(tradeLogs))
+
+	tradeLogsBS, err := testStorage.LoadTradeLogsByTxHash(tradeLogs[0].TransactionHash)
+	require.NoError(t, err)
+	require.NotZero(t, len(tradeLogsBS))
+}
+
 func TestTokenSymbol(t *testing.T) {
 	const (
 		dbName = "test_get_token_symbol"

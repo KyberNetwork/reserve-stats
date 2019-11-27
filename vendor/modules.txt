@@ -116,6 +116,8 @@ github.com/nanmu42/etherscan-api
 github.com/oschwald/geoip2-golang
 # github.com/oschwald/maxminddb-golang v1.3.0
 github.com/oschwald/maxminddb-golang
+# github.com/patrickmn/go-cache v2.1.0+incompatible
+github.com/patrickmn/go-cache
 # github.com/pborman/uuid v1.2.0
 github.com/pborman/uuid
 # github.com/pkg/errors v0.8.1

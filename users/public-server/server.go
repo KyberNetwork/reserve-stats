@@ -52,7 +52,7 @@ func NewServer(
 		sugar:        sugar,
 		r:            r,
 		host:         host,
-		rateProvider: trlib.NewCachedRateProvider(sugar, rateProvider, trlib.WithTimeout(time.Hour)),
+		rateProvider: trlib.NewCachedRateProvider(sugar, rateProvider, trlib.WithExpires(time.Hour)),
 		redisClient:  storage,
 		userCapConf:  userCapConf,
 	}

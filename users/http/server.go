@@ -37,7 +37,7 @@ func NewServer(sugar *zap.SugaredLogger,
 	r := gin.Default()
 	return &Server{
 		sugar:        sugar,
-		rateProvider: trlib.NewCachedRateProvider(sugar, rateProvider, trlib.WithTimeout(time.Hour)),
+		rateProvider: trlib.NewCachedRateProvider(sugar, rateProvider, trlib.WithExpires(time.Hour)),
 		r:            r,
 		host:         host,
 		redisClient:  redisClient,

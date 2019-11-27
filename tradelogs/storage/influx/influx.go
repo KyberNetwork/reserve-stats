@@ -3,6 +3,7 @@ package influx
 import (
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -32,7 +33,8 @@ type Storage struct {
 	tokenAmountFormatter blockchain.TokenAmountFormatterInterface
 
 	// traded stored traded addresses to use in a single SaveTradeLogs
-	traded map[ethereum.Address]struct{}
+	traded      map[ethereum.Address]struct{}
+	tokenSymbol sync.Map
 }
 
 // NewInfluxStorage init an instance of Storage
@@ -44,7 +46,9 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 		influxClient:         influxClient,
 		tokenAmountFormatter: tokenAmountFormatter,
 		traded:               make(map[ethereum.Address]struct{}),
+		tokenSymbol:          sync.Map{},
 	}
+	storage.tokenSymbol.Store(ethereum.HexToAddress("0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359").Hex(), "SAI")
 	if err := storage.createDB(); err != nil {
 		return nil, err
 	}
@@ -92,7 +96,7 @@ func (is *Storage) SaveTradeLogs(logs []common.TradeLog) error {
 }
 
 // LastBlock returns last stored trade log block number from database.
-func (is Storage) LastBlock() (int64, error) {
+func (is *Storage) LastBlock() (int64, error) {
 	q := fmt.Sprintf(`SELECT "block_number","eth_amount" from "trades" ORDER BY time DESC limit 1`)
 
 	res, err := influxdb.QueryDB(is.influxClient, q, is.dbName)

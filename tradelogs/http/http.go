@@ -333,6 +333,29 @@ func (sv *Server) getTradeLogsByTx(c *gin.Context) {
 	)
 }
 
+func (sv *Server) get24hStats(c *gin.Context) {
+	/** --> query
+	 **/
+}
+
+func (sv *Server) getTopTokens(c *gin.Context) {
+	/**
+
+	 **/
+}
+
+func (sv *Server) getTopIntegration(c *gin.Context) {
+	/**
+	**/
+}
+
+func (sv *Server) getTopReserves(c *gin.Context) {
+	var query libhttputil.TimeRangeQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
+	}
+}
+
 func (sv *Server) setupRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/trade-logs", sv.getTradeLogs)
@@ -353,6 +376,12 @@ func (sv *Server) setupRouter() *gin.Engine {
 	// token symbol
 	r.GET("/symbol", sv.getSymbol)
 	r.POST("/symbol", sv.updateSymbol)
+
+	// twitter api
+	r.GET("/24h-stats", sv.get24hStats)
+	r.GET("/top-tokens-24h", sv.getTopTokens)
+	r.GET("/top-integrations", sv.getTopIntegration)
+	r.GET("/top-reserves", sv.getTopReserves)
 
 	return r
 }

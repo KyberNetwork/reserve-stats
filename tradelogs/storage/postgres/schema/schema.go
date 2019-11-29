@@ -31,6 +31,18 @@ CREATE TABLE IF NOT EXISTS "reserve" (
 	id SERIAL PRIMARY KEY,
 	address TEXT UNIQUE NOT NULL
 );
+
+
+DO $$ 
+    BEGIN
+        BEGIN
+            ALTER TABLE "reserve" ADD COLUMN name TEXT DEFAULT '';
+        EXCEPTION
+            WHEN duplicate_column THEN RAISE NOTICE 'column name already exists in reserve.';
+        END;
+    END;
+$$;
+
 CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	id SERIAL,
 	timestamp TIMESTAMPTZ,

@@ -333,27 +333,95 @@ func (sv *Server) getTradeLogsByTx(c *gin.Context) {
 	)
 }
 
-func (sv *Server) get24hStats(c *gin.Context) {
+func (sv *Server) getStats(c *gin.Context) {
 	/** --> query
 	 **/
+	var query libhttputil.TimeRangeQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
+	from, to, err := query.Validate()
+	if err != nil {
+		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
+	stats, err := sv.storage.GetStats(from, to)
+	if err != nil {
+		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		stats,
+	)
 }
 
 func (sv *Server) getTopTokens(c *gin.Context) {
-	/**
+	var query libhttputil.TimeRangeQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
 
-	 **/
+	from, to, err := query.Validate()
+	if err != nil {
+		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
+	topTokens, err := sv.storage.GetTopTokens(from, to)
+	if err != nil {
+		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		topTokens,
+	)
 }
 
 func (sv *Server) getTopIntegration(c *gin.Context) {
-	/**
-	**/
+	var query libhttputil.TimeRangeQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
+	from, to, err := query.Validate()
+	if err != nil {
+		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
+	topIntegration, err := sv.storage.GetTopIntegrations(from, to)
+	if err != nil {
+		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		topIntegration,
+	)
 }
 
 func (sv *Server) getTopReserves(c *gin.Context) {
 	var query libhttputil.TimeRangeQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
 		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
 	}
+	from, to, err := query.Validate()
+	if err != nil {
+		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
+	topReserves, err := sv.storage.GetTopReserves(from, to)
+	if err != nil {
+		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		topReserves,
+	)
 }
 
 func (sv *Server) setupRouter() *gin.Engine {
@@ -378,8 +446,8 @@ func (sv *Server) setupRouter() *gin.Engine {
 	r.POST("/symbol", sv.updateSymbol)
 
 	// twitter api
-	r.GET("/24h-stats", sv.get24hStats)
-	r.GET("/top-tokens-24h", sv.getTopTokens)
+	r.GET("/stats", sv.getStats)
+	r.GET("/top-tokens", sv.getTopTokens)
 	r.GET("/top-integrations", sv.getTopIntegration)
 	r.GET("/top-reserves", sv.getTopReserves)
 

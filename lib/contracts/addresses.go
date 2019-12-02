@@ -42,7 +42,10 @@ func OldBurnerContractAddress() deployment.Address {
 
 var (
 	internalNetworkContractAddress = deployment.NewAddress(
-		[]common.Address{common.HexToAddress("0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950")},
+		[]common.Address{
+			common.HexToAddress("0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950"),
+			common.HexToAddress("0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd")
+		},
 		[]common.Address{common.HexToAddress("0x65897aDCBa42dcCA5DD162c647b1cC3E31238490")},
 	)
 	internalReserveAddress = deployment.NewAddress(

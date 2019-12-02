@@ -38,6 +38,7 @@ require (
 	github.com/nanmu42/etherscan-api v1.0.4
 	github.com/oschwald/geoip2-golang v1.2.1
 	github.com/oschwald/maxminddb-golang v1.3.0 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/qiangmzsx/string-adapter v0.0.0-20180323073508-38f25303bb0c
@@ -62,3 +63,5 @@ require (
 replace github.com/ethereum/go-ethereum => github.com/favadi/go-ethereum v1.8.16-fork
 
 replace github.com/ugorji/go v1.1.4 => github.com/ugorji/go/codec v0.0.0-20190204201341-e444a5086c43
+
+go 1.13

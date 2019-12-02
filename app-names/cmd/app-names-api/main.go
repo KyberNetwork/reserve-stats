@@ -21,7 +21,6 @@ func main() {
 	app.Name = "Integration Application Name manager"
 	app.Action = run
 	app.Version = "0.0.1"
-	app.Flags = append(app.Flags)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.AppNames)...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultDB)...)
 	if err := app.Run(os.Args); err != nil {

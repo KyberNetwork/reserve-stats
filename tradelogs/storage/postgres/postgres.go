@@ -208,35 +208,120 @@ func (tldb *TradeLogDB) isFirstTrade(userAddr ethereum.Address) (bool, error) {
 	return result, nil
 }
 
+type tradeLogDBData struct {
+	Timestamp          time.Time      `db:"timestamp"`
+	BlockNumber        uint64         `db:"block_number"`
+	EthAmount          float64        `db:"eth_amount"`
+	OriginalEthAmount  float64        `db:"original_eth_amount"`
+	EthUsdRate         float64        `db:"eth_usd_rate"`
+	UserAddress        string         `db:"user_address"`
+	SrcAddress         string         `db:"src_address"`
+	DstAddress         string         `db:"dst_address"`
+	SrcAmount          float64        `db:"src_amount"`
+	DstAmount          float64        `db:"dst_amount"`
+	LogIndex           uint           `db:"index"`
+	TxHash             string         `db:"tx_hash"`
+	IP                 sql.NullString `db:"ip"`
+	Country            sql.NullString `db:"country"`
+	IntegrationApp     string         `db:"integration_app"`
+	SrcBurnAmount      float64        `db:"src_burn_amount"`
+	DstBurnAmount      float64        `db:"dst_burn_amount"`
+	SrcReserveAddress  string         `db:"src_rsv_address"`
+	DstReserveAddress  string         `db:"dst_rsv_address"`
+	SrcWalletFeeAmount float64        `db:"src_wallet_fee_amount"`
+	DstWalletFeeAmount float64        `db:"dst_wallet_fee_amount"`
+	WalletAddress      string         `db:"wallet_addr"`
+	TxSender           string         `db:"tx_sender"`
+	ReceiverAddr       string         `db:"receiver_address"`
+}
+
+func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradeLog, error) {
+	var (
+		tradeLog common.TradeLog
+		err      error
+
+		ethAmountInWei         *big.Int
+		srcAmountInWei         *big.Int
+		dstAmountInWei         *big.Int
+		originalEthAmountInWei *big.Int
+	)
+
+	if ethAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.EthAmount); err != nil {
+		return tradeLog, err
+	}
+
+	if originalEthAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.OriginalEthAmount); err != nil {
+		return tradeLog, err
+	}
+	SrcAddress := ethereum.HexToAddress(r.SrcAddress)
+	if srcAmountInWei, err = tldb.tokenAmountFormatter.ToWei(SrcAddress, r.SrcAmount); err != nil {
+		return tradeLog, err
+	}
+	DstAddress := ethereum.HexToAddress(r.DstAddress)
+	if dstAmountInWei, err = tldb.tokenAmountFormatter.ToWei(DstAddress, r.SrcAmount); err != nil {
+		return tradeLog, err
+	}
+
+	tradeLog = common.TradeLog{
+		TransactionHash:   ethereum.HexToHash(r.TxHash),
+		Index:             r.LogIndex,
+		Timestamp:         r.Timestamp,
+		BlockNumber:       r.BlockNumber,
+		EthAmount:         ethAmountInWei,
+		OriginalEthAmount: originalEthAmountInWei,
+		UserAddress:       ethereum.HexToAddress(r.UserAddress),
+		SrcAddress:        SrcAddress,
+		DestAddress:       DstAddress,
+		SrcAmount:         srcAmountInWei,
+		DestAmount:        dstAmountInWei,
+		SrcReserveAddress: ethereum.HexToAddress(r.SrcReserveAddress),
+		DstReserveAddress: ethereum.HexToAddress(r.DstReserveAddress),
+		IP:                r.IP.String,
+		Country:           r.Country.String,
+		IntegrationApp:    r.IntegrationApp,
+		FiatAmount:        r.EthAmount * r.EthUsdRate,
+		TxSender:          ethereum.HexToAddress(r.TxSender),
+		ReceiverAddress:   ethereum.HexToAddress(r.ReceiverAddr),
+		ETHUSDRate:        r.EthUsdRate,
+	}
+	return tradeLog, nil
+}
+
+// LoadTradeLogsByTxHash get list of tradelogs by tx hash
+func (tldb *TradeLogDB) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradeLog, error) {
+	var (
+		logger      = tldb.sugar.With("func", caller.GetCurrentFunctionName())
+		queryResult []tradeLogDBData
+		result      = make([]common.TradeLog, 0)
+	)
+	err := tldb.db.Select(&queryResult, selectTradeLogsWithTxHashQuery, tx.Hex())
+	if err != nil {
+		return nil, err
+	}
+
+	if len(queryResult) == 0 {
+		logger.Debugw("empty result returned", "query", selectTradeLogsWithTxHashQuery)
+		return result, nil
+	}
+
+	for _, r := range queryResult {
+		tradeLog, err := tldb.tradeLogFromDBData(r)
+		if err != nil {
+			logger.Errorw("cannot parse db data to trade log", "error", err)
+			return nil, err
+		}
+		result = append(result, tradeLog)
+	}
+	return result, nil
+}
+
 // LoadTradeLogs get list of tradelogs by timestamp from time to time
 func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
-	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
-	var queryResult []struct {
-		Timestamp          time.Time      `db:"timestamp"`
-		BlockNumber        uint64         `db:"block_number"`
-		EthAmount          float64        `db:"eth_amount"`
-		OriginalEthAmount  float64        `db:"original_eth_amount"`
-		EthUsdRate         float64        `db:"eth_usd_rate"`
-		UserAddress        string         `db:"user_address"`
-		SrcAddress         string         `db:"src_address"`
-		DstAddress         string         `db:"dst_address"`
-		SrcAmount          float64        `db:"src_amount"`
-		DstAmount          float64        `db:"dst_amount"`
-		LogIndex           uint           `db:"index"`
-		TxHash             string         `db:"tx_hash"`
-		IP                 sql.NullString `db:"ip"`
-		Country            sql.NullString `db:"country"`
-		IntegrationApp     string         `db:"integration_app"`
-		SrcBurnAmount      float64        `db:"src_burn_amount"`
-		DstBurnAmount      float64        `db:"dst_burn_amount"`
-		SrcReserveAddress  string         `db:"src_rsv_address"`
-		DstReserveAddress  string         `db:"dst_rsv_address"`
-		SrcWalletFeeAmount float64        `db:"src_wallet_fee_amount"`
-		DstWalletFeeAmount float64        `db:"dst_wallet_fee_amount"`
-		WalletAddress      string         `db:"wallet_addr"`
-		TxSender           string         `db:"tx_sender"`
-		ReceiverAddr       string         `db:"receiver_address"`
-	}
+	var (
+		logger      = tldb.sugar.With("func", caller.GetCurrentFunctionName())
+		queryResult []tradeLogDBData
+		result      = make([]common.TradeLog, 0)
+	)
 	err := tldb.db.Select(&queryResult, selectTradeLogsQuery, from, to)
 	if err != nil {
 		return nil, err
@@ -244,58 +329,15 @@ func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, er
 
 	if len(queryResult) == 0 {
 		logger.Debugw("empty result returned", "query", selectTradeLogsQuery)
-		return nil, nil
+		return result, nil
 	}
 
-	result := make([]common.TradeLog, 0)
-
 	for _, r := range queryResult {
-
-		var (
-			ethAmountInWei         *big.Int
-			srcAmountInWei         *big.Int
-			dstAmountInWei         *big.Int
-			originalEthAmountInWei *big.Int
-		)
-
-		if ethAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.EthAmount); err != nil {
+		tradeLog, err := tldb.tradeLogFromDBData(r)
+		if err != nil {
+			logger.Errorw("cannot parse db data to trade log", "error", err)
 			return nil, err
 		}
-
-		if originalEthAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.OriginalEthAmount); err != nil {
-			return nil, err
-		}
-		SrcAddress := ethereum.HexToAddress(r.SrcAddress)
-		if srcAmountInWei, err = tldb.tokenAmountFormatter.ToWei(SrcAddress, r.SrcAmount); err != nil {
-			return nil, err
-		}
-		DstAddress := ethereum.HexToAddress(r.DstAddress)
-		if dstAmountInWei, err = tldb.tokenAmountFormatter.ToWei(DstAddress, r.SrcAmount); err != nil {
-			return nil, err
-		}
-
-		tradeLog := common.TradeLog{
-			TransactionHash:   ethereum.HexToHash(r.TxHash),
-			Index:             r.LogIndex,
-			Timestamp:         r.Timestamp,
-			BlockNumber:       r.BlockNumber,
-			EthAmount:         ethAmountInWei,
-			OriginalEthAmount: originalEthAmountInWei,
-			UserAddress:       ethereum.HexToAddress(r.UserAddress),
-			SrcAddress:        SrcAddress,
-			DestAddress:       DstAddress,
-			SrcAmount:         srcAmountInWei,
-			DestAmount:        dstAmountInWei,
-			SrcReserveAddress: ethereum.HexToAddress(r.SrcReserveAddress),
-			DstReserveAddress: ethereum.HexToAddress(r.DstReserveAddress),
-			IP:                r.IP.String,
-			Country:           r.Country.String,
-			IntegrationApp:    r.IntegrationApp,
-			FiatAmount:        r.EthAmount * r.EthUsdRate,
-			TxSender:          ethereum.HexToAddress(r.TxSender),
-			ReceiverAddress:   ethereum.HexToAddress(r.ReceiverAddr),
-		}
-
 		result = append(result, tradeLog)
 	}
 	return result, nil
@@ -438,4 +480,20 @@ INNER JOIN token AS e ON a.src_address_id = e.id
 INNER JOIN token AS f ON a.dst_address_id = f.id
 INNER JOIN wallet AS g ON a.wallet_address_id = g.id
 WHERE a.timestamp >= $1 and a.timestamp <= $2;
+`
+
+const selectTradeLogsWithTxHashQuery = `
+SELECT a.timestamp AS timestamp, block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
+e.address AS src_address, f.address AS dst_address,
+src_amount, dst_amount, ip, country, integration_app, src_burn_amount, dst_burn_amount,
+index, tx_hash, b.address AS src_rsv_address, c.address AS dst_rsv_address, src_wallet_fee_amount, dst_wallet_fee_amount,
+g.address AS wallet_addr, tx_sender, receiver_address
+FROM "` + schema.TradeLogsTableName + `" AS a
+INNER JOIN reserve AS b ON a.src_reserve_address_id = b.id
+INNER JOIN reserve AS c ON a.dst_reserve_address_id = c.id
+INNER JOIN users AS d ON a.user_address_id = d.id
+INNER JOIN token AS e ON a.src_address_id = e.id
+INNER JOIN token AS f ON a.dst_address_id = f.id
+INNER JOIN wallet AS g ON a.wallet_address_id = g.id
+WHERE a.tx_hash=$1;
 `

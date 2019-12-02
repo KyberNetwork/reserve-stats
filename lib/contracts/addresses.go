@@ -42,7 +42,11 @@ func OldBurnerContractAddress() deployment.Address {
 
 var (
 	internalNetworkContractAddress = deployment.NewAddress(
-		[]common.Address{common.HexToAddress("0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950")},
+		[]common.Address{
+			common.HexToAddress("0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950"),
+			// update address for istanbul fork
+			common.HexToAddress("0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd"),
+		},
 		[]common.Address{common.HexToAddress("0x65897aDCBa42dcCA5DD162c647b1cC3E31238490")},
 	)
 	internalReserveAddress = deployment.NewAddress(
@@ -58,7 +62,11 @@ var (
 		[]common.Address{common.HexToAddress("0xC14f34233071543E979F6A79AA272b0AB1B4947D")},
 	)
 	burnerContractAddress = deployment.NewAddress(
-		[]common.Address{common.HexToAddress("0x52166528FCC12681aF996e409Ee3a421a4e128A3")},
+		[]common.Address{
+			common.HexToAddress("0x52166528FCC12681aF996e409Ee3a421a4e128A3"),
+			// updated address for istanbul fork
+			common.HexToAddress("0x8007aa43792A392b221DC091bdb2191E5fF626d1"),
+		},
 		[]common.Address{common.HexToAddress("0x39682A7b8E4A03b2c8dC6DA6E0146Aee4E29A306")},
 	)
 

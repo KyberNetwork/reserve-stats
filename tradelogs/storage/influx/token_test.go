@@ -22,14 +22,13 @@ func TestTokenUpdate(t *testing.T) {
 	}()
 	require.NoError(t, loadTestData(dbName))
 
-	symbol, err := is.GetTokenSymbol(ethAddress)
-	assert.NoError(t, err)
-	assert.Equal(t, "", symbol)
+	_, err = is.GetTokenSymbol(ethAddress)
+	assert.Error(t, err)
 
 	err = is.UpdateTokens([]string{ethAddress}, []string{"ETH"})
 	assert.NoError(t, err)
 
-	symbol, err = is.GetTokenSymbol(ethAddress)
+	symbol, err := is.GetTokenSymbol(ethAddress)
 	assert.NoError(t, err)
 	assert.Equal(t, "ETH", symbol)
 }

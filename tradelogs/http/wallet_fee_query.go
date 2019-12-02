@@ -16,7 +16,7 @@ type walletFeeQuery struct {
 	Timezone    int8   `form:"timezone" binding:"isSupportedTimezone"`
 }
 
-func (ha *Server) getWalletFee(c *gin.Context) {
+func (sv *Server) getWalletFee(c *gin.Context) {
 	var query walletFeeQuery
 
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -39,9 +39,9 @@ func (ha *Server) getWalletFee(c *gin.Context) {
 	walletAddr := common.HexToAddress(query.WalletAddr).Hex()
 	reserveAddr := common.HexToAddress(query.ReserveAddr).Hex()
 
-	walletFee, err := ha.storage.GetAggregatedWalletFee(reserveAddr, walletAddr, query.Freq, fromTime, toTime, query.Timezone)
+	walletFee, err := sv.storage.GetAggregatedWalletFee(reserveAddr, walletAddr, query.Freq, fromTime, toTime, query.Timezone)
 	if err != nil {
-		ha.sugar.Errorw("reserve addr", query.ReserveAddr, "Wallet addr", query.WalletAddr,
+		sv.sugar.Errorw("reserve addr", query.ReserveAddr, "Wallet addr", query.WalletAddr,
 			"from time", fromTime, "to time", toTime, "frequency", query.Freq)
 		httputil.ResponseFailure(
 			c,

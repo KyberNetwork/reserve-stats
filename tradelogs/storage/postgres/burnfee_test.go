@@ -1,12 +1,12 @@
 package postgres
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
@@ -57,9 +57,9 @@ func TestTradeLogDB_GetAggregatedBurnFee(t *testing.T) {
 	if !ok {
 		t.Fatalf("expect to find result at rsv %s timestamp %s, yet there is none", rsvAddr.Hex(), timeStamp)
 	}
-
-	if amount != expectedAmount {
-		t.Fatal(fmt.Errorf("Expect burnFee amount to be %.18f, got %.18f", expectedAmount, amount))
-	}
+	assert.Equal(t, expectedAmount, amount)
+	//test with empty addr
+	_, err = tldb.GetAggregatedBurnFee(from, to, freq, []ethereum.Address{})
+	assert.NoError(t, err)
 
 }

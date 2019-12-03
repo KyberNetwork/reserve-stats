@@ -1,6 +1,8 @@
 package tradelogs
 
 import (
+	"fmt"
+
 	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
@@ -57,6 +59,9 @@ var reserves = map[ethereum.Address]string{
 }
 
 // ReserveAddressToName return reserve name by its address
-func ReserveAddressToName(address ethereum.Address) string {
-	return reserves[address]
+func ReserveAddressToName(address ethereum.Address) (string, error) {
+	if name, existed := reserves[address]; existed {
+		return name, nil
+	}
+	return address.Hex(), fmt.Errorf("address does not have a name: %s", address.Hex())
 }

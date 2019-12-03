@@ -181,8 +181,8 @@ func (tldb *TradeLogDB) GetTopReserves(from, to time.Time) (common.TopReserves, 
 	}
 	var result = make(common.TopReserves)
 	for _, reserve := range topReserves {
-		reserveName := tradelogs.ReserveAddressToName(ethereum.HexToAddress(reserve.ReserveAddress))
-		if reserveName != "" {
+		reserveName, err := tradelogs.ReserveAddressToName(ethereum.HexToAddress(reserve.ReserveAddress))
+		if err == nil {
 			result[reserveName] = reserve.USDAmount
 		} else {
 			result[reserve.ReserveAddress] = reserve.USDAmount

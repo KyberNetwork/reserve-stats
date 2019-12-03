@@ -185,6 +185,7 @@ func (tldb *TradeLogDB) GetTopReserves(from, to time.Time) (common.TopReserves, 
 		if err == nil {
 			result[reserveName] = reserve.USDAmount
 		} else {
+			logger.Warnw("reserve address does not have name", "error", err)
 			result[reserve.ReserveAddress] = reserve.USDAmount
 		}
 	}

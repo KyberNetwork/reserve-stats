@@ -107,6 +107,22 @@ func (s *mockStorage) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradeLog
 	return nil, nil
 }
 
+func (s *mockStorage) GetStats(from, to time.Time) (common.StatsResponse, error) {
+	return common.StatsResponse{}, nil
+}
+
+func (s *mockStorage) GetTopTokens(from, to time.Time) (common.TopTokens, error) {
+	return common.TopTokens{}, nil
+}
+
+func (s *mockStorage) GetTopIntegrations(from, to time.Time) (common.TopIntegrations, error) {
+	return common.TopIntegrations{}, nil
+}
+
+func (s *mockStorage) GetTopReserves(from, to time.Time) (common.TopReserves, error) {
+	return common.TopReserves{}, nil
+}
+
 type mockJob struct {
 	order   int
 	failure bool

@@ -240,3 +240,26 @@ type IntegrationVolume struct {
 	KyberSwapVolume    float64 `json:"kyber_swap_volume"`
 	NonKyberSwapVolume float64 `json:"non_kyber_swap_volume"`
 }
+
+// StatsResponse reponse for stats
+type StatsResponse struct {
+	ETHVolume        float64 `json:"eth_volume"`
+	USDVolume        float64 `json:"usd_volume"`
+	UniqueAddresses  uint64  `json:"unique_addresses"`
+	NewAdresses      uint64  `json:"new_addresses"`
+	TotalTrades      uint64  `json:"total_trades"`
+	FeeCollected     float64 `json:"fee_collected"`
+	AverageTradeSize float64 `json:"average_size"`
+}
+
+// TopTokens by volume
+// map token symbol with its volume
+type TopTokens map[string]float64
+
+// TopIntegrations by volume
+// map integration name and its volume
+type TopIntegrations map[string]float64
+
+// TopReserves by volume
+// map reserve name and its volume
+type TopReserves map[string]float64

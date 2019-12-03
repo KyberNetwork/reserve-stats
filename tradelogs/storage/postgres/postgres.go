@@ -258,7 +258,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradeLog, e
 		return tradeLog, err
 	}
 	DstAddress := ethereum.HexToAddress(r.DstAddress)
-	if dstAmountInWei, err = tldb.tokenAmountFormatter.ToWei(DstAddress, r.SrcAmount); err != nil {
+	if dstAmountInWei, err = tldb.tokenAmountFormatter.ToWei(DstAddress, r.DstAmount); err != nil {
 		return tradeLog, err
 	}
 

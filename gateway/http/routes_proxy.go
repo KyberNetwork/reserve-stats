@@ -26,6 +26,10 @@ func WithTradeLogURL(tradeLogsURL string) Option {
 		s.r.GET("/integration-volume", tradeLogsProxyMW)
 		s.r.GET("/symbol", tradeLogsProxyMW)
 		s.r.POST("/symbol", tradeLogsProxyMW)
+		s.r.GET("/stats", tradeLogsProxyMW)
+		s.r.GET("/top-tokens", tradeLogsProxyMW)
+		s.r.GET("/top-integrations", tradeLogsProxyMW)
+		s.r.GET("/top-reserves", tradeLogsProxyMW)
 		return nil
 	}
 }

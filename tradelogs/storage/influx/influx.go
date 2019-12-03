@@ -449,3 +449,23 @@ func (is *Storage) AssembleKYCPoint(logItem common.TradeLog) (*client.Point, err
 	point, err := client.NewPoint("kyced", tags, fields, logItem.Timestamp)
 	return point, err
 }
+
+// GetStats mock function return StatsResponse
+func (is *Storage) GetStats(from, to time.Time) (common.StatsResponse, error) {
+	return common.StatsResponse{}, nil
+}
+
+// GetTopTokens mock function return TopTokens
+func (is *Storage) GetTopTokens(from, to time.Time) (common.TopTokens, error) {
+	return common.TopTokens{}, nil
+}
+
+// GetTopIntegrations mock function return TopIntegrations
+func (is *Storage) GetTopIntegrations(from, to time.Time) (common.TopIntegrations, error) {
+	return common.TopIntegrations{}, nil
+}
+
+// GetTopReserves mock function return TopReserves
+func (is *Storage) GetTopReserves(from, to time.Time) (common.TopReserves, error) {
+	return common.TopReserves{}, nil
+}

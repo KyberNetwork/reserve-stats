@@ -89,8 +89,8 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 
 	startingBlocks := deployment.MustGetStartingBlocksFromContext(fj.c)
 	addresses := []ethereum.Address{contracts.PricingContractAddress().MustGetOneFromContext(fj.c)}
-	addresses = append(addresses, contracts.InternalNetworkContractAddress().MustGetFromContext(fj.c)...)
-	addresses = append(addresses, contracts.BurnerContractAddress().MustGetFromContext(fj.c)...)
+	addresses = append(addresses, contracts.InternalNetworkContractAddress().MustGetOneFromContext(fj.c))
+	addresses = append(addresses, contracts.BurnerContractAddress().MustGetOneFromContext(fj.c))
 	addresses = append(addresses, contracts.NetworkContractAddress().MustGetOneFromContext(fj.c))
 	addresses = append(addresses, contracts.OldBurnerContractAddress().MustGetFromContext(fj.c)...)
 	addresses = append(addresses, contracts.OldNetworkContractAddress().MustGetFromContext(fj.c)...)

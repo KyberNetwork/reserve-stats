@@ -36,6 +36,10 @@ func (tldb *TradeLogDB) GetAggregatedBurnFee(from, to time.Time, freq string, re
 	default:
 		return nil, fmt.Errorf("frequency not supported: %v", freq)
 	}
+	args := []interface{}{
+		from,
+		to,
+	}
 
 	hexAddrs := make([]string, 0)
 	for _, rsvAddr := range reserveAddrs {
@@ -45,6 +49,7 @@ func (tldb *TradeLogDB) GetAggregatedBurnFee(from, to time.Time, freq string, re
 	addrCondition := ""
 	if len(hexAddrs) != 0 {
 		addrCondition = " AND c.address = ANY($3)"
+		args = append(args, pq.Array(hexAddrs))
 	}
 
 	integrationQuery := fmt.Sprintf(`
@@ -69,7 +74,7 @@ func (tldb *TradeLogDB) GetAggregatedBurnFee(from, to time.Time, freq string, re
 	}
 
 	logger.Debugw("prepare statement", "stmt", integrationQuery)
-	err = tldb.db.Select(&records, integrationQuery, from, to, pq.Array(hexAddrs))
+	err = tldb.db.Select(&records, integrationQuery, args...)
 	if err != nil {
 		return nil, err
 	}

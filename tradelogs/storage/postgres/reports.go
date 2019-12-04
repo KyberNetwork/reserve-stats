@@ -63,13 +63,15 @@ func (tldb *TradeLogDB) GetTopTokens(from, to time.Time) (common.TopTokens, erro
 		)
 		query = `
 	  SELECT
-	    address as token_address,
+		address as token_address,
+		symbol as token_symbol,
 		sum(usd_amount) as usd_amount
 	  FROM
 	  (
 	  SELECT
 	    sum(tradelogs.eth_amount*tradelogs.eth_usd_rate) usd_amount,
-	    token.address,
+		token.address,
+		token.symbol,
 		token.id
 	  FROM tradelogs
 	    left join token on tradelogs.src_address_id = token.id
@@ -80,7 +82,8 @@ func (tldb *TradeLogDB) GetTopTokens(from, to time.Time) (common.TopTokens, erro
 	  UNION ALL
 	  SELECT
 	    sum(tradelogs.eth_amount*tradelogs.eth_usd_rate) usd_amount,
-	    token.address,
+		token.address,
+		token.symbol,
 		token.id
 	  FROM tradelogs
 	    left join token on tradelogs.dst_address_id = token.id
@@ -88,10 +91,11 @@ func (tldb *TradeLogDB) GetTopTokens(from, to time.Time) (common.TopTokens, erro
 		timestamp >= $1 AND timestamp <= $2
 	    AND (src_burn_amount + dst_amount) > 0
 	  GROUP BY token.id
-	  ) a GROUP BY a.address;
+	  ) a GROUP BY a.address, a.symbol;
 		`
 		topTokens []struct {
 			TokenAddress string  `db:"token_address"`
+			TokenSymbol  string  `db:"token_symbol"`
 			USDAmount    float64 `db:"usd_amount"`
 		}
 	)
@@ -102,7 +106,11 @@ func (tldb *TradeLogDB) GetTopTokens(from, to time.Time) (common.TopTokens, erro
 	}
 	var result = make(common.TopTokens)
 	for _, token := range topTokens {
-		result[token.TokenAddress] = token.USDAmount
+		if token.TokenSymbol == "" {
+			result[token.TokenAddress] = token.USDAmount
+		} else {
+			result[token.TokenSymbol] = token.USDAmount
+		}
 	}
 
 	return result, nil

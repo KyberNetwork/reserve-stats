@@ -32,6 +32,12 @@ var StartingBlocks = map[Deployment]VersionedStartingBlocks{
 		v3: 7019038,
 		v2: 5925999,
 	},
+	// Ropsten starting blocks are for testing purpose
+	// TODO suppose to change for more precise log (if needed)
+	Ropsten: {
+		v3: 6899992,
+		v2: 6899991,
+	},
 }
 
 //MustGetStartingBlocksFromContext return starting blocks from context

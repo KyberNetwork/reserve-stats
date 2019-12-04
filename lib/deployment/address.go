@@ -14,10 +14,11 @@ const Flag = "deployment"
 type Address map[Deployment][]common.Address
 
 // NewAddress returns an Address instance. Address of all deployments should be present.
-func NewAddress(prodAddr, stagingAddr []common.Address) Address {
+func NewAddress(prodAddr, stagingAddr, ropstenAddr []common.Address) Address {
 	return map[Deployment][]common.Address{
 		Production: prodAddr,
 		Staging:    stagingAddr,
+		Ropsten:    ropstenAddr,
 	}
 }
 
@@ -29,6 +30,8 @@ func MustGetDeploymentFromContext(c *cli.Context) Deployment {
 		return Staging
 	case Production.String():
 		return Production
+	case Ropsten.String():
+		return Ropsten
 	default:
 		panic(fmt.Errorf("invalid deployment %s", dpl))
 	}

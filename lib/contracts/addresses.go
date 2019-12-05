@@ -45,23 +45,28 @@ var (
 		// update address for istanbul fork
 		[]common.Address{common.HexToAddress("0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd")},
 		[]common.Address{common.HexToAddress("0x65897aDCBa42dcCA5DD162c647b1cC3E31238490")},
+		[]common.Address{common.HexToAddress("0x753fe1914db38ee744e071baadd123f50f9c8e46")},
 	)
 	internalReserveAddress = deployment.NewAddress(
 		[]common.Address{common.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")},
 		[]common.Address{common.HexToAddress("0x2C5a182d280EeB5824377B98CD74871f78d6b8BC")},
+		[]common.Address{common.HexToAddress("0xEB52Ce516a8d054A574905BDc3D4a176D3a2d51a")},
 	)
 	pricingContractAddress = deployment.NewAddress(
 		[]common.Address{common.HexToAddress("0x798AbDA6Cc246D0EDbA912092A2a3dBd3d11191B")},
 		[]common.Address{common.HexToAddress("0xe3E415a7a6c287a95DC68a01ff036828073fD2e6")},
+		[]common.Address{common.HexToAddress("0xE16E257a25e287AF50C5651A4c2728b32D7e5ef7")},
 	)
 	networkContractAddress = deployment.NewAddress(
 		[]common.Address{common.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")},
 		[]common.Address{common.HexToAddress("0xC14f34233071543E979F6A79AA272b0AB1B4947D")},
+		[]common.Address{common.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")},
 	)
 	burnerContractAddress = deployment.NewAddress(
 		// updated address for istanbul fork
 		[]common.Address{common.HexToAddress("0x8007aa43792A392b221DC091bdb2191E5fF626d1")},
 		[]common.Address{common.HexToAddress("0x39682A7b8E4A03b2c8dC6DA6E0146Aee4E29A306")},
+		[]common.Address{common.HexToAddress("0x06b0fbaba8fba5161f725f2159de1e1d6409c35f")},
 	)
 
 	oldNetworkContractAddress = deployment.NewAddress(
@@ -76,6 +81,7 @@ var (
 			common.HexToAddress("0xD2D21FdeF0D054D2864ce328cc56D1238d6b239e"),
 			// staging old internal network v2
 			common.HexToAddress("0x706aBcE058DB29eB36578c463cf295F180a1Fe9C")},
+		[]common.Address{},
 	)
 
 	oldBurnerContractAddress = deployment.NewAddress(
@@ -91,5 +97,6 @@ var (
 			common.HexToAddress("0xB2cB365D803Ad914e63EA49c95eC663715c2F673"),
 			// staging old burner contract v2
 			common.HexToAddress("0xd6703974Dc30155d768c058189A2936Cf7C62Da6")},
+		[]common.Address{},
 	)
 )

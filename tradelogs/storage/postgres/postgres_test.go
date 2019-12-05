@@ -40,7 +40,7 @@ func newTestTradeLogPostgresql(dbName string) (*TradeLogDB, error) {
 		return nil, err
 	}
 	tokenAmountFormatter := blockchain.NewMockTokenAmountFormatter()
-	storage, err := NewTradeLogDB(sugar, db, tokenAmountFormatter)
+	storage, err := NewTradeLogDB(sugar, db, tokenAmountFormatter, blockchain.KNCAddr)
 	if err != nil {
 		return nil, err
 	}

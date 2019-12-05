@@ -4,9 +4,9 @@ package deployment
 
 import "strconv"
 
-const _Deployment_name = "productionstaging"
+const _Deployment_name = "productionstagingropsten"
 
-var _Deployment_index = [...]uint8{0, 10, 17}
+var _Deployment_index = [...]uint8{0, 10, 17, 24}
 
 func (i Deployment) String() string {
 	if i < 0 || i >= Deployment(len(_Deployment_index)-1) {

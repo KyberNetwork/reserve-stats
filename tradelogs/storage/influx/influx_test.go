@@ -33,6 +33,7 @@ func newTestInfluxStorage(db string) (*Storage, error) {
 		db,
 		influxClient,
 		blockchain.NewMockTokenAmountFormatter(),
+		blockchain.KCCAddr,
 	)
 	if err != nil {
 		return nil, err

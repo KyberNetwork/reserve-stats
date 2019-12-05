@@ -23,10 +23,14 @@ type TradeLogDB struct {
 	sugar                *zap.SugaredLogger
 	db                   *sqlx.DB
 	tokenAmountFormatter blockchain.TokenAmountFormatterInterface
+
+	// used for calculate burn amount
+	// as different environment have different knc address
+	kncAddr ethereum.Address
 }
 
 //NewTradeLogDB create a new instance of TradeLogDB
-func NewTradeLogDB(sugar *zap.SugaredLogger, db *sqlx.DB, tokenAmountFormatter blockchain.TokenAmountFormatterInterface) (*TradeLogDB, error) {
+func NewTradeLogDB(sugar *zap.SugaredLogger, db *sqlx.DB, tokenAmountFormatter blockchain.TokenAmountFormatterInterface, kncAddr ethereum.Address) (*TradeLogDB, error) {
 	var logger = sugar.With("func", caller.GetCurrentFunctionName())
 	var err error
 	logger.Debug("initializing database schema")
@@ -39,6 +43,7 @@ func NewTradeLogDB(sugar *zap.SugaredLogger, db *sqlx.DB, tokenAmountFormatter b
 		sugar:                sugar,
 		db:                   db,
 		tokenAmountFormatter: tokenAmountFormatter,
+		kncAddr:              kncAddr,
 	}, err
 }
 

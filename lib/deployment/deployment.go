@@ -15,4 +15,6 @@ const (
 	Production Deployment = iota //production
 	//Staging is staging mode for deployment
 	Staging //staging
+	//Ropsten is ropsten mode for deployment
+	Ropsten //ropsten
 )

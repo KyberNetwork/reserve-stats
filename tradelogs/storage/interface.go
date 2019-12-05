@@ -10,6 +10,7 @@ import (
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx"
@@ -68,9 +69,21 @@ func NewCliFlags() []cli.Flag {
 	}
 }
 
+// KNCAddressFromContext return knc address by deployment mode
+func KNCAddressFromContext(c *cli.Context) ethereum.Address {
+	deploymentMode := deployment.MustGetDeploymentFromContext(c)
+	switch deploymentMode {
+	case deployment.Ropsten:
+		return ethereum.HexToAddress("0x4e470dc7321e84ca96fcaedd0c8abcebbaeb68c6")
+	default:
+		return ethereum.HexToAddress("0xdd974d5c2e2928dea5f71b9825b8b646686bd200")
+	}
+}
+
 // NewStorageInterfaceFromContext return new storage interface
 func NewStorageInterfaceFromContext(sugar *zap.SugaredLogger, c *cli.Context, tokenAmountFormatter blockchain.TokenAmountFormatterInterface) (Interface, error) {
 	dbEngine := c.String(DbEngineFlag)
+	kncAddr := KNCAddressFromContext(c)
 	switch dbEngine {
 	case InfluxDbEngine:
 		influxClient, err := influxdb.NewClientFromContext(c)
@@ -83,6 +96,7 @@ func NewStorageInterfaceFromContext(sugar *zap.SugaredLogger, c *cli.Context, to
 			common.DatabaseName,
 			influxClient,
 			tokenAmountFormatter,
+			kncAddr,
 		)
 		if err != nil {
 			return nil, err
@@ -93,7 +107,7 @@ func NewStorageInterfaceFromContext(sugar *zap.SugaredLogger, c *cli.Context, to
 		if err != nil {
 			return nil, err
 		}
-		postgresStorage, err := postgres.NewTradeLogDB(sugar, db, tokenAmountFormatter)
+		postgresStorage, err := postgres.NewTradeLogDB(sugar, db, tokenAmountFormatter, kncAddr)
 		if err != nil {
 			sugar.Errorw("failed to initiate postgres storage", "error", err)
 			return nil, err

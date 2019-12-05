@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"sync"
 	"time"
@@ -51,7 +52,7 @@ func (f *TokenAmountFormatter) FromWei(address common.Address, amount *big.Int) 
 	}
 	decimals, err := f.getDecimals(address)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to get decimals: %s, err: %s", address.Hex(), err.Error())
 	}
 	floatAmount := new(big.Float).SetInt(amount)
 	power := new(big.Float).SetInt(new(big.Int).Exp(

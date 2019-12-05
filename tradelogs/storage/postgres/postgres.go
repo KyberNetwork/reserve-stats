@@ -279,6 +279,8 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradeLog, e
 		DestAddress:       DstAddress,
 		SrcAmount:         srcAmountInWei,
 		DestAmount:        dstAmountInWei,
+		SrcBurnAmount:     r.SrcBurnAmount,
+		DstBurnAmount:     r.DstBurnAmount,
 		SrcReserveAddress: ethereum.HexToAddress(r.SrcReserveAddress),
 		DstReserveAddress: ethereum.HexToAddress(r.DstReserveAddress),
 		IP:                r.IP.String,

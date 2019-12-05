@@ -34,7 +34,7 @@ func TestPostProcessor_Run(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	storage, err := influx.NewInfluxStorage(sugar, dbName, influxClient, blockchain.NewMockTokenAmountFormatter())
+	storage, err := influx.NewInfluxStorage(sugar, dbName, influxClient, blockchain.NewMockTokenAmountFormatter(), blockchain.KCCAddr)
 	require.NoError(t, err)
 
 	tradeLogs := []common.TradeLog{

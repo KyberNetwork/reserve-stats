@@ -333,10 +333,13 @@ func (sv *Server) getTradeLogsByTx(c *gin.Context) {
 	)
 }
 
+type getReportRequest struct {
+	libhttputil.TimeRangeQuery
+	Limit uint64 `form:"limit"`
+}
+
 func (sv *Server) getStats(c *gin.Context) {
-	/** --> query
-	 **/
-	var query libhttputil.TimeRangeQuery
+	var query getReportRequest
 	if err := c.ShouldBindQuery(&query); err != nil {
 		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
@@ -358,7 +361,7 @@ func (sv *Server) getStats(c *gin.Context) {
 }
 
 func (sv *Server) getTopTokens(c *gin.Context) {
-	var query libhttputil.TimeRangeQuery
+	var query getReportRequest
 	if err := c.ShouldBindQuery(&query); err != nil {
 		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
@@ -369,7 +372,7 @@ func (sv *Server) getTopTokens(c *gin.Context) {
 		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
-	topTokens, err := sv.storage.GetTopTokens(from, to)
+	topTokens, err := sv.storage.GetTopTokens(from, to, query.Limit)
 	if err != nil {
 		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return
@@ -381,7 +384,7 @@ func (sv *Server) getTopTokens(c *gin.Context) {
 }
 
 func (sv *Server) getTopIntegration(c *gin.Context) {
-	var query libhttputil.TimeRangeQuery
+	var query getReportRequest
 	if err := c.ShouldBindQuery(&query); err != nil {
 		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
@@ -391,7 +394,7 @@ func (sv *Server) getTopIntegration(c *gin.Context) {
 		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
-	topIntegration, err := sv.storage.GetTopIntegrations(from, to)
+	topIntegration, err := sv.storage.GetTopIntegrations(from, to, query.Limit)
 	if err != nil {
 		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return
@@ -403,7 +406,7 @@ func (sv *Server) getTopIntegration(c *gin.Context) {
 }
 
 func (sv *Server) getTopReserves(c *gin.Context) {
-	var query libhttputil.TimeRangeQuery
+	var query getReportRequest
 	if err := c.ShouldBindQuery(&query); err != nil {
 		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
@@ -413,7 +416,7 @@ func (sv *Server) getTopReserves(c *gin.Context) {
 		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
 		return
 	}
-	topReserves, err := sv.storage.GetTopReserves(from, to)
+	topReserves, err := sv.storage.GetTopReserves(from, to, query.Limit)
 	if err != nil {
 		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return

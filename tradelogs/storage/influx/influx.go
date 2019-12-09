@@ -461,16 +461,16 @@ func (is *Storage) GetStats(from, to time.Time) (common.StatsResponse, error) {
 }
 
 // GetTopTokens mock function return TopTokens
-func (is *Storage) GetTopTokens(from, to time.Time) (common.TopTokens, error) {
+func (is *Storage) GetTopTokens(from, to time.Time, limit uint64) (common.TopTokens, error) {
 	return common.TopTokens{}, nil
 }
 
 // GetTopIntegrations mock function return TopIntegrations
-func (is *Storage) GetTopIntegrations(from, to time.Time) (common.TopIntegrations, error) {
+func (is *Storage) GetTopIntegrations(from, to time.Time, limit uint64) (common.TopIntegrations, error) {
 	return common.TopIntegrations{}, nil
 }
 
 // GetTopReserves mock function return TopReserves
-func (is *Storage) GetTopReserves(from, to time.Time) (common.TopReserves, error) {
+func (is *Storage) GetTopReserves(from, to time.Time, limit uint64) (common.TopReserves, error) {
 	return common.TopReserves{}, nil
 }

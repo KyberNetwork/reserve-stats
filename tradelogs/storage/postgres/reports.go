@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
@@ -26,7 +27,7 @@ func (tldb *TradeLogDB) GetStats(from, to time.Time) (common.StatsResponse, erro
 	  COUNT(distinct(user_address_id)) AS unique_addresses,
 	  AVG(eth_amount*eth_usd_rate) as average_trade_size
 	  from tradelogs
-	  WHERE timestamp >= $1 and timestamp <= $2;
+	  WHERE timestamp >= $1 and timestamp <= $2
 	`
 		statsRecord struct {
 			ETHVolume        float64 `db:"eth_volume"`
@@ -54,22 +55,25 @@ func (tldb *TradeLogDB) GetStats(from, to time.Time) (common.StatsResponse, erro
 }
 
 // GetTopTokens return top tokens by volume in a time range
-func (tldb *TradeLogDB) GetTopTokens(from, to time.Time) (common.TopTokens, error) {
+func (tldb *TradeLogDB) GetTopTokens(from, to time.Time, limit uint64) (common.TopTokens, error) {
 	var (
 		logger = tldb.sugar.With(
+			"func", caller.GetCurrentFunctionName(),
 			"from", from,
 			"to", to,
-			"func", caller.GetCurrentFunctionName(),
+			"limit", limit,
 		)
 		query = `
 	  SELECT
-	    address as token_address,
+		address as token_address,
+		symbol as token_symbol,
 		sum(usd_amount) as usd_amount
 	  FROM
 	  (
 	  SELECT
 	    sum(tradelogs.eth_amount*tradelogs.eth_usd_rate) usd_amount,
-	    token.address,
+		token.address,
+		token.symbol,
 		token.id
 	  FROM tradelogs
 	    left join token on tradelogs.src_address_id = token.id
@@ -80,66 +84,97 @@ func (tldb *TradeLogDB) GetTopTokens(from, to time.Time) (common.TopTokens, erro
 	  UNION ALL
 	  SELECT
 	    sum(tradelogs.eth_amount*tradelogs.eth_usd_rate) usd_amount,
-	    token.address,
+		token.address,
+		token.symbol,
 		token.id
 	  FROM tradelogs
 	    left join token on tradelogs.dst_address_id = token.id
 	  WHERE
 		timestamp >= $1 AND timestamp <= $2
-	    AND (src_burn_amount + dst_amount) > 0
+	    AND (src_burn_amount + dst_burn_amount) > 0
 	  GROUP BY token.id
-	  ) a GROUP BY a.address;
+	  ) a GROUP BY a.address, a.symbol ORDER BY usd_amount DESC
 		`
 		topTokens []struct {
 			TokenAddress string  `db:"token_address"`
+			TokenSymbol  string  `db:"token_symbol"`
 			USDAmount    float64 `db:"usd_amount"`
 		}
 	)
+	if limit > 0 {
+		query += fmt.Sprintf(" LIMIT %d", limit)
+	}
 	logger.Infow("query to get top tokens", "query", query)
-
 	if err := tldb.db.Select(&topTokens, query, from, to); err != nil {
 		return common.TopTokens{}, err
 	}
 	var result = make(common.TopTokens)
 	for _, token := range topTokens {
-		result[token.TokenAddress] = token.USDAmount
+		if token.TokenSymbol == "" {
+			result[token.TokenAddress] = token.USDAmount
+		} else {
+			result[token.TokenSymbol] = token.USDAmount
+		}
 	}
 
 	return result, nil
 }
 
 // GetTopIntegrations return top integrations by volume
-func (tldb *TradeLogDB) GetTopIntegrations(from, to time.Time) (common.TopIntegrations, error) {
+func (tldb *TradeLogDB) GetTopIntegrations(from, to time.Time, limit uint64) (common.TopIntegrations, error) {
 	var (
 		logger = tldb.sugar.With(
+			"func", caller.GetCurrentFunctionName(),
 			"from", from,
 			"to", to,
-			"func", caller.GetCurrentFunctionName(),
+			"limit", limit,
 		)
 		query = `
 		SELECT
 	  wallet.address,
 	  wallet.name AS wallet_name,
-	  sum(tradelogs.eth_amount*tradelogs.eth_usd_rate) usd_amount,
+	  sum(tradelogs.eth_amount*tradelogs.eth_usd_rate) usd_amount
 	FROM tradelogs
 	  left join wallet on tradelogs.wallet_address_id = wallet.id
 	WHERE
 		timestamp >= $1 AND timestamp <= $2
-	  AND (src_burn_amount + dst_amount) > 0
-	GROUP BY wallet.address, wallet.name;
+	  AND (src_burn_amount + dst_burn_amount) > 0
+	GROUP BY wallet.address, wallet.name ORDER BY usd_amount DESC
 		`
+		topIntegrations []struct {
+			Address   string  `db:"address"`
+			Name      string  `db:"wallet_name"`
+			USDAmount float64 `db:"usd_amount"`
+		}
 	)
+	if limit > 0 {
+		query += fmt.Sprintf(" LIMIT %d", limit)
+	}
 	logger.Infow("get top integrations", "query", query)
-	return common.TopIntegrations{}, nil
+	if err := tldb.db.Select(&topIntegrations, query, from, to); err != nil {
+		return common.TopIntegrations{}, err
+	}
+
+	result := make(common.TopIntegrations)
+	for _, integration := range topIntegrations {
+		if integration.Name != "" {
+			result[integration.Name] = integration.USDAmount
+		} else {
+			result[integration.Address] = integration.USDAmount
+		}
+	}
+
+	return result, nil
 }
 
 // GetTopReserves return top reserves by volume
-func (tldb *TradeLogDB) GetTopReserves(from, to time.Time) (common.TopReserves, error) {
+func (tldb *TradeLogDB) GetTopReserves(from, to time.Time, limit uint64) (common.TopReserves, error) {
 	var (
 		logger = tldb.sugar.With(
+			"func", caller.GetCurrentFunctionName(),
 			"from", from,
 			"to", to,
-			"func", caller.GetCurrentFunctionName(),
+			"limit", limit,
 		)
 		query = `
 	  SELECT
@@ -155,7 +190,7 @@ func (tldb *TradeLogDB) GetTopReserves(from, to time.Time) (common.TopReserves, 
 	    left join reserve on tradelogs.src_reserve_address_id = reserve.id
 	  WHERE
 		timestamp >= $1 AND timestamp <= $2
-	    AND (src_burn_amount + dst_amount) > 0
+	    AND (src_burn_amount + dst_burn_amount) > 0
 	  GROUP BY reserve.id
 	  UNION ALL
 	  SELECT
@@ -166,15 +201,18 @@ func (tldb *TradeLogDB) GetTopReserves(from, to time.Time) (common.TopReserves, 
 	    left join reserve on tradelogs.dst_reserve_address_id = reserve.id
 	  WHERE
 		timestamp >= $1 AND timestamp <= $2
-	    AND (src_burn_amount + dst_amount) > 0
+		AND (src_burn_amount + dst_burn_amount) > 0
 	  GROUP BY reserve.id
-	  ) a GROUP BY a.address;
+	  ) a GROUP BY a.address ORDER BY usd_amount DESC
 		`
 		topReserves []struct {
 			ReserveAddress string  `db:"reserve_address"`
 			USDAmount      float64 `db:"usd_amount"`
 		}
 	)
+	if limit > 0 {
+		query += fmt.Sprintf(" LIMIT %d", limit)
+	}
 	logger.Infow("get top reserves", "query", query)
 	if err := tldb.db.Select(&topReserves, query, from, to); err != nil {
 		return common.TopReserves{}, err
@@ -189,5 +227,5 @@ func (tldb *TradeLogDB) GetTopReserves(from, to time.Time) (common.TopReserves, 
 			result[reserve.ReserveAddress] = reserve.USDAmount
 		}
 	}
-	return common.TopReserves{}, nil
+	return result, nil
 }

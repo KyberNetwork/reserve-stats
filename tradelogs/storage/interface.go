@@ -52,9 +52,9 @@ type Interface interface {
 	GetTokenSymbol(address string) (string, error)
 	UpdateTokens(tokenAddresses, symbols []string) error
 	GetStats(from, to time.Time) (common.StatsResponse, error)
-	GetTopTokens(from, to time.Time) (common.TopTokens, error)
-	GetTopIntegrations(from, to time.Time) (common.TopIntegrations, error)
-	GetTopReserves(from, to time.Time) (common.TopReserves, error)
+	GetTopTokens(from, to time.Time, limit uint64) (common.TopTokens, error)
+	GetTopIntegrations(from, to time.Time, limit uint64) (common.TopIntegrations, error)
+	GetTopReserves(from, to time.Time, limit uint64) (common.TopReserves, error)
 }
 
 // NewCliFlags return dbEngine flag option

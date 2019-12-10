@@ -157,7 +157,7 @@ func TestGetMonthlyVolume(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	storage, err := NewInfluxStorage(sugar, dbName, influxClient, blockchain.NewMockTokenAmountFormatter())
+	storage, err := NewInfluxStorage(sugar, dbName, influxClient, blockchain.NewMockTokenAmountFormatter(), blockchain.KNCAddr)
 	require.NoError(t, err)
 
 	tradeLogs := []common.TradeLog{

@@ -7,6 +7,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
+// GetSampleTradeLogs get sample a tradelogs
 func GetSampleTradeLogs(dataPath string) ([]common.TradeLog, error) {
 	var tradeLogs []common.TradeLog
 	byteValue, err := os.Open(dataPath)

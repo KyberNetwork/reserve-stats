@@ -36,11 +36,15 @@ type Storage struct {
 	// traded stored traded addresses to use in a single SaveTradeLogs
 	traded      map[ethereum.Address]struct{}
 	tokenSymbol sync.Map
+
+	// used for calculate burn amount
+	// as different environment have different knc address
+	kncAddr ethereum.Address
 }
 
 // NewInfluxStorage init an instance of Storage
 func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient client.Client,
-	tokenAmountFormatter blockchain.TokenAmountFormatterInterface) (*Storage, error) {
+	tokenAmountFormatter blockchain.TokenAmountFormatterInterface, kncAddr ethereum.Address) (*Storage, error) {
 	storage := &Storage{
 		sugar:                sugar,
 		dbName:               dbName,
@@ -48,6 +52,7 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 		tokenAmountFormatter: tokenAmountFormatter,
 		traded:               make(map[ethereum.Address]struct{}),
 		tokenSymbol:          sync.Map{},
+		kncAddr:              kncAddr,
 	}
 	storage.tokenSymbol.Store(ethereum.HexToAddress("0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359").Hex(), "SAI")
 	if err := storage.createDB(); err != nil {
@@ -300,7 +305,7 @@ func (is *Storage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error)
 		return nil, err
 	}
 
-	srcBurnAmount, dstBurnAmount, err := utils.GetBurnAmount(is.sugar, is.tokenAmountFormatter, log)
+	srcBurnAmount, dstBurnAmount, err := utils.GetBurnAmount(is.sugar, is.tokenAmountFormatter, log, is.kncAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -456,16 +461,16 @@ func (is *Storage) GetStats(from, to time.Time) (common.StatsResponse, error) {
 }
 
 // GetTopTokens mock function return TopTokens
-func (is *Storage) GetTopTokens(from, to time.Time) (common.TopTokens, error) {
+func (is *Storage) GetTopTokens(from, to time.Time, limit uint64) (common.TopTokens, error) {
 	return common.TopTokens{}, nil
 }
 
 // GetTopIntegrations mock function return TopIntegrations
-func (is *Storage) GetTopIntegrations(from, to time.Time) (common.TopIntegrations, error) {
+func (is *Storage) GetTopIntegrations(from, to time.Time, limit uint64) (common.TopIntegrations, error) {
 	return common.TopIntegrations{}, nil
 }
 
 // GetTopReserves mock function return TopReserves
-func (is *Storage) GetTopReserves(from, to time.Time) (common.TopReserves, error) {
+func (is *Storage) GetTopReserves(from, to time.Time, limit uint64) (common.TopReserves, error) {
 	return common.TopReserves{}, nil
 }

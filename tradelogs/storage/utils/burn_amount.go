@@ -1,6 +1,7 @@
 package utils
 
 import (
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
@@ -9,7 +10,7 @@ import (
 )
 
 // GetBurnAmount return the burn amount in float for src and
-func GetBurnAmount(sugar *zap.SugaredLogger, tokenAmountFormatter blockchain.TokenAmountFormatterInterface, log common.TradeLog) (float64, float64, error) {
+func GetBurnAmount(sugar *zap.SugaredLogger, tokenAmountFormatter blockchain.TokenAmountFormatterInterface, log common.TradeLog, kncAddr ethereum.Address) (float64, float64, error) {
 	var (
 		logger = sugar.With(
 			"func", caller.GetCurrentFunctionName(),
@@ -24,7 +25,7 @@ func GetBurnAmount(sugar *zap.SugaredLogger, tokenAmountFormatter blockchain.Tok
 			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "at least 1 burn fees (src)")
 			return srcAmount, dstAmount, nil
 		}
-		srcAmount, err := tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
+		srcAmount, err := tokenAmountFormatter.FromWei(kncAddr, log.BurnFees[0].Amount)
 		if err != nil {
 			return srcAmount, dstAmount, err
 		}
@@ -34,7 +35,7 @@ func GetBurnAmount(sugar *zap.SugaredLogger, tokenAmountFormatter blockchain.Tok
 				logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "2 burn fees (src-dst)")
 				return srcAmount, dstAmount, nil
 			}
-			dstAmount, err = tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[1].Amount)
+			dstAmount, err = tokenAmountFormatter.FromWei(kncAddr, log.BurnFees[1].Amount)
 			if err != nil {
 				return srcAmount, dstAmount, err
 			}
@@ -48,7 +49,7 @@ func GetBurnAmount(sugar *zap.SugaredLogger, tokenAmountFormatter blockchain.Tok
 			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "at least 1 burn fees (dst)")
 			return srcAmount, dstAmount, nil
 		}
-		dstAmount, err := tokenAmountFormatter.FromWei(blockchain.KNCAddr, log.BurnFees[0].Amount)
+		dstAmount, err := tokenAmountFormatter.FromWei(kncAddr, log.BurnFees[0].Amount)
 		if err != nil {
 			return srcAmount, dstAmount, err
 		}

@@ -27,6 +27,7 @@ func main() {
 	app.Version = "0.0.1"
 
 	app.Flags = append(app.Flags, usercommon.NewUserCapCliFlags()...)
+	app.Flags = append(app.Flags, usercommon.NewBlacklistFlag()...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.UsersPort)...)
 	app.Flags = append(app.Flags, libredis.NewCliFlags()...)
 	app.Flags = append(app.Flags, cli.IntFlag{
@@ -59,12 +60,18 @@ func run(c *cli.Context) error {
 	}
 	userCapConf := usercommon.NewUserCapConfigurationFromContext(c)
 
+	blacklist, err := usercommon.NewBlacklistFromContext(c, sugar)
+	if err != nil {
+		return err
+	}
+
 	server := http.NewServer(
 		sugar,
 		coingecko.New(),
 		httputil.NewHTTPAddressFromContext(c),
 		redisCacheClient,
 		userCapConf,
-		c.Int(maxBatchSizeFlag))
+		c.Int(maxBatchSizeFlag),
+		blacklist)
 	return server.Run()
 }

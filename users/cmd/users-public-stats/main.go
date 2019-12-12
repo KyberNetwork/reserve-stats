@@ -26,6 +26,7 @@ func main() {
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.UsersPublicPort)...)
 	app.Flags = append(app.Flags, libredis.NewCliFlags()...)
 	app.Flags = append(app.Flags, common.NewUserCapCliFlags()...)
+	app.Flags = append(app.Flags, common.NewBlacklistFlag()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -52,7 +53,11 @@ func run(c *cli.Context) error {
 	sugar.Debugw("initiate redis client", "client", redisClient)
 	userCapConf := common.NewUserCapConfigurationFromContext(c)
 
-	publicServer := server.NewServer(logger, httputil.NewHTTPAddressFromContext(c), coingecko.New(), redisClient, userCapConf)
+	blacklist, err := common.NewBlacklistFromContext(c, sugar)
+	if err != nil {
+		return err
+	}
 
+	publicServer := server.NewServer(logger, httputil.NewHTTPAddressFromContext(c), coingecko.New(), redisClient, userCapConf, blacklist)
 	return publicServer.Run()
 }

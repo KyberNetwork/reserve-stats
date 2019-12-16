@@ -6,13 +6,16 @@ import (
 	"net/http"
 	"time"
 
+	ethereum "github.com/ethereum/go-ethereum/common"
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
+	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	trlib "github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/users/common"
 	"github.com/KyberNetwork/tokenrate"
@@ -30,6 +33,7 @@ type Server struct {
 	rateProvider tokenrate.ETHUSDRateProvider
 	redisClient  *redis.Client
 	userCapConf  *common.UserCapConfiguration
+	blacklist    *common.Blacklist
 }
 
 //UserQuery is query for user info
@@ -44,7 +48,8 @@ func NewServer(
 	host string,
 	rateProvider tokenrate.ETHUSDRateProvider,
 	storage *redis.Client,
-	userCapConf *common.UserCapConfiguration) *Server {
+	userCapConf *common.UserCapConfiguration,
+	blacklist *common.Blacklist) *Server {
 	r := gin.Default()
 	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
 	sugar := logger.Sugar()
@@ -55,6 +60,7 @@ func NewServer(
 		rateProvider: trlib.NewCachedRateProvider(sugar, rateProvider, trlib.WithExpires(time.Hour)),
 		redisClient:  storage,
 		userCapConf:  userCapConf,
+		blacklist:    blacklist,
 	}
 }
 
@@ -88,22 +94,23 @@ func (s *Server) getUsers(c *gin.Context) {
 	}
 
 	logger.Info("query", "user query", query)
-
+	//return 0 for banned address
+	if s.blacklist.IsBanned(ethereum.HexToAddress(query.Address)) {
+		c.JSON(http.StatusOK, common.UserResponse{
+			Cap:  big.NewInt(0),
+			Rich: false,
+		})
+		return
+	}
 	volume, err = s.getAddressVolumeByKey(richPrefix, query.Address)
 	if err != nil {
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"error": err.Error()},
-		)
+		httputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	rate, err := s.rateProvider.USDRate(time.Now())
 	if err != nil {
-		c.JSON(
-			http.StatusInternalServerError,
-			gin.H{"error": fmt.Sprintf("failed  to get usd rate: %s", err.Error())},
-		)
+		httputil.ResponseFailure(c, http.StatusInternalServerError, errors.Wrap(err, "failed  to get usd rate"))
 		return
 	}
 

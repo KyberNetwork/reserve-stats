@@ -21,7 +21,6 @@ func NewBlacklistFlag() []cli.Flag {
 			Name:   blackListFlag,
 			Usage:  "json file to store blacklist",
 			EnvVar: "BLACKLIST_FILE",
-			Value:  "",
 		},
 	}
 }

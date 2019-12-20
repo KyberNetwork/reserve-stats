@@ -183,7 +183,7 @@ func (tldb *TradeLogDB) GetTopReserves(from, to time.Time, limit uint64) (common
 	  FROM
 	  (
 	  SELECT
-	    sum(tradelogs.eth_amount*tradelogs.eth_usd_rate) usd_amount,
+	    sum(tradelogs.original_eth_amount*tradelogs.eth_usd_rate) usd_amount,
 	    reserve.address,
 		reserve.id
 	  FROM tradelogs
@@ -194,7 +194,7 @@ func (tldb *TradeLogDB) GetTopReserves(from, to time.Time, limit uint64) (common
 	  GROUP BY reserve.id
 	  UNION ALL
 	  SELECT
-	    sum(tradelogs.eth_amount*tradelogs.eth_usd_rate) usd_amount,
+	    sum(tradelogs.original_eth_amount*tradelogs.eth_usd_rate) usd_amount,
 	    reserve.address,
 		reserve.id
 	  FROM tradelogs

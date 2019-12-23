@@ -46,6 +46,7 @@ var walletNamingMap = map[ethereum.Address]string{
 	ethereum.HexToAddress("0x087aC7736469716D73498e479E09119A02D7A59D"): "Opyn",
 	ethereum.HexToAddress("0x03E0635A77Ca3DbC23748aF10a568663964f4BAD"): "Fulcrum",
 	ethereum.HexToAddress("0x3fFFF2F4f6C0831FAC59534694ACd14AC2Ea501b"): "KyberSwap Android",
+	ethereum.HexToAddress("0x4D37f28D2db99e8d35A6C725a5f1749A085850a3"): "1inch.exchange",
 }
 
 // WalletAddrToName convert eth addr to name

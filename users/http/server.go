@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/tokenrate"
+	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"github.com/pkg/errors"
@@ -33,6 +34,7 @@ func NewServer(sugar *zap.SugaredLogger,
 	redisClient *redis.Client,
 	userCapConf *common.UserCapConfiguration,
 	maxBatchSize int,
+	blacklist *common.Blacklist,
 ) *Server {
 	r := gin.Default()
 	return &Server{
@@ -43,6 +45,7 @@ func NewServer(sugar *zap.SugaredLogger,
 		redisClient:  redisClient,
 		userCapConf:  userCapConf,
 		maxBatchSize: maxBatchSize,
+		blacklist:    blacklist,
 	}
 }
 
@@ -55,16 +58,19 @@ type Server struct {
 	redisClient  *redis.Client
 	userCapConf  *common.UserCapConfiguration
 	maxBatchSize int
+	blacklist    *common.Blacklist
 }
 
 type userStatsQuery struct {
-	UID   string `form:"uid" binding:"required"`
-	KYCed bool   `form:"kyced"`
+	UID     string `form:"uid" binding:"required"`
+	Address string `form:"address" binding:"required,isAddress"`
+	KYCed   bool   `form:"kyced"`
 }
 
 type userStatsBatchQuery struct {
-	UIDs  string `form:"uids" binding:"required"`
-	KYCed string `form:"kyced"  binding:"required"`
+	UIDs      string `form:"uids" binding:"required"`
+	Addresses string `form:"addresses" binding:"required"`
+	KYCed     string `form:"kyced"  binding:"required"`
 }
 
 func (s *Server) getUserVolumeByUID(uid string) (float64, error) {
@@ -109,24 +115,36 @@ func (s *Server) getUserVolumeByUIDs(uids []string) ([]float64, error) {
 	return result, nil
 }
 
-func (s *Server) convertQueryParams(query userStatsBatchQuery) ([]string, []bool, error) {
+func (s *Server) convertQueryParams(query userStatsBatchQuery) ([]string, []ethereum.Address, []bool, error) {
 	var uidArr []string
 	uidArr = append(uidArr, strings.Split(query.UIDs, ",")...)
 	var kycedArr []bool
 	for _, kycedString := range strings.Split(query.KYCed, ",") {
 		kyced, err := strconv.ParseBool(kycedString)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		kycedArr = append(kycedArr, kyced)
 	}
 	if len(uidArr) >= s.maxBatchSize {
-		return nil, nil, errors.Errorf("batch size is too big (current size %v, max size=%v)", len(uidArr), s.maxBatchSize)
+		return nil, nil, nil, errors.Errorf("batch size is too big (current size %v, max size=%v)", len(uidArr), s.maxBatchSize)
 	}
 	if len(uidArr) != len(kycedArr) {
-		return nil, nil, errors.New("len uids and kyced are not match")
+		return nil, nil, nil, errors.New("len uids and kyced are not match")
 	}
-	return uidArr, kycedArr, nil
+
+	addressStrings := strings.Split(query.Addresses, ",")
+	var addresses []ethereum.Address
+	for _, addressS := range addressStrings {
+		if !ethereum.IsHexAddress(addressS) {
+			return nil, nil, nil, errors.Errorf("input '%s' is not a address", addressS)
+		}
+		addresses = append(addresses, ethereum.HexToAddress(addressS))
+	}
+	if len(addresses) != len(uidArr) {
+		return nil, nil, nil, errors.New("len uids and addresses are not match")
+	}
+	return uidArr, addresses, kycedArr, nil
 }
 
 // stats-batch returns cap of the user with given uids, max size = 1k
@@ -149,7 +167,7 @@ func (s *Server) userStatsBatch(c *gin.Context) {
 	)
 	logger.Debugw("querying stats batch for user")
 
-	uidArr, kycedArr, err := s.convertQueryParams(input)
+	uidArr, addressArr, kycedArr, err := s.convertQueryParams(input)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
@@ -176,6 +194,16 @@ func (s *Server) userStatsBatch(c *gin.Context) {
 	//output
 	var jsonOutput []gin.H
 	for i := range uidArr {
+		if s.blacklist.IsBanned(addressArr[i]) {
+			jsonOutput = append(jsonOutput, gin.H{
+				"cap":                 big.NewInt(0),
+				"kyced":               kycedArr[i],
+				"rich":                false,
+				"volume":              big.NewInt(0),
+				"remaining_daily_cap": big.NewInt(0),
+			})
+			continue
+		}
 		userCap = blockchain.EthToWei(s.userCapConf.UserCap(kycedArr[i]).TxLimit / rate)
 		rich = s.userCapConf.IsRich(kycedArr[i], volume[i])
 		// calculate remaining cap daily
@@ -219,10 +247,21 @@ func (s *Server) userStats(c *gin.Context) {
 
 	logger = logger.With(
 		"uid", input.UID,
+		"address", input.Address,
 		"kyced", input.KYCed,
 	)
 
 	logger.Debugw("querying stats for user")
+	if s.blacklist.IsBanned(ethereum.HexToAddress(input.Address)) {
+		c.JSON(http.StatusOK, gin.H{
+			"cap":                 big.NewInt(0),
+			"kyced":               input.KYCed,
+			"rich":                false,
+			"volume":              big.NewInt(0),
+			"remaining_daily_cap": big.NewInt(0),
+		})
+		return
+	}
 
 	volume, err := s.getUserVolumeByUID(input.UID)
 	if err != nil {

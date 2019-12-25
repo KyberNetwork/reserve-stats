@@ -67,7 +67,7 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 				return nil, err
 			}
 		case kyberTradeEvent:
-			if tradeLog, err = fillKyberTradeV3(tradeLog, log); err != nil {
+			if tradeLog, err = fillKyberTradeV3(tradeLog, log, crawler.volumeExludedReserves); err != nil {
 				return nil, err
 			}
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {

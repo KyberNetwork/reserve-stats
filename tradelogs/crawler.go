@@ -47,14 +47,6 @@ const (
 	tradeExecuteEvent = "0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de"
 )
 
-var (
-	volumeExcludedReserves = []ethereum.Address{
-		ethereum.HexToAddress("0x2295fc6BC32cD12fdBb852cFf4014cEAc6d79C10"), // PT Reserve
-		ethereum.HexToAddress("0x57f8160e1c59D16C01BbE181fD94db4E56b60495"), // WETH Reserve
-		ethereum.HexToAddress("0x0000000000000000000000000000000000000000"), // Self Reserve
-	}
-)
-
 var defaultTimeout = 10 * time.Second
 var errUnknownLogTopic = errors.New("unknown log topic")
 
@@ -68,34 +60,37 @@ func NewCrawler(
 	rateProvider tokenrate.ETHUSDRateProvider,
 	addresses []ethereum.Address,
 	sb deployment.VersionedStartingBlocks,
-	etherscanClient *etherscan.Client) (*Crawler, error) {
+	etherscanClient *etherscan.Client,
+	volumeExcludedReserves []ethereum.Address) (*Crawler, error) {
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Crawler{
-		sugar:           sugar,
-		ethClient:       client,
-		txTime:          resolver,
-		broadcastClient: broadcastClient,
-		rateProvider:    rateProvider,
-		addresses:       addresses,
-		startingBlocks:  sb,
-		etherscanClient: etherscanClient,
+		sugar:                 sugar,
+		ethClient:             client,
+		txTime:                resolver,
+		broadcastClient:       broadcastClient,
+		rateProvider:          rateProvider,
+		addresses:             addresses,
+		startingBlocks:        sb,
+		etherscanClient:       etherscanClient,
+		volumeExludedReserves: volumeExcludedReserves,
 	}, nil
 }
 
 // Crawler gets trade logs on KyberNetwork on blockchain, adding the
 // information about USD equivalent on each trade.
 type Crawler struct {
-	sugar           *zap.SugaredLogger
-	ethClient       *ethclient.Client
-	txTime          *blockchain.BlockTimeResolver
-	broadcastClient broadcast.Interface
-	rateProvider    tokenrate.ETHUSDRateProvider
-	addresses       []ethereum.Address
-	startingBlocks  deployment.VersionedStartingBlocks
+	sugar                 *zap.SugaredLogger
+	ethClient             *ethclient.Client
+	txTime                *blockchain.BlockTimeResolver
+	broadcastClient       broadcast.Interface
+	rateProvider          tokenrate.ETHUSDRateProvider
+	addresses             []ethereum.Address
+	startingBlocks        deployment.VersionedStartingBlocks
+	volumeExludedReserves []ethereum.Address
 
 	etherscanClient *etherscan.Client
 }
@@ -238,7 +233,7 @@ func logDataToKyberTradeV3Params(data []byte) (
 	return
 }
 
-func isVolumeExcludedReserves(address ethereum.Address) bool {
+func isVolumeExcludedReserves(address ethereum.Address, volumeExcludedReserves []ethereum.Address) bool {
 	for _, a := range volumeExcludedReserves {
 		if address == a {
 			return true
@@ -247,7 +242,7 @@ func isVolumeExcludedReserves(address ethereum.Address) bool {
 	return false
 }
 
-func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log) (common.TradeLog, error) {
+func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log, volumeExcludedReserves []ethereum.Address) (common.TradeLog, error) {
 	srcAddress, destAddress, srcReserve, dstReserve, receiverAddress, srcAmount, destAmount, ethAmount, err := logDataToKyberTradeV3Params(logItem.Data)
 	if err != nil {
 		return common.TradeLog{}, err
@@ -260,20 +255,16 @@ func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log) (common.Trade
 	tradeLog.SrcReserveAddress = srcReserve
 	tradeLog.DstReserveAddress = dstReserve
 
-	// if number of burnFee events > 1 (2), then default we x2 the volume
-	if len(tradeLog.BurnFees) > 1 {
-		tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(len(tradeLog.BurnFees))))
-	} else {
-		// when the burnFees event < 2, we check its reserve address for volume included
-		defaultRatio := 2
-		if isVolumeExcludedReserves(tradeLog.SrcReserveAddress) {
-			defaultRatio--
-		}
-		if isVolumeExcludedReserves(tradeLog.DstReserveAddress) {
-			defaultRatio--
-		}
-		tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(defaultRatio)))
+	// update logic base on reserve instead of number of burn fee event
+	defaultRatio := 2
+	if isVolumeExcludedReserves(tradeLog.SrcReserveAddress, volumeExcludedReserves) {
+		defaultRatio--
 	}
+	if isVolumeExcludedReserves(tradeLog.DstReserveAddress, volumeExcludedReserves) {
+		defaultRatio--
+	}
+	tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(defaultRatio)))
+
 	tradeLog.TransactionHash = logItem.TxHash
 	tradeLog.Index = logItem.Index
 	tradeLog.UserAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())

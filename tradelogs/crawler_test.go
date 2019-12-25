@@ -76,7 +76,8 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		tokenrate.NewMock(),
 		v3Addresses,
 		deployment.StartingBlocks[deployment.Production],
-		ec)
+		ec,
+		[]ethereum.Address{})
 	require.NoError(t, err)
 
 	tradeLogs, err := c.GetTradeLogs(big.NewInt(7025000), big.NewInt(7025100), time.Minute)
@@ -100,7 +101,8 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		tokenrate.NewMock(),
 		v2Addresses,
 		deployment.StartingBlocks[deployment.Production],
-		ec)
+		ec,
+		[]ethereum.Address{})
 	require.NoError(t, err)
 
 	tradeLogs, err = c.GetTradeLogs(big.NewInt(6343120), big.NewInt(6343220), time.Minute)
@@ -200,7 +202,8 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		tokenrate.NewMock(),
 		v1Addresses,
 		deployment.StartingBlocks[deployment.Production],
-		ec)
+		ec,
+		[]ethereum.Address{})
 	require.NoError(t, err)
 
 	tradeLogs, err = c.GetTradeLogs(big.NewInt(5877442), big.NewInt(5877500), time.Minute)
@@ -259,7 +262,8 @@ func newTestCrawler(t *testing.T, version string) *Crawler {
 		tokenrate.NewMock(),
 		addresses,
 		deployment.StartingBlocks[deployment.Production],
-		ec)
+		ec,
+		[]ethereum.Address{})
 	require.NoError(t, err)
 	return c
 }

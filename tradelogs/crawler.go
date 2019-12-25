@@ -47,6 +47,14 @@ const (
 	tradeExecuteEvent = "0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de"
 )
 
+var (
+	volumeExcludedReserves = []ethereum.Address{
+		ethereum.HexToAddress("0x2295fc6BC32cD12fdBb852cFf4014cEAc6d79C10"), // PT Reserve
+		ethereum.HexToAddress("0x57f8160e1c59D16C01BbE181fD94db4E56b60495"), // WETH Reserve
+		ethereum.HexToAddress("0x0000000000000000000000000000000000000000"), // Self Reserve
+	}
+)
+
 var defaultTimeout = 10 * time.Second
 var errUnknownLogTopic = errors.New("unknown log topic")
 
@@ -230,6 +238,15 @@ func logDataToKyberTradeV3Params(data []byte) (
 	return
 }
 
+func isVolumeExcludedReserves(address ethereum.Address) bool {
+	for _, a := range volumeExcludedReserves {
+		if address == a {
+			return true
+		}
+	}
+	return false
+}
+
 func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log) (common.TradeLog, error) {
 	srcAddress, destAddress, srcReserve, dstReserve, receiverAddress, srcAmount, destAmount, ethAmount, err := logDataToKyberTradeV3Params(logItem.Data)
 	if err != nil {
@@ -240,13 +257,27 @@ func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log) (common.Trade
 	tradeLog.SrcAmount = srcAmount.Big()
 	tradeLog.DestAmount = destAmount.Big()
 	tradeLog.OriginalEthAmount = ethAmount.Big()
-	tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(len(tradeLog.BurnFees))))
+	tradeLog.SrcReserveAddress = srcReserve
+	tradeLog.DstReserveAddress = dstReserve
+
+	// if number of burnFee events > 1 (2), then default we x2 the volume
+	if len(tradeLog.BurnFees) > 1 {
+		tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(len(tradeLog.BurnFees))))
+	} else {
+		// when the burnFees event < 2, we check its reserve address for volume included
+		defaultRatio := 2
+		if isVolumeExcludedReserves(tradeLog.SrcReserveAddress) {
+			defaultRatio--
+		}
+		if isVolumeExcludedReserves(tradeLog.DstReserveAddress) {
+			defaultRatio--
+		}
+		tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(defaultRatio)))
+	}
 	tradeLog.TransactionHash = logItem.TxHash
 	tradeLog.Index = logItem.Index
 	tradeLog.UserAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
 	tradeLog.BlockNumber = logItem.BlockNumber
-	tradeLog.SrcReserveAddress = srcReserve
-	tradeLog.DstReserveAddress = dstReserve
 	tradeLog.ReceiverAddress = receiverAddress
 
 	return tradeLog, nil

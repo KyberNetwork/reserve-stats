@@ -95,7 +95,9 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 	addresses = append(addresses, contracts.OldBurnerContractAddress().MustGetFromContext(fj.c)...)
 	addresses = append(addresses, contracts.OldNetworkContractAddress().MustGetFromContext(fj.c)...)
 
-	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks, fj.etherscanClient)
+	volumeExcludedReserve := contracts.VolumeExcludedReserves().MustGetFromContext(fj.c)
+
+	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks, fj.etherscanClient, volumeExcludedReserve)
 	if err != nil {
 		return nil, err
 	}

@@ -40,6 +40,11 @@ func OldBurnerContractAddress() deployment.Address {
 	return oldBurnerContractAddress
 }
 
+// VolumeExcludedReserves return volume excluded reserve of all deployments
+func VolumeExcludedReserves() deployment.Address {
+	return volumeExcludedReserves
+}
+
 var (
 	internalNetworkContractAddress = deployment.NewAddress(
 		// update address for istanbul fork
@@ -98,5 +103,15 @@ var (
 			// staging old burner contract v2
 			common.HexToAddress("0xd6703974Dc30155d768c058189A2936Cf7C62Da6")},
 		[]common.Address{},
+	)
+
+	volumeExcludedReserves = deployment.NewAddress(
+		[]common.Address{
+			common.HexToAddress("0x2295fc6BC32cD12fdBb852cFf4014cEAc6d79C10"), // PT Reserve
+			common.HexToAddress("0x57f8160e1c59D16C01BbE181fD94db4E56b60495"), // WETH Reserve
+			common.HexToAddress("0x0000000000000000000000000000000000000000"), // Self Reserve
+		},
+		[]common.Address{}, // staging
+		[]common.Address{}, // ropsten
 	)
 )

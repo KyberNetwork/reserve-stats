@@ -60,34 +60,37 @@ func NewCrawler(
 	rateProvider tokenrate.ETHUSDRateProvider,
 	addresses []ethereum.Address,
 	sb deployment.VersionedStartingBlocks,
-	etherscanClient *etherscan.Client) (*Crawler, error) {
+	etherscanClient *etherscan.Client,
+	volumeExcludedReserves []ethereum.Address) (*Crawler, error) {
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Crawler{
-		sugar:           sugar,
-		ethClient:       client,
-		txTime:          resolver,
-		broadcastClient: broadcastClient,
-		rateProvider:    rateProvider,
-		addresses:       addresses,
-		startingBlocks:  sb,
-		etherscanClient: etherscanClient,
+		sugar:                 sugar,
+		ethClient:             client,
+		txTime:                resolver,
+		broadcastClient:       broadcastClient,
+		rateProvider:          rateProvider,
+		addresses:             addresses,
+		startingBlocks:        sb,
+		etherscanClient:       etherscanClient,
+		volumeExludedReserves: volumeExcludedReserves,
 	}, nil
 }
 
 // Crawler gets trade logs on KyberNetwork on blockchain, adding the
 // information about USD equivalent on each trade.
 type Crawler struct {
-	sugar           *zap.SugaredLogger
-	ethClient       *ethclient.Client
-	txTime          *blockchain.BlockTimeResolver
-	broadcastClient broadcast.Interface
-	rateProvider    tokenrate.ETHUSDRateProvider
-	addresses       []ethereum.Address
-	startingBlocks  deployment.VersionedStartingBlocks
+	sugar                 *zap.SugaredLogger
+	ethClient             *ethclient.Client
+	txTime                *blockchain.BlockTimeResolver
+	broadcastClient       broadcast.Interface
+	rateProvider          tokenrate.ETHUSDRateProvider
+	addresses             []ethereum.Address
+	startingBlocks        deployment.VersionedStartingBlocks
+	volumeExludedReserves []ethereum.Address
 
 	etherscanClient *etherscan.Client
 }
@@ -230,7 +233,16 @@ func logDataToKyberTradeV3Params(data []byte) (
 	return
 }
 
-func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log) (common.TradeLog, error) {
+func isVolumeExcludedReserves(address ethereum.Address, volumeExcludedReserves []ethereum.Address) bool {
+	for _, a := range volumeExcludedReserves {
+		if address == a {
+			return true
+		}
+	}
+	return false
+}
+
+func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log, volumeExcludedReserves []ethereum.Address) (common.TradeLog, error) {
 	srcAddress, destAddress, srcReserve, dstReserve, receiverAddress, srcAmount, destAmount, ethAmount, err := logDataToKyberTradeV3Params(logItem.Data)
 	if err != nil {
 		return common.TradeLog{}, err
@@ -240,13 +252,23 @@ func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log) (common.Trade
 	tradeLog.SrcAmount = srcAmount.Big()
 	tradeLog.DestAmount = destAmount.Big()
 	tradeLog.OriginalEthAmount = ethAmount.Big()
-	tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(len(tradeLog.BurnFees))))
+	tradeLog.SrcReserveAddress = srcReserve
+	tradeLog.DstReserveAddress = dstReserve
+
+	// update logic base on reserve instead of number of burn fee event
+	defaultRatio := 2
+	if isVolumeExcludedReserves(tradeLog.SrcReserveAddress, volumeExcludedReserves) {
+		defaultRatio--
+	}
+	if isVolumeExcludedReserves(tradeLog.DstReserveAddress, volumeExcludedReserves) {
+		defaultRatio--
+	}
+	tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(defaultRatio)))
+
 	tradeLog.TransactionHash = logItem.TxHash
 	tradeLog.Index = logItem.Index
 	tradeLog.UserAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
 	tradeLog.BlockNumber = logItem.BlockNumber
-	tradeLog.SrcReserveAddress = srcReserve
-	tradeLog.DstReserveAddress = dstReserve
 	tradeLog.ReceiverAddress = receiverAddress
 
 	return tradeLog, nil

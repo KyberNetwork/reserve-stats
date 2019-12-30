@@ -64,7 +64,7 @@ var (
 	)
 	networkContractAddress = deployment.NewAddress(
 		[]common.Address{common.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")},
-		[]common.Address{common.HexToAddress("0xC14f34233071543E979F6A79AA272b0AB1B4947D")},
+		[]common.Address{common.HexToAddress("0x6326dd73E368c036D4C4997053a021CBc52c7367")},
 		[]common.Address{common.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")},
 	)
 	burnerContractAddress = deployment.NewAddress(
@@ -85,7 +85,9 @@ var (
 		[]common.Address{
 			common.HexToAddress("0xD2D21FdeF0D054D2864ce328cc56D1238d6b239e"),
 			// staging old internal network v2
-			common.HexToAddress("0x706aBcE058DB29eB36578c463cf295F180a1Fe9C")},
+			common.HexToAddress("0x706aBcE058DB29eB36578c463cf295F180a1Fe9C"),
+			// staging old network proxy contract
+			common.HexToAddress("0xC14f34233071543E979F6A79AA272b0AB1B4947D")},
 		[]common.Address{},
 	)
 

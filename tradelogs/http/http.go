@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -285,8 +286,8 @@ func (sv *Server) updateSymbol(c *gin.Context) {
 		return
 	}
 	for _, token := range query {
-		addresses = append(addresses, token.Address)
-		symbol = append(symbol, token.Symbol)
+		addresses = append(addresses, ethereum.HexToAddress(token.Address).Hex())
+		symbol = append(symbol, strings.ToUpper(token.Symbol))
 	}
 
 	if err := sv.storage.UpdateTokens(addresses, symbol); err != nil {

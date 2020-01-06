@@ -99,12 +99,13 @@ var (
 			common.HexToAddress("0xed4f53268bfdFF39B36E8786247bA3A02Cf34B04"),
 			// old burner contract v3
 			common.HexToAddress("0x52166528FCC12681aF996e409Ee3a421a4e128A3"),
-		},
+		}, // production
 		[]common.Address{
 			common.HexToAddress("0xB2cB365D803Ad914e63EA49c95eC663715c2F673"),
 			// staging old burner contract v2
-			common.HexToAddress("0xd6703974Dc30155d768c058189A2936Cf7C62Da6")},
-		[]common.Address{},
+			common.HexToAddress("0xd6703974Dc30155d768c058189A2936Cf7C62Da6"),
+		}, // staging
+		[]common.Address{}, // ropsten
 	)
 
 	volumeExcludedReserves = deployment.NewAddress(
@@ -113,7 +114,12 @@ var (
 			common.HexToAddress("0x57f8160e1c59D16C01BbE181fD94db4E56b60495"), // WETH Reserve
 			common.HexToAddress("0x0000000000000000000000000000000000000000"), // Self Reserve
 		},
-		[]common.Address{}, // staging
-		[]common.Address{}, // ropsten
+		[]common.Address{
+			common.HexToAddress("0x0000000000000000000000000000000000000000"), // Self Reserve
+			common.HexToAddress("0x29382a4c3b22a39B83c76F261439bBCC78c72dd0"), // PT Reserve
+		}, // staging
+		[]common.Address{
+			common.HexToAddress("0x0000000000000000000000000000000000000000"), // Self Reserve
+		}, // ropsten
 	)
 )

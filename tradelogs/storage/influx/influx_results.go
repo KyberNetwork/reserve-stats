@@ -265,7 +265,7 @@ func (is *Storage) rowToTradeLog(value []interface{},
 		return tradeLog, fmt.Errorf("failed to get wallet_addr: %s", err)
 	}
 
-	walletName, ok := value[idxs[logschema.IntegrationApp]].(string)
+	walletName, ok := value[idxs[logschema.WalletName]].(string)
 	if !ok {
 		walletName = ""
 	}

@@ -2,6 +2,7 @@ package tradelogs
 
 import (
 	"context"
+	"log"
 	"math/big"
 	"time"
 
@@ -264,6 +265,16 @@ func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log, volumeExclude
 		defaultRatio--
 	}
 	tradeLog.EthAmount = big.NewInt(1).Mul(ethAmount.Big(), big.NewInt(int64(defaultRatio)))
+
+	// check big trade
+	ethPoint, ok := big.NewInt(1).SetString("5000000000000000000", 10)
+	if !ok {
+		log.Println("cannot initiate 5 eth amount in wei, err")
+	}
+
+	if tradeLog.EthAmount.Cmp(ethPoint) >= 0 {
+		// save to postgres for big trades
+	}
 
 	tradeLog.TransactionHash = logItem.TxHash
 	tradeLog.Index = logItem.Index

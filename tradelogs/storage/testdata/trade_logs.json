@@ -69,6 +69,7 @@
             {
                 "reserve_addr": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
                 "wallet_addr": "0xf1aa99c69715f423086008eb9d06dc1e35cc504d",
+                "wallet_name": "KyberSwap EU",
                 "amount": 52307168750000000
             }
         ],

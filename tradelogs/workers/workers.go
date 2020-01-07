@@ -94,6 +94,9 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 	addresses = append(addresses, contracts.NetworkContractAddress().MustGetOneFromContext(fj.c))
 	addresses = append(addresses, contracts.OldBurnerContractAddress().MustGetFromContext(fj.c)...)
 	addresses = append(addresses, contracts.OldNetworkContractAddress().MustGetFromContext(fj.c)...)
+	addresses = append(addresses, contracts.OldInternalNetworkContractAddress().MustGetFromContext(fj.c)...)
+
+	// logger.Fatalw("addresses", "addresses", addresses)
 
 	volumeExcludedReserve := contracts.VolumeExcludedReserves().MustGetFromContext(fj.c)
 

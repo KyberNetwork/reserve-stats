@@ -5,9 +5,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// InternalNetworkContractAddress returns the address of internal network contract of all deployments.
-func InternalNetworkContractAddress() deployment.Address {
-	return internalNetworkContractAddress
+// NetworkContractAddress returns the address of network contract of all deployments.
+func NetworkContractAddress() deployment.Address {
+	return networkContractAddress
 }
 
 // InternalReserveAddress returns the address of reserve contract of all deployments.
@@ -20,9 +20,9 @@ func PricingContractAddress() deployment.Address {
 	return pricingContractAddress
 }
 
-// NetworkContractAddress returns the address of network contract of all deployments.
-func NetworkContractAddress() deployment.Address {
-	return networkContractAddress
+// ProxyContractAddress returns the address of network contract of all deployments.
+func ProxyContractAddress() deployment.Address {
+	return proxyContractAddress
 }
 
 // BurnerContractAddress returns the address of burner contract of all deployments.
@@ -40,16 +40,21 @@ func OldBurnerContractAddress() deployment.Address {
 	return oldBurnerContractAddress
 }
 
+// OldProxyContractAddress returns old proxy address of all deployment
+func OldProxyContractAddress() deployment.Address {
+	return oldProxyContractAddress
+}
+
 // VolumeExcludedReserves return volume excluded reserve of all deployments
 func VolumeExcludedReserves() deployment.Address {
 	return volumeExcludedReserves
 }
 
 var (
-	internalNetworkContractAddress = deployment.NewAddress(
+	networkContractAddress = deployment.NewAddress(
 		// update address for istanbul fork
 		[]common.Address{common.HexToAddress("0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd")},
-		[]common.Address{common.HexToAddress("0x65897aDCBa42dcCA5DD162c647b1cC3E31238490")},
+		[]common.Address{common.HexToAddress("0xafBf0D08269a7eEe8d587121f3B0616c8CeF5077")},
 		[]common.Address{common.HexToAddress("0x753fe1914db38ee744e071baadd123f50f9c8e46")},
 	)
 	internalReserveAddress = deployment.NewAddress(
@@ -62,7 +67,7 @@ var (
 		[]common.Address{common.HexToAddress("0xe3E415a7a6c287a95DC68a01ff036828073fD2e6")},
 		[]common.Address{common.HexToAddress("0xE16E257a25e287AF50C5651A4c2728b32D7e5ef7")},
 	)
-	networkContractAddress = deployment.NewAddress(
+	proxyContractAddress = deployment.NewAddress(
 		[]common.Address{common.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")},
 		[]common.Address{common.HexToAddress("0x6326dd73E368c036D4C4997053a021CBc52c7367")},
 		[]common.Address{common.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")},
@@ -74,19 +79,27 @@ var (
 		[]common.Address{common.HexToAddress("0x06b0fbaba8fba5161f725f2159de1e1d6409c35f")},
 	)
 
+	oldProxyContractAddress = deployment.NewAddress(
+		[]common.Address{},
+		[]common.Address{
+			common.HexToAddress("0x65897aDCBa42dcCA5DD162c647b1cC3E31238490"),
+		},
+		[]common.Address{},
+	)
+
 	oldNetworkContractAddress = deployment.NewAddress(
 		[]common.Address{
 			common.HexToAddress("0x964F35fAe36d75B1e72770e244F6595B68508CF5"),
-			// production old internal network v2
+			// production old network v2
 			common.HexToAddress("0x91a502C678605fbCe581eae053319747482276b9"),
-			// production old internal network v3
+			// production old network v3
 			common.HexToAddress("0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950"),
 		},
 		[]common.Address{
 			common.HexToAddress("0xD2D21FdeF0D054D2864ce328cc56D1238d6b239e"),
-			// staging old internal network v2
+			// staging old network v2
 			common.HexToAddress("0x706aBcE058DB29eB36578c463cf295F180a1Fe9C"),
-			// staging old network proxy contract
+			// staging old network contract
 			common.HexToAddress("0xC14f34233071543E979F6A79AA272b0AB1B4947D")},
 		[]common.Address{},
 	)

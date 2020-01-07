@@ -20,6 +20,12 @@ func GetBurnAmount(sugar *zap.SugaredLogger, tokenAmountFormatter blockchain.Tok
 		dstAmount float64
 	)
 
+	// the tradelogs is fee free
+	if len(log.BurnFees) == 0 {
+		return 0, 0, nil
+	}
+
+	// if len(log.BurnFees) > 0, check normal logic
 	if blockchain.IsBurnable(log.SrcAddress) {
 		if len(log.BurnFees) < 1 {
 			logger.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "at least 1 burn fees (src)")

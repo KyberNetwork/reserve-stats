@@ -44,7 +44,7 @@ DO $$
 $$;
 
 CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
-	id SERIAL UNIQUE,
+	id SERIAL,
 	timestamp TIMESTAMPTZ,
 	block_number INTEGER,
 	tx_hash TEXT,
@@ -74,6 +74,8 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	receiver_address	TEXT,
 	PRIMARY KEY (tx_hash,index)
 );
+
+ALTER TABLE tradelogs ADD UNIQUE (id);
 
 CREATE TABLE IF NOT EXISTS "` + BigTradeLogsTableName + `" (
 	id SERIAL PRIMARY KEY,

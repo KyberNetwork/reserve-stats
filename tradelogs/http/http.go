@@ -461,7 +461,6 @@ func (sv *Server) updateBigTradesTwitted(c *gin.Context) {
 		http.StatusOK,
 		nil,
 	)
-	return
 }
 
 func (sv *Server) setupRouter() *gin.Engine {

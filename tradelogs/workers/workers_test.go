@@ -123,6 +123,18 @@ func (s *mockStorage) GetTopReserves(from, to time.Time, limit uint64) (common.T
 	return common.TopReserves{}, nil
 }
 
+func (s *mockStorage) GetNotTwittedTrades() ([]common.BigTradeLog, error) {
+	return nil, nil
+}
+
+func (s *mockStorage) SaveBigTrades() error {
+	return nil
+}
+
+func (s *mockStorage) UpdateBigTradesTwitted(trades []uint64) error {
+	return nil
+}
+
 type mockJob struct {
 	order   int
 	failure bool

@@ -241,6 +241,14 @@ func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradeLog) error {
 				return err
 			}
 
+			// save big trades
+			if err = p.storage.SaveBigTrades(); err != nil {
+				logger.Errorw("save big trades into db failed", "error", err)
+				p.mutex.Unlock()
+				p.markAsFailed(order)
+				return err
+			}
+
 			p.lastCompletedJobOrder++
 			logger.Infow("save trade logs into db success")
 			p.mutex.Unlock()

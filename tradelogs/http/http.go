@@ -428,6 +428,18 @@ func (sv *Server) getTopReserves(c *gin.Context) {
 	)
 }
 
+func (sv *Server) getBigTrades(c *gin.Context) {
+	bigTrades, err := sv.storage.GetNotTwittedTrades()
+	if err != nil {
+		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		bigTrades,
+	)
+}
+
 func (sv *Server) setupRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/trade-logs", sv.getTradeLogs)
@@ -454,6 +466,8 @@ func (sv *Server) setupRouter() *gin.Engine {
 	r.GET("/top-tokens", sv.getTopTokens)
 	r.GET("/top-integrations", sv.getTopIntegration)
 	r.GET("/top-reserves", sv.getTopReserves)
+
+	r.GET("/big-trades", sv.getBigTrades)
 
 	return r
 }

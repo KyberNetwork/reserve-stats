@@ -55,6 +55,9 @@ type Interface interface {
 	GetTopTokens(from, to time.Time, limit uint64) (common.TopTokens, error)
 	GetTopIntegrations(from, to time.Time, limit uint64) (common.TopIntegrations, error)
 	GetTopReserves(from, to time.Time, limit uint64) (common.TopReserves, error)
+	GetNotTwittedTrades() ([]common.BigTradeLog, error)
+	SaveBigTrades() error
+	UpdateBigTradesTwitted(trades []uint64) error
 }
 
 // NewCliFlags return dbEngine flag option

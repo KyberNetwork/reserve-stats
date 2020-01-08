@@ -1,14 +1,16 @@
 package schema
 
 const (
-	// Table for trade logs
+	// TradeLogsTableName table for trade logs
 	TradeLogsTableName = "tradelogs"
-	// Table for id and reserve address
+	// ReserveTableName Table for id and reserve address
 	ReserveTableName = "reserve"
-	// Table for
+	// TokenTableName table for token info (id, address, symbol)
 	TokenTableName = "token"
-	// Table for id and wallet address
+	// WalletTableName table for walelt info (id, address, name)
 	WalletTableName = "wallet"
-	// Table for id and user address
+	// UserTableName table for user info (id, address)
 	UserTableName = "users"
+	// BigTradeLogsTableName for store big trade
+	BigTradeLogsTableName = "big_tradelogs"
 )

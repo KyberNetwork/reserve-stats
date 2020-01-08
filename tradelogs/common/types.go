@@ -72,6 +72,12 @@ type TradeLog struct {
 	Index     uint   `json:"index"` // the index of event log in transaction receipt
 }
 
+// BigTradeLog represent trade event on KyberNetwork
+type BigTradeLog struct {
+	TradelogID uint64 `json:"tradelog_id"`
+	TradeLog
+}
+
 // MarshalJSON implements custom JSON marshaller for TradeLog to format timestamp in unix millis instead of RFC3339.
 func (tl *TradeLog) MarshalJSON() ([]byte, error) {
 	type AliasTradeLog TradeLog

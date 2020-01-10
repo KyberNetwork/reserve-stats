@@ -44,6 +44,9 @@ const (
 
 	blockConfirmationsFlag    = "wait-for-confirmations"
 	defaultBlockConfirmations = 7
+
+	bigVolumeFlag    = "big-volume"
+	defaultBigVolume = 100
 )
 
 func main() {
@@ -93,6 +96,12 @@ func main() {
 			Usage:  "The number of block confirmations to latest known block",
 			EnvVar: "WAIT_FOR_CONFIRMATIONS",
 			Value:  defaultBlockConfirmations,
+		},
+		cli.Float64Flag{
+			Name:   bigVolumeFlag,
+			Usage:  "The amount of eth to detect which trade is big",
+			EnvVar: "BIG_VOLUME",
+			Value:  defaultBigVolume,
 		},
 	)
 
@@ -229,7 +238,9 @@ func run(c *cli.Context) error {
 
 		requiredWorkers := requiredWorkers(fromBlock, toBlock, maxBlocks, maxWorkers)
 		startingBlocks := deployment.MustGetStartingBlocksFromContext(c)
-		p := workers.NewPool(sugar, requiredWorkers, storageInterface)
+
+		bigVolume := c.Float64(bigVolumeFlag)
+		p := workers.NewPool(sugar, requiredWorkers, storageInterface, float32(bigVolume))
 		sugar.Debugw("number of fetcher jobs",
 			"from_block", fromBlock.String(),
 			"to_block", toBlock.String(),

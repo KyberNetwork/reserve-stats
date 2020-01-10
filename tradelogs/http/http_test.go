@@ -94,7 +94,7 @@ func (s *mockStorage) GetNotTwittedTrades() ([]common.BigTradeLog, error) {
 	return nil, nil
 }
 
-func (s *mockStorage) SaveBigTrades() error {
+func (s *mockStorage) SaveBigTrades(bigVolume float32, fromBlock uint64) error {
 	return nil
 }
 

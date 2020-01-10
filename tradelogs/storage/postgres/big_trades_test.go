@@ -26,7 +26,7 @@ func TestSaveBigTrades(t *testing.T) {
 	log.Printf("len trade logs: %d", len(tradeLogs))
 
 	// save big trades
-	require.NoError(t, testStorage.SaveBigTrades())
+	require.NoError(t, testStorage.SaveBigTrades(float32(100), 6100010))
 
 	// get big trades
 	bigTrades, err := testStorage.GetNotTwittedTrades()

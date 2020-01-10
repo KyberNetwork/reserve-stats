@@ -481,7 +481,7 @@ func (is *Storage) GetNotTwittedTrades() ([]common.BigTradeLog, error) {
 }
 
 // SaveBigTrades save trades detected big into storage
-func (is *Storage) SaveBigTrades() error {
+func (is *Storage) SaveBigTrades(bigVolume float32, fromBlock uint64) error {
 	return nil
 }
 

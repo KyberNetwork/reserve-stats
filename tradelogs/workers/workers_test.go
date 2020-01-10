@@ -127,7 +127,7 @@ func (s *mockStorage) GetNotTwittedTrades() ([]common.BigTradeLog, error) {
 	return nil, nil
 }
 
-func (s *mockStorage) SaveBigTrades() error {
+func (s *mockStorage) SaveBigTrades(bigVolume float32, fromBlock uint64) error {
 	return nil
 }
 
@@ -155,7 +155,7 @@ func (j *mockJob) info() (order int, from, to *big.Int) {
 
 func newTestWorkerPool(maxWorkers int) *Pool {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	return NewPool(sugar, maxWorkers, newMockStorage())
+	return NewPool(sugar, maxWorkers, newMockStorage(), float32(100))
 }
 
 func sendJobsToWorkerPool(pool *Pool, jobs []job, doneCh chan<- struct{}) {

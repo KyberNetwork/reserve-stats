@@ -428,6 +428,41 @@ func (sv *Server) getTopReserves(c *gin.Context) {
 	)
 }
 
+func (sv *Server) getBigTrades(c *gin.Context) {
+	bigTrades, err := sv.storage.GetNotTwittedTrades()
+	if err != nil {
+		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		bigTrades,
+	)
+}
+
+type updateBigTradesTwittedRequest struct {
+	IDs []uint64 `json:"ids"`
+}
+
+func (sv *Server) updateBigTradesTwitted(c *gin.Context) {
+	var (
+		query updateBigTradesTwittedRequest
+	)
+	if err := c.ShouldBindJSON(&query); err != nil {
+		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := sv.storage.UpdateBigTradesTwitted(query.IDs); err != nil {
+		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		nil,
+	)
+}
+
 func (sv *Server) setupRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/trade-logs", sv.getTradeLogs)
@@ -454,6 +489,9 @@ func (sv *Server) setupRouter() *gin.Engine {
 	r.GET("/top-tokens", sv.getTopTokens)
 	r.GET("/top-integrations", sv.getTopIntegration)
 	r.GET("/top-reserves", sv.getTopReserves)
+
+	r.GET("/big-trades", sv.getBigTrades)
+	r.PUT("/big-trades", sv.updateBigTradesTwitted)
 
 	return r
 }

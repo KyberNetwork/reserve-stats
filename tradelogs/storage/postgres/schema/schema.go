@@ -75,6 +75,14 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	PRIMARY KEY (tx_hash,index)
 );
 
+ALTER TABLE tradelogs ADD UNIQUE (id);
+
+CREATE TABLE IF NOT EXISTS "` + BigTradeLogsTableName + `" (
+	id SERIAL PRIMARY KEY,
+	tradelog_id INTEGER UNIQUE NOT NULL REFERENCES tradelogs (id),
+	twitted BOOLEAN DEFAULT FALSE
+);
+
 CREATE INDEX IF NOT EXISTS "trade_timestamp" ON "` + TradeLogsTableName + `"(timestamp);
 CREATE INDEX IF NOT EXISTS "trade_user_address" ON "` + TradeLogsTableName + `"(user_address_id);
 CREATE INDEX IF NOT EXISTS "trade_src_address" ON "` + TradeLogsTableName + `"(src_address_id);

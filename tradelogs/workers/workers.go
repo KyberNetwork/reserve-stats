@@ -134,10 +134,12 @@ type Pool struct {
 	lastCompletedJobOrder int  // Keep the order of the last completed job
 	failed                bool // mark as failed, all subsequent persistent storage will be passed
 	storage               storage.Interface
+
+	bigVolume float32 // for detect big trade
 }
 
 // NewPool returns a pool of workers to handle jobs concurrently
-func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface) *Pool {
+func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface, bigVolume float32) *Pool {
 	var p = &Pool{
 		sugar:                 sugar,
 		jobCh:                 make(chan job),
@@ -145,6 +147,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 		mutex:                 &sync.Mutex{},
 		storage:               storage,
 		lastCompletedJobOrder: 0,
+		bigVolume:             bigVolume,
 	}
 
 	p.wg.Add(maxWorkers)
@@ -177,7 +180,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 					"order", order,
 					"from", from.String(),
 					"to", to.String())
-				if err = p.serialSaveTradeLogs(order, tradeLogs); err != nil {
+				if err = p.serialSaveTradeLogs(order, tradeLogs, from.Uint64()); err != nil {
 					p.errCh <- err
 					break
 				}
@@ -215,7 +218,7 @@ func (p *Pool) markAsFailed(order int) {
 }
 
 // serialSaveTradeLogs waits until the job with order right before it completed and saving the logs to database.
-func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradeLog) error {
+func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradeLog, fromBlock uint64) error {
 	var (
 		logger = p.sugar.With(
 			"func", caller.GetCurrentFunctionName(),
@@ -236,6 +239,14 @@ func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradeLog) error {
 			if err = p.storage.SaveTradeLogs(logs); err != nil {
 				logger.Errorw("save trade logs into db failed",
 					"err", err)
+				p.mutex.Unlock()
+				p.markAsFailed(order)
+				return err
+			}
+
+			// save big trades
+			if err = p.storage.SaveBigTrades(p.bigVolume, fromBlock); err != nil {
+				logger.Errorw("save big trades into db failed", "error", err)
 				p.mutex.Unlock()
 				p.markAsFailed(order)
 				return err

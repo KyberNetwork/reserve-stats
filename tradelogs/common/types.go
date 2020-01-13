@@ -75,6 +75,7 @@ type TradeLog struct {
 // BigTradeLog represent trade event on KyberNetwork
 type BigTradeLog struct {
 	TradelogID uint64 `json:"tradelog_id"`
+	WalletName string `json:"wallet_name"`
 	TradeLog
 }
 

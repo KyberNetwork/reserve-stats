@@ -12,9 +12,11 @@ const (
 	getBigTradesQuery = `
 SELECT bt.tradelog_id, a.timestamp AS timestamp, block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
 e.address AS src_address, f.address AS dst_address,
+e.symbol AS src_symbol, f.symbol AS dst_symbol,
 src_amount, dst_amount, ip, country, integration_app, src_burn_amount, dst_burn_amount,
 index, tx_hash, b.address AS src_rsv_address, c.address AS dst_rsv_address, src_wallet_fee_amount, dst_wallet_fee_amount,
-g.address AS wallet_addr, tx_sender, receiver_address
+g.address AS wallet_addr, tx_sender, receiver_address,
+g.name as wallet_name
 FROM "` + schema.BigTradeLogsTableName + `" AS bt
 INNER JOIN tradelogs as a ON a.id = bt.tradelog_id
 INNER JOIN reserve AS b ON a.src_reserve_address_id = b.id
@@ -27,16 +29,19 @@ WHERE bt.twitted is false;
 `
 
 	insertionBigTradelogsTemplate = `
-INSERT INTO "` + schema.BigTradeLogsTableName + `" (tradelog_id) VALUES ($1) ON CONFLICT (tradelog_id) DO NOTHING;
-`
-	detectBigTradeQuery = `
-	SELECT id from tradelogs WHERE eth_amount > $1 AND block_number >= $2;
+INSERT INTO big_tradelogs (tradelog_id) (
+	SELECT id FROM tradelogs AS tradelog_id WHERE eth_amount > $1 AND block_number >= $2
+)
+ON CONFLICT (tradelog_id) DO NOTHING;
 `
 	updateBigTradesQuery = `UPDATE "` + schema.BigTradeLogsTableName + `" SET twitted = true WHERE tradelog_id = $1;`
 )
 
 type bigTradeLogDBData struct {
 	TradelogID uint64 `db:"tradelog_id"`
+	SrcSymbol  string `db:"src_symbol"`
+	DstSymbol  string `db:"dst_symbol"`
+	WalletName string `db:"wallet_name"`
 	tradeLogDBData
 }
 
@@ -63,8 +68,11 @@ func (tldb *TradeLogDB) GetNotTwittedTrades() ([]common.BigTradeLog, error) {
 			logger.Errorw("cannot parse db data to trade log", "error", err)
 			return nil, err
 		}
+		tradeLog.SrcSymbol = r.SrcSymbol
+		tradeLog.DestSymbol = r.DstSymbol
 		bigTradeLog := common.BigTradeLog{
 			TradelogID: r.TradelogID,
+			WalletName: r.WalletName,
 			TradeLog:   tradeLog,
 		}
 		result = append(result, bigTradeLog)
@@ -78,15 +86,11 @@ func (tldb *TradeLogDB) SaveBigTrades(bigVolume float32, fromBlock uint64) error
 		logger    = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 		bigTrades = []uint64{}
 	)
-	if err := tldb.db.Select(&bigTrades, detectBigTradeQuery, bigVolume, fromBlock); err != nil {
-		return fmt.Errorf("cannot get big trades: %s", err.Error())
+	logger.Infow("query save big trades", "query", insertionBigTradelogsTemplate)
+	if _, err := tldb.db.Exec(insertionBigTradelogsTemplate, bigVolume, fromBlock); err != nil {
+		return fmt.Errorf("cannot update big trades: %s", err.Error())
 	}
 	logger.Infow("number of big trades", "number", len(bigTrades))
-	for _, tradelogID := range bigTrades {
-		if _, err := tldb.db.Exec(insertionBigTradelogsTemplate, tradelogID); err != nil {
-			return fmt.Errorf("cannot insert big trades into db: %s", err.Error())
-		}
-	}
 	return nil
 }
 

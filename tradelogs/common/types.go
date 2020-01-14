@@ -74,9 +74,14 @@ type TradeLog struct {
 
 // BigTradeLog represent trade event on KyberNetwork
 type BigTradeLog struct {
-	TradelogID uint64 `json:"tradelog_id"`
-	WalletName string `json:"wallet_name"`
-	TradeLog
+	TradelogID      uint64        `json:"tradelog_id"`
+	Timestamp       time.Time     `json:"timestamp"`
+	TransactionHash ethereum.Hash `json:"tx_hash"`
+	EthAmount       *big.Int      `json:"eth_amount"`
+	SrcSymbol       string        `json:"src_symbol,omitempty"`
+	DestSymbol      string        `json:"dst_symbol,omitempty"`
+	FiatAmount      float64       `json:"fiat_amount"`
+	WalletName      string        `json:"wallet_name"`
 }
 
 // MarshalJSON implements custom JSON marshaller for TradeLog to format timestamp in unix millis instead of RFC3339.
@@ -94,6 +99,37 @@ func (tl *TradeLog) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON implements custom JSON unmarshal for TradeLog
 func (tl *TradeLog) UnmarshalJSON(b []byte) error {
 	type AliasTradeLog TradeLog
+	type mask struct {
+		Timestamp uint64 `json:"timestamp"`
+		*AliasTradeLog
+	}
+	m := mask{
+		Timestamp:     0,
+		AliasTradeLog: (*AliasTradeLog)(tl),
+	}
+	err := json.Unmarshal(b, &m)
+	if err != nil {
+		return err
+	}
+	tl.Timestamp = timeutil.TimestampMsToTime(m.Timestamp)
+	return nil
+}
+
+// MarshalJSON implements custom JSON marshaller for TradeLog to format timestamp in unix millis instead of RFC3339.
+func (tl *BigTradeLog) MarshalJSON() ([]byte, error) {
+	type AliasTradeLog BigTradeLog
+	return json.Marshal(struct {
+		Timestamp uint64 `json:"timestamp"`
+		*AliasTradeLog
+	}{
+		AliasTradeLog: (*AliasTradeLog)(tl),
+		Timestamp:     timeutil.TimeToTimestampMs(tl.Timestamp),
+	})
+}
+
+// UnmarshalJSON implements custom JSON unmarshal for TradeLog
+func (tl *BigTradeLog) UnmarshalJSON(b []byte) error {
+	type AliasTradeLog BigTradeLog
 	type mask struct {
 		Timestamp uint64 `json:"timestamp"`
 		*AliasTradeLog

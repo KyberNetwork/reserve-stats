@@ -68,12 +68,15 @@ func (tldb *TradeLogDB) GetNotTwittedTrades() ([]common.BigTradeLog, error) {
 			logger.Errorw("cannot parse db data to trade log", "error", err)
 			return nil, err
 		}
-		tradeLog.SrcSymbol = r.SrcSymbol
-		tradeLog.DestSymbol = r.DstSymbol
 		bigTradeLog := common.BigTradeLog{
-			TradelogID: r.TradelogID,
-			WalletName: r.WalletName,
-			TradeLog:   tradeLog,
+			TradelogID:      r.TradelogID,
+			WalletName:      r.WalletName,
+			Timestamp:       tradeLog.Timestamp,
+			TransactionHash: tradeLog.TransactionHash,
+			EthAmount:       tradeLog.EthAmount,
+			SrcSymbol:       r.SrcSymbol,
+			DestSymbol:      r.DstSymbol,
+			FiatAmount:      tradeLog.FiatAmount,
 		}
 		result = append(result, bigTradeLog)
 	}

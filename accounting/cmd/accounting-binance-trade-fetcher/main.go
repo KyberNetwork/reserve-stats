@@ -115,8 +115,6 @@ func run(c *cli.Context) error {
 		}
 	}
 
-	sugar.Infow("fetch trade from id", "id", fromID+1)
-
 	retryDelay := c.Duration(retryDelayFlag)
 	attempt := c.Int(attemptFlag)
 	batchSize := c.Int(batchSizeFlag)

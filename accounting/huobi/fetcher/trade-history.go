@@ -39,6 +39,12 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time) 
 		result    []huobi.TradeHistory
 		lastID    string
 		extras    huobi.ExtrasTradeHistoryParams
+		logger    = fc.sugar.With(
+			"func", caller.GetCurrentFunctionName(),
+			"from", from,
+			"to", to,
+			"symbol", symbol,
+		)
 	)
 	for {
 		if lastID != "" {
@@ -51,6 +57,7 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time) 
 		}
 		tradeHistoriesResponse, err := fc.retry(fc.client.GetTradeHistory, symbol, startTime, endTime, extras)
 		if err != nil {
+			logger.Errorw("failed to get trade history from huobi", "error", err)
 			return result, err
 		}
 		// while result != empty, get trades latest time to toTime
@@ -91,6 +98,7 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 
 	symbols, err := fc.client.GetSymbolsPair()
 	if err != nil {
+		logger.Errorw("failed to get symbols from huobi", "error", err)
 		return result, err
 	}
 	for _, sym := range symbols {

@@ -221,6 +221,7 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 func (bc *Client) GetTradeHistory(symbol string, fromID uint64) ([]TradeHistory, error) {
 	var (
 		result []TradeHistory
+		logger = bc.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	const weight = 5
 	//Wait before creating the request to avoid timestamp request outside the recWindow
@@ -243,6 +244,7 @@ func (bc *Client) GetTradeHistory(symbol string, fromID uint64) ([]TradeHistory,
 		time.Now(),
 	)
 	if err != nil {
+		logger.Errorw("failed to get trade history from binance", "error", err)
 		return result, err
 	}
 	err = json.Unmarshal(res, &result)

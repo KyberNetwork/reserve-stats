@@ -60,14 +60,13 @@ func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]b
 	for {
 		tradeHistoriesResponse, err := f.getTradeHistoryWithRetry(symbol, fromID)
 		if err != nil {
-			logger.Debugw("get trade history error", "symbol", symbol, "error", err)
+			logger.Errorw("get trade history error", "symbol", symbol, "error", err)
 			return result, err
 		}
 		// while result != empty, get trades latest time to toTime
 		if len(tradeHistoriesResponse) == 0 {
 			break
 		}
-		logger.Debugw("trade history for", "symbol", symbol, "history", tradeHistoriesResponse)
 		result = append(result, tradeHistoriesResponse...)
 		lastTrade := tradeHistoriesResponse[len(tradeHistoriesResponse)-1]
 		fromID = lastTrade.ID + 1
@@ -86,6 +85,7 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64) ([]binance.TradeHis
 	// get list token
 	exchangeInfo, err := f.client.GetExchangeInfo()
 	if err != nil {
+		logger.Errorw("failed to get exchange info from binance", "error", err)
 		return result, err
 	}
 	tokenPairs := exchangeInfo.Symbols
@@ -96,7 +96,7 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64) ([]binance.TradeHis
 			errGroup.Go(
 				func(pair binance.Symbol) func() error {
 					return func() error {
-						logger.Debugw("token", "pair", pair.Symbol)
+						logger.Infow("token", "pair", pair.Symbol)
 						oneSymbolTradeHistory, err := f.getTradeHistoryForOneSymBol(fromIDs[pair.Symbol], pair.Symbol)
 						if err != nil {
 							return err
@@ -136,12 +136,13 @@ func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (bin
 		logger          = f.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	for attempt := 0; attempt < f.attempt; attempt++ {
-		logger.Debugw("attempt to get withdraw history", "attempt", attempt, "startTime", startTime, "endTime", endTime)
+		logger.Infow("attempt to get withdraw history", "attempt", attempt, "startTime", startTime, "endTime", endTime)
 		withdrawHistory, err = f.client.GetWithdrawalHistory(startTime, endTime)
 		if err == nil {
+			logger.Errorw("failed to get withdraw history from binance", "error", err)
 			return withdrawHistory, nil
 		}
-		logger.Warnw("get withdraw history failed", "error", err, "attempt", attempt)
+		logger.Errorw("get withdraw history failed", "error", err, "attempt", attempt)
 		time.Sleep(f.retryDelay)
 	}
 	return withdrawHistory, err

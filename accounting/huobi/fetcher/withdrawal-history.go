@@ -35,10 +35,16 @@ func (fc *Fetcher) getWithdrawHistoryWithSymbol(symbol string, fromID uint64) ([
 	var (
 		nextFromID = fromID
 		result     []huobi.WithdrawHistory
+		logger     = fc.sugar.With(
+			"func", caller.GetCurrentFunctionName(),
+			"symbol", symbol,
+			"fromID", fromID,
+		)
 	)
 	for {
 		tradeHistoriesResponse, err := fc.retryGetWithdrawal(fc.client.GetWithdrawHistory, symbol, nextFromID)
 		if err != nil {
+			logger.Errorw("failed to get trade history", "error", err)
 			return result, err
 		}
 
@@ -69,6 +75,7 @@ func (fc *Fetcher) GetWithdrawHistory(fromID uint64) (map[string][]huobi.Withdra
 
 	symbols, err := fc.client.GetCurrencies()
 	if err != nil {
+		logger.Errorw("failed to get currency from huobi", "error", err)
 		return result, err
 	}
 	for _, sym := range symbols {
@@ -82,7 +89,7 @@ func (fc *Fetcher) GetWithdrawHistory(fromID uint64) (map[string][]huobi.Withdra
 					if len(singleResult) > 0 {
 						fetchResult.Store(symbol, singleResult)
 					}
-					logger.Infow("Fetching done", "symbol", symbol, "error", err, "time", time.Now())
+					logger.Infow("Fetching done", "symbol", symbol, "time", time.Now())
 					return nil
 				}
 			}(sym),

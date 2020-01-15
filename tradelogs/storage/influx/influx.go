@@ -474,3 +474,18 @@ func (is *Storage) GetTopIntegrations(from, to time.Time, limit uint64) (common.
 func (is *Storage) GetTopReserves(from, to time.Time, limit uint64) (common.TopReserves, error) {
 	return common.TopReserves{}, nil
 }
+
+// GetNotTwittedTrades return not twitted trades
+func (is *Storage) GetNotTwittedTrades() ([]common.BigTradeLog, error) {
+	return nil, nil
+}
+
+// SaveBigTrades save trades detected big into storage
+func (is *Storage) SaveBigTrades(bigVolume float32, fromBlock uint64) error {
+	return nil
+}
+
+// UpdateBigTradesTwitted update big trade into storage
+func (is *Storage) UpdateBigTradesTwitted(trades []uint64) error {
+	return nil
+}

@@ -71,7 +71,7 @@ func (tldb *TradeLogDB) GetTopTokens(from, to time.Time, limit uint64) (common.T
 	  FROM
 	  (
 	  SELECT
-	    sum(tradelogs.eth_amount*tradelogs.eth_usd_rate) usd_amount,
+	    sum(tradelogs.original_eth_amount*tradelogs.eth_usd_rate) usd_amount,
 		token.address,
 		token.symbol,
 		token.id
@@ -83,7 +83,7 @@ func (tldb *TradeLogDB) GetTopTokens(from, to time.Time, limit uint64) (common.T
 	  GROUP BY token.id
 	  UNION ALL
 	  SELECT
-	    sum(tradelogs.eth_amount*tradelogs.eth_usd_rate) usd_amount,
+	    sum(tradelogs.original_eth_amount*tradelogs.eth_usd_rate) usd_amount,
 		token.address,
 		token.symbol,
 		token.id

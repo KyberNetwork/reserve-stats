@@ -34,7 +34,7 @@ INSERT INTO big_tradelogs (tradelog_id) (
 )
 ON CONFLICT (tradelog_id) DO NOTHING;
 `
-	updateBigTradesQuery = `UPDATE "` + schema.BigTradeLogsTableName + `" SET twitted = true WHERE tradelog_id = $1;`
+	updateBigTradesQuery = `UPDATE "` + schema.BigTradeLogsTableName + `" SET twitted = true WHERE tradelog_id = $1 RETURNING tradelog_id;`
 )
 
 type bigTradeLogDBData struct {
@@ -100,14 +100,16 @@ func (tldb *TradeLogDB) SaveBigTrades(bigVolume float32, fromBlock uint64) error
 // UpdateBigTradesTwitted update trades to twitted
 func (tldb *TradeLogDB) UpdateBigTradesTwitted(trades []uint64) error {
 	var (
-		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
+		logger     = tldb.sugar.With("func", caller.GetCurrentFunctionName())
+		tradeLogID uint64
 	)
 	logger.Infow("update big trade twitted", "len", len(trades))
 	for _, tradelogID := range trades {
-		if _, err := tldb.db.Exec(updateBigTradesQuery, tradelogID); err != nil {
+		if err := tldb.db.Get(&tradeLogID, updateBigTradesQuery, tradelogID); err != nil {
 			logger.Errorw("failed to update big trades twitted", "error", err)
 			return err
 		}
+		logger.Infow("tradelog updated", "id", tradeLogID)
 	}
 	return nil
 }

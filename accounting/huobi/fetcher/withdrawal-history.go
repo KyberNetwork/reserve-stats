@@ -97,7 +97,8 @@ func (fc *Fetcher) GetWithdrawHistory(fromID uint64) (map[string][]huobi.Withdra
 	}
 
 	if err := errGroup.Wait(); err != nil {
-		return result, nil
+		logger.Errorw("failed to fetch huobi withdraw", "error", err)
+		return result, err
 	}
 	fetchResult.Range(func(key, value interface{}) bool {
 		symbol, ok := key.(string)

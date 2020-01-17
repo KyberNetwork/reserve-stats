@@ -120,6 +120,7 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 	}
 
 	if err := errGroup.Wait(); err != nil {
+		logger.Errorw("failed to fetch huobi trade history", "error", err)
 		return result, err
 	}
 	fetchResult.Range(func(key, value interface{}) bool {

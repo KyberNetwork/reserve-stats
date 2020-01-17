@@ -127,6 +127,7 @@ func run(c *cli.Context) error {
 	sugar.Debugw("trade histories", "result", tradeHistories)
 
 	if err := binanceStorage.UpdateTradeHistory(tradeHistories); err != nil {
+		sugar.Errorw("failed to save trade history to db", "error", err)
 		return err
 	}
 	return binanceStorage.Close()

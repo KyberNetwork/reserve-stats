@@ -96,7 +96,10 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64) ([]binance.TradeHis
 			errGroup.Go(
 				func(pair binance.Symbol) func() error {
 					return func() error {
-						logger.Infow("token", "pair", pair.Symbol)
+						logger.Infow("token",
+							"pair", pair.Symbol,
+							"fromID", fromIDs[pair.Symbol],
+						)
 						oneSymbolTradeHistory, err := f.getTradeHistoryForOneSymBol(fromIDs[pair.Symbol], pair.Symbol)
 						if err != nil {
 							return err
@@ -110,6 +113,7 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64) ([]binance.TradeHis
 			)
 		}
 		if err := errGroup.Wait(); err != nil {
+			logger.Errorw("failed to get trade history from binance", "error", err)
 			return result, err
 		}
 		index += f.batchSize
@@ -157,6 +161,7 @@ func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.With
 	logger.Info("Start get withdraw history")
 	withdrawHistory, err := f.getWithdrawHistoryWithRetry(fromTime, toTime)
 	if err != nil {
+		logger.Errorw("failed to get withdraw history from binance", "error", err)
 		return result, err
 	}
 	result = append(result, withdrawHistory.WithdrawList...)

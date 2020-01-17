@@ -74,14 +74,15 @@ type TradeLog struct {
 
 // BigTradeLog represent trade event on KyberNetwork
 type BigTradeLog struct {
-	TradelogID      uint64        `json:"tradelog_id"`
-	Timestamp       time.Time     `json:"timestamp"`
-	TransactionHash ethereum.Hash `json:"tx_hash"`
-	EthAmount       *big.Int      `json:"eth_amount"`
-	SrcSymbol       string        `json:"src_symbol,omitempty"`
-	DestSymbol      string        `json:"dst_symbol,omitempty"`
-	FiatAmount      float64       `json:"fiat_amount"`
-	WalletName      string        `json:"wallet_name"`
+	TradelogID        uint64        `json:"tradelog_id"`
+	Timestamp         time.Time     `json:"timestamp"`
+	TransactionHash   ethereum.Hash `json:"tx_hash"`
+	EthAmount         *big.Int      `json:"eth_amount"`
+	OriginalETHAmount *big.Int      `json:"original_eth_amount"`
+	SrcSymbol         string        `json:"src_symbol,omitempty"`
+	DestSymbol        string        `json:"dst_symbol,omitempty"`
+	FiatAmount        float64       `json:"fiat_amount"`
+	WalletName        string        `json:"wallet_name"`
 }
 
 // MarshalJSON implements custom JSON marshaller for TradeLog to format timestamp in unix millis instead of RFC3339.

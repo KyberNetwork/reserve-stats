@@ -476,7 +476,7 @@ func (is *Storage) GetTopReserves(from, to time.Time, limit uint64) (common.TopR
 }
 
 // GetNotTwittedTrades return not twitted trades
-func (is *Storage) GetNotTwittedTrades() ([]common.BigTradeLog, error) {
+func (is *Storage) GetNotTwittedTrades(from, to time.Time) ([]common.BigTradeLog, error) {
 	return nil, nil
 }
 

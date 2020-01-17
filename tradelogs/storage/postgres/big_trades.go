@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -25,7 +26,7 @@ INNER JOIN users AS d ON a.user_address_id = d.id
 INNER JOIN token AS e ON a.src_address_id = e.id
 INNER JOIN token AS f ON a.dst_address_id = f.id
 INNER JOIN wallet AS g ON a.wallet_address_id = g.id
-WHERE bt.twitted is false;
+WHERE bt.twitted is false AND a.timestamp >= $1 AND a.timestamp <= $2;
 `
 
 	insertionBigTradelogsTemplate = `
@@ -46,13 +47,13 @@ type bigTradeLogDBData struct {
 }
 
 // GetNotTwittedTrades return big trades that is not twitted yet
-func (tldb *TradeLogDB) GetNotTwittedTrades() ([]common.BigTradeLog, error) {
+func (tldb *TradeLogDB) GetNotTwittedTrades(from, to time.Time) ([]common.BigTradeLog, error) {
 	var (
 		logger      = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 		queryResult = []bigTradeLogDBData{}
 		result      = []common.BigTradeLog{}
 	)
-	err := tldb.db.Select(&queryResult, getBigTradesQuery)
+	err := tldb.db.Select(&queryResult, getBigTradesQuery, from, to)
 	if err != nil {
 		return nil, err
 	}

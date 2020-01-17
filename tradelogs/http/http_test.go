@@ -90,7 +90,7 @@ func (s *mockStorage) GetTopReserves(from, to time.Time, limit uint64) (common.T
 	return common.TopReserves{}, nil
 }
 
-func (s *mockStorage) GetNotTwittedTrades() ([]common.BigTradeLog, error) {
+func (s *mockStorage) GetNotTwittedTrades(from, to time.Time) ([]common.BigTradeLog, error) {
 	return nil, nil
 }
 

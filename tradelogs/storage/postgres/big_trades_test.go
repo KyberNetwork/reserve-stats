@@ -3,6 +3,7 @@ package postgres
 import (
 	"log"
 	"testing"
+	"time"
 
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +30,9 @@ func TestSaveBigTrades(t *testing.T) {
 	require.NoError(t, testStorage.SaveBigTrades(float32(100), 6100010))
 
 	// get big trades
-	bigTrades, err := testStorage.GetNotTwittedTrades()
+	var fromTime time.Time
+	toTime := time.Now()
+	bigTrades, err := testStorage.GetNotTwittedTrades(fromTime, toTime)
 	require.NoError(t, err)
 	// expect len(bigTrades) > 0
 	assert.Greater(t, len(bigTrades), 0)

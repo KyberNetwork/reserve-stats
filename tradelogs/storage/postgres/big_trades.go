@@ -31,7 +31,7 @@ WHERE bt.twitted is false AND a.timestamp >= $1 AND a.timestamp <= $2;
 
 	insertionBigTradelogsTemplate = `
 INSERT INTO big_tradelogs (tradelog_id) (
-	SELECT id FROM tradelogs AS tradelog_id WHERE eth_amount > $1 AND block_number >= $2
+	SELECT id FROM tradelogs AS tradelog_id WHERE original_eth_amount > $1 AND block_number >= $2
 )
 ON CONFLICT (tradelog_id) DO NOTHING;
 `
@@ -70,14 +70,15 @@ func (tldb *TradeLogDB) GetNotTwittedTrades(from, to time.Time) ([]common.BigTra
 			return nil, err
 		}
 		bigTradeLog := common.BigTradeLog{
-			TradelogID:      r.TradelogID,
-			WalletName:      r.WalletName,
-			Timestamp:       tradeLog.Timestamp,
-			TransactionHash: tradeLog.TransactionHash,
-			EthAmount:       tradeLog.EthAmount,
-			SrcSymbol:       r.SrcSymbol,
-			DestSymbol:      r.DstSymbol,
-			FiatAmount:      tradeLog.FiatAmount,
+			TradelogID:        r.TradelogID,
+			WalletName:        r.WalletName,
+			Timestamp:         tradeLog.Timestamp,
+			TransactionHash:   tradeLog.TransactionHash,
+			EthAmount:         tradeLog.EthAmount,
+			OriginalETHAmount: tradeLog.OriginalEthAmount,
+			SrcSymbol:         r.SrcSymbol,
+			DestSymbol:        r.DstSymbol,
+			FiatAmount:        tradeLog.FiatAmount,
 		}
 		result = append(result, bigTradeLog)
 	}

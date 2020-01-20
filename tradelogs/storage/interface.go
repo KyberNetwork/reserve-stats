@@ -55,7 +55,7 @@ type Interface interface {
 	GetTopTokens(from, to time.Time, limit uint64) (common.TopTokens, error)
 	GetTopIntegrations(from, to time.Time, limit uint64) (common.TopIntegrations, error)
 	GetTopReserves(from, to time.Time, limit uint64) (common.TopReserves, error)
-	GetNotTwittedTrades() ([]common.BigTradeLog, error)
+	GetNotTwittedTrades(from, to time.Time) ([]common.BigTradeLog, error)
 	SaveBigTrades(bigVolume float32, fromBlock uint64) error
 	UpdateBigTradesTwitted(trades []uint64) error
 }

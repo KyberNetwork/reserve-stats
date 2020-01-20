@@ -16,6 +16,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
@@ -428,8 +429,25 @@ func (sv *Server) getTopReserves(c *gin.Context) {
 	)
 }
 
+type bigTradesQuery struct {
+	FromTime uint64 `form:"from"`
+	ToTime   uint64 `form:"to"`
+}
+
 func (sv *Server) getBigTrades(c *gin.Context) {
-	bigTrades, err := sv.storage.GetNotTwittedTrades()
+	var (
+		query bigTradesQuery
+	)
+	if err := c.ShouldBindQuery(&query); err != nil {
+		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
+	fromTime := timeutil.TimestampMsToTime(query.FromTime)
+	toTime := timeutil.TimestampMsToTime(query.ToTime)
+	if query.ToTime == 0 {
+		toTime = time.Now()
+	}
+	bigTrades, err := sv.storage.GetNotTwittedTrades(fromTime, toTime)
 	if err != nil {
 		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
 		return

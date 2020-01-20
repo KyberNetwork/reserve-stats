@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -25,16 +26,16 @@ INNER JOIN users AS d ON a.user_address_id = d.id
 INNER JOIN token AS e ON a.src_address_id = e.id
 INNER JOIN token AS f ON a.dst_address_id = f.id
 INNER JOIN wallet AS g ON a.wallet_address_id = g.id
-WHERE bt.twitted is false;
+WHERE bt.twitted is false AND a.timestamp >= $1 AND a.timestamp <= $2;
 `
 
 	insertionBigTradelogsTemplate = `
 INSERT INTO big_tradelogs (tradelog_id) (
-	SELECT id FROM tradelogs AS tradelog_id WHERE eth_amount > $1 AND block_number >= $2
+	SELECT id FROM tradelogs AS tradelog_id WHERE original_eth_amount > $1 AND block_number >= $2
 )
 ON CONFLICT (tradelog_id) DO NOTHING;
 `
-	updateBigTradesQuery = `UPDATE "` + schema.BigTradeLogsTableName + `" SET twitted = true WHERE tradelog_id = $1;`
+	updateBigTradesQuery = `UPDATE "` + schema.BigTradeLogsTableName + `" SET twitted = true WHERE tradelog_id = $1 RETURNING tradelog_id;`
 )
 
 type bigTradeLogDBData struct {
@@ -46,13 +47,13 @@ type bigTradeLogDBData struct {
 }
 
 // GetNotTwittedTrades return big trades that is not twitted yet
-func (tldb *TradeLogDB) GetNotTwittedTrades() ([]common.BigTradeLog, error) {
+func (tldb *TradeLogDB) GetNotTwittedTrades(from, to time.Time) ([]common.BigTradeLog, error) {
 	var (
 		logger      = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 		queryResult = []bigTradeLogDBData{}
 		result      = []common.BigTradeLog{}
 	)
-	err := tldb.db.Select(&queryResult, getBigTradesQuery)
+	err := tldb.db.Select(&queryResult, getBigTradesQuery, from, to)
 	if err != nil {
 		return nil, err
 	}
@@ -69,14 +70,15 @@ func (tldb *TradeLogDB) GetNotTwittedTrades() ([]common.BigTradeLog, error) {
 			return nil, err
 		}
 		bigTradeLog := common.BigTradeLog{
-			TradelogID:      r.TradelogID,
-			WalletName:      r.WalletName,
-			Timestamp:       tradeLog.Timestamp,
-			TransactionHash: tradeLog.TransactionHash,
-			EthAmount:       tradeLog.EthAmount,
-			SrcSymbol:       r.SrcSymbol,
-			DestSymbol:      r.DstSymbol,
-			FiatAmount:      tradeLog.FiatAmount,
+			TradelogID:        r.TradelogID,
+			WalletName:        r.WalletName,
+			Timestamp:         tradeLog.Timestamp,
+			TransactionHash:   tradeLog.TransactionHash,
+			EthAmount:         tradeLog.EthAmount,
+			OriginalETHAmount: tradeLog.OriginalEthAmount,
+			SrcSymbol:         r.SrcSymbol,
+			DestSymbol:        r.DstSymbol,
+			FiatAmount:        tradeLog.FiatAmount,
 		}
 		result = append(result, bigTradeLog)
 	}
@@ -100,14 +102,16 @@ func (tldb *TradeLogDB) SaveBigTrades(bigVolume float32, fromBlock uint64) error
 // UpdateBigTradesTwitted update trades to twitted
 func (tldb *TradeLogDB) UpdateBigTradesTwitted(trades []uint64) error {
 	var (
-		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
+		logger     = tldb.sugar.With("func", caller.GetCurrentFunctionName())
+		tradeLogID uint64
 	)
 	logger.Infow("update big trade twitted", "len", len(trades))
 	for _, tradelogID := range trades {
-		if _, err := tldb.db.Exec(updateBigTradesQuery, tradelogID); err != nil {
+		if err := tldb.db.Get(&tradeLogID, updateBigTradesQuery, tradelogID); err != nil {
 			logger.Errorw("failed to update big trades twitted", "error", err)
 			return err
 		}
+		logger.Infow("tradelog updated", "id", tradeLogID)
 	}
 	return nil
 }

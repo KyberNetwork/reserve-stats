@@ -287,6 +287,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradeLog, e
 		Country:           r.Country.String,
 		IntegrationApp:    r.IntegrationApp,
 		FiatAmount:        r.EthAmount * r.EthUsdRate,
+		WalletAddress:     ethereum.HexToAddress(r.WalletAddress),
 		TxSender:          ethereum.HexToAddress(r.TxSender),
 		ReceiverAddress:   ethereum.HexToAddress(r.ReceiverAddr),
 		ETHUSDRate:        r.EthUsdRate,

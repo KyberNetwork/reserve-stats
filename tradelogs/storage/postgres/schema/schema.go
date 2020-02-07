@@ -78,7 +78,12 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	PRIMARY KEY (tx_hash,index)
 );
 
-ALTER TABLE tradelogs ADD UNIQUE (id);
+ALTER TABLE "` + TradeLogsTableName + `" ADD UNIQUE (id);
+
+ALTER TABLE "` + TradeLogsTableName + `"
+	ADD COLUMN IF NOT EXIST gas_used INTEGER,
+	ADD COLUMN IF NOT EXIST transaction_fee FLOAT(32),
+	ADD COLUMN IF NOT EXIST gas_price FLOAT(32);
 
 CREATE TABLE IF NOT EXISTS "` + BigTradeLogsTableName + `" (
 	id SERIAL PRIMARY KEY,

@@ -70,6 +70,10 @@ type TradeLog struct {
 	UserName  string `json:"user_name"`
 	ProfileID int64  `json:"profile_id"`
 	Index     uint   `json:"index"` // the index of event log in transaction receipt
+
+	GasUsed        uint64   `json:"gas_used"`
+	GasPrice       *big.Int `json:"gas_price"`
+	TransactionFee *big.Int `json:"transaction_fee"`
 }
 
 // BigTradeLog represent trade event on KyberNetwork

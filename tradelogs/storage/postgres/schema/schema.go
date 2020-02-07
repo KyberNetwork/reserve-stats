@@ -72,6 +72,9 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	is_first_trade BOOLEAN,
 	tx_sender	TEXT,
 	receiver_address	TEXT,
+	gas_used INTEGER,
+	gas_price FLOAT(32),
+	transaction_fee FLOAT(32),
 	PRIMARY KEY (tx_hash,index)
 );
 

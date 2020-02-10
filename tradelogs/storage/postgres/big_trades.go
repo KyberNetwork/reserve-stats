@@ -31,7 +31,10 @@ WHERE bt.twitted is false AND a.timestamp >= $1 AND a.timestamp <= $2;
 
 	insertionBigTradelogsTemplate = `
 INSERT INTO big_tradelogs (tradelog_id) (
-	SELECT id FROM tradelogs AS tradelog_id WHERE original_eth_amount > $1 AND block_number >= $2
+	SELECT tradelog_id.id FROM tradelogs AS tradelog_id 
+	INNER JOIN token AS src_token ON src_token.id = tradelog_id.src_address_id
+	INNER JOIN token AS dst_token ON dst_token.id = tradelog_id.dst_address_id
+	WHERE original_eth_amount > $1 AND block_number >= $2 AND src_token.symbol != 'WETH' and dst_token.symbol != 'WETH'
 )
 ON CONFLICT (tradelog_id) DO NOTHING;
 `

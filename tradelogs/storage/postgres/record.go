@@ -42,6 +42,9 @@ type record struct {
 	IsFirstTrade       bool           `db:"is_first_trade"`
 	TxSender           string         `db:"tx_sender"`
 	ReceiverAddress    string         `db:"receiver_address"`
+	GasUsed            uint64         `db:"gas_used"`
+	GasPrice           float64        `db:"gas_price"`
+	TransactionFee     float64        `db:"transaction_fee"`
 }
 
 func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error) {
@@ -80,6 +83,14 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error)
 	if err != nil {
 		return nil, err
 	}
+	transactionFee, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.TransactionFee)
+	if err != nil {
+		return nil, err
+	}
+	gasPrice, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.GasPrice)
+	if err != nil {
+		return nil, err
+	}
 	return &record{
 		Timestamp:          log.Timestamp.UTC(),
 		BlockNumber:        log.BlockNumber,
@@ -108,6 +119,9 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error)
 		Kyced:              log.UID != "",
 		TxSender:           log.TxSender.Hex(),
 		ReceiverAddress:    log.ReceiverAddress.Hex(),
+		TransactionFee:     transactionFee,
+		GasPrice:           gasPrice,
+		GasUsed:            log.GasUsed,
 	}, nil
 }
 

@@ -238,6 +238,9 @@ type tradeLogDBData struct {
 	WalletAddress      string         `db:"wallet_addr"`
 	TxSender           string         `db:"tx_sender"`
 	ReceiverAddr       string         `db:"receiver_address"`
+	GasUsed            uint64         `db:"gas_used"`
+	GasPrice           float64        `db:"gas_price"`
+	TransactionFee     float64        `db:"transaction_fee"`
 }
 
 func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradeLog, error) {
@@ -415,7 +418,10 @@ INSERT INTO "` + schema.TradeLogsTableName + `"(
 	kyced,
 	is_first_trade,
 	tx_sender,
-	receiver_address
+	receiver_address,
+	gas_used,
+	gas_price,
+	transaction_fee
 ) VALUES (
  	:timestamp,
  	:block_number,
@@ -443,7 +449,10 @@ INSERT INTO "` + schema.TradeLogsTableName + `"(
 	:kyced,
 	:is_first_trade,
 	:tx_sender,
- 	:receiver_address
+ 	:receiver_address,
+	:gas_used,
+	:gas_price,
+	:transaction_fee
 )
 ON CONFLICT (tx_hash, index)
 DO 
@@ -471,7 +480,10 @@ UPDATE SET -- update every fields if record exists (except field is_first_trade)
  	eth_usd_provider = :eth_usd_provider,
 	kyced = :kyced,
 	tx_sender = :tx_sender,
-	receiver_address = :receiver_address
+	receiver_address = :receiver_address,
+	gas_used = :gas_used,
+	gas_price = :gas_price,
+	transaction_fee = :transaction_fee
 ;`
 
 const selectTradeLogsQuery = `

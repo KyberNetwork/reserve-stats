@@ -15,16 +15,12 @@ import (
 func (tldb *TradeLogDB) GetTokenHeatmap(asset ethereum.Address, from, to time.Time, timezone int8) (map[string]common.Heatmap, error) {
 	var (
 		err               error
-		ethCondition      string
 		tokenHeatMapQuery string
 	)
 
 	logger := tldb.sugar.With("from", from, "to", to, "timezone", timezone,
 		"func", caller.GetCurrentFunctionName())
 
-	if ethCondition, err = schema.BuildEthWethExcludingCondition(); err != nil {
-		return nil, err
-	}
 	from = schema.RoundTime(from, "day", timezone)
 	to = schema.RoundTime(to, "day", timezone).Add(time.Hour * 24)
 	// nested query with filter by src_address_id and dst_address_id
@@ -39,7 +35,6 @@ func (tldb *TradeLogDB) GetTokenHeatmap(asset ethereum.Address, from, to time.Ti
 			FROM "%[1]s"
 			WHERE timestamp >= $1 and timestamp < $2
 			AND EXISTS (SELECT NULL FROM "%[2]s" WHERE address = $3 and id = src_address_id)
-			AND %[3]s
 			AND country IS NOT NULL
 		UNION ALL
 			SELECT country, dst_amount AS token_volume, eth_amount, 
@@ -47,10 +42,9 @@ func (tldb *TradeLogDB) GetTokenHeatmap(asset ethereum.Address, from, to time.Ti
 			FROM "%[1]s"
 			WHERE timestamp >= $1 and timestamp < $2
 			AND EXISTS (SELECT NULL FROM "%[2]s" WHERE address = $3 and id = dst_address_id)
-			AND %[3]s
 			AND country IS NOT NULL
 		)a GROUP BY country
-	`, schema.TradeLogsTableName, schema.TokenTableName, ethCondition)
+	`, schema.TradeLogsTableName, schema.TokenTableName)
 	logger.Debugw("prepare statement", "stmt", tokenHeatMapQuery)
 
 	var records []struct {

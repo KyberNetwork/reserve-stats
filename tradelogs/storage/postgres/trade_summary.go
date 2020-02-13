@@ -64,7 +64,7 @@ func (tldb *TradeLogDB) GetTradeSummary(from, to time.Time, timezone int8) (map[
 		SUM(eth_amount*eth_usd_rate) as total_usd_volume, 
 		AVG(eth_amount*eth_usd_rate) usd_per_trade, count(1) as total_trade 
 	FROM "%[2]s"
-	AND timestamp >= $1 AND timestamp < $2
+	WHERE timestamp >= $1 AND timestamp < $2
 	GROUP BY time
 	`, timeField, schema.TradeLogsTableName)
 	logger.Debugw("prepare statement", "stmt", tradelogQuery)

@@ -65,7 +65,7 @@ func (tldb *TradeLogDB) GetCountryStats(countryCode string, from, to time.Time, 
 		SUM(eth_amount*eth_usd_rate) as total_usd_volume, 
 		AVG(eth_amount*eth_usd_rate) usd_per_trade, count(1) as total_trade 
 	FROM %[2]s
-	AND timestamp >= $1 AND timestamp < $2 AND country = $3
+	WHERE timestamp >= $1 AND timestamp < $2 AND country = $3
 	GROUP BY time
 	`, timeField, schema.TradeLogsTableName)
 	logger.Debugw("prepare statement", "stmt", tradelogsQuery)

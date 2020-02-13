@@ -13,8 +13,7 @@ import (
 // GetWalletStats return wallet stats group by day
 func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, timezone int8) (map[uint64]common.WalletStats, error) {
 	var (
-		err          error
-		ethCondition string
+		err error
 	)
 	logger := tldb.sugar.With("from", from, "to", to, "walletAddr", walletAddr,
 		"timezone", timezone, "func", caller.GetCurrentFunctionName())
@@ -22,10 +21,6 @@ func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, ti
 	from = schema.RoundTime(from, "day", timezone)
 	to = schema.RoundTime(to, "day", timezone).Add(time.Hour * 24)
 	timeField := schema.BuildDateTruncField("day", timezone)
-
-	if ethCondition, err = schema.BuildEthWethExcludingCondition(); err != nil {
-		return nil, err
-	}
 
 	walletStatsQuery := fmt.Sprintf(`
 		SELECT %[1]s as time,
@@ -74,9 +69,8 @@ func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, ti
 		FROM "%[2]s" 
 		WHERE timestamp >= $1 AND timestamp < $2
 		AND EXISTS (SELECT NULL FROM "%[3]s" WHERE address = $3 AND id=wallet_address_id)
-		AND %[4]s
 		GROUP BY time
-	`, timeField, schema.TradeLogsTableName, schema.WalletTableName, ethCondition)
+	`, timeField, schema.TradeLogsTableName, schema.WalletTableName)
 	logger.Debugw("prepare statement", "stmt", walletStatsQuery)
 
 	var records2 []struct {

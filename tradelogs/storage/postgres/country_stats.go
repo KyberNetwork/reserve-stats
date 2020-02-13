@@ -10,10 +10,10 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 )
 
+// GetCountryStats return country stats aggregated data
 func (tldb *TradeLogDB) GetCountryStats(countryCode string, from, to time.Time, timezone int8) (map[uint64]*common.CountryStats, error) {
 	var (
 		err            error
-		ethCondition   string
 		tradelogsQuery string
 		timeField      = schema.BuildDateTruncField("day", timezone)
 		results        = make(map[uint64]*common.CountryStats)
@@ -22,9 +22,6 @@ func (tldb *TradeLogDB) GetCountryStats(countryCode string, from, to time.Time, 
 		"func", caller.GetCurrentFunctionName())
 	from = schema.RoundTime(from, "day", timezone)
 	to = schema.RoundTime(to, "day", timezone).Add(time.Hour * 24)
-	if ethCondition, err = schema.BuildEthWethExcludingCondition(); err != nil {
-		return nil, err
-	}
 	// get unique_address, kyced, total_burn_fee, count_new_trades
 	tradelogsQuery = fmt.Sprintf(`SELECT %[1]s AS time, 
 		COUNT(DISTINCT(user_address_id)) AS unique_address,
@@ -68,10 +65,9 @@ func (tldb *TradeLogDB) GetCountryStats(countryCode string, from, to time.Time, 
 		SUM(eth_amount*eth_usd_rate) as total_usd_volume, 
 		AVG(eth_amount*eth_usd_rate) usd_per_trade, count(1) as total_trade 
 	FROM %[2]s
-	WHERE %[3]s
 	AND timestamp >= $1 AND timestamp < $2 AND country = $3
 	GROUP BY time
-	`, timeField, schema.TradeLogsTableName, ethCondition)
+	`, timeField, schema.TradeLogsTableName)
 	logger.Debugw("prepare statement", "stmt", tradelogsQuery)
 	var volumeRecords []struct {
 		Time           time.Time `db:"time"`

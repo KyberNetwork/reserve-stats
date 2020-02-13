@@ -1,7 +1,6 @@
 package tradelogs
 
 import (
-	"context"
 	"math/big"
 	"time"
 
@@ -45,14 +44,8 @@ func (crawler *Crawler) fetchTradeLogV1(fromBlock, toBlock *big.Int, timeout tim
 	return result, nil
 }
 
-func (crawler *Crawler) getTransactionReceiptV1(tradeLog common.TradeLog, timeout time.Duration, logIndex uint,
+func (crawler *Crawler) getTransactionReceiptV1(tradeLog common.TradeLog, receipt *types.Receipt, logIndex uint,
 	shouldGetReserveAddr bool) (common.TradeLog, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	receipt, err := crawler.ethClient.TransactionReceipt(ctx, tradeLog.TransactionHash)
-	if err != nil {
-		return tradeLog, err
-	}
 
 	for index := mathutil.MinInt64(int64(len(receipt.Logs)-1), int64(logIndex)); index >= 0; index-- {
 		log := receipt.Logs[index]
@@ -123,7 +116,7 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 			return result, errors.New("log item has no topic")
 		}
 
-		tradeLog.TxSender, err = crawler.getTxSender(log, defaultTimeout)
+		tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
 		if err != nil {
 			return result, errors.New("could not get trade log sender")
 		}
@@ -152,13 +145,19 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 
 			tradeLog = assembleTradeLogsReserveAddr(tradeLog, crawler.sugar)
 
+			receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)
+			}
+			tradeLog.GasUsed = receipt.GasUsed
+
 			// when the tradelog does not contain burnfee and etherReceival event
 			// or trasaction is not from token to ether
 			// get tx receipt to get reserve address, receiver address
 			shouldGetReserveAddr := len(tradeLog.BurnFees) == 0 && blockchain.IsZeroAddress(tradeLog.SrcReserveAddress)
 			if shouldGetReserveAddr || tradeLog.DestAddress != blockchain.ETHAddr {
 				crawler.sugar.Debug("trade logs  has no burn fee, no ethReceival event, no wallet fee, getting reserve address from tx receipt")
-				tradeLog, err = crawler.getTransactionReceiptV1(tradeLog, 10*time.Second, log.Index, shouldGetReserveAddr)
+				tradeLog, err = crawler.getTransactionReceiptV1(tradeLog, receipt, log.Index, shouldGetReserveAddr)
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to get info from transaction receipt")
 				}
@@ -182,6 +181,9 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 			}
 			tradeLog.OriginalEthAmount = tradeLog.EthAmount // some case EthAmount
 			// will be multiple so we keep OriginalEthAmount as a copy of original amount.
+
+			tradeLog.TransactionFee = big.NewInt(0).Mul(tradeLog.GasPrice, big.NewInt(int64(tradeLog.GasUsed)))
+
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)

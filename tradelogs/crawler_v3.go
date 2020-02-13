@@ -51,7 +51,7 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 			return result, errors.New("log item has no topic")
 		}
 
-		tradeLog.TxSender, err = crawler.getTxSender(log, defaultTimeout)
+		tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
 		if err != nil {
 			return result, errors.New("could not get trade log sender")
 		}
@@ -70,9 +70,16 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 			if tradeLog, err = fillKyberTradeV3(tradeLog, log, crawler.volumeExludedReserves); err != nil {
 				return nil, err
 			}
+			receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)
+			}
+			tradeLog.GasUsed = receipt.GasUsed
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
 				return nil, errors.Wrapf(err, "failed to resolve timestamp by block_number %v", log.BlockNumber)
 			}
+
+			tradeLog.TransactionFee = big.NewInt(0).Mul(tradeLog.GasPrice, big.NewInt(int64(tradeLog.GasUsed)))
 
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			// one trade only has one and only ExecuteTrade event

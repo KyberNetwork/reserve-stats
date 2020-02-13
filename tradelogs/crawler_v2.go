@@ -88,7 +88,7 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			return result, errors.New("log item has no topic")
 		}
 
-		tradeLog.TxSender, err = crawler.getTxSender(log, defaultTimeout)
+		tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
 		if err != nil {
 			return result, errors.New("could not get trade log sender")
 		}
@@ -117,14 +117,16 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 
 			tradeLog = assembleTradeLogsReserveAddr(tradeLog, crawler.sugar)
 
+			receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)
+			}
+			tradeLog.GasUsed = receipt.GasUsed
+
 			// when the tradelog does not contain burnfee and etherReceival event
 			// get tx receipt to get reserve address
 			if len(tradeLog.BurnFees) == 0 && blockchain.IsZeroAddress(tradeLog.SrcReserveAddress) {
 				crawler.sugar.Debug("trade logs has no burn fee, no ethReceival event, no wallet fee, getting reserve address from tx receipt")
-				receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)
-				}
 				tradeLog.SrcReserveAddress = getReserveFromReceipt(receipt, log.Index)
 			}
 			// set tradeLog.EthAmount
@@ -136,6 +138,8 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			// keep OriginalEthAmount as origin amount of EthAmount
 			tradeLog.OriginalEthAmount = big.NewInt(0).Set(tradeLog.EthAmount)
 			tradeLog.EthAmount = tradeLog.EthAmount.Mul(tradeLog.EthAmount, big.NewInt(int64(len(tradeLog.BurnFees))))
+
+			tradeLog.TransactionFee = big.NewInt(0).Mul(tradeLog.GasPrice, big.NewInt(int64(tradeLog.GasUsed)))
 
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			// one trade only has one and only ExecuteTrade event

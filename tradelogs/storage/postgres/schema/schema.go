@@ -72,10 +72,18 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	is_first_trade BOOLEAN,
 	tx_sender	TEXT,
 	receiver_address	TEXT,
+	gas_used INTEGER,
+	gas_price FLOAT(32),
+	transaction_fee FLOAT(32),
 	PRIMARY KEY (tx_hash,index)
 );
 
-ALTER TABLE tradelogs ADD UNIQUE (id);
+ALTER TABLE "` + TradeLogsTableName + `" ADD UNIQUE (id);
+
+ALTER TABLE "` + TradeLogsTableName + `"
+	ADD COLUMN IF NOT EXISTS gas_used INTEGER,
+	ADD COLUMN IF NOT EXISTS transaction_fee FLOAT(32),
+	ADD COLUMN IF NOT EXISTS gas_price FLOAT(32);
 
 CREATE TABLE IF NOT EXISTS "` + BigTradeLogsTableName + `" (
 	id SERIAL PRIMARY KEY,

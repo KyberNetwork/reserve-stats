@@ -79,7 +79,6 @@ func (tldb *TradeLogDB) GetTopTokens(from, to time.Time, limit uint64) (common.T
 	    left join token on tradelogs.src_address_id = token.id
 	  WHERE
 		timestamp >= $1 AND timestamp <= $2
-	    AND (src_burn_amount + dst_amount) > 0
 	  GROUP BY token.id
 	  UNION ALL
 	  SELECT
@@ -91,7 +90,6 @@ func (tldb *TradeLogDB) GetTopTokens(from, to time.Time, limit uint64) (common.T
 	    left join token on tradelogs.dst_address_id = token.id
 	  WHERE
 		timestamp >= $1 AND timestamp <= $2
-	    AND (src_burn_amount + dst_burn_amount) > 0
 	  GROUP BY token.id
 	  ) a GROUP BY a.address, a.symbol ORDER BY usd_amount DESC
 		`
@@ -138,7 +136,6 @@ func (tldb *TradeLogDB) GetTopIntegrations(from, to time.Time, limit uint64) (co
 	  left join wallet on tradelogs.wallet_address_id = wallet.id
 	WHERE
 		timestamp >= $1 AND timestamp <= $2
-	  AND (src_burn_amount + dst_burn_amount) > 0
 	GROUP BY wallet.address, wallet.name ORDER BY usd_amount DESC
 		`
 		topIntegrations []struct {
@@ -190,7 +187,6 @@ func (tldb *TradeLogDB) GetTopReserves(from, to time.Time, limit uint64) (common
 	    left join reserve on tradelogs.src_reserve_address_id = reserve.id
 	  WHERE
 		timestamp >= $1 AND timestamp <= $2
-	    AND (src_burn_amount + dst_burn_amount) > 0
 	  GROUP BY reserve.id
 	  UNION ALL
 	  SELECT
@@ -201,7 +197,6 @@ func (tldb *TradeLogDB) GetTopReserves(from, to time.Time, limit uint64) (common
 	    left join reserve on tradelogs.dst_reserve_address_id = reserve.id
 	  WHERE
 		timestamp >= $1 AND timestamp <= $2
-		AND (src_burn_amount + dst_burn_amount) > 0
 	  GROUP BY reserve.id
 	  ) a GROUP BY a.address ORDER BY usd_amount DESC
 		`

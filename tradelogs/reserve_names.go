@@ -74,6 +74,7 @@ var reserves = map[ethereum.Address]string{
 	ethereum.HexToAddress("0x31e085afd48a1d6e51cc193153d625e8f0514c7f"): "Uniswap Bridge Reserve V4",
 
 	ethereum.HexToAddress("0x1e158c0e93c30d24e918ef83d1e0be23595c3c0f"): "Oasis Bridge Reserve V3",
+	ethereum.HexToAddress("0x4f32BbE8dFc9efD54345Fc936f9fEF1048746fCF"): "OneBit Quant",
 }
 
 // ReserveAddressToName return reserve name by its address

@@ -12,4 +12,5 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE DATABASE "reserve_rates";
     CREATE DATABASE "transactions";
     CREATE DATABASE "reserve_addresses";
+    CREATE DATABASE "burned_fees";
 EOSQL

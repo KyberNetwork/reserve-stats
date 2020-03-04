@@ -7,13 +7,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/urfave/cli"
+
 	"github.com/KyberNetwork/reserve-stats/burnedfees/crawler"
+	"github.com/KyberNetwork/reserve-stats/burnedfees/storage"
 	influxdbstorage "github.com/KyberNetwork/reserve-stats/burnedfees/storage/influxdb"
+	"github.com/KyberNetwork/reserve-stats/burnedfees/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	"github.com/urfave/cli"
 )
 
 const (
@@ -24,6 +27,8 @@ const (
 
 	maxBlocksFlag    = "max-blocks"
 	defaultMaxBlocks = 100000
+
+	dbEngineFlag = "db-engine"
 )
 
 func main() {
@@ -50,7 +55,15 @@ func main() {
 			EnvVar: "MAX_BLOCKS",
 			Value:  defaultMaxBlocks,
 		},
+		cli.StringFlag{
+			Name:   dbEngineFlag,
+			Usage:  "database engine to store burned fee",
+			EnvVar: "DB_ENGINE",
+			Value:  "postgres",
+		},
 	)
+
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.PostgresDefaultDb)...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -97,9 +110,22 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	st, err := influxdbstorage.NewBurnedFeesStorage(sugar, influxClient, blkTimeRsv, amountFmt)
-	if err != nil {
-		return err
+	dbEngine := c.String(dbEngineFlag)
+	var st storage.Interface
+	if dbEngine == "postgres" {
+		db, err := libapp.NewDBFromContext(c)
+		if err != nil {
+			return err
+		}
+		st, err = postgres.NewPostgresStorage(db, sugar, blkTimeRsv, amountFmt)
+		if err != nil {
+			return err
+		}
+	} else {
+		st, err = influxdbstorage.NewBurnedFeesStorage(sugar, influxClient, blkTimeRsv, amountFmt)
+		if err != nil {
+			return err
+		}
 	}
 
 	cr := crawler.NewBurnedFeesCrawler(sugar, ethClient, st, burners)

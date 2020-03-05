@@ -112,7 +112,7 @@ func run(c *cli.Context) error {
 
 	dbEngine := c.String(dbEngineFlag)
 	var st storage.Interface
-	if dbEngine == "postgres" {
+	if dbEngine == storage.PostgresDBEngine {
 		db, err := libapp.NewDBFromContext(c)
 		if err != nil {
 			return err

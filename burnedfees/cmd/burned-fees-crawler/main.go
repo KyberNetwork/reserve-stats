@@ -59,7 +59,6 @@ func main() {
 			Name:   dbEngineFlag,
 			Usage:  "database engine to store burned fee",
 			EnvVar: "DB_ENGINE",
-			Value:  "postgres",
 		},
 	)
 

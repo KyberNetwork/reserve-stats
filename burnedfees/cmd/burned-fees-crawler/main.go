@@ -164,7 +164,7 @@ func run(c *cli.Context) error {
 			if err != nil {
 				return err
 			}
-			toBlock = big.NewInt(0).Add(currentHeader.Number, big.NewInt(1))
+			toBlock = currentHeader.Number
 		}
 
 		if fErr := cr.Crawl(fromBlock.Uint64(), toBlock.Uint64(), c.Uint64(maxBlocksFlag)); fErr != nil {

@@ -1,16 +1,31 @@
 package tradelogs
 
 import (
+	"bytes"
 	"math/big"
+	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
+var (
+	networkABI abi.ABI
+)
+
+func init() {
+	var err error
+	networkABI, err = abi.JSON(strings.NewReader(contracts.NetworkProxyABI))
+	if err != nil {
+		panic(err)
+	}
+}
 func (crawler *Crawler) fetchTradeLogV3(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
 	var result []common.TradeLog
 
@@ -35,6 +50,37 @@ func (crawler *Crawler) fetchTradeLogV3(fromBlock, toBlock *big.Int, timeout tim
 	return result, nil
 }
 
+type tradeWithHintParam struct {
+	Src               ethereum.Address
+	SrcAmount         *big.Int
+	Dest              ethereum.Address
+	DestAddress       ethereum.Address
+	MaxDestAmount     *big.Int
+	MinConversionRate *big.Int
+	WalletId          ethereum.Address // WalletID will not work
+	Hint              []byte
+}
+
+func decodeTradeWithHintParam(data []byte) (tradeWithHintParam, error) { // decode txInput method signature
+	if len(data) < 4 {
+		return tradeWithHintParam{}, errors.New("input data not valid")
+	}
+	// recover Method from signature and ABI
+	method, err := networkABI.MethodById(data[0:4])
+	if err != nil {
+		return tradeWithHintParam{}, errors.Wrap(err, "cannot find method for correspond data")
+	}
+	var resp tradeWithHintParam
+	if method.Name != "tradeWithHint" {
+		return tradeWithHintParam{}, errors.New("try to decode data is not from tradeWithHint")
+	}
+	// unpack method inputs
+	err = method.Inputs.Unpack(&resp, data[4:])
+	if err != nil {
+		return tradeWithHintParam{}, errors.Wrap(err, "unpack tradeWithHint param failed")
+	}
+	return resp, nil
+}
 func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.TradeLog, error) {
 	var (
 		result   []common.TradeLog
@@ -73,6 +119,26 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 			receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)
+			}
+			if len(tradeLog.WalletFees) == 0 { // in case there's no fee, we try to get wallet addr from tradeWithHint input
+				tx, err := crawler.getTransactionByHash(tradeLog.TransactionHash, defaultTimeout)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to get transactionByHash tx: %v", tradeLog.TransactionHash)
+				}
+				if bytes.Equal(tx.To().Bytes(), crawler.networkProxy.Bytes()) { // try to fail early, tx must have dst == networkProxy
+					tradeParam, err := decodeTradeWithHintParam(tx.Data())
+					if err == nil {
+						tradeLog.WalletAddress = tradeParam.WalletId
+						tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
+					} else {
+						return nil, errors.Wrap(err, "failed to decode tradeWithHint param")
+					}
+				} else {
+					crawler.sugar.Warnw("no walletFee but tx is not with dest is networkProxy, skip get wallet addr")
+				}
+			} else {
+				tradeLog.WalletAddress = tradeLog.WalletFees[0].WalletAddress
+				tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
 			}
 			tradeLog.GasUsed = receipt.GasUsed
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {

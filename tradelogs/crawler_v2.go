@@ -53,6 +53,16 @@ func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time
 	return receipt, nil
 }
 
+func (crawler *Crawler) getTransactionByHash(txHash ethereum.Hash, timeout time.Duration) (*types.Transaction, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	tx, _, err := crawler.ethClient.TransactionByHash(ctx, txHash)
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
 func getReserveFromReceipt(receipt *types.Receipt, logIndex uint) ethereum.Address {
 	var (
 		reserveAddr ethereum.Address

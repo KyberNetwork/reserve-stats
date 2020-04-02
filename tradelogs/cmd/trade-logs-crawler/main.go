@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -47,6 +48,9 @@ const (
 
 	bigVolumeThresholdFlag = "big-volume-threshold"
 	defaultBigVolume       = 100
+
+	networkProxyAddrFlag = "network-proxy-addr"
+	defaultNetworkProxy  = "0x818E6FECD516Ecc3849DAf6845e3EC868087B755"
 )
 
 func main() {
@@ -102,6 +106,12 @@ func main() {
 			Usage:  "The amount of eth to detect which trade is big",
 			EnvVar: "BIG_VOLUME_THRESHOLD",
 			Value:  defaultBigVolume,
+		},
+		cli.StringFlag{
+			Name:   networkProxyAddrFlag,
+			Usage:  "network proxy contract address",
+			EnvVar: "NETWORK_PROXY_ADDR",
+			Value:  defaultNetworkProxy,
 		},
 	)
 
@@ -215,7 +225,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
+	networkProxyAddr := common2.HexToAddress(c.String(networkProxyAddrFlag))
 	maxWorkers := c.Int(maxWorkersFlag)
 	maxBlocks := c.Int(maxBlocksFlag)
 	attempts := c.Int(attemptsFlag) // exit if failed to fetch logs after attempts times
@@ -223,7 +233,6 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return nil
 	}
-
 	for {
 		var (
 			doneCh             = make(chan struct{})
@@ -256,18 +265,18 @@ func run(c *cli.Context) error {
 				//if job start at block v2 and end at block v3 then split job
 				case uint64(end) >= startingBlocks.V3() && uint64(i) < startingBlocks.V3():
 					jobOrder++
-					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(int64(startingBlocks.V3())), attempts, etherscanClient))
+					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(int64(startingBlocks.V3())), attempts, etherscanClient, networkProxyAddr))
 					jobOrder++
-					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(int64(startingBlocks.V3())), big.NewInt(end), attempts, etherscanClient))
+					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(int64(startingBlocks.V3())), big.NewInt(end), attempts, etherscanClient, networkProxyAddr))
 				//if job start at block v1 and end at block v2 then split job
 				case uint64(end) >= startingBlocks.V2() && uint64(i) < startingBlocks.V2():
 					jobOrder++
-					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(int64(startingBlocks.V2())), attempts, etherscanClient))
+					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(int64(startingBlocks.V2())), attempts, etherscanClient, networkProxyAddr))
 					jobOrder++
-					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(int64(startingBlocks.V2())), big.NewInt(end), attempts, etherscanClient))
+					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(int64(startingBlocks.V2())), big.NewInt(end), attempts, etherscanClient, networkProxyAddr))
 				default:
 					jobOrder++
-					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(end), attempts, etherscanClient))
+					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(end), attempts, etherscanClient, networkProxyAddr))
 				}
 			}
 			for p.GetLastCompleteJobOrder() < jobOrder {

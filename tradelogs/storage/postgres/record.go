@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum/common"
-
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -48,12 +46,6 @@ type record struct {
 }
 
 func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error) {
-	var walletAddr ethereum.Address
-	var walletName string
-	if len(log.WalletFees) > 0 {
-		walletAddr = log.WalletFees[0].WalletAddress
-		walletName = log.WalletFees[0].WalletName
-	}
 	ethAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)
 	if err != nil {
 		return nil, err
@@ -104,8 +96,8 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradeLog) (*record, error)
 		DstReserveAddress:  log.DstReserveAddress.String(),
 		SrcAmount:          srcAmount,
 		DestAmount:         dstAmount,
-		WalletAddress:      walletAddr.String(),
-		WalletName:         walletName,
+		WalletAddress:      log.WalletAddress.String(),
+		WalletName:         log.WalletName,
 		SrcBurnAmount:      srcBurnAmount,
 		DstBurnAmount:      dstBurnAmount,
 		SrcWalletFeeAmount: srcWalletFee,

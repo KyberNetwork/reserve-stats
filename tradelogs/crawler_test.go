@@ -6,6 +6,7 @@ import (
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/nanmu42/etherscan-api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -57,6 +58,8 @@ func assertTradeLog(t *testing.T, tradeLog common.TradeLog) {
 	assert.NotZero(t, tradeLog.Index)
 }
 
+var nwProxyAddr = ethereum.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")
+
 func TestCrawlerGetTradeLogs(t *testing.T) {
 	testutil.SkipExternal(t)
 
@@ -69,15 +72,8 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		ethereum.HexToAddress("0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950"), // internal network contract
 		ethereum.HexToAddress("0x52166528FCC12681aF996e409Ee3a421a4e128A3"), // burner contract
 	}
-	c, err := NewCrawler(
-		sugar,
-		client,
-		newMockBroadCastClient(),
-		tokenrate.NewMock(),
-		v3Addresses,
-		deployment.StartingBlocks[deployment.Production],
-		ec,
-		[]ethereum.Address{})
+	c, err := NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), v3Addresses,
+		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr)
 	require.NoError(t, err)
 
 	tradeLogs, err := c.GetTradeLogs(big.NewInt(7025000), big.NewInt(7025100), time.Minute)
@@ -94,15 +90,8 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		ethereum.HexToAddress("0xed4f53268bfdFF39B36E8786247bA3A02Cf34B04"), // burner contract
 	}
 
-	c, err = NewCrawler(
-		sugar,
-		client,
-		newMockBroadCastClient(),
-		tokenrate.NewMock(),
-		v2Addresses,
-		deployment.StartingBlocks[deployment.Production],
-		ec,
-		[]ethereum.Address{})
+	c, err = NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), v2Addresses,
+		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr)
 	require.NoError(t, err)
 
 	tradeLogs, err = c.GetTradeLogs(big.NewInt(6343120), big.NewInt(6343220), time.Minute)
@@ -195,15 +184,8 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		ethereum.HexToAddress("0x07f6e905f2a1559cd9fd43cb92f8a1062a3ca706"), // burner contract
 	}
 
-	c, err = NewCrawler(
-		sugar,
-		client,
-		newMockBroadCastClient(),
-		tokenrate.NewMock(),
-		v1Addresses,
-		deployment.StartingBlocks[deployment.Production],
-		ec,
-		[]ethereum.Address{})
+	c, err = NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), v1Addresses,
+		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr)
 	require.NoError(t, err)
 
 	tradeLogs, err = c.GetTradeLogs(big.NewInt(5877442), big.NewInt(5877500), time.Minute)
@@ -255,15 +237,8 @@ func newTestCrawler(t *testing.T, version string) *Crawler {
 	}
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	client := testutil.MustNewDevelopmentwEthereumClient()
-	c, err := NewCrawler(
-		sugar,
-		client,
-		newMockBroadCastClient(),
-		tokenrate.NewMock(),
-		addresses,
-		deployment.StartingBlocks[deployment.Production],
-		ec,
-		[]ethereum.Address{})
+	c, err := NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), addresses,
+		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr)
 	require.NoError(t, err)
 	return c
 }
@@ -321,4 +296,20 @@ func TestCrawler_GetEthAmount(t *testing.T) {
 	for _, tradeLog := range tradeLogs {
 		assertTradeLog(t, tradeLog)
 	}
+}
+
+func TestDecodeTx(t *testing.T) {
+	// example of transaction input data
+	txInput := "0x29589f61000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee00000000000000000000000000000000000000000000000002e0f43384a3591f0000000000000000000000000d8775f648430679a709e98d2b0cb6250d2887ef0000000000000000000000005eee96fa064a571dabcbfe43799d46e5de2f51f98000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000031c454332beb5e2eff000000000000000000000000440bbd6a888a36de6e2f6a25f65bc4e16874faa9000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000045045524d00000000000000000000000000000000000000000000000000000000"
+
+	data, err := decodeTradeWithHintParam(hexutil.MustDecode(txInput))
+	require.NoError(t, err)
+
+	t.Log("src", data.Src.String())
+	t.Log("srcAmount", data.SrcAmount)
+	t.Log("dest", data.Dest.String())
+	t.Log("destAddr", data.DestAddress.String())
+	t.Log("maxDestAmount", data.MaxDestAmount)
+	t.Log("walletID", data.WalletId.String())
+	t.Log("minConversionRate", data.MinConversionRate.String())
 }

@@ -149,8 +149,8 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 		}
 		tradeLogs[i].UserName = up.UserName
 		tradeLogs[i].ProfileID = up.ProfileID
-		if (tradeLogs[i].IntegrationApp != appname.KyberSwapAppName) && (len(log.WalletFees) > 0) {
-			name, avai := addrToAppName[log.WalletFees[0].WalletAddress]
+		if tradeLogs[i].IntegrationApp != appname.KyberSwapAppName {
+			name, avai := addrToAppName[log.WalletAddress]
 			if avai {
 				tradeLogs[i].IntegrationApp = name
 			}

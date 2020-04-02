@@ -53,15 +53,9 @@ var errUnknownLogTopic = errors.New("unknown log topic")
 type tradeLogFetcher func(*big.Int, *big.Int, time.Duration) ([]common.TradeLog, error)
 
 // NewCrawler create a new Crawler instance.
-func NewCrawler(
-	sugar *zap.SugaredLogger,
-	client *ethclient.Client,
-	broadcastClient broadcast.Interface,
-	rateProvider tokenrate.ETHUSDRateProvider,
-	addresses []ethereum.Address,
-	sb deployment.VersionedStartingBlocks,
-	etherscanClient *etherscan.Client,
-	volumeExcludedReserves []ethereum.Address) (*Crawler, error) {
+func NewCrawler(sugar *zap.SugaredLogger, client *ethclient.Client, broadcastClient broadcast.Interface,
+	rateProvider tokenrate.ETHUSDRateProvider, addresses []ethereum.Address, sb deployment.VersionedStartingBlocks,
+	etherscanClient *etherscan.Client, volumeExcludedReserves []ethereum.Address, networkProxy ethereum.Address) (*Crawler, error) {
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
 	if err != nil {
 		return nil, err
@@ -77,6 +71,7 @@ func NewCrawler(
 		startingBlocks:        sb,
 		etherscanClient:       etherscanClient,
 		volumeExludedReserves: volumeExcludedReserves,
+		networkProxy:          networkProxy,
 	}, nil
 }
 
@@ -93,6 +88,7 @@ type Crawler struct {
 	volumeExludedReserves []ethereum.Address
 
 	etherscanClient *etherscan.Client
+	networkProxy    ethereum.Address
 }
 
 func logDataToExecuteTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {

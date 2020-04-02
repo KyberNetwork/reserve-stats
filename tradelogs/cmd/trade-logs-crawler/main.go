@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -15,6 +14,7 @@ import (
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
@@ -48,9 +48,6 @@ const (
 
 	bigVolumeThresholdFlag = "big-volume-threshold"
 	defaultBigVolume       = 100
-
-	networkProxyAddrFlag = "network-proxy-addr"
-	defaultNetworkProxy  = "0x818E6FECD516Ecc3849DAf6845e3EC868087B755"
 )
 
 func main() {
@@ -106,12 +103,6 @@ func main() {
 			Usage:  "The amount of eth to detect which trade is big",
 			EnvVar: "BIG_VOLUME_THRESHOLD",
 			Value:  defaultBigVolume,
-		},
-		cli.StringFlag{
-			Name:   networkProxyAddrFlag,
-			Usage:  "network proxy contract address",
-			EnvVar: "NETWORK_PROXY_ADDR",
-			Value:  defaultNetworkProxy,
 		},
 	)
 
@@ -225,7 +216,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	networkProxyAddr := common2.HexToAddress(c.String(networkProxyAddrFlag))
+	networkProxyAddr := contracts.ProxyContractAddress().MustGetOneFromContext(c)
 	maxWorkers := c.Int(maxWorkersFlag)
 	maxBlocks := c.Int(maxBlocksFlag)
 	attempts := c.Int(attemptsFlag) // exit if failed to fetch logs after attempts times

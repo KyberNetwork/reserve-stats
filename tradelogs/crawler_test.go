@@ -312,4 +312,8 @@ func TestDecodeTx(t *testing.T) {
 	t.Log("maxDestAmount", data.MaxDestAmount)
 	t.Log("walletID", data.WalletID.String())
 	t.Log("minConversionRate", data.MinConversionRate.String())
+
+	assert.Equal(t, ethereum.HexToAddress("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"), data.Src)
+	assert.Equal(t, ethereum.HexToAddress("0x0D8775F648430679A709E98d2b0Cb6250d2887EF"), data.Dest)
+	assert.Equal(t, ethereum.HexToAddress("0x440bBd6a888a36DE6e2F6A25f65bc4e16874faa9"), data.WalletID)
 }

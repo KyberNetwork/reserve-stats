@@ -57,7 +57,7 @@ type tradeWithHintParam struct {
 	DestAddress       ethereum.Address
 	MaxDestAmount     *big.Int
 	MinConversionRate *big.Int
-	WalletId          ethereum.Address // WalletID will not work
+	WalletID          ethereum.Address `abi:"walletId"`
 	Hint              []byte
 }
 
@@ -128,7 +128,7 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 				if bytes.Equal(tx.To().Bytes(), crawler.networkProxy.Bytes()) { // try to fail early, tx must have dst == networkProxy
 					tradeParam, err := decodeTradeWithHintParam(tx.Data())
 					if err == nil {
-						tradeLog.WalletAddress = tradeParam.WalletId
+						tradeLog.WalletAddress = tradeParam.WalletID
 						tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
 					} else {
 						return nil, errors.Wrap(err, "failed to decode tradeWithHint param")

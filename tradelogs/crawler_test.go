@@ -310,6 +310,6 @@ func TestDecodeTx(t *testing.T) {
 	t.Log("dest", data.Dest.String())
 	t.Log("destAddr", data.DestAddress.String())
 	t.Log("maxDestAmount", data.MaxDestAmount)
-	t.Log("walletID", data.WalletId.String())
+	t.Log("walletID", data.WalletID.String())
 	t.Log("minConversionRate", data.MinConversionRate.String())
 }

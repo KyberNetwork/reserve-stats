@@ -377,10 +377,9 @@ func (crawler *Crawler) updateBasicInfo(log types.Log, tradeLog common.TradeLog,
 			tradeParam, err := decodeTradeWithHintParam(tx.Data())
 			if err != nil {
 				return tradeLog, errors.Wrap(err, "failed to decode tradeWithHint param")
-			} else {
-				tradeLog.WalletAddress = tradeParam.WalletID
-				tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
 			}
+			tradeLog.WalletAddress = tradeParam.WalletID
+			tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
 		} else {
 			crawler.sugar.Warnw("no walletFee but tx is not with dest is networkProxy, skip get wallet addr")
 		}

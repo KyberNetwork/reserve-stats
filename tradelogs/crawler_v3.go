@@ -1,7 +1,6 @@
 package tradelogs
 
 import (
-	"bytes"
 	"math/big"
 	"strings"
 	"time"
@@ -97,11 +96,6 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 			return result, errors.New("log item has no topic")
 		}
 
-		tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
-		if err != nil {
-			return result, errors.New("could not get trade log sender")
-		}
-
 		topic := log.Topics[0]
 		switch topic.Hex() {
 		case feeToWalletEvent:
@@ -120,34 +114,18 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)
 			}
-			if len(tradeLog.WalletFees) == 0 { // in case there's no fee, we try to get wallet addr from tradeWithHint input
-				tx, err := crawler.getTransactionByHash(tradeLog.TransactionHash, defaultTimeout)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to get transactionByHash tx: %v", tradeLog.TransactionHash)
-				}
-				if bytes.Equal(tx.To().Bytes(), crawler.networkProxy.Bytes()) { // try to fail early, tx must have dst == networkProxy
-					tradeParam, err := decodeTradeWithHintParam(tx.Data())
-					if err == nil {
-						tradeLog.WalletAddress = tradeParam.WalletID
-						tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
-					} else {
-						return nil, errors.Wrap(err, "failed to decode tradeWithHint param")
-					}
-				} else {
-					crawler.sugar.Warnw("no walletFee but tx is not with dest is networkProxy, skip get wallet addr")
-				}
-			} else {
-				tradeLog.WalletAddress = tradeLog.WalletFees[0].WalletAddress
-				tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
-			}
 			tradeLog.GasUsed = receipt.GasUsed
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
 				return nil, errors.Wrapf(err, "failed to resolve timestamp by block_number %v", log.BlockNumber)
 			}
 
 			tradeLog.TransactionFee = big.NewInt(0).Mul(tradeLog.GasPrice, big.NewInt(int64(tradeLog.GasUsed)))
-
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
+			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
+			if err != nil {
+				return result, errors.New("could not get trade log sender")
+			}
+
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)
 			tradeLog = common.TradeLog{}

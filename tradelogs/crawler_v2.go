@@ -98,11 +98,6 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			return result, errors.New("log item has no topic")
 		}
 
-		tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
-		if err != nil {
-			return result, errors.New("could not get trade log sender")
-		}
-
 		topic := log.Topics[0]
 		switch topic.Hex() {
 		case feeToWalletEvent:
@@ -152,6 +147,12 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			tradeLog.TransactionFee = big.NewInt(0).Mul(tradeLog.GasPrice, big.NewInt(int64(tradeLog.GasUsed)))
 
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
+
+			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
+			if err != nil {
+				return result, errors.New("could not get trade log sender")
+			}
+
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)
 			tradeLog = common.TradeLog{}

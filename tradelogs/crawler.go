@@ -1,6 +1,7 @@
 package tradelogs
 
 import (
+	"bytes"
 	"context"
 	"math/big"
 	"time"
@@ -370,6 +371,24 @@ func (crawler *Crawler) updateBasicInfo(log types.Log, tradeLog common.TradeLog,
 	txSender, err = crawler.ethClient.TransactionSender(ctx, tx, log.BlockHash, log.TxIndex)
 	tradeLog.TxSender = txSender
 	tradeLog.GasPrice = tx.GasPrice()
+
+	if len(tradeLog.WalletFees) == 0 { // in case there's no fee, we try to get wallet addr from tradeWithHint input
+		if bytes.Equal(tx.To().Bytes(), crawler.networkProxy.Bytes()) { // try to fail early, tx must have dst == networkProxy
+			tradeParam, err := decodeTradeWithHintParam(tx.Data())
+			if err != nil {
+				return tradeLog, errors.Wrap(err, "failed to decode tradeWithHint param")
+			} else {
+				tradeLog.WalletAddress = tradeParam.WalletID
+				tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
+			}
+		} else {
+			crawler.sugar.Warnw("no walletFee but tx is not with dest is networkProxy, skip get wallet addr")
+		}
+	} else {
+		tradeLog.WalletAddress = tradeLog.WalletFees[0].WalletAddress
+		tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
+	}
+
 	return tradeLog, err
 }
 

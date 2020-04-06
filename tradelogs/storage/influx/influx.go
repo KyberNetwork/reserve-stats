@@ -247,12 +247,9 @@ func (is *Storage) getWalletFeeAmount(log common.TradeLog) (float64, float64, er
 
 func (is *Storage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error) {
 	var points []*client.Point
-	var walletAddr ethereum.Address
-	var walletName string
-	if len(log.WalletFees) > 0 {
-		walletAddr = log.WalletFees[0].WalletAddress
-		walletName = log.WalletFees[0].WalletName
-	}
+
+	walletAddr := log.WalletAddress
+	walletName := log.WalletName
 
 	tags := map[string]string{
 
@@ -385,10 +382,7 @@ func (is *Storage) assembleFirstTradePoint(logItem common.TradeLog) (*client.Poi
 		"user_addr": logItem.UserAddress.Hex(),
 		"country":   logItem.Country,
 	}
-
-	for _, walletFee := range logItem.WalletFees {
-		tags["wallet_addr"] = walletFee.WalletAddress.Hex()
-	}
+	tags["wallet_addr"] = logItem.WalletAddress.Hex()
 
 	fields := map[string]interface{}{
 		"traded": true,
@@ -442,10 +436,7 @@ func (is *Storage) AssembleKYCPoint(logItem common.TradeLog) (*client.Point, err
 		kycedschema.UserAddress.String(): logItem.UserAddress.Hex(),
 		kycedschema.Country.String():     logItem.Country,
 	}
-
-	for _, walletFee := range logItem.WalletFees {
-		tags[kycedschema.WalletAddress.String()] = walletFee.WalletAddress.Hex()
-	}
+	tags[kycedschema.WalletAddress.String()] = logItem.WalletAddress.Hex()
 
 	fields := map[string]interface{}{
 		kycedschema.KYCed.String(): true,

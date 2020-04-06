@@ -1,6 +1,7 @@
 package tradelogs
 
 import (
+	"bytes"
 	"context"
 	"math/big"
 	"time"
@@ -53,15 +54,9 @@ var errUnknownLogTopic = errors.New("unknown log topic")
 type tradeLogFetcher func(*big.Int, *big.Int, time.Duration) ([]common.TradeLog, error)
 
 // NewCrawler create a new Crawler instance.
-func NewCrawler(
-	sugar *zap.SugaredLogger,
-	client *ethclient.Client,
-	broadcastClient broadcast.Interface,
-	rateProvider tokenrate.ETHUSDRateProvider,
-	addresses []ethereum.Address,
-	sb deployment.VersionedStartingBlocks,
-	etherscanClient *etherscan.Client,
-	volumeExcludedReserves []ethereum.Address) (*Crawler, error) {
+func NewCrawler(sugar *zap.SugaredLogger, client *ethclient.Client, broadcastClient broadcast.Interface,
+	rateProvider tokenrate.ETHUSDRateProvider, addresses []ethereum.Address, sb deployment.VersionedStartingBlocks,
+	etherscanClient *etherscan.Client, volumeExcludedReserves []ethereum.Address, networkProxy ethereum.Address) (*Crawler, error) {
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
 	if err != nil {
 		return nil, err
@@ -77,6 +72,7 @@ func NewCrawler(
 		startingBlocks:        sb,
 		etherscanClient:       etherscanClient,
 		volumeExludedReserves: volumeExcludedReserves,
+		networkProxy:          networkProxy,
 	}, nil
 }
 
@@ -93,6 +89,7 @@ type Crawler struct {
 	volumeExludedReserves []ethereum.Address
 
 	etherscanClient *etherscan.Client
+	networkProxy    ethereum.Address
 }
 
 func logDataToExecuteTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
@@ -374,6 +371,23 @@ func (crawler *Crawler) updateBasicInfo(log types.Log, tradeLog common.TradeLog,
 	txSender, err = crawler.ethClient.TransactionSender(ctx, tx, log.BlockHash, log.TxIndex)
 	tradeLog.TxSender = txSender
 	tradeLog.GasPrice = tx.GasPrice()
+
+	if len(tradeLog.WalletFees) == 0 { // in case there's no fee, we try to get wallet addr from tradeWithHint input
+		if bytes.Equal(tx.To().Bytes(), crawler.networkProxy.Bytes()) { // try to fail early, tx must have dst == networkProxy
+			tradeParam, err := decodeTradeWithHintParam(tx.Data())
+			if err != nil {
+				return tradeLog, errors.Wrap(err, "failed to decode tradeWithHint param")
+			}
+			tradeLog.WalletAddress = tradeParam.WalletID
+			tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
+		} else {
+			crawler.sugar.Warnw("no walletFee but tx is not with dest is networkProxy, skip get wallet addr")
+		}
+	} else {
+		tradeLog.WalletAddress = tradeLog.WalletFees[0].WalletAddress
+		tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
+	}
+
 	return tradeLog, err
 }
 

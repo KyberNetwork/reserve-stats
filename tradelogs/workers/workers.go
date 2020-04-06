@@ -30,25 +30,27 @@ type job interface {
 }
 
 // NewFetcherJob return an instance of fetcherJob
-func NewFetcherJob(c *cli.Context, order int, from, to *big.Int, attempts int, etherscanClient *etherscan.Client) *FetcherJob {
+func NewFetcherJob(c *cli.Context, order int, from, to *big.Int, attempts int, etherscanClient *etherscan.Client, networkProxyAddr ethereum.Address) *FetcherJob {
 	return &FetcherJob{
-		c:               c,
-		order:           order,
-		from:            from,
-		to:              to,
-		attempts:        attempts,
-		etherscanClient: etherscanClient,
+		c:                c,
+		order:            order,
+		from:             from,
+		to:               to,
+		attempts:         attempts,
+		etherscanClient:  etherscanClient,
+		networkProxyAddr: networkProxyAddr,
 	}
 }
 
 // FetcherJob represent a job to crawl trade logs from block to block
 type FetcherJob struct {
-	c               *cli.Context
-	order           int
-	from            *big.Int
-	to              *big.Int
-	attempts        int
-	etherscanClient *etherscan.Client
+	c                *cli.Context
+	order            int
+	from             *big.Int
+	to               *big.Int
+	attempts         int
+	etherscanClient  *etherscan.Client
+	networkProxyAddr ethereum.Address
 }
 
 // retry the given fn function for attempts time with sleep duration between before returns an error.
@@ -100,7 +102,8 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 
 	volumeExcludedReserve := contracts.VolumeExcludedReserves().MustGetFromContext(fj.c)
 
-	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks, fj.etherscanClient, volumeExcludedReserve)
+	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks,
+		fj.etherscanClient, volumeExcludedReserve, fj.networkProxyAddr)
 	if err != nil {
 		return nil, err
 	}

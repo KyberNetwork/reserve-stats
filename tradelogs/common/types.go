@@ -256,31 +256,21 @@ func (tl TradeLog) IsKyberSwap() bool {
 	// since block 6715130 KyberSwap add wallet_addr to its tx
 	// then we use only this logic to detect if a tx a KyberSwap tx or not
 	if tl.BlockNumber >= 6715130 {
-		for _, fee := range tl.WalletFees {
-			if isKyberWallet(fee.WalletAddress) {
-				return true
-			}
-		}
-		return false
+		return isKyberWallet(tl.WalletAddress)
 	}
 	// with older block we use logic below to detect if a tx is a KyberSwap tx
 	// if a trade log has no feeToWalletEvent, it is KyberSwap
 	if len(tl.WalletFees) == 0 {
 		return true
 	}
-	for _, fee := range tl.WalletFees {
-		// if Wallet Address < maxUint128, it is KyberSwap
-		// as a result  of history we used to put block number as wallet address (while other put their real wallet addr)
-		// then we use logic below to check if a tx is Kyber Swap tx
-		if fee.WalletAddress.Big().Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(128), nil)) == -1 {
-			return true
-		}
-
-		if isKyberWallet(fee.WalletAddress) {
-			return true
-		}
+	// if Wallet Address < maxUint128, it is KyberSwap
+	// as a result  of history we used to put block number as wallet address (while other put their real wallet addr)
+	// then we use logic below to check if a tx is Kyber Swap tx
+	if tl.WalletAddress.Big().Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(128), nil)) == -1 {
+		return true
 	}
-	return false
+
+	return isKyberWallet(tl.WalletAddress)
 }
 
 // IntegrationVolume represent kyberSwap and non kyberswap volume

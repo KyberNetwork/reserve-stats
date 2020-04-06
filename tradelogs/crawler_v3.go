@@ -2,15 +2,29 @@ package tradelogs
 
 import (
 	"math/big"
+	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
+var (
+	networkABI abi.ABI
+)
+
+func init() {
+	var err error
+	networkABI, err = abi.JSON(strings.NewReader(contracts.NetworkProxyABI))
+	if err != nil {
+		panic(err)
+	}
+}
 func (crawler *Crawler) fetchTradeLogV3(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
 	var result []common.TradeLog
 
@@ -35,6 +49,37 @@ func (crawler *Crawler) fetchTradeLogV3(fromBlock, toBlock *big.Int, timeout tim
 	return result, nil
 }
 
+type tradeWithHintParam struct {
+	Src               ethereum.Address
+	SrcAmount         *big.Int
+	Dest              ethereum.Address
+	DestAddress       ethereum.Address
+	MaxDestAmount     *big.Int
+	MinConversionRate *big.Int
+	WalletID          ethereum.Address `abi:"walletId"`
+	Hint              []byte
+}
+
+func decodeTradeWithHintParam(data []byte) (tradeWithHintParam, error) { // decode txInput method signature
+	if len(data) < 4 {
+		return tradeWithHintParam{}, errors.New("input data not valid")
+	}
+	// recover Method from signature and ABI
+	method, err := networkABI.MethodById(data[0:4])
+	if err != nil {
+		return tradeWithHintParam{}, errors.Wrap(err, "cannot find method for correspond data")
+	}
+	var resp tradeWithHintParam
+	if method.Name != "tradeWithHint" {
+		return tradeWithHintParam{}, errors.New("try to decode data is not from tradeWithHint")
+	}
+	// unpack method inputs
+	err = method.Inputs.Unpack(&resp, data[4:])
+	if err != nil {
+		return tradeWithHintParam{}, errors.Wrap(err, "unpack tradeWithHint param failed")
+	}
+	return resp, nil
+}
 func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.TradeLog, error) {
 	var (
 		result   []common.TradeLog
@@ -49,11 +94,6 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 
 		if len(log.Topics) == 0 {
 			return result, errors.New("log item has no topic")
-		}
-
-		tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
-		if err != nil {
-			return result, errors.New("could not get trade log sender")
 		}
 
 		topic := log.Topics[0]
@@ -80,8 +120,11 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 			}
 
 			tradeLog.TransactionFee = big.NewInt(0).Mul(tradeLog.GasPrice, big.NewInt(int64(tradeLog.GasUsed)))
-
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
+			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
+			if err != nil {
+				return result, errors.New("could not update trade log basic info")
+			}
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)
 			tradeLog = common.TradeLog{}

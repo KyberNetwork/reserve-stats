@@ -177,14 +177,13 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 			tradeLog.OriginalEthAmount = tradeLog.EthAmount // some case EthAmount
 			// will be multiple so we keep OriginalEthAmount as a copy of original amount.
 
-			tradeLog.TransactionFee = big.NewInt(0).Mul(tradeLog.GasPrice, big.NewInt(int64(tradeLog.GasUsed)))
-
-			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
-
 			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
 			if err != nil {
 				return result, errors.New("could not update trade log basic info")
 			}
+			tradeLog.TransactionFee = big.NewInt(0).Mul(tradeLog.GasPrice, big.NewInt(int64(tradeLog.GasUsed)))
+
+			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)

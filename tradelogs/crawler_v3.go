@@ -118,13 +118,12 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
 				return nil, errors.Wrapf(err, "failed to resolve timestamp by block_number %v", log.BlockNumber)
 			}
-
-			tradeLog.TransactionFee = big.NewInt(0).Mul(tradeLog.GasPrice, big.NewInt(int64(tradeLog.GasUsed)))
-			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
 			if err != nil {
 				return result, errors.Wrap(err, "could not update trade log basic info")
 			}
+			tradeLog.TransactionFee = big.NewInt(0).Mul(tradeLog.GasPrice, big.NewInt(int64(tradeLog.GasUsed)))
+			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)
 			tradeLog = common.TradeLog{}

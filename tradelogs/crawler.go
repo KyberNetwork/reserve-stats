@@ -46,13 +46,6 @@ const (
 	// tradeExecute(address sender, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
 	// use for crawler v1 and v2
 	tradeExecuteEvent = "0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de"
-
-	tradeWithHintMethod = "tradeWithHint"
-	tradeMethod         = "trade"
-)
-
-var (
-	errMethodNotMatch = errors.New("method not match with input")
 )
 
 var defaultTimeout = 10 * time.Second
@@ -381,12 +374,7 @@ func (crawler *Crawler) updateBasicInfo(log types.Log, tradeLog common.TradeLog,
 
 	if len(tradeLog.WalletFees) == 0 { // in case there's no fee, we try to get wallet addr from tradeWithHint input
 		if bytes.Equal(tx.To().Bytes(), crawler.networkProxy.Bytes()) { // try to fail early, tx must have dst == networkProxy
-			var tradeParam tradeWithHintParam
-			err := decodeInputParam(tradeWithHintMethod, &tradeParam, tx.Data())
-			if errors.Cause(err) == errMethodNotMatch {
-				// althought trade method does not have hint param, it's the last one
-				err = decodeInputParam(tradeMethod, &tradeParam, tx.Data())
-			}
+			tradeParam, err := decodeTradeInputParam(tx.Data())
 			if err != nil {
 				return tradeLog, errors.Wrapf(err, "failed to decode input param, tx %s", tx.Hash().String())
 			}

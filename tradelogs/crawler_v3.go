@@ -60,25 +60,24 @@ type tradeWithHintParam struct {
 	Hint              []byte
 }
 
-func decodeTradeWithHintParam(data []byte) (tradeWithHintParam, error) { // decode txInput method signature
+func decodeInputParam(methodStr string, out interface{}, data []byte) error { // decode txInput method signature
 	if len(data) < 4 {
-		return tradeWithHintParam{}, errors.New("input data not valid")
+		return errors.New("input data not valid")
 	}
 	// recover Method from signature and ABI
 	method, err := networkABI.MethodById(data[0:4])
 	if err != nil {
-		return tradeWithHintParam{}, errors.Wrap(err, "cannot find method for correspond data")
+		return errors.Wrapf(err, "cannot find method for correspond data, method %s", methodStr)
 	}
-	var resp tradeWithHintParam
-	if method.Name != "tradeWithHint" {
-		return tradeWithHintParam{}, errors.New("try to decode data is not from tradeWithHint")
+	if method.Name != methodStr {
+		return errors.Wrapf(errMethodNotMatch, "method %s", methodStr)
 	}
 	// unpack method inputs
-	err = method.Inputs.Unpack(&resp, data[4:])
+	err = method.Inputs.Unpack(out, data[4:])
 	if err != nil {
-		return tradeWithHintParam{}, errors.Wrap(err, "unpack tradeWithHint param failed")
+		return errors.Wrapf(err, "unpack param failed, method %s", methodStr)
 	}
-	return resp, nil
+	return nil
 }
 func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.TradeLog, error) {
 	var (

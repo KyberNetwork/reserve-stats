@@ -140,7 +140,7 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 
 			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
 			if err != nil {
-				return result, errors.New("could not update trade log basic info")
+				return result, errors.Wrap(err, "could not update trade log basic info")
 			}
 
 			// one trade only has one and only ExecuteTrade event

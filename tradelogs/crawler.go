@@ -383,7 +383,7 @@ func (crawler *Crawler) updateBasicInfo(log types.Log, tradeLog common.TradeLog,
 		if bytes.Equal(tx.To().Bytes(), crawler.networkProxy.Bytes()) { // try to fail early, tx must have dst == networkProxy
 			var tradeParam tradeWithHintParam
 			err := decodeInputParam(tradeWithHintMethod, &tradeParam, tx.Data())
-			if err == errMethodNotMatch {
+			if errors.Cause(err) == errMethodNotMatch {
 				// althought trade method does not have hint param, it's the last one
 				err = decodeInputParam(tradeMethod, &tradeParam, tx.Data())
 			}

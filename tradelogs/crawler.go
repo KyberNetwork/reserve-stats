@@ -48,10 +48,6 @@ const (
 	tradeExecuteEvent = "0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de"
 )
 
-var (
-	errMethodNotMatch = errors.New("method not match with input")
-)
-
 var defaultTimeout = 10 * time.Second
 var errUnknownLogTopic = errors.New("unknown log topic")
 

@@ -388,7 +388,7 @@ func (crawler *Crawler) updateBasicInfo(log types.Log, tradeLog common.TradeLog,
 				err = decodeInputParam(tradeMethod, &tradeParam, tx.Data())
 			}
 			if err != nil {
-				return tradeLog, errors.Wrap(err, "failed to decode input param")
+				return tradeLog, errors.Wrapf(err, "failed to decode input param, tx %s", tx.Hash().String())
 			}
 			tradeLog.WalletAddress = tradeParam.WalletID
 			tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)

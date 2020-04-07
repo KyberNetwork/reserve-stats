@@ -70,7 +70,7 @@ func decodeInputParam(methodStr string, out interface{}, data []byte) error { //
 		return errors.Wrapf(err, "cannot find method for correspond data, method %s", methodStr)
 	}
 	if method.Name != methodStr {
-		return errors.Wrapf(errMethodNotMatch, "method %s, expect", method.Name, methodStr)
+		return errors.Wrapf(errMethodNotMatch, "method %s, expect %s", method.Name, methodStr)
 	}
 	// unpack method inputs
 	err = method.Inputs.Unpack(out, data[4:])

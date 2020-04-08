@@ -320,6 +320,7 @@ func (tldb *TradeLogDB) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradeL
 	)
 	err := tldb.db.Select(&queryResult, selectTradeLogsWithTxHashQuery, tx.Hex())
 	if err != nil {
+		logger.Errorw("failed to get tradelog from database", "error", err)
 		return nil, err
 	}
 
@@ -504,7 +505,7 @@ SELECT a.timestamp AS timestamp, block_number, eth_amount, original_eth_amount, 
 e.address AS src_address, f.address AS dst_address,
 src_amount, dst_amount, ip, country, integration_app, src_burn_amount, dst_burn_amount,
 index, tx_hash, b.address AS src_rsv_address, c.address AS dst_rsv_address, src_wallet_fee_amount, dst_wallet_fee_amount,
-g.address AS wallet_addr, tx_sender, receiver_address
+g.address AS wallet_addr, tx_sender, receiver_address, gas_used, gas_price, transaction_fee
 FROM "` + schema.TradeLogsTableName + `" AS a
 INNER JOIN reserve AS b ON a.src_reserve_address_id = b.id
 INNER JOIN reserve AS c ON a.dst_reserve_address_id = c.id
@@ -520,7 +521,7 @@ SELECT a.timestamp AS timestamp, block_number, eth_amount, original_eth_amount, 
 e.address AS src_address, f.address AS dst_address,
 src_amount, dst_amount, ip, country, integration_app, src_burn_amount, dst_burn_amount,
 index, tx_hash, b.address AS src_rsv_address, c.address AS dst_rsv_address, src_wallet_fee_amount, dst_wallet_fee_amount,
-g.address AS wallet_addr, tx_sender, receiver_address
+g.address AS wallet_addr, tx_sender, receiver_address, gas_used, gas_price, transaction_fee
 FROM "` + schema.TradeLogsTableName + `" AS a
 INNER JOIN reserve AS b ON a.src_reserve_address_id = b.id
 INNER JOIN reserve AS c ON a.dst_reserve_address_id = c.id

@@ -19,15 +19,15 @@ import (
 
 const (
 	// DbEngineFlag flag option
-	DbEngineFlag    = "db-engine"
-	defaultDbEngine = "influx"
+	DBEngineFlag    = "db-engine"
+	defaultDBEngine = "influx"
 	// InfluxDbEngine influxdb
-	InfluxDbEngine = "influx"
+	InfluxDBEngine = "influx"
 	// PostgresDbEngine postgres db
-	PostgresDbEngine = "postgres"
+	PostgresDBEngine = "postgres"
 
 	// PostgresDefaultDb default db name when choosing Postgres
-	PostgresDefaultDb = "reserve_stats"
+	PostgresDefaultDB = "reserve_stats"
 )
 
 // Interface represent a storage for TradeLogs data
@@ -64,10 +64,10 @@ type Interface interface {
 func NewCliFlags() []cli.Flag {
 	return []cli.Flag{
 		cli.StringFlag{
-			Name:   DbEngineFlag,
+			Name:   DBEngineFlag,
 			Usage:  "db engine to write trade logs, pls select influx or postgres",
 			EnvVar: "DB_ENGINE",
-			Value:  defaultDbEngine,
+			Value:  defaultDBEngine,
 		},
 	}
 }
@@ -85,10 +85,10 @@ func KNCAddressFromContext(c *cli.Context) ethereum.Address {
 
 // NewStorageInterfaceFromContext return new storage interface
 func NewStorageInterfaceFromContext(sugar *zap.SugaredLogger, c *cli.Context, tokenAmountFormatter blockchain.TokenAmountFormatterInterface) (Interface, error) {
-	dbEngine := c.String(DbEngineFlag)
+	dbEngine := c.String(DBEngineFlag)
 	kncAddr := KNCAddressFromContext(c)
 	switch dbEngine {
-	case InfluxDbEngine:
+	case InfluxDBEngine:
 		influxClient, err := influxdb.NewClientFromContext(c)
 		if err != nil {
 			return nil, err
@@ -105,7 +105,7 @@ func NewStorageInterfaceFromContext(sugar *zap.SugaredLogger, c *cli.Context, to
 			return nil, err
 		}
 		return influxStorage, nil
-	case PostgresDbEngine:
+	case PostgresDBEngine:
 		db, err := libapp.NewDBFromContext(c)
 		if err != nil {
 			return nil, err

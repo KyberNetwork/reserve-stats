@@ -60,7 +60,7 @@ type tradeWithHintParam struct {
 	Hint              []byte
 }
 
-func decodeTradeWithHintParam(data []byte) (tradeWithHintParam, error) { // decode txInput method signature
+func decodeTradeInputParam(data []byte) (out tradeWithHintParam, err error) { // decode txInput method signature
 	if len(data) < 4 {
 		return tradeWithHintParam{}, errors.New("input data not valid")
 	}
@@ -69,16 +69,21 @@ func decodeTradeWithHintParam(data []byte) (tradeWithHintParam, error) { // deco
 	if err != nil {
 		return tradeWithHintParam{}, errors.Wrap(err, "cannot find method for correspond data")
 	}
-	var resp tradeWithHintParam
-	if method.Name != "tradeWithHint" {
-		return tradeWithHintParam{}, errors.New("try to decode data is not from tradeWithHint")
+	switch method.Name {
+	case "trade", "tradeWithHint":
+		// unpack method inputs
+		var out tradeWithHintParam
+		err = method.Inputs.Unpack(&out, data[4:])
+		if err != nil {
+			return tradeWithHintParam{}, errors.Wrap(err, "unpack param failed")
+		}
+		return out, nil
+	case "swapTokenToToken", "swapTokenToEther", "swapEtherToToken":
+		// no wallet this trade, just return empty
+		return tradeWithHintParam{}, nil
+	default:
+		return tradeWithHintParam{}, errors.Errorf("unexpected method %s", method.Name)
 	}
-	// unpack method inputs
-	err = method.Inputs.Unpack(&resp, data[4:])
-	if err != nil {
-		return tradeWithHintParam{}, errors.Wrap(err, "unpack tradeWithHint param failed")
-	}
-	return resp, nil
 }
 func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.TradeLog, error) {
 	var (

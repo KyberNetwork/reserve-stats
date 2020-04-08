@@ -374,9 +374,9 @@ func (crawler *Crawler) updateBasicInfo(log types.Log, tradeLog common.TradeLog,
 
 	if len(tradeLog.WalletFees) == 0 { // in case there's no fee, we try to get wallet addr from tradeWithHint input
 		if bytes.Equal(tx.To().Bytes(), crawler.networkProxy.Bytes()) { // try to fail early, tx must have dst == networkProxy
-			tradeParam, err := decodeTradeWithHintParam(tx.Data())
+			tradeParam, err := decodeTradeInputParam(tx.Data())
 			if err != nil {
-				return tradeLog, errors.Wrap(err, "failed to decode tradeWithHint param")
+				return tradeLog, errors.Wrapf(err, "failed to decode input param, tx %s", tx.Hash().String())
 			}
 			tradeLog.WalletAddress = tradeParam.WalletID
 			tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)

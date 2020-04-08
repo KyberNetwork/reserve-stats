@@ -248,10 +248,11 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradeLog, e
 		tradeLog common.TradeLog
 		err      error
 
-		ethAmountInWei         *big.Int
-		srcAmountInWei         *big.Int
-		dstAmountInWei         *big.Int
-		originalEthAmountInWei *big.Int
+		ethAmountInWei                     *big.Int
+		srcAmountInWei                     *big.Int
+		dstAmountInWei                     *big.Int
+		originalEthAmountInWei             *big.Int
+		gasPriceInWei, transactionFeeInWei *big.Int
 	)
 
 	if ethAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.EthAmount); err != nil {
@@ -267,6 +268,15 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradeLog, e
 	}
 	DstAddress := ethereum.HexToAddress(r.DstAddress)
 	if dstAmountInWei, err = tldb.tokenAmountFormatter.ToWei(DstAddress, r.DstAmount); err != nil {
+		return tradeLog, err
+	}
+
+	// these conversion below is from Gwei to wei which is used ^18 method, so I used ToWei function with ETHAddr - which have decimals of 18
+	if gasPriceInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.GasPrice); err != nil {
+		return tradeLog, err
+	}
+
+	if transactionFeeInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.TransactionFee); err != nil {
 		return tradeLog, err
 	}
 
@@ -294,6 +304,9 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradeLog, e
 		TxSender:          ethereum.HexToAddress(r.TxSender),
 		ReceiverAddress:   ethereum.HexToAddress(r.ReceiverAddr),
 		ETHUSDRate:        r.EthUsdRate,
+		GasUsed:           r.GasUsed,
+		GasPrice:          gasPriceInWei,
+		TransactionFee:    transactionFeeInWei,
 	}
 	return tradeLog, nil
 }
@@ -307,6 +320,7 @@ func (tldb *TradeLogDB) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradeL
 	)
 	err := tldb.db.Select(&queryResult, selectTradeLogsWithTxHashQuery, tx.Hex())
 	if err != nil {
+		logger.Errorw("failed to get tradelog from database", "error", err)
 		return nil, err
 	}
 
@@ -491,7 +505,7 @@ SELECT a.timestamp AS timestamp, block_number, eth_amount, original_eth_amount, 
 e.address AS src_address, f.address AS dst_address,
 src_amount, dst_amount, ip, country, integration_app, src_burn_amount, dst_burn_amount,
 index, tx_hash, b.address AS src_rsv_address, c.address AS dst_rsv_address, src_wallet_fee_amount, dst_wallet_fee_amount,
-g.address AS wallet_addr, tx_sender, receiver_address
+g.address AS wallet_addr, tx_sender, receiver_address, gas_used, gas_price, transaction_fee
 FROM "` + schema.TradeLogsTableName + `" AS a
 INNER JOIN reserve AS b ON a.src_reserve_address_id = b.id
 INNER JOIN reserve AS c ON a.dst_reserve_address_id = c.id
@@ -507,7 +521,7 @@ SELECT a.timestamp AS timestamp, block_number, eth_amount, original_eth_amount, 
 e.address AS src_address, f.address AS dst_address,
 src_amount, dst_amount, ip, country, integration_app, src_burn_amount, dst_burn_amount,
 index, tx_hash, b.address AS src_rsv_address, c.address AS dst_rsv_address, src_wallet_fee_amount, dst_wallet_fee_amount,
-g.address AS wallet_addr, tx_sender, receiver_address
+g.address AS wallet_addr, tx_sender, receiver_address, gas_used, gas_price, transaction_fee
 FROM "` + schema.TradeLogsTableName + `" AS a
 INNER JOIN reserve AS b ON a.src_reserve_address_id = b.id
 INNER JOIN reserve AS c ON a.dst_reserve_address_id = c.id

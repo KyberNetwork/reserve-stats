@@ -310,6 +310,7 @@ type tradeLogsByTxHashParam struct {
 func (sv *Server) getTradeLogsByTx(c *gin.Context) {
 	var param tradeLogsByTxHashParam
 	if err := c.ShouldBindUri(&param); err != nil {
+		sv.sugar.Errorw("failed to bind uri query", "error", err)
 		libhttputil.ResponseFailure(
 			c, http.StatusInternalServerError, err,
 		)
@@ -323,6 +324,7 @@ func (sv *Server) getTradeLogsByTx(c *gin.Context) {
 	}
 	tradeLogs, err := sv.storage.LoadTradeLogsByTxHash(ethereum.HexToHash(param.TxHash))
 	if err != nil {
+		sv.sugar.Errorw("failed to get tradelog from database", "error", err)
 		libhttputil.ResponseFailure(
 			c, http.StatusInternalServerError, err,
 		)

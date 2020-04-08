@@ -108,11 +108,12 @@ func run(c *cli.Context) error {
 				continue
 			}
 			var (
-				isSameSrc      = tl.SrcAddress == ethereum.HexToAddress(r.Src)
-				isSameDst      = tl.DestAddress == ethereum.HexToAddress(r.Dest)
-				isSameReceiver = tl.ReceiverAddress == ethereum.HexToAddress(r.DestAddress)
+				isSameSrc       = tl.SrcAddress == ethereum.HexToAddress(r.Src)
+				isSameDst       = tl.DestAddress == ethereum.HexToAddress(r.Dest)
+				isSameReceiver  = tl.ReceiverAddress == ethereum.HexToAddress(r.DestAddress)
+				isSameSrcAmount = tl.SrcAmount.Cmp(r.SrcAmount) == 0
 			)
-			if isSameSrc && isSameDst && isSameReceiver {
+			if isSameSrc && isSameDst && isSameReceiver && isSameSrcAmount {
 				tl.WalletAddress = walletAddr
 				tl.WalletName = tradelogs.WalletAddrToName(walletAddr)
 				updatedTradeLogs = append(updatedTradeLogs, tl)

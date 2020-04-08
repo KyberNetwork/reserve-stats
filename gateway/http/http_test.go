@@ -181,7 +181,7 @@ func TestReverseProxy(t *testing.T) {
 	var testCaseWriteKey = []httputil.HTTPTestCase{
 		{
 			Msg:      "test sign request body is empty",
-			Endpoint: fmt.Sprintf("/users"),
+			Endpoint: "/users",
 			Method:   http.MethodPost,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, resp.Code)
@@ -189,7 +189,7 @@ func TestReverseProxy(t *testing.T) {
 		},
 		{
 			Msg:      "test sign request body is not empty",
-			Endpoint: fmt.Sprintf("/users"),
+			Endpoint: "/users",
 			Method:   http.MethodPost,
 			Body:     []byte(`{"user":"something"}`),
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -201,7 +201,7 @@ func TestReverseProxy(t *testing.T) {
 	var testsFailedWithoutKey = []httputil.HTTPTestCase{
 		{
 			Msg:      "test sign request without body",
-			Endpoint: fmt.Sprintf("/users"),
+			Endpoint: "/users",
 			Method:   http.MethodPost,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusUnauthorized, resp.Code)
@@ -212,7 +212,7 @@ func TestReverseProxy(t *testing.T) {
 	var testFailedWhenWriteWithReadKey = []httputil.HTTPTestCase{
 		{
 			Msg:      "test sign write request with read Key",
-			Endpoint: fmt.Sprintf("/users"),
+			Endpoint: "/users",
 			Method:   http.MethodPost,
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusUnauthorized, resp.Code)

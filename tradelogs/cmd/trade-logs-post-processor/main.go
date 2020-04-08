@@ -54,7 +54,7 @@ func run(c *cli.Context) error {
 	}
 	sugar.Info(fmt.Sprintf("%+v", res))
 	if len(res) != 1 || len(res[0].Series) != 1 || len(res[0].Series[0].Values) < 1 || len(res[0].Series[0].Values[0]) != 2 {
-		q = fmt.Sprintf(`SELECT eth_amount FROM trades ORDER BY ASC LIMIT 1`)
+		q = `SELECT eth_amount FROM trades ORDER BY ASC LIMIT 1`
 		res, err := influxdb.QueryDB(influxClient, q, storage.TradeLogsDatabase)
 		if err != nil {
 			return err

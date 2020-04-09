@@ -158,7 +158,7 @@ func prepareTradeLogQuery() string {
 
 // LoadTradeLogsByTxHash get list of tradelogs by tx hash
 func (is *Storage) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradeLog, error) {
-	return nil, errors.New("not supported")
+	return nil, errors.New("influx does not supported get tradelog by txhash")
 }
 
 // LoadTradeLogs return trade logs from DB

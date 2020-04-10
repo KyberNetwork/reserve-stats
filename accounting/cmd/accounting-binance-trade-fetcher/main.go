@@ -19,6 +19,7 @@ const (
 	retryDelayFlag    = "retry-delay"
 	attemptFlag       = "attempt"
 	batchSizeFlag     = "batch-size"
+	symbolsFlag       = "symbols"
 	defaultRetryDelay = 2 * time.Minute
 	defaultAttempt    = 4
 	defaultBatchSize  = 20
@@ -53,6 +54,11 @@ func main() {
 			Name:   fromIDFlag,
 			Usage:  "id to get trade history from",
 			EnvVar: "FROM_ID",
+		},
+		cli.StringSliceFlag{
+			Name:   symbolsFlag,
+			Usage:  "symbol to get trade history for, if not provide then get from binance",
+			EnvVar: "SYMBOLS",
 		},
 	)
 
@@ -95,11 +101,21 @@ func run(c *cli.Context) error {
 		}
 	}()
 
-	exchangeInfo, err := binanceClient.GetExchangeInfo()
-	if err != nil {
-		return err
+	symbols := c.StringSlice(symbolsFlag)
+	var tokenPairs []binance.Symbol
+	if len(symbols) == 0 {
+		exchangeInfo, err := binanceClient.GetExchangeInfo()
+		if err != nil {
+			return err
+		}
+		tokenPairs = exchangeInfo.Symbols
+	} else {
+		for _, symbol := range symbols {
+			tokenPairs = append(tokenPairs, binance.Symbol{
+				Symbol: symbol,
+			})
+		}
 	}
-	tokenPairs := exchangeInfo.Symbols
 
 	var fromIDs = make(map[string]uint64)
 	fromID := c.Uint64(fromIDFlag)
@@ -122,7 +138,7 @@ func run(c *cli.Context) error {
 	batchSize := c.Int(batchSizeFlag)
 	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
 
-	tradeHistories, err := binanceFetcher.GetTradeHistory(fromIDs)
+	tradeHistories, err := binanceFetcher.GetTradeHistory(fromIDs, tokenPairs)
 	if err != nil {
 		return err
 	}

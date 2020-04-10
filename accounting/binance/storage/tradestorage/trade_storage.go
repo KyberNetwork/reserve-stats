@@ -29,11 +29,13 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 	const schemaFmt = `CREATE TABLE IF NOT EXISTS "binance_trades"
 	(
 	  id   bigint NOT NULL,
+	  symbol TEXT NOT NULL,
 	  data JSONB,
+	  timestamp TIMESTAMP NOT NULL,
 	  CONSTRAINT binance_trades_pk PRIMARY KEY(id)
 	);
-	CREATE INDEX IF NOT EXISTS binance_trades_time_idx ON binance_trades ((data ->> 'time'));
-	CREATE INDEX IF NOT EXISTS binance_trades_symbol_idx ON binance_trades ((data ->> 'symbol'));
+	CREATE INDEX IF NOT EXISTS binance_trades_time_idx ON binance_trades (timestamp);
+	CREATE INDEX IF NOT EXISTS binance_trades_symbol_idx ON binance_trades (symbol);
 	`
 
 	s := &BinanceStorage{
@@ -63,15 +65,19 @@ func (bd *BinanceStorage) Close() error {
 //UpdateTradeHistory save trade history into a postgres db
 func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err error) {
 	var (
-		logger    = bd.sugar.With("func", caller.GetCurrentFunctionName())
-		tradeJSON []byte
-		dataJSON  [][]byte
-		ids       []uint64
+		logger     = bd.sugar.With("func", caller.GetCurrentFunctionName())
+		tradeJSON  []byte
+		dataJSON   [][]byte
+		ids        []uint64
+		timestamps []time.Time
+		symbols    []string
 	)
-	const updateQuery = `INSERT INTO binance_trades (id, data)
+	const updateQuery = `INSERT INTO binance_trades (id, data, timestamp, symbol)
 	VALUES(
 		unnest($1::BIGINT[]),
-		unnest($2::JSONB[])
+		unnest($2::JSONB[]),
+		unnest($3::TIMESTAMP[]),
+		unnest($4::TEXT[])
 	) ON CONFLICT ON CONSTRAINT binance_trades_pk DO NOTHING;
 	`
 
@@ -89,11 +95,14 @@ func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err
 		if err != nil {
 			return
 		}
+		time := timeutil.TimestampMsToTime(trade.Time)
 		ids = append(ids, trade.ID)
 		dataJSON = append(dataJSON, tradeJSON)
+		timestamps = append(timestamps, time)
+		symbols = append(symbols, trade.Symbol)
 	}
 
-	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON)); err != nil {
+	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps), pq.Array(symbols)); err != nil {
 		return
 	}
 

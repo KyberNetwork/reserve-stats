@@ -76,7 +76,7 @@ func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]b
 }
 
 //GetTradeHistory get all trade history from trades for all token
-func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64) ([]binance.TradeHistory, error) {
+func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binance.Symbol) ([]binance.TradeHistory, error) {
 	var (
 		tradeHistories sync.Map
 		logger         = f.sugar.With("func", caller.GetCurrentFunctionName())
@@ -84,11 +84,11 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64) ([]binance.TradeHis
 		result         []binance.TradeHistory
 	)
 	// get list token
-	exchangeInfo, err := f.client.GetExchangeInfo()
-	if err != nil {
-		return result, err
-	}
-	tokenPairs := exchangeInfo.Symbols
+	// exchangeInfo, err := f.client.GetExchangeInfo()
+	// if err != nil {
+	// 	return result, err
+	// }
+	// tokenPairs := exchangeInfo.Symbols
 	index := 0
 	for index < len(tokenPairs) {
 		for count := 0; count < f.batchSize && index+count < len(tokenPairs); count++ {

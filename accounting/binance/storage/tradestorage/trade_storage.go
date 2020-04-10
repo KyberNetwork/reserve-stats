@@ -28,11 +28,11 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 
 	const schemaFmt = `CREATE TABLE IF NOT EXISTS "binance_trades"
 	(
-	  id   SERIAL,
+	  id   bigint NOT NULL,
 	  symbol TEXT NOT NULL,
 	  data JSONB,
 	  timestamp TIMESTAMP NOT NULL,
-	  CONSTRAINT binance_trades_pk PRIMARY KEY(id)
+	  CONSTRAINT binance_trades_pk PRIMARY KEY(id, symbol)
 	);
 	CREATE INDEX IF NOT EXISTS binance_trades_time_idx ON binance_trades (timestamp);
 	CREATE INDEX IF NOT EXISTS binance_trades_symbol_idx ON binance_trades (symbol);
@@ -68,11 +68,13 @@ func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err
 		logger     = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		tradeJSON  []byte
 		dataJSON   [][]byte
+		ids        []uint64
 		timestamps []time.Time
 		symbols    []string
 	)
-	const updateQuery = `INSERT INTO binance_trades (data, timestamp, symbol)
+	const updateQuery = `INSERT INTO binance_trades (id, data, timestamp, symbol)
 	VALUES(
+		unnest($1::BIGINT[]),
 		unnest($2::JSONB[]),
 		unnest($3::TIMESTAMP[]),
 		unnest($4::TEXT[])
@@ -94,12 +96,13 @@ func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err
 			return
 		}
 		time := timeutil.TimestampMsToTime(trade.Time)
+		ids = append(ids, trade.ID)
 		dataJSON = append(dataJSON, tradeJSON)
 		timestamps = append(timestamps, time)
 		symbols = append(symbols, trade.Symbol)
 	}
 
-	if _, err = tx.Exec(updateQuery, pq.Array(dataJSON), pq.Array(timestamps), pq.Array(symbols)); err != nil {
+	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps), pq.Array(symbols)); err != nil {
 		return
 	}
 
@@ -140,7 +143,7 @@ func (bd *BinanceStorage) GetLastStoredID(symbol string) (uint64, error) {
 		logger = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		result uint64
 	)
-	const selectStmt = `SELECT COALESCE(MAX(id), 0) FROM binance_trades WHERE data->>'symbol'=$1`
+	const selectStmt = `SELECT COALESCE(MAX(id), 0) FROM binance_trades WHERE symbol=$1`
 
 	logger.Debugw("querying last stored id", "query", selectStmt)
 

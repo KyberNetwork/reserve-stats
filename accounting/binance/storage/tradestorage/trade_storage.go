@@ -28,7 +28,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 
 	const schemaFmt = `CREATE TABLE IF NOT EXISTS "binance_trades"
 	(
-	  id   bigint NOT NULL,
+	  id   SERIAL,
 	  symbol TEXT NOT NULL,
 	  data JSONB,
 	  timestamp TIMESTAMP NOT NULL,
@@ -68,13 +68,11 @@ func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err
 		logger     = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		tradeJSON  []byte
 		dataJSON   [][]byte
-		ids        []uint64
 		timestamps []time.Time
 		symbols    []string
 	)
-	const updateQuery = `INSERT INTO binance_trades (id, data, timestamp, symbol)
+	const updateQuery = `INSERT INTO binance_trades (data, timestamp, symbol)
 	VALUES(
-		unnest($1::BIGINT[]),
 		unnest($2::JSONB[]),
 		unnest($3::TIMESTAMP[]),
 		unnest($4::TEXT[])
@@ -96,13 +94,12 @@ func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err
 			return
 		}
 		time := timeutil.TimestampMsToTime(trade.Time)
-		ids = append(ids, trade.ID)
 		dataJSON = append(dataJSON, tradeJSON)
 		timestamps = append(timestamps, time)
 		symbols = append(symbols, trade.Symbol)
 	}
 
-	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps), pq.Array(symbols)); err != nil {
+	if _, err = tx.Exec(updateQuery, pq.Array(dataJSON), pq.Array(timestamps), pq.Array(symbols)); err != nil {
 		return
 	}
 

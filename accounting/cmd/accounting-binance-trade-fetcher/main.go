@@ -1,11 +1,11 @@
 package main
 
 import (
-	"log"
 	"os"
 	"time"
 
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	fetcher "github.com/KyberNetwork/reserve-stats/accounting/binance/fetcher"
 	"github.com/KyberNetwork/reserve-stats/accounting/binance/storage/tradestorage"
@@ -24,6 +24,8 @@ const (
 	defaultAttempt    = 4
 	defaultBatchSize  = 20
 )
+
+var sugar *zap.SugaredLogger
 
 func main() {
 	app := libapp.NewApp()
@@ -66,12 +68,16 @@ func main() {
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultCexTradesDB)...)
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		sugar.Fatal(err)
 	}
 }
 
 func run(c *cli.Context) error {
-	sugar, flusher, err := libapp.NewSugaredLogger(c)
+	var (
+		flusher func()
+		err     error
+	)
+	sugar, flusher, err = libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}

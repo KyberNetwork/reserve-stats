@@ -60,14 +60,14 @@ func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]b
 	for {
 		tradeHistoriesResponse, err := f.getTradeHistoryWithRetry(symbol, fromID)
 		if err != nil {
-			logger.Debugw("get trade history error", "symbol", symbol, "error", err)
+			logger.Errorw("get trade history error", "symbol", symbol, "error", err)
 			return result, err
 		}
 		// while result != empty, get trades latest time to toTime
 		if len(tradeHistoriesResponse) == 0 {
 			break
 		}
-		logger.Debugw("trade history for", "symbol", symbol, "history", tradeHistoriesResponse)
+		logger.Infow("trade history for", "symbol", symbol, "history", tradeHistoriesResponse)
 		result = append(result, tradeHistoriesResponse...)
 		lastTrade := tradeHistoriesResponse[len(tradeHistoriesResponse)-1]
 		fromID = lastTrade.ID + 1
@@ -76,7 +76,7 @@ func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]b
 }
 
 //GetTradeHistory get all trade history from trades for all token
-func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64) ([]binance.TradeHistory, error) {
+func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binance.Symbol) ([]binance.TradeHistory, error) {
 	var (
 		tradeHistories sync.Map
 		logger         = f.sugar.With("func", caller.GetCurrentFunctionName())
@@ -84,11 +84,11 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64) ([]binance.TradeHis
 		result         []binance.TradeHistory
 	)
 	// get list token
-	exchangeInfo, err := f.client.GetExchangeInfo()
-	if err != nil {
-		return result, err
-	}
-	tokenPairs := exchangeInfo.Symbols
+	// exchangeInfo, err := f.client.GetExchangeInfo()
+	// if err != nil {
+	// 	return result, err
+	// }
+	// tokenPairs := exchangeInfo.Symbols
 	index := 0
 	for index < len(tokenPairs) {
 		for count := 0; count < f.batchSize && index+count < len(tokenPairs); count++ {
@@ -96,7 +96,7 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64) ([]binance.TradeHis
 			errGroup.Go(
 				func(pair binance.Symbol) func() error {
 					return func() error {
-						logger.Debugw("token", "pair", pair.Symbol)
+						logger.Infow("token", "pair", pair.Symbol)
 						oneSymbolTradeHistory, err := f.getTradeHistoryForOneSymBol(fromIDs[pair.Symbol], pair.Symbol)
 						if err != nil {
 							return err
@@ -136,7 +136,7 @@ func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (bin
 		logger          = f.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	for attempt := 0; attempt < f.attempt; attempt++ {
-		logger.Debugw("attempt to get withdraw history", "attempt", attempt, "startTime", startTime, "endTime", endTime)
+		logger.Infow("attempt to get withdraw history", "attempt", attempt, "startTime", startTime, "endTime", endTime)
 		withdrawHistory, err = f.client.GetWithdrawalHistory(startTime, endTime)
 		if err == nil {
 			return withdrawHistory, nil
@@ -160,7 +160,7 @@ func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.With
 	}
 	result = append(result, withdrawHistory.WithdrawList...)
 	// log for test get withdraw history successfully
-	logger.Debugw("withdraw history", "list", result)
+	logger.Infow("withdraw history", "list", result)
 
 	return result, nil
 }

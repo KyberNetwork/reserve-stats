@@ -214,33 +214,33 @@ func (tldb *TradeLogDB) isFirstTrade(userAddr ethereum.Address) (bool, error) {
 }
 
 type tradeLogDBData struct {
-	Timestamp          time.Time      `db:"timestamp"`
-	BlockNumber        uint64         `db:"block_number"`
-	EthAmount          float64        `db:"eth_amount"`
-	OriginalEthAmount  float64        `db:"original_eth_amount"`
-	EthUsdRate         float64        `db:"eth_usd_rate"`
-	UserAddress        string         `db:"user_address"`
-	SrcAddress         string         `db:"src_address"`
-	DstAddress         string         `db:"dst_address"`
-	SrcAmount          float64        `db:"src_amount"`
-	DstAmount          float64        `db:"dst_amount"`
-	LogIndex           uint           `db:"index"`
-	TxHash             string         `db:"tx_hash"`
-	IP                 sql.NullString `db:"ip"`
-	Country            sql.NullString `db:"country"`
-	IntegrationApp     string         `db:"integration_app"`
-	SrcBurnAmount      float64        `db:"src_burn_amount"`
-	DstBurnAmount      float64        `db:"dst_burn_amount"`
-	SrcReserveAddress  string         `db:"src_rsv_address"`
-	DstReserveAddress  string         `db:"dst_rsv_address"`
-	SrcWalletFeeAmount float64        `db:"src_wallet_fee_amount"`
-	DstWalletFeeAmount float64        `db:"dst_wallet_fee_amount"`
-	WalletAddress      string         `db:"wallet_addr"`
-	TxSender           string         `db:"tx_sender"`
-	ReceiverAddr       string         `db:"receiver_address"`
-	GasUsed            uint64         `db:"gas_used"`
-	GasPrice           float64        `db:"gas_price"`
-	TransactionFee     float64        `db:"transaction_fee"`
+	Timestamp          time.Time       `db:"timestamp"`
+	BlockNumber        uint64          `db:"block_number"`
+	EthAmount          float64         `db:"eth_amount"`
+	OriginalEthAmount  float64         `db:"original_eth_amount"`
+	EthUsdRate         float64         `db:"eth_usd_rate"`
+	UserAddress        string          `db:"user_address"`
+	SrcAddress         string          `db:"src_address"`
+	DstAddress         string          `db:"dst_address"`
+	SrcAmount          float64         `db:"src_amount"`
+	DstAmount          float64         `db:"dst_amount"`
+	LogIndex           uint            `db:"index"`
+	TxHash             string          `db:"tx_hash"`
+	IP                 sql.NullString  `db:"ip"`
+	Country            sql.NullString  `db:"country"`
+	IntegrationApp     string          `db:"integration_app"`
+	SrcBurnAmount      float64         `db:"src_burn_amount"`
+	DstBurnAmount      float64         `db:"dst_burn_amount"`
+	SrcReserveAddress  string          `db:"src_rsv_address"`
+	DstReserveAddress  string          `db:"dst_rsv_address"`
+	SrcWalletFeeAmount float64         `db:"src_wallet_fee_amount"`
+	DstWalletFeeAmount float64         `db:"dst_wallet_fee_amount"`
+	WalletAddress      string          `db:"wallet_addr"`
+	TxSender           string          `db:"tx_sender"`
+	ReceiverAddr       string          `db:"receiver_address"`
+	GasUsed            sql.NullInt64   `db:"gas_used"`
+	GasPrice           sql.NullFloat64 `db:"gas_price"`
+	TransactionFee     sql.NullFloat64 `db:"transaction_fee"`
 }
 
 func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradeLog, error) {
@@ -252,6 +252,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradeLog, e
 		srcAmountInWei                     *big.Int
 		dstAmountInWei                     *big.Int
 		originalEthAmountInWei             *big.Int
+		gasUsed                            uint64
 		gasPriceInWei, transactionFeeInWei *big.Int
 	)
 
@@ -272,12 +273,20 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradeLog, e
 	}
 
 	// these conversion below is from Gwei to wei which is used ^18 method, so I used ToWei function with ETHAddr - which have decimals of 18
-	if gasPriceInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.GasPrice); err != nil {
-		return tradeLog, err
+	if r.GasPrice.Valid {
+		if gasPriceInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.GasPrice.Float64); err != nil {
+			return tradeLog, err
+		}
 	}
 
-	if transactionFeeInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.TransactionFee); err != nil {
-		return tradeLog, err
+	if r.TransactionFee.Valid {
+		if transactionFeeInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.TransactionFee.Float64); err != nil {
+			return tradeLog, err
+		}
+	}
+
+	if r.GasUsed.Valid {
+		gasUsed = uint64(r.GasUsed.Int64)
 	}
 
 	tradeLog = common.TradeLog{
@@ -304,7 +313,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradeLog, e
 		TxSender:          ethereum.HexToAddress(r.TxSender),
 		ReceiverAddress:   ethereum.HexToAddress(r.ReceiverAddr),
 		ETHUSDRate:        r.EthUsdRate,
-		GasUsed:           r.GasUsed,
+		GasUsed:           gasUsed,
 		GasPrice:          gasPriceInWei,
 		TransactionFee:    transactionFeeInWei,
 	}

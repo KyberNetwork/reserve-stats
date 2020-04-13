@@ -1,12 +1,12 @@
 package fetcher
 
 import (
-	"sync"
 	"time"
 
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/KyberNetwork/reserve-stats/accounting/binance/storage/tradestorage"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 )
@@ -16,18 +16,20 @@ type Fetcher struct {
 	sugar      *zap.SugaredLogger
 	client     *binance.Client
 	retryDelay time.Duration
+	storage    tradestorage.Interface
 	attempt    int
 	batchSize  int
 }
 
 //NewFetcher return a new fetcher instance
-func NewFetcher(sugar *zap.SugaredLogger, client *binance.Client, retryDelay time.Duration, attempt, batchSize int) *Fetcher {
+func NewFetcher(sugar *zap.SugaredLogger, client *binance.Client, retryDelay time.Duration, attempt, batchSize int, storage tradestorage.Interface) *Fetcher {
 	return &Fetcher{
 		sugar:      sugar,
 		client:     client,
 		retryDelay: retryDelay,
 		attempt:    attempt,
 		batchSize:  batchSize,
+		storage:    storage,
 	}
 }
 
@@ -76,19 +78,11 @@ func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]b
 }
 
 //GetTradeHistory get all trade history from trades for all token
-func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binance.Symbol) ([]binance.TradeHistory, error) {
+func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binance.Symbol) error {
 	var (
-		tradeHistories sync.Map
-		logger         = f.sugar.With("func", caller.GetCurrentFunctionName())
-		errGroup       errgroup.Group
-		result         []binance.TradeHistory
+		logger   = f.sugar.With("func", caller.GetCurrentFunctionName())
+		errGroup errgroup.Group
 	)
-	// get list token
-	// exchangeInfo, err := f.client.GetExchangeInfo()
-	// if err != nil {
-	// 	return result, err
-	// }
-	// tokenPairs := exchangeInfo.Symbols
 	index := 0
 	for index < len(tokenPairs) {
 		for count := 0; count < f.batchSize && index+count < len(tokenPairs); count++ {
@@ -101,32 +95,17 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binanc
 						if err != nil {
 							return err
 						}
-						if len(oneSymbolTradeHistory) != 0 {
-							tradeHistories.Store(pair.Symbol, oneSymbolTradeHistory)
-						}
-						return nil
+						return f.storage.UpdateTradeHistory(oneSymbolTradeHistory)
 					}
 				}(pair),
 			)
 		}
 		if err := errGroup.Wait(); err != nil {
-			return result, err
+			return err
 		}
 		index += f.batchSize
 	}
-
-	// log here for test get trade history without persistence storage
-	tradeHistories.Range(func(key, value interface{}) bool {
-		tradeHistory, ok := value.([]binance.TradeHistory)
-		if !ok {
-			return false
-		}
-		if len(tradeHistory) != 0 {
-			result = append(result, tradeHistory...)
-		}
-		return true
-	})
-	return result, nil
+	return nil
 }
 
 func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (binance.WithdrawHistoryList, error) {

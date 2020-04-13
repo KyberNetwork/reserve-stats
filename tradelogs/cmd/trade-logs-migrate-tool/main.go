@@ -117,6 +117,7 @@ func run(c *cli.Context) error {
 				tl.WalletAddress = walletAddr
 				tl.WalletName = tradelogs.WalletAddrToName(walletAddr)
 				updatedTradeLogs = append(updatedTradeLogs, tl)
+				sugar.Infow("update wallet", "block", tl.BlockNumber)
 				if len(updatedTradeLogs) == int(maxRecordSavePerTime) {
 					if errS := storageInterface.SaveTradeLogs(updatedTradeLogs); errS != nil {
 						return errS

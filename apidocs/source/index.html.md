@@ -20,7 +20,6 @@ includes:
   - users/public_user_endpoint
   - users/user_list
   - users/user_volume
-  - price-analytics-data/price_analytics_data
   - errors
 
 search: true

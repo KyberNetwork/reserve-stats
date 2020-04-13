@@ -77,7 +77,7 @@ func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]b
 	return result, nil
 }
 
-//GetTradeHistory get all trade history from trades for all token
+//GetTradeHistory get all trade history from trades for all token and save them into database
 func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binance.Symbol) error {
 	var (
 		logger   = f.sugar.With("func", caller.GetCurrentFunctionName())

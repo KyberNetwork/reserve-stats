@@ -47,7 +47,7 @@ func (ltd *ListedTokenDB) CreateOrUpdate(tokens []common.ListedToken, blockNumbe
 		logger  = ltd.sugar.With("func", caller.GetCurrentFunctionName())
 		changed = false
 	)
-	saveTokenQuery := fmt.Sprintf(`SELECT save_token($1, $2, $3, $4, $5, $6, $7)`)
+	saveTokenQuery := `SELECT save_token($1, $2, $3, $4, $5, $6, $7)`
 
 	updateVersionQuery := `UPDATE "listed_tokens_version"
 SET version      = CASE WHEN $1 THEN version + 1 ELSE version END,

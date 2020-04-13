@@ -3,8 +3,8 @@ package storage
 import "github.com/KyberNetwork/reserve-stats/burnedfees/common"
 
 const (
-	// PostgresDefaultDb default db name when choosing Postgres
-	PostgresDefaultDb = "burned_fees"
+	// PostgresDefaultDB default db name when choosing Postgres
+	PostgresDefaultDB = "burned_fees"
 	// PostgresDBEngine is value for flags dbEngine
 	PostgresDBEngine = "postgres"
 )

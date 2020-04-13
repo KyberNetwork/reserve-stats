@@ -142,16 +142,11 @@ func run(c *cli.Context) error {
 	retryDelay := c.Duration(retryDelayFlag)
 	attempt := c.Int(attemptFlag)
 	batchSize := c.Int(batchSizeFlag)
-	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
+	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage)
 
-	tradeHistories, err := binanceFetcher.GetTradeHistory(fromIDs, tokenPairs)
-	if err != nil {
+	if err := binanceFetcher.GetTradeHistory(fromIDs, tokenPairs); err != nil {
 		return err
 	}
-	sugar.Debugw("trade histories", "result", tradeHistories)
 
-	if err := binanceStorage.UpdateTradeHistory(tradeHistories); err != nil {
-		return err
-	}
 	return binanceStorage.Close()
 }

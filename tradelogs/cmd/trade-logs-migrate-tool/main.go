@@ -50,7 +50,7 @@ func main() {
 
 	app.Flags = append(app.Flags, storage.NewCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.PostgresDefaultDb)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.PostgresDefaultDB)...)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 
 	if err := app.Run(os.Args); err != nil {

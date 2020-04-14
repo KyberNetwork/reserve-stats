@@ -81,7 +81,7 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 		dataJSON     [][]byte
 		timestamps   []time.Time
 	)
-	const updateQuery = `INSERT INTO binance_withdrawals (id, data)
+	const updateQuery = `INSERT INTO binance_withdrawals (id, data, timestamp)
 	VALUES(
 		unnest($1::TEXT[]),
 		unnest($2::JSONB[]),

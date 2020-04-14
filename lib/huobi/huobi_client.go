@@ -202,10 +202,8 @@ func (hc *Client) GetTradeHistory(symbol string, startDate, endDate time.Time, e
 	var (
 		result TradeHistoryList
 		params = map[string]string{
-			"states":     "filled",
-			"symbol":     strings.ToLower(symbol),
-			"start-date": startDate.Format("2006-01-02"),
-			"end-date":   endDate.Format("2006-01-02"),
+			"symbol": strings.ToLower(symbol),
+			"states": "filled",
 		}
 	)
 	if len(extras) > 0 {

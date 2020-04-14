@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	huobiFetcher "github.com/KyberNetwork/reserve-stats/accounting/huobi/fetcher"
@@ -25,6 +25,8 @@ const (
 	defaultRetryDelay    = time.Second
 	defaultBatchDuration = 90 * 24 * time.Hour
 )
+
+var sugar *zap.SugaredLogger
 
 func main() {
 	app := libapp.NewApp()
@@ -56,16 +58,21 @@ func main() {
 	app.Flags = append(app.Flags, timeutil.NewMilliTimeRangeCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultCexTradesDB)...)
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		// log.Fatal does not signal to sentry, using sugar instead
+		sugar.Fatal(err)
 	}
 }
 
 func run(c *cli.Context) error {
+	var (
+		flush func()
+		err   error
+	)
 	if err := libapp.Validate(c); err != nil {
 		return err
 	}
 
-	sugar, flush, err := libapp.NewSugaredLogger(c)
+	sugar, flush, err = libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}

@@ -45,7 +45,7 @@ var (
 			},
 		},
 	}
-	testTs = timeutil.TimeToTimestampMs(time.Now())
+	testTS = timeutil.TimeToTimestampMs(time.Now())
 )
 
 func newTestServer(sugar *zap.SugaredLogger, dbInstance storage.ReserveRatesStorage) (*Server, error) {
@@ -73,7 +73,7 @@ func TestHTTPRateServer(t *testing.T) {
 	})
 	assert.Nil(t, err, "influx client should be created successfully")
 
-	dbInstance, err := influxRateStorage.NewRateInfluxDBStorage(sugar, influxClient, dbName, blockchain.NewMockBlockTimeResolve(timeutil.TimestampMsToTime(testTs)))
+	dbInstance, err := influxRateStorage.NewRateInfluxDBStorage(sugar, influxClient, dbName, blockchain.NewMockBlockTimeResolve(timeutil.TimestampMsToTime(testTS)))
 	assert.Nil(t, err, "Rate storage should be created successfully")
 
 	defer tearDownTestDB(t, influxClient)
@@ -86,7 +86,7 @@ func TestHTTPRateServer(t *testing.T) {
 	var tests = []httputil.HTTPTestCase{
 		{
 			Msg:      "success query",
-			Endpoint: fmt.Sprintf("%s/%s?from=%d&to=%d&reserve=%s", host, requestEndpoint, testTs, testTs, testRsvAddress),
+			Endpoint: fmt.Sprintf("%s/%s?from=%d&to=%d&reserve=%s", host, requestEndpoint, testTS, testTS, testRsvAddress),
 			Method:   http.MethodGet,
 			Assert:   expectCorrectRate,
 		},

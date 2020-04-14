@@ -307,7 +307,7 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 	if err != nil {
 		return result, err
 	}
-
+	bc.sugar.Infof("%s", res)
 	err = json.Unmarshal(res, &result)
 	if err != nil {
 		return result, err

@@ -33,7 +33,7 @@ type AssetDetailResponse struct {
 //WithdrawHistory is a binance withdraw history
 type WithdrawHistory struct {
 	ID        string  `json:"id"`
-	Amount    float64 `json:"amount"`
+	Amount    float64 `json:"amount,string"`
 	Address   string  `json:"address"`
 	Asset     string  `json:"asset"`
 	TxID      string  `json:"txId"`

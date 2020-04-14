@@ -1,11 +1,11 @@
 package main
 
 import (
-	"log"
 	"os"
 	"time"
 
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/binance/fetcher"
 	withdrawstorage "github.com/KyberNetwork/reserve-stats/accounting/binance/storage/withdrawalstorage"
@@ -16,13 +16,16 @@ import (
 )
 
 const (
-	retryDelayFlag    = "retry-delay"
-	attemptFlag       = "attempt"
-	batchSizeFlag     = "batch-size"
-	defaultRetryDelay = 2 * time.Minute
-	defaultAttempt    = 4
-	defaultBatchSize  = 100
+	retryDelayFlag       = "retry-delay"
+	attemptFlag          = "attempt"
+	batchSizeFlag        = "batch-size"
+	defaultRetryDelay    = 2 * time.Minute
+	defaultAttempt       = 4
+	defaultBatchSize     = 100
+	defaultBatchDuration = 90 * 24 * time.Hour
 )
+
+var sugar *zap.SugaredLogger
 
 func main() {
 	app := libapp.NewApp()
@@ -56,7 +59,8 @@ func main() {
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultCexWithdrawalsDB)...)
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		// log.Fatal stop the program without alert on sentry
+		sugar.Fatal(err)
 	}
 }
 
@@ -64,9 +68,10 @@ func run(c *cli.Context) error {
 	var (
 		fromTime, toTime time.Time
 		err              error
+		flusher          func()
 	)
 
-	sugar, flusher, err := libapp.NewSugaredLogger(c)
+	sugar, flusher, err = libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
@@ -122,14 +127,25 @@ func run(c *cli.Context) error {
 	attempt := c.Int(attemptFlag)
 	batchSize := c.Int(batchSizeFlag)
 	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, nil)
+	from := fromTime
+	for {
+		to := from.Add(defaultBatchDuration)
+		if to.After(toTime) {
+			to = toTime
+		}
+		withdrawHistory, err := binanceFetcher.GetWithdrawHistory(from, to)
+		if err != nil {
+			return err
+		}
 
-	withdrawHistory, err := binanceFetcher.GetWithdrawHistory(fromTime, toTime)
-	if err != nil {
-		return err
+		if err := binanceStorage.UpdateWithdrawHistory(withdrawHistory); err != nil {
+			return err
+		}
+		from = to
+		if from == toTime {
+			break
+		}
 	}
 
-	if err := binanceStorage.UpdateWithdrawHistory(withdrawHistory); err != nil {
-		return err
-	}
 	return binanceStorage.Close()
 }

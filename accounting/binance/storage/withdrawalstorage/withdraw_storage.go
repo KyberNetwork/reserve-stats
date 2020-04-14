@@ -36,6 +36,16 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 	);
 	CREATE INDEX IF NOT EXISTS binance_withdrawals_time_idx ON binance_withdrawals ((data ->> 'applyTime'));
 	CREATE INDEX IF NOT EXISTS binance_withdrawals_txid_idx ON binance_withdrawals ((data ->> 'txId'));
+
+	DO $$ 
+    BEGIN
+        BEGIN
+            ALTER TABLE binance_withdrawals ADD COLUMN timestamp TIMESTAMP;
+        EXCEPTION
+            WHEN duplicate_column THEN RAISE NOTICE 'column timestamp already exists in binance_withdrawals.';
+        END;
+    END;
+	$$
 	`
 
 	s := &BinanceStorage{
@@ -69,11 +79,13 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 		withdrawJSON []byte
 		ids          []string
 		dataJSON     [][]byte
+		timestamps   []time.Time
 	)
 	const updateQuery = `INSERT INTO binance_withdrawals (id, data)
 	VALUES(
 		unnest($1::TEXT[]),
-		unnest($2::JSONB[])
+		unnest($2::JSONB[]),
+		unnest($3::TIMESTAMP[])
 	) ON CONFLICT ON CONSTRAINT binance_withdrawals_pk DO UPDATE SET data = EXCLUDED.data;
 	`
 
@@ -92,11 +104,13 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 		if err != nil {
 			return
 		}
+		timestamp := timeutil.TimestampMsToTime(withdraw.ApplyTime)
 		ids = append(ids, withdraw.ID)
 		dataJSON = append(dataJSON, withdrawJSON)
+		timestamps = append(timestamps, timestamp)
 	}
 
-	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON)); err != nil {
+	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps)); err != nil {
 		return
 	}
 

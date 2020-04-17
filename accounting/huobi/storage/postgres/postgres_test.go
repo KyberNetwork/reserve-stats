@@ -15,8 +15,8 @@ import (
 
 func TestSaveAndGetAccountingRates(t *testing.T) {
 	var (
-		testData = map[int64]huobi.TradeHistory{
-			15584072551: {
+		testData = []huobi.TradeHistory{
+			{
 				ID:              15584072551,
 				Symbol:          "cmtetsh",
 				AccountID:       3375841,
@@ -53,14 +53,14 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 		assert.NoError(t, teardown())
 	}()
 
-	ts, err := hdb.GetLastStoredTimestamp()
+	ts, err := hdb.GetLastStoredTimestamp("cmtetsh")
 	require.NoError(t, err)
 	assert.Equal(t, ts, time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 	err = hdb.UpdateTradeHistory(testData)
 	require.NoError(t, err)
 
-	latestTimestamp, err := hdb.GetLastStoredTimestamp()
+	latestTimestamp, err := hdb.GetLastStoredTimestamp("cmtetsh")
 	require.NoError(t, err)
 	assert.Equal(t, uint64(1540793585778), timeutil.TimeToTimestampMs(latestTimestamp))
 	sugar.Debugw("latest time stamp", "value", timeutil.TimeToTimestampMs(latestTimestamp))

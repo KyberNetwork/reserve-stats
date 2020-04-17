@@ -8,7 +8,7 @@ import (
 
 //Interface defines a set of interface for huobi storage, which can be implemented by any DB
 type Interface interface {
-	UpdateTradeHistory(trade map[int64]huobi.TradeHistory) error
+	UpdateTradeHistory(trade []huobi.TradeHistory) error
 	GetTradeHistory(from, to time.Time) ([]huobi.TradeHistory, error)
-	GetLastStoredTimestamp() (time.Time, error)
+	GetLastStoredTimestamp(symbol string) (time.Time, error)
 }

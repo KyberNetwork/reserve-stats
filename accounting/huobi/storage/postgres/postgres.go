@@ -56,7 +56,7 @@ func (hdb *HuobiStorage) Close() error {
 }
 
 //UpdateTradeHistory store the TradeHistory rate at that blockInfo
-func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory) (err error) {
+func (hdb *HuobiStorage) UpdateTradeHistory(trades []huobi.TradeHistory) (err error) {
 	var (
 		nTrades = len(trades)
 		logger  = hdb.sugar.With(
@@ -72,7 +72,13 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory)
 		unnest($1::BIGINT[]),
 		unnest($2::JSONB[])
 	)
-	ON CONFLICT ON CONSTRAINT huobi_trades_pk DO NOTHING;`
+	ON CONFLICT ON CONSTRAINT huobi_trades_pk DO
+	UPDATE SET data = CASE
+						WHEN huobi_trades.data->>'state'='partial-filled' AND huobi_trades.data->>'finished-at' != excluded.data->>'finished-at'
+						THEN huobi_trades.data || ('{"amount": ' || ((huobi_trades.data->>'amount')::float+(EXCLUDED.data->>'amount')::float) || '}')::jsonb
+						ELSE huobi_trades.data || ('{"state": ' || EXCLUDED.data->>'state' || '}')::jsonb
+					  END
+	`
 	logger.Debugw("updating tradeHistory...", "query", updateStmt)
 
 	tx, err := hdb.db.Beginx()
@@ -123,15 +129,15 @@ func (hdb *HuobiStorage) GetTradeHistory(from, to time.Time) ([]huobi.TradeHisto
 }
 
 //GetLastStoredTimestamp return the last stored timestamp in database
-func (hdb *HuobiStorage) GetLastStoredTimestamp() (time.Time, error) {
+func (hdb *HuobiStorage) GetLastStoredTimestamp(symbol string) (time.Time, error) {
 	var (
 		dbResult uint64
 		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
 		logger   = hdb.sugar.With("func", caller.GetCurrentFunctionName())
 	)
-	const selectStmt = `SELECT COALESCE(MAX(data->>'created-at'), '0') FROM huobi_trades`
+	const selectStmt = `SELECT COALESCE(MAX(data->>'created-at'), '0') FROM huobi_trades WHERE data->>'symbol'=$1`
 	logger.Debugw("querying trade history...", "query", selectStmt)
-	if err := hdb.db.Get(&dbResult, selectStmt); err != nil {
+	if err := hdb.db.Get(&dbResult, selectStmt, symbol); err != nil {
 		return result, err
 	}
 	if dbResult != 0 {

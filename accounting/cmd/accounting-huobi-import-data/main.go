@@ -146,7 +146,12 @@ func importTradeHistory(sugar *zap.SugaredLogger, historyFile string, hdb *postg
 			tradeHistories[orderID] = order
 		}
 	}
-	return hdb.UpdateTradeHistory(tradeHistories)
+	// convert from map to slice as we are no longer need key id
+	tradeRecords := []huobi.TradeHistory{}
+	for _, record := range tradeHistories {
+		tradeRecords = append(tradeRecords, record)
+	}
+	return hdb.UpdateTradeHistory(tradeRecords)
 }
 
 func importWithdrawHistory(sugar *zap.SugaredLogger, historyFile string, hdb *withdrawstorage.HuobiStorage) error {

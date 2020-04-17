@@ -19,6 +19,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
@@ -203,9 +204,13 @@ func (hc *Client) GetTradeHistory(symbol string, startDate, endDate time.Time, e
 		result TradeHistoryList
 		params = map[string]string{
 			"symbol": strings.ToLower(symbol),
-			"states": "filled",
+			"states": "filled,canceled",
 		}
 	)
+	startTime := timeutil.TimeToTimestampMs(startDate)
+	endTime := timeutil.TimeToTimestampMs(endDate)
+	params["start-time"] = strconv.FormatUint(startTime, 10)
+	params["end-time"] = strconv.FormatUint(endTime, 10)
 	if len(extras) > 0 {
 		if extras[0].From != "" {
 			params["from"] = extras[0].From
@@ -227,6 +232,7 @@ func (hc *Client) GetTradeHistory(symbol string, startDate, endDate time.Time, e
 	if err != nil {
 		return result, err
 	}
+	hc.sugar.Infow("response from binance", "response", res, "start time", startTime, "end time", endTime)
 	err = json.Unmarshal(res, &result)
 	if err != nil {
 		return result, err

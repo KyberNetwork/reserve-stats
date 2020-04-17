@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/urfave/cli"
@@ -23,7 +22,11 @@ const (
 	batchDurationFlag    = "batch-duration"
 	defaultMaxAttempt    = 3
 	defaultRetryDelay    = time.Second
-	defaultBatchDuration = 90 * 24 * time.Hour
+	defaultBatchDuration = 48 * time.Hour
+	// as https://huobiapi.github.io/docs/spot/v1/en/#search-past-orders, farthest day is 180 days from now
+	// then it should be safe to set to 179 days
+	farthestDate = 179 * 24 * time.Hour
+	symbolsFlag  = "symbols"
 )
 
 var sugar *zap.SugaredLogger
@@ -52,6 +55,11 @@ func main() {
 			Usage:  "The duration for a batch query. If the duration is too big, the query will require a lot of memory to store. Default is 90 days each batch",
 			EnvVar: "BATCH_DURATION",
 			Value:  defaultBatchDuration,
+		},
+		cli.StringSliceFlag{
+			Name:   symbolsFlag,
+			Usage:  "symbol to crawl trades",
+			EnvVar: "SYMBOLS",
 		},
 	)
 	app.Flags = append(app.Flags, huobi.NewCliFlags()...)
@@ -99,11 +107,8 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("cannot get from time: %v", err)
 	}
 	if from.IsZero() {
-		sugar.Info("from timestamp is not provided, get latest timestamp from database")
-		from, err = hdb.GetLastStoredTimestamp()
-		if err != nil {
-			return err
-		}
+		sugar.Info("from timestamp is not provided, get from farthest time")
+		from = time.Now().Add(-1 * farthestDate)
 	}
 	sugar.Infow("fetch trade from time", "time", from)
 
@@ -117,71 +122,50 @@ func run(c *cli.Context) error {
 
 	retryDelay := c.Duration(retryDelayFlag)
 	maxAttempts := c.Int(maxAttemptFlag)
+	symbols := c.StringSlice(symbolsFlag)
 
-	startTime := from
-	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts)
+	huobiSymbols := []huobi.Symbol{}
+	for _, symbol := range symbols {
+		huobiSymbols = append(huobiSymbols,
+			huobi.Symbol{
+				SymBol: symbol,
+			})
+	}
+
 	batchDuration := c.Duration(batchDurationFlag)
-	// fetch each day to reduce memory footprint of the fetch and storage
-	for {
-		next := startTime.Add(batchDuration)
-		if to.Before(next) {
-			next = to
-		}
-		data, err := fetcher.GetTradeHistory(startTime, next)
-		if err != nil {
-			return err
-		}
-
-		var trades = make(map[int64]huobi.TradeHistory)
-		for _, record := range data {
-			for _, trade := range record {
-				if err := updateTradeRecord(trades, trade); err != nil {
-					return err
-				}
-			}
-		}
-
-		if err = hdb.UpdateTradeHistory(trades); err != nil {
-			return err
-		}
-
-		startTime = next
-		if !startTime.Before(to) {
-			break
-		}
-	}
-	return nil
+	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts, batchDuration, hdb)
+	return fetcher.GetTradeHistory(from, to, huobiSymbols)
 }
 
-func updateTradeRecord(trades map[int64]huobi.TradeHistory, trade huobi.TradeHistory) error {
-	//if trade does not exist, add it to the list
-	if _, exist := trades[trade.ID]; !exist {
-		trades[trade.ID] = trade
-	} else if trade.State == "partial-filled" || (trade.State == "filled" && trades[trade.ID].State != "filled") {
-		// if trade is partial-filled multiple time, the amount is the sum of all times
-		tempTrade := trades[trade.ID]
-		amount, err := strconv.ParseFloat(tempTrade.Amount, 64)
-		if err != nil {
-			return err
-		}
-		orderAmount, err := strconv.ParseFloat(trade.FieldAmount, 64)
-		if err != nil {
-			return err
-		}
-		amount += orderAmount
-		fee, err := strconv.ParseFloat(tempTrade.FieldFees, 64)
-		if err != nil {
-			return err
-		}
-		orderFee, err := strconv.ParseFloat(trade.FieldFees, 64)
-		if err != nil {
-			return err
-		}
-		fee += orderFee
-		tempTrade.Amount = strconv.FormatFloat(amount, 'f', -1, 64)
-		tempTrade.FieldFees = strconv.FormatFloat(fee, 'f', -1, 64)
-		tempTrade.State = trade.State
-		trades[trade.ID] = tempTrade
-	}
-	return nil
-}
+// func updateTradeRecord(trades map[int64]huobi.TradeHistory, trade huobi.TradeHistory) error {
+// 	//if trade does not exist, add it to the list
+// 	if _, exist := trades[trade.ID]; !exist {
+// 		trades[trade.ID] = trade
+// 	} else if trade.State == "partial-filled" || (trade.State == "filled" && trades[trade.ID].State != "filled") {
+// 		// if trade is partial-filled multiple time, the amount is the sum of all times
+// 		tempTrade := trades[trade.ID]
+// 		amount, err := strconv.ParseFloat(tempTrade.Amount, 64)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		orderAmount, err := strconv.ParseFloat(trade.FieldAmount, 64)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		amount += orderAmount
+// 		fee, err := strconv.ParseFloat(tempTrade.FieldFees, 64)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		orderFee, err := strconv.ParseFloat(trade.FieldFees, 64)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		fee += orderFee
+// 		tempTrade.Amount = strconv.FormatFloat(amount, 'f', -1, 64)
+// 		tempTrade.FieldFees = strconv.FormatFloat(fee, 'f', -1, 64)
+// 		tempTrade.State = trade.State
+// 		trades[trade.ID] = tempTrade
+// 	}
+// 	return nil
+// }

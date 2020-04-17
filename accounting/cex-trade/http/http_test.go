@@ -21,8 +21,8 @@ import (
 
 var (
 	ts          *Server
-	huobiTrades = map[int64]huobi.TradeHistory{
-		59378: {
+	huobiTrades = []huobi.TradeHistory{
+		{
 			ID:              59378,
 			Symbol:          "ethusdt",
 			AccountID:       100009,

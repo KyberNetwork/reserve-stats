@@ -104,8 +104,9 @@ func run(c *cli.Context) error {
 
 	retryDelay := c.Duration(retryDelayFlag)
 	maxAttempts := c.Int(maxAttemptFlag)
+	batchDuration := 24 * time.Hour
 
-	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts)
+	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts, batchDuration, nil)
 	data, err := fetcher.GetWithdrawHistory(fromID + 1)
 	if err != nil {
 		return err

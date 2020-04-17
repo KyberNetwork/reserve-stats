@@ -19,14 +19,18 @@ func (fc *Fetcher) retry(fn tradeHistoryFetcher, symbol string, startTime, endTi
 	var (
 		result huobi.TradeHistoryList
 		err    error
-		logger = fc.sugar.With("func", caller.GetCurrentFunctionName())
+		logger = fc.sugar.With("func", caller.GetCurrentFunctionName(),
+			"symbol", symbol,
+			"startTime", startTime,
+			"endTime", endTime,
+		)
 	)
 	for i := 0; i < fc.attempt; i++ {
 		result, err = fn(symbol, startTime, endTime, extras)
 		if err == nil {
 			return result, nil
 		}
-		logger.Warn("fail to fetch trade history", "error", err, "attempt", i+1)
+		logger.Warnw("fail to fetch trade history", "error", err, "attempt", i+1)
 		time.Sleep(fc.retryDelay)
 	}
 	return result, err
@@ -34,40 +38,48 @@ func (fc *Fetcher) retry(fn tradeHistoryFetcher, symbol string, startTime, endTi
 
 func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time) ([]huobi.TradeHistory, error) {
 	var (
-		startTime = from
-		endTime   = to
-		result    []huobi.TradeHistory
-		lastID    string
-		extras    huobi.ExtrasTradeHistoryParams
+		result []huobi.TradeHistory
+		lastID string
+		extras huobi.ExtrasTradeHistoryParams
 	)
+	latestTimeStored, err := fc.storage.GetLastStoredTimestamp(symbol)
+	if err != nil {
+		return result, err
+	}
+	if from.Before(latestTimeStored) {
+		from = latestTimeStored
+	}
+	startTime := from
 	for {
-		if lastID != "" {
-			extras = huobi.ExtrasTradeHistoryParams{
-				From:   lastID,
-				Direct: "prev",
+		endTime := startTime.Add(48 * time.Hour)
+		if endTime.After(to) {
+			endTime = to
+		}
+		for {
+			tradeHistoriesResponse, err := fc.retry(fc.client.GetTradeHistory, symbol, startTime, endTime, extras)
+			if err != nil {
+				return result, err
 			}
-		} else {
-			extras = huobi.ExtrasTradeHistoryParams{}
-		}
-		tradeHistoriesResponse, err := fc.retry(fc.client.GetTradeHistory, symbol, startTime, endTime, extras)
-		if err != nil {
-			return result, err
-		}
-		// while result != empty, get trades latest time to toTime
-		if len(tradeHistoriesResponse.Data) == 0 {
-			break
-		}
-		//huobi returns tradelogs with latest trade in the beginning of the slice
-		lastTrade := tradeHistoriesResponse.Data[0]
-		if strconv.FormatInt(lastTrade.ID, 10) == lastID {
-			break
-		}
-		lastID = strconv.FormatInt(lastTrade.ID, 10)
+			// while result != empty, get trades latest time to toTime
+			if len(tradeHistoriesResponse.Data) == 0 {
+				break
+			}
+			//huobi returns tradelogs with latest trade in the beginning of the slice
+			lastTrade := tradeHistoriesResponse.Data[0]
+			if strconv.FormatInt(lastTrade.ID, 10) == lastID {
+				break
+			}
+			lastID = strconv.FormatInt(lastTrade.ID, 10)
 
-		result = append(result, tradeHistoriesResponse.Data...)
+			result = append(result, tradeHistoriesResponse.Data...)
 
-		startTime = timeutil.TimestampMsToTime(lastTrade.CreatedAt)
-		if endTime.Before(startTime) {
+			startTime = timeutil.TimestampMsToTime(lastTrade.CreatedAt + 1)
+			if endTime.Before(startTime) {
+				break
+			}
+		}
+		startTime = endTime
+		if startTime == to {
 			break
 		}
 	}
@@ -76,7 +88,7 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time) 
 }
 
 //GetTradeHistory return all trade history between from-to and
-func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.TradeHistory, error) {
+func (fc *Fetcher) GetTradeHistory(from, to time.Time, symbols []huobi.Symbol) error {
 	var (
 		logger = fc.sugar.With(
 			"func", caller.GetCurrentFunctionName(),
@@ -87,11 +99,14 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 		fetchResult = sync.Map{}
 		assertError error
 		errGroup    errgroup.Group
+		err         error
 	)
 
-	symbols, err := fc.client.GetSymbolsPair()
-	if err != nil {
-		return result, err
+	if len(symbols) == 0 {
+		symbols, err = fc.client.GetSymbolsPair()
+		if err != nil {
+			return err
+		}
 	}
 	for _, sym := range symbols {
 		errGroup.Go(
@@ -101,10 +116,10 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 					if err != nil {
 						return err
 					}
-					if len(singleResult) > 0 {
-						fetchResult.Store(symbol, singleResult)
-					}
 					logger.Infow("Fetching done", "symbol", symbol, "error", err, "time", time.Now())
+					if len(singleResult) > 0 {
+						return fc.storage.UpdateTradeHistory(singleResult)
+					}
 					return nil
 				}
 			}(sym.SymBol),
@@ -112,7 +127,7 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 	}
 
 	if err := errGroup.Wait(); err != nil {
-		return result, err
+		return err
 	}
 	fetchResult.Range(func(key, value interface{}) bool {
 		symbol, ok := key.(string)
@@ -128,5 +143,5 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 		result[symbol] = historyList
 		return true
 	})
-	return result, assertError
+	return assertError
 }

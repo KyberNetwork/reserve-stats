@@ -266,7 +266,7 @@ func (tl TradeLog) IsKyberSwap() bool {
 	// if Wallet Address < maxUint128, it is KyberSwap
 	// as a result  of history we used to put block number as wallet address (while other put their real wallet addr)
 	// then we use logic below to check if a tx is Kyber Swap tx
-	if tl.WalletAddress.Big().Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(128), nil)) == -1 {
+	if new(big.Int).SetBytes(tl.WalletAddress.Bytes()).Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(128), nil)) == -1 {
 		return true
 	}
 

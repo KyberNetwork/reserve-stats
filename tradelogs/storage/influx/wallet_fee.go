@@ -71,11 +71,8 @@ func (is *Storage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq string,
 		}
 		key := timeutil.TimeToTimestampMs(ts)
 		//if the result is already there, that mean there was either src/dst wallet fee
-		if _, avail := result[key]; avail {
-			result[key] += amount
-		} else {
-			result[key] = amount
-		}
+		// https://staticcheck.io/docs/checks#S1036
+		result[key] += amount
 	}
 
 	return result, err

@@ -108,7 +108,7 @@ func main() {
 
 	app.Flags = append(app.Flags, storage.NewCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.PostgresDefaultDb)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.PostgresDefaultDB)...)
 	app.Flags = append(app.Flags, broadcast.NewCliFlags()...)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, cq.NewCQFlags()...)
@@ -201,7 +201,7 @@ func run(c *cli.Context) error {
 	}
 
 	//if db = influx check cq flags
-	if c.String(storage.DbEngineFlag) == storage.InfluxDbEngine {
+	if c.String(storage.DBEngineFlag) == storage.InfluxDBEngine {
 		influxClient, err := influxdb.NewClientFromContext(c)
 		if err != nil {
 			return err

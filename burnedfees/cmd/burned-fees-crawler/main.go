@@ -62,7 +62,7 @@ func main() {
 		},
 	)
 
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.PostgresDefaultDb)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.PostgresDefaultDB)...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

@@ -171,7 +171,7 @@ func manageCQFromContext(c *cli.Context, influxClient client.Client, sugar *zap.
 // requiredWorkers returns number of workers to start. If the number of jobs is smaller than max workers,
 // only start the number of required workers instead of max workers.
 func requiredWorkers(fromBlock, toBlock *big.Int, maxBlocks, maxWorkers int) int {
-	jobs := int(math.Ceil(float64(toBlock.Int64()-fromBlock.Int64()) / float64(maxBlocks)))
+	jobs := int(math.Ceil(float64(toBlock.Int64()-fromBlock.Int64()+1) / float64(maxBlocks)))
 	if jobs < maxWorkers {
 		return jobs
 	}
@@ -250,7 +250,7 @@ func run(c *cli.Context) error {
 
 		go func(fromBlock, toBlock, maxBlocks int64) {
 			var jobOrder = p.GetLastCompleteJobOrder()
-			for i := fromBlock; i < toBlock; i += maxBlocks {
+			for i := fromBlock; i <= toBlock; i += maxBlocks {
 				end := mathutil.MinInt64(i+maxBlocks, toBlock)
 				switch {
 				//if job start at block v2 and end at block v3 then split job

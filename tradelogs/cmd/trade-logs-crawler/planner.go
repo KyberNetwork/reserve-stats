@@ -94,7 +94,7 @@ func (p *crawlPlanner) next() (*big.Int, *big.Int, error) {
 		p.fromBlock = big.NewInt(lastBlock)
 	}
 
-	if p.fromBlock != nil && p.toBlock != nil && p.fromBlock.Cmp(p.toBlock) >= 0 {
+	if p.fromBlock != nil && p.toBlock != nil && p.fromBlock.Cmp(p.toBlock) > 0 {
 		return nil, nil, errors.New("fromBlock is bigger than toBlock")
 	}
 

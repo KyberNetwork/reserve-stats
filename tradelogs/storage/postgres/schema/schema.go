@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	PRIMARY KEY (tx_hash,index)
 );
 
-ALTER TABLE "` + TradeLogsTableName + `" ADD UNIQUE (id);
+CREATE UNIQUE INDEX IF NOT EXISTS "tradelogs_id_index" ON "` + TradeLogsTableName + `"(id);
 
 ALTER TABLE "` + TradeLogsTableName + `"
 	ADD COLUMN IF NOT EXISTS gas_used INTEGER,

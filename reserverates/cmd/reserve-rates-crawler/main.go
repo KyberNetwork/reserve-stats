@@ -16,7 +16,9 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/reserverates/common"
+	"github.com/KyberNetwork/reserve-stats/reserverates/storage"
 	influxRateStorage "github.com/KyberNetwork/reserve-stats/reserverates/storage/influx"
+	"github.com/KyberNetwork/reserve-stats/reserverates/storage/postgres"
 	"github.com/KyberNetwork/reserve-stats/reserverates/workers"
 )
 
@@ -38,6 +40,9 @@ const (
 	durationFlag         = "duration"
 	shardDurationFlag    = "shard-duration"
 	defaultShardDuration = time.Hour * 24
+
+	dbEngineFlag      = "db-engine"
+	defaultPostgresDB = "reserve_rates"
 )
 
 func main() {
@@ -91,9 +96,16 @@ func main() {
 			EnvVar: "SHARD_DURATION",
 			Value:  defaultShardDuration,
 		},
+		cli.StringFlag{
+			Name:   dbEngineFlag,
+			Usage:  "db engine flag",
+			EnvVar: "DB_ENGINE",
+			Value:  "postgres",
+		},
 		blockchain.NewEthereumNodeFlags(),
 	)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(defaultPostgresDB)...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -128,17 +140,26 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	var options []influxRateStorage.RateStorageOption
-	duration := c.Duration(durationFlag)
-	shardDuration := c.Duration(shardDurationFlag)
-	if duration != 0 && shardDuration != 0 {
-		options = append(options, influxRateStorage.RateStorageOptionWithRetentionPolicy(duration, shardDuration))
-	}
+	var rateStorage storage.ReserveRatesStorage
+	if c.String(dbEngineFlag) == "influxdb" {
+		var options []influxRateStorage.RateStorageOption
+		duration := c.Duration(durationFlag)
+		shardDuration := c.Duration(shardDurationFlag)
+		if duration != 0 && shardDuration != 0 {
+			options = append(options, influxRateStorage.RateStorageOptionWithRetentionPolicy(duration, shardDuration))
+		}
 
-	rateStorage, err := influxRateStorage.NewRateInfluxDBStorage(
-		sugar, influxClient, common.DatabaseName, blockTimeResolver, options...)
-	if err != nil {
-		return err
+		if rateStorage, err = influxRateStorage.NewRateInfluxDBStorage(sugar, influxClient, common.DatabaseName, blockTimeResolver, options...); err != nil {
+			return err
+		}
+	} else {
+		db, err := libapp.NewDBFromContext(c)
+		if err != nil {
+			return err
+		}
+		if rateStorage, err = postgres.NewPostgresStorage(db, sugar, blockTimeResolver); err != nil {
+			return err
+		}
 	}
 
 	if c.String(fromBlockFlag) == "" {

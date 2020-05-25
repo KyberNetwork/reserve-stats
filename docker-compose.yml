@@ -1,11 +1,5 @@
 version: '3.1'
 services:
-  influxdb:
-    image: 'influxdb:1.7.1-alpine'
-    volumes:
-      - './data/influxdb:/var/lib/influxdb/'
-    ports:
-      - '127.0.0.1:8086:8086'
   kapacitor:
     image: 'kapacitor:1.5.2-alpine'
     volumes:

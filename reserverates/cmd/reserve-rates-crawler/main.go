@@ -125,11 +125,6 @@ func run(c *cli.Context) error {
 	}
 	defer flush()
 
-	influxClient, err := influxdb.NewClientFromContext(c)
-	if err != nil {
-		return err
-	}
-
 	ethClient, err := blockchain.NewEthereumClientFromFlag(c)
 	if err != nil {
 		return err
@@ -142,6 +137,10 @@ func run(c *cli.Context) error {
 
 	var rateStorage storage.ReserveRatesStorage
 	if c.String(dbEngineFlag) == "influxdb" {
+		influxClient, err := influxdb.NewClientFromContext(c)
+		if err != nil {
+			return err
+		}
 		var options []influxRateStorage.RateStorageOption
 		duration := c.Duration(durationFlag)
 		shardDuration := c.Duration(shardDurationFlag)

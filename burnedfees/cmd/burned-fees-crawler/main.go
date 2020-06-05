@@ -94,11 +94,6 @@ func run(c *cli.Context) error {
 		contracts.OldBurnerContractAddress().MustGetFromContext(c),
 		contracts.BurnerContractAddress().MustGetOneFromContext(c))
 
-	influxClient, err := influxdb.NewClientFromContext(c)
-	if err != nil {
-		return err
-	}
-
 	blkTimeRsv, err := blockchain.NewBlockTimeResolver(sugar, ethClient)
 	if err != nil {
 		return err
@@ -121,6 +116,10 @@ func run(c *cli.Context) error {
 			return err
 		}
 	} else {
+		influxClient, err := influxdb.NewClientFromContext(c)
+		if err != nil {
+			return err
+		}
 		st, err = influxdbstorage.NewBurnedFeesStorage(sugar, influxClient, blkTimeRsv, amountFmt)
 		if err != nil {
 			return err

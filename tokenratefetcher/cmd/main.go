@@ -10,6 +10,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	tokenrate "github.com/KyberNetwork/reserve-stats/tokenratefetcher"
 	"github.com/KyberNetwork/reserve-stats/tokenratefetcher/storage"
+	"github.com/KyberNetwork/reserve-stats/tokenratefetcher/storage/postgres"
 	"github.com/KyberNetwork/tokenrate/coingecko"
 	"github.com/urfave/cli"
 )
@@ -19,6 +20,9 @@ const (
 	kyberNetworkTokenID = "kyber-network"
 	usdCurrencyID       = "usd"
 	dbName              = "token_rate"
+
+	dbEngineFlag    = "db-engine"
+	defaultDBEngine = "postgres"
 )
 
 func main() {
@@ -29,12 +33,24 @@ func main() {
 	app.Action = run
 	app.Flags = append(app.Flags, timeutil.NewTimeRangeCliFlags()...)
 	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(dbName)...)
+	app.Flags = append(app.Flags,
+		cli.StringFlag{
+			Name:   dbEngineFlag,
+			Usage:  "engine database (influxdb or postgres)",
+			EnvVar: "DB_ENGINE",
+			Value:  defaultDBEngine, // default value
+		},
+	)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func run(c *cli.Context) error {
+	var (
+		dbStorage storage.Interface
+	)
 	sugar, flush, err := libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
@@ -43,17 +59,27 @@ func run(c *cli.Context) error {
 
 	cgk := coingecko.New()
 
-	influxClient, err := influxdb.NewClientFromContext(c)
-	if err != nil {
-		return err
+	if c.String(dbEngineFlag) != "postgres" {
+		influxClient, err := influxdb.NewClientFromContext(c)
+		if err != nil {
+			return err
+		}
+
+		dbStorage, err = storage.NewInfluxStorage(influxClient, dbName, sugar)
+		if err != nil {
+			return err
+		}
+	} else {
+		db, err := libapp.NewDBFromContext(c)
+		if err != nil {
+			return err
+		}
+		if dbStorage, err = postgres.NewPostgresStorage(sugar, db); err != nil {
+			return err
+		}
 	}
 
-	influxStorage, err := storage.NewInfluxStorage(influxClient, dbName, sugar)
-	if err != nil {
-		return err
-	}
-
-	tokenRate, err := tokenrate.NewRateFetcher(sugar, influxStorage, cgk)
+	tokenRate, err := tokenrate.NewRateFetcher(sugar, dbStorage, cgk)
 	if err != nil {
 		return err
 	}
@@ -61,7 +87,7 @@ func run(c *cli.Context) error {
 	from, err := timeutil.FromTimeFromContext(c)
 	if err == timeutil.ErrEmptyFlag {
 		sugar.Debug("no from time provided, seeking for the first data point in DB...")
-		from, err = influxStorage.LastTimePoint(cgk.Name(), kyberNetworkTokenID, usdCurrencyID)
+		from, err = dbStorage.LastTimePoint(cgk.Name(), kyberNetworkTokenID, usdCurrencyID)
 		if err != nil {
 			return err
 		}

@@ -32,6 +32,10 @@ CREATE TABLE IF NOT EXISTS "reserve" (
 	address TEXT UNIQUE NOT NULL
 );
 
+ALTER TABLE "reserve" 
+	ADD COLUMN IF NOT EXISTS "reserve_id" TEXT DEFAULT '',
+	ADD COLUMN IF NOT EXISTS "block_number" INTEGER;
+
 
 DO $$ 
     BEGIN

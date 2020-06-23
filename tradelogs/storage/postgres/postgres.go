@@ -501,7 +501,7 @@ UPDATE SET -- update every fields if record exists (except field is_first_trade)
 ;`
 
 const selectTradeLogsQuery = `
-SELECT a.timestamp AS timestamp, block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
+SELECT a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
 e.address AS src_address, f.address AS dst_address,
 src_amount, dst_amount, ip, country, integration_app, src_burn_amount, dst_burn_amount,
 index, tx_hash, b.address AS src_rsv_address, c.address AS dst_rsv_address, src_wallet_fee_amount, dst_wallet_fee_amount,
@@ -517,7 +517,7 @@ WHERE a.timestamp >= $1 and a.timestamp <= $2;
 `
 
 const selectTradeLogsWithTxHashQuery = `
-SELECT a.timestamp AS timestamp, block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
+SELECT a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
 e.address AS src_address, f.address AS dst_address,
 src_amount, dst_amount, ip, country, integration_app, src_burn_amount, dst_burn_amount,
 index, tx_hash, b.address AS src_rsv_address, c.address AS dst_rsv_address, src_wallet_fee_amount, dst_wallet_fee_amount,

@@ -11,7 +11,7 @@ import (
 
 const (
 	getBigTradesQuery = `
-SELECT bt.tradelog_id, a.timestamp AS timestamp, block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
+SELECT bt.tradelog_id, a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
 e.address AS src_address, f.address AS dst_address,
 e.symbol AS src_symbol, f.symbol AS dst_symbol,
 src_amount, dst_amount, ip, country, integration_app, src_burn_amount, dst_burn_amount,
@@ -34,7 +34,7 @@ INSERT INTO big_tradelogs (tradelog_id) (
 	SELECT tradelog_id.id FROM tradelogs AS tradelog_id 
 	INNER JOIN token AS src_token ON src_token.id = tradelog_id.src_address_id
 	INNER JOIN token AS dst_token ON dst_token.id = tradelog_id.dst_address_id
-	WHERE original_eth_amount > $1 AND block_number >= $2 AND src_token.symbol != 'WETH' and dst_token.symbol != 'WETH'
+	WHERE original_eth_amount > $1 AND tradelog_id.block_number >= $2 AND src_token.symbol != 'WETH' and dst_token.symbol != 'WETH'
 )
 ON CONFLICT (tradelog_id) DO NOTHING;
 `

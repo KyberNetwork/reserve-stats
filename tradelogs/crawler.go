@@ -46,12 +46,6 @@ const (
 	// tradeExecute(address sender, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
 	// use for crawler v1 and v2
 	tradeExecuteEvent = "0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de"
-
-	// use for crawler v4
-	addReserveToStorage = "0x4649526e2876a69a4439244e5d8a32a6940a44a92b5390fdde1c22a26cc54004"
-
-	// use for crawler v4
-	reserveRebateWalletSet = "0x42cac9e63e37f62d5689493d04887a67fe3c68e1d3763c3f0890e1620a0465b3"
 )
 
 var defaultTimeout = 10 * time.Second
@@ -407,6 +401,8 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 	// fetchTradeLogV2 also works for v3 trades, so to keep it simple, we only use fetchTradeLogV3 if both
 	// from, to blocks are >= starting block v3
 	switch {
+	case fromBlock.Uint64() > crawler.startingBlocks.V4() && toBlock.Uint64() >= crawler.startingBlocks.V4():
+		fetchFn = crawler.fetchTradeLogV4
 	case fromBlock.Uint64() >= crawler.startingBlocks.V3() && toBlock.Uint64() >= crawler.startingBlocks.V3():
 		fetchFn = crawler.fetchTradeLogV3
 	case fromBlock.Uint64() >= crawler.startingBlocks.V2() && toBlock.Uint64() >= crawler.startingBlocks.V2():

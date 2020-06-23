@@ -8,8 +8,14 @@ import (
 
 // VersionedStartingBlocks is the list of versioned block for each new contract deployment
 type VersionedStartingBlocks struct {
+	v4 uint64
 	v3 uint64
 	v2 uint64
+}
+
+// V4 return starting block of KyberNetwork v4
+func (v *VersionedStartingBlocks) V4() uint64 {
+	return v.v4
 }
 
 // V3 returns starting block of KyberNetwork v3.
@@ -35,6 +41,7 @@ var StartingBlocks = map[Deployment]VersionedStartingBlocks{
 	// Ropsten starting blocks are for testing purpose
 	// TODO suppose to change for more precise log (if needed)
 	Ropsten: {
+		v4: 8111008, // this block number is not correct, just pick random for test only
 		v3: 6899992,
 		v2: 6899991,
 	},

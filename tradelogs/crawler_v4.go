@@ -14,6 +14,17 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
+const (
+	// use for crawler v4
+	addReserveToStorageEvent = "0x4649526e2876a69a4439244e5d8a32a6940a44a92b5390fdde1c22a26cc54004"
+
+	// use for crawler v4
+	reserveRebateWalletSetEvent = "0x42cac9e63e37f62d5689493d04887a67fe3c68e1d3763c3f0890e1620a0465b3"
+
+	//
+	feeDistributedEvent = ""
+)
+
 func init() {
 	var err error
 	networkABI, err = abi.JSON(strings.NewReader(contracts.NetworkProxyABI))
@@ -21,15 +32,15 @@ func init() {
 		panic(err)
 	}
 }
-func (crawler *Crawler) fetchTradelogsV4(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
+func (crawler *Crawler) fetchTradeLogV4(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
 	var result []common.TradeLog
 
 	topics := [][]ethereum.Hash{
 		{
-			ethereum.HexToHash(burnFeeEvent),
-			ethereum.HexToHash(feeToWalletEvent),
+			ethereum.HexToHash(feeDistributedEvent),
 			ethereum.HexToHash(kyberTradeEvent),
-			ethereum.HexToHash(addReserveToStorage),
+			ethereum.HexToHash(addReserveToStorageEvent),
+			ethereum.HexToHash(reserveRebateWalletSetEvent),
 		},
 	}
 
@@ -38,7 +49,7 @@ func (crawler *Crawler) fetchTradelogsV4(fromBlock, toBlock *big.Int, timeout ti
 		return nil, errors.Wrap(err, "failed to fetch log by topic")
 	}
 
-	result, err = crawler.assembleTradeLogsV3(typeLogs)
+	result, err = crawler.assembleTradeLogsV4(typeLogs)
 	if err != nil {
 		return nil, err
 	}
@@ -46,42 +57,16 @@ func (crawler *Crawler) fetchTradelogsV4(fromBlock, toBlock *big.Int, timeout ti
 	return result, nil
 }
 
-type tradeWithHintV4Param struct {
-	Src               ethereum.Address
-	SrcAmount         *big.Int
-	Dest              ethereum.Address
-	DestAddress       ethereum.Address
-	MaxDestAmount     *big.Int
-	MinConversionRate *big.Int
-	WalletID          ethereum.Address `abi:"walletId"`
-	Hint              []byte
-}
-
-func decodeTradeInputV4Param(data []byte) (out tradeWithHintParam, err error) { // decode txInput method signature
-	if len(data) < 4 {
-		return tradeWithHintParam{}, errors.New("input data not valid")
-	}
-	// recover Method from signature and ABI
-	method, err := networkABI.MethodById(data[0:4])
-	if err != nil {
-		return tradeWithHintParam{}, errors.Wrap(err, "cannot find method for correspond data")
-	}
-	switch method.Name {
-	case "trade", "tradeWithHint":
-		// unpack method inputs
-		var out tradeWithHintParam
-		err = method.Inputs.Unpack(&out, data[4:])
-		if err != nil {
-			return tradeWithHintParam{}, errors.Wrap(err, "unpack param failed")
-		}
-		return out, nil
-	case "swapTokenToToken", "swapTokenToEther", "swapEtherToToken":
-		// no wallet this trade, just return empty
-		return tradeWithHintParam{}, nil
-	default:
-		return tradeWithHintParam{}, errors.Errorf("unexpected method %s", method.Name)
-	}
-}
+// type tradeWithHintV4Param struct {
+// 	Src               ethereum.Address
+// 	SrcAmount         *big.Int
+// 	Dest              ethereum.Address
+// 	DestAddress       ethereum.Address
+// 	MaxDestAmount     *big.Int
+// 	MinConversionRate *big.Int
+// 	WalletID          ethereum.Address `abi:"walletId"`
+// 	Hint              []byte
+// }
 
 func fillAddReserveToStorage(log types.Log) error {
 	// TODO: get
@@ -136,10 +121,11 @@ func (crawler *Crawler) assembleTradeLogsV4(eventLogs []types.Log) ([]common.Tra
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)
 			tradeLog = common.TradeLog{}
-		case addReserveToStorage:
+		case addReserveToStorageEvent:
 			if err := fillAddReserveToStorage(log); err != nil {
 				return result, err
 			}
+		case reserveRebateWalletSetEvent:
 		default:
 			return nil, errUnknownLogTopic
 		}

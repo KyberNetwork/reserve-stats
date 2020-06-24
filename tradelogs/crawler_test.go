@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/favadi/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/nanmu42/etherscan-api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

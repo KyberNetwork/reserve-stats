@@ -3,6 +3,7 @@ package tradelogs
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	appname "github.com/KyberNetwork/reserve-stats/app-names"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/tokenrate"
@@ -79,14 +81,17 @@ func NewCrawler(sugar *zap.SugaredLogger, client *ethclient.Client, broadcastCli
 // Crawler gets trade logs on KyberNetwork on blockchain, adding the
 // information about USD equivalent on each trade.
 type Crawler struct {
-	sugar                 *zap.SugaredLogger
-	ethClient             *ethclient.Client
-	txTime                *blockchain.BlockTimeResolver
-	broadcastClient       broadcast.Interface
-	rateProvider          tokenrate.ETHUSDRateProvider
-	addresses             []ethereum.Address
-	startingBlocks        deployment.VersionedStartingBlocks
-	volumeExludedReserves []ethereum.Address
+	sugar                   *zap.SugaredLogger
+	ethClient               *ethclient.Client
+	txTime                  *blockchain.BlockTimeResolver
+	broadcastClient         broadcast.Interface
+	rateProvider            tokenrate.ETHUSDRateProvider
+	addresses               []ethereum.Address
+	startingBlocks          deployment.VersionedStartingBlocks
+	volumeExludedReserves   []ethereum.Address
+	kyberStorageContract    contracts.KyberStorage
+	kyberFeeHandlerContract contracts.KyberFeeHandler
+	kyberNetworkContract    contracts.KyberNetwork
 
 	etherscanClient *etherscan.Client
 	networkProxy    ethereum.Address
@@ -269,6 +274,17 @@ func fillKyberTradeV3(tradeLog common.TradeLog, logItem types.Log, volumeExclude
 	tradeLog.ReceiverAddress = receiverAddress
 
 	return tradeLog, nil
+}
+
+func (crawler *Crawler) fillKyberTradeV4(tradelog common.TradeLog, logItem types.Log, volumeExcludedReserves []ethereum.Address) (common.TradeLog, error) {
+	trade, err := crawler.kyberNetworkContract.ParseKyberTrade(logItem)
+	if err != nil {
+		return tradelog, err
+	}
+
+	// TODO: fill tradelog with infor from trade
+	fmt.Println(trade)
+	return tradelog, nil
 }
 
 func logDataToKyberTradeV2Params(data []byte) (ethereum.Address, ethereum.Address, ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {

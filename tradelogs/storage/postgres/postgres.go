@@ -67,9 +67,17 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 	return result.Int64, nil
 }
 
-func (tldb *TradeLogDB) saveReserveAddress(tx *sqlx.Tx, reserveAddressArray []string) error {
-	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
-	query := fmt.Sprintf(insertionAddressTemplate, schema.ReserveTableName)
+func (tldb *TradeLogDB) saveReserveAddress(tx *sqlx.Tx, reserveAddressArray, reserveIDArray []string, blockNumberArray []uint64) error {
+	var (
+		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
+	)
+	// query := fmt.Sprintf(insertionAddressTemplate, schema.ReserveTableName)
+	query := fmt.Sprintf(`INSERT INTO %[1]s(address, reserve_id, block_number) 
+	VALUES (
+		UNNEST($1::TEXT),
+		UNNEST($2::TEXT),
+		UNNEST($3::INTEGER)
+	)`, schema.ReserveTableName) // TODO: define conflict here
 	logger.Debugw("updating rsv...", "query", query)
 	_, err := tx.Exec(query, pq.StringArray(reserveAddressArray))
 	return err
@@ -111,12 +119,13 @@ func (tldb *TradeLogDB) UpdateTokens(tokensArray []string, symbolArray []string)
 // SaveTradeLogs persist trade logs to DB
 func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
 	var (
-		logger              = tldb.sugar.With("func", caller.GetCurrentFunctionName())
-		reserveAddress      = make(map[string]struct{})
-		reserveAddressArray []string
-		tokens              = make(map[string]struct{})
-		tokensArray         []string
-		records             []*record
+		logger                              = tldb.sugar.With("func", caller.GetCurrentFunctionName())
+		reserveAddress                      = make(map[string]struct{})
+		reserveAddressArray, reserveIDArray []string
+		blockNumbers                        []uint64
+		tokens                              = make(map[string]struct{})
+		tokensArray                         []string
+		records                             []*record
 
 		users = make(map[ethereum.Address]struct{})
 	)
@@ -168,7 +177,7 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
 	}
 	defer pgsql.CommitOrRollback(tx, logger, &err)
 
-	err = tldb.saveReserveAddress(tx, reserveAddressArray)
+	err = tldb.saveReserveAddress(tx, reserveAddressArray, reserveIDArray, blockNumbers)
 	if err != nil {
 		return err
 	}

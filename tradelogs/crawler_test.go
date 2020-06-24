@@ -1,21 +1,33 @@
 package tradelogs
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
 	"math/big"
 	"testing"
 	"time"
 
+	ether "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/favadi/go-ethereum/ethclient"
 	"github.com/nanmu42/etherscan-api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
+)
+
+const (
+	alchemyRopsten = "https://eth-ropsten.alchemyapi.io/v2/GvXu_IIrL0U10ZpgTXKjOGIA06KcwzEK"
 )
 
 type mockBroadCastClient struct{}
@@ -334,4 +346,71 @@ func TestDecodeTrade(t *testing.T) {
 	assert.Equal(t, ethereum.HexToAddress("0x6B175474E89094C44Da98b954EedeAC495271d0F"), data.Src)
 	assert.Equal(t, ethereum.HexToAddress("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"), data.Dest)
 	assert.Equal(t, ethereum.HexToAddress("0xF1AA99C69715F423086008eB9D06Dc1E35Cc504d"), data.WalletID)
+}
+
+func TestTraceAddReserve(t *testing.T) {
+	c, err := ethclient.Dial(alchemyRopsten)
+	require.NoError(t, err)
+	topics := [][]ethereum.Hash{
+		{
+			ethereum.HexToHash(addReserveToStorageEvent),
+		},
+	}
+	query := ether.FilterQuery{
+		FromBlock: big.NewInt(8008389),
+		ToBlock:   big.NewInt(8008389),
+		Addresses: []ethereum.Address{ethereum.HexToAddress("0xa4ead31a6c8e047e01ce1128e268c101ad391959")},
+		Topics:    topics,
+	}
+	logs, err := c.FilterLogs(context.Background(), query)
+	require.NoError(t, err)
+	ab, err := abi.JSON(bytes.NewReader([]byte(contracts.KyberStorageABI)))
+	require.NoError(t, err)
+
+	type AddReserveToStorageEvent struct {
+		ReserveType uint8
+		Add         bool
+	}
+
+	for _, log := range logs {
+		t.Log("hash", log.TxHash.String())
+		var d AddReserveToStorageEvent
+		for _, d := range log.Topics {
+			t.Log("topic", d.String())
+		}
+		err = ab.Unpack(&d, "AddReserveToStorage", log.Data)
+		require.NoError(t, err)
+		t.Log("rawdata", log.Data)
+	}
+}
+
+func TestCrawlFeeDistributed(t *testing.T) {
+	c, err := ethclient.Dial(alchemyRopsten)
+	require.NoError(t, err)
+	topics := [][]ethereum.Hash{
+		{
+			ethereum.HexToHash(feeDistributedEvent),
+		},
+	}
+	query := ether.FilterQuery{
+		FromBlock: big.NewInt(8151682),
+		ToBlock:   big.NewInt(8152370),
+		Addresses: []ethereum.Address{ethereum.HexToAddress("0xe57B2c3b4E44730805358131a6Fc244C57178Da7")},
+		Topics:    topics,
+	}
+	logs, err := c.FilterLogs(context.Background(), query)
+	require.NoError(t, err)
+	kyberFeeHandlerContract, err := contracts.NewKyberFeeHandler(ethereum.HexToAddress("0xe57B2c3b4E44730805358131a6Fc244C57178Da7"), c)
+	require.NoError(t, err)
+
+	for _, log := range logs {
+		fmt.Printf("hash: %s\n", log.TxHash.String())
+		for _, t := range log.Topics {
+			fmt.Printf("topic: %s\n", t.String())
+		}
+		d, err := kyberFeeHandlerContract.ParseFeeDistributed(log)
+		require.NoError(t, err)
+		dataByte, _ := json.Marshal(d)
+		fmt.Printf("%s\n", dataByte)
+	}
 }

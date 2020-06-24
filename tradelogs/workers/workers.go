@@ -97,6 +97,8 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 	addresses = append(addresses, contracts.OldBurnerContractAddress().MustGetFromContext(fj.c)...)
 	addresses = append(addresses, contracts.OldNetworkContractAddress().MustGetFromContext(fj.c)...)
 	addresses = append(addresses, contracts.OldProxyContractAddress().MustGetFromContext(fj.c)...)
+	addresses = append(addresses, contracts.KyberFeeHandlerContractAddress().MustGetFromContext(fj.c)...)
+	addresses = append(addresses, contracts.KyberStorageContractAddress().MustGetFromContext(fj.c)...)
 
 	// logger.Fatalw("addresses", "addresses", addresses)
 

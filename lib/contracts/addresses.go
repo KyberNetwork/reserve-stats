@@ -50,6 +50,16 @@ func VolumeExcludedReserves() deployment.Address {
 	return volumeExcludedReserves
 }
 
+// KyberStorageContractAddress return contract address of kyber storage for all deployments
+func KyberStorageContractAddress() deployment.Address {
+	return kyberStorageContractAddress
+}
+
+// KyberFeeHandlerContractAddress return contract address of kyber fee handler for all deployments
+func KyberFeeHandlerContractAddress() deployment.Address {
+	return feeHandlerContractAddress
+}
+
 var (
 	networkContractAddress = deployment.NewAddress(
 		// update address for istanbul fork
@@ -77,6 +87,18 @@ var (
 		[]common.Address{common.HexToAddress("0x8007aa43792A392b221DC091bdb2191E5fF626d1")},
 		[]common.Address{common.HexToAddress("0x39682A7b8E4A03b2c8dC6DA6E0146Aee4E29A306")},
 		[]common.Address{common.HexToAddress("0x06b0fbaba8fba5161f725f2159de1e1d6409c35f")},
+	)
+
+	feeHandlerContractAddress = deployment.NewAddress(
+		[]common.Address{common.HexToAddress("")},                                           // production
+		[]common.Address{common.HexToAddress("")},                                           // staging
+		[]common.Address{common.HexToAddress("0xe57B2c3b4E44730805358131a6Fc244C57178Da7")}, // ropsten
+	)
+
+	kyberStorageContractAddress = deployment.NewAddress(
+		[]common.Address{common.HexToAddress("")},
+		[]common.Address{common.HexToAddress("")},
+		[]common.Address{common.HexToAddress("0xa4ead31a6c8e047e01ce1128e268c101ad391959")},
 	)
 
 	oldProxyContractAddress = deployment.NewAddress(

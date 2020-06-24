@@ -1,6 +1,7 @@
 package tradelogs
 
 import (
+	"fmt"
 	"math/big"
 	"strings"
 	"time"
@@ -22,7 +23,7 @@ const (
 	reserveRebateWalletSetEvent = "0x42cac9e63e37f62d5689493d04887a67fe3c68e1d3763c3f0890e1620a0465b3"
 
 	//
-	feeDistributedEvent = ""
+	feeDistributedEvent = "0x53e2e1b5ab64e0a76fcc6a932558eba265d4e58c512401a7d776ae0f8fc08994"
 )
 
 func init() {
@@ -57,21 +58,30 @@ func (crawler *Crawler) fetchTradeLogV4(fromBlock, toBlock *big.Int, timeout tim
 	return result, nil
 }
 
-// type tradeWithHintV4Param struct {
-// 	Src               ethereum.Address
-// 	SrcAmount         *big.Int
-// 	Dest              ethereum.Address
-// 	DestAddress       ethereum.Address
-// 	MaxDestAmount     *big.Int
-// 	MinConversionRate *big.Int
-// 	WalletID          ethereum.Address `abi:"walletId"`
-// 	Hint              []byte
-// }
+func (crawler *Crawler) fillAddReserveToStorage(log types.Log) error {
+	reserve, err := crawler.kyberStorageContract.ParseAddReserveToStorage(log)
+	if err != nil {
+		return err
+	}
 
-func fillAddReserveToStorage(log types.Log) error {
-	// TODO: get
+	// TODO: add result to db
+	fmt.Println(reserve)
 	return nil
-	//
+}
+
+func fillRebateWalletSet(log types.Log) error {
+	return nil
+}
+
+func (crawler *Crawler) fillFeeDistributed(log types.Log) error {
+	fee, err := crawler.kyberFeeHandlerContract.ParseFeeDistributed(log)
+	if err != nil {
+		return err
+	}
+
+	// TODO: save fee into db
+	fmt.Println(fee)
+	return nil
 }
 
 func (crawler *Crawler) assembleTradeLogsV4(eventLogs []types.Log) ([]common.TradeLog, error) {
@@ -92,16 +102,12 @@ func (crawler *Crawler) assembleTradeLogsV4(eventLogs []types.Log) ([]common.Tra
 
 		topic := log.Topics[0]
 		switch topic.Hex() {
-		case feeToWalletEvent:
-			if tradeLog, err = fillWalletFees(tradeLog, log); err != nil {
-				return nil, err
-			}
-		case burnFeeEvent:
-			if tradeLog, err = fillBurnFees(tradeLog, log); err != nil {
+		case feeDistributedEvent:
+			if err := crawler.fillFeeDistributed(log); err != nil {
 				return nil, err
 			}
 		case kyberTradeEvent:
-			if tradeLog, err = fillKyberTradeV3(tradeLog, log, crawler.volumeExludedReserves); err != nil {
+			if tradeLog, err = crawler.fillKyberTradeV4(tradeLog, log, crawler.volumeExludedReserves); err != nil {
 				return nil, err
 			}
 			receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
@@ -122,10 +128,13 @@ func (crawler *Crawler) assembleTradeLogsV4(eventLogs []types.Log) ([]common.Tra
 			result = append(result, tradeLog)
 			tradeLog = common.TradeLog{}
 		case addReserveToStorageEvent:
-			if err := fillAddReserveToStorage(log); err != nil {
+			if err := crawler.fillAddReserveToStorage(log); err != nil {
 				return result, err
 			}
 		case reserveRebateWalletSetEvent:
+			if err := fillRebateWalletSet(log); err != nil {
+				return result, err
+			}
 		default:
 			return nil, errUnknownLogTopic
 		}

@@ -58,6 +58,14 @@ func (crawler *Crawler) fetchTradeLogV4(fromBlock, toBlock *big.Int, timeout tim
 	return result, nil
 }
 
+// AddReserveToStorage object
+type AddReserveToStorage struct {
+	Reserve      ethereum.Address `json:"reserve"`
+	ReserveID    [32]byte         `json:"reserve_id"`
+	RebateWallet ethereum.Address `json:"rebate_wallet"`
+	BlockNumber  uint64           `json:"block_number"`
+}
+
 func (crawler *Crawler) fillAddReserveToStorage(log types.Log) error {
 	reserve, err := crawler.kyberStorageContract.ParseAddReserveToStorage(log)
 	if err != nil {
@@ -67,6 +75,13 @@ func (crawler *Crawler) fillAddReserveToStorage(log types.Log) error {
 	// TODO: add result to db
 	fmt.Println(reserve)
 	return nil
+}
+
+// UpdateRebateWallet object
+type UpdateRebateWallet struct {
+	RebateWallet ethereum.Address `json:"rebate_wallet"`
+	ReserveID    [32]byte         `json:"reserve_id"`
+	BlockNumber  uint64           `json:"block_number"`
 }
 
 func fillRebateWalletSet(log types.Log) error {

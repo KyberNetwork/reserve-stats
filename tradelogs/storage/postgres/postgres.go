@@ -8,12 +8,10 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
-	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 )
@@ -65,161 +63,6 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 		return 0, err
 	}
 	return result.Int64, nil
-}
-
-func (tldb *TradeLogDB) saveReserveAddress(tx *sqlx.Tx, reserveAddressArray, reserveIDArray []string, blockNumberArray []uint64) error {
-	var (
-		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
-	)
-	// query := fmt.Sprintf(insertionAddressTemplate, schema.ReserveTableName)
-	query := fmt.Sprintf(`INSERT INTO %[1]s(address, reserve_id, block_number) 
-	VALUES (
-		UNNEST($1::TEXT),
-		UNNEST($2::TEXT),
-		UNNEST($3::INTEGER)
-	)`, schema.ReserveTableName) // TODO: define conflict here
-	logger.Debugw("updating rsv...", "query", query)
-	_, err := tx.Exec(query, pq.StringArray(reserveAddressArray))
-	return err
-}
-
-func (tldb *TradeLogDB) saveTokens(tx *sqlx.Tx, tokensArray []string) error {
-	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
-	query := fmt.Sprintf(insertionAddressTemplate, schema.TokenTableName)
-	logger.Debugw("updating tokens...", "query", query)
-	_, err := tx.Exec(query, pq.StringArray(tokensArray))
-	return err
-}
-
-// GetTokenSymbol return symbol of provided token address
-func (tldb *TradeLogDB) GetTokenSymbol(address string) (string, error) {
-	var (
-		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
-		symbol string
-	)
-	query := fmt.Sprintf("SELECT symbol FROM %1s WHERE address = $1;", schema.TokenTableName)
-	logger.Debugw("get token symbol", "token", address, "query", query)
-	if err := tldb.db.Get(&symbol, query, ethereum.HexToAddress(address).Hex()); err != nil {
-		if err != sql.ErrNoRows {
-			return symbol, fmt.Errorf("failed to get token symbol: %s", err.Error())
-		}
-	}
-	return symbol, nil
-}
-
-// UpdateTokens update token symbol, insert new record if the token have not yet added to the table
-func (tldb *TradeLogDB) UpdateTokens(tokensArray []string, symbolArray []string) error {
-	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
-	query := fmt.Sprintf(updateTokenSymbolTemplate, schema.TokenTableName)
-	logger.Debugw("updating token symbols ...", "query", query)
-	_, err := tldb.db.Exec(query, pq.StringArray(tokensArray), pq.StringArray(symbolArray))
-	return err
-}
-
-// SaveTradeLogs persist trade logs to DB
-func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
-	var (
-		logger                              = tldb.sugar.With("func", caller.GetCurrentFunctionName())
-		reserveAddress                      = make(map[string]struct{})
-		reserveAddressArray, reserveIDArray []string
-		blockNumbers                        []uint64
-		tokens                              = make(map[string]struct{})
-		tokensArray                         []string
-		records                             []*record
-
-		users = make(map[ethereum.Address]struct{})
-	)
-	for _, log := range logs {
-		r, err := tldb.recordFromTradeLog(log)
-		if err != nil {
-			return err
-		}
-
-		if _, ok := users[log.UserAddress]; ok {
-			r.IsFirstTrade = false
-		} else {
-			isFirstTrade, err := tldb.isFirstTrade(log.UserAddress)
-			if err != nil {
-				return err
-			}
-			r.IsFirstTrade = isFirstTrade
-		}
-		records = append(records, r)
-		users[log.UserAddress] = struct{}{}
-	}
-
-	for _, r := range records {
-		reserve := r.SrcReserveAddress
-		if _, ok := reserveAddress[reserve]; !ok {
-			reserveAddress[reserve] = struct{}{}
-			reserveAddressArray = append(reserveAddressArray, reserve)
-		}
-		reserve = r.DstReserveAddress
-		if _, ok := reserveAddress[reserve]; !ok {
-			reserveAddress[reserve] = struct{}{}
-			reserveAddressArray = append(reserveAddressArray, reserve)
-		}
-		token := r.SrcAddress
-		if _, ok := tokens[reserve]; !ok {
-			tokens[token] = struct{}{}
-			tokensArray = append(tokensArray, token)
-		}
-		token = r.DestAddress
-		if _, ok := tokens[reserve]; !ok {
-			tokens[token] = struct{}{}
-			tokensArray = append(tokensArray, token)
-		}
-	}
-
-	tx, err := tldb.db.Beginx()
-	if err != nil {
-		return err
-	}
-	defer pgsql.CommitOrRollback(tx, logger, &err)
-
-	err = tldb.saveReserveAddress(tx, reserveAddressArray, reserveIDArray, blockNumbers)
-	if err != nil {
-		return err
-	}
-
-	err = tldb.saveTokens(tx, tokensArray)
-	if err != nil {
-		return err
-	}
-
-	for _, r := range records {
-		logger.Debugw("Record", "record", r)
-		_, err = tx.NamedExec(insertionUserTemplate, r)
-		if err != nil {
-			logger.Debugw("Error while add users", "error", err)
-			return err
-		}
-
-		_, err = tx.NamedExec(insertionWalletTemplate, r)
-		if err != nil {
-			logger.Debugw("Error while add wallet", "error", err)
-			return err
-		}
-
-		_, err = tx.NamedExec(insertionTradelogsTemplate, r)
-		if err != nil {
-			logger.Debugw("Error while add trade logs", "error", err)
-			return err
-		}
-	}
-
-	return err
-}
-
-func (tldb *TradeLogDB) isFirstTrade(userAddr ethereum.Address) (bool, error) {
-	query := `SELECT NOT EXISTS(SELECT NULL FROM "` + schema.UserTableName + `" WHERE address=$1);`
-	row := tldb.db.QueryRow(query, userAddr.Hex())
-	var result bool
-	if err := row.Scan(&result); err != nil {
-		tldb.sugar.Error(err)
-		return false, err
-	}
-	return result, nil
 }
 
 type tradeLogDBData struct {
@@ -383,14 +226,6 @@ const insertionAddressTemplate = `INSERT INTO %[1]s(
 	unnest($1::TEXT[])
 )
 ON CONFLICT ON CONSTRAINT %[1]s_address_key DO NOTHING`
-
-const updateTokenSymbolTemplate = `INSERT INTO %[1]s(
-	address,
-	symbol
-) VALUES (
-	unnest($1::TEXT[]), 
-	unnest($2::TEXT[])
-) ON CONFLICT ON CONSTRAINT %[1]s_address_key DO UPDATE SET symbol = EXCLUDED.symbol`
 
 const insertionWalletTemplate string = `
 INSERT INTO wallet(

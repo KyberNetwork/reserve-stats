@@ -95,9 +95,9 @@ type tradeLogDBData struct {
 	TransactionFee     float64        `db:"transaction_fee"`
 }
 
-func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradeLog, error) {
+func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4, error) {
 	var (
-		tradeLog common.TradeLog
+		tradeLog common.TradelogV4
 		err      error
 
 		ethAmountInWei                     *big.Int
@@ -132,43 +132,49 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradeLog, e
 		return tradeLog, err
 	}
 
-	tradeLog = common.TradeLog{
+	tradeLog = common.TradelogV4{
 		TransactionHash:   ethereum.HexToHash(r.TxHash),
 		Index:             r.LogIndex,
 		Timestamp:         r.Timestamp,
 		BlockNumber:       r.BlockNumber,
 		EthAmount:         ethAmountInWei,
 		OriginalEthAmount: originalEthAmountInWei,
-		UserAddress:       ethereum.HexToAddress(r.UserAddress),
-		SrcAddress:        SrcAddress,
-		DestAddress:       DstAddress,
-		SrcAmount:         srcAmountInWei,
-		DestAmount:        dstAmountInWei,
-		SrcBurnAmount:     r.SrcBurnAmount,
-		DstBurnAmount:     r.DstBurnAmount,
-		SrcReserveAddress: ethereum.HexToAddress(r.SrcReserveAddress),
-		DstReserveAddress: ethereum.HexToAddress(r.DstReserveAddress),
-		IP:                r.IP.String,
-		Country:           r.Country.String,
-		IntegrationApp:    r.IntegrationApp,
-		FiatAmount:        r.EthAmount * r.EthUsdRate,
-		WalletAddress:     ethereum.HexToAddress(r.WalletAddress),
-		TxSender:          ethereum.HexToAddress(r.TxSender),
-		ReceiverAddress:   ethereum.HexToAddress(r.ReceiverAddr),
-		ETHUSDRate:        r.EthUsdRate,
-		GasUsed:           r.GasUsed,
-		GasPrice:          gasPriceInWei,
-		TransactionFee:    transactionFeeInWei,
+		User: common.KyberUserInfo{
+			UserAddress: ethereum.HexToAddress(r.UserAddress),
+			IP:          r.IP.String,
+			Country:     r.Country.String,
+		},
+		TokenInfo: common.TradeTokenInfo{
+			SrcAddress:  SrcAddress,
+			DestAddress: DstAddress,
+		},
+		SrcAmount:  srcAmountInWei,
+		DestAmount: dstAmountInWei,
+		// SrcBurnAmount:     r.SrcBurnAmount,
+		// DstBurnAmount:     r.DstBurnAmount,
+		// SrcReserveAddress: ethereum.HexToAddress(r.SrcReserveAddress),
+		// DstReserveAddress: ethereum.HexToAddress(r.DstReserveAddress),
+		IntegrationApp:  r.IntegrationApp,
+		FiatAmount:      r.EthAmount * r.EthUsdRate,
+		WalletAddress:   ethereum.HexToAddress(r.WalletAddress),
+		ReceiverAddress: ethereum.HexToAddress(r.ReceiverAddr),
+		ETHUSDRate:      r.EthUsdRate,
+		TxDetail: common.TxDetail{
+			GasUsed:        r.GasUsed,
+			GasPrice:       gasPriceInWei,
+			TransactionFee: transactionFeeInWei,
+			TxSender:       ethereum.HexToAddress(r.TxSender),
+		},
 	}
 	return tradeLog, nil
 }
 
 // LoadTradeLogsByTxHash get list of tradelogs by tx hash
-func (tldb *TradeLogDB) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradeLog, error) {
+func (tldb *TradeLogDB) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradelogV4, error) {
 	var (
 		logger      = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 		queryResult []tradeLogDBData
-		result      = make([]common.TradeLog, 0)
+		result      = make([]common.TradelogV4, 0)
 	)
 	err := tldb.db.Select(&queryResult, selectTradeLogsWithTxHashQuery, tx.Hex())
 	if err != nil {
@@ -193,11 +199,11 @@ func (tldb *TradeLogDB) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradeL
 }
 
 // LoadTradeLogs get list of tradelogs by timestamp from time to time
-func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
+func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradelogV4, error) {
 	var (
 		logger      = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 		queryResult []tradeLogDBData
-		result      = make([]common.TradeLog, 0)
+		result      = make([]common.TradelogV4, 0)
 	)
 	err := tldb.db.Select(&queryResult, selectTradeLogsQuery, from, to)
 	if err != nil {
@@ -258,8 +264,6 @@ INSERT INTO "` + schema.TradeLogsTableName + `"(
  	user_address_id,
  	src_address_id,
  	dst_address_id,
- 	src_reserve_address_id,
- 	dst_reserve_address_id,
  	src_amount,
  	dst_amount,
  	wallet_address_id,
@@ -289,8 +293,6 @@ INSERT INTO "` + schema.TradeLogsTableName + `"(
  	(SELECT id FROM users WHERE address=:user_address),
  	(SELECT id FROM token WHERE address=:src_address),
  	(SELECT id FROM token WHERE address=:dst_address),
- 	(SELECT id FROM reserve WHERE address=:src_reserve_address),
- 	(SELECT id FROM reserve WHERE address=:dst_reserve_address),
  	:src_amount,
  	:dst_amount,
  	(SELECT id FROM wallet WHERE address=:wallet_address),
@@ -322,8 +324,6 @@ UPDATE SET -- update every fields if record exists (except field is_first_trade)
  	user_address_id = (SELECT id FROM users WHERE address=:user_address),
  	src_address_id = (SELECT id FROM token WHERE address=:src_address),
  	dst_address_id = (SELECT id FROM token WHERE address=:dst_address),
- 	src_reserve_address_id = (SELECT id FROM reserve WHERE address=:src_reserve_address),
- 	dst_reserve_address_id = (SELECT id FROM reserve WHERE address=:dst_reserve_address),
  	src_amount = :src_amount,
  	dst_amount = :dst_amount,
  	wallet_address_id = (SELECT id FROM wallet WHERE address=:wallet_address),

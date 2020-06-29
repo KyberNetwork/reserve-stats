@@ -22,10 +22,10 @@ import (
 	"github.com/KyberNetwork/tokenrate/coingecko"
 )
 
-type executeJob func(*zap.SugaredLogger) ([]common.TradeLog, error)
+type executeJob func(*zap.SugaredLogger) ([]common.TradelogV4, error)
 
 type job interface {
-	execute(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
+	execute(sugar *zap.SugaredLogger) ([]common.TradelogV4, error)
 	info() (order int, from, to *big.Int)
 }
 
@@ -54,9 +54,9 @@ type FetcherJob struct {
 }
 
 // retry the given fn function for attempts time with sleep duration between before returns an error.
-func retry(fn executeJob, attempts int, logger *zap.SugaredLogger) ([]common.TradeLog, error) {
+func retry(fn executeJob, attempts int, logger *zap.SugaredLogger) ([]common.TradelogV4, error) {
 	var (
-		result []common.TradeLog
+		result []common.TradelogV4
 		err    error
 	)
 
@@ -73,7 +73,7 @@ func retry(fn executeJob, attempts int, logger *zap.SugaredLogger) ([]common.Tra
 	return result, err
 }
 
-func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error) {
+func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradelogV4, error) {
 	logger := sugar.With(
 		"from", fj.from.String(),
 		"to", fj.to.String())
@@ -104,8 +104,12 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 
 	volumeExcludedReserve := contracts.VolumeExcludedReserves().MustGetFromContext(fj.c)
 
+	kyberStorageAddr := contracts.KyberStorageContractAddress().MustGetOneFromContext(fj.c)
+	feeHandlerAddr := contracts.KyberFeeHandlerContractAddress().MustGetOneFromContext(fj.c)
+	kyberNetworkAddr := contracts.NetworkContractAddress().MustGetOneFromContext(fj.c)
+
 	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks,
-		fj.etherscanClient, volumeExcludedReserve, fj.networkProxyAddr)
+		fj.etherscanClient, volumeExcludedReserve, fj.networkProxyAddr, kyberStorageAddr, feeHandlerAddr, kyberNetworkAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +122,7 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 	return tradeLogs, nil
 }
 
-func (fj *FetcherJob) execute(sugar *zap.SugaredLogger) ([]common.TradeLog, error) {
+func (fj *FetcherJob) execute(sugar *zap.SugaredLogger) ([]common.TradelogV4, error) {
 	return retry(fj.fetch, fj.attempts, sugar)
 }
 
@@ -223,7 +227,7 @@ func (p *Pool) markAsFailed(order int) {
 }
 
 // serialSaveTradeLogs waits until the job with order right before it completed and saving the logs to database.
-func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradeLog, fromBlock uint64) error {
+func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradelogV4, fromBlock uint64) error {
 	var (
 		logger = p.sugar.With(
 			"func", caller.GetCurrentFunctionName(),

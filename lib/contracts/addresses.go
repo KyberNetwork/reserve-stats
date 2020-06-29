@@ -65,7 +65,7 @@ var (
 		// update address for istanbul fork
 		[]common.Address{common.HexToAddress("0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd")},
 		[]common.Address{common.HexToAddress("0xafBf0D08269a7eEe8d587121f3B0616c8CeF5077")},
-		[]common.Address{common.HexToAddress("0x753fe1914db38ee744e071baadd123f50f9c8e46")},
+		[]common.Address{common.HexToAddress("0x9EC49C41Fdc4C79fDb042AF37659f2E3220ad0a4")},
 	)
 	internalReserveAddress = deployment.NewAddress(
 		[]common.Address{common.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F")},
@@ -80,7 +80,7 @@ var (
 	proxyContractAddress = deployment.NewAddress(
 		[]common.Address{common.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")},
 		[]common.Address{common.HexToAddress("0x6326dd73E368c036D4C4997053a021CBc52c7367")},
-		[]common.Address{common.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")},
+		[]common.Address{common.HexToAddress("0xa16Fc6e9b5D359797999adA576F7f4a4d57E8F75")},
 	)
 	burnerContractAddress = deployment.NewAddress(
 		// updated address for istanbul fork
@@ -106,7 +106,9 @@ var (
 		[]common.Address{
 			common.HexToAddress("0x65897aDCBa42dcCA5DD162c647b1cC3E31238490"),
 		},
-		[]common.Address{},
+		[]common.Address{
+			common.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755"),
+		},
 	)
 
 	oldNetworkContractAddress = deployment.NewAddress(
@@ -123,7 +125,9 @@ var (
 			common.HexToAddress("0x706aBcE058DB29eB36578c463cf295F180a1Fe9C"),
 			// staging old network contract
 			common.HexToAddress("0xC14f34233071543E979F6A79AA272b0AB1B4947D")},
-		[]common.Address{},
+		[]common.Address{
+			common.HexToAddress("0x753fe1914db38ee744e071baadd123f50f9c8e46"),
+		},
 	)
 
 	oldBurnerContractAddress = deployment.NewAddress(

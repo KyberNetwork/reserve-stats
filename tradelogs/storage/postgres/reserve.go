@@ -46,14 +46,19 @@ func (tldb *TradeLogDB) AddUpdateRebateWallet(rebateWallet *tradelogs.UpdateReba
 // use for version before v4
 func (tldb *TradeLogDB) saveReserveAddress(tx *sqlx.Tx, reserveAddressArray []string) error {
 	var (
-		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
+		logger = tldb.sugar.With(
+			"func", caller.GetCurrentFunctionName(),
+			"reserves", reserveAddressArray,
+		)
 	)
 	// query := fmt.Sprintf(insertionAddressTemplate, schema.ReserveTableName)
 	query := fmt.Sprintf(`INSERT INTO %[1]s(address) 
-	VALUES (
-		UNNEST($1::TEXT),
-	)`, schema.ReserveTableName) // TODO: define conflict here
+	VALUES (UNNEST($1::TEXT[])) ON CONFLICT ON CONSTRAINT reserve_pk DO NOTHING;`, schema.ReserveTableName) // TODO: define conflict here
 	logger.Debugw("updating rsv...", "query", query)
+
 	_, err := tx.Exec(query, pq.StringArray(reserveAddressArray))
+	if err != nil {
+		logger.Errorw("failed to update reserve", "error", err)
+	}
 	return err
 }

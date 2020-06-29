@@ -28,14 +28,14 @@ DO $$
 $$;
 
 CREATE TABLE IF NOT EXISTS "reserve" (
-	id SERIAL PRIMARY KEY,
-	address TEXT UNIQUE NOT NULL
+	id SERIAL,
+	address TEXT NOT NULL,
+	reserve_id TEXT DEFAULT '',
+	rebate_wallet TEXT DEFAULT '', 
+	block_number INTEGER DEFAULT 0,
+	CONSTRAINT reserve_pk PRIMARY KEY(address, reserve_id, block_number)
 );
 
-ALTER TABLE "reserve" 
-	ADD COLUMN IF NOT EXISTS "reserve_id" TEXT DEFAULT '',
-	ADD COLUMN IF NOT EXISTS "rebate_wallet" TEXT DEFAULT '', 
-	ADD COLUMN IF NOT EXISTS "block_number" INTEGER;
 
 
 DO $$ 
@@ -58,8 +58,6 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	user_address_id BIGINT NOT NULL REFERENCES users,
 	src_address_id BIGINT NOT NULL REFERENCES token,
 	dst_address_id BIGINT NOT NULL REFERENCES token,
-	src_reserve_address_id BIGINT NOT NULL REFERENCES reserve,
-	dst_reserve_address_id BIGINT NOT NULL REFERENCES reserve,
 	src_amount FLOAT(32),
 	dst_amount FLOAT(32),
 	wallet_address_id BIGINT NOT NULL REFERENCES wallet,
@@ -100,8 +98,6 @@ CREATE INDEX IF NOT EXISTS "trade_timestamp" ON "` + TradeLogsTableName + `"(tim
 CREATE INDEX IF NOT EXISTS "trade_user_address" ON "` + TradeLogsTableName + `"(user_address_id);
 CREATE INDEX IF NOT EXISTS "trade_src_address" ON "` + TradeLogsTableName + `"(src_address_id);
 CREATE INDEX IF NOT EXISTS "trade_dst_address" ON "` + TradeLogsTableName + `"(dst_address_id);
-CREATE INDEX IF NOT EXISTS "trade_src_reserve_address" ON "` + TradeLogsTableName + `"(src_reserve_address_id);
-CREATE INDEX IF NOT EXISTS "trade_dst_reserve_address" ON "` + TradeLogsTableName + `"(dst_reserve_address_id);
 CREATE INDEX IF NOT EXISTS "trade_wallet_address" ON "` + TradeLogsTableName + `"(wallet_address_id);
 CREATE INDEX IF NOT EXISTS "trade_tx_hash" ON "` + TradeLogsTableName + `"(tx_hash);
 
@@ -119,8 +115,6 @@ CREATE TABLE IF NOT EXISTS  "tradelog_v4" (
 	src_amount FLOAT(32),
 	dst_amount FLOAT(32),
 	platform_wallet_address_id BIGINT NOT NULL REFERENCES wallet,
-	t2e_reserves_id BIGINT[] NOT NULL REFERENCES reserve,
-	e2t_reserves_id BIGINT[] NOT NULL REFERENCES reserve, 
 	integration_app TEXT,
 	ip TEXT,
 	country TEXT,
@@ -137,6 +131,9 @@ CREATE TABLE IF NOT EXISTS  "tradelog_v4" (
 	PRIMARY KEY (tx_hash,index)
 );
 `
+
+// t2e_reserves_id BIGINT[] NOT NULL REFERENCES reserve,
+// e2t_reserves_id BIGINT[] NOT NULL REFERENCES reserve
 
 // DefaultDateFormat ...
 const DefaultDateFormat = "2006-01-02 15:04:05"

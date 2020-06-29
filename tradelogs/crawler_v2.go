@@ -19,8 +19,8 @@ const (
 	kyberTradeEventV2 = "0x1c8399ecc5c956b9cb18c820248b10b634cca4af308755e07cd467655e8ec3c7"
 )
 
-func (crawler *Crawler) fetchTradeLogV2(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
-	var result []common.TradeLog
+func (crawler *Crawler) fetchTradeLogV2(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradelogV4, error) {
+	var result []common.TradelogV4
 	topics := [][]ethereum.Hash{
 		{
 			ethereum.HexToHash(kyberTradeEventV2),
@@ -72,10 +72,10 @@ func getReserveFromReceipt(receipt *types.Receipt, logIndex uint) ethereum.Addre
 	return reserveAddr
 }
 
-func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.TradeLog, error) {
+func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.TradelogV4, error) {
 	var (
-		result   []common.TradeLog
-		tradeLog common.TradeLog
+		result   []common.TradelogV4
+		tradeLog common.TradelogV4
 		err      error
 	)
 
@@ -110,41 +110,42 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 				return nil, errors.Wrapf(err, "failed to resolve timestamp by block_number %v", log.BlockNumber)
 			}
 
-			tradeLog = assembleTradeLogsReserveAddr(tradeLog, crawler.sugar)
+			// tradeLog = assembleTradeLogsReserveAddr(tradeLog, crawler.sugar)
 
 			receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)
 			}
-			tradeLog.GasUsed = receipt.GasUsed
+			tradeLog.TxDetail.GasUsed = receipt.GasUsed
 
 			// when the tradelog does not contain burnfee and etherReceival event
 			// get tx receipt to get reserve address
-			if len(tradeLog.BurnFees) == 0 && blockchain.IsZeroAddress(tradeLog.SrcReserveAddress) {
+			if common.LengthBurnFees(tradeLog) == 0 && len(tradeLog.T2EReserves)+len(tradeLog.E2TReserves) == 0 {
 				crawler.sugar.Debug("trade logs has no burn fee, no ethReceival event, no wallet fee, getting reserve address from tx receipt")
-				tradeLog.SrcReserveAddress = getReserveFromReceipt(receipt, log.Index)
+				srcReserveAddress := getReserveFromReceipt(receipt, log.Index)
+				tradeLog.T2EReserves = append(tradeLog.T2EReserves, srcReserveAddress)
 			}
 			// set tradeLog.EthAmount
-			if tradeLog.SrcAddress == blockchain.ETHAddr {
+			if tradeLog.TokenInfo.SrcAddress == blockchain.ETHAddr {
 				tradeLog.EthAmount = tradeLog.SrcAmount
-			} else if tradeLog.DestAddress == blockchain.ETHAddr {
+			} else if tradeLog.TokenInfo.DestAddress == blockchain.ETHAddr {
 				tradeLog.EthAmount = tradeLog.DestAmount
 			}
 			// keep OriginalEthAmount as origin amount of EthAmount
 			tradeLog.OriginalEthAmount = big.NewInt(0).Set(tradeLog.EthAmount)
-			tradeLog.EthAmount = tradeLog.EthAmount.Mul(tradeLog.EthAmount, big.NewInt(int64(len(tradeLog.BurnFees))))
+			tradeLog.EthAmount = tradeLog.EthAmount.Mul(tradeLog.EthAmount, big.NewInt(int64(common.LengthBurnFees(tradeLog))))
 
 			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
 			if err != nil {
 				return result, errors.Wrap(err, "could not update trade log basic info")
 			}
-			tradeLog.TransactionFee = big.NewInt(0).Mul(tradeLog.GasPrice, big.NewInt(int64(tradeLog.GasUsed)))
+			tradeLog.TxDetail.TransactionFee = big.NewInt(0).Mul(tradeLog.TxDetail.GasPrice, big.NewInt(int64(tradeLog.TxDetail.GasUsed)))
 
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)
-			tradeLog = common.TradeLog{}
+			tradeLog = common.TradelogV4{}
 		default:
 			return nil, errUnknownLogTopic
 		}

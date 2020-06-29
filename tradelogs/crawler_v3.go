@@ -25,8 +25,8 @@ func init() {
 		panic(err)
 	}
 }
-func (crawler *Crawler) fetchTradeLogV3(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
-	var result []common.TradeLog
+func (crawler *Crawler) fetchTradeLogV3(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradelogV4, error) {
+	var result []common.TradelogV4
 
 	topics := [][]ethereum.Hash{
 		{
@@ -85,10 +85,10 @@ func decodeTradeInputParam(data []byte) (out tradeWithHintParam, err error) { //
 		return tradeWithHintParam{}, errors.Errorf("unexpected method %s", method.Name)
 	}
 }
-func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.TradeLog, error) {
+func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.TradelogV4, error) {
 	var (
-		result   []common.TradeLog
-		tradeLog common.TradeLog
+		result   []common.TradelogV4
+		tradeLog common.TradelogV4
 		err      error
 	)
 
@@ -119,7 +119,7 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)
 			}
-			tradeLog.GasUsed = receipt.GasUsed
+			tradeLog.TxDetail.GasUsed = receipt.GasUsed
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
 				return nil, errors.Wrapf(err, "failed to resolve timestamp by block_number %v", log.BlockNumber)
 			}
@@ -127,11 +127,11 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 			if err != nil {
 				return result, errors.Wrap(err, "could not update trade log basic info")
 			}
-			tradeLog.TransactionFee = big.NewInt(0).Mul(tradeLog.GasPrice, big.NewInt(int64(tradeLog.GasUsed)))
+			tradeLog.TxDetail.TransactionFee = big.NewInt(0).Mul(tradeLog.TxDetail.GasPrice, big.NewInt(int64(tradeLog.TxDetail.GasUsed)))
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)
-			tradeLog = common.TradeLog{}
+			tradeLog = common.TradelogV4{}
 		default:
 			return nil, errUnknownLogTopic
 		}

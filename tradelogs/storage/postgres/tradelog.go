@@ -1,6 +1,9 @@
 package postgres
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -14,7 +17,7 @@ func (tldb *TradeLogDB) SaveTradelogV4() error {
 }
 
 // SaveTradeLogs persist trade logs to DB
-func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
+func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradelogV4) (err error) {
 	var (
 		logger              = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 		reserveAddress      = make(map[string]struct{})
@@ -31,39 +34,45 @@ func (tldb *TradeLogDB) SaveTradeLogs(logs []common.TradeLog) (err error) {
 			return err
 		}
 
-		if _, ok := users[log.UserAddress]; ok {
+		byteRecords, _ := json.Marshal(r)
+		fmt.Printf("record: %s\n", byteRecords)
+
+		if _, ok := users[log.User.UserAddress]; ok {
 			r.IsFirstTrade = false
 		} else {
-			isFirstTrade, err := tldb.isFirstTrade(log.UserAddress)
+			isFirstTrade, err := tldb.isFirstTrade(log.User.UserAddress)
 			if err != nil {
 				return err
 			}
 			r.IsFirstTrade = isFirstTrade
 		}
 		records = append(records, r)
-		users[log.UserAddress] = struct{}{}
+		users[log.User.UserAddress] = struct{}{}
 	}
 
 	for _, r := range records {
-		reserve := r.SrcReserveAddress
-		if _, ok := reserveAddress[reserve]; !ok {
-			reserveAddress[reserve] = struct{}{}
-			reserveAddressArray = append(reserveAddressArray, reserve)
+		for _, reserve := range r.T2EReserves {
+			if _, ok := reserveAddress[reserve]; !ok {
+				reserveAddress[reserve] = struct{}{}
+				reserveAddressArray = append(reserveAddressArray, reserve)
+			}
+			token := r.SrcAddress
+			if _, ok := tokens[reserve]; !ok {
+				tokens[token] = struct{}{}
+				tokensArray = append(tokensArray, token)
+			}
 		}
-		reserve = r.DstReserveAddress
-		if _, ok := reserveAddress[reserve]; !ok {
-			reserveAddress[reserve] = struct{}{}
-			reserveAddressArray = append(reserveAddressArray, reserve)
-		}
-		token := r.SrcAddress
-		if _, ok := tokens[reserve]; !ok {
-			tokens[token] = struct{}{}
-			tokensArray = append(tokensArray, token)
-		}
-		token = r.DestAddress
-		if _, ok := tokens[reserve]; !ok {
-			tokens[token] = struct{}{}
-			tokensArray = append(tokensArray, token)
+
+		for _, reserve := range r.E2TReserves {
+			if _, ok := reserveAddress[reserve]; !ok {
+				reserveAddress[reserve] = struct{}{}
+				reserveAddressArray = append(reserveAddressArray, reserve)
+			}
+			token := r.DestAddress
+			if _, ok := tokens[reserve]; !ok {
+				tokens[token] = struct{}{}
+				tokensArray = append(tokensArray, token)
+			}
 		}
 	}
 

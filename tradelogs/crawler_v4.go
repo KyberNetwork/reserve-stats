@@ -1,7 +1,6 @@
 package tradelogs
 
 import (
-	"fmt"
 	"math/big"
 	"strings"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
+	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
@@ -19,11 +19,11 @@ const (
 	// use for crawler v4
 	addReserveToStorageEvent = "0x4649526e2876a69a4439244e5d8a32a6940a44a92b5390fdde1c22a26cc54004"
 
-	// use for crawler v4
 	reserveRebateWalletSetEvent = "0x42cac9e63e37f62d5689493d04887a67fe3c68e1d3763c3f0890e1620a0465b3"
 
-	//
 	feeDistributedEvent = "0x53e2e1b5ab64e0a76fcc6a932558eba265d4e58c512401a7d776ae0f8fc08994"
+
+	kyberTradeEventV4 = "0x30bbea603a7b36858fe5e3ec6ba5ff59dde039d02120d758eacfaed01520577d"
 )
 
 func init() {
@@ -33,13 +33,13 @@ func init() {
 		panic(err)
 	}
 }
-func (crawler *Crawler) fetchTradeLogV4(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
-	var result []common.TradeLog
+func (crawler *Crawler) fetchTradeLogV4(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradelogV4, error) {
+	var result []common.TradelogV4
 
 	topics := [][]ethereum.Hash{
 		{
 			ethereum.HexToHash(feeDistributedEvent),
-			ethereum.HexToHash(kyberTradeEvent),
+			ethereum.HexToHash(kyberTradeEventV4),
 			ethereum.HexToHash(addReserveToStorageEvent),
 			ethereum.HexToHash(reserveRebateWalletSetEvent),
 		},
@@ -66,15 +66,23 @@ type AddReserveToStorage struct {
 	BlockNumber  uint64           `json:"block_number"`
 }
 
-func (crawler *Crawler) fillAddReserveToStorage(log types.Log) error {
+func (crawler *Crawler) fillAddReserveToStorage(tradelog common.TradelogV4, log types.Log) (common.TradelogV4, error) {
 	reserve, err := crawler.kyberStorageContract.ParseAddReserveToStorage(log)
 	if err != nil {
-		return err
+		return tradelog, err
 	}
 
-	// TODO: add result to db
-	fmt.Println(reserve)
-	return nil
+	if len(tradelog.Reserves) == 0 {
+		tradelog.Reserves = []common.Reserve{}
+	}
+	tradelog.Reserves = append(tradelog.Reserves, common.Reserve{
+		Address:      reserve.Reserve,
+		ReserveID:    reserve.ReserveId,
+		RebateWallet: reserve.RebateWallet,
+		BlockNumber:  log.BlockNumber,
+	})
+
+	return tradelog, nil
 }
 
 // UpdateRebateWallet object
@@ -84,25 +92,45 @@ type UpdateRebateWallet struct {
 	BlockNumber  uint64           `json:"block_number"`
 }
 
-func fillRebateWalletSet(log types.Log) error {
-	return nil
+func (crawler *Crawler) fillRebateWalletSet(tradelog common.TradelogV4, log types.Log) (common.TradelogV4, error) {
+	reserve, err := crawler.kyberStorageContract.ParseReserveRebateWalletSet(log)
+	if err != nil {
+		return tradelog, err
+	}
+	tradelog.Reserves = append(tradelog.Reserves, common.Reserve{
+		ReserveID:    reserve.ReserveId,
+		RebateWallet: reserve.RebateWallet,
+		BlockNumber:  log.BlockNumber,
+	})
+	return tradelog, nil
 }
 
-func (crawler *Crawler) fillFeeDistributed(log types.Log) error {
+func (crawler *Crawler) fillFeeDistributed(tradelog common.TradelogV4, log types.Log) (common.TradelogV4, error) {
+	var (
+		logger = crawler.sugar.With("func", caller.GetCurrentFunctionName())
+	)
 	fee, err := crawler.kyberFeeHandlerContract.ParseFeeDistributed(log)
 	if err != nil {
-		return err
+		logger.Errorw("failed to parse fee distributed event", "error", err)
+		return tradelog, err
 	}
 
-	// TODO: save fee into db
-	fmt.Println(fee)
-	return nil
+	tradelog.Fees = append(tradelog.Fees,
+		common.TradelogFee{
+			PlatformFee:    fee.PlatformFeeWei,
+			PlatformWallet: fee.PlatformWallet,
+			Burn:           fee.BurnAmtWei,
+			Rebate:         fee.RebateWei,
+			Reward:         fee.RewardWei,
+		})
+	return tradelog, nil
 }
 
-func (crawler *Crawler) assembleTradeLogsV4(eventLogs []types.Log) ([]common.TradeLog, error) {
+func (crawler *Crawler) assembleTradeLogsV4(eventLogs []types.Log) ([]common.TradelogV4, error) {
 	var (
-		result   []common.TradeLog
-		tradeLog common.TradeLog
+		logger   = crawler.sugar.With("func", caller.GetCurrentFunctionName())
+		result   []common.TradelogV4
+		tradeLog common.TradelogV4
 		err      error
 	)
 
@@ -118,38 +146,39 @@ func (crawler *Crawler) assembleTradeLogsV4(eventLogs []types.Log) ([]common.Tra
 		topic := log.Topics[0]
 		switch topic.Hex() {
 		case feeDistributedEvent:
-			if err := crawler.fillFeeDistributed(log); err != nil {
+			if tradeLog, err = crawler.fillFeeDistributed(tradeLog, log); err != nil {
 				return nil, err
 			}
-		case kyberTradeEvent:
+		case addReserveToStorageEvent:
+			if tradeLog, err = crawler.fillAddReserveToStorage(tradeLog, log); err != nil {
+				return result, err
+			}
+		case reserveRebateWalletSetEvent:
+			if tradeLog, err = crawler.fillRebateWalletSet(tradeLog, log); err != nil {
+				return result, err
+			}
+		case kyberTradeEventV4:
 			if tradeLog, err = crawler.fillKyberTradeV4(tradeLog, log, crawler.volumeExludedReserves); err != nil {
 				return nil, err
 			}
 			receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
 			if err != nil {
+				logger.Errorw("failed to get transaction receipt", "error", err)
 				return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)
 			}
-			tradeLog.GasUsed = receipt.GasUsed
+			tradeLog.TxDetail.GasUsed = receipt.GasUsed
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
 				return nil, errors.Wrapf(err, "failed to resolve timestamp by block_number %v", log.BlockNumber)
 			}
-			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
+			tradeLog, err = crawler.updateBasicInfoV4(log, tradeLog, defaultTimeout)
 			if err != nil {
 				return result, errors.Wrap(err, "could not update trade log basic info")
 			}
-			tradeLog.TransactionFee = big.NewInt(0).Mul(tradeLog.GasPrice, big.NewInt(int64(tradeLog.GasUsed)))
+			tradeLog.TxDetail.TransactionFee = big.NewInt(0).Mul(tradeLog.TxDetail.GasPrice, big.NewInt(int64(tradeLog.TxDetail.GasUsed)))
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			// one trade only has one and only ExecuteTrade event
 			result = append(result, tradeLog)
-			tradeLog = common.TradeLog{}
-		case addReserveToStorageEvent:
-			if err := crawler.fillAddReserveToStorage(log); err != nil {
-				return result, err
-			}
-		case reserveRebateWalletSetEvent:
-			if err := fillRebateWalletSet(log); err != nil {
-				return result, err
-			}
+			tradeLog = common.TradelogV4{}
 		default:
 			return nil, errUnknownLogTopic
 		}

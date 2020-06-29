@@ -160,29 +160,38 @@ func TestGetMonthlyVolume(t *testing.T) {
 	storage, err := NewInfluxStorage(sugar, dbName, influxClient, blockchain.NewMockTokenAmountFormatter(), blockchain.KNCAddr)
 	require.NoError(t, err)
 
-	tradeLogs := []common.TradeLog{
+	tradeLogs := []common.TradelogV4{
 		{
 			Timestamp:       timeutil.TimestampMsToTime(1554353231000),
 			BlockNumber:     uint64(6100010),
 			TransactionHash: ethereum.HexToHash("0x33dcdbed63556a1d90b7e0f626bfaf20f6f532d2ae8bf24c22abb15c4e1fff01"),
-			TxSender:        ethereum.HexToAddress("0x63825c174ab367968ec60f061753d3bbd36a0d8f"),
-			UserAddress:     ethereum.HexToAddress("0x85c5c26dc2af5546341fc1988b9d178148b4838b"),
-			SrcAddress:      ethereum.HexToAddress("0xd0a4b8946cb52f0661273bfbc6fd0e0c75fc6433"),
-			DestAddress:     ethereum.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"),
-			SrcAmount:       big.NewInt(421371814779117936),
-			DestAmount:      big.NewInt(999995137653743773),
-			FiatAmount:      0,
-			BurnFees: []common.BurnFee{
+			T2EReserves: []ethereum.Address{
+				ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"),
+			},
+			E2TReserves: []ethereum.Address{
+				ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"),
+			},
+			TxDetail: common.TxDetail{
+				TxSender: ethereum.HexToAddress("0x63825c174ab367968ec60f061753d3bbd36a0d8f"),
+			},
+			User: common.KyberUserInfo{
+				UserAddress: ethereum.HexToAddress("0x85c5c26dc2af5546341fc1988b9d178148b4838b"),
+			},
+			TokenInfo: common.TradeTokenInfo{
+				SrcAddress:  ethereum.HexToAddress("0xd0a4b8946cb52f0661273bfbc6fd0e0c75fc6433"),
+				DestAddress: ethereum.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"),
+			},
+			SrcAmount:  big.NewInt(421371814779117936),
+			DestAmount: big.NewInt(999995137653743773),
+			FiatAmount: 0,
+			Fees: []common.TradelogFee{
 				{
-					ReserveAddress: ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"),
-					Amount:         big.NewInt(1427493059000719235),
+					ReserveAddr: ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"),
+					Burn:        big.NewInt(1427493059000719235),
 				},
 			},
-			WalletFees:        nil,
 			EthAmount:         big.NewInt(999995137653743773),
 			OriginalEthAmount: big.NewInt(999995137653743773),
-			SrcReserveAddress: ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"),
-			DstReserveAddress: ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"),
 			ETHUSDRate:        100,
 		},
 	}

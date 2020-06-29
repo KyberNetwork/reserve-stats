@@ -62,7 +62,7 @@ func NewInfluxStorage(sugar *zap.SugaredLogger, dbName string, influxClient clie
 }
 
 // SaveTradeLogs persist trade logs to DB
-func (is *Storage) SaveTradeLogs(logs []common.TradeLog) error {
+func (is *Storage) SaveTradeLogs(logs []common.TradelogV4) error {
 	logger := is.sugar.With("func", caller.GetCurrentFunctionName())
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  is.dbName,
@@ -215,37 +215,37 @@ func (is *Storage) createDB() error {
 	return err
 }
 
-func (is *Storage) getWalletFeeAmount(log common.TradeLog) (float64, float64, error) {
-	var (
-		logger = is.sugar.With(
-			"func", caller.GetCurrentFunctionName(),
-			"log", log,
-		)
-		dstAmount    float64
-		srcAmount    float64
-		srcAmountSet bool
-	)
-	for _, walletFee := range log.WalletFees {
-		amount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, walletFee.Amount)
-		if err != nil {
-			return dstAmount, srcAmount, err
-		}
+// func (is *Storage) getWalletFeeAmount(log common.TradeLog) (float64, float64, error) {
+// 	var (
+// 		logger = is.sugar.With(
+// 			"func", caller.GetCurrentFunctionName(),
+// 			"log", log,
+// 		)
+// 		dstAmount    float64
+// 		srcAmount    float64
+// 		srcAmountSet bool
+// 	)
+// 	for _, walletFee := range log.WalletFees {
+// 		amount, err := is.tokenAmountFormatter.FromWei(blockchain.KNCAddr, walletFee.Amount)
+// 		if err != nil {
+// 			return dstAmount, srcAmount, err
+// 		}
 
-		switch {
-		case walletFee.ReserveAddress == log.SrcReserveAddress && !srcAmountSet:
-			srcAmount = amount
-			// to prevent setting SrcReserveAddress twice when SrcReserveAddress =DstReserveAddress
-			srcAmountSet = true
-		case walletFee.ReserveAddress == log.DstReserveAddress:
-			dstAmount = amount
-		default:
-			logger.Warnw("unexpected wallet fees with unrecognized reserve address", "wallet fee", walletFee)
-		}
-	}
-	return srcAmount, dstAmount, nil
-}
+// 		switch {
+// 		case walletFee.ReserveAddress == log.SrcReserveAddress && !srcAmountSet:
+// 			srcAmount = amount
+// 			// to prevent setting SrcReserveAddress twice when SrcReserveAddress =DstReserveAddress
+// 			srcAmountSet = true
+// 		case walletFee.ReserveAddress == log.DstReserveAddress:
+// 			dstAmount = amount
+// 		default:
+// 			logger.Warnw("unexpected wallet fees with unrecognized reserve address", "wallet fee", walletFee)
+// 		}
+// 	}
+// 	return srcAmount, dstAmount, nil
+// }
 
-func (is *Storage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error) {
+func (is *Storage) tradeLogToPoint(log common.TradelogV4) ([]*client.Point, error) {
 	var points []*client.Point
 
 	walletAddr := log.WalletAddress
@@ -253,27 +253,27 @@ func (is *Storage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error)
 
 	tags := map[string]string{
 
-		logschema.UserAddr.String(): log.UserAddress.String(),
+		logschema.UserAddr.String(): log.User.UserAddress.String(),
 
-		logschema.SrcAddr.String():        log.SrcAddress.String(),
-		logschema.DstAddr.String():        log.DestAddress.String(),
+		logschema.SrcAddr.String():        log.TokenInfo.SrcAddress.String(),
+		logschema.DstAddr.String():        log.TokenInfo.DestAddress.String(),
 		logschema.IntegrationApp.String(): log.IntegrationApp,
 		logschema.LogIndex.String():       strconv.FormatUint(uint64(log.Index), 10),
 
-		logschema.Country.String(): log.Country,
+		logschema.Country.String(): log.User.Country,
 
 		logschema.LogIndex.String():        strconv.FormatUint(uint64(log.Index), 10),
-		logschema.UID.String():             log.UID,
-		logschema.TxSender.String():        log.TxSender.String(),
+		logschema.UID.String():             log.User.UID,
+		logschema.TxSender.String():        log.TxDetail.TxSender.String(),
 		logschema.ReceiverAddress.String(): log.ReceiverAddress.String(),
 	}
 
-	if !blockchain.IsZeroAddress(log.SrcReserveAddress) {
-		tags[logschema.SrcReserveAddr.String()] = log.SrcReserveAddress.String()
-	}
-	if !blockchain.IsZeroAddress(log.DstReserveAddress) {
-		tags[logschema.DstReserveAddr.String()] = log.DstReserveAddress.String()
-	}
+	// if !blockchain.IsZeroAddress(log.SrcReserveAddress) {
+	// 	tags[logschema.SrcReserveAddr.String()] = log.SrcReserveAddress.String()
+	// }
+	// if !blockchain.IsZeroAddress(log.DstReserveAddress) {
+	// 	tags[logschema.DstReserveAddr.String()] = log.DstReserveAddress.String()
+	// }
 	if !blockchain.IsZeroAddress(walletAddr) {
 		tags[logschema.WalletAddress.String()] = walletAddr.String()
 	}
@@ -292,12 +292,12 @@ func (is *Storage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error)
 		return nil, err
 	}
 
-	srcAmount, err := is.tokenAmountFormatter.FromWei(log.SrcAddress, log.SrcAmount)
+	srcAmount, err := is.tokenAmountFormatter.FromWei(log.TokenInfo.SrcAddress, log.SrcAmount)
 	if err != nil {
 		return nil, err
 	}
 
-	dstAmount, err := is.tokenAmountFormatter.FromWei(log.DestAddress, log.DestAmount)
+	dstAmount, err := is.tokenAmountFormatter.FromWei(log.TokenInfo.DestAddress, log.DestAmount)
 	if err != nil {
 		return nil, err
 	}
@@ -307,10 +307,10 @@ func (is *Storage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error)
 		return nil, err
 	}
 
-	srcWalletFee, dstWalletFee, err := is.getWalletFeeAmount(log)
-	if err != nil {
-		return nil, err
-	}
+	// srcWalletFee, dstWalletFee, err := is.getWalletFeeAmount(log)
+	// if err != nil {
+	// 	return nil, err
+	// }
 	fields := map[string]interface{}{
 
 		logschema.SrcAmount.String():        srcAmount,
@@ -319,14 +319,14 @@ func (is *Storage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error)
 		logschema.SourceBurnAmount.String(): srcBurnAmount,
 		logschema.DestBurnAmount.String():   dstBurnAmount,
 
-		logschema.EthAmount.String():             ethAmount,
-		logschema.OriginalEthAmount.String():     originalEthAmount,
-		logschema.BlockNumber.String():           int64(log.BlockNumber),
-		logschema.TxHash.String():                log.TransactionHash.String(),
-		logschema.IP.String():                    log.IP,
-		logschema.EthUSDProvider.String():        log.ETHUSDProvider,
-		logschema.SourceWalletFeeAmount.String(): srcWalletFee,
-		logschema.DestWalletFeeAmount.String():   dstWalletFee,
+		logschema.EthAmount.String():         ethAmount,
+		logschema.OriginalEthAmount.String(): originalEthAmount,
+		logschema.BlockNumber.String():       int64(log.BlockNumber),
+		logschema.TxHash.String():            log.TransactionHash.String(),
+		logschema.IP.String():                log.User.IP,
+		logschema.EthUSDProvider.String():    log.ETHUSDProvider,
+		// logschema.SourceWalletFeeAmount.String(): srcWalletFee,
+		// logschema.DestWalletFeeAmount.String():   dstWalletFee,
 	}
 	tradePoint, err := client.NewPoint(tradeLogMeasurementName, tags, fields, log.Timestamp)
 	if err != nil {
@@ -355,20 +355,20 @@ func (is *Storage) tradeLogToPoint(log common.TradeLog) ([]*client.Point, error)
 	return points, nil
 }
 
-func (is *Storage) assembleFirstTradePoint(logItem common.TradeLog) (*client.Point, error) {
+func (is *Storage) assembleFirstTradePoint(logItem common.TradelogV4) (*client.Point, error) {
 	var logger = is.sugar.With(
 		"func", caller.GetCurrentFunctionName(),
 		"timestamp", logItem.Timestamp.String(),
-		"user_addr", logItem.UserAddress.Hex(),
-		"country", logItem.Country,
+		"user_addr", logItem.User.UserAddress.Hex(),
+		"country", logItem.User.Country,
 	)
 
-	if _, ok := is.traded[logItem.UserAddress]; ok {
+	if _, ok := is.traded[logItem.User.UserAddress]; ok {
 		logger.Debug("user has already traded, ignoring")
 		return nil, nil
 	}
 
-	traded, err := is.userTraded(logItem.UserAddress)
+	traded, err := is.userTraded(logItem.User.UserAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -379,8 +379,8 @@ func (is *Storage) assembleFirstTradePoint(logItem common.TradeLog) (*client.Poi
 
 	logger.Debugw("user first trade")
 	tags := map[string]string{
-		"user_addr": logItem.UserAddress.Hex(),
-		"country":   logItem.Country,
+		"user_addr": logItem.User.UserAddress.Hex(),
+		"country":   logItem.User.Country,
 	}
 	tags["wallet_addr"] = logItem.WalletAddress.Hex()
 
@@ -393,7 +393,7 @@ func (is *Storage) assembleFirstTradePoint(logItem common.TradeLog) (*client.Poi
 		return nil, err
 	}
 
-	is.traded[logItem.UserAddress] = struct{}{}
+	is.traded[logItem.User.UserAddress] = struct{}{}
 	return point, nil
 }
 
@@ -411,18 +411,18 @@ func (is *Storage) userTraded(addr ethereum.Address) (bool, error) {
 }
 
 // AssembleKYCPoint constructs kyced InfluxDB data point from given trade log.
-func (is *Storage) AssembleKYCPoint(logItem common.TradeLog) (*client.Point, error) {
+func (is *Storage) AssembleKYCPoint(logItem common.TradelogV4) (*client.Point, error) {
 	var (
 		logger = is.sugar.With(
 			"func", caller.GetCurrentFunctionName(),
 			"timestamp", logItem.Timestamp.String(),
-			"user_addr", logItem.UserAddress.Hex(),
-			"country", logItem.Country,
+			"user_addr", logItem.User.UserAddress.Hex(),
+			"country", logItem.User.Country,
 		)
 		kyced bool
 	)
 
-	if logItem.UID != "" {
+	if logItem.User.UID != "" {
 		kyced = true
 	}
 
@@ -433,8 +433,8 @@ func (is *Storage) AssembleKYCPoint(logItem common.TradeLog) (*client.Point, err
 
 	logger.Debugw("user has been kyced")
 	tags := map[string]string{
-		kycedschema.UserAddress.String(): logItem.UserAddress.Hex(),
-		kycedschema.Country.String():     logItem.Country,
+		kycedschema.UserAddress.String(): logItem.User.UserAddress.Hex(),
+		kycedschema.Country.String():     logItem.User.Country,
 	}
 	tags[kycedschema.WalletAddress.String()] = logItem.WalletAddress.Hex()
 

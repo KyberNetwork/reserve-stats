@@ -137,7 +137,7 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 
 	for i, log := range tradeLogs {
 		// get user profile
-		up, err := sv.getUserProfile(tradeLogs[i].UserAddress)
+		up, err := sv.getUserProfile(tradeLogs[i].User.UserAddress)
 		if err != nil {
 			sv.sugar.Errorw(err.Error(), "fromTime", fromTime, "toTime", toTime)
 			libhttputil.ResponseFailure(
@@ -147,8 +147,8 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 			)
 			return
 		}
-		tradeLogs[i].UserName = up.UserName
-		tradeLogs[i].ProfileID = up.ProfileID
+		tradeLogs[i].User.UserName = up.UserName
+		tradeLogs[i].User.ProfileID = up.ProfileID
 		if tradeLogs[i].IntegrationApp != appname.KyberSwapAppName {
 			name, avai := addrToAppName[log.WalletAddress]
 			if avai {
@@ -157,8 +157,8 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 		}
 
 		// resolve token symbol
-		if !blockchain.IsZeroAddress(log.SrcAddress) {
-			srcSymbol, err := sv.getTokenSymbol(log.SrcAddress)
+		if !blockchain.IsZeroAddress(log.TokenInfo.SrcAddress) {
+			srcSymbol, err := sv.getTokenSymbol(log.TokenInfo.SrcAddress)
 			if err != nil {
 				libhttputil.ResponseFailure(
 					c,
@@ -167,11 +167,11 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 				)
 				return
 			}
-			tradeLogs[i].SrcSymbol = srcSymbol
+			tradeLogs[i].TokenInfo.SrcSymbol = srcSymbol
 		}
 
-		if !blockchain.IsZeroAddress(log.DestAddress) {
-			dstSymbol, err := sv.getTokenSymbol(log.DestAddress)
+		if !blockchain.IsZeroAddress(log.TokenInfo.DestAddress) {
+			dstSymbol, err := sv.getTokenSymbol(log.TokenInfo.DestAddress)
 			if err != nil {
 				libhttputil.ResponseFailure(
 					c,
@@ -180,7 +180,7 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 				)
 				return
 			}
-			tradeLogs[i].DestSymbol = dstSymbol
+			tradeLogs[i].TokenInfo.DestSymbol = dstSymbol
 		}
 	}
 

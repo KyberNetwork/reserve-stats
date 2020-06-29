@@ -10,6 +10,11 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
+// IsETHAddress return true if address is eth
+func IsETHAddress(addr ethereum.Address) bool {
+	return addr == ethereum.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+}
+
 // BurnFee represent burnFee event on KyberNetwork
 type BurnFee struct {
 	ReserveAddress ethereum.Address `json:"reserve_addr"`
@@ -74,6 +79,94 @@ type TradeLog struct {
 	GasUsed        uint64   `json:"gas_used"`
 	GasPrice       *big.Int `json:"gas_price"`
 	TransactionFee *big.Int `json:"transaction_fee"`
+}
+
+// TradelogV4 is object for tradelog after katalyst upgrade
+type TradelogV4 struct {
+	Timestamp       time.Time     `json:"timestamp"`
+	BlockNumber     uint64        `json:"block_number"`
+	TransactionHash ethereum.Hash `json:"tx_hash"`
+
+	TokenInfo         TradeTokenInfo `json:"token_info"`
+	SrcReserveAddress ethereum.Address
+	DstReserveAddress ethereum.Address
+	// T2EReserves       [][32]byte    `json:"t2e_reserves"` // reserve_id of reserve for trade from token to ether
+	// E2TReserves       [][32]byte    `json:"e2t_reserves"` // reserve_id of reserve for trade from ether to token
+	T2EReserves []ethereum.Address `json:"t2e_reserves"`
+	E2TReserves []ethereum.Address `json:"e2t_reserves"`
+	T2ERates    []*big.Int         `json:"t2e_rates"`
+	E2TRates    []*big.Int         `json:"e2t_rates"`
+	Fees        []TradelogFee      `json:"fee"`
+
+	// EthAmount = OriginalEthAmount * len(BurnFees)
+	EthAmount         *big.Int `json:"eth_amount"`
+	OriginalEthAmount *big.Int `json:"original_eth_amount"`
+	SrcAmount         *big.Int `json:"src_amount"`
+	DestAmount        *big.Int `json:"dst_amount"`
+	FiatAmount        float64  `json:"fiat_amount"`
+	ETHUSDRate        float64  `json:"eth_usd_rate"`
+	ETHUSDProvider    string   `json:"-"`
+
+	WalletAddress  ethereum.Address `json:"wallet_addr"`
+	WalletName     string           `json:"wallet_name"`
+	IntegrationApp string           `json:"integration_app"`
+
+	User            KyberUserInfo    `json:"user"`
+	ReceiverAddress ethereum.Address `json:"receiver_address"`
+	TxDetail        TxDetail         `json:"tx_detail"`
+
+	Reserves []Reserve `json:"reserves"` // reserve update on this tradelog block
+
+	Index uint `json:"index"`
+}
+
+// Reserve represent a reserve in KN
+type Reserve struct {
+	Address      ethereum.Address `json:"reserve"`
+	ReserveID    [32]byte         `json:"reserve_id"`
+	RebateWallet ethereum.Address `json:"rebate_wallet"`
+	BlockNumber  uint64           `json:"block_number"` // block number where reserve value (address, rebate_wallet) is applied
+}
+
+// TradelogFee is fee for a trade
+type TradelogFee struct {
+	ReserveAddr               ethereum.Address   `json:"reserve_addr"` // backward compatible for tradelog before katalyst
+	WalletName                string             `json:"wallet_name"`  // backward compatible for tradelog before katalyst
+	PlatformFee               *big.Int           `json:"platform_fee"`
+	PlatformWallet            ethereum.Address   `json:"platform_wallet"`
+	Reward                    *big.Int           `json:"reward"`
+	Rebate                    *big.Int           `json:"rebate"`
+	RebateWallets             []ethereum.Address `json:"rebate_wallet"`
+	RebatePercentBpsPerWallet []*big.Int         `json:"rebate_percent_per_wallet"`
+	Burn                      *big.Int           `json:"burn"`
+	Index                     uint               `json:"index"`
+}
+
+// TradeTokenInfo is token info
+type TradeTokenInfo struct {
+	SrcAddress  ethereum.Address `json:"src_addr"`
+	SrcSymbol   string           `json:"src_symbol,omitempty"`
+	DestAddress ethereum.Address `json:"dst_addr"`
+	DestSymbol  string           `json:"dst_symbol,omitempty"`
+}
+
+// TxDetail about the tx fee
+type TxDetail struct {
+	GasUsed        uint64           `json:"gas_used"`
+	GasPrice       *big.Int         `json:"gas_price"`
+	TransactionFee *big.Int         `json:"transaction_fee"`
+	TxSender       ethereum.Address `json:"tx_sender"`
+}
+
+// KyberUserInfo if available from KS
+type KyberUserInfo struct {
+	UserAddress ethereum.Address `json:"user_addr"`
+	UserName    string           `json:"user_name"`
+	ProfileID   int64            `json:"profile_id"`
+	Index       uint             `json:"index"` // the index of event log in transaction receipt
+	IP          string           `json:"ip"`
+	Country     string           `json:"country"`
+	UID         string           `json:"uid"`
 }
 
 // BigTradeLog represent trade event on KyberNetwork
@@ -244,6 +337,29 @@ var kyberWallets = map[ethereum.Address]struct{}{
 	ethereum.HexToAddress("0xEA1a7dE54a427342c8820185867cF49fc2f95d43"): {},
 }
 
+// NoWalletFee return true if tradelog have no wallet fee
+func NoWalletFee(tradelog TradelogV4) bool {
+	for _, fee := range tradelog.Fees {
+		if fee.PlatformFee != nil {
+			if fee.PlatformFee.Cmp(big.NewInt(0)) != 0 {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// LengthBurnFees return number of burn fee in a tradelogs
+func LengthBurnFees(tradelog TradelogV4) int {
+	count := 0
+	for _, fee := range tradelog.Fees {
+		if fee.Burn.Cmp(big.NewInt(0)) != 0 {
+			count++
+		}
+	}
+	return count
+}
+
 func isKyberWallet(addr ethereum.Address) bool {
 	if _, exist := kyberWallets[addr]; exist {
 		return true
@@ -252,7 +368,7 @@ func isKyberWallet(addr ethereum.Address) bool {
 }
 
 //IsKyberSwap determine if the tradelog is through KyberSwap
-func (tl TradeLog) IsKyberSwap() bool {
+func (tl TradelogV4) IsKyberSwap() bool {
 	// since block 6715130 KyberSwap add wallet_addr to its tx
 	// then we use only this logic to detect if a tx a KyberSwap tx or not
 	if tl.BlockNumber >= 6715130 {
@@ -260,7 +376,7 @@ func (tl TradeLog) IsKyberSwap() bool {
 	}
 	// with older block we use logic below to detect if a tx is a KyberSwap tx
 	// if a trade log has no feeToWalletEvent, it is KyberSwap
-	if len(tl.WalletFees) == 0 {
+	if NoWalletFee(tl) {
 		return true
 	}
 	// if Wallet Address < maxUint128, it is KyberSwap

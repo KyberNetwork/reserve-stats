@@ -156,32 +156,38 @@ func TestSaveTradeLogs_Overwrite(t *testing.T) {
 	}()
 	var timestampMs uint64 = 1554336000000
 	timestamp := timeutil.TimestampMsToTime(timestampMs)
-	tradelog := common.TradeLog{
-		Timestamp:         timestamp,
-		BlockNumber:       uint64(6100010),
-		TransactionHash:   ethereum.HexToHash("0x33dcdbed63556a1d90b7e0f626bfaf20f6f532d2ae8bf24c22abb15c4e1fff01"),
-		SrcReserveAddress: ethereum.HexToAddress("0x63825c174ab367968ec60f061753d3bbd36a0d8f"),
-		UserAddress:       ethereum.HexToAddress("0x85c5c26dc2af5546341fc1988b9d178148b4838b"),
-		SrcAddress:        ethereum.HexToAddress("0x0f5d2fb29fb7d3cfee444a200298f468908cc942"),
-		DestAddress:       ethereum.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"),
-		SrcAmount:         big.NewInt(99995137653743),
-		DestAmount:        big.NewInt(99995137653743773),
-		BurnFees: []common.BurnFee{
+	tradelog := common.TradelogV4{
+		Timestamp:       timestamp,
+		BlockNumber:     uint64(6100010),
+		TransactionHash: ethereum.HexToHash("0x33dcdbed63556a1d90b7e0f626bfaf20f6f532d2ae8bf24c22abb15c4e1fff01"),
+		T2EReserves: []ethereum.Address{
+			ethereum.HexToAddress("0x63825c174ab367968ec60f061753d3bbd36a0d8f"),
+		},
+		User: common.KyberUserInfo{
+			UserAddress: ethereum.HexToAddress("0x85c5c26dc2af5546341fc1988b9d178148b4838b"),
+			IP:          "",
+			Country:     "",
+		},
+		TokenInfo: common.TradeTokenInfo{
+			SrcAddress:  ethereum.HexToAddress("0x0f5d2fb29fb7d3cfee444a200298f468908cc942"),
+			DestAddress: ethereum.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"),
+		},
+		SrcAmount:  big.NewInt(99995137653743),
+		DestAmount: big.NewInt(99995137653743773),
+		Fees: []common.TradelogFee{
 			{
-				ReserveAddress: ethereum.HexToAddress("0x63825c174ab367968ec60f061753d3bbd36a0d8f"),
-				Amount:         big.NewInt(1427493059000719235),
+				ReserveAddr: ethereum.HexToAddress("0x63825c174ab367968ec60f061753d3bbd36a0d8f"),
+				Burn:        big.NewInt(1427493059000719235),
 			},
 		},
-		IP:                "",
-		Country:           "",
 		EthAmount:         big.NewInt(100000000000000000),
 		OriginalEthAmount: big.NewInt(100000000000000000),
 	}
 
-	require.NoError(t, testStorage.SaveTradeLogs([]common.TradeLog{tradelog}))
+	require.NoError(t, testStorage.SaveTradeLogs([]common.TradelogV4{tradelog}))
 	tradelog2 := tradelog
 	tradelog2.EthAmount = big.NewInt(0).Mul(big.NewInt(2), tradelog.EthAmount)
-	require.NoError(t, testStorage.SaveTradeLogs([]common.TradeLog{tradelog2}))
+	require.NoError(t, testStorage.SaveTradeLogs([]common.TradelogV4{tradelog2}))
 
 	tls, err := testStorage.LoadTradeLogs(timestamp, timestamp)
 	require.NoError(t, err)

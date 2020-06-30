@@ -94,10 +94,10 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr, kyberStorageAddr, feeHandlerAddr, kyberNetwork)
 	require.NoError(t, err)
 
-	tradeLogs, err := c.GetTradeLogs(big.NewInt(7025000), big.NewInt(7025100), time.Minute)
+	result, err := c.GetTradeLogs(big.NewInt(7025000), big.NewInt(7025100), time.Minute)
 	require.NoError(t, err)
-	require.Len(t, tradeLogs, 10)
-	for _, tradeLog := range tradeLogs {
+	require.Len(t, result.Trades, 10)
+	for _, tradeLog := range result.Trades {
 		assertTradeLog(t, tradeLog)
 	}
 
@@ -112,17 +112,17 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr, kyberStorageAddr, feeHandlerAddr, kyberNetwork)
 	require.NoError(t, err)
 
-	tradeLogs, err = c.GetTradeLogs(big.NewInt(6343120), big.NewInt(6343220), time.Minute)
+	result, err = c.GetTradeLogs(big.NewInt(6343120), big.NewInt(6343220), time.Minute)
 	require.NoError(t, err)
-	require.Len(t, tradeLogs, 8)
-	for _, tradeLog := range tradeLogs {
+	require.Len(t, result.Trades, 8)
+	for _, tradeLog := range result.Trades {
 		assertTradeLog(t, tradeLog)
 	}
 
-	tradeLogs, err = c.GetTradeLogs(big.NewInt(6343120), big.NewInt(6343220), time.Minute)
+	result, err = c.GetTradeLogs(big.NewInt(6343120), big.NewInt(6343220), time.Minute)
 	require.NoError(t, err)
-	require.Len(t, tradeLogs, 8)
-	for _, tradeLog := range tradeLogs {
+	require.Len(t, result.Trades, 8)
+	for _, tradeLog := range result.Trades {
 		assertTradeLog(t, tradeLog)
 	}
 
@@ -131,7 +131,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 	// conversion: WETH --> ETH
 	var sampleTxHash = "0x4959968da434aa9b1da585479a19da0ce71c47b6e896aab85c6a285400d6de18"
 	var found = false
-	for _, tradeLog := range tradeLogs {
+	for _, tradeLog := range result.Trades {
 		if tradeLog.TransactionHash == ethereum.HexToHash(sampleTxHash) {
 			found = true
 			// assert.Equal(t, ethereum.HexToAddress("0x57f8160e1c59d16c01bbe181fd94db4e56b60495"), tradeLog.SrcReserveAddress,
@@ -145,10 +145,10 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 	}
 	assert.True(t, found, "transaction %s not found", sampleTxHash)
 
-	tradeLogs, err = c.GetTradeLogs(big.NewInt(6325136), big.NewInt(6325137), time.Minute)
+	result, err = c.GetTradeLogs(big.NewInt(6325136), big.NewInt(6325137), time.Minute)
 	require.NoError(t, err)
-	require.Len(t, tradeLogs, 3)
-	for _, tradeLog := range tradeLogs {
+	require.Len(t, result.Trades, 3)
+	for _, tradeLog := range result.Trades {
 		assertTradeLog(t, tradeLog)
 	}
 
@@ -157,7 +157,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 	// conversion: ETH --> WETH
 	sampleTxHash = "0xa1a0cec06413c5466f46d64bc8d6aa2606e82e2da466ec7b266331c056e20133"
 	found = false
-	for _, tradeLog := range tradeLogs {
+	for _, tradeLog := range result.Trades {
 		if tradeLog.TransactionHash == ethereum.HexToHash(sampleTxHash) {
 			found = true
 			// assert.Equal(t,
@@ -176,15 +176,15 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 	// tx: 0xbda96c208fee7812f463f1fff515a1c70d9148ffe8b40a91db419a10074d4cc1
 	// conversion : ETH-GTO
 	// ethAmount must equal to : 749378067533693720
-	tradeLogs, err = c.GetTradeLogs(big.NewInt(7000184), big.NewInt(7000184), time.Minute)
+	result, err = c.GetTradeLogs(big.NewInt(7000184), big.NewInt(7000184), time.Minute)
 	require.NoError(t, err)
-	require.Len(t, tradeLogs, 1)
-	for _, tradeLog := range tradeLogs {
+	require.Len(t, result.Trades, 1)
+	for _, tradeLog := range result.Trades {
 		assertTradeLog(t, tradeLog)
 	}
 	sampleTxHash = "0xbda96c208fee7812f463f1fff515a1c70d9148ffe8b40a91db419a10074d4cc1"
 	found = false
-	for _, tradeLog := range tradeLogs {
+	for _, tradeLog := range result.Trades {
 		if tradeLog.TransactionHash == ethereum.HexToHash(sampleTxHash) {
 			found = true
 			assert.Equal(t,
@@ -209,10 +209,10 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr, kyberStorageAddr, feeHandlerAddr, kyberNetwork)
 	require.NoError(t, err)
 
-	tradeLogs, err = c.GetTradeLogs(big.NewInt(5877442), big.NewInt(5877500), time.Minute)
+	result, err = c.GetTradeLogs(big.NewInt(5877442), big.NewInt(5877500), time.Minute)
 	require.NoError(t, err)
-	require.Len(t, tradeLogs, 7)
-	for _, tradeLog := range tradeLogs {
+	require.Len(t, result.Trades, 7)
+	for _, tradeLog := range result.Trades {
 		assertTradeLog(t, tradeLog)
 	}
 
@@ -221,7 +221,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 	// conversion: DAI --> ETH
 	sampleTxHash = "0xe9316215b35fd6c7ba9e8e770a90f67ce6b9332c04bf67d272c04cb26fb43ec0"
 	found = false
-	for _, tradeLog := range tradeLogs {
+	for _, tradeLog := range result.Trades {
 		if tradeLog.TransactionHash == ethereum.HexToHash(sampleTxHash) {
 			found = true
 			assert.Equal(t, ethereum.HexToAddress("0xfb0f16663c71a2f92bf009c7dc7b401ad372b6de"), tradeLog.ReceiverAddress,
@@ -268,37 +268,36 @@ func newTestCrawler(t *testing.T, version string) *Crawler {
 func TestCrawler_GetEthAmount(t *testing.T) {
 	testutil.SkipExternal(t)
 	var (
-		c         *Crawler
-		tradeLogs []common.TradelogV4
-		err       error
+		c *Crawler
 	)
 	// test v3 token to token
 	c = newTestCrawler(t, "v3")
-	tradeLogs, err = c.GetTradeLogs(big.NewInt(8166246), big.NewInt(8166247), time.Minute)
+	result, err := c.GetTradeLogs(big.NewInt(8166246), big.NewInt(8166247), time.Minute)
 	require.NoError(t, err)
-	require.Len(t, tradeLogs, 1)
-	require.Equal(t, big.NewInt(7543875834785386865), tradeLogs[0].OriginalEthAmount)
-	require.Equal(t, big.NewInt(0).Mul(big.NewInt(7543875834785386865), big.NewInt(2)), tradeLogs[0].EthAmount)
-	for _, tradeLog := range tradeLogs {
+	require.Len(t, result.Trades, 1)
+	require.Equal(t, big.NewInt(7543875834785386865), result.Trades[0].OriginalEthAmount)
+	require.Equal(t, big.NewInt(0).Mul(big.NewInt(7543875834785386865), big.NewInt(2)), result.Trades[0].EthAmount)
+	for _, tradeLog := range result.Trades {
 		assertTradeLog(t, tradeLog)
 	}
 	// test v3 token to eth
 	c = newTestCrawler(t, "v3")
-	tradeLogs, err = c.GetTradeLogs(big.NewInt(8180001), big.NewInt(8180002), time.Minute)
+	result, err = c.GetTradeLogs(big.NewInt(8180001), big.NewInt(8180002), time.Minute)
 	require.NoError(t, err)
-	require.Len(t, tradeLogs, 2)
-	require.Equal(t, big.NewInt(682000000000000000), tradeLogs[0].EthAmount)
+	require.Len(t, result.Trades, 2)
+	require.Equal(t, big.NewInt(682000000000000000), result.Trades[0].EthAmount)
 	// eth to weth
-	require.Equal(t, big.NewInt(500000000000000000), tradeLogs[1].OriginalEthAmount)
-	require.Equal(t, int64(0), tradeLogs[1].EthAmount.Int64())
-	for _, tradeLog := range tradeLogs {
+	require.Equal(t, big.NewInt(500000000000000000), result.Trades[1].OriginalEthAmount)
+	require.Equal(t, int64(0), result.Trades[1].EthAmount.Int64())
+	for _, tradeLog := range result.Trades {
 		assertTradeLog(t, tradeLog)
 	}
 
 	// test v2
 	c = newTestCrawler(t, "v2")
-	tradeLogs, err = c.GetTradeLogs(big.NewInt(6325136), big.NewInt(6325137), time.Minute)
+	result, err = c.GetTradeLogs(big.NewInt(6325136), big.NewInt(6325137), time.Minute)
 	require.NoError(t, err)
+	tradeLogs := result.Trades
 	require.Len(t, tradeLogs, 3)
 	for _, tradeLog := range tradeLogs {
 		assertTradeLog(t, tradeLog)
@@ -311,7 +310,8 @@ func TestCrawler_GetEthAmount(t *testing.T) {
 
 	// test v1
 	c = newTestCrawler(t, "v1")
-	tradeLogs, err = c.GetTradeLogs(big.NewInt(5877442), big.NewInt(5877500), time.Minute)
+	result, err = c.GetTradeLogs(big.NewInt(5877442), big.NewInt(5877500), time.Minute)
+	tradeLogs = result.Trades
 	require.NoError(t, err)
 	require.Len(t, tradeLogs, 7)
 	for _, tradeLog := range tradeLogs {

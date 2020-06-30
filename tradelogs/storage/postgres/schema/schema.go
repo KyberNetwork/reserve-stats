@@ -28,12 +28,12 @@ DO $$
 $$;
 
 CREATE TABLE IF NOT EXISTS "reserve" (
-	id SERIAL,
+	id SERIAL PRIMARY KEY,
 	address TEXT NOT NULL,
 	reserve_id TEXT DEFAULT '',
 	rebate_wallet TEXT DEFAULT '', 
 	block_number INTEGER DEFAULT 0,
-	CONSTRAINT reserve_pk PRIMARY KEY(address, reserve_id, block_number)
+	CONSTRAINT reserve_pk UNIQUE (address, reserve_id, block_number)
 );
 
 
@@ -49,7 +49,7 @@ DO $$
 $$;
 
 CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
-	id SERIAL,
+	id SERIAL PRIMARY KEY,
 	timestamp TIMESTAMPTZ,
 	block_number INTEGER,
 	tx_hash TEXT,
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	gas_used INTEGER,
 	gas_price FLOAT(32),
 	transaction_fee FLOAT(32),
-	PRIMARY KEY (tx_hash,index)
+	CONSTRAINT tradelog_constraint UNIQUE (tx_hash, index)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "tradelogs_id_index" ON "` + TradeLogsTableName + `"(id);
@@ -130,6 +130,16 @@ CREATE TABLE IF NOT EXISTS  "tradelog_v4" (
 	transaction_fee FLOAT(32),
 	PRIMARY KEY (tx_hash,index)
 );
+
+CREATE TABLE IF NOT EXISTS "fee" (
+	id SERIAL,
+	trade_id INTEGER NOT NULL REFERENCES tradelogs,
+	reserve_address_id INTEGER NOT NULL REFERENCES reserve,
+	platform_fee FLOAT(32) default 0,
+	burn FLOAT(32) default 0,
+	rebate FLOAT(32) default 0,
+	reward FLOAT(32) default 0
+)
 `
 
 // t2e_reserves_id BIGINT[] NOT NULL REFERENCES reserve,

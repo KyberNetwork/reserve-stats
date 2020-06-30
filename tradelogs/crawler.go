@@ -53,7 +53,7 @@ const (
 var defaultTimeout = 10 * time.Second
 var errUnknownLogTopic = errors.New("unknown log topic")
 
-type tradeLogFetcher func(*big.Int, *big.Int, time.Duration) ([]common.TradelogV4, error)
+type tradeLogFetcher func(*big.Int, *big.Int, time.Duration) (*common.CrawlResult, error)
 
 // NewCrawler create a new Crawler instance.
 func NewCrawler(sugar *zap.SugaredLogger,
@@ -173,7 +173,8 @@ func fillEtherReceival(tradeLog common.TradelogV4, logItem types.Log) (common.Tr
 	if err != nil {
 		return tradeLog, err
 	}
-	tradeLog.T2EReserves = append(tradeLog.T2EReserves, ethereum.BytesToAddress(logItem.Topics[1].Bytes()))
+	// tradeLog.T2EReserves = append(tradeLog.T2EReserves, ethereum.BytesToAddress(logItem.Topics[1].Bytes()))
+	tradeLog.SrcReserveAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
 	tradeLog.EthAmount = amount.Big()
 	tradeLog.OriginalEthAmount = amount.Big()
 	return tradeLog, nil
@@ -281,13 +282,15 @@ func fillKyberTradeV3(tradeLog common.TradelogV4, logItem types.Log, volumeExclu
 	tradeLog.SrcAmount = srcAmount.Big()
 	tradeLog.DestAmount = destAmount.Big()
 	tradeLog.OriginalEthAmount = ethAmount.Big()
-	if common.IsETHAddress(srcAddress) {
-		tradeLog.E2TReserves = append(tradeLog.E2TReserves, srcReserve)
-		tradeLog.T2EReserves = append(tradeLog.T2EReserves, dstReserve)
-	} else {
-		tradeLog.E2TReserves = append(tradeLog.E2TReserves, dstReserve)
-		tradeLog.T2EReserves = append(tradeLog.T2EReserves, srcReserve)
-	}
+	tradeLog.SrcReserveAddress = srcReserve
+	tradeLog.DstReserveAddress = dstReserve
+	// if common.IsETHAddress(srcAddress) {
+	// 	tradeLog.E2TReserves = append(tradeLog.E2TReserves, srcReserve)
+	// 	tradeLog.T2EReserves = append(tradeLog.T2EReserves, dstReserve)
+	// } else {
+	// 	tradeLog.E2TReserves = append(tradeLog.E2TReserves, dstReserve)
+	// 	tradeLog.T2EReserves = append(tradeLog.T2EReserves, srcReserve)
+	// }
 
 	// update logic base on reserve instead of number of burn fee event
 	defaultRatio := 2
@@ -326,7 +329,11 @@ func (crawler *Crawler) fillKyberTradeV4(tradelog common.TradelogV4, logItem typ
 		DestAddress: trade.Dest,
 	}
 
-	// tradelog.T2EReserves = trade.T2eIds
+	tradelog.T2EReserves = trade.T2eIds
+	tradelog.E2TReserves = trade.E2tIds
+	tradelog.T2ERates = trade.T2eRates
+	tradelog.E2TRates = trade.E2tRates
+
 	tradelog.EthAmount = trade.EthWeiValue
 
 	return tradelog, nil
@@ -468,6 +475,7 @@ func (crawler *Crawler) updateBasicInfoV4(log types.Log, tradeLog common.Tradelo
 	txSender, err = crawler.ethClient.TransactionSender(ctx, tx, log.BlockHash, log.TxIndex)
 	tradeLog.TxDetail.TxSender = txSender
 	tradeLog.TxDetail.GasPrice = tx.GasPrice()
+	tradeLog.User.UserAddress = txSender
 
 	if common.NoWalletFee(tradeLog) { // in case there's no fee, we try to get wallet addr from tradeWithHint input
 		if tx.To() != nil && bytes.Equal(tx.To().Bytes(), crawler.networkProxy.Bytes()) { // try to fail early, tx must have dst == networkProxy
@@ -494,9 +502,9 @@ func (crawler *Crawler) updateBasicInfoV4(log types.Log, tradeLog common.Tradelo
 }
 
 // GetTradeLogs returns trade logs from KyberNetwork.
-func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradelogV4, error) {
+func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.Duration) (*common.CrawlResult, error) {
 	var (
-		result  []common.TradelogV4
+		result  *common.CrawlResult
 		fetchFn tradeLogFetcher
 	)
 
@@ -517,30 +525,32 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 	if err != nil {
 		return result, errors.Wrapf(err, "failed to fetch trade logs fromBlock: %v toBlock:%v", fromBlock, toBlock)
 	}
-
-	for i, tradeLog := range result {
+	if result == nil {
+		return result, nil
+	}
+	for _, tradeLog := range result.Trades {
 		var uid, ip, country string
 
 		uid, ip, country, err = crawler.broadcastClient.GetTxInfo(tradeLog.TransactionHash.Hex())
 		if err != nil {
 			return result, err
 		}
-		result[i].User.IP = ip
-		result[i].User.Country = country
-		result[i].User.UID = uid
+		tradeLog.User.IP = ip
+		tradeLog.User.Country = country
+		tradeLog.User.UID = uid
 
 		if tradeLog.IsKyberSwap() {
-			result[i].IntegrationApp = appname.KyberSwapAppName
+			tradeLog.IntegrationApp = appname.KyberSwapAppName
 		} else {
-			result[i].IntegrationApp = appname.ThirdPartyAppName
+			tradeLog.IntegrationApp = appname.ThirdPartyAppName
 		}
 
 		rate, err := crawler.rateProvider.USDRate(tradeLog.Timestamp)
 		if err != nil {
 			return nil, err
 		}
-		result[i].ETHUSDProvider = crawler.rateProvider.Name()
-		result[i].ETHUSDRate = rate
+		tradeLog.ETHUSDProvider = crawler.rateProvider.Name()
+		tradeLog.ETHUSDRate = rate
 	}
 	return result, nil
 }

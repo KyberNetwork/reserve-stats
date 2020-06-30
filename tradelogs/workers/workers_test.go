@@ -47,7 +47,7 @@ func (s *mockStorage) GetIntegrationVolume(fromTime, toTime time.Time) (map[uint
 	return nil, nil
 }
 
-func (s *mockStorage) SaveTradeLogs(logs []common.TradelogV4) error {
+func (s *mockStorage) SaveTradeLogs(log *common.CrawlResult) error {
 	s.m.Lock()
 	defer s.m.Unlock()
 
@@ -140,13 +140,15 @@ type mockJob struct {
 	failure bool
 }
 
-func (j *mockJob) execute(sugar *zap.SugaredLogger) ([]common.TradelogV4, error) {
+func (j *mockJob) execute(sugar *zap.SugaredLogger) (*common.CrawlResult, error) {
 	if j.failure {
 		return nil, fmt.Errorf("failed to execute job %d", j.order)
 	}
-	return []common.TradelogV4{{
-		Timestamp: time.Now(),
-	}}, nil
+	return &common.CrawlResult{
+		Trades: []common.TradelogV4{{
+			Timestamp: time.Now(),
+		}},
+	}, nil
 }
 
 func (j *mockJob) info() (order int, from, to *big.Int) {

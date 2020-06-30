@@ -64,12 +64,12 @@ func TestPostProcessor_Run(t *testing.T) {
 			// alletFees:        nil,
 			EthAmount:         big.NewInt(999995137653743773),
 			OriginalEthAmount: big.NewInt(999995137653743773),
-			T2EReserves: []ethereum.Address{
-				ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"),
-			},
-			E2TReserves: []ethereum.Address{
-				ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"),
-			},
+			// T2EReserves: []ethereum.Address{
+			// 	ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"),
+			// },
+			// E2TReserves: []ethereum.Address{
+			// 	ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"),
+			// },
 		},
 	}
 

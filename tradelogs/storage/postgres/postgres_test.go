@@ -135,10 +135,10 @@ func TestSaveTradeLogs(t *testing.T) {
 	defer func() {
 		require.NoError(t, testStorage.tearDown(dbName))
 	}()
-
-	tradeLogs, err := utils.GetSampleTradeLogs("../testdata/trade_logs.json")
+	var result *common.CrawlResult
+	result.Trades, err = utils.GetSampleTradeLogs("../testdata/trade_logs.json")
 	require.NoError(t, err)
-	require.NoError(t, testStorage.SaveTradeLogs(tradeLogs))
+	require.NoError(t, testStorage.SaveTradeLogs(result))
 
 	tls, err := testStorage.LoadTradeLogs(timeutil.TimestampMsToTime(1554353231000), timeutil.TimestampMsToTime(1554353231000))
 	require.NoError(t, err)
@@ -160,9 +160,9 @@ func TestSaveTradeLogs_Overwrite(t *testing.T) {
 		Timestamp:       timestamp,
 		BlockNumber:     uint64(6100010),
 		TransactionHash: ethereum.HexToHash("0x33dcdbed63556a1d90b7e0f626bfaf20f6f532d2ae8bf24c22abb15c4e1fff01"),
-		T2EReserves: []ethereum.Address{
-			ethereum.HexToAddress("0x63825c174ab367968ec60f061753d3bbd36a0d8f"),
-		},
+		// T2EReserves: []ethereum.Address{
+		// 	ethereum.HexToAddress("0x63825c174ab367968ec60f061753d3bbd36a0d8f"),
+		// },
 		User: common.KyberUserInfo{
 			UserAddress: ethereum.HexToAddress("0x85c5c26dc2af5546341fc1988b9d178148b4838b"),
 			IP:          "",
@@ -183,11 +183,13 @@ func TestSaveTradeLogs_Overwrite(t *testing.T) {
 		EthAmount:         big.NewInt(100000000000000000),
 		OriginalEthAmount: big.NewInt(100000000000000000),
 	}
-
-	require.NoError(t, testStorage.SaveTradeLogs([]common.TradelogV4{tradelog}))
+	result := &common.CrawlResult{
+		Trades: []common.TradelogV4{tradelog},
+	}
+	require.NoError(t, testStorage.SaveTradeLogs(result))
 	tradelog2 := tradelog
 	tradelog2.EthAmount = big.NewInt(0).Mul(big.NewInt(2), tradelog.EthAmount)
-	require.NoError(t, testStorage.SaveTradeLogs([]common.TradelogV4{tradelog2}))
+	require.NoError(t, testStorage.SaveTradeLogs(result))
 
 	tls, err := testStorage.LoadTradeLogs(timestamp, timestamp)
 	require.NoError(t, err)

@@ -11,37 +11,41 @@ import (
 )
 
 type record struct {
-	Timestamp          time.Time      `db:"timestamp"`
-	BlockNumber        uint64         `db:"block_number"`
-	TransactionHash    string         `db:"tx_hash"`
-	EthAmount          float64        `db:"eth_amount"`
-	OriginalEthAmount  float64        `db:"original_eth_amount"`
-	UserAddress        string         `db:"user_address"`
-	SrcAddress         string         `db:"src_address"`
-	DestAddress        string         `db:"dst_address"`
-	T2EReserves        []string       `db:"t2e_reserves"`
-	E2TReserves        []string       `db:"e2t_reserves"`
-	SrcAmount          float64        `db:"src_amount"`
-	DestAmount         float64        `db:"dst_amount"`
-	WalletAddress      string         `db:"wallet_address"`
-	WalletName         string         `db:"wallet_name"`
-	SrcBurnAmount      float64        `db:"src_burn_amount"`
-	DstBurnAmount      float64        `db:"dst_burn_amount"`
-	SrcWalletFeeAmount float64        `db:"src_wallet_fee_amount"`
-	DstWalletFeeAmount float64        `db:"dst_wallet_fee_amount"`
-	IntegrationApp     string         `db:"integration_app"`
-	IP                 sql.NullString `db:"ip"`
-	Country            sql.NullString `db:"country"`
-	ETHUSDRate         float64        `db:"eth_usd_rate"`
-	ETHUSDProvider     string         `db:"eth_usd_provider"`
-	Index              string         `db:"index"`
-	Kyced              bool           `db:"kyced"`
-	IsFirstTrade       bool           `db:"is_first_trade"`
-	TxSender           string         `db:"tx_sender"`
-	ReceiverAddress    string         `db:"receiver_address"`
-	GasUsed            uint64         `db:"gas_used"`
-	GasPrice           float64        `db:"gas_price"`
-	TransactionFee     float64        `db:"transaction_fee"`
+	Timestamp          time.Time        `db:"timestamp"`
+	BlockNumber        uint64           `db:"block_number"`
+	TransactionHash    string           `db:"tx_hash"`
+	EthAmount          float64          `db:"eth_amount"`
+	OriginalEthAmount  float64          `db:"original_eth_amount"`
+	UserAddress        string           `db:"user_address"`
+	SrcAddress         string           `db:"src_address"`
+	DestAddress        string           `db:"dst_address"`
+	SrcReserveAddress  string           `db:"src_reserve_address"`
+	DstReserveAddress  string           `db:"dst_reserve_address"`
+	T2EReserves        [][32]byte       `db:"t2e_reserves"`
+	E2TReserves        [][32]byte       `db:"e2t_reserves"`
+	SrcAmount          float64          `db:"src_amount"`
+	DestAmount         float64          `db:"dst_amount"`
+	WalletAddress      string           `db:"wallet_address"`
+	WalletName         string           `db:"wallet_name"`
+	SrcBurnAmount      float64          `db:"src_burn_amount"`
+	DstBurnAmount      float64          `db:"dst_burn_amount"`
+	SrcWalletFeeAmount float64          `db:"src_wallet_fee_amount"`
+	DstWalletFeeAmount float64          `db:"dst_wallet_fee_amount"`
+	IntegrationApp     string           `db:"integration_app"`
+	IP                 sql.NullString   `db:"ip"`
+	Country            sql.NullString   `db:"country"`
+	ETHUSDRate         float64          `db:"eth_usd_rate"`
+	ETHUSDProvider     string           `db:"eth_usd_provider"`
+	Index              string           `db:"index"`
+	Kyced              bool             `db:"kyced"`
+	IsFirstTrade       bool             `db:"is_first_trade"`
+	TxSender           string           `db:"tx_sender"`
+	ReceiverAddress    string           `db:"receiver_address"`
+	GasUsed            uint64           `db:"gas_used"`
+	GasPrice           float64          `db:"gas_price"`
+	TransactionFee     float64          `db:"transaction_fee"`
+	Reserves           []common.Reserve `db:"reserves"`
+	Version            uint64           `db:"version"`
 }
 
 func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, error) {
@@ -82,14 +86,6 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, erro
 	if err != nil {
 		return nil, err
 	}
-	t2eReserves := []string{}
-	for _, reserve := range log.T2EReserves {
-		t2eReserves = append(t2eReserves, reserve.Hex())
-	}
-	e2tReserves := []string{}
-	for _, reserve := range log.E2TReserves {
-		e2tReserves = append(e2tReserves, reserve.Hex())
-	}
 
 	return &record{
 		Timestamp:         log.Timestamp.UTC(),
@@ -100,8 +96,8 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, erro
 		UserAddress:       log.User.UserAddress.String(),
 		SrcAddress:        log.TokenInfo.SrcAddress.String(),
 		DestAddress:       log.TokenInfo.DestAddress.String(),
-		T2EReserves:       t2eReserves,
-		E2TReserves:       e2tReserves,
+		T2EReserves:       log.T2EReserves,
+		E2TReserves:       log.E2TReserves,
 		SrcAmount:         srcAmount,
 		DestAmount:        dstAmount,
 		WalletAddress:     log.WalletAddress.String(),

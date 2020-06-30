@@ -119,7 +119,9 @@ func run(c *cli.Context) error {
 				updatedTradeLogs = append(updatedTradeLogs, tl)
 				sugar.Infow("update wallet", "block", tl.BlockNumber)
 				if len(updatedTradeLogs) == int(maxRecordSavePerTime) {
-					if errS := storageInterface.SaveTradeLogs(updatedTradeLogs); errS != nil {
+					var r *common.CrawlResult
+					r.Trades = updatedTradeLogs
+					if errS := storageInterface.SaveTradeLogs(r); errS != nil {
 						return errS
 					}
 					updatedTradeLogs = nil
@@ -128,7 +130,9 @@ func run(c *cli.Context) error {
 		}
 	}
 	if len(updatedTradeLogs) > 0 {
-		return storageInterface.SaveTradeLogs(updatedTradeLogs)
+		var r *common.CrawlResult
+		r.Trades = updatedTradeLogs
+		return storageInterface.SaveTradeLogs(r)
 	}
 	return nil
 }

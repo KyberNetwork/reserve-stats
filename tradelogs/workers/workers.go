@@ -22,10 +22,10 @@ import (
 	"github.com/KyberNetwork/tokenrate/coingecko"
 )
 
-type executeJob func(*zap.SugaredLogger) ([]common.TradelogV4, error)
+type executeJob func(*zap.SugaredLogger) (*common.CrawlResult, error)
 
 type job interface {
-	execute(sugar *zap.SugaredLogger) ([]common.TradelogV4, error)
+	execute(sugar *zap.SugaredLogger) (*common.CrawlResult, error)
 	info() (order int, from, to *big.Int)
 }
 
@@ -54,9 +54,9 @@ type FetcherJob struct {
 }
 
 // retry the given fn function for attempts time with sleep duration between before returns an error.
-func retry(fn executeJob, attempts int, logger *zap.SugaredLogger) ([]common.TradelogV4, error) {
+func retry(fn executeJob, attempts int, logger *zap.SugaredLogger) (*common.CrawlResult, error) {
 	var (
-		result []common.TradelogV4
+		result *common.CrawlResult
 		err    error
 	)
 
@@ -73,7 +73,7 @@ func retry(fn executeJob, attempts int, logger *zap.SugaredLogger) ([]common.Tra
 	return result, err
 }
 
-func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradelogV4, error) {
+func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (*common.CrawlResult, error) {
 	logger := sugar.With(
 		"from", fj.from.String(),
 		"to", fj.to.String())
@@ -114,15 +114,15 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradelogV4, erro
 		return nil, err
 	}
 
-	tradeLogs, err := crawler.GetTradeLogs(fj.from, fj.to, time.Second*5)
+	result, err := crawler.GetTradeLogs(fj.from, fj.to, time.Second*5)
 	if err != nil {
 		return nil, err
 	}
 
-	return tradeLogs, nil
+	return result, nil
 }
 
-func (fj *FetcherJob) execute(sugar *zap.SugaredLogger) ([]common.TradelogV4, error) {
+func (fj *FetcherJob) execute(sugar *zap.SugaredLogger) (*common.CrawlResult, error) {
 	return retry(fj.fetch, fj.attempts, sugar)
 }
 
@@ -174,7 +174,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 					"from", from.String(),
 					"to", to.String())
 
-				tradeLogs, err := j.execute(sugar)
+				result, err := j.execute(sugar)
 				if err != nil {
 					logger.Errorw("fetcher job execution failed",
 						"from", from.String(),
@@ -189,7 +189,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 					"order", order,
 					"from", from.String(),
 					"to", to.String())
-				if err = p.serialSaveTradeLogs(order, tradeLogs, from.Uint64()); err != nil {
+				if err = p.serialSaveTradeLogs(order, result, from.Uint64()); err != nil {
 					p.errCh <- err
 					break
 				}
@@ -227,7 +227,7 @@ func (p *Pool) markAsFailed(order int) {
 }
 
 // serialSaveTradeLogs waits until the job with order right before it completed and saving the logs to database.
-func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradelogV4, fromBlock uint64) error {
+func (p *Pool) serialSaveTradeLogs(order int, log *common.CrawlResult, fromBlock uint64) error {
 	var (
 		logger = p.sugar.With(
 			"func", caller.GetCurrentFunctionName(),
@@ -245,7 +245,7 @@ func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradelogV4, fromBloc
 		}
 
 		if order == p.lastCompletedJobOrder+1 {
-			if err = p.storage.SaveTradeLogs(logs); err != nil {
+			if err = p.storage.SaveTradeLogs(log); err != nil {
 				logger.Errorw("save trade logs into db failed",
 					"err", err)
 				p.mutex.Unlock()

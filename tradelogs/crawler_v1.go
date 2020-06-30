@@ -20,8 +20,7 @@ const (
 	internalNetworkAddrV1 = "0x964F35fAe36d75B1e72770e244F6595B68508CF5"
 )
 
-func (crawler *Crawler) fetchTradeLogV1(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradelogV4, error) {
-	var result []common.TradelogV4
+func (crawler *Crawler) fetchTradeLogV1(fromBlock, toBlock *big.Int, timeout time.Duration) (*common.CrawlResult, error) {
 	topics := [][]ethereum.Hash{
 		{
 			ethereum.HexToHash(executeTradeEvent),
@@ -36,12 +35,7 @@ func (crawler *Crawler) fetchTradeLogV1(fromBlock, toBlock *big.Int, timeout tim
 		return nil, errors.Wrap(err, "failed to fetch log by topic")
 	}
 
-	result, err = crawler.assembleTradeLogsV1(typeLogs)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return crawler.assembleTradeLogsV1(typeLogs)
 }
 
 func (crawler *Crawler) getTransactionReceiptV1(tradeLog common.TradelogV4, receipt *types.Receipt, logIndex uint,
@@ -101,9 +95,9 @@ func (crawler *Crawler) getInternalTransaction(tradeLog common.TradelogV4) (comm
 	return tradeLog, nil
 }
 
-func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.TradelogV4, error) {
+func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) (*common.CrawlResult, error) {
 	var (
-		result   []common.TradelogV4
+		result   common.CrawlResult
 		tradeLog common.TradelogV4
 		err      error
 	)
@@ -114,7 +108,7 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 		}
 
 		if len(log.Topics) == 0 {
-			return result, errors.New("log item has no topic")
+			return &result, errors.New("log item has no topic")
 		}
 
 		topic := log.Topics[0]
@@ -180,19 +174,19 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 
 			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
 			if err != nil {
-				return result, errors.Wrap(err, "could not update trade log basic info")
+				return &result, errors.Wrap(err, "could not update trade log basic info")
 			}
 			tradeLog.TxDetail.TransactionFee = big.NewInt(0).Mul(tradeLog.TxDetail.GasPrice, big.NewInt(int64(tradeLog.TxDetail.GasUsed)))
 
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 
 			// one trade only has one and only ExecuteTrade event
-			result = append(result, tradeLog)
+			result.Trades = append(result.Trades, tradeLog)
 			tradeLog = common.TradelogV4{}
 		default:
 			return nil, errUnknownLogTopic
 		}
 	}
 
-	return result, nil
+	return &result, nil
 }

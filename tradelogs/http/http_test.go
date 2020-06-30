@@ -34,7 +34,7 @@ func (s *mockStorage) UpdateTokens(addresses, symbols []string) error {
 func (s *mockStorage) LastBlock() (int64, error) {
 	return 0, nil
 }
-func (s *mockStorage) SaveTradeLogs(logs []common.TradelogV4) error {
+func (s *mockStorage) SaveTradeLogs(logs *common.CrawlResult) error {
 	return nil
 }
 

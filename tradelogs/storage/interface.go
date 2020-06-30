@@ -46,7 +46,7 @@ type Interface interface {
 	GetTokenHeatmap(asset ethereum.Address, from, to time.Time, timezone int8) (map[string]common.Heatmap, error)
 	GetIntegrationVolume(fromTime, toTime time.Time) (map[uint64]*common.IntegrationVolume, error)
 	LastBlock() (int64, error)
-	SaveTradeLogs(logs []common.TradelogV4) error
+	SaveTradeLogs(log *common.CrawlResult) error
 	GetTokenSymbol(address string) (string, error)
 	UpdateTokens(tokenAddresses, symbols []string) error
 	GetStats(from, to time.Time) (common.StatsResponse, error)

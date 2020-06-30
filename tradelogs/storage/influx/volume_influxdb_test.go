@@ -165,12 +165,12 @@ func TestGetMonthlyVolume(t *testing.T) {
 			Timestamp:       timeutil.TimestampMsToTime(1554353231000),
 			BlockNumber:     uint64(6100010),
 			TransactionHash: ethereum.HexToHash("0x33dcdbed63556a1d90b7e0f626bfaf20f6f532d2ae8bf24c22abb15c4e1fff01"),
-			T2EReserves: []ethereum.Address{
-				ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"),
-			},
-			E2TReserves: []ethereum.Address{
-				ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"),
-			},
+			// T2EReserves: []ethereum.Address{
+			// 	ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"),
+			// },
+			// E2TReserves: []ethereum.Address{
+			// 	ethereum.HexToAddress("0x63825c174ab367968EC60f061753D3bbD36A0D8F"),
+			// },
 			TxDetail: common.TxDetail{
 				TxSender: ethereum.HexToAddress("0x63825c174ab367968ec60f061753d3bbd36a0d8f"),
 			},

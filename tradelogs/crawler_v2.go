@@ -19,8 +19,7 @@ const (
 	kyberTradeEventV2 = "0x1c8399ecc5c956b9cb18c820248b10b634cca4af308755e07cd467655e8ec3c7"
 )
 
-func (crawler *Crawler) fetchTradeLogV2(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradelogV4, error) {
-	var result []common.TradelogV4
+func (crawler *Crawler) fetchTradeLogV2(fromBlock, toBlock *big.Int, timeout time.Duration) (*common.CrawlResult, error) {
 	topics := [][]ethereum.Hash{
 		{
 			ethereum.HexToHash(kyberTradeEventV2),
@@ -35,12 +34,7 @@ func (crawler *Crawler) fetchTradeLogV2(fromBlock, toBlock *big.Int, timeout tim
 		return nil, errors.Wrap(err, "failed to fetch log by topic")
 	}
 
-	result, err = crawler.assembleTradeLogsV2(typeLogs)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return crawler.assembleTradeLogsV2(typeLogs)
 }
 
 func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time.Duration) (*types.Receipt, error) {
@@ -72,9 +66,9 @@ func getReserveFromReceipt(receipt *types.Receipt, logIndex uint) ethereum.Addre
 	return reserveAddr
 }
 
-func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.TradelogV4, error) {
+func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) (*common.CrawlResult, error) {
 	var (
-		result   []common.TradelogV4
+		result   common.CrawlResult
 		tradeLog common.TradelogV4
 		err      error
 	)
@@ -85,7 +79,7 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 		}
 
 		if len(log.Topics) == 0 {
-			return result, errors.New("log item has no topic")
+			return &result, errors.New("log item has no topic")
 		}
 
 		topic := log.Topics[0]
@@ -123,7 +117,8 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 			if common.LengthBurnFees(tradeLog) == 0 && len(tradeLog.T2EReserves)+len(tradeLog.E2TReserves) == 0 {
 				crawler.sugar.Debug("trade logs has no burn fee, no ethReceival event, no wallet fee, getting reserve address from tx receipt")
 				srcReserveAddress := getReserveFromReceipt(receipt, log.Index)
-				tradeLog.T2EReserves = append(tradeLog.T2EReserves, srcReserveAddress)
+				tradeLog.SrcReserveAddress = srcReserveAddress
+				// tradeLog.T2EReserves = append(tradeLog.T2EReserves, srcReserveAddress)
 			}
 			// set tradeLog.EthAmount
 			if tradeLog.TokenInfo.SrcAddress == blockchain.ETHAddr {
@@ -137,14 +132,14 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 
 			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
 			if err != nil {
-				return result, errors.Wrap(err, "could not update trade log basic info")
+				return &result, errors.Wrap(err, "could not update trade log basic info")
 			}
 			tradeLog.TxDetail.TransactionFee = big.NewInt(0).Mul(tradeLog.TxDetail.GasPrice, big.NewInt(int64(tradeLog.TxDetail.GasUsed)))
 
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 
 			// one trade only has one and only ExecuteTrade event
-			result = append(result, tradeLog)
+			result.Trades = append(result.Trades, tradeLog)
 			tradeLog = common.TradelogV4{}
 		default:
 			return nil, errUnknownLogTopic
@@ -152,5 +147,5 @@ func (crawler *Crawler) assembleTradeLogsV2(eventLogs []types.Log) ([]common.Tra
 
 	}
 
-	return result, nil
+	return &result, nil
 }

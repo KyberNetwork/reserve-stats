@@ -81,22 +81,29 @@ type TradeLog struct {
 	TransactionFee *big.Int `json:"transaction_fee"`
 }
 
+// CrawlResult is result of the crawl
+type CrawlResult struct {
+	Reserves []Reserve    `json:"reserves"` // reserve update on this
+	Trades   []TradelogV4 `json:"trades"`
+}
+
 // TradelogV4 is object for tradelog after katalyst upgrade
 type TradelogV4 struct {
 	Timestamp       time.Time     `json:"timestamp"`
 	BlockNumber     uint64        `json:"block_number"`
 	TransactionHash ethereum.Hash `json:"tx_hash"`
 
-	TokenInfo         TradeTokenInfo `json:"token_info"`
+	TokenInfo TradeTokenInfo `json:"token_info"`
+	// support version before katalyst
 	SrcReserveAddress ethereum.Address
 	DstReserveAddress ethereum.Address
-	// T2EReserves       [][32]byte    `json:"t2e_reserves"` // reserve_id of reserve for trade from token to ether
-	// E2TReserves       [][32]byte    `json:"e2t_reserves"` // reserve_id of reserve for trade from ether to token
-	T2EReserves []ethereum.Address `json:"t2e_reserves"`
-	E2TReserves []ethereum.Address `json:"e2t_reserves"`
-	T2ERates    []*big.Int         `json:"t2e_rates"`
-	E2TRates    []*big.Int         `json:"e2t_rates"`
-	Fees        []TradelogFee      `json:"fee"`
+	T2EReserves       [][32]byte `json:"t2e_reserves"` // reserve_id of reserve for trade from token to ether
+	E2TReserves       [][32]byte `json:"e2t_reserves"` // reserve_id of reserve for trade from ether to token
+	// T2EReserves []ethereum.Address `json:"t2e_reserves"`
+	// E2TReserves []ethereum.Address `json:"e2t_reserves"`
+	T2ERates []*big.Int    `json:"t2e_rates"`
+	E2TRates []*big.Int    `json:"e2t_rates"`
+	Fees     []TradelogFee `json:"fee"`
 
 	// EthAmount = OriginalEthAmount * len(BurnFees)
 	EthAmount         *big.Int `json:"eth_amount"`
@@ -114,8 +121,6 @@ type TradelogV4 struct {
 	User            KyberUserInfo    `json:"user"`
 	ReceiverAddress ethereum.Address `json:"receiver_address"`
 	TxDetail        TxDetail         `json:"tx_detail"`
-
-	Reserves []Reserve `json:"reserves"` // reserve update on this tradelog block
 
 	Index uint `json:"index"`
 }

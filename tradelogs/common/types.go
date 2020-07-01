@@ -83,8 +83,9 @@ type TradeLog struct {
 
 // CrawlResult is result of the crawl
 type CrawlResult struct {
-	Reserves []Reserve    `json:"reserves"` // reserve update on this
-	Trades   []TradelogV4 `json:"trades"`
+	Reserves      []Reserve    `json:"reserves"` // reserve update on this
+	UpdateWallets []Reserve    `json:"update_wallets"`
+	Trades        []TradelogV4 `json:"trades"`
 }
 
 // TradelogV4 is object for tradelog after katalyst upgrade
@@ -97,13 +98,13 @@ type TradelogV4 struct {
 	// support version before katalyst
 	SrcReserveAddress ethereum.Address
 	DstReserveAddress ethereum.Address
-	T2EReserves       [][32]byte `json:"t2e_reserves"` // reserve_id of reserve for trade from token to ether
-	E2TReserves       [][32]byte `json:"e2t_reserves"` // reserve_id of reserve for trade from ether to token
-	// T2EReserves []ethereum.Address `json:"t2e_reserves"`
-	// E2TReserves []ethereum.Address `json:"e2t_reserves"`
-	T2ERates []*big.Int    `json:"t2e_rates"`
-	E2TRates []*big.Int    `json:"e2t_rates"`
-	Fees     []TradelogFee `json:"fee"`
+
+	// After katalyst info
+	T2EReserves [][32]byte    `json:"t2e_reserves"` // reserve_id of reserve for trade from token to ether
+	E2TReserves [][32]byte    `json:"e2t_reserves"` // reserve_id of reserve for trade from ether to token
+	T2ERates    []*big.Int    `json:"t2e_rates"`
+	E2TRates    []*big.Int    `json:"e2t_rates"`
+	Fees        []TradelogFee `json:"fee"`
 
 	// EthAmount = OriginalEthAmount * len(BurnFees)
 	EthAmount         *big.Int `json:"eth_amount"`
@@ -114,9 +115,10 @@ type TradelogV4 struct {
 	ETHUSDRate        float64  `json:"eth_usd_rate"`
 	ETHUSDProvider    string   `json:"-"`
 
-	WalletAddress  ethereum.Address `json:"wallet_addr"`
-	WalletName     string           `json:"wallet_name"`
-	IntegrationApp string           `json:"integration_app"`
+	WalletAddress ethereum.Address `json:"wallet_addr"`
+	WalletName    string           `json:"wallet_name"`
+
+	IntegrationApp string `json:"integration_app"`
 
 	User            KyberUserInfo    `json:"user"`
 	ReceiverAddress ethereum.Address `json:"receiver_address"`
@@ -129,6 +131,7 @@ type TradelogV4 struct {
 type Reserve struct {
 	Address      ethereum.Address `json:"reserve"`
 	ReserveID    [32]byte         `json:"reserve_id"`
+	ReserveType  uint64           `json:"reserve_type"`
 	RebateWallet ethereum.Address `json:"rebate_wallet"`
 	BlockNumber  uint64           `json:"block_number"` // block number where reserve value (address, rebate_wallet) is applied
 }

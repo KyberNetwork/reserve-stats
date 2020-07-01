@@ -28,11 +28,48 @@ const (
 
 func init() {
 	var err error
-	networkABI, err = abi.JSON(strings.NewReader(contracts.NetworkProxyABI))
+	networkABI, err = abi.JSON(strings.NewReader(contracts.KyberNetworkProxyV4ABI))
 	if err != nil {
 		panic(err)
 	}
 }
+
+type tradeWithHintParamV4 struct {
+	Src               ethereum.Address
+	SrcAmount         *big.Int
+	Dest              ethereum.Address
+	DestAddress       ethereum.Address
+	MaxDestAmount     *big.Int
+	MinConversionRate *big.Int
+	Hint              []byte
+}
+
+// func (crawler ) decodeTradeInputParamV4(data []byte) (out tradeWithHintParamV4, err error) { // decode txInput method signature
+// 	if len(data) < 4 {
+// 		return tradeWithHintParamV4{}, errors.New("input data not valid")
+// 	}
+// 	// recover Method from signature and ABI
+// 	method, err := networkABI.MethodById(data[0:4])
+// 	if err != nil {
+// 		return tradeWithHintParamV4{}, errors.Wrap(err, "cannot find method for correspond data")
+// 	}
+// 	switch method.Name {
+// 	case "trade", "tradeWithHint", "tradeWithHintAndFee":
+// 		// unpack method inputs
+// 		var out tradeWithHintParamV4
+// 		err = method.Inputs.Unpack(&out, data[4:])
+// 		if err != nil {
+// 			return tradeWithHintParamV4{}, errors.Wrap(err, "unpack param failed")
+// 		}
+// 		return out, nil
+// 	case "swapTokenToToken", "swapTokenToEther", "swapEtherToToken":
+// 		// no wallet this trade, just return empty
+// 		return tradeWithHintParamV4{}, nil
+// 	default:
+// 		return tradeWithHintParamV4{}, nil
+// 	}
+// }
+
 func (crawler *Crawler) fetchTradeLogV4(fromBlock, toBlock *big.Int, timeout time.Duration) (*common.CrawlResult, error) {
 	topics := [][]ethereum.Hash{
 		{
@@ -51,14 +88,6 @@ func (crawler *Crawler) fetchTradeLogV4(fromBlock, toBlock *big.Int, timeout tim
 	return crawler.assembleTradeLogsV4(typeLogs)
 }
 
-// AddReserveToStorage object
-type AddReserveToStorage struct {
-	Reserve      ethereum.Address `json:"reserve"`
-	ReserveID    [32]byte         `json:"reserve_id"`
-	RebateWallet ethereum.Address `json:"rebate_wallet"`
-	BlockNumber  uint64           `json:"block_number"`
-}
-
 func (crawler *Crawler) fillAddReserveToStorage(crResult *common.CrawlResult, log types.Log) error {
 	reserve, err := crawler.kyberStorageContract.ParseAddReserveToStorage(log)
 	if err != nil {
@@ -71,6 +100,7 @@ func (crawler *Crawler) fillAddReserveToStorage(crResult *common.CrawlResult, lo
 	crResult.Reserves = append(crResult.Reserves, common.Reserve{
 		Address:      reserve.Reserve,
 		ReserveID:    reserve.ReserveId,
+		ReserveType:  uint64(reserve.ReserveType),
 		RebateWallet: reserve.RebateWallet,
 		BlockNumber:  log.BlockNumber,
 	})
@@ -78,19 +108,12 @@ func (crawler *Crawler) fillAddReserveToStorage(crResult *common.CrawlResult, lo
 	return nil
 }
 
-// UpdateRebateWallet object
-type UpdateRebateWallet struct {
-	RebateWallet ethereum.Address `json:"rebate_wallet"`
-	ReserveID    [32]byte         `json:"reserve_id"`
-	BlockNumber  uint64           `json:"block_number"`
-}
-
 func (crawler *Crawler) fillRebateWalletSet(crResult *common.CrawlResult, log types.Log) error {
 	reserve, err := crawler.kyberStorageContract.ParseReserveRebateWalletSet(log)
 	if err != nil {
 		return err
 	}
-	crResult.Reserves = append(crResult.Reserves, common.Reserve{
+	crResult.UpdateWallets = append(crResult.UpdateWallets, common.Reserve{
 		ReserveID:    reserve.ReserveId,
 		RebateWallet: reserve.RebateWallet,
 		BlockNumber:  log.BlockNumber,
@@ -115,6 +138,7 @@ func (crawler *Crawler) fillFeeDistributed(tradelog common.TradelogV4, log types
 			Burn:           fee.BurnAmtWei,
 			Rebate:         fee.RebateWei,
 			Reward:         fee.RewardWei,
+			RebateWallets:  fee.RebateWallets,
 		})
 	return tradelog, nil
 }

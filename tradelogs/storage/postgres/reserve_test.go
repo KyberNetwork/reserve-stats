@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
-	"github.com/KyberNetwork/reserve-stats/tradelogs"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	ether "github.com/ethereum/go-ethereum"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -20,12 +20,12 @@ const (
 func TestAddUpdateReserve(t *testing.T) {
 	const (
 		dbName                   = "test_reserve_v4"
-		addReserveToStorageEvent = "0x4649526e2876a69a4439244e5d8a32a6940a44a92b5390fdde1c22a26cc54004"
+		addReserveToStorageEvent = "0x50b2ce9e8f1a63ceaed262cc854dbf741b216e6429f7ba38403afbcdddc7f1ea"
 	)
 	testStorage, err := newTestTradeLogPostgresql(dbName)
 	require.NoError(t, err)
 	defer func() {
-		// require.NoError(t, testStorage.tearDown(dbName))
+		require.NoError(t, testStorage.tearDown(dbName))
 	}()
 
 	c, err := ethclient.Dial(alchemyRopsten)
@@ -36,15 +36,15 @@ func TestAddUpdateReserve(t *testing.T) {
 		},
 	}
 	query := ether.FilterQuery{
-		FromBlock: big.NewInt(8008389),
-		ToBlock:   big.NewInt(8008389),
-		Addresses: []ethereum.Address{ethereum.HexToAddress("0xa4ead31a6c8e047e01ce1128e268c101ad391959")},
+		FromBlock: big.NewInt(8192307),
+		ToBlock:   big.NewInt(8192307),
+		Addresses: []ethereum.Address{ethereum.HexToAddress("0x688bf5eec43e0799c5b9c1612f625f7b93fe5434")},
 		Topics:    topics,
 	}
 	logs, err := c.FilterLogs(context.Background(), query)
 	require.NoError(t, err)
 	kyberStorageContract, err := contracts.NewKyberStorage(
-		ethereum.HexToAddress("0xa4ead31a6c8e047e01ce1128e268c101ad391959"),
+		ethereum.HexToAddress("0x688bf5eec43e0799c5b9c1612f625f7b93fe5434"),
 		c,
 	)
 	require.NoError(t, err)
@@ -53,11 +53,14 @@ func TestAddUpdateReserve(t *testing.T) {
 		t.Log("hash", log.TxHash.String())
 		d, err := kyberStorageContract.ParseAddReserveToStorage(log)
 		require.NoError(t, err)
-		err = testStorage.AddUpdateReserve(&tradelogs.AddReserveToStorage{
-			Reserve:      d.Reserve,
-			ReserveID:    d.ReserveId,
-			BlockNumber:  log.BlockNumber,
-			RebateWallet: d.RebateWallet,
+		err = testStorage.saveReserve([]common.Reserve{
+			{
+				Address:      d.Reserve,
+				ReserveID:    d.ReserveId,
+				ReserveType:  uint64(d.ReserveType),
+				BlockNumber:  log.BlockNumber,
+				RebateWallet: d.RebateWallet,
+			},
 		})
 		require.NoError(t, err)
 	}

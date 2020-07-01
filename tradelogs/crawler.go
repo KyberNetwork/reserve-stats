@@ -120,6 +120,8 @@ type Crawler struct {
 
 	etherscanClient *etherscan.Client
 	networkProxy    ethereum.Address
+
+	tokenInfoGetter *blockchain.TokenInfoGetter
 }
 
 func logDataToExecuteTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
@@ -311,6 +313,30 @@ func fillKyberTradeV3(tradeLog common.TradelogV4, logItem types.Log, volumeExclu
 	return tradeLog, nil
 }
 
+func (crawler *Crawler) calculateTradeAmount(T2ESrcAmounts, E2TSrcAmounts, T2ERates, E2TRates []*big.Int, srcToken, destToken ethereum.Address) (*big.Int, *big.Int) {
+	srcAmount := big.NewInt(0)
+	dstAmount := big.NewInt(0)
+	if len(T2ESrcAmounts) != 0 {
+		for _, amount := range T2ESrcAmounts {
+			srcAmount = srcAmount.Add(srcAmount, amount)
+		}
+	} else {
+		for _, amount := range E2TSrcAmounts {
+			srcAmount = srcAmount.Add(srcAmount, amount)
+		}
+	}
+	if len(E2TSrcAmounts) != 0 {
+		for i, amount := range E2TSrcAmounts {
+			dstAmount = dstAmount.Add(dstAmount, amount.Mul(amount, E2TRates[i]))
+		}
+	} else {
+		for i, amount := range T2ESrcAmounts {
+			dstAmount = dstAmount.Add(dstAmount, amount.Mul(amount, T2ERates[i]))
+		}
+	}
+	return srcAmount, dstAmount
+}
+
 func (crawler *Crawler) fillKyberTradeV4(tradelog common.TradelogV4, logItem types.Log, volumeExcludedReserves []ethereum.Address) (common.TradelogV4, error) {
 	var (
 		logger = crawler.sugar.With("func", caller.GetCurrentFunctionName())
@@ -334,7 +360,13 @@ func (crawler *Crawler) fillKyberTradeV4(tradelog common.TradelogV4, logItem typ
 	tradelog.T2ERates = trade.T2eRates
 	tradelog.E2TRates = trade.E2tRates
 
+	logger.Infow("trade info", "t2e src amount", len(trade.T2eSrcAmounts), "t2e rates", len(trade.T2eRates), "e2t src amount", len(trade.E2tSrcAmounts), "e2t rates", len(trade.E2tRates))
+	srcAmount, dstAmount := crawler.calculateTradeAmount(trade.T2eSrcAmounts, trade.E2tSrcAmounts, trade.T2eRates, trade.E2tRates, trade.Src, trade.Dest)
+	tradelog.SrcAmount = srcAmount
+	tradelog.DestAmount = dstAmount
+
 	tradelog.EthAmount = trade.EthWeiValue
+	tradelog.Index = logItem.Index
 
 	return tradelog, nil
 }
@@ -476,27 +508,12 @@ func (crawler *Crawler) updateBasicInfoV4(log types.Log, tradeLog common.Tradelo
 	tradeLog.TxDetail.TxSender = txSender
 	tradeLog.TxDetail.GasPrice = tx.GasPrice()
 	tradeLog.User.UserAddress = txSender
+	// tradeParam, err := decodeTradeInputParamV4(tx.Data()) // decode trade param to get dest address
+	// if err != nil {
+	// 	return tradeLog, errors.Wrapf(err, "failed to decode input param, tx %s", tx.Hash().String())
+	// }
 
-	if common.NoWalletFee(tradeLog) { // in case there's no fee, we try to get wallet addr from tradeWithHint input
-		if tx.To() != nil && bytes.Equal(tx.To().Bytes(), crawler.networkProxy.Bytes()) { // try to fail early, tx must have dst == networkProxy
-			tradeParam, err := decodeTradeInputParam(tx.Data())
-			if err != nil {
-				return tradeLog, errors.Wrapf(err, "failed to decode input param, tx %s", tx.Hash().String())
-			}
-			tradeLog.WalletAddress = tradeParam.WalletID
-			tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
-		} else {
-			crawler.sugar.Warnw("no walletFee but tx is not with dest is networkProxy, skip get wallet addr")
-		}
-	} else {
-		for _, fee := range tradeLog.Fees {
-			if fee.PlatformFee.Cmp(big.NewInt(0)) != 0 {
-				tradeLog.WalletAddress = fee.PlatformWallet
-				tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
-				break
-			}
-		}
-	}
+	// tradeLog.ReceiverAddress = tradeParam.DestAddress
 
 	return tradeLog, err
 }

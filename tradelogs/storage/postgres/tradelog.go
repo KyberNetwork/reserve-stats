@@ -21,14 +21,15 @@ func (tldb *TradeLogDB) saveReserve(reserves []common.Reserve) error {
 	var (
 		logger                               = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 		addresses, reserveIDs, rebateWallets []string
-		blockNumbers                         []uint64
+		blockNumbers, reserveTypes           []uint64
 	)
-	query := `INSERT INTO reserve (address, reserve_id, rebate_wallet, block_number)
+	query := `INSERT INTO reserve (address, reserve_id, rebate_wallet, block_number, reserve_type)
 	VALUES(
 		UNNEST($1::TEXT[]),
 		UNNEST($2::TEXT[]),
 		UNNEST($3::TEXT[]),
-		UNNEST($4::INTEGER[])
+		UNNEST($4::INTEGER[]),
+		UNNEST($5::INTEGER[])
 	) ON CONFLICT (address, reserve_id, block_number) DO NOTHING;`
 	logger.Infow("query", "value", query)
 	for _, r := range reserves {
@@ -36,10 +37,33 @@ func (tldb *TradeLogDB) saveReserve(reserves []common.Reserve) error {
 		reserveIDs = append(reserveIDs, ethereum.BytesToHash(r.ReserveID[:]).Hex())
 		rebateWallets = append(rebateWallets, r.RebateWallet.Hex())
 		blockNumbers = append(blockNumbers, r.BlockNumber)
+		reserveTypes = append(reserveTypes, r.ReserveType)
 	}
-	if _, err := tldb.db.Exec(query, pq.StringArray(addresses), pq.StringArray(reserveIDs), pq.StringArray(rebateWallets), pq.Array(blockNumbers)); err != nil {
+	if _, err := tldb.db.Exec(query, pq.StringArray(addresses), pq.StringArray(reserveIDs), pq.StringArray(rebateWallets),
+		pq.Array(blockNumbers), pq.Array(reserveTypes)); err != nil {
 		logger.Errorw("failed to add reserve into db", "error", err)
 		return err
+	}
+	return nil
+}
+
+func (tldb *TradeLogDB) updateRebateWallet(reserves []common.Reserve) error {
+	var (
+		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
+	)
+	query := `WITH r AS SELECT address, reserve_type FROM reserve WHERE reserve_id = $1,
+	INSERT INTO reserve(address, reserve_id, rebate_wallet, block_number, reserve_type)
+	VALUES (r.address, $1, $2, $3, r.reserve_type) ON CONFLICT (address, reserve_id, block_number) DO NOTHING;`
+	logger.Infow("query update rebate wallet", "value", query)
+	tx, err := tldb.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer pgsql.CommitOrRollback(tx, logger, &err)
+	for _, r := range reserves {
+		if _, err := tx.Exec(query, ethereum.BytesToHash(r.ReserveID[:]).Hex(), r.RebateWallet.Hex(), r.BlockNumber); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -59,6 +83,10 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 	if crResult != nil {
 		if len(crResult.Reserves) > 0 {
 			tldb.saveReserve(crResult.Reserves)
+		}
+
+		if len(crResult.UpdateWallets) > 0 {
+			tldb.updateRebateWallet(crResult.UpdateWallets)
 		}
 
 		logs := crResult.Trades

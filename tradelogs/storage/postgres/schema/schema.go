@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS "reserve" (
 	id SERIAL PRIMARY KEY,
 	address TEXT NOT NULL,
 	reserve_id TEXT DEFAULT '',
+	reserve_type INTEGER DEFAULT 0,
 	rebate_wallet TEXT DEFAULT '', 
 	block_number INTEGER DEFAULT 0,
 	CONSTRAINT reserve_pk UNIQUE (address, reserve_id, block_number)
@@ -61,10 +62,6 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	src_amount FLOAT(32),
 	dst_amount FLOAT(32),
 	wallet_address_id BIGINT NOT NULL REFERENCES wallet,
-	src_burn_amount FLOAT(32),
-	dst_burn_amount FLOAT(32),
-	src_wallet_fee_amount FLOAT(32),
-	dst_wallet_fee_amount FLOAT(32),
 	integration_app TEXT,
 	ip TEXT,
 	country TEXT,
@@ -102,48 +99,18 @@ CREATE INDEX IF NOT EXISTS "trade_wallet_address" ON "` + TradeLogsTableName + `
 CREATE INDEX IF NOT EXISTS "trade_tx_hash" ON "` + TradeLogsTableName + `"(tx_hash);
 
 
-CREATE TABLE IF NOT EXISTS  "tradelog_v4" (
-	id SERIAL,
-	timestamp TIMESTAMPTZ,
-	block_number INTEGER,
-	tx_hash TEXT,
-	eth_amount FLOAT(32),
-	original_eth_amount FLOAT(32),
-	user_address_id BIGINT NOT NULL REFERENCES users,
-	src_address_id BIGINT NOT NULL REFERENCES token,
-	dst_address_id BIGINT NOT NULL REFERENCES token,
-	src_amount FLOAT(32),
-	dst_amount FLOAT(32),
-	platform_wallet_address_id BIGINT NOT NULL REFERENCES wallet,
-	integration_app TEXT,
-	ip TEXT,
-	country TEXT,
-	eth_usd_rate FLOAT(32),
-	eth_usd_provider TEXT,
-	index INTEGER,
-	kyced BOOLEAN,
-	is_first_trade BOOLEAN,
-	tx_sender	TEXT,
-	receiver_address	TEXT,
-	gas_used INTEGER,
-	gas_price FLOAT(32),
-	transaction_fee FLOAT(32),
-	PRIMARY KEY (tx_hash,index)
-);
-
 CREATE TABLE IF NOT EXISTS "fee" (
 	id SERIAL,
 	trade_id INTEGER NOT NULL REFERENCES tradelogs,
 	reserve_address_id INTEGER NOT NULL REFERENCES reserve,
+	wallet_address TEXT default '',
+	wallet_fee FLOAT(32) default 0,
 	platform_fee FLOAT(32) default 0,
 	burn FLOAT(32) default 0,
 	rebate FLOAT(32) default 0,
 	reward FLOAT(32) default 0
 )
 `
-
-// t2e_reserves_id BIGINT[] NOT NULL REFERENCES reserve,
-// e2t_reserves_id BIGINT[] NOT NULL REFERENCES reserve
 
 // DefaultDateFormat ...
 const DefaultDateFormat = "2006-01-02 15:04:05"

@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	gas_used INTEGER,
 	gas_price FLOAT(32),
 	transaction_fee FLOAT(32),
+	version integer,
 	CONSTRAINT tradelog_constraint UNIQUE (tx_hash, index)
 );
 
@@ -102,13 +103,14 @@ CREATE INDEX IF NOT EXISTS "trade_tx_hash" ON "` + TradeLogsTableName + `"(tx_ha
 CREATE TABLE IF NOT EXISTS "fee" (
 	id SERIAL,
 	trade_id INTEGER NOT NULL REFERENCES tradelogs,
-	reserve_address_id INTEGER NOT NULL REFERENCES reserve,
+	reserve_address TEXT NOT NULL,
 	wallet_address TEXT default '',
 	wallet_fee FLOAT(32) default 0,
 	platform_fee FLOAT(32) default 0,
 	burn FLOAT(32) default 0,
 	rebate FLOAT(32) default 0,
-	reward FLOAT(32) default 0
+	reward FLOAT(32) default 0,
+	version INTEGER default 0
 )
 `
 

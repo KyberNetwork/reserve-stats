@@ -126,6 +126,7 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) (*common.Craw
 				return nil, err
 			}
 		case executeTradeEvent:
+			tradeLog.Version = 1 // tradelog version 1
 			if tradeLog, err = fillExecuteTrade(tradeLog, log); err != nil {
 				return nil, err
 			}

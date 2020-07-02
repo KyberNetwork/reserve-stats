@@ -133,12 +133,13 @@ func (crawler *Crawler) fillFeeDistributed(tradelog common.TradelogV4, log types
 
 	tradelog.Fees = append(tradelog.Fees,
 		common.TradelogFee{
-			PlatformFee:    fee.PlatformFeeWei,
-			PlatformWallet: fee.PlatformWallet,
-			Burn:           fee.BurnAmtWei,
-			Rebate:         fee.RebateWei,
-			Reward:         fee.RewardWei,
-			RebateWallets:  fee.RebateWallets,
+			PlatformFee:               fee.PlatformFeeWei,
+			PlatformWallet:            fee.PlatformWallet,
+			Burn:                      fee.BurnAmtWei,
+			Rebate:                    fee.RebateWei,
+			Reward:                    fee.RewardWei,
+			RebateWallets:             fee.RebateWallets,
+			RebatePercentBpsPerWallet: fee.RebatePercentBpsPerWallet,
 		})
 	return tradelog, nil
 }
@@ -175,6 +176,7 @@ func (crawler *Crawler) assembleTradeLogsV4(eventLogs []types.Log) (*common.Craw
 				return nil, err
 			}
 		case kyberTradeEventV4:
+			tradeLog.Version = 4 // tradelog version 4
 			if tradeLog, err = crawler.fillKyberTradeV4(tradeLog, log, crawler.volumeExludedReserves); err != nil {
 				return nil, err
 			}

@@ -360,7 +360,6 @@ func (crawler *Crawler) fillKyberTradeV4(tradelog common.TradelogV4, logItem typ
 	tradelog.T2ERates = trade.T2eRates
 	tradelog.E2TRates = trade.E2tRates
 
-	logger.Infow("trade info", "t2e src amount", len(trade.T2eSrcAmounts), "t2e rates", len(trade.T2eRates), "e2t src amount", len(trade.E2tSrcAmounts), "e2t rates", len(trade.E2tRates))
 	srcAmount, dstAmount := crawler.calculateTradeAmount(trade.T2eSrcAmounts, trade.E2tSrcAmounts, trade.T2eRates, trade.E2tRates, trade.Src, trade.Dest)
 	tradelog.SrcAmount = srcAmount
 	tradelog.DestAmount = dstAmount

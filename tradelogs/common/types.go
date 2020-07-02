@@ -124,7 +124,8 @@ type TradelogV4 struct {
 	ReceiverAddress ethereum.Address `json:"receiver_address"`
 	TxDetail        TxDetail         `json:"tx_detail"`
 
-	Index uint `json:"index"`
+	Index   uint `json:"index"`
+	Version uint `json:"version"`
 }
 
 // Reserve represent a reserve in KN
@@ -138,8 +139,10 @@ type Reserve struct {
 
 // TradelogFee is fee for a trade
 type TradelogFee struct {
-	ReserveAddr               ethereum.Address   `json:"reserve_addr"` // backward compatible for tradelog before katalyst
-	WalletName                string             `json:"wallet_name"`  // backward compatible for tradelog before katalyst
+	ReserveAddr ethereum.Address `json:"reserve_addr"` // backward compatible for tradelog before katalyst
+	WalletName  string           `json:"wallet_name"`  // backward compatible for tradelog before katalyst
+	WalletFee   *big.Int         `json:"wallet_fee"`   // backward compatible for tradelog before katalyst
+
 	PlatformFee               *big.Int           `json:"platform_fee"`
 	PlatformWallet            ethereum.Address   `json:"platform_wallet"`
 	Reward                    *big.Int           `json:"reward"`

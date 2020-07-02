@@ -105,6 +105,7 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) (*common.Craw
 				return nil, err
 			}
 		case kyberTradeEvent:
+			tradeLog.Version = 3 // tradelog version 3
 			if tradeLog, err = fillKyberTradeV3(tradeLog, log, crawler.volumeExludedReserves); err != nil {
 				return nil, err
 			}

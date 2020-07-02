@@ -2,53 +2,64 @@ package postgres
 
 import (
 	"database/sql"
+	"fmt"
+	"math/big"
 	"strconv"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/utils"
 )
 
 type record struct {
-	Timestamp          time.Time        `db:"timestamp"`
-	BlockNumber        uint64           `db:"block_number"`
-	TransactionHash    string           `db:"tx_hash"`
-	EthAmount          float64          `db:"eth_amount"`
-	OriginalEthAmount  float64          `db:"original_eth_amount"`
-	UserAddress        string           `db:"user_address"`
-	SrcAddress         string           `db:"src_address"`
-	DestAddress        string           `db:"dst_address"`
-	SrcReserveAddress  string           `db:"src_reserve_address"`
-	DstReserveAddress  string           `db:"dst_reserve_address"`
-	T2EReserves        [][32]byte       `db:"t2e_reserves"`
-	E2TReserves        [][32]byte       `db:"e2t_reserves"`
-	SrcAmount          float64          `db:"src_amount"`
-	DestAmount         float64          `db:"dst_amount"`
-	WalletAddress      string           `db:"wallet_address"`
-	WalletName         string           `db:"wallet_name"`
-	SrcBurnAmount      float64          `db:"src_burn_amount"`
-	DstBurnAmount      float64          `db:"dst_burn_amount"`
-	SrcWalletFeeAmount float64          `db:"src_wallet_fee_amount"`
-	DstWalletFeeAmount float64          `db:"dst_wallet_fee_amount"`
-	IntegrationApp     string           `db:"integration_app"`
-	IP                 sql.NullString   `db:"ip"`
-	Country            sql.NullString   `db:"country"`
-	ETHUSDRate         float64          `db:"eth_usd_rate"`
-	ETHUSDProvider     string           `db:"eth_usd_provider"`
-	Index              string           `db:"index"`
-	Kyced              bool             `db:"kyced"`
-	IsFirstTrade       bool             `db:"is_first_trade"`
-	TxSender           string           `db:"tx_sender"`
-	ReceiverAddress    string           `db:"receiver_address"`
-	GasUsed            uint64           `db:"gas_used"`
-	GasPrice           float64          `db:"gas_price"`
-	TransactionFee     float64          `db:"transaction_fee"`
-	Reserves           []common.Reserve `db:"reserves"`
-	Version            uint64           `db:"version"`
+	Timestamp         time.Time  `db:"timestamp"`
+	BlockNumber       uint64     `db:"block_number"`
+	TransactionHash   string     `db:"tx_hash"`
+	EthAmount         float64    `db:"eth_amount"`
+	OriginalEthAmount float64    `db:"original_eth_amount"`
+	UserAddress       string     `db:"user_address"`
+	SrcAddress        string     `db:"src_address"`
+	DestAddress       string     `db:"dst_address"`
+	SrcReserveAddress string     `db:"src_reserve_address"`
+	DstReserveAddress string     `db:"dst_reserve_address"`
+	T2EReserves       [][32]byte `db:"t2e_reserves"`
+	E2TReserves       [][32]byte `db:"e2t_reserves"`
+	SrcAmount         float64    `db:"src_amount"`
+	DestAmount        float64    `db:"dst_amount"`
+	WalletAddress     string     `db:"wallet_address"`
+	WalletName        string     `db:"wallet_name"`
+	// SrcBurnAmount      float64          `db:"src_burn_amount"`
+	// DstBurnAmount      float64          `db:"dst_burn_amount"`
+	// SrcWalletFeeAmount float64          `db:"src_wallet_fee_amount"`
+	// DstWalletFeeAmount float64          `db:"dst_wallet_fee_amount"`
+	IntegrationApp  string               `db:"integration_app"`
+	IP              sql.NullString       `db:"ip"`
+	Country         sql.NullString       `db:"country"`
+	ETHUSDRate      float64              `db:"eth_usd_rate"`
+	ETHUSDProvider  string               `db:"eth_usd_provider"`
+	Index           string               `db:"index"`
+	Kyced           bool                 `db:"kyced"`
+	IsFirstTrade    bool                 `db:"is_first_trade"`
+	TxSender        string               `db:"tx_sender"`
+	ReceiverAddress string               `db:"receiver_address"`
+	GasUsed         uint64               `db:"gas_used"`
+	GasPrice        float64              `db:"gas_price"`
+	TransactionFee  float64              `db:"transaction_fee"`
+	Version         uint                 `db:"version"`
+	Fee             []common.TradelogFee `db:"fee"`
+}
+
+type feeRecord struct {
+	PlatFormFee float64 `db:"platform_fee"`
+	Walletfee   float64 `db:"platform_fee"`
+	Burn        float64 `db:"burn"`
+	Rebate      float64 `db:"rebate"`
+	Reward      float64 `db:"reward"`
+	Version     uint64  `db:"version"`
 }
 
 func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, error) {
+	var dstAmount float64
 	ethAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)
 	if err != nil {
 		return nil, err
@@ -63,16 +74,34 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, erro
 	if err != nil {
 		return nil, err
 	}
-
-	dstAmount, err := tldb.tokenAmountFormatter.FromWei(log.TokenInfo.DestAddress, log.DestAmount)
-	if err != nil {
-		return nil, err
+	if log.Version == 4 {
+		dstAmount, err = tldb.tokenAmountFormatter.FromWei(log.TokenInfo.SrcAddress, log.DestAmount)
+		if err != nil {
+			return nil, err
+		}
+		floatDstAmount := big.NewFloat(0).SetFloat64(dstAmount)
+		bigDstAmount := big.NewInt(0)
+		floatDstAmount.Int(bigDstAmount)
+		dstAmount, err = tldb.tokenAmountFormatter.FromWei(log.TokenInfo.DestAddress, bigDstAmount)
+		if err != nil {
+			return nil, err
+		}
+		if dstAmount == 0 {
+			fmt.Println(bigDstAmount)
+			fmt.Println(log.TransactionHash.Hex())
+			panic(log.DestAmount)
+		}
+	} else {
+		dstAmount, err = tldb.tokenAmountFormatter.FromWei(log.TokenInfo.DestAddress, log.DestAmount)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	srcBurnAmount, dstBurnAmount, err := utils.GetBurnAmount(tldb.sugar, tldb.tokenAmountFormatter, log, tldb.kncAddr)
-	if err != nil {
-		return nil, err
-	}
+	// srcBurnAmount, dstBurnAmount, err := utils.GetBurnAmount(tldb.sugar, tldb.tokenAmountFormatter, log, tldb.kncAddr)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	// srcWalletFee, dstWalletFee, err := tldb.getWalletFeeAmount(log)
 	// if err != nil {
@@ -102,8 +131,8 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, erro
 		DestAmount:        dstAmount,
 		WalletAddress:     log.WalletAddress.String(),
 		WalletName:        log.WalletName,
-		SrcBurnAmount:     srcBurnAmount,
-		DstBurnAmount:     dstBurnAmount,
+		// SrcBurnAmount:     srcBurnAmount,
+		// DstBurnAmount:     dstBurnAmount,
 		// TODO: fill wallet fee amount
 		// SrcWalletFeeAmount: srcWalletFee,
 		// DstWalletFeeAmount: dstWalletFee,
@@ -119,6 +148,8 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, erro
 		TransactionFee:  transactionFee,
 		GasPrice:        gasPrice,
 		GasUsed:         log.TxDetail.GasUsed,
+		Version:         log.Version,
+		Fee:             log.Fees,
 	}, nil
 }
 

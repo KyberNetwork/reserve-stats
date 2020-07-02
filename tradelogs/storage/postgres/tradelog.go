@@ -158,6 +158,7 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 			logger.Debugw("Record", "record", r)
 			_, err = tx.NamedExec(insertionUserTemplate, r)
 			if err != nil {
+				logger.Infow("user", "address", r.UserAddress)
 				logger.Debugw("Error while add users", "error", err)
 				return err
 			}
@@ -167,12 +168,23 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 				logger.Debugw("Error while add wallet", "error", err)
 				return err
 			}
-
-			_, err = tx.NamedExec(insertionTradelogsTemplate, r)
+			// var tradelogID int64
+			_, err := tx.NamedExec(insertionTradelogsTemplate, r)
 			if err != nil {
 				logger.Debugw("Error while add trade logs", "error", err)
 				return err
 			}
+			// if rows.Next() {
+			// 	if err := rows.Scan(&tradelogID); err != nil {
+			// 		logger.Debugw("failed to get tradelog id", "error", err)
+			// 		return err
+			// 	}
+			// 	logger.Infow("tradelog", "id", tradelogID)
+			// 	if err := tldb.SaveFee(tx, r.Fee, tradelogID); err != nil {
+			// 		logger.Debugw("Error while add tradelog fee", "error", err)
+			// 		return err
+			// 	}
+			// }
 		}
 
 		return err

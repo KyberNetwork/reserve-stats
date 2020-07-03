@@ -120,8 +120,6 @@ type Crawler struct {
 
 	etherscanClient *etherscan.Client
 	networkProxy    ethereum.Address
-
-	tokenInfoGetter *blockchain.TokenInfoGetter
 }
 
 func logDataToExecuteTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
@@ -313,25 +311,25 @@ func fillKyberTradeV3(tradeLog common.TradelogV4, logItem types.Log, volumeExclu
 	return tradeLog, nil
 }
 
-func (crawler *Crawler) calculateTradeAmount(T2ESrcAmounts, E2TSrcAmounts, T2ERates, E2TRates []*big.Int, srcToken, destToken ethereum.Address) (*big.Int, *big.Int) {
+func (crawler *Crawler) calculateTradeAmount(t2ESrcAmounts, e2TSrcAmounts, t2ERates, e2TRates []*big.Int, srcToken, destToken ethereum.Address) (*big.Int, *big.Int) {
 	srcAmount := big.NewInt(0)
 	dstAmount := big.NewInt(0)
-	if len(T2ESrcAmounts) != 0 {
-		for _, amount := range T2ESrcAmounts {
+	if len(t2ESrcAmounts) != 0 {
+		for _, amount := range t2ESrcAmounts {
 			srcAmount = srcAmount.Add(srcAmount, amount)
 		}
 	} else {
-		for _, amount := range E2TSrcAmounts {
+		for _, amount := range e2TSrcAmounts {
 			srcAmount = srcAmount.Add(srcAmount, amount)
 		}
 	}
-	if len(E2TSrcAmounts) != 0 {
-		for i, amount := range E2TSrcAmounts {
-			dstAmount = dstAmount.Add(dstAmount, amount.Mul(amount, E2TRates[i]))
+	if len(e2TSrcAmounts) != 0 {
+		for i, amount := range e2TSrcAmounts {
+			dstAmount = dstAmount.Add(dstAmount, amount.Mul(amount, e2TRates[i]))
 		}
 	} else {
-		for i, amount := range T2ESrcAmounts {
-			dstAmount = dstAmount.Add(dstAmount, amount.Mul(amount, T2ERates[i]))
+		for i, amount := range t2ESrcAmounts {
+			dstAmount = dstAmount.Add(dstAmount, amount.Mul(amount, t2ERates[i]))
 		}
 	}
 	return srcAmount, dstAmount

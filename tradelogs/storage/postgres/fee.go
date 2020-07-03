@@ -21,7 +21,16 @@ func (tldb *TradeLogDB) SaveFee(tx *sqlx.Tx, fees []common.TradelogFee, tradelog
 		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	logger.Info("save fee")
-	query := `INSERT INTO fee(trade_id, reserve_address, wallet_address, wallet_fee, platform_fee, burn, rebate, reward)
+	query := `INSERT INTO fee(
+		trade_id, 
+		reserve_address, 
+		wallet_address, 
+		wallet_fee, 
+		platform_fee, 
+		burn, 
+		rebate, 
+		reward
+	)
 	VALUES(
 		$1,
 		$2,

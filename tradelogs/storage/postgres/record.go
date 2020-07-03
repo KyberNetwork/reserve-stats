@@ -49,15 +49,6 @@ type record struct {
 	Fee             []common.TradelogFee `db:"fee"`
 }
 
-type feeRecord struct {
-	PlatFormFee float64 `db:"platform_fee"`
-	Walletfee   float64 `db:"platform_fee"`
-	Burn        float64 `db:"burn"`
-	Rebate      float64 `db:"rebate"`
-	Reward      float64 `db:"reward"`
-	Version     uint64  `db:"version"`
-}
-
 func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, error) {
 	var dstAmount float64
 	ethAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)

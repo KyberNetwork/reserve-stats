@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -11,11 +12,6 @@ import (
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/lib/pq"
 )
-
-// SaveTradelogV4 save tradelog for v4
-func (tldb *TradeLogDB) SaveTradelogV4() error {
-	return nil
-}
 
 func (tldb *TradeLogDB) saveReserve(reserves []common.Reserve) error {
 	var (
@@ -82,11 +78,15 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 	)
 	if crResult != nil {
 		if len(crResult.Reserves) > 0 {
-			tldb.saveReserve(crResult.Reserves)
+			if err := tldb.saveReserve(crResult.Reserves); err != nil {
+				return err
+			}
 		}
 
 		if len(crResult.UpdateWallets) > 0 {
-			tldb.updateRebateWallet(crResult.UpdateWallets)
+			if err := tldb.updateRebateWallet(crResult.UpdateWallets); err != nil {
+				return err
+			}
 		}
 
 		logs := crResult.Trades
@@ -125,19 +125,6 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 			}
 		}
 
-		// 	for _, reserve := range r.E2TReserves {
-		// 		if _, ok := reserveAddress[reserve]; !ok {
-		// 			reserveAddress[reserve] = struct{}{}
-		// 			reserveAddressArray = append(reserveAddressArray, reserve)
-		// 		}
-		// 		token := r.DestAddress
-		// 		if _, ok := tokens[reserve]; !ok {
-		// 			tokens[token] = struct{}{}
-		// 			tokensArray = append(tokensArray, token)
-		// 		}
-		// 	}
-		// }
-
 		tx, err := tldb.db.Beginx()
 		if err != nil {
 			return err
@@ -168,23 +155,69 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 				logger.Debugw("Error while add wallet", "error", err)
 				return err
 			}
-			// var tradelogID int64
-			_, err := tx.NamedExec(insertionTradelogsTemplate, r)
-			if err != nil {
-				logger.Debugw("Error while add trade logs", "error", err)
+
+			var (
+				tradelogID                            uint64
+				reserveAddresses, platformWallets     []string
+				burns, rebates, rewards, platformFees []float64
+			)
+			query := `SELECT _id as id FROM 
+			create_or_update_tradelogs(
+				$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+				$13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
+				$26, $27, $28, $29, $30, $31
+			);`
+			for _, f := range r.Fee {
+				reserveAddresses = append(reserveAddresses, f.ReserveAddr.Hex())
+				platformWallets = append(platformWallets, f.PlatformWallet.Hex())
+				platformFee, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Burn)
+				if err != nil {
+					return err
+				}
+				platformFees = append(platformFees, platformFee)
+				burn, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Burn)
+				if err != nil {
+					return err
+				}
+				burns = append(burns, burn)
+				rebate, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Rebate)
+				if err != nil {
+					return err
+				}
+				rebates = append(rebates, rebate)
+				reward, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Reward)
+				if err != nil {
+					return err
+				}
+				rewards = append(rewards, reward)
+			}
+			if err := tx.Get(&tradelogID, query, 0,
+				r.Timestamp, r.BlockNumber, r.TransactionHash,
+				r.EthAmount, r.OriginalEthAmount, r.UserAddress, r.SrcAddress, r.DestAddress,
+				r.SrcAmount, r.DestAmount,
+				r.IntegrationApp,
+				r.IP,
+				r.Country,
+				r.ETHUSDRate,
+				r.ETHUSDProvider,
+				r.Index,
+				r.Kyced,
+				r.IsFirstTrade,
+				r.TxSender,
+				r.ReceiverAddress,
+				r.GasUsed,
+				r.GasPrice,
+				r.TransactionFee,
+				r.Version,
+				pq.StringArray(reserveAddresses),
+				pq.StringArray(platformWallets),
+				pq.Array(platformFees),
+				pq.Array(burns),
+				pq.Array(rebates),
+				pq.Array(rewards),
+			); err != nil {
 				return err
 			}
-			// if rows.Next() {
-			// 	if err := rows.Scan(&tradelogID); err != nil {
-			// 		logger.Debugw("failed to get tradelog id", "error", err)
-			// 		return err
-			// 	}
-			// 	logger.Infow("tradelog", "id", tradelogID)
-			// 	if err := tldb.SaveFee(tx, r.Fee, tradelogID); err != nil {
-			// 		logger.Debugw("Error while add tradelog fee", "error", err)
-			// 		return err
-			// 	}
-			// }
 		}
 
 		return err

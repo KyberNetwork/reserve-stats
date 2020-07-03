@@ -34,42 +34,6 @@ func init() {
 	}
 }
 
-type tradeWithHintParamV4 struct {
-	Src               ethereum.Address
-	SrcAmount         *big.Int
-	Dest              ethereum.Address
-	DestAddress       ethereum.Address
-	MaxDestAmount     *big.Int
-	MinConversionRate *big.Int
-	Hint              []byte
-}
-
-// func (crawler ) decodeTradeInputParamV4(data []byte) (out tradeWithHintParamV4, err error) { // decode txInput method signature
-// 	if len(data) < 4 {
-// 		return tradeWithHintParamV4{}, errors.New("input data not valid")
-// 	}
-// 	// recover Method from signature and ABI
-// 	method, err := networkABI.MethodById(data[0:4])
-// 	if err != nil {
-// 		return tradeWithHintParamV4{}, errors.Wrap(err, "cannot find method for correspond data")
-// 	}
-// 	switch method.Name {
-// 	case "trade", "tradeWithHint", "tradeWithHintAndFee":
-// 		// unpack method inputs
-// 		var out tradeWithHintParamV4
-// 		err = method.Inputs.Unpack(&out, data[4:])
-// 		if err != nil {
-// 			return tradeWithHintParamV4{}, errors.Wrap(err, "unpack param failed")
-// 		}
-// 		return out, nil
-// 	case "swapTokenToToken", "swapTokenToEther", "swapEtherToToken":
-// 		// no wallet this trade, just return empty
-// 		return tradeWithHintParamV4{}, nil
-// 	default:
-// 		return tradeWithHintParamV4{}, nil
-// 	}
-// }
-
 func (crawler *Crawler) fetchTradeLogV4(fromBlock, toBlock *big.Int, timeout time.Duration) (*common.CrawlResult, error) {
 	topics := [][]ethereum.Hash{
 		{

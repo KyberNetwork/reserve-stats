@@ -47,9 +47,14 @@ func (tldb *TradeLogDB) updateRebateWallet(reserves []common.Reserve) error {
 	var (
 		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 	)
-	query := `WITH r(address, reserve_type) AS (SELECT address, reserve_type FROM reserve WHERE reserve_id = $1)
-	INSERT INTO reserve(address, reserve_id, rebate_wallet, block_number, reserve_type)
-	VALUES (r.address, $1, $2, $3, r.reserve_type) ON CONFLICT (address, reserve_id, block_number) DO NOTHING;`
+	query := `INSERT INTO reserve(address, reserve_id, rebate_wallet, block_number, reserve_type)
+		VALUES (
+		(SELECT address FROM reserve WHERE reserve_id = $1),
+		$1,
+		$2,
+		$3, 
+		(SELECT reserve_type FROM reserve WHERE reserve_id = $1)
+		) ON CONFLICT (address, reserve_id, block_number) DO NOTHING;`
 	logger.Infow("query update rebate wallet", "value", query)
 	tx, err := tldb.db.Beginx()
 	if err != nil {

@@ -31,6 +31,7 @@ func (v *VersionedStartingBlocks) V2() uint64 {
 //StartingBlocks map deployment to its according starting blocks
 var StartingBlocks = map[Deployment]VersionedStartingBlocks{
 	Staging: {
+		v4: 10378366,
 		v3: 6997111,
 		v2: 5864036,
 	},

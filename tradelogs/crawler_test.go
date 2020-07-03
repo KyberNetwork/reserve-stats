@@ -267,11 +267,8 @@ func newTestCrawler(t *testing.T, version string) *Crawler {
 // test function for get eth amount (only run locally)
 func TestCrawler_GetEthAmount(t *testing.T) {
 	testutil.SkipExternal(t)
-	var (
-		c *Crawler
-	)
 	// test v3 token to token
-	c = newTestCrawler(t, "v3")
+	c := newTestCrawler(t, "v3")
 	result, err := c.GetTradeLogs(big.NewInt(8166246), big.NewInt(8166247), time.Minute)
 	require.NoError(t, err)
 	require.Len(t, result.Trades, 1)

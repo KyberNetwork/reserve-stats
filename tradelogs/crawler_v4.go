@@ -2,16 +2,13 @@ package tradelogs
 
 import (
 	"math/big"
-	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
-	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
@@ -25,14 +22,6 @@ const (
 
 	kyberTradeEventV4 = "0x30bbea603a7b36858fe5e3ec6ba5ff59dde039d02120d758eacfaed01520577d"
 )
-
-func init() {
-	var err error
-	networkABI, err = abi.JSON(strings.NewReader(contracts.KyberNetworkProxyV4ABI))
-	if err != nil {
-		panic(err)
-	}
-}
 
 func (crawler *Crawler) fetchTradeLogV4(fromBlock, toBlock *big.Int, timeout time.Duration) (*common.CrawlResult, error) {
 	topics := [][]ethereum.Hash{

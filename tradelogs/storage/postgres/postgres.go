@@ -93,6 +93,7 @@ type tradeLogDBData struct {
 	GasUsed            uint64         `db:"gas_used"`
 	GasPrice           float64        `db:"gas_price"`
 	TransactionFee     float64        `db:"transaction_fee"`
+	Version            uint           `db:"version"`
 }
 
 func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4, error) {
@@ -105,30 +106,38 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4,
 		dstAmountInWei                     *big.Int
 		originalEthAmountInWei             *big.Int
 		gasPriceInWei, transactionFeeInWei *big.Int
+
+		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 
 	if ethAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.EthAmount); err != nil {
+		logger.Debugw("failed to parse eth amount", "error", err)
 		return tradeLog, err
 	}
 
 	if originalEthAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.OriginalEthAmount); err != nil {
+		logger.Debugw("failed to parse original eth amount", "error", err)
 		return tradeLog, err
 	}
 	SrcAddress := ethereum.HexToAddress(r.SrcAddress)
 	if srcAmountInWei, err = tldb.tokenAmountFormatter.ToWei(SrcAddress, r.SrcAmount); err != nil {
+		logger.Debugw("failed to parse src amount", "error", err)
 		return tradeLog, err
 	}
 	DstAddress := ethereum.HexToAddress(r.DstAddress)
 	if dstAmountInWei, err = tldb.tokenAmountFormatter.ToWei(DstAddress, r.DstAmount); err != nil {
+		logger.Debugw("failed to parse dst amount", "error", err)
 		return tradeLog, err
 	}
 
 	// these conversion below is from Gwei to wei which is used ^18 method, so I used ToWei function with ETHAddr - which have decimals of 18
 	if gasPriceInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.GasPrice); err != nil {
+		logger.Debugw("failed to parse gas price", "error", err)
 		return tradeLog, err
 	}
 
 	if transactionFeeInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.TransactionFee); err != nil {
+		logger.Debugw("failed to parse transaction fee", "error", err)
 		return tradeLog, err
 	}
 
@@ -165,6 +174,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4,
 			TransactionFee: transactionFeeInWei,
 			TxSender:       ethereum.HexToAddress(r.TxSender),
 		},
+		Version: r.Version,
 	}
 	return tradeLog, nil
 }
@@ -336,16 +346,13 @@ DO NOTHING;`
 const selectTradeLogsQuery = `
 SELECT a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
 e.address AS src_address, f.address AS dst_address,
-src_amount, dst_amount, ip, country, integration_app, src_burn_amount, dst_burn_amount,
-index, tx_hash, b.address AS src_rsv_address, c.address AS dst_rsv_address, src_wallet_fee_amount, dst_wallet_fee_amount,
-g.address AS wallet_addr, tx_sender, receiver_address, COALESCE(gas_used, 0) as gas_used, COALESCE(gas_price, 0) as gas_price, COALESCE(transaction_fee, 0) as transaction_fee
+src_amount, dst_amount, ip, country, integration_app, 
+index, tx_hash, tx_sender, receiver_address, 
+COALESCE(gas_used, 0) as gas_used, COALESCE(gas_price, 0) as gas_price, COALESCE(transaction_fee, 0) as transaction_fee, version
 FROM "` + schema.TradeLogsTableName + `" AS a
-INNER JOIN reserve AS b ON a.src_reserve_address_id = b.id
-INNER JOIN reserve AS c ON a.dst_reserve_address_id = c.id
 INNER JOIN users AS d ON a.user_address_id = d.id
 INNER JOIN token AS e ON a.src_address_id = e.id
 INNER JOIN token AS f ON a.dst_address_id = f.id
-INNER JOIN wallet AS g ON a.wallet_address_id = g.id
 WHERE a.timestamp >= $1 and a.timestamp <= $2;
 `
 

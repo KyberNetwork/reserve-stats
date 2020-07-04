@@ -505,12 +505,6 @@ func (crawler *Crawler) updateBasicInfoV4(log types.Log, tradeLog common.Tradelo
 	tradeLog.TxDetail.TxSender = txSender
 	tradeLog.TxDetail.GasPrice = tx.GasPrice()
 	tradeLog.User.UserAddress = txSender
-	// tradeParam, err := decodeTradeInputParamV4(tx.Data()) // decode trade param to get dest address
-	// if err != nil {
-	// 	return tradeLog, errors.Wrapf(err, "failed to decode input param, tx %s", tx.Hash().String())
-	// }
-
-	// tradeLog.ReceiverAddress = tradeParam.DestAddress
 
 	return tradeLog, err
 }

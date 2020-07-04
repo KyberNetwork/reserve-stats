@@ -96,15 +96,15 @@ type TradelogV4 struct {
 
 	TokenInfo TradeTokenInfo `json:"token_info"`
 	// support version before katalyst
-	SrcReserveAddress ethereum.Address
-	DstReserveAddress ethereum.Address
+	SrcReserveAddress ethereum.Address `json:"src_reserve_address"`
+	DstReserveAddress ethereum.Address `json:"dst_reserve_address"`
 
 	// After katalyst info
 	T2EReserves [][32]byte    `json:"t2e_reserves"` // reserve_id of reserve for trade from token to ether
 	E2TReserves [][32]byte    `json:"e2t_reserves"` // reserve_id of reserve for trade from ether to token
 	T2ERates    []*big.Int    `json:"t2e_rates"`
 	E2TRates    []*big.Int    `json:"e2t_rates"`
-	Fees        []TradelogFee `json:"fee"`
+	Fees        []TradelogFee `json:"fees"`
 
 	// EthAmount = OriginalEthAmount * len(BurnFees)
 	EthAmount         *big.Int `json:"eth_amount"`
@@ -208,6 +208,37 @@ func (tl *TradeLog) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON implements custom JSON unmarshal for TradeLog
 func (tl *TradeLog) UnmarshalJSON(b []byte) error {
 	type AliasTradeLog TradeLog
+	type mask struct {
+		Timestamp uint64 `json:"timestamp"`
+		*AliasTradeLog
+	}
+	m := mask{
+		Timestamp:     0,
+		AliasTradeLog: (*AliasTradeLog)(tl),
+	}
+	err := json.Unmarshal(b, &m)
+	if err != nil {
+		return err
+	}
+	tl.Timestamp = timeutil.TimestampMsToTime(m.Timestamp)
+	return nil
+}
+
+// MarshalJSON implements custom JSON marshaller for TradeLog to format timestamp in unix millis instead of RFC3339.
+func (tl *TradelogV4) MarshalJSON() ([]byte, error) {
+	type AliasTradeLog TradelogV4
+	return json.Marshal(struct {
+		Timestamp uint64 `json:"timestamp"`
+		*AliasTradeLog
+	}{
+		AliasTradeLog: (*AliasTradeLog)(tl),
+		Timestamp:     timeutil.TimeToTimestampMs(tl.Timestamp),
+	})
+}
+
+// UnmarshalJSON implements custom JSON unmarshal for TradeLog
+func (tl *TradelogV4) UnmarshalJSON(b []byte) error {
+	type AliasTradeLog TradelogV4
 	type mask struct {
 		Timestamp uint64 `json:"timestamp"`
 		*AliasTradeLog

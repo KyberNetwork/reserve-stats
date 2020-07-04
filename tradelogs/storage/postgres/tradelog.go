@@ -72,8 +72,8 @@ func (tldb *TradeLogDB) updateRebateWallet(reserves []common.Reserve) error {
 // SaveTradeLogs persist trade logs to DB
 func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) {
 	var (
-		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
-		// reserveAddress      = make(map[string]struct{})
+		logger              = tldb.sugar.With("func", caller.GetCurrentFunctionName())
+		reserveAddress      = make(map[string]struct{})
 		reserveAddressArray []string
 		tokens              = make(map[string]struct{})
 		tokensArray         []string
@@ -128,6 +128,20 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 				tokens[token] = struct{}{}
 				tokensArray = append(tokensArray, token)
 			}
+			reserve := r.SrcReserveAddress
+			if reserve != "" {
+				if _, ok := reserveAddress[reserve]; !ok {
+					reserveAddress[reserve] = struct{}{}
+					reserveAddressArray = append(reserveAddressArray, reserve)
+				}
+			}
+			reserve = r.DstReserveAddress
+			if reserve != "" {
+				if _, ok := reserveAddress[reserve]; !ok {
+					reserveAddress[reserve] = struct{}{}
+					reserveAddressArray = append(reserveAddressArray, reserve)
+				}
+			}
 		}
 
 		tx, err := tldb.db.Beginx()
@@ -135,14 +149,17 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 			return err
 		}
 		defer pgsql.CommitOrRollback(tx, logger, &err)
-
-		err = tldb.saveReserveAddress(tx, reserveAddressArray)
-		if err != nil {
-			return err
+		if len(reserveAddressArray) > 0 {
+			err = tldb.saveReserveAddress(tx, reserveAddressArray)
+			if err != nil {
+				logger.Debugw("failed to save reserve address", "error", err)
+				return err
+			}
 		}
 
 		err = tldb.saveTokens(tx, tokensArray)
 		if err != nil {
+			logger.Debugw("failed to save token", "error", err)
 			return err
 		}
 
@@ -221,6 +238,7 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 				pq.Array(rebates),
 				pq.Array(rewards),
 			); err != nil {
+				logger.Debugw("failed to save tradelogs", "error", err)
 				return err
 			}
 		}

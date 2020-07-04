@@ -155,7 +155,7 @@ BEGIN
 		INSERT INTO tradelogs (timestamp, block_number, tx_hash, eth_amount, 
 			original_eth_amount, user_address_id, src_address_id, dst_address_id, src_amount, dst_amount,
 			integration_app, ip, country, eth_usd_rate, eth_usd_provider, index, kyced, is_first_trade, tx_sender,
-			receiver_address, gas_used, gas_price, transaction_fee) 
+			receiver_address, gas_used, gas_price, transaction_fee, version) 
 		VALUES (_timestamp,
 			_block_number,
 			_tx_hash,
@@ -178,32 +178,35 @@ BEGIN
 			_receiver_address,
 			_gas_used,
 			_gas_price,
-			_transaction_fee
+			_transaction_fee,
+			_version
 		) ON CONFLICT (tx_hash, index) DO UPDATE SET 
 			timestamp = _timestamp
 		 RETURNING id INTO _id;
     END IF;
 
 
-    IF _id IS NOT NULL THEN
-        FOREACH _address IN ARRAY _reserve_addresses
-            LOOP
-				INSERT INTO "fee"(trade_id, 
-					reserve_address, 
-					wallet_address, 
-					platform_fee, 
-					burn, 
-					rebate, 
-					reward)
-				VALUES (_id, _address, 
-					_platform_wallets[_iterator],
-					_platform_fees[_iterator],
-					_burns[_iterator],
-					_rebates[_iterator],
-					_rewards[_iterator]
-				);
-				_iterator := _iterator+1;
-            END LOOP;
+	IF _id IS NOT NULL THEN
+        IF _reserve_addresses IS NOT NULL THEN
+			FOREACH _address IN ARRAY _reserve_addresses
+				LOOP
+					INSERT INTO "fee"(trade_id, 
+						reserve_address, 
+						wallet_address, 
+						platform_fee, 
+						burn, 
+						rebate, 
+						reward)
+					VALUES (_id, _address, 
+						_platform_wallets[_iterator],
+						_platform_fees[_iterator],
+						_burns[_iterator],
+						_rebates[_iterator],
+						_rewards[_iterator]
+					);
+					_iterator := _iterator+1;
+				END LOOP;
+        END IF;
     END IF;
 
     RETURN;

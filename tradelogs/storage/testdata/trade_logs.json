@@ -1,126 +1,26 @@
 [
     {
-        "timestamp": 1554353231000,
-        "block_number": 6100010,
-        "tx_hash": "0x33dcdbed63556a1d90b7e0f626bfaf20f6f532d2ae8bf24c22abb15c4e1fff01",
-        "eth_receival_sender": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
-        "eth_receival_amount": 999995137653743773,
-        "user_addr": "0x85c5c26dc2af5546341fc1988b9d178148b4838b",
-        "src_addr": "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
-        "dst_addr": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-        "src_amount": 4213718147791179364415,
-        "dst_amount": 999995137653743773,
-        "fiat_amount": 0,
-        "burn_fees": [
-            {
-                "reserve_addr": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
-                "amount": 1427493059000719235
-            }
-        ],
-        "wallet_fees": null,
-        "ip": "",
-        "country": "",
-        "uid": "",
-        "eth_amount": 1999995137653743773000,
-        "original_eth_amount": 1999995137653743773000
-    },
-    {
-        "timestamp": 1554367631,
-        "block_number": 6100055,
-        "tx_hash": "0xc8ea088f9357a3df85365e66f23c368f55d78b16fdd89497dc520d210e5d0fe6",
-        "eth_receival_sender": "0x21433dec9cb634a23c6a4bbcce08c83f5ac2ec18",
-        "eth_receival_amount": 1497511199841889307,
-        "user_addr": "0x06d03bdb9db0a5a3c3f171b1c246ec4c6769b345",
-        "src_addr": "0xd0a4b8946cb52f0661273bfbc6fd0e0c75fc6433",
-        "dst_addr": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-        "src_amount": 50456046160204440436380,
-        "dst_amount": 1497511199841889307,
-        "fiat_amount": 0,
-        "burn_fees": [
-            {
-                "reserve_addr": "0x21433dec9cb634a23c6a4bbcce08c83f5ac2ec18",
-                "amount": 1026094674131662553
-            }
-        ],
-        "wallet_fees": null,
-        "ip": "",
-        "country": "",
-        "uid": "12"
-    },
-    {
-        "timestamp": 1554382031,
-        "block_number": 6100059,
-        "tx_hash": "0x7d345d4048554a3c4bd7681fd4c3b940a99993da16a3a11f51251659a3489452",
-        "eth_receival_sender": "0x0000000000000000000000000000000000000000",
-        "eth_receival_amount": null,
-        "user_addr": "0x2820ee44d44288a470516214e2caf2d4f6d1dc8d",
-        "src_addr": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-        "dst_addr": "0xfe5f141bf94fe84bc28ded0ab966c16b17490657",
-        "src_amount": 73285000000000000,
-        "dst_amount": 323811815748530889850,
-        "fiat_amount": 0,
-        "burn_fees": [
-            {
-                "reserve_addr": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
-                "amount": 52307168750000000
-            }
-        ],
-        "wallet_fees": [
-            {
-                "reserve_addr": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
-                "wallet_addr": "0xf1aa99c69715f423086008eb9d06dc1e35cc504d",
-                "wallet_name": "KyberSwap EU",
-                "amount": 52307168750000000
-            }
-        ],
-        "ip": "2601:282:4101:6e1c:c13:da49:3b7e:522f",
-        "country": "US",
-        "uid": "123"
-    },
-    {
-        "timestamp": 1554410831,
-        "block_number": 6100062,
-        "tx_hash": "0x4b3204bed6f935e8f1b10526f400a85b8d9287ed7a1b367da55176fd3c6cbcf4",
-        "eth_receival_sender": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
-        "eth_receival_amount": 744599085462189214,
-        "user_addr": "0x06d03bdb9db0a5a3c3f171b1c246ec4c6769b345",
-        "src_addr": "0x0e0989b1f9b8a38983c2ba8053269ca62ec9b195",
-        "dst_addr": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-        "src_amount": 2246656224724,
-        "dst_amount": 744599085462189214,
-        "fiat_amount": 0,
-        "burn_fees": [
-            {
-                "reserve_addr": "0x63825c174ab367968ec60f061753d3bbd36a0d8f",
-                "amount": 1062915194497275102
-            }
-        ],
-        "wallet_fees": null,
-        "ip": "",
-        "country": "",
-        "uid": "1234"
-    },
-    {
         "timestamp": 1554414431,
         "block_number": 6100073,
         "tx_hash": "0x6d1baef397a1ec60169d49cebc8111357b7c0f989678bff32a4c81ee4c05aed2",
-        "eth_receival_sender": "0x0000000000000000000000000000000000000000",
-        "eth_receival_amount": null,
-        "user_addr": "0x85c5c26dc2af5546341fc1988b9d178148b4838b",
-        "src_addr": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-        "dst_addr": "0xf433089366899d83a9f26a773d59ec7ecf30355e",
         "src_amount": 745425298615886242,
         "dst_amount": 31113247286,
         "fiat_amount": 0,
-        "burn_fees": [
+        "token_info": {
+            "src_addr": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "dst_addr": "0xf433089366899d83a9f26a773d59ec7ecf30355e"
+        },
+        "user": {
+            "user_addr": "0x85c5c26dc2af5546341fc1988b9d178148b4838b",
+            "ip": "",
+            "country": "",
+            "uid": "1"
+        },
+        "fees": [
             {
                 "reserve_addr": "0x21433dec9cb634a23c6a4bbcce08c83f5ac2ec18",
-                "amount": 510765414611605253
+                "burn": 510765414611605253
             }
-        ],
-        "wallet_fees": null,
-        "ip": "",
-        "country": "",
-        "uid": "1"
+        ]
     }
 ]

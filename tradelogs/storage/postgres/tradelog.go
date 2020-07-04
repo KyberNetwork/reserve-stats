@@ -69,6 +69,53 @@ func (tldb *TradeLogDB) updateRebateWallet(reserves []common.Reserve) error {
 	return nil
 }
 
+func (tldb *TradeLogDB) prepareFeeRecords(r *record) ([]string, []string, []float64, []float64, []float64, []float64, error) {
+	var (
+		reserveAddresses, platformWallets     []string
+		burns, rebates, rewards, platformFees []float64
+	)
+	for _, f := range r.Fee {
+		reserveAddresses = append(reserveAddresses, f.ReserveAddr.Hex())
+		platformWallets = append(platformWallets, f.PlatformWallet.Hex())
+		platformFee, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Burn)
+		if err != nil {
+			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, err
+		}
+		platformFees = append(platformFees, platformFee)
+		burn, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Burn)
+		if err != nil {
+			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, err
+		}
+		burns = append(burns, burn)
+		rebate, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Rebate)
+		if err != nil {
+			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, err
+		}
+		rebates = append(rebates, rebate)
+		reward, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Reward)
+		if err != nil {
+			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, err
+		}
+		rewards = append(rewards, reward)
+	}
+	return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, nil
+}
+
+// func (tldb *TradeLogDB) prepareSplitRecords(r *record) ([]string, []string, []string, []float64, []float64, error) {
+// 	var (
+// 		reserveAddressIDs, srcAddresses, destAddresses []string
+// 		srcAmounts, rates                              []float64
+// 	)
+// 	for index, s := range r.T2EReserves {
+// 		reserveAddressIDs = append(reserveAddressIDs, ethereum.Bytes2Hex(s[:]))
+// 		srcAddresses = append(srcAddresses, r.SrcAddress)
+// 		destAddresses = append(destAddresses, blockchain.ETHAddr.Hex())
+// 		srcAmounts = append(srcAmounts, r.T2ESrcAmount[index])
+// 		rates = append(rates, r.T2ERates[index])
+// 	}
+// 	return reserveAddressIDs, srcAddresses, destAddresses, srcAmounts, rates, nil
+// }
+
 // SaveTradeLogs persist trade logs to DB
 func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) {
 	var (
@@ -178,40 +225,19 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 				return err
 			}
 
-			var (
-				tradelogID                            uint64
-				reserveAddresses, platformWallets     []string
-				burns, rebates, rewards, platformFees []float64
-			)
 			query := `SELECT _id as id FROM 
 			create_or_update_tradelogs(
 				$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
 				$13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
 				$26, $27, $28, $29, $30, $31
 			);`
-			for _, f := range r.Fee {
-				reserveAddresses = append(reserveAddresses, f.ReserveAddr.Hex())
-				platformWallets = append(platformWallets, f.PlatformWallet.Hex())
-				platformFee, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Burn)
-				if err != nil {
-					return err
-				}
-				platformFees = append(platformFees, platformFee)
-				burn, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Burn)
-				if err != nil {
-					return err
-				}
-				burns = append(burns, burn)
-				rebate, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Rebate)
-				if err != nil {
-					return err
-				}
-				rebates = append(rebates, rebate)
-				reward, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Reward)
-				if err != nil {
-					return err
-				}
-				rewards = append(rewards, reward)
+			var tradelogID uint64
+			reserveAddresses, platformWallets, platformFees, burns, rebates, rewards, err := tldb.prepareFeeRecords(r)
+			// reserveAddressIds,
+
+			if err != nil {
+				logger.Debugw("failed to prepare fees record", "error", err)
+				return err
 			}
 			if err := tx.Get(&tradelogID, query, 0,
 				r.Timestamp, r.BlockNumber, r.TransactionHash,

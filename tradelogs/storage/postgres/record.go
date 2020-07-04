@@ -12,41 +12,41 @@ import (
 )
 
 type record struct {
-	Timestamp         time.Time  `db:"timestamp"`
-	BlockNumber       uint64     `db:"block_number"`
-	TransactionHash   string     `db:"tx_hash"`
-	EthAmount         float64    `db:"eth_amount"`
-	OriginalEthAmount float64    `db:"original_eth_amount"`
-	UserAddress       string     `db:"user_address"`
-	SrcAddress        string     `db:"src_address"`
-	DestAddress       string     `db:"dst_address"`
-	SrcReserveAddress string     `db:"src_reserve_address"`
-	DstReserveAddress string     `db:"dst_reserve_address"`
-	T2EReserves       [][32]byte `db:"t2e_reserves"`
-	E2TReserves       [][32]byte `db:"e2t_reserves"`
-	SrcAmount         float64    `db:"src_amount"`
-	DestAmount        float64    `db:"dst_amount"`
-	WalletAddress     string     `db:"wallet_address"`
-	WalletName        string     `db:"wallet_name"`
-	// SrcBurnAmount      float64          `db:"src_burn_amount"`
-	// DstBurnAmount      float64          `db:"dst_burn_amount"`
-	// SrcWalletFeeAmount float64          `db:"src_wallet_fee_amount"`
-	// DstWalletFeeAmount float64          `db:"dst_wallet_fee_amount"`
-	IntegrationApp  string               `db:"integration_app"`
-	IP              sql.NullString       `db:"ip"`
-	Country         sql.NullString       `db:"country"`
-	ETHUSDRate      float64              `db:"eth_usd_rate"`
-	ETHUSDProvider  string               `db:"eth_usd_provider"`
-	Index           string               `db:"index"`
-	Kyced           bool                 `db:"kyced"`
-	IsFirstTrade    bool                 `db:"is_first_trade"`
-	TxSender        string               `db:"tx_sender"`
-	ReceiverAddress string               `db:"receiver_address"`
-	GasUsed         uint64               `db:"gas_used"`
-	GasPrice        float64              `db:"gas_price"`
-	TransactionFee  float64              `db:"transaction_fee"`
-	Version         uint                 `db:"version"`
-	Fee             []common.TradelogFee `db:"fee"`
+	Timestamp         time.Time            `db:"timestamp"`
+	BlockNumber       uint64               `db:"block_number"`
+	TransactionHash   string               `db:"tx_hash"`
+	EthAmount         float64              `db:"eth_amount"`
+	OriginalEthAmount float64              `db:"original_eth_amount"`
+	UserAddress       string               `db:"user_address"`
+	SrcAddress        string               `db:"src_address"`
+	DestAddress       string               `db:"dst_address"`
+	SrcReserveAddress string               `db:"src_reserve_address"`
+	DstReserveAddress string               `db:"dst_reserve_address"`
+	T2EReserves       [][32]byte           `db:"t2e_reserves"`
+	E2TReserves       [][32]byte           `db:"e2t_reserves"`
+	T2ESrcAmount      []float64            `db:"t2e_src_amount"`
+	E2TSrcAmount      []float64            `db:"t2e_src_amount"`
+	T2ERates          []float64            `db:"t2e_rates"`
+	E2TRates          []float64            `db:"e2t_rates"`
+	SrcAmount         float64              `db:"src_amount"`
+	DestAmount        float64              `db:"dst_amount"`
+	WalletAddress     string               `db:"wallet_address"`
+	WalletName        string               `db:"wallet_name"`
+	IntegrationApp    string               `db:"integration_app"`
+	IP                sql.NullString       `db:"ip"`
+	Country           sql.NullString       `db:"country"`
+	ETHUSDRate        float64              `db:"eth_usd_rate"`
+	ETHUSDProvider    string               `db:"eth_usd_provider"`
+	Index             string               `db:"index"`
+	Kyced             bool                 `db:"kyced"`
+	IsFirstTrade      bool                 `db:"is_first_trade"`
+	TxSender          string               `db:"tx_sender"`
+	ReceiverAddress   string               `db:"receiver_address"`
+	GasUsed           uint64               `db:"gas_used"`
+	GasPrice          float64              `db:"gas_price"`
+	TransactionFee    float64              `db:"transaction_fee"`
+	Version           uint                 `db:"version"`
+	Fee               []common.TradelogFee `db:"fee"`
 }
 
 func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, error) {

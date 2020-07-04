@@ -100,11 +100,13 @@ type TradelogV4 struct {
 	DstReserveAddress ethereum.Address `json:"dst_reserve_address"`
 
 	// After katalyst info
-	T2EReserves [][32]byte    `json:"t2e_reserves"` // reserve_id of reserve for trade from token to ether
-	E2TReserves [][32]byte    `json:"e2t_reserves"` // reserve_id of reserve for trade from ether to token
-	T2ERates    []*big.Int    `json:"t2e_rates"`
-	E2TRates    []*big.Int    `json:"e2t_rates"`
-	Fees        []TradelogFee `json:"fees"`
+	T2EReserves  [][32]byte    `json:"t2e_reserves"` // reserve_id of reserve for trade from token to ether
+	E2TReserves  [][32]byte    `json:"e2t_reserves"` // reserve_id of reserve for trade from ether to token
+	T2ESrcAmount []*big.Int    `json:"t2e_src_amount"`
+	E2TSrcAmount []*big.Int    `json:"e2t_src_amount"`
+	T2ERates     []*big.Int    `json:"t2e_rates"`
+	E2TRates     []*big.Int    `json:"e2t_rates"`
+	Fees         []TradelogFee `json:"fees"`
 
 	// EthAmount = OriginalEthAmount * len(BurnFees)
 	EthAmount         *big.Int `json:"eth_amount"`

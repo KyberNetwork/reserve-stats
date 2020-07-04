@@ -99,7 +99,7 @@ CREATE INDEX IF NOT EXISTS "trade_tx_hash" ON "` + TradeLogsTableName + `"(tx_ha
 
 
 CREATE TABLE IF NOT EXISTS "fee" (
-	id SERIAL,
+	id SERIAL PRIMARY KEY,
 	trade_id INTEGER NOT NULL REFERENCES tradelogs,
 	reserve_address TEXT NOT NULL,
 	wallet_address TEXT default '',
@@ -109,6 +109,16 @@ CREATE TABLE IF NOT EXISTS "fee" (
 	rebate FLOAT(32) default 0,
 	reward FLOAT(32) default 0,
 	version INTEGER default 0
+);
+
+CREATE TABLE IF NOT EXISTS "split" (
+	id SERIAL PRIMARY KEY,
+	trade_id INTEGER NOT NULL REFERENCES tradelogs,
+	reserve_id INTEGER NOT NULL REFERENCES reserve,
+	src TEXT NOT NULL,
+	dst TEXT NOT NULL,
+	src_amount FLOAT(32) NOT NULL,
+	rate FLOAT(32) NOT NULL
 );
 
 

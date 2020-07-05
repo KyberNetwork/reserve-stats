@@ -99,3 +99,10 @@ func (f *TokenAmountFormatter) getDecimals(address common.Address) (int64, error
 	f.mu.Unlock()
 	return int64(decimals), err
 }
+
+//
+func (f *TokenAmountFormatter) getSymbol(address common.Address) (string, error) {
+	f.mu.RLock()
+
+	return "", nil
+}

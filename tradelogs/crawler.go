@@ -202,7 +202,7 @@ func fillWalletFees(tradeLog common.TradelogV4, logItem types.Log) (common.Trade
 	}
 
 	tradelogFee := common.TradelogFee{
-		PlatformFee:    fee.Big(),
+		WalletFee:      fee.Big(),
 		PlatformWallet: walletAddr,
 		WalletName:     WalletAddrToName(walletAddr),
 		ReserveAddr:    reserveAddr,
@@ -238,6 +238,11 @@ func fillBurnFees(tradeLog common.TradelogV4, logItem types.Log) (common.Tradelo
 		Index:       logItem.Index,
 	}
 	tradeLog.Fees = append(tradeLog.Fees, burnFee)
+	if common.LengthBurnFees(tradeLog) == 1 {
+		tradeLog.SrcReserveAddress = reserveAddr
+	} else {
+		tradeLog.DstReserveAddress = reserveAddr
+	}
 	return tradeLog, nil
 }
 
@@ -284,13 +289,6 @@ func fillKyberTradeV3(tradeLog common.TradelogV4, logItem types.Log, volumeExclu
 	tradeLog.OriginalEthAmount = ethAmount.Big()
 	tradeLog.SrcReserveAddress = srcReserve
 	tradeLog.DstReserveAddress = dstReserve
-	// if common.IsETHAddress(srcAddress) {
-	// 	tradeLog.E2TReserves = append(tradeLog.E2TReserves, srcReserve)
-	// 	tradeLog.T2EReserves = append(tradeLog.T2EReserves, dstReserve)
-	// } else {
-	// 	tradeLog.E2TReserves = append(tradeLog.E2TReserves, dstReserve)
-	// 	tradeLog.T2EReserves = append(tradeLog.T2EReserves, srcReserve)
-	// }
 
 	// update logic base on reserve instead of number of burn fee event
 	defaultRatio := 2
@@ -412,14 +410,14 @@ func fillKyberTradeV2(tradeLog common.TradelogV4, logItem types.Log) (common.Tra
 // 	switch {
 // 	case blockchain.IsBurnable(log.TokenInfo.SrcAddress):
 // 		if blockchain.IsBurnable(log.TokenInfo.DestAddress) {
-// 			if len(log.BurnFees) == 2 {
+// 			if common.LengthBurnFees(log) == 2 {
 // 				log.SrcReserveAddress = log.BurnFees[0].ReserveAddress
 // 				log.DstReserveAddress = log.BurnFees[1].ReserveAddress
 // 			} else {
-// 				sugar.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "2 burn fees (src-dst)")
+// 				sugar.Warnw("unexpected burn fees", "got", common.LengthBurnFees(log), "want", "2 burn fees (src-dst)")
 // 			}
 // 		} else {
-// 			if len(log.BurnFees) == 1 {
+// 			if common.LengthBurnFees(log) == 1 {
 // 				log.SrcReserveAddress = log.BurnFees[0].ReserveAddress
 // 			} else {
 // 				sugar.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (src)")
@@ -431,8 +429,8 @@ func fillKyberTradeV2(tradeLog common.TradelogV4, logItem types.Log) (common.Tra
 // 		} else {
 // 			sugar.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
 // 		}
-// 	case len(log.WalletFees) != 0:
-// 		if len(log.WalletFees) == 1 {
+// 	case common.LengthWalletFees(log) != 0:
+// 		if common.LengthWalletFees(log) == 1 {
 // 			log.SrcReserveAddress = log.WalletFees[0].ReserveAddress
 // 		} else {
 // 			log.SrcReserveAddress = log.WalletFees[0].ReserveAddress
@@ -469,7 +467,7 @@ func (crawler *Crawler) updateBasicInfo(log types.Log, tradeLog common.TradelogV
 	tradeLog.TxDetail.TxSender = txSender
 	tradeLog.TxDetail.GasPrice = tx.GasPrice()
 
-	if common.NoWalletFee(tradeLog) { // in case there's no fee, we try to get wallet addr from tradeWithHint input
+	if common.LengthBurnFees(tradeLog) == 0 { // in case there's no fee, we try to get wallet addr from tradeWithHint input
 		if tx.To() != nil && bytes.Equal(tx.To().Bytes(), crawler.networkProxy.Bytes()) { // try to fail early, tx must have dst == networkProxy
 			tradeParam, err := decodeTradeInputParam(tx.Data())
 			if err != nil {

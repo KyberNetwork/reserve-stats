@@ -13,19 +13,14 @@ const (
 	getBigTradesQuery = `
 SELECT bt.tradelog_id, a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
 e.address AS src_address, f.address AS dst_address,
-e.symbol AS src_symbol, f.symbol AS dst_symbol,
-src_amount, dst_amount, ip, country, integration_app, src_burn_amount, dst_burn_amount,
-index, tx_hash, b.address AS src_rsv_address, c.address AS dst_rsv_address, src_wallet_fee_amount, dst_wallet_fee_amount,
-g.address AS wallet_addr, tx_sender, receiver_address,
+e.symbol AS src_symbol, f.symbol AS dst_symbol, src_amount, dst_amount,
+index, tx_hash, tx_sender, receiver_address,
 g.name as wallet_name
 FROM "` + schema.BigTradeLogsTableName + `" AS bt
 INNER JOIN tradelogs as a ON a.id = bt.tradelog_id
-INNER JOIN reserve AS b ON a.src_reserve_address_id = b.id
-INNER JOIN reserve AS c ON a.dst_reserve_address_id = c.id
 INNER JOIN users AS d ON a.user_address_id = d.id
 INNER JOIN token AS e ON a.src_address_id = e.id
 INNER JOIN token AS f ON a.dst_address_id = f.id
-INNER JOIN wallet AS g ON a.wallet_address_id = g.id
 WHERE bt.twitted is false AND a.timestamp >= $1 AND a.timestamp <= $2;
 `
 
@@ -67,14 +62,16 @@ func (tldb *TradeLogDB) GetNotTwittedTrades(from, to time.Time) ([]common.BigTra
 	}
 
 	for _, r := range queryResult {
-		tradeLog, err := tldb.tradeLogFromDBData(r.tradeLogDBData)
+		var (
+			feeResult []feeRecord
+		)
+		tradeLog, err := tldb.tradeLogFromDBData(r.tradeLogDBData, feeResult)
 		if err != nil {
 			logger.Errorw("cannot parse db data to trade log", "error", err)
 			return nil, err
 		}
 		bigTradeLog := common.BigTradeLog{
 			TradelogID:        r.TradelogID,
-			WalletName:        r.WalletName,
 			Timestamp:         tradeLog.Timestamp,
 			TransactionHash:   tradeLog.TransactionHash,
 			EthAmount:         tradeLog.EthAmount,

@@ -101,20 +101,47 @@ func (tldb *TradeLogDB) prepareFeeRecords(r *record) ([]string, []string, []floa
 	return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, nil
 }
 
-// func (tldb *TradeLogDB) prepareSplitRecords(r *record) ([]string, []string, []string, []float64, []float64, error) {
-// 	var (
-// 		reserveAddressIDs, srcAddresses, destAddresses []string
-// 		srcAmounts, rates                              []float64
-// 	)
-// 	for index, s := range r.T2EReserves {
-// 		reserveAddressIDs = append(reserveAddressIDs, ethereum.Bytes2Hex(s[:]))
-// 		srcAddresses = append(srcAddresses, r.SrcAddress)
-// 		destAddresses = append(destAddresses, blockchain.ETHAddr.Hex())
-// 		srcAmounts = append(srcAmounts, r.T2ESrcAmount[index])
-// 		rates = append(rates, r.T2ERates[index])
-// 	}
-// 	return reserveAddressIDs, srcAddresses, destAddresses, srcAmounts, rates, nil
-// }
+func (tldb *TradeLogDB) prepareSplitRecords(r *record) ([]string, []string, []string, []float64, []float64, error) {
+	var (
+		reserveAddressIDs, srcAddresses, destAddresses []string
+		srcAmounts, rates                              []float64
+	)
+	// before katalyst
+	if ethereum.HexToAddress(r.SrcAddress) != blockchain.ETHAddr {
+		reserveAddressIDs = append(reserveAddressIDs, r.SrcReserveAddress)
+		srcAddresses = append(srcAddresses, r.SrcAddress)
+		destAddresses = append(destAddresses, blockchain.ETHAddr.Hex())
+		srcAmounts = append(srcAmounts, r.SrcAmount)
+		rates = append(rates, 0) // TODO: need to calculate rate here
+	}
+
+	if ethereum.HexToAddress(r.DestAddress) != blockchain.ETHAddr {
+		reserveAddressIDs = append(reserveAddressIDs, r.SrcReserveAddress)
+		srcAddresses = append(srcAddresses, blockchain.ETHAddr.Hex())
+		destAddresses = append(destAddresses, r.DestAddress)
+		srcAmounts = append(srcAmounts, r.OriginalEthAmount)
+		rates = append(rates, 0) // TODO: need to calculate rate here
+	}
+
+	// After katalyst
+	for index, s := range r.T2EReserves {
+		reserveAddressIDs = append(reserveAddressIDs, ethereum.Bytes2Hex(s[:]))
+		srcAddresses = append(srcAddresses, r.SrcAddress)
+		destAddresses = append(destAddresses, blockchain.ETHAddr.Hex())
+		srcAmounts = append(srcAmounts, r.T2ESrcAmount[index])
+		rates = append(rates, r.T2ERates[index])
+	}
+
+	for index, s := range r.E2TReserves {
+		reserveAddressIDs = append(reserveAddressIDs, ethereum.Bytes2Hex(s[:]))
+		srcAddresses = append(srcAddresses, blockchain.ETHAddr.Hex())
+		destAddresses = append(destAddresses, r.DestAddress)
+		srcAmounts = append(srcAmounts, r.E2TSrcAmount[index])
+		rates = append(rates, r.E2TRates[index])
+	}
+
+	return reserveAddressIDs, srcAddresses, destAddresses, srcAmounts, rates, nil
+}
 
 // SaveTradeLogs persist trade logs to DB
 func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) {
@@ -229,11 +256,19 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 			create_or_update_tradelogs(
 				$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
 				$13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
-				$26, $27, $28, $29, $30, $31
+				$26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36
 			);`
 			var tradelogID uint64
 			reserveAddresses, platformWallets, platformFees, burns, rebates, rewards, err := tldb.prepareFeeRecords(r)
-			// reserveAddressIds,
+			if err != nil {
+				logger.Debugw("failed to prepare fee records", "error", err)
+				return err
+			}
+			reserveAddressIds, srcAddresses, dstAddresses, srcAmounts, rates, err := tldb.prepareSplitRecords(r)
+			if err != nil {
+				logger.Debugw("failed to prepared split records", "error", err)
+				return err
+			}
 
 			if err != nil {
 				logger.Debugw("failed to prepare fees record", "error", err)
@@ -263,6 +298,11 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 				pq.Array(burns),
 				pq.Array(rebates),
 				pq.Array(rewards),
+				pq.StringArray(reserveAddressIds),
+				pq.StringArray(srcAddresses),
+				pq.StringArray(dstAddresses),
+				pq.Array(srcAmounts),
+				pq.Array(rates),
 			); err != nil {
 				logger.Debugw("failed to save tradelogs", "error", err)
 				return err

@@ -122,7 +122,6 @@ CREATE TABLE IF NOT EXISTS "split" (
 );
 
 
-
 -- create_or_update_tradelogs creates or update tradelogs
 CREATE OR REPLACE FUNCTION create_or_update_tradelogs(INOUT _id tradelogs.id%TYPE,
 												_timestamp tradelogs.timestamp%TYPE,
@@ -154,7 +153,12 @@ CREATE OR REPLACE FUNCTION create_or_update_tradelogs(INOUT _id tradelogs.id%TYP
 												_platform_fees FLOAT[],
 												_burns FLOAT[],
 												_rebates FLOAT[],
-												_rewards FLOAT[]
+												_rewards FLOAT[],
+												_split TEXT[],
+												_src TEXT[],
+												_dst TEXT[],
+												_src_amounts FLOAT[],
+												_rate FLOAT[]
 												) AS
 $$
 DECLARE
@@ -216,7 +220,33 @@ BEGIN
 					);
 					_iterator := _iterator+1;
 				END LOOP;
-        END IF;
+		END IF;
+		IF _split IS NOT NULL THEN 
+            _iterator := 1;
+			FOREACH _address IN ARRAY _split 
+				LOOP
+				    INSERT INTO "split" (
+						trade_id,
+						reserve_id,
+						src,
+						dst,
+						src_amount,
+						rate
+					)
+					VALUES(
+						_id,
+						CASE 
+							WHEN _version = 4 THEN (SELECT id FROM reserve WHERE reserve_id = _address)
+							ELSE (SELECT id FROM reserve WHERE address = _address)
+						END,
+						_src[_iterator],
+						_dst[_iterator],
+						_src_amounts[_iterator],
+						_rate[_iterator]
+					);
+					_iterator := _iterator+1;
+				END LOOP;
+		END IF;
     END IF;
 
     RETURN;

@@ -66,6 +66,7 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 }
 
 type tradeLogDBData struct {
+	ID                 uint64         `db:"id"`
 	Timestamp          time.Time      `db:"timestamp"`
 	BlockNumber        uint64         `db:"block_number"`
 	EthAmount          float64        `db:"eth_amount"`
@@ -96,7 +97,20 @@ type tradeLogDBData struct {
 	Version            uint           `db:"version"`
 }
 
-func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4, error) {
+type feeRecord struct {
+	ID             uint64  `db:"id"`
+	TradeID        uint64  `db:"trade_id"`
+	ReserveAddress string  `db:"reserve_address"`
+	WalletAddress  string  `db:"wallet_address"`
+	WalletFee      float64 `db:"wallet_fee"`
+	PlatformFee    float64 `db:"platform_fee"`
+	Burn           float64 `db:"burn"`
+	Rebate         float64 `db:"rebate"`
+	Reward         float64 `db:"reward"`
+	Version        uint64  `db:"version"`
+}
+
+func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData, f []feeRecord) (common.TradelogV4, error) {
 	var (
 		tradeLog common.TradelogV4
 		err      error
@@ -106,6 +120,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4,
 		dstAmountInWei                     *big.Int
 		originalEthAmountInWei             *big.Int
 		gasPriceInWei, transactionFeeInWei *big.Int
+		fees                               []common.TradelogFee
 
 		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 	)
@@ -141,6 +156,38 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4,
 		return tradeLog, err
 	}
 
+	for _, fee := range f {
+		platformFee, err := tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, fee.PlatformFee)
+		if err != nil {
+			return tradeLog, err
+		}
+		walletFee, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, fee.WalletFee)
+		if err != nil {
+			return tradeLog, err
+		}
+		burn, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, fee.Burn)
+		if err != nil {
+			return tradeLog, err
+		}
+		rebate, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, fee.Rebate)
+		if err != nil {
+			return tradeLog, err
+		}
+		reward, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, fee.Reward)
+		if err != nil {
+			return tradeLog, err
+		}
+		fees = append(fees, common.TradelogFee{
+			ReserveAddr:    ethereum.HexToAddress(fee.ReserveAddress),
+			PlatformWallet: ethereum.HexToAddress(fee.WalletAddress),
+			PlatformFee:    platformFee,
+			WalletFee:      walletFee,
+			Burn:           burn,
+			Rebate:         rebate,
+			Reward:         reward,
+		})
+	}
+
 	tradeLog = common.TradelogV4{
 		TransactionHash:   ethereum.HexToHash(r.TxHash),
 		Index:             r.LogIndex,
@@ -157,12 +204,8 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4,
 			SrcAddress:  SrcAddress,
 			DestAddress: DstAddress,
 		},
-		SrcAmount:  srcAmountInWei,
-		DestAmount: dstAmountInWei,
-		// SrcBurnAmount:     r.SrcBurnAmount,
-		// DstBurnAmount:     r.DstBurnAmount,
-		// SrcReserveAddress: ethereum.HexToAddress(r.SrcReserveAddress),
-		// DstReserveAddress: ethereum.HexToAddress(r.DstReserveAddress),
+		SrcAmount:       srcAmountInWei,
+		DestAmount:      dstAmountInWei,
 		IntegrationApp:  r.IntegrationApp,
 		FiatAmount:      r.EthAmount * r.EthUsdRate,
 		WalletAddress:   ethereum.HexToAddress(r.WalletAddress),
@@ -174,6 +217,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4,
 			TransactionFee: transactionFeeInWei,
 			TxSender:       ethereum.HexToAddress(r.TxSender),
 		},
+		Fees:    fees,
 		Version: r.Version,
 	}
 	return tradeLog, nil
@@ -198,7 +242,14 @@ func (tldb *TradeLogDB) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.Tradel
 	}
 
 	for _, r := range queryResult {
-		tradeLog, err := tldb.tradeLogFromDBData(r)
+		var (
+			feeResult []feeRecord
+		)
+		if err := tldb.db.Select(&feeResult, selectFeeByTradelogID, r.ID); err != nil {
+			logger.Debugw("failed to get fee from db", "error", err)
+			return result, err
+		}
+		tradeLog, err := tldb.tradeLogFromDBData(r, feeResult)
 		if err != nil {
 			logger.Errorw("cannot parse db data to trade log", "error", err)
 			return nil, err
@@ -226,7 +277,11 @@ func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradelogV4, 
 	}
 
 	for _, r := range queryResult {
-		tradeLog, err := tldb.tradeLogFromDBData(r)
+		var (
+			feeResult []feeRecord
+		)
+		err := tldb.db.Select(&feeResult, selectFeeByTradelogID, r.ID)
+		tradeLog, err := tldb.tradeLogFromDBData(r, feeResult)
 		if err != nil {
 			logger.Errorw("cannot parse db data to trade log", "error", err)
 			return nil, err
@@ -265,86 +320,8 @@ INSERT INTO users(
 ON CONFLICT (address) 
 DO NOTHING;`
 
-// const insertionTradelogsTemplate string = `
-// INSERT INTO "` + schema.TradeLogsTableName + `"(
-// 	timestamp,
-//  	block_number,
-//  	tx_hash,
-//  	eth_amount,
-// 	original_eth_amount,
-//  	user_address_id,
-//  	src_address_id,
-//  	dst_address_id,
-//  	src_amount,
-//  	dst_amount,
-//  	wallet_address_id,
-//  	integration_app,
-//  	ip,
-//  	country,
-//  	eth_usd_rate,
-//  	eth_usd_provider,
-// 	index,
-// 	kyced,
-// 	is_first_trade,
-// 	tx_sender,
-// 	receiver_address,
-// 	gas_used,
-// 	gas_price,
-// 	transaction_fee
-// ) VALUES (
-//  	:timestamp,
-//  	:block_number,
-//  	:tx_hash,
-//  	:eth_amount,
-// 	:original_eth_amount,
-//  	(SELECT id FROM users WHERE address=:user_address),
-//  	(SELECT id FROM token WHERE address=:src_address),
-//  	(SELECT id FROM token WHERE address=:dst_address),
-//  	:src_amount,
-//  	:dst_amount,
-//  	(SELECT id FROM wallet WHERE address=:wallet_address),
-//  	:integration_app,
-//  	:ip,
-//  	:country,
-//  	:eth_usd_rate,
-//  	:eth_usd_provider,
-//  	:index,
-// 	:kyced,
-// 	:is_first_trade,
-// 	:tx_sender,
-//  	:receiver_address,
-// 	:gas_used,
-// 	:gas_price,
-// 	:transaction_fee
-// )
-// ON CONFLICT (tx_hash, index)
-// DO
-// UPDATE SET -- update every fields if record exists (except field is_first_trade)
-// 	timestamp = :timestamp,
-// 	block_number = :block_number,
-// 	eth_amount = :eth_amount,
-// 	original_eth_amount = :original_eth_amount,
-//  	user_address_id = (SELECT id FROM users WHERE address=:user_address),
-//  	src_address_id = (SELECT id FROM token WHERE address=:src_address),
-//  	dst_address_id = (SELECT id FROM token WHERE address=:dst_address),
-//  	src_amount = :src_amount,
-//  	dst_amount = :dst_amount,
-//  	wallet_address_id = (SELECT id FROM wallet WHERE address=:wallet_address),
-//  	integration_app = :integration_app,
-//  	ip = :ip,
-//  	country = :country,
-//  	eth_usd_rate = :eth_usd_rate,
-//  	eth_usd_provider = :eth_usd_provider,
-// 	kyced = :kyced,
-// 	tx_sender = :tx_sender,
-// 	receiver_address = :receiver_address,
-// 	gas_used = :gas_used,
-// 	gas_price = :gas_price,
-// 	transaction_fee = :transaction_fee
-// ;`
-
 const selectTradeLogsQuery = `
-SELECT a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
+SELECT a.id, a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
 e.address AS src_address, f.address AS dst_address,
 src_amount, dst_amount, ip, country, integration_app, 
 index, tx_hash, tx_sender, receiver_address, 
@@ -355,6 +332,8 @@ INNER JOIN token AS e ON a.src_address_id = e.id
 INNER JOIN token AS f ON a.dst_address_id = f.id
 WHERE a.timestamp >= $1 and a.timestamp <= $2;
 `
+
+const selectFeeByTradelogID = `SELECT * FROM fee WHERE trade_id = $1;`
 
 const selectTradeLogsWithTxHashQuery = `
 SELECT a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,

@@ -100,10 +100,10 @@ type TradelogV4 struct {
 	DstReserveAddress ethereum.Address `json:"dst_reserve_address"`
 
 	// After katalyst info
-	T2EReserves  [][32]byte    `json:"t2e_reserves"` // reserve_id of reserve for trade from token to ether
-	E2TReserves  [][32]byte    `json:"e2t_reserves"` // reserve_id of reserve for trade from ether to token
-	T2ESrcAmount []*big.Int    `json:"t2e_src_amount"`
-	E2TSrcAmount []*big.Int    `json:"e2t_src_amount"`
+	T2EReserves  [][32]byte    `json:"_"` // reserve_id of reserve for trade from token to ether
+	E2TReserves  [][32]byte    `json:"-"` // reserve_id of reserve for trade from ether to token
+	T2ESrcAmount []*big.Int    `json:"-"`
+	E2TSrcAmount []*big.Int    `json:"-"`
 	T2ERates     []*big.Int    `json:"t2e_rates"`
 	E2TRates     []*big.Int    `json:"e2t_rates"`
 	Fees         []TradelogFee `json:"fees"`
@@ -128,6 +128,15 @@ type TradelogV4 struct {
 
 	Index   uint `json:"index"`
 	Version uint `json:"version"`
+}
+
+// TradeSplit split the trade
+type TradeSplit struct {
+	ReserveAddress ethereum.Address `json:"reserve_address"`
+	SrcToken       ethereum.Address `json:"src_token"`
+	DstToken       ethereum.Address `json:"dst_token"`
+	SrcAmount      *big.Int         `json:"src_amount"`
+	Rate           *big.Int         `json:"rate"`
 }
 
 // Reserve represent a reserve in KN
@@ -192,7 +201,6 @@ type BigTradeLog struct {
 	SrcSymbol         string        `json:"src_symbol,omitempty"`
 	DestSymbol        string        `json:"dst_symbol,omitempty"`
 	FiatAmount        float64       `json:"fiat_amount"`
-	WalletName        string        `json:"wallet_name"`
 }
 
 // MarshalJSON implements custom JSON marshaller for TradeLog to format timestamp in unix millis instead of RFC3339.
@@ -381,16 +389,17 @@ var kyberWallets = map[ethereum.Address]struct{}{
 	ethereum.HexToAddress("0xEA1a7dE54a427342c8820185867cF49fc2f95d43"): {},
 }
 
-// NoWalletFee return true if tradelog have no wallet fee
-func NoWalletFee(tradelog TradelogV4) bool {
+// LengthWalletFees return true if tradelog have no wallet fee
+func LengthWalletFees(tradelog TradelogV4) int {
+	count := 0
 	for _, fee := range tradelog.Fees {
-		if fee.PlatformFee != nil {
-			if fee.PlatformFee.Cmp(big.NewInt(0)) != 0 {
-				return false
+		if fee.WalletFee != nil {
+			if fee.WalletFee.Cmp(big.NewInt(0)) != 0 {
+				count++
 			}
 		}
 	}
-	return true
+	return count
 }
 
 // LengthBurnFees return number of burn fee in a tradelogs
@@ -420,7 +429,7 @@ func (tl TradelogV4) IsKyberSwap() bool {
 	}
 	// with older block we use logic below to detect if a tx is a KyberSwap tx
 	// if a trade log has no feeToWalletEvent, it is KyberSwap
-	if NoWalletFee(tl) {
+	if LengthWalletFees(tl) == 0 {
 		return true
 	}
 	// if Wallet Address < maxUint128, it is KyberSwap

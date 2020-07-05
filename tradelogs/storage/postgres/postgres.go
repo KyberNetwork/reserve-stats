@@ -280,7 +280,10 @@ func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradelogV4, 
 		var (
 			feeResult []feeRecord
 		)
-		err := tldb.db.Select(&feeResult, selectFeeByTradelogID, r.ID)
+		if err := tldb.db.Select(&feeResult, selectFeeByTradelogID, r.ID); err != nil {
+			logger.Debugw("failed to get fee from db", "error", err)
+			return nil, err
+		}
 		tradeLog, err := tldb.tradeLogFromDBData(r, feeResult)
 		if err != nil {
 			logger.Errorw("cannot parse db data to trade log", "error", err)

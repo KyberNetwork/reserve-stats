@@ -541,29 +541,29 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 	if result == nil {
 		return result, nil
 	}
-	for _, tradeLog := range result.Trades {
+	for index, tradeLog := range result.Trades {
 		var uid, ip, country string
 
 		uid, ip, country, err = crawler.broadcastClient.GetTxInfo(tradeLog.TransactionHash.Hex())
 		if err != nil {
 			return result, err
 		}
-		tradeLog.User.IP = ip
-		tradeLog.User.Country = country
-		tradeLog.User.UID = uid
+		result.Trades[index].User.IP = ip
+		result.Trades[index].User.Country = country
+		result.Trades[index].User.UID = uid
 
 		if tradeLog.IsKyberSwap() {
-			tradeLog.IntegrationApp = appname.KyberSwapAppName
+			result.Trades[index].IntegrationApp = appname.KyberSwapAppName
 		} else {
-			tradeLog.IntegrationApp = appname.ThirdPartyAppName
+			result.Trades[index].IntegrationApp = appname.ThirdPartyAppName
 		}
 
 		rate, err := crawler.rateProvider.USDRate(tradeLog.Timestamp)
 		if err != nil {
 			return nil, err
 		}
-		tradeLog.ETHUSDProvider = crawler.rateProvider.Name()
-		tradeLog.ETHUSDRate = rate
+		result.Trades[index].ETHUSDProvider = crawler.rateProvider.Name()
+		result.Trades[index].ETHUSDRate = rate
 	}
 	return result, nil
 }

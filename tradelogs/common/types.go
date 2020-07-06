@@ -407,8 +407,10 @@ func LengthWalletFees(tradelog TradelogV4) int {
 func LengthBurnFees(tradelog TradelogV4) int {
 	count := 0
 	for _, fee := range tradelog.Fees {
-		if fee.Burn.Cmp(big.NewInt(0)) != 0 {
-			count++
+		if fee.Burn != nil {
+			if fee.Burn.Cmp(big.NewInt(0)) != 0 {
+				count++
+			}
 		}
 	}
 	return count

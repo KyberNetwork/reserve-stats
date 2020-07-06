@@ -63,7 +63,7 @@ func KyberFeeHandlerContractAddress() deployment.Address {
 var (
 	networkContractAddress = deployment.NewAddress(
 		// update address for istanbul fork
-		[]common.Address{common.HexToAddress("0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd")},
+		[]common.Address{common.HexToAddress("0x7C66550C9c730B6fdd4C03bc2e73c5462c5F7ACC")},
 		[]common.Address{common.HexToAddress("0x9CB7bB6D4795A281860b9Bfb7B1441361Cc9A794")},
 		[]common.Address{common.HexToAddress("0x920B322D4B8BAB34fb6233646F5c87F87e79952b")},
 	)
@@ -78,7 +78,7 @@ var (
 		[]common.Address{common.HexToAddress("0xE16E257a25e287AF50C5651A4c2728b32D7e5ef7")},
 	)
 	proxyContractAddress = deployment.NewAddress(
-		[]common.Address{common.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")},
+		[]common.Address{common.HexToAddress("0x9AAb3f75489902f3a48495025729a0AF77d4b11e")},
 		[]common.Address{common.HexToAddress("0xc153eeAD19e0DBbDb3462Dcc2B703cC6D738A37c")},
 		[]common.Address{common.HexToAddress("0xd719c34261e099Fdb33030ac8909d5788D3039C4")},
 	)
@@ -90,19 +90,21 @@ var (
 	)
 
 	feeHandlerContractAddress = deployment.NewAddress(
-		[]common.Address{common.HexToAddress("")},                                           // production
+		[]common.Address{common.HexToAddress("0xd3d2b5643e506c6d9B7099E9116D7aAa941114fe")}, // production
 		[]common.Address{common.HexToAddress("0xEc30037C9A8A6A3f42734c30Dfa0a208aF71b40C")}, // staging
 		[]common.Address{common.HexToAddress("0xfF456D9A8cbB5352eF77dEc2337bAC8dEC63bEAC")}, // ropsten
 	)
 
 	kyberStorageContractAddress = deployment.NewAddress(
-		[]common.Address{common.HexToAddress("")},
+		[]common.Address{common.HexToAddress("0xC8fb12402cB16970F3C5F4b48Ff68Eb9D1289301")},
 		[]common.Address{common.HexToAddress("0xB18D90bE9ADD2a6c9F2c3943B264c3dC86E30cF5")},
 		[]common.Address{common.HexToAddress("0x688bf5EeC43E0799c5B9c1612F625F7b93FE5434")},
 	)
 
 	oldProxyContractAddress = deployment.NewAddress(
-		[]common.Address{},
+		[]common.Address{
+			common.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755"),
+		},
 		[]common.Address{
 			common.HexToAddress("0x65897aDCBa42dcCA5DD162c647b1cC3E31238490"),
 			// old proxy contract v3
@@ -120,6 +122,8 @@ var (
 			common.HexToAddress("0x91a502C678605fbCe581eae053319747482276b9"),
 			// production old network v3
 			common.HexToAddress("0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950"),
+			//
+			common.HexToAddress("0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd"),
 		},
 		[]common.Address{
 			common.HexToAddress("0xD2D21FdeF0D054D2864ce328cc56D1238d6b239e"),

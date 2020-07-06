@@ -57,8 +57,7 @@ func (crawler *Crawler) getTransactionReceiptV1(tradeLog common.TradelogV4, rece
 				break
 			}
 		case shouldGetReserveAddr && topic == tradeExecuteEvent:
-			// TODO: fill this
-			// tradeLog.SrcReserveAddress = log.Address
+			tradeLog.SrcReserveAddress = log.Address
 			if !blockchain.IsZeroAddress(tradeLog.ReceiverAddress) {
 				break
 			}

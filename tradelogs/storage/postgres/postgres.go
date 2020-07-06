@@ -372,7 +372,7 @@ WHERE a.timestamp >= $1 and a.timestamp <= $2;
 `
 
 const selectFeeByTradelogID = `SELECT id, trade_id, reserve_address, wallet_address, wallet_fee,
-platform_fee, burn, rebate, reward, version FROM fee WHERE trade_id = $1;`
+platform_fee, burn, rebate, reward FROM fee WHERE trade_id = $1;`
 
 const selectSplitByTradelogID = `SELECT reserve.address, split.src, split.dst, split.src_amount, split.rate FROM split 
 JOIN reserve ON reserve.id = split.reserve_id 

@@ -65,7 +65,7 @@ func (tldb *TradeLogDB) GetNotTwittedTrades(from, to time.Time) ([]common.BigTra
 		var (
 			feeResult []feeRecord
 		)
-		tradeLog, err := tldb.tradeLogFromDBData(r.tradeLogDBData, feeResult)
+		tradeLog, err := tldb.tradeLogFromDBData(r.tradeLogDBData, feeResult, nil)
 		if err != nil {
 			logger.Errorw("cannot parse db data to trade log", "error", err)
 			return nil, err

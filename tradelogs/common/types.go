@@ -96,16 +96,16 @@ type TradelogV4 struct {
 
 	TokenInfo TradeTokenInfo `json:"token_info"`
 	// support version before katalyst
-	SrcReserveAddress ethereum.Address `json:"src_reserve_address"`
-	DstReserveAddress ethereum.Address `json:"dst_reserve_address"`
+	SrcReserveAddress ethereum.Address `json:"-"`
+	DstReserveAddress ethereum.Address `json:"-"`
 
 	// After katalyst info
-	T2EReserves  [][32]byte    `json:"_"` // reserve_id of reserve for trade from token to ether
+	T2EReserves  [][32]byte    `json:"-"` // reserve_id of reserve for trade from token to ether
 	E2TReserves  [][32]byte    `json:"-"` // reserve_id of reserve for trade from ether to token
 	T2ESrcAmount []*big.Int    `json:"-"`
 	E2TSrcAmount []*big.Int    `json:"-"`
-	T2ERates     []*big.Int    `json:"t2e_rates"`
-	E2TRates     []*big.Int    `json:"e2t_rates"`
+	T2ERates     []*big.Int    `json:"-"`
+	E2TRates     []*big.Int    `json:"-"`
 	Fees         []TradelogFee `json:"fees"`
 
 	// EthAmount = OriginalEthAmount * len(BurnFees)
@@ -125,6 +125,7 @@ type TradelogV4 struct {
 	User            KyberUserInfo    `json:"user"`
 	ReceiverAddress ethereum.Address `json:"receiver_address"`
 	TxDetail        TxDetail         `json:"tx_detail"`
+	Split           []TradeSplit     `json:"split"`
 
 	Index   uint `json:"index"`
 	Version uint `json:"version"`

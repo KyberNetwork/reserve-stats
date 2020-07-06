@@ -209,6 +209,8 @@ func fillWalletFees(tradeLog common.TradelogV4, logItem types.Log) (common.Trade
 		Index:          logItem.Index,
 	}
 	tradeLog.Fees = append(tradeLog.Fees, tradelogFee)
+	tradeLog.WalletAddress = walletAddr
+	tradeLog.WalletName = WalletAddrToName(walletAddr)
 	return tradeLog, nil
 }
 
@@ -355,12 +357,15 @@ func (crawler *Crawler) fillKyberTradeV4(tradelog common.TradelogV4, logItem typ
 	tradelog.E2TReserves = trade.E2tIds
 	tradelog.T2ERates = trade.T2eRates
 	tradelog.E2TRates = trade.E2tRates
+	tradelog.T2ESrcAmount = trade.T2eSrcAmounts
+	tradelog.E2TSrcAmount = trade.E2tSrcAmounts
 
 	srcAmount, dstAmount := crawler.calculateTradeAmount(trade.T2eSrcAmounts, trade.E2tSrcAmounts, trade.T2eRates, trade.E2tRates, trade.Src, trade.Dest)
 	tradelog.SrcAmount = srcAmount
 	tradelog.DestAmount = dstAmount
 
 	tradelog.EthAmount = trade.EthWeiValue
+	tradelog.OriginalEthAmount = trade.EthWeiValue
 	tradelog.Index = logItem.Index
 
 	return tradelog, nil
@@ -480,10 +485,12 @@ func (crawler *Crawler) updateBasicInfo(log types.Log, tradeLog common.TradelogV
 		}
 	} else {
 		for _, fee := range tradeLog.Fees {
-			if fee.PlatformFee.Cmp(big.NewInt(0)) != 0 {
-				tradeLog.WalletAddress = fee.PlatformWallet
-				tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
-				break
+			if fee.PlatformFee != nil {
+				if fee.PlatformFee.Cmp(big.NewInt(0)) != 0 {
+					tradeLog.WalletAddress = fee.PlatformWallet
+					tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
+					break
+				}
 			}
 		}
 	}

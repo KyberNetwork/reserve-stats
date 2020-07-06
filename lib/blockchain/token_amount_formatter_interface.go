@@ -10,4 +10,5 @@ import (
 type TokenAmountFormatterInterface interface {
 	FromWei(common.Address, *big.Int) (float64, error)
 	ToWei(common.Address, float64) (*big.Int, error)
+	GetDecimals(common.Address) (int64, error)
 }

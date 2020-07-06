@@ -50,7 +50,7 @@ func (f *TokenAmountFormatter) FromWei(address common.Address, amount *big.Int) 
 	if amount == nil {
 		return 0, nil
 	}
-	decimals, err := f.getDecimals(address)
+	decimals, err := f.GetDecimals(address)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get decimals: %s, err: %s", address.Hex(), err.Error())
 	}
@@ -65,7 +65,7 @@ func (f *TokenAmountFormatter) FromWei(address common.Address, amount *big.Int) 
 
 // ToWei return the given human friendly number to wei unit.
 func (f *TokenAmountFormatter) ToWei(address common.Address, amount float64) (*big.Int, error) {
-	decimals, err := f.getDecimals(address)
+	decimals, err := f.GetDecimals(address)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,8 @@ func (f *TokenAmountFormatter) ToWei(address common.Address, amount float64) (*b
 	return result, nil
 }
 
-func (f *TokenAmountFormatter) getDecimals(address common.Address) (int64, error) {
+// GetDecimals return decimals of a token
+func (f *TokenAmountFormatter) GetDecimals(address common.Address) (int64, error) {
 	f.mu.RLock()
 	if decimals, ok := f.cachedDecimals[address]; ok {
 		f.mu.RUnlock()
@@ -98,11 +99,4 @@ func (f *TokenAmountFormatter) getDecimals(address common.Address) (int64, error
 	f.cachedDecimals[address] = int64(decimals)
 	f.mu.Unlock()
 	return int64(decimals), err
-}
-
-//
-func (f *TokenAmountFormatter) getSymbol(address common.Address) (string, error) {
-	f.mu.RLock()
-
-	return "", nil
 }

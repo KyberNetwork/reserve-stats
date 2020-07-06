@@ -94,6 +94,8 @@ func (crawler *Crawler) fillFeeDistributed(tradelog common.TradelogV4, log types
 			RebateWallets:             fee.RebateWallets,
 			RebatePercentBpsPerWallet: fee.RebatePercentBpsPerWallet,
 		})
+	tradelog.WalletAddress = fee.PlatformWallet
+	tradelog.WalletName = WalletAddrToName(fee.PlatformWallet)
 	return tradelog, nil
 }
 

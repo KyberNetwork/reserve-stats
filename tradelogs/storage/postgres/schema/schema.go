@@ -108,7 +108,8 @@ CREATE TABLE IF NOT EXISTS "fee" (
 	burn FLOAT(32) default 0,
 	rebate FLOAT(32) default 0,
 	reward FLOAT(32) default 0,
-	version INTEGER default 0
+	rebateWallets TEXT[],
+	rebatePercents FLOAT[]
 );
 
 CREATE TABLE IF NOT EXISTS "split" (
@@ -119,6 +120,13 @@ CREATE TABLE IF NOT EXISTS "split" (
 	dst TEXT NOT NULL,
 	src_amount FLOAT(32) NOT NULL,
 	rate FLOAT(32) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "rebates" (
+	id SERIAL PRIMARY KEY,
+	fee_id INTEGER NOT NULL REFERENCES fee,
+	rebate_wallet TEXT NOT NULL,
+	percent INTEGER NOT NULL
 );
 
 
@@ -164,6 +172,7 @@ $$
 DECLARE
 	_address fee.reserve_address%TYPE;
 	_iterator INTEGER := 1;
+	_fee_id fee.id%TYPE;
 BEGIN
     IF _id = 0 THEN
 		INSERT INTO tradelogs (timestamp, block_number, tx_hash, eth_amount, 
@@ -210,14 +219,15 @@ BEGIN
 						platform_fee, 
 						burn, 
 						rebate, 
-						reward)
+						reward
+					)
 					VALUES (_id, _address, 
 						_platform_wallets[_iterator],
 						_platform_fees[_iterator],
 						_burns[_iterator],
 						_rebates[_iterator],
 						_rewards[_iterator]
-					);
+					) RETURNING id INTO _fee_id;
 					_iterator := _iterator+1;
 				END LOOP;
 		END IF;
@@ -236,8 +246,8 @@ BEGIN
 					VALUES(
 						_id,
 						CASE 
-							WHEN _version = 4 THEN (SELECT id FROM reserve WHERE reserve_id = _address)
-							ELSE (SELECT id FROM reserve WHERE address = _address)
+							WHEN _version = 4 THEN (SELECT MAX(id) FROM reserve WHERE reserve_id = _address)
+							ELSE (SELECT MIN(id) FROM reserve WHERE address = _address)
 						END,
 						_src[_iterator],
 						_dst[_iterator],

@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"database/sql"
-	"fmt"
 	"math/big"
 	"strconv"
 	"time"
@@ -49,6 +48,55 @@ type record struct {
 	Fee               []common.TradelogFee `db:"fee"`
 }
 
+func (tldb *TradeLogDB) calculateDstAmountV4(log common.TradelogV4) (float64, error) {
+	var (
+		srcDecimals, dstDecimals int64
+		err                      error
+		dstAmount                float64
+	)
+	if len(log.E2TReserves) != 0 {
+		srcDecimals, err = tldb.tokenAmountFormatter.GetDecimals(blockchain.ETHAddr)
+		if err != nil {
+			return dstAmount, err
+		}
+		dstDecimals, err = tldb.tokenAmountFormatter.GetDecimals(log.TokenInfo.DestAddress)
+		if err != nil {
+			return dstAmount, err
+		}
+	} else {
+		srcDecimals, err = tldb.tokenAmountFormatter.GetDecimals(log.TokenInfo.SrcAddress)
+		if err != nil {
+			return dstAmount, err
+		}
+		dstDecimals, err = tldb.tokenAmountFormatter.GetDecimals(blockchain.ETHAddr)
+		if err != nil {
+			return dstAmount, err
+		}
+	}
+	if dstDecimals >= srcDecimals {
+		precision := new(big.Float).SetInt(new(big.Int).Exp(
+			big.NewInt(10), big.NewInt(18), nil,
+		))
+		exp := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(dstDecimals-srcDecimals), nil)
+		tmp := log.DestAmount.Mul(log.DestAmount, exp)
+		dstAmountInt, _ := new(big.Float).Quo(new(big.Float).SetInt(tmp), precision).Int(nil)
+		dstAmount, err = tldb.tokenAmountFormatter.FromWei(log.TokenInfo.DestAddress, dstAmountInt)
+		if err != nil {
+			return dstAmount, err
+		}
+	} else {
+		precision := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil)
+		exp := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(srcDecimals-dstDecimals), nil)
+		tmp := big.NewInt(0).Mul(exp, precision)
+		dstAmountInt, _ := new(big.Float).Quo(new(big.Float).SetInt(log.DestAmount), new(big.Float).SetInt(tmp)).Int(nil)
+		dstAmount, err = tldb.tokenAmountFormatter.FromWei(log.TokenInfo.DestAddress, dstAmountInt)
+		if err != nil {
+			return dstAmount, err
+		}
+	}
+	return dstAmount, nil
+}
+
 func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, error) {
 	var dstAmount float64
 	ethAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)
@@ -66,22 +114,7 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, erro
 		return nil, err
 	}
 	if log.Version == 4 {
-		dstAmount, err = tldb.tokenAmountFormatter.FromWei(log.TokenInfo.SrcAddress, log.DestAmount)
-		if err != nil {
-			return nil, err
-		}
-		floatDstAmount := big.NewFloat(0).SetFloat64(dstAmount)
-		bigDstAmount := big.NewInt(0)
-		floatDstAmount.Int(bigDstAmount)
-		dstAmount, err = tldb.tokenAmountFormatter.FromWei(log.TokenInfo.DestAddress, bigDstAmount)
-		if err != nil {
-			return nil, err
-		}
-		if dstAmount == 0 {
-			fmt.Println(bigDstAmount)
-			fmt.Println(log.TransactionHash.Hex())
-			panic(log.DestAmount)
-		}
+		dstAmount, err = tldb.calculateDstAmountV4(log)
 	} else {
 		dstAmount, err = tldb.tokenAmountFormatter.FromWei(log.TokenInfo.DestAddress, log.DestAmount)
 		if err != nil {
@@ -89,15 +122,6 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, erro
 		}
 	}
 
-	// srcBurnAmount, dstBurnAmount, err := utils.GetBurnAmount(tldb.sugar, tldb.tokenAmountFormatter, log, tldb.kncAddr)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// srcWalletFee, dstWalletFee, err := tldb.getWalletFeeAmount(log)
-	// if err != nil {
-	// 	return nil, err
-	// }
 	transactionFee, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.TxDetail.TransactionFee)
 	if err != nil {
 		return nil, err
@@ -105,6 +129,40 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, erro
 	gasPrice, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.TxDetail.GasPrice)
 	if err != nil {
 		return nil, err
+	}
+	var (
+		t2eSrcAmounts, e2tSrcAmounts, t2eRates, e2tRates []float64
+	)
+	for _, am := range log.T2ESrcAmount {
+		amount, err := tldb.tokenAmountFormatter.FromWei(log.TokenInfo.SrcAddress, am)
+		if err != nil {
+			return nil, err
+		}
+		t2eSrcAmounts = append(t2eSrcAmounts, amount)
+	}
+
+	for _, am := range log.E2TSrcAmount {
+		amount, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, am)
+		if err != nil {
+			return nil, err
+		}
+		e2tSrcAmounts = append(e2tSrcAmounts, amount)
+	}
+
+	for _, r := range log.T2ERates {
+		rate, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, r)
+		if err != nil {
+			return nil, err
+		}
+		t2eRates = append(t2eRates, rate)
+	}
+
+	for _, r := range log.E2TRates {
+		rate, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, r)
+		if err != nil {
+			return nil, err
+		}
+		e2tRates = append(e2tRates, rate)
 	}
 
 	return &record{
@@ -118,6 +176,10 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, erro
 		DestAddress:       log.TokenInfo.DestAddress.String(),
 		T2EReserves:       log.T2EReserves,
 		E2TReserves:       log.E2TReserves,
+		T2ESrcAmount:      t2eSrcAmounts,
+		E2TSrcAmount:      e2tSrcAmounts,
+		T2ERates:          t2eRates,
+		E2TRates:          e2tRates,
 		SrcAmount:         srcAmount,
 		DestAmount:        dstAmount,
 		WalletAddress:     log.WalletAddress.String(),

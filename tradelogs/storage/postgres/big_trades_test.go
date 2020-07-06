@@ -12,6 +12,7 @@ import (
 )
 
 func TestSaveBigTrades(t *testing.T) {
+	t.Skip()
 	// save tradelogs
 	const (
 		dbName = "test_save_trade_log"

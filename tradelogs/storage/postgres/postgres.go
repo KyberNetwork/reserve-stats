@@ -108,9 +108,19 @@ type feeRecord struct {
 	Rebate         float64 `db:"rebate"`
 	Reward         float64 `db:"reward"`
 	Version        uint64  `db:"version"`
+	// RebateWallets  []string  `db:"rebatewallets"`
+	// RebatePercents []float64 `db:"rebatepercents"`
 }
 
-func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData, f []feeRecord) (common.TradelogV4, error) {
+type splitRecord struct {
+	ReserveAddress string  `db:"address"`
+	SrcToken       string  `db:"src"`
+	DstToken       string  `db:"dst"`
+	SrcAmount      float64 `db:"src_amount"`
+	Rate           float64 `db:"rate"`
+}
+
+func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData, f []feeRecord, s []splitRecord) (common.TradelogV4, error) {
 	var (
 		tradeLog common.TradelogV4
 		err      error
@@ -121,6 +131,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData, f []feeRecord) (com
 		originalEthAmountInWei             *big.Int
 		gasPriceInWei, transactionFeeInWei *big.Int
 		fees                               []common.TradelogFee
+		split                              []common.TradeSplit
 
 		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 	)
@@ -188,6 +199,24 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData, f []feeRecord) (com
 		})
 	}
 
+	for _, sp := range s {
+		srcAmount, err := tldb.tokenAmountFormatter.ToWei(ethereum.HexToAddress(sp.SrcToken), sp.SrcAmount)
+		if err != nil {
+			return tradeLog, err
+		}
+		rate, err := tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, sp.Rate)
+		if err != nil {
+			return tradeLog, err
+		}
+		split = append(split, common.TradeSplit{
+			ReserveAddress: ethereum.HexToAddress(sp.ReserveAddress),
+			SrcToken:       ethereum.HexToAddress(sp.SrcToken),
+			DstToken:       ethereum.HexToAddress(sp.DstToken),
+			SrcAmount:      srcAmount,
+			Rate:           rate,
+		})
+	}
+
 	tradeLog = common.TradelogV4{
 		TransactionHash:   ethereum.HexToHash(r.TxHash),
 		Index:             r.LogIndex,
@@ -218,6 +247,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData, f []feeRecord) (com
 			TxSender:       ethereum.HexToAddress(r.TxSender),
 		},
 		Fees:    fees,
+		Split:   split,
 		Version: r.Version,
 	}
 	return tradeLog, nil
@@ -249,7 +279,7 @@ func (tldb *TradeLogDB) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.Tradel
 			logger.Debugw("failed to get fee from db", "error", err)
 			return result, err
 		}
-		tradeLog, err := tldb.tradeLogFromDBData(r, feeResult)
+		tradeLog, err := tldb.tradeLogFromDBData(r, feeResult, nil)
 		if err != nil {
 			logger.Errorw("cannot parse db data to trade log", "error", err)
 			return nil, err
@@ -278,13 +308,18 @@ func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradelogV4, 
 
 	for _, r := range queryResult {
 		var (
-			feeResult []feeRecord
+			feeResult   []feeRecord
+			splitResult []splitRecord
 		)
 		if err := tldb.db.Select(&feeResult, selectFeeByTradelogID, r.ID); err != nil {
 			logger.Debugw("failed to get fee from db", "error", err)
 			return nil, err
 		}
-		tradeLog, err := tldb.tradeLogFromDBData(r, feeResult)
+		if err := tldb.db.Select(&splitResult, selectSplitByTradelogID, r.ID); err != nil {
+			logger.Debugw("failed to get split from db", "error", err)
+			return nil, err
+		}
+		tradeLog, err := tldb.tradeLogFromDBData(r, feeResult, splitResult)
 		if err != nil {
 			logger.Errorw("cannot parse db data to trade log", "error", err)
 			return nil, err
@@ -336,7 +371,12 @@ INNER JOIN token AS f ON a.dst_address_id = f.id
 WHERE a.timestamp >= $1 and a.timestamp <= $2;
 `
 
-const selectFeeByTradelogID = `SELECT * FROM fee WHERE trade_id = $1;`
+const selectFeeByTradelogID = `SELECT id, trade_id, reserve_address, wallet_address, wallet_fee,
+platform_fee, burn, rebate, reward, version FROM fee WHERE trade_id = $1;`
+
+const selectSplitByTradelogID = `SELECT reserve.address, split.src, split.dst, split.src_amount, split.rate FROM split 
+JOIN reserve ON reserve.id = split.reserve_id 
+WHERE trade_id = $1;`
 
 const selectTradeLogsWithTxHashQuery = `
 SELECT a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,

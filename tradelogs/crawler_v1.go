@@ -134,8 +134,6 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) (*common.Craw
 				return nil, errors.Wrapf(err, "failed to resolve timestamp by block_number %v", log.BlockNumber)
 			}
 
-			// tradeLog = assembleTradeLogsReserveAddr(tradeLog, crawler.sugar)
-
 			receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)

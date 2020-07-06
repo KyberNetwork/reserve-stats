@@ -27,7 +27,7 @@ func (tldb *TradeLogDB) saveReserve(reserves []common.Reserve) error {
 		UNNEST($4::INTEGER[]),
 		UNNEST($5::INTEGER[])
 	) ON CONFLICT (address, reserve_id, block_number) DO NOTHING;`
-	logger.Infow("query", "value", query)
+	logger.Infow("save reserve", "query", query)
 	for _, r := range reserves {
 		addresses = append(addresses, r.Address.Hex())
 		reserveIDs = append(reserveIDs, ethereum.BytesToHash(r.ReserveID[:]).Hex())
@@ -77,7 +77,7 @@ func (tldb *TradeLogDB) prepareFeeRecords(r *record) ([]string, []string, []floa
 	for _, f := range r.Fee {
 		reserveAddresses = append(reserveAddresses, f.ReserveAddr.Hex())
 		platformWallets = append(platformWallets, f.PlatformWallet.Hex())
-		platformFee, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Burn)
+		platformFee, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.PlatformFee)
 		if err != nil {
 			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, err
 		}
@@ -107,25 +107,28 @@ func (tldb *TradeLogDB) prepareSplitRecords(r *record) ([]string, []string, []st
 		srcAmounts, rates                              []float64
 	)
 	// before katalyst
-	if ethereum.HexToAddress(r.SrcAddress) != blockchain.ETHAddr {
-		reserveAddressIDs = append(reserveAddressIDs, r.SrcReserveAddress)
-		srcAddresses = append(srcAddresses, r.SrcAddress)
-		destAddresses = append(destAddresses, blockchain.ETHAddr.Hex())
-		srcAmounts = append(srcAmounts, r.SrcAmount)
-		rates = append(rates, 0) // TODO: need to calculate rate here
-	}
+	if r.Version != 4 {
+		if ethereum.HexToAddress(r.SrcAddress) != blockchain.ETHAddr {
+			reserveAddressIDs = append(reserveAddressIDs, r.SrcReserveAddress)
+			srcAddresses = append(srcAddresses, r.SrcAddress)
+			destAddresses = append(destAddresses, blockchain.ETHAddr.Hex())
+			srcAmounts = append(srcAmounts, r.SrcAmount)
+			rates = append(rates, 0) // TODO: need to calculate rate here
+		}
 
-	if ethereum.HexToAddress(r.DestAddress) != blockchain.ETHAddr {
-		reserveAddressIDs = append(reserveAddressIDs, r.SrcReserveAddress)
-		srcAddresses = append(srcAddresses, blockchain.ETHAddr.Hex())
-		destAddresses = append(destAddresses, r.DestAddress)
-		srcAmounts = append(srcAmounts, r.OriginalEthAmount)
-		rates = append(rates, 0) // TODO: need to calculate rate here
+		if ethereum.HexToAddress(r.DestAddress) != blockchain.ETHAddr {
+			reserveAddressIDs = append(reserveAddressIDs, r.SrcReserveAddress)
+			srcAddresses = append(srcAddresses, blockchain.ETHAddr.Hex())
+			destAddresses = append(destAddresses, r.DestAddress)
+			srcAmounts = append(srcAmounts, r.OriginalEthAmount)
+			rates = append(rates, 0) // TODO: need to calculate rate here
+		}
+		return reserveAddressIDs, srcAddresses, destAddresses, srcAmounts, rates, nil
 	}
 
 	// After katalyst
 	for index, s := range r.T2EReserves {
-		reserveAddressIDs = append(reserveAddressIDs, ethereum.Bytes2Hex(s[:]))
+		reserveAddressIDs = append(reserveAddressIDs, ethereum.BytesToHash(s[:]).Hex())
 		srcAddresses = append(srcAddresses, r.SrcAddress)
 		destAddresses = append(destAddresses, blockchain.ETHAddr.Hex())
 		srcAmounts = append(srcAmounts, r.T2ESrcAmount[index])
@@ -133,7 +136,7 @@ func (tldb *TradeLogDB) prepareSplitRecords(r *record) ([]string, []string, []st
 	}
 
 	for index, s := range r.E2TReserves {
-		reserveAddressIDs = append(reserveAddressIDs, ethereum.Bytes2Hex(s[:]))
+		reserveAddressIDs = append(reserveAddressIDs, ethereum.BytesToHash(s[:]).Hex())
 		srcAddresses = append(srcAddresses, blockchain.ETHAddr.Hex())
 		destAddresses = append(destAddresses, r.DestAddress)
 		srcAmounts = append(srcAmounts, r.E2TSrcAmount[index])
@@ -156,6 +159,8 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 		users = make(map[ethereum.Address]struct{})
 	)
 	if crResult != nil {
+		byteRecords, _ := json.Marshal(crResult)
+		fmt.Printf("record %s\n", byteRecords)
 		if len(crResult.Reserves) > 0 {
 			if err := tldb.saveReserve(crResult.Reserves); err != nil {
 				return err
@@ -174,9 +179,6 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 			if err != nil {
 				return err
 			}
-
-			byteRecords, _ := json.Marshal(r)
-			fmt.Printf("record: %s\n", byteRecords)
 
 			if _, ok := users[log.User.UserAddress]; ok {
 				r.IsFirstTrade = false
@@ -259,7 +261,7 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 				$26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36
 			);`
 			var tradelogID uint64
-			reserveAddresses, platformWallets, platformFees, burns, rebates, rewards, err := tldb.prepareFeeRecords(r)
+			reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, err := tldb.prepareFeeRecords(r)
 			if err != nil {
 				logger.Debugw("failed to prepare fee records", "error", err)
 				return err
@@ -269,6 +271,8 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 				logger.Debugw("failed to prepared split records", "error", err)
 				return err
 			}
+
+			logger.Debugw("reserve", "ids", reserveAddressIds)
 
 			if err != nil {
 				logger.Debugw("failed to prepare fees record", "error", err)

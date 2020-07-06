@@ -38,3 +38,8 @@ func (mc *MockTokenAmountFormatter) FromWei(_ common.Address, amount *big.Int) (
 	result, _ := res.Float64()
 	return result, nil
 }
+
+// GetDecimals return mock decimals for token
+func (mc *MockTokenAmountFormatter) GetDecimals(_ common.Address) (int64, error) {
+	return 18, nil
+}

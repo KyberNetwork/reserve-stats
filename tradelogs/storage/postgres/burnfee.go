@@ -14,8 +14,9 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 )
 
-// Get aggregated Burn fee by hour or day
+// GetAggregatedBurnFee Get aggregated Burn fee by hour or day
 func (tldb *TradeLogDB) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[ethereum.Address]map[string]float64, error) {
+	// TODO: rewrite get aggregated burn fee
 	var (
 		timeField string
 		err       error

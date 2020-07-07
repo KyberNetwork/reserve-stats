@@ -31,6 +31,8 @@ func (crawler *Crawler) fetchTradeLogV3(fromBlock, toBlock *big.Int, timeout tim
 			ethereum.HexToHash(burnFeeEvent),
 			ethereum.HexToHash(feeToWalletEvent),
 			ethereum.HexToHash(kyberTradeEvent),
+			ethereum.HexToHash(addReserveToStorageEvent),
+			ethereum.HexToHash(reserveRebateWalletSetEvent),
 		},
 	}
 
@@ -96,6 +98,14 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) (*common.Craw
 
 		topic := log.Topics[0]
 		switch topic.Hex() {
+		case addReserveToStorageEvent:
+			if err = crawler.fillAddReserveToStorage(&result, log); err != nil {
+				return &result, err
+			}
+		case reserveRebateWalletSetEvent:
+			if err = crawler.fillRebateWalletSet(&result, log); err != nil {
+				return &result, err
+			}
 		case feeToWalletEvent:
 			if tradeLog, err = fillWalletFees(tradeLog, log); err != nil {
 				return nil, err

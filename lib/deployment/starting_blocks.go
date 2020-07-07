@@ -36,7 +36,7 @@ var StartingBlocks = map[Deployment]VersionedStartingBlocks{
 		v2: 5864036,
 	},
 	Production: {
-		v4: 10378366, // TODO have to change
+		v4: 10410610,
 		v3: 7019038,
 		v2: 5925999,
 	},

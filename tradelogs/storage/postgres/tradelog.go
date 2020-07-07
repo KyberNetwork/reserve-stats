@@ -123,7 +123,7 @@ func (tldb *TradeLogDB) prepareSplitRecords(r *record) ([]string, []string, []st
 		}
 
 		if ethereum.HexToAddress(r.DestAddress) != blockchain.ETHAddr {
-			reserveAddressIDs = append(reserveAddressIDs, r.SrcReserveAddress)
+			reserveAddressIDs = append(reserveAddressIDs, r.DstReserveAddress)
 			srcAddresses = append(srcAddresses, blockchain.ETHAddr.Hex())
 			destAddresses = append(destAddresses, r.DestAddress)
 			srcAmounts = append(srcAmounts, r.OriginalEthAmount)

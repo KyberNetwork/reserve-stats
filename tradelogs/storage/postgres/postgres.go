@@ -8,6 +8,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
@@ -66,58 +67,48 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 }
 
 type tradeLogDBData struct {
-	ID                uint64         `db:"id"`
-	Timestamp         time.Time      `db:"timestamp"`
-	BlockNumber       uint64         `db:"block_number"`
-	EthAmount         float64        `db:"eth_amount"`
-	OriginalEthAmount float64        `db:"original_eth_amount"`
-	EthUsdRate        float64        `db:"eth_usd_rate"`
-	UserAddress       string         `db:"user_address"`
-	SrcAddress        string         `db:"src_address"`
-	DstAddress        string         `db:"dst_address"`
-	SrcAmount         float64        `db:"src_amount"`
-	DstAmount         float64        `db:"dst_amount"`
-	LogIndex          uint           `db:"index"`
-	TxHash            string         `db:"tx_hash"`
-	IP                sql.NullString `db:"ip"`
-	Country           sql.NullString `db:"country"`
-	IntegrationApp    string         `db:"integration_app"`
-	SrcBurnAmount     float64        `db:"src_burn_amount"`
-	DstBurnAmount     float64        `db:"dst_burn_amount"`
-	WalletAddress     string         `db:"wallet_address"`
-	TxSender          string         `db:"tx_sender"`
-	ReceiverAddr      string         `db:"receiver_address"`
-	GasUsed           uint64         `db:"gas_used"`
-	GasPrice          float64        `db:"gas_price"`
-	TransactionFee    float64        `db:"transaction_fee"`
-	Version           uint           `db:"version"`
+	ID                uint64          `db:"id"`
+	Timestamp         time.Time       `db:"timestamp"`
+	BlockNumber       uint64          `db:"block_number"`
+	EthAmount         float64         `db:"eth_amount"`
+	OriginalEthAmount float64         `db:"original_eth_amount"`
+	EthUsdRate        float64         `db:"eth_usd_rate"`
+	UserAddress       pq.StringArray  `db:"user_address"`
+	SrcAddress        pq.StringArray  `db:"src_address"`
+	DstAddress        pq.StringArray  `db:"dst_address"`
+	SrcAmount         float64         `db:"src_amount"`
+	DstAmount         float64         `db:"dst_amount"`
+	LogIndex          uint            `db:"index"`
+	TxHash            string          `db:"tx_hash"`
+	IP                sql.NullString  `db:"ip"`
+	Country           sql.NullString  `db:"country"`
+	IntegrationApp    string          `db:"integration_app"`
+	SrcBurnAmount     float64         `db:"src_burn_amount"`
+	DstBurnAmount     float64         `db:"dst_burn_amount"`
+	WalletAddress     pq.StringArray  `db:"wallet_address"`
+	TxSender          string          `db:"tx_sender"`
+	ReceiverAddr      string          `db:"receiver_address"`
+	GasUsed           uint64          `db:"gas_used"`
+	GasPrice          float64         `db:"gas_price"`
+	TransactionFee    float64         `db:"transaction_fee"`
+	Version           uint            `db:"version"`
+	FeeReserveAddress pq.StringArray  `db:"fee_reserve_address"`
+	FeeWalletAddress  pq.StringArray  `db:"fee_wallet_address"`
+	WalletFee         pq.Float64Array `db:"wallet_fee"`
+	PlatformFee       pq.Float64Array `db:"platform_fee"`
+	Burn              pq.Float64Array `db:"burn"`
+	Rebate            pq.Float64Array `db:"rebate"`
+	Reward            pq.Float64Array `db:"reward"`
+
+	SplitReserveAddress pq.StringArray  `db:"split_reserve_address"`
+	SplitSrc            pq.StringArray  `db:"split_src"`
+	SplitDst            pq.StringArray  `db:"split_dst"`
+	SplitSrcAmount      pq.Float64Array `db:"split_src_amount"`
+	SplitRate           pq.Float64Array `db:"split_rate"`
+	SplitDstAmount      pq.Float64Array `db:"split_dst_amount"`
 }
 
-type feeRecord struct {
-	ID             uint64  `db:"id"`
-	TradeID        uint64  `db:"trade_id"`
-	ReserveAddress string  `db:"reserve_address"`
-	WalletAddress  string  `db:"wallet_address"`
-	WalletFee      float64 `db:"wallet_fee"`
-	PlatformFee    float64 `db:"platform_fee"`
-	Burn           float64 `db:"burn"`
-	Rebate         float64 `db:"rebate"`
-	Reward         float64 `db:"reward"`
-	Version        uint64  `db:"version"`
-	// RebateWallets  []string  `db:"rebatewallets"`
-	// RebatePercents []float64 `db:"rebatepercents"`
-}
-
-type splitRecord struct {
-	ReserveAddress string  `db:"address"`
-	SrcToken       string  `db:"src"`
-	DstToken       string  `db:"dst"`
-	SrcAmount      float64 `db:"src_amount"`
-	DstAmount      float64 `db:"dst_amount"`
-	Rate           float64 `db:"rate"`
-}
-
-func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData, f []feeRecord, s []splitRecord) (common.TradelogV4, error) {
+func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4, error) {
 	var (
 		tradeLog common.TradelogV4
 		err      error
@@ -142,12 +133,12 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData, f []feeRecord, s []
 		logger.Debugw("failed to parse original eth amount", "error", err)
 		return tradeLog, err
 	}
-	SrcAddress := ethereum.HexToAddress(r.SrcAddress)
+	SrcAddress := ethereum.HexToAddress(r.SrcAddress[0])
 	if srcAmountInWei, err = tldb.tokenAmountFormatter.ToWei(SrcAddress, r.SrcAmount); err != nil {
 		logger.Debugw("failed to parse src amount", "error", err)
 		return tradeLog, err
 	}
-	DstAddress := ethereum.HexToAddress(r.DstAddress)
+	DstAddress := ethereum.HexToAddress(r.DstAddress[0])
 	if dstAmountInWei, err = tldb.tokenAmountFormatter.ToWei(DstAddress, r.DstAmount); err != nil {
 		logger.Debugw("failed to parse dst amount", "error", err)
 		return tradeLog, err
@@ -164,30 +155,30 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData, f []feeRecord, s []
 		return tradeLog, err
 	}
 
-	for _, fee := range f {
-		platformFee, err := tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, fee.PlatformFee)
+	for index, feeReserveAddr := range r.FeeReserveAddress {
+		platformFee, err := tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.PlatformFee[index])
 		if err != nil {
 			return tradeLog, err
 		}
-		walletFee, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, fee.WalletFee)
+		walletFee, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, r.WalletFee[index])
 		if err != nil {
 			return tradeLog, err
 		}
-		burn, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, fee.Burn)
+		burn, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, r.Burn[index])
 		if err != nil {
 			return tradeLog, err
 		}
-		rebate, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, fee.Rebate)
+		rebate, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, r.Rebate[index])
 		if err != nil {
 			return tradeLog, err
 		}
-		reward, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, fee.Reward)
+		reward, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, r.Reward[index])
 		if err != nil {
 			return tradeLog, err
 		}
 		fees = append(fees, common.TradelogFee{
-			ReserveAddr:    ethereum.HexToAddress(fee.ReserveAddress),
-			PlatformWallet: ethereum.HexToAddress(fee.WalletAddress),
+			ReserveAddr:    ethereum.HexToAddress(feeReserveAddr),
+			PlatformWallet: ethereum.HexToAddress(r.WalletAddress[index]),
 			PlatformFee:    platformFee,
 			WalletFee:      walletFee,
 			Burn:           burn,
@@ -196,23 +187,23 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData, f []feeRecord, s []
 		})
 	}
 
-	for _, sp := range s {
-		srcAmount, err := tldb.tokenAmountFormatter.ToWei(ethereum.HexToAddress(sp.SrcToken), sp.SrcAmount)
+	for index, sp := range r.SplitReserveAddress {
+		srcAmount, err := tldb.tokenAmountFormatter.ToWei(ethereum.HexToAddress(r.SplitSrc[index]), r.SplitSrcAmount[index])
 		if err != nil {
 			return tradeLog, err
 		}
-		dstAmount, err := tldb.tokenAmountFormatter.ToWei(ethereum.HexToAddress(sp.DstToken), sp.DstAmount)
+		dstAmount, err := tldb.tokenAmountFormatter.ToWei(ethereum.HexToAddress(r.SplitDst[index]), r.SplitDstAmount[index])
 		if err != nil {
 			return tradeLog, err
 		}
-		rate, err := tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, sp.Rate)
+		rate, err := tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.SplitRate[index])
 		if err != nil {
 			return tradeLog, err
 		}
 		split = append(split, common.TradeSplit{
-			ReserveAddress: ethereum.HexToAddress(sp.ReserveAddress),
-			SrcToken:       ethereum.HexToAddress(sp.SrcToken),
-			DstToken:       ethereum.HexToAddress(sp.DstToken),
+			ReserveAddress: ethereum.HexToAddress(sp),
+			SrcToken:       ethereum.HexToAddress(r.SplitSrc[index]),
+			DstToken:       ethereum.HexToAddress(r.SplitDst[index]),
 			SrcAmount:      srcAmount,
 			DstAmount:      dstAmount,
 			Rate:           rate,
@@ -227,7 +218,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData, f []feeRecord, s []
 		EthAmount:         ethAmountInWei,
 		OriginalEthAmount: originalEthAmountInWei,
 		User: common.KyberUserInfo{
-			UserAddress: ethereum.HexToAddress(r.UserAddress),
+			UserAddress: ethereum.HexToAddress(r.UserAddress[0]),
 			IP:          r.IP.String,
 			Country:     r.Country.String,
 		},
@@ -239,7 +230,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData, f []feeRecord, s []
 		DestAmount:      dstAmountInWei,
 		IntegrationApp:  r.IntegrationApp,
 		FiatAmount:      r.EthAmount * r.EthUsdRate,
-		WalletAddress:   ethereum.HexToAddress(r.WalletAddress),
+		WalletAddress:   ethereum.HexToAddress(r.WalletAddress[0]),
 		ReceiverAddress: ethereum.HexToAddress(r.ReceiverAddr),
 		ETHUSDRate:      r.EthUsdRate,
 		TxDetail: common.TxDetail{
@@ -274,14 +265,7 @@ func (tldb *TradeLogDB) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.Tradel
 	}
 
 	for _, r := range queryResult {
-		var (
-			feeResult []feeRecord
-		)
-		if err := tldb.db.Select(&feeResult, selectFeeByTradelogID, r.ID); err != nil {
-			logger.Debugw("failed to get fee from db", "error", err)
-			return result, err
-		}
-		tradeLog, err := tldb.tradeLogFromDBData(r, feeResult, nil)
+		tradeLog, err := tldb.tradeLogFromDBData(r)
 		if err != nil {
 			logger.Errorw("cannot parse db data to trade log", "error", err)
 			return nil, err
@@ -309,19 +293,7 @@ func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradelogV4, 
 	}
 
 	for _, r := range queryResult {
-		var (
-			feeResult   []feeRecord
-			splitResult []splitRecord
-		)
-		if err := tldb.db.Select(&feeResult, selectFeeByTradelogID, r.ID); err != nil {
-			logger.Debugw("failed to get fee from db", "error", err)
-			return nil, err
-		}
-		if err := tldb.db.Select(&splitResult, selectSplitByTradelogID, r.ID); err != nil {
-			logger.Debugw("failed to get split from db", "error", err)
-			return nil, err
-		}
-		tradeLog, err := tldb.tradeLogFromDBData(r, feeResult, splitResult)
+		tradeLog, err := tldb.tradeLogFromDBData(r)
 		if err != nil {
 			logger.Errorw("cannot parse db data to trade log", "error", err)
 			return nil, err
@@ -361,25 +333,40 @@ ON CONFLICT (address)
 DO NOTHING;`
 
 const selectTradeLogsQuery = `
-SELECT a.id, a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
-e.address AS src_address, f.address AS dst_address,
-src_amount, dst_amount, ip, country, integration_app, 
-index, tx_hash, tx_sender, receiver_address, w.address as wallet_address,
-COALESCE(gas_used, 0) as gas_used, COALESCE(gas_price, 0) as gas_price, COALESCE(transaction_fee, 0) as transaction_fee, version
-FROM "` + schema.TradeLogsTableName + `" AS a
+SELECT a.id, a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_amount, eth_usd_rate, 
+ARRAY_AGG(d.address) AS user_address,
+ARRAY_AGG(e.address) AS src_address, 
+ARRAY_AGG(f.address) AS dst_address,
+a.src_amount, a.dst_amount, ip, country, integration_app, 
+index, tx_hash, tx_sender, receiver_address, 
+ARRAY_AGG(w.address) as wallet_address,
+COALESCE(gas_used, 0) as gas_used, COALESCE(gas_price, 0) as gas_price, COALESCE(transaction_fee, 0) as transaction_fee, version,
+ARRAY_AGG(fee.reserve_address) as fee_reserve_address,
+ARRAY_AGG(fee.wallet_address) as fee_wallet_address,
+ARRAY_AGG(fee.wallet_fee) as wallet_fee,
+ARRAY_AGG(fee.platform_fee) as platform_fee,
+ARRAY_AGG(fee.burn) as burn,
+ARRAY_AGG(fee.rebate) as rebate,
+ARRAY_AGG(fee.reward) as reward,
+
+ARRAY_AGG(sr.address) as split_reserve_address,
+ARRAY_AGG(split.src) as split_src,
+ARRAY_AGG(split.dst) as split_dst,
+ARRAY_AGG(split.src_amount) as split_src_amount,
+ARRAY_AGG(split.rate) as split_rate,
+ARRAY_AGG(split.dst_amount) as split_dst_amount
+
+FROM tradelogs AS a
 INNER JOIN users AS d ON a.user_address_id = d.id
 INNER JOIN token AS e ON a.src_address_id = e.id
 INNER JOIN token AS f ON a.dst_address_id = f.id
 INNER JOIN wallet as w on a.wallet_address_id = w.id
-WHERE a.timestamp >= $1 and a.timestamp <= $2;
+INNER JOIN fee ON fee.trade_id = a.id
+INNER JOIN split ON split.trade_id = a.id
+INNER JOIN reserve sr ON sr.id = split.reserve_id
+WHERE a.timestamp >= $1 and a.timestamp <= $2
+GROUP BY a.id;
 `
-
-const selectFeeByTradelogID = `SELECT id, trade_id, reserve_address, wallet_address, wallet_fee,
-platform_fee, burn, rebate, reward FROM fee WHERE trade_id = $1;`
-
-const selectSplitByTradelogID = `SELECT reserve.address, split.src, split.dst, split.src_amount, split.rate, split.dst_amount FROM split 
-JOIN reserve ON reserve.id = split.reserve_id 
-WHERE trade_id = $1;`
 
 const selectTradeLogsWithTxHashQuery = `
 SELECT a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,

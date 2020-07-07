@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	user_address_id BIGINT NOT NULL REFERENCES users,
 	src_address_id BIGINT NOT NULL REFERENCES token,
 	dst_address_id BIGINT NOT NULL REFERENCES token,
+	wallet_address_id BIGINT NOT NULL REFERENCES wallet,
 	src_amount FLOAT(32),
 	dst_amount FLOAT(32),
 	integration_app TEXT,
@@ -95,6 +96,7 @@ CREATE INDEX IF NOT EXISTS "trade_timestamp" ON "` + TradeLogsTableName + `"(tim
 CREATE INDEX IF NOT EXISTS "trade_user_address" ON "` + TradeLogsTableName + `"(user_address_id);
 CREATE INDEX IF NOT EXISTS "trade_src_address" ON "` + TradeLogsTableName + `"(src_address_id);
 CREATE INDEX IF NOT EXISTS "trade_dst_address" ON "` + TradeLogsTableName + `"(dst_address_id);
+CREATE INDEX IF NOT EXISTS "trade_wallet_address" ON "` + TradeLogsTableName + `"(wallet_address_id);
 CREATE INDEX IF NOT EXISTS "trade_tx_hash" ON "` + TradeLogsTableName + `"(tx_hash);
 
 
@@ -119,7 +121,8 @@ CREATE TABLE IF NOT EXISTS "split" (
 	src TEXT NOT NULL,
 	dst TEXT NOT NULL,
 	src_amount FLOAT(32) NOT NULL,
-	rate FLOAT(32) NOT NULL
+	rate FLOAT(32) NOT NULL,
+	dst_amount FLOAT
 );
 
 CREATE TABLE IF NOT EXISTS "rebates" (
@@ -140,6 +143,7 @@ CREATE OR REPLACE FUNCTION create_or_update_tradelogs(INOUT _id tradelogs.id%TYP
 												_user_address TEXT,
 												_src_address TEXT,
 												_dst_address TEXT,
+												_wallet_address TEXT,
 												_src_amount tradelogs.src_amount%TYPE,
 												_dst_amount tradelogs.dst_amount%TYPE,
 												_integration_app tradelogs.integration_app%TYPE,
@@ -158,6 +162,7 @@ CREATE OR REPLACE FUNCTION create_or_update_tradelogs(INOUT _id tradelogs.id%TYP
 												_version tradelogs.version%TYPE,
 												_reserve_addresses TEXT[],
 												_platform_wallets TEXT[],
+												_wallet_fees FLOAT[],
 												_platform_fees FLOAT[],
 												_burns FLOAT[],
 												_rebates FLOAT[],
@@ -166,7 +171,8 @@ CREATE OR REPLACE FUNCTION create_or_update_tradelogs(INOUT _id tradelogs.id%TYP
 												_src TEXT[],
 												_dst TEXT[],
 												_src_amounts FLOAT[],
-												_rate FLOAT[]
+												_rate FLOAT[],
+												_dst_amounts FLOAT[]
 												) AS
 $$
 DECLARE
@@ -176,7 +182,7 @@ DECLARE
 BEGIN
     IF _id = 0 THEN
 		INSERT INTO tradelogs (timestamp, block_number, tx_hash, eth_amount, 
-			original_eth_amount, user_address_id, src_address_id, dst_address_id, src_amount, dst_amount,
+			original_eth_amount, user_address_id, src_address_id, dst_address_id, wallet_address_id, src_amount, dst_amount,
 			integration_app, ip, country, eth_usd_rate, eth_usd_provider, index, kyced, is_first_trade, tx_sender,
 			receiver_address, gas_used, gas_price, transaction_fee, version) 
 		VALUES (_timestamp,
@@ -187,6 +193,7 @@ BEGIN
 			(SELECT id FROM users WHERE address=_user_address),
 			(SELECT id FROM token WHERE address=_src_address),
 			(SELECT id FROM token WHERE address=_dst_address),
+			(SELECT id FROM wallet WHERE address=_wallet_address),
 			_src_amount,
 			_dst_amount,
 			_integration_app,
@@ -215,7 +222,8 @@ BEGIN
 				LOOP
 					INSERT INTO "fee"(trade_id, 
 						reserve_address, 
-						wallet_address, 
+						wallet_address,
+						wallet_fee,
 						platform_fee, 
 						burn, 
 						rebate, 
@@ -223,6 +231,7 @@ BEGIN
 					)
 					VALUES (_id, _address, 
 						_platform_wallets[_iterator],
+						_wallet_fees[_iterator],
 						_platform_fees[_iterator],
 						_burns[_iterator],
 						_rebates[_iterator],
@@ -241,7 +250,8 @@ BEGIN
 						src,
 						dst,
 						src_amount,
-						rate
+						rate,
+						dst_amount
 					)
 					VALUES(
 						_id,
@@ -252,7 +262,8 @@ BEGIN
 						_src[_iterator],
 						_dst[_iterator],
 						_src_amounts[_iterator],
-						_rate[_iterator]
+						_rate[_iterator],
+						_dst_amounts[_iterator]
 					);
 					_iterator := _iterator+1;
 				END LOOP;

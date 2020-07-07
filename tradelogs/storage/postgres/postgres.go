@@ -66,35 +66,31 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 }
 
 type tradeLogDBData struct {
-	ID                 uint64         `db:"id"`
-	Timestamp          time.Time      `db:"timestamp"`
-	BlockNumber        uint64         `db:"block_number"`
-	EthAmount          float64        `db:"eth_amount"`
-	OriginalEthAmount  float64        `db:"original_eth_amount"`
-	EthUsdRate         float64        `db:"eth_usd_rate"`
-	UserAddress        string         `db:"user_address"`
-	SrcAddress         string         `db:"src_address"`
-	DstAddress         string         `db:"dst_address"`
-	SrcAmount          float64        `db:"src_amount"`
-	DstAmount          float64        `db:"dst_amount"`
-	LogIndex           uint           `db:"index"`
-	TxHash             string         `db:"tx_hash"`
-	IP                 sql.NullString `db:"ip"`
-	Country            sql.NullString `db:"country"`
-	IntegrationApp     string         `db:"integration_app"`
-	SrcBurnAmount      float64        `db:"src_burn_amount"`
-	DstBurnAmount      float64        `db:"dst_burn_amount"`
-	SrcReserveAddress  string         `db:"src_rsv_address"`
-	DstReserveAddress  string         `db:"dst_rsv_address"`
-	SrcWalletFeeAmount float64        `db:"src_wallet_fee_amount"`
-	DstWalletFeeAmount float64        `db:"dst_wallet_fee_amount"`
-	WalletAddress      string         `db:"wallet_addr"`
-	TxSender           string         `db:"tx_sender"`
-	ReceiverAddr       string         `db:"receiver_address"`
-	GasUsed            uint64         `db:"gas_used"`
-	GasPrice           float64        `db:"gas_price"`
-	TransactionFee     float64        `db:"transaction_fee"`
-	Version            uint           `db:"version"`
+	ID                uint64         `db:"id"`
+	Timestamp         time.Time      `db:"timestamp"`
+	BlockNumber       uint64         `db:"block_number"`
+	EthAmount         float64        `db:"eth_amount"`
+	OriginalEthAmount float64        `db:"original_eth_amount"`
+	EthUsdRate        float64        `db:"eth_usd_rate"`
+	UserAddress       string         `db:"user_address"`
+	SrcAddress        string         `db:"src_address"`
+	DstAddress        string         `db:"dst_address"`
+	SrcAmount         float64        `db:"src_amount"`
+	DstAmount         float64        `db:"dst_amount"`
+	LogIndex          uint           `db:"index"`
+	TxHash            string         `db:"tx_hash"`
+	IP                sql.NullString `db:"ip"`
+	Country           sql.NullString `db:"country"`
+	IntegrationApp    string         `db:"integration_app"`
+	SrcBurnAmount     float64        `db:"src_burn_amount"`
+	DstBurnAmount     float64        `db:"dst_burn_amount"`
+	WalletAddress     string         `db:"wallet_address"`
+	TxSender          string         `db:"tx_sender"`
+	ReceiverAddr      string         `db:"receiver_address"`
+	GasUsed           uint64         `db:"gas_used"`
+	GasPrice          float64        `db:"gas_price"`
+	TransactionFee    float64        `db:"transaction_fee"`
+	Version           uint           `db:"version"`
 }
 
 type feeRecord struct {
@@ -117,6 +113,7 @@ type splitRecord struct {
 	SrcToken       string  `db:"src"`
 	DstToken       string  `db:"dst"`
 	SrcAmount      float64 `db:"src_amount"`
+	DstAmount      float64 `db:"dst_amount"`
 	Rate           float64 `db:"rate"`
 }
 
@@ -204,6 +201,10 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData, f []feeRecord, s []
 		if err != nil {
 			return tradeLog, err
 		}
+		dstAmount, err := tldb.tokenAmountFormatter.ToWei(ethereum.HexToAddress(sp.DstToken), sp.DstAmount)
+		if err != nil {
+			return tradeLog, err
+		}
 		rate, err := tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, sp.Rate)
 		if err != nil {
 			return tradeLog, err
@@ -213,6 +214,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData, f []feeRecord, s []
 			SrcToken:       ethereum.HexToAddress(sp.SrcToken),
 			DstToken:       ethereum.HexToAddress(sp.DstToken),
 			SrcAmount:      srcAmount,
+			DstAmount:      dstAmount,
 			Rate:           rate,
 		})
 	}
@@ -362,19 +364,20 @@ const selectTradeLogsQuery = `
 SELECT a.id, a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
 e.address AS src_address, f.address AS dst_address,
 src_amount, dst_amount, ip, country, integration_app, 
-index, tx_hash, tx_sender, receiver_address, 
+index, tx_hash, tx_sender, receiver_address, w.address as wallet_address,
 COALESCE(gas_used, 0) as gas_used, COALESCE(gas_price, 0) as gas_price, COALESCE(transaction_fee, 0) as transaction_fee, version
 FROM "` + schema.TradeLogsTableName + `" AS a
 INNER JOIN users AS d ON a.user_address_id = d.id
 INNER JOIN token AS e ON a.src_address_id = e.id
 INNER JOIN token AS f ON a.dst_address_id = f.id
+INNER JOIN wallet as w on a.wallet_address_id = w.id
 WHERE a.timestamp >= $1 and a.timestamp <= $2;
 `
 
 const selectFeeByTradelogID = `SELECT id, trade_id, reserve_address, wallet_address, wallet_fee,
 platform_fee, burn, rebate, reward FROM fee WHERE trade_id = $1;`
 
-const selectSplitByTradelogID = `SELECT reserve.address, split.src, split.dst, split.src_amount, split.rate FROM split 
+const selectSplitByTradelogID = `SELECT reserve.address, split.src, split.dst, split.src_amount, split.rate, split.dst_amount FROM split 
 JOIN reserve ON reserve.id = split.reserve_id 
 WHERE trade_id = $1;`
 

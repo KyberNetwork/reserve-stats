@@ -137,6 +137,7 @@ type TradeSplit struct {
 	SrcToken       ethereum.Address `json:"src_token"`
 	DstToken       ethereum.Address `json:"dst_token"`
 	SrcAmount      *big.Int         `json:"src_amount"`
+	DstAmount      *big.Int         `json:"dst_amount"`
 	Rate           *big.Int         `json:"rate"`
 }
 

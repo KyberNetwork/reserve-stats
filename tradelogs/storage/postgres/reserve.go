@@ -49,7 +49,6 @@ func (tldb *TradeLogDB) saveReserveAddress(tx *sqlx.Tx, reserveAddressArray []st
 			"reserves", reserveAddressArray,
 		)
 	)
-	// query := fmt.Sprintf(insertionAddressTemplate, schema.ReserveTableName)
 	query := fmt.Sprintf(`INSERT INTO %[1]s(address) 
 	VALUES (UNNEST($1::TEXT[])) ON CONFLICT ON CONSTRAINT reserve_pk DO NOTHING;`, schema.ReserveTableName) // TODO: define conflict here
 	logger.Debugw("updating rsv...", "query", query)

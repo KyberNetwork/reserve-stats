@@ -115,6 +115,9 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, erro
 	}
 	if log.Version == 4 {
 		dstAmount, err = tldb.calculateDstAmountV4(log)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		dstAmount, err = tldb.tokenAmountFormatter.FromWei(log.TokenInfo.DestAddress, log.DestAmount)
 		if err != nil {
@@ -202,32 +205,3 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.TradelogV4) (*record, erro
 		Fee:               log.Fees,
 	}, nil
 }
-
-// func (tldb *TradeLogDB) getWalletFeeAmount(log common.TradelogV4) (float64, float64, error) {
-// 	var (
-// 		logger = tldb.sugar.With(
-// 			"func", caller.GetCurrentFunctionName(),
-// 			"log", log,
-// 		)
-// 		dstAmount    float64
-// 		srcAmount    float64
-// 		srcAmountSet bool
-// 	)
-// 	for _, walletFee := range log.WalletFees {
-// 		amount, err := tldb.tokenAmountFormatter.FromWei(blockchain.KNCAddr, walletFee.Amount)
-// 		if err != nil {
-// 			return dstAmount, srcAmount, err
-// 		}
-
-// 		switch {
-// 		case walletFee.ReserveAddress == log.SrcReserveAddress && !srcAmountSet:
-// 			srcAmount = amount
-// 			srcAmountSet = true
-// 		case walletFee.ReserveAddress == log.DstReserveAddress:
-// 			dstAmount = amount
-// 		default:
-// 			logger.Warnw("unexpected wallet fees with unrecognized reserve address", "wallet fee", walletFee)
-// 		}
-// 	}
-// 	return srcAmount, dstAmount, nil
-// }

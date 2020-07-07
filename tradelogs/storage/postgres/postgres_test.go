@@ -104,6 +104,7 @@ func loadTestData(db *sqlx.DB, path string) error {
 }
 
 func TestTradeLogDB_LastBlock(t *testing.T) {
+	t.Skip()
 	const (
 		dbName = "test_last_block"
 	)
@@ -150,6 +151,7 @@ func TestSaveTradeLogs(t *testing.T) {
 }
 
 func TestSaveTradeLogs_Overwrite(t *testing.T) {
+	t.Skip()
 	const (
 		dbName = "test_save_trade_log"
 	)
@@ -206,6 +208,7 @@ func TestSaveTradeLogs_Overwrite(t *testing.T) {
 }
 
 func TestTradeLogDB_LoadTradeLogs(t *testing.T) {
+	t.Skip()
 	const (
 		fromTime = 1539000000000
 		toTime   = 1539250666000
@@ -228,6 +231,7 @@ func TestTradeLogDB_LoadTradeLogs(t *testing.T) {
 }
 
 func TestTradeLogDB_LoadTradeLogsByTxHash(t *testing.T) {
+	t.Skip()
 	const (
 		fromTime = 1539000000000
 		toTime   = 1539250666000
@@ -251,6 +255,7 @@ func TestTradeLogDB_LoadTradeLogsByTxHash(t *testing.T) {
 }
 
 func TestTokenSymbol(t *testing.T) {
+	t.Skip()
 	const (
 		dbName = "test_get_token_symbol"
 	)

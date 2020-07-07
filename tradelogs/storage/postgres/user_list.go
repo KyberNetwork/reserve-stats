@@ -9,6 +9,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 )
 
+// GetUserList return list of user with his amount
 func (tldb *TradeLogDB) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo, error) {
 	logger := tldb.sugar.With("from", fromTime, "to", toTime, "func", caller.GetCurrentFunctionName())
 

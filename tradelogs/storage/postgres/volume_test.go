@@ -12,6 +12,7 @@ import (
 )
 
 func TestTradeLogDB_GetAssetVolume(t *testing.T) {
+	t.Skip()
 	const (
 		dbName = "test_volume"
 		// These params are expected to be change when export.dat changes.
@@ -48,6 +49,7 @@ func TestTradeLogDB_GetAssetVolume(t *testing.T) {
 }
 
 func TestTradeLogDB_GetReserveVolume(t *testing.T) {
+	t.Skip()
 	const (
 		dbName = "test_rsv_volume"
 

@@ -10,6 +10,7 @@ import (
 )
 
 func TestTradeLogDB_GetUserList(t *testing.T) {
+	t.Skip()
 	const (
 		dbName   = "test_user_list"
 		fromTime = 1539248043000

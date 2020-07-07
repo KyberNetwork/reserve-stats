@@ -11,6 +11,7 @@ import (
 )
 
 func TestTradeLogDB_GetUserVolume(t *testing.T) {
+	t.Skip()
 	const (
 		dbName = "test_user_volume"
 		// These params are expected to be change when export.dat changes.

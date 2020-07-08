@@ -376,8 +376,8 @@ INNER JOIN users AS d ON a.user_address_id = d.id
 INNER JOIN token AS e ON a.src_address_id = e.id
 INNER JOIN token AS f ON a.dst_address_id = f.id
 INNER JOIN wallet as w on a.wallet_address_id = w.id
-INNER JOIN fee ON fee.trade_id = a.id
-INNER JOIN split ON split.trade_id = a.id
+LEFT JOIN fee ON fee.trade_id = a.id
+LEFT JOIN split ON split.trade_id = a.id
 INNER JOIN reserve sr ON sr.id = split.reserve_id
 WHERE a.timestamp >= $1 and a.timestamp <= $2
 GROUP BY a.id;

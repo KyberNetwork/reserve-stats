@@ -66,6 +66,20 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 	return result.Int64, nil
 }
 
+type NullInt64Array struct {
+	Int64s []int64
+	Valid  bool
+}
+
+func (n *NullInt64Array) Scan(value interface{}) error {
+	if value == nil {
+		n.Int64s, n.Valid = nil, false
+		return nil
+	}
+	n.Valid = true
+	return pq.Array(&n.Int64s).Scan(value)
+}
+
 type tradeLogDBData struct {
 	ID                uint64          `db:"id"`
 	Timestamp         time.Time       `db:"timestamp"`
@@ -354,14 +368,14 @@ a.src_amount, a.dst_amount, ip, country, integration_app,
 a.index, tx_hash, tx_sender, receiver_address, 
 ARRAY_AGG(w.address) as wallet_address,
 COALESCE(gas_used, 0) as gas_used, COALESCE(gas_price, 0) as gas_price, COALESCE(transaction_fee, 0) as transaction_fee, version,
-ARRAY_AGG(fee.reserve_address) as fee_reserve_address,
-ARRAY_AGG(fee.wallet_address) as fee_wallet_address,
-ARRAY_AGG(fee.wallet_fee) as wallet_fee,
-ARRAY_AGG(fee.platform_fee) as platform_fee,
-ARRAY_AGG(fee.burn) as burn,
-ARRAY_AGG(fee.rebate) as rebate,
-ARRAY_AGG(fee.reward) as reward,
-ARRAY_AGG(fee.index) as fee_index,
+ARRAY_REMOVE(ARRAY_AGG(fee.reserve_address), NULL) as fee_reserve_address,
+ARRAY_REMOVE(ARRAY_AGG(fee.wallet_address), NULL) as fee_wallet_address,
+ARRAY_REMOVE(ARRAY_AGG(fee.wallet_fee), NULL) as wallet_fee,
+ARRAY_REMOVE(ARRAY_AGG(fee.platform_fee), NULL) as platform_fee,
+ARRAY_REMOVE(ARRAY_AGG(fee.burn), NULL) as burn,
+ARRAY_REMOVE(ARRAY_AGG(fee.rebate), NULL) as rebate,
+ARRAY_REMOVE(ARRAY_AGG(fee.reward), NULL) as reward,
+ARRAY_REMOVE(ARRAY_AGG(fee.index), NULL) as fee_index,
 
 ARRAY_AGG(sr.address) as split_reserve_address,
 ARRAY_AGG(split.src) as split_src,

@@ -325,11 +325,11 @@ func (crawler *Crawler) calculateTradeAmount(t2ESrcAmounts, e2TSrcAmounts, t2ERa
 	}
 	if len(e2TSrcAmounts) != 0 {
 		for i, amount := range e2TSrcAmounts {
-			dstAmount = dstAmount.Add(dstAmount, amount.Mul(amount, e2TRates[i]))
+			dstAmount = dstAmount.Add(dstAmount, big.NewInt(0).Mul(amount, e2TRates[i]))
 		}
 	} else {
 		for i, amount := range t2ESrcAmounts {
-			dstAmount = dstAmount.Add(dstAmount, amount.Mul(amount, t2ERates[i]))
+			dstAmount = dstAmount.Add(dstAmount, big.NewInt(0).Mul(amount, t2ERates[i]))
 		}
 	}
 	return srcAmount, dstAmount

@@ -99,6 +99,7 @@ type tradeLogDBData struct {
 	Burn              pq.Float64Array `db:"burn"`
 	Rebate            pq.Float64Array `db:"rebate"`
 	Reward            pq.Float64Array `db:"reward"`
+	FeeIndex          pq.Int64Array   `db:"fee_index"`
 
 	SplitReserveAddress pq.StringArray  `db:"split_reserve_address"`
 	SplitSrc            pq.StringArray  `db:"split_src"`
@@ -106,6 +107,7 @@ type tradeLogDBData struct {
 	SplitSrcAmount      pq.Float64Array `db:"split_src_amount"`
 	SplitRate           pq.Float64Array `db:"split_rate"`
 	SplitDstAmount      pq.Float64Array `db:"split_dst_amount"`
+	SplitIndex          pq.Int64Array   `db:"split_index"`
 }
 
 func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4, error) {
@@ -154,8 +156,13 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4,
 		logger.Debugw("failed to parse transaction fee", "error", err)
 		return tradeLog, err
 	}
-
+	uniqueSplit := make(map[uint]bool)
+	uniqueFee := make(map[uint]bool)
 	for index, feeReserveAddr := range r.FeeReserveAddress {
+		if _, exist := uniqueFee[uint(r.FeeIndex[index])]; exist {
+			continue
+		}
+		uniqueFee[uint(r.FeeIndex[index])] = true // mark as exist
 		platformFee, err := tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.PlatformFee[index])
 		if err != nil {
 			return tradeLog, err
@@ -184,10 +191,15 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4,
 			Burn:           burn,
 			Rebate:         rebate,
 			Reward:         reward,
+			Index:          uint(r.FeeIndex[index]),
 		})
 	}
 
 	for index, sp := range r.SplitReserveAddress {
+		if _, exist := uniqueSplit[uint(r.SplitIndex[index])]; exist {
+			continue
+		}
+		uniqueSplit[uint(r.SplitIndex[index])] = true // mark as exist
 		srcAmount, err := tldb.tokenAmountFormatter.ToWei(ethereum.HexToAddress(r.SplitSrc[index]), r.SplitSrcAmount[index])
 		if err != nil {
 			return tradeLog, err
@@ -207,6 +219,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4,
 			SrcAmount:      srcAmount,
 			DstAmount:      dstAmount,
 			Rate:           rate,
+			Index:          uint(r.SplitIndex[index]),
 		})
 	}
 
@@ -338,7 +351,7 @@ ARRAY_AGG(d.address) AS user_address,
 ARRAY_AGG(e.address) AS src_address, 
 ARRAY_AGG(f.address) AS dst_address,
 a.src_amount, a.dst_amount, ip, country, integration_app, 
-index, tx_hash, tx_sender, receiver_address, 
+a.index, tx_hash, tx_sender, receiver_address, 
 ARRAY_AGG(w.address) as wallet_address,
 COALESCE(gas_used, 0) as gas_used, COALESCE(gas_price, 0) as gas_price, COALESCE(transaction_fee, 0) as transaction_fee, version,
 ARRAY_AGG(fee.reserve_address) as fee_reserve_address,
@@ -348,13 +361,15 @@ ARRAY_AGG(fee.platform_fee) as platform_fee,
 ARRAY_AGG(fee.burn) as burn,
 ARRAY_AGG(fee.rebate) as rebate,
 ARRAY_AGG(fee.reward) as reward,
+ARRAY_AGG(fee.index) as fee_index,
 
 ARRAY_AGG(sr.address) as split_reserve_address,
 ARRAY_AGG(split.src) as split_src,
 ARRAY_AGG(split.dst) as split_dst,
 ARRAY_AGG(split.src_amount) as split_src_amount,
 ARRAY_AGG(split.rate) as split_rate,
-ARRAY_AGG(split.dst_amount) as split_dst_amount
+ARRAY_AGG(split.dst_amount) as split_dst_amount,
+ARRAY_AGG(split.index) as split_index
 
 FROM tradelogs AS a
 INNER JOIN users AS d ON a.user_address_id = d.id

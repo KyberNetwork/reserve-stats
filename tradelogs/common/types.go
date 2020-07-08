@@ -139,6 +139,7 @@ type TradeSplit struct {
 	SrcAmount      *big.Int         `json:"src_amount"`
 	DstAmount      *big.Int         `json:"dst_amount"`
 	Rate           *big.Int         `json:"rate"`
+	Index          uint             `json:"index"`
 }
 
 // Reserve represent a reserve in KN

@@ -111,7 +111,9 @@ CREATE TABLE IF NOT EXISTS "fee" (
 	rebate FLOAT(32) default 0,
 	reward FLOAT(32) default 0,
 	rebateWallets TEXT[],
-	rebatePercents FLOAT[]
+	rebatePercents FLOAT[],
+	index INTEGER NOT NULL,
+	CONSTRAINT fee_constraint UNIQUE (trade_id, index)	
 );
 
 CREATE TABLE IF NOT EXISTS "split" (
@@ -122,7 +124,9 @@ CREATE TABLE IF NOT EXISTS "split" (
 	dst TEXT NOT NULL,
 	src_amount FLOAT(32) NOT NULL,
 	rate FLOAT(32) NOT NULL,
-	dst_amount FLOAT
+	dst_amount FLOAT,
+	index INTEGER NOT NULL,
+	CONSTRAINT split_constraint UNIQUE (trade_id, index)
 );
 
 CREATE TABLE IF NOT EXISTS "rebates" (
@@ -167,12 +171,14 @@ CREATE OR REPLACE FUNCTION create_or_update_tradelogs(INOUT _id tradelogs.id%TYP
 												_burns FLOAT[],
 												_rebates FLOAT[],
 												_rewards FLOAT[],
+												_fee_indexes INTEGER[],
 												_split TEXT[],
 												_src TEXT[],
 												_dst TEXT[],
 												_src_amounts FLOAT[],
 												_rate FLOAT[],
-												_dst_amounts FLOAT[]
+												_dst_amounts FLOAT[],
+												_split_index INTEGER[]
 												) AS
 $$
 DECLARE
@@ -227,7 +233,8 @@ BEGIN
 						platform_fee, 
 						burn, 
 						rebate, 
-						reward
+						reward,
+						index
 					)
 					VALUES (_id, _address, 
 						_platform_wallets[_iterator],
@@ -235,8 +242,11 @@ BEGIN
 						_platform_fees[_iterator],
 						_burns[_iterator],
 						_rebates[_iterator],
-						_rewards[_iterator]
-					) RETURNING id INTO _fee_id;
+						_rewards[_iterator],
+						_fee_indexes[_iterator]
+					) ON CONFLICT (trade_id, index) DO 
+					UPDATE SET reserve_address = _address
+					RETURNING id INTO _fee_id;
 					_iterator := _iterator+1;
 				END LOOP;
 		END IF;
@@ -251,7 +261,8 @@ BEGIN
 						dst,
 						src_amount,
 						rate,
-						dst_amount
+						dst_amount,
+						index
 					)
 					VALUES(
 						_id,
@@ -263,8 +274,9 @@ BEGIN
 						_dst[_iterator],
 						_src_amounts[_iterator],
 						_rate[_iterator],
-						_dst_amounts[_iterator]
-					);
+						_dst_amounts[_iterator],
+						_split_index[_iterator]
+					) ON CONFLICT (trade_id, index) DO NOTHING;
 					_iterator := _iterator+1;
 				END LOOP;
 		END IF;

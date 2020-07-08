@@ -21,12 +21,13 @@ func (tldb *TradeLogDB) GetStats(from, to time.Time) (common.StatsResponse, erro
 		query = `
 	 SELECT SUM(eth_amount) as eth_volume,
 	  SUM(eth_amount*eth_usd_rate) as usd_volume,
-	  SUM(src_burn_amount+dst_burn_amount+src_wallet_fee_amount+dst_wallet_fee_amount) as collected_fee,
+	  SUM(platform_fee+burn+rebate+reward) as collected_fee,
 	  COUNT(*) as total_trades,
 	  COUNT(CASE WHEN is_first_trade THEN 1 END) AS new_users,
 	  COUNT(distinct(user_address_id)) AS unique_addresses,
 	  AVG(eth_amount*eth_usd_rate) as average_trade_size
 	  from tradelogs
+	  join fee on fee.trade_id = tradelogs.id
 	  WHERE timestamp >= $1 and timestamp <= $2
 	`
 		statsRecord struct {

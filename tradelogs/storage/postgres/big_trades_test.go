@@ -23,10 +23,13 @@ func TestSaveBigTrades(t *testing.T) {
 		require.NoError(t, testStorage.tearDown(dbName))
 	}()
 
-	var result *common.CrawlResult
+	var result common.CrawlResult
+	result.Reserves, err = utils.GetSampleReserves("../testdata/reserves.json")
+	require.NoError(t, err)
 	result.Trades, err = utils.GetSampleTradeLogs("../testdata/trade_logs.json")
 	require.NoError(t, err)
-	require.NoError(t, testStorage.SaveTradeLogs(result))
+
+	require.NoError(t, testStorage.SaveTradeLogs(&result))
 	log.Printf("len trade logs: %d", len(result.Trades))
 
 	// save big trades

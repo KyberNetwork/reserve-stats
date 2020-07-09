@@ -57,7 +57,8 @@ func (tldb *TradeLogDB) GetAggregatedBurnFee(from, to time.Time, freq string, re
 		FROM (
 			SELECT %[1]s as time, burn AS amount, reserve_address AS address
 			FROM "fee" b
-			WHERE timestamp >= $1 AND timestamp < $2 %[2]s
+			JOIN tradelogs on tradelogs.id = fee.trade_id
+			WHERE tradelogs.timestamp >= $1 AND tradelogs.timestamp < $2 %[2]s
 		) a GROUP BY time,address
 	`, timeField, addrCondition)
 

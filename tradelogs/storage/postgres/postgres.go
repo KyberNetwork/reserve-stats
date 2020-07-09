@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
@@ -113,6 +114,8 @@ type tradeLogDBData struct {
 	Burn              pq.Float64Array `db:"burn"`
 	Rebate            pq.Float64Array `db:"rebate"`
 	Reward            pq.Float64Array `db:"reward"`
+	RebateWallets     pq.ByteaArray   `db:"rebate_wallets"`
+	RebatePercents    pq.ByteaArray   `db:"rebate_percents"`
 	FeeIndex          pq.Int64Array   `db:"fee_index"`
 
 	SplitReserveAddress pq.StringArray  `db:"split_reserve_address"`
@@ -197,15 +200,35 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4,
 		if err != nil {
 			return tradeLog, err
 		}
+		var (
+			rebateWallets         []string
+			rebatePercents        []uint64
+			rebateWalletAddresses []ethereum.Address
+			rebatePercentBig      []*big.Int
+		)
+		if err := json.Unmarshal(r.RebateWallets[index], &rebateWallets); err != nil {
+			return tradeLog, err
+		}
+		for _, wallet := range rebateWallets {
+			rebateWalletAddresses = append(rebateWalletAddresses, ethereum.HexToAddress(wallet))
+		}
+		if err := json.Unmarshal(r.RebatePercents[index], &rebatePercents); err != nil {
+			return tradeLog, err
+		}
+		for _, percent := range rebatePercents {
+			rebatePercentBig = append(rebatePercentBig, big.NewInt(0).SetInt64(int64(percent)))
+		}
 		fees = append(fees, common.TradelogFee{
-			ReserveAddr:    ethereum.HexToAddress(feeReserveAddr),
-			PlatformWallet: ethereum.HexToAddress(r.WalletAddress[index]),
-			PlatformFee:    platformFee,
-			WalletFee:      walletFee,
-			Burn:           burn,
-			Rebate:         rebate,
-			Reward:         reward,
-			Index:          uint(r.FeeIndex[index]),
+			ReserveAddr:               ethereum.HexToAddress(feeReserveAddr),
+			PlatformWallet:            ethereum.HexToAddress(r.WalletAddress[index]),
+			PlatformFee:               platformFee,
+			WalletFee:                 walletFee,
+			Burn:                      burn,
+			Rebate:                    rebate,
+			Reward:                    reward,
+			RebateWallets:             rebateWalletAddresses,
+			RebatePercentBpsPerWallet: rebatePercentBig,
+			Index:                     uint(r.FeeIndex[index]),
 		})
 	}
 
@@ -367,7 +390,9 @@ ARRAY_AGG(f.address) AS dst_address,
 a.src_amount, a.dst_amount, ip, country, integration_app, 
 a.index, tx_hash, tx_sender, receiver_address, 
 ARRAY_AGG(w.address) as wallet_address,
-COALESCE(gas_used, 0) as gas_used, COALESCE(gas_price, 0) as gas_price, COALESCE(transaction_fee, 0) as transaction_fee, version,
+COALESCE(gas_used, 0) as gas_used, COALESCE(gas_price, 0) as gas_price, 
+COALESCE(transaction_fee, 0) as transaction_fee, 
+version,
 ARRAY_REMOVE(ARRAY_AGG(fee.reserve_address), NULL) as fee_reserve_address,
 ARRAY_REMOVE(ARRAY_AGG(fee.wallet_address), NULL) as fee_wallet_address,
 ARRAY_REMOVE(ARRAY_AGG(fee.wallet_fee), NULL) as wallet_fee,
@@ -376,6 +401,8 @@ ARRAY_REMOVE(ARRAY_AGG(fee.burn), NULL) as burn,
 ARRAY_REMOVE(ARRAY_AGG(fee.rebate), NULL) as rebate,
 ARRAY_REMOVE(ARRAY_AGG(fee.reward), NULL) as reward,
 ARRAY_REMOVE(ARRAY_AGG(fee.index), NULL) as fee_index,
+ARRAY_REMOVE(ARRAY_AGG(fee.rebate_wallets), NULL) as rebate_wallets,
+ARRAY_REMOVE(ARRAY_AGG(fee.rebate_percents), NULL) as rebate_percents,
 
 ARRAY_AGG(sr.address) as split_reserve_address,
 ARRAY_AGG(split.src) as split_src,

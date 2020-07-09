@@ -153,14 +153,14 @@ type Reserve struct {
 
 // TradelogFee is fee for a trade
 type TradelogFee struct {
-	ReserveAddr ethereum.Address `json:"reserve_addr"` // backward compatible for tradelog before katalyst
-	WalletName  string           `json:"wallet_name"`  // backward compatible for tradelog before katalyst
-	WalletFee   *big.Int         `json:"wallet_fee"`   // backward compatible for tradelog before katalyst
+	ReserveAddr ethereum.Address `json:"reserve_addr"`    // backward compatible for tradelog before katalyst
+	WalletName  string           `json:"wallet_name"`     // backward compatible for tradelog before katalyst
+	WalletFee   *big.Int         `json:"platform_rebate"` // backward compatible for tradelog before katalyst
 
 	PlatformFee               *big.Int           `json:"platform_fee"`
 	PlatformWallet            ethereum.Address   `json:"platform_wallet"`
 	Reward                    *big.Int           `json:"reward"`
-	Rebate                    *big.Int           `json:"rebate"`
+	Rebate                    *big.Int           `json:"reserve_rebate"`
 	RebateWallets             []ethereum.Address `json:"rebate_wallet"`
 	RebatePercentBpsPerWallet []*big.Int         `json:"rebate_percent_per_wallet"`
 	Burn                      *big.Int           `json:"burn"`

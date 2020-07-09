@@ -43,7 +43,7 @@ INSERT INTO big_tradelogs (tradelog_id) (
 	WHERE original_eth_amount > $1 
 	AND tradelog_id.block_number >= $2 
 	AND src_token.symbol != 'WETH' AND dst_token.symbol != 'WETH'
-	AND tradelogs.timestamp >= now() - interval '1' hour
+	AND tradelog_id.timestamp >= now() - interval '1' hour
 )
 ON CONFLICT (tradelog_id) DO NOTHING;
 `

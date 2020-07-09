@@ -137,13 +137,13 @@ func TestSaveTradeLogs(t *testing.T) {
 	defer func() {
 		require.NoError(t, testStorage.tearDown(dbName))
 	}()
-	var result *common.CrawlResult
+	var result common.CrawlResult
 	result.Trades, err = utils.GetSampleTradeLogs("../testdata/trade_logs.json")
 	if err != nil {
 		fmt.Println("error: ", err)
 	}
 	require.NoError(t, err)
-	require.NoError(t, testStorage.SaveTradeLogs(result))
+	require.NoError(t, testStorage.SaveTradeLogs(&result))
 
 	tls, err := testStorage.LoadTradeLogs(timeutil.TimestampMsToTime(1554353231000), timeutil.TimestampMsToTime(1554353231000))
 	require.NoError(t, err)

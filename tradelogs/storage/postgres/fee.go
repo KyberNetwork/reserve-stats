@@ -7,14 +7,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// GetFeeByTradelogID return fee by tradelog id
-func (tldb *TradeLogDB) GetFeeByTradelogID(tradelogID uint64) (common.TradelogFee, error) {
-	var (
-		fee common.TradelogFee
-	)
-	return fee, nil
-}
-
 // SaveFee save fee by tradelog
 func (tldb *TradeLogDB) SaveFee(tx *sqlx.Tx, fees []common.TradelogFee, tradelogID int64) error {
 	var (

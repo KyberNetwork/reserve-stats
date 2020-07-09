@@ -110,8 +110,8 @@ CREATE TABLE IF NOT EXISTS "fee" (
 	burn FLOAT(32) default 0,
 	rebate FLOAT(32) default 0,
 	reward FLOAT(32) default 0,
-	rebateWallets TEXT[],
-	rebatePercents FLOAT[],
+	rebate_wallets JSONB,
+	rebate_percents JSONB,
 	index INTEGER NOT NULL,
 	CONSTRAINT fee_constraint UNIQUE (trade_id, index)	
 );
@@ -172,6 +172,8 @@ CREATE OR REPLACE FUNCTION create_or_update_tradelogs(INOUT _id tradelogs.id%TYP
 												_rebates FLOAT[],
 												_rewards FLOAT[],
 												_fee_indexes INTEGER[],
+												_rebate_wallets JSONB[],
+												_rebate_percents JSONB[],
 												_split TEXT[],
 												_src TEXT[],
 												_dst TEXT[],
@@ -234,6 +236,8 @@ BEGIN
 						burn, 
 						rebate, 
 						reward,
+						rebate_wallets,
+						rebate_percents,
 						index
 					)
 					VALUES (_id, _address, 
@@ -243,6 +247,8 @@ BEGIN
 						_burns[_iterator],
 						_rebates[_iterator],
 						_rewards[_iterator],
+						_rebate_wallets[_iterator],
+						_rebate_percents[_iterator],
 						_fee_indexes[_iterator]
 					) ON CONFLICT (trade_id, index) DO 
 					UPDATE SET reserve_address = _address

@@ -69,10 +69,11 @@ func (tldb *TradeLogDB) updateRebateWallet(reserves []common.Reserve) error {
 	return nil
 }
 
-func (tldb *TradeLogDB) prepareFeeRecords(r *record) ([]string, []string, []float64, []float64, []float64, []float64, []float64, []uint, error) {
+func (tldb *TradeLogDB) prepareFeeRecords(r *record) ([]string, []string, []float64, []float64, []float64, []float64, []float64, []uint, [][]byte, [][]byte, error) {
 	var (
 		reserveAddresses, platformWallets                 []string
 		walletFees, burns, rebates, rewards, platformFees []float64
+		rebateWallets, rebatePercents                     [][]byte
 		indexes                                           []uint
 	)
 	for _, f := range r.Fee {
@@ -80,32 +81,52 @@ func (tldb *TradeLogDB) prepareFeeRecords(r *record) ([]string, []string, []floa
 		platformWallets = append(platformWallets, f.PlatformWallet.Hex())
 		walletFee, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.WalletFee)
 		if err != nil {
-			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, indexes, err
+			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, indexes, rebateWallets, rebatePercents, err
 		}
 		walletFees = append(walletFees, walletFee)
 		platformFee, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.PlatformFee)
 		if err != nil {
-			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, indexes, err
+			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, indexes, rebateWallets, rebatePercents, err
 		}
 		platformFees = append(platformFees, platformFee)
 		burn, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Burn)
 		if err != nil {
-			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, indexes, err
+			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, indexes, rebateWallets, rebatePercents, err
 		}
 		burns = append(burns, burn)
 		rebate, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Rebate)
 		if err != nil {
-			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, indexes, err
+			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, indexes, rebateWallets, rebatePercents, err
 		}
 		rebates = append(rebates, rebate)
 		reward, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, f.Reward)
 		if err != nil {
-			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, indexes, err
+			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, indexes, rebateWallets, rebatePercents, err
 		}
 		rewards = append(rewards, reward)
 		indexes = append(indexes, f.Index)
+		var (
+			wallets  []string
+			percents []uint64
+		)
+		for _, wallet := range f.RebateWallets {
+			wallets = append(wallets, wallet.Hex())
+		}
+		walletsJSON, err := json.Marshal(wallets)
+		if err != nil {
+			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, indexes, rebateWallets, rebatePercents, err
+		}
+		rebateWallets = append(rebateWallets, walletsJSON)
+		for _, percent := range f.RebatePercentBpsPerWallet {
+			percents = append(percents, percent.Uint64())
+		}
+		percentsJSON, err := json.Marshal(percents)
+		if err != nil {
+			return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, indexes, rebateWallets, rebatePercents, err
+		}
+		rebatePercents = append(rebatePercents, percentsJSON)
 	}
-	return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, indexes, nil
+	return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, indexes, rebateWallets, rebatePercents, nil
 }
 
 func (tldb *TradeLogDB) prepareSplitRecords(r *record) ([]string, []string, []string, []float64, []float64, []float64, []uint, error) {
@@ -279,10 +300,10 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 			create_or_update_tradelogs(
 				$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
 				$13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
-				$26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41
+				$26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43
 			);`
 			var tradelogID uint64
-			reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, feeIndexes, err := tldb.prepareFeeRecords(r)
+			reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, feeIndexes, rebateWallets, rebatePercents, err := tldb.prepareFeeRecords(r)
 			if err != nil {
 				logger.Debugw("failed to prepare fee records", "error", err)
 				return err
@@ -326,6 +347,8 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 				pq.Array(rebates),
 				pq.Array(rewards),
 				pq.Array(feeIndexes),
+				pq.Array(rebateWallets),
+				pq.Array(rebatePercents),
 				pq.StringArray(reserveAddressIds),
 				pq.StringArray(srcAddresses),
 				pq.StringArray(dstAddresses),

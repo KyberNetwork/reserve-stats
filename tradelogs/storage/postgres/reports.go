@@ -175,31 +175,20 @@ func (tldb *TradeLogDB) GetTopReserves(from, to time.Time, limit uint64) (common
 			"limit", limit,
 		)
 		query = `
-	  SELECT
-	    address as reserve_address,
-		sum(usd_amount) as usd_amount 
-	  FROM
-	  (
-	  SELECT
-	    sum(tradelogs.original_eth_amount*tradelogs.eth_usd_rate) usd_amount,
-	    reserve.address,
-		reserve.id
-	  FROM tradelogs
-	    left join reserve on tradelogs.src_reserve_address_id = reserve.id
-	  WHERE
-		timestamp >= $1 AND timestamp <= $2
-	  GROUP BY reserve.id
-	  UNION ALL
-	  SELECT
-	    sum(tradelogs.original_eth_amount*tradelogs.eth_usd_rate) usd_amount,
-	    reserve.address,
-		reserve.id
-	  FROM tradelogs
-	    left join reserve on tradelogs.dst_reserve_address_id = reserve.id
-	  WHERE
-		timestamp >= $1 AND timestamp <= $2
-	  GROUP BY reserve.id
-	  ) a GROUP BY a.address ORDER BY usd_amount DESC
+	  SELECT 
+		  reserve.address as reserve_address, 
+		  SUM(
+			CASE 
+		  		WHEN split.src = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
+				THEN split.src_amount*tradelogs.eth_usd_rate
+				ELSE split.dst_amount*tradelogs.eth_usd_rate
+			END
+		  ) AS usd_amount
+	  FROM split
+	  JOIN tradelogs on tradelogs.id = split.trade_id
+	  JOIN reserve on split.reserve_id = reserve.id
+	  WHERE tradelogs.timestamp >= $1 AND tradelogs.timestamp <= $2
+	  GROUP BY reserve.address ORDER BY usd_amount DESC
 		`
 		topReserves []struct {
 			ReserveAddress string  `db:"reserve_address"`

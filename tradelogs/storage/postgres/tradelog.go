@@ -3,6 +3,7 @@ package postgres
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
@@ -129,6 +130,55 @@ func (tldb *TradeLogDB) prepareFeeRecords(r *record) ([]string, []string, []floa
 	return reserveAddresses, platformWallets, burns, rebates, rewards, platformFees, walletFees, indexes, rebateWallets, rebatePercents, nil
 }
 
+func (tldb *TradeLogDB) calculateDstAmount(srcAddress, dstAddress string, srcAmount, rate float64) (float64, error) {
+	var (
+		srcDecimals, dstDecimals int64
+		err                      error
+		dstAmount                float64
+	)
+	srcDecimals, err = tldb.tokenAmountFormatter.GetDecimals(ethereum.HexToAddress(srcAddress))
+	if err != nil {
+		return dstAmount, err
+	}
+	dstDecimals, err = tldb.tokenAmountFormatter.GetDecimals(ethereum.HexToAddress(dstAddress))
+	if err != nil {
+		return dstAmount, err
+	}
+	srcAmountBig, err := tldb.tokenAmountFormatter.ToWei(ethereum.HexToAddress(srcAddress), srcAmount)
+	if err != nil {
+		return dstAmount, err
+	}
+
+	rateBig, err := tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, rate)
+	if err != nil {
+		return dstAmount, err
+	}
+	dstAmountTmp := big.NewInt(0).Mul(srcAmountBig, rateBig)
+	// this formula is base on https://github.com/KyberNetwork/smart-contracts/blob/Katalyst/contracts/sol6/utils/Utils5.sol#L88
+	if dstDecimals >= srcDecimals {
+		precision := new(big.Float).SetInt(new(big.Int).Exp(
+			big.NewInt(10), big.NewInt(18), nil,
+		))
+		exp := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(dstDecimals-srcDecimals), nil)
+		tmp := big.NewInt(0).Mul(dstAmountTmp, exp)
+		dstAmountInt, _ := new(big.Float).Quo(new(big.Float).SetInt(tmp), precision).Int(nil)
+		dstAmount, err = tldb.tokenAmountFormatter.FromWei(ethereum.HexToAddress(dstAddress), dstAmountInt)
+		if err != nil {
+			return dstAmount, err
+		}
+	} else {
+		precision := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil)
+		exp := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(srcDecimals-dstDecimals), nil)
+		tmp := big.NewInt(0).Mul(exp, precision)
+		dstAmountInt, _ := new(big.Float).Quo(new(big.Float).SetInt(dstAmountTmp), new(big.Float).SetInt(tmp)).Int(nil)
+		dstAmount, err = tldb.tokenAmountFormatter.FromWei(ethereum.HexToAddress(dstAddress), dstAmountInt)
+		if err != nil {
+			return dstAmount, err
+		}
+	}
+	return dstAmount, nil
+}
+
 func (tldb *TradeLogDB) prepareSplitRecords(r *record) ([]string, []string, []string, []float64, []float64, []float64, []uint, error) {
 	var (
 		reserveAddressIDs, srcAddresses, destAddresses []string
@@ -168,7 +218,11 @@ func (tldb *TradeLogDB) prepareSplitRecords(r *record) ([]string, []string, []st
 		srcAddresses = append(srcAddresses, r.SrcAddress)
 		destAddresses = append(destAddresses, blockchain.ETHAddr.Hex())
 		srcAmounts = append(srcAmounts, r.T2ESrcAmount[index])
-		dstAmounts = append(dstAmounts, 0)
+		dstAmount, err := tldb.calculateDstAmount(r.SrcAddress, blockchain.ETHAddr.Hex(), r.T2ESrcAmount[index], r.T2ERates[index])
+		if err != nil {
+			return reserveAddressIDs, srcAddresses, destAddresses, srcAmounts, rates, dstAmounts, indexes, nil
+		}
+		dstAmounts = append(dstAmounts, dstAmount)
 		rates = append(rates, r.T2ERates[index])
 		indexes = append(indexes, splitIndex+1)
 		splitIndex++
@@ -179,7 +233,11 @@ func (tldb *TradeLogDB) prepareSplitRecords(r *record) ([]string, []string, []st
 		srcAddresses = append(srcAddresses, blockchain.ETHAddr.Hex())
 		destAddresses = append(destAddresses, r.DestAddress)
 		srcAmounts = append(srcAmounts, r.E2TSrcAmount[index])
-		dstAmounts = append(dstAmounts, 0)
+		dstAmount, err := tldb.calculateDstAmount(blockchain.ETHAddr.Hex(), r.DestAddress, r.E2TSrcAmount[index], r.E2TRates[index])
+		if err != nil {
+			return reserveAddressIDs, srcAddresses, destAddresses, srcAmounts, rates, dstAmounts, indexes, nil
+		}
+		dstAmounts = append(dstAmounts, dstAmount)
 		rates = append(rates, r.E2TRates[index])
 		indexes = append(indexes, splitIndex+1)
 		splitIndex++

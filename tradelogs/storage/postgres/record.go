@@ -49,6 +49,7 @@ type record struct {
 }
 
 func (tldb *TradeLogDB) calculateDstAmountV4(log common.TradelogV4) (float64, error) {
+	// this formula is base on https://github.com/KyberNetwork/smart-contracts/blob/Katalyst/contracts/sol6/utils/Utils5.sol#L88
 	var (
 		srcDecimals, dstDecimals int64
 		err                      error
@@ -78,7 +79,7 @@ func (tldb *TradeLogDB) calculateDstAmountV4(log common.TradelogV4) (float64, er
 			big.NewInt(10), big.NewInt(18), nil,
 		))
 		exp := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(dstDecimals-srcDecimals), nil)
-		tmp := log.DestAmount.Mul(log.DestAmount, exp)
+		tmp := log.DestAmount.Mul(log.DestAmount, exp) // log.DestAmount is is equal srcAmount*rate when fillKyberTradeEvent
 		dstAmountInt, _ := new(big.Float).Quo(new(big.Float).SetInt(tmp), precision).Int(nil)
 		dstAmount, err = tldb.tokenAmountFormatter.FromWei(log.TokenInfo.DestAddress, dstAmountInt)
 		if err != nil {
@@ -88,7 +89,7 @@ func (tldb *TradeLogDB) calculateDstAmountV4(log common.TradelogV4) (float64, er
 		precision := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil)
 		exp := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(srcDecimals-dstDecimals), nil)
 		tmp := big.NewInt(0).Mul(exp, precision)
-		dstAmountInt, _ := new(big.Float).Quo(new(big.Float).SetInt(log.DestAmount), new(big.Float).SetInt(tmp)).Int(nil)
+		dstAmountInt, _ := new(big.Float).Quo(new(big.Float).SetInt(log.DestAmount), new(big.Float).SetInt(tmp)).Int(nil) // log.DestAmount is is equal srcAmount*rate when fillKyberTradeEvent
 		dstAmount, err = tldb.tokenAmountFormatter.FromWei(log.TokenInfo.DestAddress, dstAmountInt)
 		if err != nil {
 			return dstAmount, err

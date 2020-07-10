@@ -29,6 +29,7 @@ func (tldb *TradeLogDB) GetCountryStats(countryCode string, from, to time.Time, 
 		COUNT(CASE WHEN kyced THEN 1 END) AS kyced,
 		COUNT(CASE WHEN is_first_trade THEN 1 END) AS count_new_trades
 		FROM tradelogs
+		LEFT JOIN fee ON fee.trade_id = tradelogs.id
 		WHERE timestamp >= $1 AND timestamp < $2 AND country = $3
 		GROUP BY time
 	`, timeField)

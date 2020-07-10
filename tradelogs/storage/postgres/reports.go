@@ -19,15 +19,30 @@ func (tldb *TradeLogDB) GetStats(from, to time.Time) (common.StatsResponse, erro
 			"func", caller.GetCurrentFunctionName(),
 		)
 		query = `
-	 SELECT SUM(eth_amount) as eth_volume,
-	  SUM(eth_amount*eth_usd_rate) as usd_volume,
+	 SELECT 
+	  SUM(
+		CASE 
+			WHEN split.src = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND split.dst != '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+			THEN split.src_amount
+			WHEN split.dst = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND split.src != '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+			THEN split.dst_amount
+		END
+	  ) AS eth_volume,
+	  SUM(
+		CASE 
+			  WHEN split.src = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
+			THEN split.src_amount*tradelogs.eth_usd_rate
+			ELSE split.dst_amount*tradelogs.eth_usd_rate
+		END
+	  ) AS usd_volume,
 	  SUM(platform_fee+burn+rebate+reward) as collected_fee,
-	  COUNT(*) as total_trades,
+	  COUNT(DISTINCT(tx_hash, tradeslogs.index)) as total_trades,
 	  COUNT(CASE WHEN is_first_trade THEN 1 END) AS new_users,
 	  COUNT(distinct(user_address_id)) AS unique_addresses,
 	  AVG(eth_amount*eth_usd_rate) as average_trade_size
 	  from tradelogs
-	  join fee on fee.trade_id = tradelogs.id
+	  left join fee on fee.trade_id = tradelogs.id
+	  left join split on split.trade_id = tradelogs.id
 	  WHERE timestamp >= $1 and timestamp <= $2
 	`
 		statsRecord struct {

@@ -133,7 +133,7 @@ type TradelogV4 struct {
 
 // TradeSplit split the trade
 type TradeSplit struct {
-	ReserveAddress ethereum.Address `json:"reserve_address"`
+	ReserveAddress ethereum.Address `json:"reserve_addr"`
 	SrcToken       ethereum.Address `json:"src_token"`
 	DstToken       ethereum.Address `json:"dst_token"`
 	SrcAmount      *big.Int         `json:"src_amount"`

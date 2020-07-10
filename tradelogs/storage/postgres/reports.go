@@ -19,31 +19,34 @@ func (tldb *TradeLogDB) GetStats(from, to time.Time) (common.StatsResponse, erro
 			"func", caller.GetCurrentFunctionName(),
 		)
 		query = `
-	 SELECT 
-	  SUM(
-		CASE 
-			WHEN split.src = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND split.dst != '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-			THEN split.src_amount
-			WHEN split.dst = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND split.src != '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-			THEN split.dst_amount
-		END
-	  ) AS eth_volume,
-	  SUM(
-		CASE 
-			  WHEN split.src = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
-			THEN split.src_amount*tradelogs.eth_usd_rate
-			ELSE split.dst_amount*tradelogs.eth_usd_rate
-		END
-	  ) AS usd_volume,
-	  SUM(platform_fee+burn+rebate+reward) as collected_fee,
-	  COUNT(DISTINCT(tx_hash, tradeslogs.index)) as total_trades,
-	  COUNT(CASE WHEN is_first_trade THEN 1 END) AS new_users,
-	  COUNT(distinct(user_address_id)) AS unique_addresses,
-	  AVG(eth_amount*eth_usd_rate) as average_trade_size
-	  from tradelogs
-	  left join fee on fee.trade_id = tradelogs.id
-	  left join split on split.trade_id = tradelogs.id
-	  WHERE timestamp >= $1 and timestamp <= $2
+		SELECT 
+		COALESCE(SUM(
+		  CASE 
+			  WHEN split.src = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND split.dst != '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND split.dst != '0x094c875704c14783049DDF8136E298B3a099c446'
+			  THEN split.src_amount
+			  WHEN split.dst = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND split.src != '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND split.src != '0x094c875704c14783049DDF8136E298B3a099c446'
+			  THEN split.dst_amount
+			  ELSE 0
+		  END
+		), 0) AS eth_volume,
+		COALESCE(SUM(
+		  CASE 
+			  WHEN split.src = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND split.dst != '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND split.dst != '0x094c875704c14783049DDF8136E298B3a099c446'
+			  THEN split.src_amount*tradelogs.eth_usd_rate
+			  WHEN split.dst = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND split.src != '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND split.src != '0x094c875704c14783049DDF8136E298B3a099c446'
+			  THEN split.dst_amount*tradelogs.eth_usd_rate
+			  ELSE 0
+		  END
+		), 0) AS usd_volume,
+		COALESCE(SUM(platform_fee+burn+rebate+reward), 0) as collected_fee,
+		COUNT(DISTINCT(tx_hash, tradelogs.index)) as total_trades,
+		COUNT(CASE WHEN is_first_trade THEN 1 END) AS new_users,
+		COUNT(distinct(user_address_id)) AS unique_addresses,
+		COALESCE(AVG(eth_amount*eth_usd_rate), 0) as average_trade_size
+		FROM tradelogs
+		LEFT JOIN fee ON fee.trade_id = tradelogs.id
+		LEFT JOIN split ON split.trade_id = tradelogs.id
+	  WHERE timestamp >= $1 AND timestamp <= $2
 	`
 		statsRecord struct {
 			ETHVolume        float64 `db:"eth_volume"`

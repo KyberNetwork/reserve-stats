@@ -387,7 +387,9 @@ SELECT a.id, a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_
 ARRAY_AGG(d.address) AS user_address,
 ARRAY_AGG(e.address) AS src_address, 
 ARRAY_AGG(f.address) AS dst_address,
-a.src_amount, a.dst_amount, ip, country, integration_app, 
+a.src_amount, 
+a.dst_amount, 
+ip, country, integration_app, 
 a.index, tx_hash, tx_sender, receiver_address, 
 ARRAY_AGG(w.address) as wallet_address,
 COALESCE(gas_used, 0) as gas_used, COALESCE(gas_price, 0) as gas_price, 
@@ -425,17 +427,57 @@ GROUP BY a.id;
 `
 
 const selectTradeLogsWithTxHashQuery = `
-SELECT a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_amount, eth_usd_rate, d.address AS user_address,
-e.address AS src_address, f.address AS dst_address,
-src_amount, dst_amount, ip, country, integration_app, src_burn_amount, dst_burn_amount,
-index, tx_hash, b.address AS src_rsv_address, c.address AS dst_rsv_address, src_wallet_fee_amount, dst_wallet_fee_amount,
-g.address AS wallet_addr, tx_sender, receiver_address, COALESCE(gas_used, 0) as gas_used, COALESCE(gas_price, 0) as gas_price, COALESCE(transaction_fee, 0) as transaction_fee
-FROM "` + schema.TradeLogsTableName + `" AS a
-INNER JOIN reserve AS b ON a.src_reserve_address_id = b.id
-INNER JOIN reserve AS c ON a.dst_reserve_address_id = c.id
+SELECT 
+a.timestamp AS timestamp, 
+a.block_number, 
+eth_amount, 
+original_eth_amount, 
+eth_usd_rate, 
+ARRAY_AGG(d.address) AS user_address,
+ARRAY_AGG(e.address) AS src_address, 
+ARRAY_AGG(f.address) AS dst_address,
+a.src_amount, 
+a.dst_amount, 
+ip, 
+country, 
+integration_app, 
+a.index, 
+tx_hash, 
+ARRAY_AGG(w.address) AS wallet_address, 
+tx_sender, 
+receiver_address, 
+COALESCE(gas_used, 0) as gas_used, 
+COALESCE(gas_price, 0) as gas_price, 
+COALESCE(transaction_fee, 0) as transaction_fee,
+version,
+
+ARRAY_REMOVE(ARRAY_AGG(fee.reserve_address), NULL) as fee_reserve_address,
+ARRAY_REMOVE(ARRAY_AGG(fee.wallet_address), NULL) as fee_wallet_address,
+ARRAY_REMOVE(ARRAY_AGG(fee.wallet_fee), NULL) as wallet_fee,
+ARRAY_REMOVE(ARRAY_AGG(fee.platform_fee), NULL) as platform_fee,
+ARRAY_REMOVE(ARRAY_AGG(fee.burn), NULL) as burn,
+ARRAY_REMOVE(ARRAY_AGG(fee.rebate), NULL) as rebate,
+ARRAY_REMOVE(ARRAY_AGG(fee.reward), NULL) as reward,
+ARRAY_REMOVE(ARRAY_AGG(fee.index), NULL) as fee_index,
+ARRAY_REMOVE(ARRAY_AGG(fee.rebate_wallets), NULL) as rebate_wallets,
+ARRAY_REMOVE(ARRAY_AGG(fee.rebate_percents), NULL) as rebate_percents,
+
+ARRAY_AGG(sr.address) as split_reserve_address,
+ARRAY_AGG(split.src) as split_src,
+ARRAY_AGG(split.dst) as split_dst,
+ARRAY_AGG(split.src_amount) as split_src_amount,
+ARRAY_AGG(split.rate) as split_rate,
+ARRAY_AGG(split.dst_amount) as split_dst_amount,
+ARRAY_AGG(split.index) as split_index
+
+FROM tradelogs AS a
 INNER JOIN users AS d ON a.user_address_id = d.id
 INNER JOIN token AS e ON a.src_address_id = e.id
 INNER JOIN token AS f ON a.dst_address_id = f.id
-INNER JOIN wallet AS g ON a.wallet_address_id = g.id
-WHERE a.tx_hash=$1;
+INNER JOIN wallet AS w ON a.wallet_address_id = w.id
+LEFT JOIN fee ON fee.trade_id = a.id
+LEFT JOIN split ON split.trade_id = a.id
+INNER JOIN reserve sr ON sr.id = split.reserve_id
+WHERE a.tx_hash=$1
+GROUP BY a.id;
 `

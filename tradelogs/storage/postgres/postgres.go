@@ -67,20 +67,6 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 	return result.Int64, nil
 }
 
-type NullInt64Array struct {
-	Int64s []int64
-	Valid  bool
-}
-
-func (n *NullInt64Array) Scan(value interface{}) error {
-	if value == nil {
-		n.Int64s, n.Valid = nil, false
-		return nil
-	}
-	n.Valid = true
-	return pq.Array(&n.Int64s).Scan(value)
-}
-
 type tradeLogDBData struct {
 	ID                uint64          `db:"id"`
 	Timestamp         time.Time       `db:"timestamp"`

@@ -35,13 +35,14 @@ func (tldb *TradeLogDB) GetUserVolume(userAddress ethereum.Address, from, to tim
 	}
 
 	query := fmt.Sprintf(
-		`SELECT %[1]s AS time, SUM(eth_amount) eth_volume,
+		`SELECT %[1]s AS time, 
+			SUM(eth_amount) eth_volume,
 			SUM(eth_amount * eth_usd_rate) usd_volume
-		FROM "%[2]s" a
+		FROM "tradelogs" a
 		WHERE timestamp >= $1 AND timestamp < $2
-		AND EXISTS (SELECT NULL FROM "%[3]s" WHERE user_address_id = id AND address = $3)
+		AND EXISTS (SELECT NULL FROM "users" WHERE user_address_id = id AND address = $3)
 		GROUP BY time;
-	`, timeField, schema.TradeLogsTableName, schema.UserTableName)
+	`, timeField)
 	logger.Debugw("prepare statement", "stmt", query)
 
 	var records []struct {

@@ -411,41 +411,6 @@ func fillKyberTradeV2(tradeLog common.TradelogV4, logItem types.Log) (common.Tra
 	return tradeLog, nil
 }
 
-// func assembleTradeLogsReserveAddr(log common.TradelogV4, sugar *zap.SugaredLogger) common.TradelogV4 {
-// 	switch {
-// 	case blockchain.IsBurnable(log.TokenInfo.SrcAddress):
-// 		if blockchain.IsBurnable(log.TokenInfo.DestAddress) {
-// 			if common.LengthBurnFees(log) == 2 {
-// 				log.SrcReserveAddress = log.BurnFees[0].ReserveAddress
-// 				log.DstReserveAddress = log.BurnFees[1].ReserveAddress
-// 			} else {
-// 				sugar.Warnw("unexpected burn fees", "got", common.LengthBurnFees(log), "want", "2 burn fees (src-dst)")
-// 			}
-// 		} else {
-// 			if common.LengthBurnFees(log) == 1 {
-// 				log.SrcReserveAddress = log.BurnFees[0].ReserveAddress
-// 			} else {
-// 				sugar.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (src)")
-// 			}
-// 		}
-// 	case blockchain.IsBurnable(log.DestAddress):
-// 		if len(log.BurnFees) == 1 {
-// 			log.DstReserveAddress = log.BurnFees[0].ReserveAddress
-// 		} else {
-// 			sugar.Warnw("unexpected burn fees", "got", log.BurnFees, "want", "1 burn fees (dst)")
-// 		}
-// 	case common.LengthWalletFees(log) != 0:
-// 		if common.LengthWalletFees(log) == 1 {
-// 			log.SrcReserveAddress = log.WalletFees[0].ReserveAddress
-// 		} else {
-// 			log.SrcReserveAddress = log.WalletFees[0].ReserveAddress
-// 			log.DstReserveAddress = log.WalletFees[1].ReserveAddress
-// 		}
-// 	}
-
-// 	return log
-// }
-
 func (crawler *Crawler) fetchLogsWithTopics(fromBlock, toBlock *big.Int, timeout time.Duration, topics [][]ethereum.Hash) ([]types.Log, error) {
 	query := ether.FilterQuery{
 		FromBlock: fromBlock,

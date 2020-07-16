@@ -60,12 +60,6 @@ func assertTradeLog(t *testing.T, tradeLog common.TradelogV4) {
 	assert.NotZero(t, tradeLog.DestAmount)
 	assert.NotZero(t, tradeLog.ReceiverAddress)
 
-	// TODO: re-write this assert part
-	// assert.True(t, !blockchain.IsZeroAddress(tradeLog.) || !blockchain.IsZeroAddress(tradeLog.DstReserveAddress))
-	// if blockchain.IsBurnable(tradeLog.TokenInfo.SrcAddress) || blockchain.IsBurnable(tradeLog.TokenInfo.DestAddress) {
-	// 	assert.NotZero(t, tradeLog.BurnFees)
-	// }
-
 	assert.NotZero(t, tradeLog.ETHUSDRate)
 	assert.NotZero(t, tradeLog.ETHUSDProvider)
 	assert.NotZero(t, tradeLog.Index)

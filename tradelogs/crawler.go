@@ -173,7 +173,6 @@ func fillEtherReceival(tradeLog common.TradelogV4, logItem types.Log) (common.Tr
 	if err != nil {
 		return tradeLog, err
 	}
-	// tradeLog.T2EReserves = append(tradeLog.T2EReserves, ethereum.BytesToAddress(logItem.Topics[1].Bytes()))
 	tradeLog.SrcReserveAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
 	tradeLog.EthAmount = amount.Big()
 	tradeLog.OriginalEthAmount = amount.Big()

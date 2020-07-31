@@ -170,19 +170,19 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4,
 		if err != nil {
 			return tradeLog, err
 		}
-		walletFee, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, r.WalletFee[index])
+		walletFee, err := tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.WalletFee[index])
 		if err != nil {
 			return tradeLog, err
 		}
-		burn, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, r.Burn[index])
+		burn, err := tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.Burn[index])
 		if err != nil {
 			return tradeLog, err
 		}
-		rebate, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, r.Rebate[index])
+		rebate, err := tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.Rebate[index])
 		if err != nil {
 			return tradeLog, err
 		}
-		reward, err := tldb.tokenAmountFormatter.ToWei(blockchain.KNCAddr, r.Reward[index])
+		reward, err := tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.Reward[index])
 		if err != nil {
 			return tradeLog, err
 		}

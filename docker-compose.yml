@@ -1,14 +1,5 @@
 version: '3.1'
 services:
-  kapacitor:
-    image: 'kapacitor:1.5.2-alpine'
-    volumes:
-      - './data/kapacitor:/var/lib/kapacitor/'
-      - './ticks:/ticks'
-    environment:
-      - KAPACITOR_INFLUXDB_0_URLS_0=http://influxdb:8086
-    ports:
-      - '127.0.0.1:9092:9092'
   postgres:
     image: 'postgres:10-alpine'
     volumes:
@@ -26,10 +17,3 @@ services:
       - './data/redis:/var/lib/redis/'
     ports:
       - '127.0.0.1:6379:6379'
-  pgadmin4:
-    image: dpage/pgadmin4
-    ports:
-      - '127.0.0.1:9000:80'
-    environment:
-      PGADMIN_DEFAULT_EMAIL: reserve_stats@localhost
-      PGADMIN_DEFAULT_PASSWORD: reserve_stats

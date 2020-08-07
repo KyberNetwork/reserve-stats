@@ -11,6 +11,10 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 )
 
+const (
+	withdrawalTimeLimit = time.Hour * 24 * 90 // 90 days
+)
+
 //Fetcher is a fetcher for get binance data
 type Fetcher struct {
 	sugar      *zap.SugaredLogger
@@ -133,11 +137,19 @@ func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.With
 		logger = f.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	logger.Info("Start get withdraw history")
-	withdrawHistory, err := f.getWithdrawHistoryWithRetry(fromTime, toTime)
-	if err != nil {
-		return result, err
+	endTime := toTime
+	for toTime.After(fromTime) {
+		endTime = fromTime.Add(withdrawalTimeLimit)
+		if endTime.After(toTime) {
+			endTime = toTime
+		}
+		withdrawHistory, err := f.getWithdrawHistoryWithRetry(fromTime, endTime)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, withdrawHistory.WithdrawList...)
+		fromTime = endTime
 	}
-	result = append(result, withdrawHistory.WithdrawList...)
 	// log for test get withdraw history successfully
 	logger.Infow("withdraw history", "list", result)
 

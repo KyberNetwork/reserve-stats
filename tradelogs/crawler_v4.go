@@ -26,6 +26,9 @@ const (
 func (crawler *Crawler) fetchTradeLogV4(fromBlock, toBlock *big.Int, timeout time.Duration) (*common.CrawlResult, error) {
 	topics := [][]ethereum.Hash{
 		{
+			ethereum.HexToHash(burnFeeEvent),
+			ethereum.HexToHash(feeToWalletEvent),
+			ethereum.HexToHash(kyberTradeEvent),
 			ethereum.HexToHash(feeDistributedEvent),
 			ethereum.HexToHash(kyberTradeEventV4),
 			ethereum.HexToHash(addReserveToStorageEvent),
@@ -127,6 +130,35 @@ func (crawler *Crawler) assembleTradeLogsV4(eventLogs []types.Log) (*common.Craw
 			if err = crawler.fillRebateWalletSet(&result, log); err != nil {
 				return &result, err
 			}
+		case feeToWalletEvent:
+			if tradeLog, err = fillWalletFees(tradeLog, log); err != nil {
+				return nil, err
+			}
+		case burnFeeEvent:
+			if tradeLog, err = fillBurnFees(tradeLog, log); err != nil {
+				return nil, err
+			}
+		case kyberTradeEvent:
+			tradeLog.Version = 3 // tradelog version 3
+			if tradeLog, err = fillKyberTradeV3(tradeLog, log, crawler.volumeExludedReserves); err != nil {
+				return nil, err
+			}
+			receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)
+			}
+			tradeLog.TxDetail.GasUsed = receipt.GasUsed
+			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
+				return nil, errors.Wrapf(err, "failed to resolve timestamp by block_number %v", log.BlockNumber)
+			}
+			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
+			if err != nil {
+				return &result, errors.Wrap(err, "could not update trade log basic info")
+			}
+			tradeLog.TxDetail.TransactionFee = big.NewInt(0).Mul(tradeLog.TxDetail.GasPrice, big.NewInt(int64(tradeLog.TxDetail.GasUsed)))
+			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
+			result.Trades = append(result.Trades, tradeLog)
+			tradeLog = common.TradelogV4{}
 		case feeDistributedEvent:
 			if tradeLog, err = crawler.fillFeeDistributed(tradeLog, log); err != nil {
 				return nil, err

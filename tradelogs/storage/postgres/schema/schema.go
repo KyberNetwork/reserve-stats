@@ -129,6 +129,8 @@ CREATE TABLE IF NOT EXISTS "split" (
 	CONSTRAINT split_constraint UNIQUE (trade_id, index)
 );
 
+ALTER TABLE "split" ADD COLUMN IF NOT EXISTS eth_amount FLOAT DEFAULT 0;
+
 CREATE TABLE IF NOT EXISTS "rebates" (
 	id SERIAL PRIMARY KEY,
 	fee_id INTEGER NOT NULL REFERENCES fee,
@@ -268,7 +270,8 @@ BEGIN
 						src_amount,
 						rate,
 						dst_amount,
-						index
+						index,
+						eth_amount
 					)
 					VALUES(
 						_id,
@@ -281,7 +284,11 @@ BEGIN
 						_src_amounts[_iterator],
 						_rate[_iterator],
 						_dst_amounts[_iterator],
-						_split_index[_iterator]
+						_split_index[_iterator],
+						CASE 
+							WHEN _src[_iterator] = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' THEN _src_amounts[_iterator]
+							ELSE _dst_amounts[_iterator]
+						END
 					) ON CONFLICT (trade_id, index) DO NOTHING;
 					_iterator := _iterator+1;
 				END LOOP;

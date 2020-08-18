@@ -20,29 +20,13 @@ func (tldb *TradeLogDB) GetStats(from, to time.Time) (common.StatsResponse, erro
 		)
 		query = `
 		SELECT 
-		COALESCE(SUM(
-		  CASE 
-			  WHEN split.src = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND split.dst != '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND split.dst != '0x094c875704c14783049DDF8136E298B3a099c446'
-			  THEN split.src_amount
-			  WHEN split.dst = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND split.src != '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND split.src != '0x094c875704c14783049DDF8136E298B3a099c446'
-			  THEN split.dst_amount
-			  ELSE 0
-		  END
-		), 0) AS eth_volume,
-		COALESCE(SUM(
-		  CASE 
-			  WHEN split.src = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND split.dst != '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND split.dst != '0x094c875704c14783049DDF8136E298B3a099c446'
-			  THEN split.src_amount*tradelogs.eth_usd_rate
-			  WHEN split.dst = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' AND split.src != '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND split.src != '0x094c875704c14783049DDF8136E298B3a099c446'
-			  THEN split.dst_amount*tradelogs.eth_usd_rate
-			  ELSE 0
-		  END
-		), 0) AS usd_volume,
+		COALESCE(SUM(split.eth_amount), 0) AS eth_volume,
+		COALESCE(SUM(split.eth_amount), 0) AS usd_volume,
 		COALESCE(SUM(platform_fee+burn+rebate+reward), 0) as collected_fee,
 		COUNT(DISTINCT(tx_hash, tradelogs.index)) as total_trades,
 		COUNT(CASE WHEN is_first_trade THEN 1 END) AS new_users,
 		COUNT(distinct(user_address_id)) AS unique_addresses,
-		COALESCE(AVG(eth_amount*eth_usd_rate), 0) as average_trade_size
+		COALESCE(AVG(split.eth_amount*eth_usd_rate), 0) as average_trade_size
 		FROM tradelogs
 		LEFT JOIN fee ON fee.trade_id = tradelogs.id
 		LEFT JOIN split ON split.trade_id = tradelogs.id

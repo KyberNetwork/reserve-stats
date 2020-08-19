@@ -21,7 +21,7 @@ func (tldb *TradeLogDB) GetStats(from, to time.Time) (common.StatsResponse, erro
 		query = `
 		SELECT 
 		COALESCE(SUM(split.eth_amount), 0) AS eth_volume,
-		COALESCE(SUM(split.eth_amount), 0) AS usd_volume,
+		COALESCE(SUM(split.eth_amount*eth_usd_rate), 0) AS usd_volume,
 		COALESCE(SUM(platform_fee+burn+rebate+reward), 0) as collected_fee,
 		COUNT(DISTINCT(tx_hash, tradelogs.index)) as total_trades,
 		COUNT(CASE WHEN is_first_trade THEN 1 END) AS new_users,

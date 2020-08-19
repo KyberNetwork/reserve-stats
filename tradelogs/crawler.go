@@ -363,8 +363,15 @@ func (crawler *Crawler) fillKyberTradeV4(tradelog common.TradelogV4, logItem typ
 	tradelog.SrcAmount = srcAmount
 	tradelog.DestAmount = dstAmount
 
-	tradelog.EthAmount = trade.EthWeiValue
 	tradelog.OriginalEthAmount = trade.EthWeiValue
+	defaultRatio := 2
+	if trade.Src == blockchain.WETHAddr || trade.Src == blockchain.ETHAddr || trade.Src == blockchain.PTAddr {
+		defaultRatio--
+	}
+	if trade.Dest == blockchain.WETHAddr || trade.Dest == blockchain.ETHAddr || trade.Dest == blockchain.PTAddr {
+		defaultRatio--
+	}
+	tradelog.EthAmount = big.NewInt(1).Mul(trade.EthWeiValue, big.NewInt(int64(defaultRatio)))
 	tradelog.Index = logItem.Index
 
 	return tradelog, nil

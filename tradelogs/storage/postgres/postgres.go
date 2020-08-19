@@ -369,7 +369,7 @@ ON CONFLICT (address)
 DO NOTHING;`
 
 const selectTradeLogsQuery = `
-SELECT a.id, a.timestamp AS timestamp, a.block_number, eth_amount, original_eth_amount, eth_usd_rate, 
+SELECT a.id, a.timestamp AS timestamp, a.block_number, a.eth_amount, original_eth_amount, eth_usd_rate, 
 ARRAY_AGG(d.address) AS user_address,
 ARRAY_AGG(e.address) AS src_address, 
 ARRAY_AGG(f.address) AS dst_address,
@@ -416,7 +416,7 @@ const selectTradeLogsWithTxHashQuery = `
 SELECT 
 a.timestamp AS timestamp, 
 a.block_number, 
-eth_amount, 
+a.eth_amount, 
 original_eth_amount, 
 eth_usd_rate, 
 ARRAY_AGG(d.address) AS user_address,

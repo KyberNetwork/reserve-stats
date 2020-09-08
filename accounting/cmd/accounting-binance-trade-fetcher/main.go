@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	fromIDFlag        = "from-id"
 	retryDelayFlag    = "retry-delay"
 	attemptFlag       = "attempt"
 	batchSizeFlag     = "batch-size"
@@ -52,11 +51,6 @@ func main() {
 			EnvVar: "BATCH_SIZE",
 			Value:  defaultBatchSize,
 		},
-		cli.Uint64Flag{
-			Name:   fromIDFlag,
-			Usage:  "id to get trade history from",
-			EnvVar: "FROM_ID",
-		},
 		cli.StringSliceFlag{
 			Name:   symbolsFlag,
 			Usage:  "symbol to get trade history for, if not provide then get from binance",
@@ -74,8 +68,9 @@ func main() {
 
 func run(c *cli.Context) error {
 	var (
-		flusher func()
-		err     error
+		flusher  func()
+		err      error
+		accounts []common.BinanceAccount // map account name with its info
 	)
 	sugar, flusher, err = libapp.NewSugaredLogger(c)
 	if err != nil {
@@ -85,11 +80,6 @@ func run(c *cli.Context) error {
 	defer flusher()
 
 	sugar.Info("initiate fetcher")
-
-	binanceClient, err := binance.NewClientFromContext(c, sugar)
-	if err != nil {
-		return err
-	}
 
 	storage, err := libapp.NewDBFromContext(c)
 	if err != nil {
@@ -107,45 +97,46 @@ func run(c *cli.Context) error {
 		}
 	}()
 
-	symbols := c.StringSlice(symbolsFlag)
-	var tokenPairs []binance.Symbol
-	if len(symbols) == 0 {
-		exchangeInfo, err := binanceClient.GetExchangeInfo()
-		if err != nil {
-			return err
-		}
-		tokenPairs = exchangeInfo.Symbols
-	} else {
-		for _, symbol := range symbols {
-			tokenPairs = append(tokenPairs, binance.Symbol{
-				Symbol: symbol,
-			})
-		}
+	binanceClient, err := binance.NewBinance("", "", sugar) // this is public client to get exchange info
+	if err != nil {
+		return err
 	}
 
-	var fromIDs = make(map[string]uint64)
-	fromID := c.Uint64(fromIDFlag)
-	for _, pair := range tokenPairs {
-		fromIDs[pair.Symbol] = fromID
-		if fromID == 0 {
+	var tokenPairs []binance.Symbol
+	exchangeInfo, err := binanceClient.GetExchangeInfo()
+	if err != nil {
+		return err
+	}
+	tokenPairs = exchangeInfo.Symbols
+
+	retryDelay := c.Duration(retryDelayFlag)
+	attempt := c.Int(attemptFlag)
+	batchSize := c.Int(batchSizeFlag)
+	accounts, err = binance.AccountsFromContext(c)
+	if err != nil {
+		return err
+	}
+	for _, account := range accounts {
+		fromIDs := make(map[string]uint64)
+		for _, pair := range tokenPairs {
 			sugar.Info("from id is not provided, get latest from id stored in database")
-			from, err := binanceStorage.GetLastStoredID(pair.Symbol)
+			from, err := binanceStorage.GetLastStoredID(pair.Symbol, account.Name)
 			if err != nil {
 				return err
 			}
 			fromIDs[pair.Symbol] = from
 		}
-	}
 
-	sugar.Infow("fetch trade from id", "id", fromID+1)
+		binanceClient, err := binance.NewBinance(account.APIKey, account.SecretKey, sugar)
+		if err != nil {
+			return err
+		}
 
-	retryDelay := c.Duration(retryDelayFlag)
-	attempt := c.Int(attemptFlag)
-	batchSize := c.Int(batchSizeFlag)
-	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage)
+		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, account.Name)
 
-	if err := binanceFetcher.GetTradeHistory(fromIDs, tokenPairs); err != nil {
-		return err
+		if err := binanceFetcher.GetTradeHistory(fromIDs, tokenPairs, account.Name); err != nil {
+			return err
+		}
 	}
 
 	return binanceStorage.Close()

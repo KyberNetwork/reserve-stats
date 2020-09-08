@@ -229,7 +229,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	if err = bs.UpdateTradeHistory(binanceTrades); err != nil {
+	if err = bs.UpdateTradeHistory(binanceTrades, "binance_1"); err != nil {
 		log.Fatal(err)
 	}
 

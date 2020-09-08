@@ -8,7 +8,7 @@ import (
 
 //Interface is inteface for binance storage
 type Interface interface {
-	UpdateTradeHistory([]binance.TradeHistory) error
+	UpdateTradeHistory([]binance.TradeHistory, string) error
 	GetTradeHistory(fromTime, toTime time.Time) ([]binance.TradeHistory, error)
-	GetLastStoredID(symbol string) (uint64, error)
+	GetLastStoredID(symbol, account string) (uint64, error)
 }

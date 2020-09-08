@@ -36,6 +36,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 	);
 	CREATE INDEX IF NOT EXISTS binance_trades_time_idx ON binance_trades (timestamp);
 	CREATE INDEX IF NOT EXISTS binance_trades_symbol_idx ON binance_trades (symbol);
+	ALTER TABLE binance_trades ADD COLUMN IF NOT EXISTS account TEXT;
 	`
 
 	s := &BinanceStorage{
@@ -63,7 +64,7 @@ func (bd *BinanceStorage) Close() error {
 }
 
 //UpdateTradeHistory save trade history into a postgres db
-func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err error) {
+func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory, account string) (err error) {
 	var (
 		logger     = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		tradeJSON  []byte
@@ -72,12 +73,13 @@ func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err
 		timestamps []time.Time
 		symbols    []string
 	)
-	const updateQuery = `INSERT INTO binance_trades (id, data, timestamp, symbol)
+	const updateQuery = `INSERT INTO binance_trades (id, data, timestamp, symbol, account)
 	VALUES(
 		unnest($1::BIGINT[]),
 		unnest($2::JSONB[]),
 		unnest($3::TIMESTAMP[]),
-		unnest($4::TEXT[])
+		unnest($4::TEXT[]),
+		$5
 	) ON CONFLICT ON CONSTRAINT binance_trades_pk DO NOTHING;
 	`
 
@@ -102,7 +104,7 @@ func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory) (err
 		symbols = append(symbols, trade.Symbol)
 	}
 
-	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps), pq.Array(symbols)); err != nil {
+	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps), pq.Array(symbols), account); err != nil {
 		return
 	}
 
@@ -138,16 +140,16 @@ func (bd *BinanceStorage) GetTradeHistory(fromTime, toTime time.Time) ([]binance
 }
 
 //GetLastStoredID return last stored id
-func (bd *BinanceStorage) GetLastStoredID(symbol string) (uint64, error) {
+func (bd *BinanceStorage) GetLastStoredID(symbol, account string) (uint64, error) {
 	var (
 		logger = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		result uint64
 	)
-	const selectStmt = `SELECT COALESCE(MAX(id), 0) FROM binance_trades WHERE symbol=$1`
+	const selectStmt = `SELECT COALESCE(MAX(id), 0) FROM binance_trades WHERE symbol=$1 AND account=$2`
 
 	logger.Debugw("querying last stored id", "query", selectStmt)
 
-	if err := bd.db.Get(&result, selectStmt, symbol); err != nil {
+	if err := bd.db.Get(&result, selectStmt, symbol, account); err != nil {
 		return 0, err
 	}
 

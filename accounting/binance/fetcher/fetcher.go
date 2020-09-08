@@ -26,7 +26,8 @@ type Fetcher struct {
 }
 
 //NewFetcher return a new fetcher instance
-func NewFetcher(sugar *zap.SugaredLogger, client *binance.Client, retryDelay time.Duration, attempt, batchSize int, storage tradestorage.Interface) *Fetcher {
+func NewFetcher(sugar *zap.SugaredLogger, client *binance.Client, retryDelay time.Duration, attempt, batchSize int, storage tradestorage.Interface,
+	accountName string) *Fetcher {
 	return &Fetcher{
 		sugar:      sugar,
 		client:     client,
@@ -82,7 +83,7 @@ func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]b
 }
 
 //GetTradeHistory get all trade history from trades for all token and save them into database
-func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binance.Symbol) error {
+func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binance.Symbol, account string) error {
 	var (
 		logger   = f.sugar.With("func", caller.GetCurrentFunctionName())
 		errGroup errgroup.Group
@@ -99,7 +100,7 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binanc
 						if err != nil {
 							return err
 						}
-						return f.storage.UpdateTradeHistory(oneSymbolTradeHistory)
+						return f.storage.UpdateTradeHistory(oneSymbolTradeHistory, account)
 					}
 				}(pair),
 			)

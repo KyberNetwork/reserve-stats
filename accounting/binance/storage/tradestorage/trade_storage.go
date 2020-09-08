@@ -119,7 +119,7 @@ func (bd *BinanceStorage) GetTradeHistory(fromTime, toTime time.Time) ([]binance
 		dbResult [][]byte
 		tmp      binance.TradeHistory
 	)
-	const selectStmt = `SELECT data FROM binance_trades WHERE data->>'time'>=$1 AND data->>'time'<=$2`
+	const selectStmt = `SELECT data, account FROM binance_trades WHERE data->>'time'>=$1 AND data->>'time'<=$2`
 
 	logger.Debugw("querying trade history...", "query", selectStmt)
 

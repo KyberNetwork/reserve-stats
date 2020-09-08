@@ -25,8 +25,8 @@ type getTradesQuery struct {
 }
 
 type getTradesResponse struct {
-	Huobi   []huobi.TradeHistory   `json:"huobi,omitempty"`
-	Binance []binance.TradeHistory `json:"binance,omitempty"`
+	Huobi   []huobi.TradeHistory            `json:"huobi,omitempty"`
+	Binance map[string]binance.TradeHistory `json:"binance,omitempty"`
 }
 
 // getTrades returns list of trades from centralized exchanges.
@@ -82,7 +82,7 @@ func (s *Server) getTrades(c *gin.Context) {
 				return
 			}
 		case common.Binance.String():
-			binanceTrades, err = s.bs.GetTradeHistory(fromTime, toTime)
+			allBinanceTrades, err := s.bs.GetTradeHistory(fromTime, toTime)
 			if err != nil {
 				httputil.ResponseFailure(
 					c,
@@ -90,6 +90,9 @@ func (s *Server) getTrades(c *gin.Context) {
 					err,
 				)
 				return
+			}
+			for _, trades := range allBinanceTrades {
+
 			}
 		}
 	}

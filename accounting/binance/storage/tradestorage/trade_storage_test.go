@@ -69,7 +69,7 @@ func TestBinanceTradeStorage(t *testing.T) {
 
 	tradeHistories, err := binanceStorage.GetTradeHistory(fromTime, toTime)
 	require.NoError(t, err)
-	assert.Equal(t, testData, tradeHistories)
+	assert.Equal(t, testData, tradeHistories["binance_1"])
 
 	ts, err = binanceStorage.GetLastStoredID("KNCETH", "binance_1")
 	require.NoError(t, err)
@@ -81,5 +81,5 @@ func TestBinanceTradeStorage(t *testing.T) {
 
 	tradeHistories, err = binanceStorage.GetTradeHistory(fromTime, toTime)
 	require.NoError(t, err)
-	assert.Equal(t, testData, tradeHistories)
+	assert.Equal(t, testData, tradeHistories["binance_1"])
 }

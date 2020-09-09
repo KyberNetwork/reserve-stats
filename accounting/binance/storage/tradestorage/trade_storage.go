@@ -125,13 +125,13 @@ func (bd *BinanceStorage) GetTradeHistory(fromTime, toTime time.Time) (map[strin
 		dbResult []TradeHistoryDB
 		tmp      binance.TradeHistory
 	)
-	const selectStmt = `SELECT account, ARRAY_AGG(data) as data FROM binance_trades WHERE extract(epoch from timestamp)>=$1 AND extract(epoch from timestamp)<=$2 GROUP BY account`
+	const selectStmt = `SELECT account, ARRAY_AGG(data) as data FROM binance_trades WHERE timestamp >=$1 AND timestamp <=$2 GROUP BY account`
 
 	logger.Debugw("querying trade history...", "query", selectStmt)
 
-	from := timeutil.TimeToTimestampMs(fromTime) / 1000
-	to := timeutil.TimeToTimestampMs(toTime) / 1000
-	if err := bd.db.Select(&dbResult, selectStmt, from, to); err != nil {
+	// from := timeutil.TimeToTimestampMs(fromTime) / 1000
+	// to := timeutil.TimeToTimestampMs(toTime) / 1000
+	if err := bd.db.Select(&dbResult, selectStmt, fromTime, toTime); err != nil {
 		return result, err
 	}
 	logger.Debugw("db result", "length", len(dbResult))

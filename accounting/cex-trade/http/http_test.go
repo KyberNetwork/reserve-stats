@@ -64,7 +64,7 @@ var (
 		},
 	}
 	binanceTrades = map[string][]binance.TradeHistory{
-		"binance_account_1": []binance.TradeHistory{
+		"binance_1": []binance.TradeHistory{
 			{
 				Symbol:          "BNBBTC",
 				ID:              28457,
@@ -231,7 +231,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	if err = bs.UpdateTradeHistory(binanceTrades["binance_account_1"], "binance_1"); err != nil {
+	if err = bs.UpdateTradeHistory(binanceTrades["binance_1"], "binance_1"); err != nil {
 		log.Fatal(err)
 	}
 

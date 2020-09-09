@@ -111,29 +111,39 @@ func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory, acco
 	return err
 }
 
+// TradeHistoryDB response from db
+type TradeHistoryDB struct {
+	Account string        `db:"account"`
+	Data    pq.ByteaArray `db:"data"`
+}
+
 //GetTradeHistory return trade history from binance storage
-func (bd *BinanceStorage) GetTradeHistory(fromTime, toTime time.Time) ([]binance.TradeHistory, error) {
+func (bd *BinanceStorage) GetTradeHistory(fromTime, toTime time.Time) (map[string][]binance.TradeHistory, error) {
 	var (
 		logger   = bd.sugar.With("func", caller.GetCurrentFunctionName())
-		result   []binance.TradeHistory
-		dbResult [][]byte
+		result   = make(map[string][]binance.TradeHistory)
+		dbResult []TradeHistoryDB
 		tmp      binance.TradeHistory
 	)
-	const selectStmt = `SELECT data, account FROM binance_trades WHERE data->>'time'>=$1 AND data->>'time'<=$2`
+	const selectStmt = `SELECT account, ARRAY_AGG(data) as data FROM binance_trades WHERE extract(epoch from timestamp)>=$1 AND extract(epoch from timestamp)<=$2 GROUP BY account`
 
 	logger.Debugw("querying trade history...", "query", selectStmt)
 
-	from := timeutil.TimeToTimestampMs(fromTime)
-	to := timeutil.TimeToTimestampMs(toTime)
+	from := timeutil.TimeToTimestampMs(fromTime) / 1000
+	to := timeutil.TimeToTimestampMs(toTime) / 1000
 	if err := bd.db.Select(&dbResult, selectStmt, from, to); err != nil {
 		return result, err
 	}
-
-	for _, data := range dbResult {
-		if err := json.Unmarshal(data, &tmp); err != nil {
-			return result, err
+	logger.Debugw("db result", "length", len(dbResult))
+	for _, record := range dbResult {
+		arrResult := []binance.TradeHistory{}
+		for _, data := range record.Data {
+			if err := json.Unmarshal(data, &tmp); err != nil {
+				return result, err
+			}
+			arrResult = append(arrResult, tmp)
 		}
-		result = append(result, tmp)
+		result[record.Account] = arrResult
 	}
 
 	return result, nil

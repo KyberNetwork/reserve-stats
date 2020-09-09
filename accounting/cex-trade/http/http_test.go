@@ -63,20 +63,22 @@ var (
 			Batch:           "",
 		},
 	}
-	binanceTrades = []binance.TradeHistory{
-		{
-			Symbol:          "BNBBTC",
-			ID:              28457,
-			OrderID:         100234,
-			Price:           "4.00000100",
-			Quantity:        "12.00000000",
-			QuoteQuantity:   "48.000012",
-			Commission:      "10.10000000",
-			CommissionAsset: "BNB",
-			Time:            1528675200000,
-			IsBuyer:         true,
-			IsMaker:         false,
-			IsBestMatch:     false,
+	binanceTrades = map[string][]binance.TradeHistory{
+		"binance_account_1": []binance.TradeHistory{
+			{
+				Symbol:          "BNBBTC",
+				ID:              28457,
+				OrderID:         100234,
+				Price:           "4.00000100",
+				Quantity:        "12.00000000",
+				QuoteQuantity:   "48.000012",
+				Commission:      "10.10000000",
+				CommissionAsset: "BNB",
+				Time:            1528675200000,
+				IsBuyer:         true,
+				IsMaker:         false,
+				IsBestMatch:     false,
+			},
 		},
 	}
 )
@@ -229,7 +231,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	if err = bs.UpdateTradeHistory(binanceTrades, "binance_1"); err != nil {
+	if err = bs.UpdateTradeHistory(binanceTrades["binance_account_1"], "binance_1"); err != nil {
 		log.Fatal(err)
 	}
 

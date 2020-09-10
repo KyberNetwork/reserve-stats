@@ -157,3 +157,10 @@ func (l *ListedToken) MarshalJSON() ([]byte, error) {
 		Timestamp:        ts,
 	})
 }
+
+// BinanceAccount represent an account in binance
+type BinanceAccount struct {
+	Name      string `json:"name"`
+	APIKey    string `json:"api_key"`
+	SecretKey string `json:"secret_key"`
+}

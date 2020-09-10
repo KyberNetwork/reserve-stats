@@ -11,18 +11,52 @@ curl -X GET "http://gateway.local/trades?from=1494901162000&to=1499865549600?cex
 ```json
 {
     "binance": {
-        "symbol": "BNBBTC",
-        "id": 28457,
-        "orderId": 100234,
-        "price": "4.00000100",
-        "qty": "12.00000000",
-        "quote_qty": "48.000012",
-        "Commission": "10.10000000",
-        "commissionAsset": "BNB",
-        "time": 1499865549590,
-        "isBuyer": true,
-        "isMaker": false,
-        "isBestMatch": false
+        "binance_sub_account_1": [
+            {
+                "symbol": "LRCETH",
+                "id": 2152067,
+                "orderId": 83194209,
+                "price": "0.00037412",
+                "qty": "29318.00000000",
+                "quote_qty": "",
+                "commission": "0.14516094",
+                "commissionAsset": "BNB",
+                "time": 1597082787593,
+                "isBuyer": false,
+                "isMaker": false,
+                "isBestMatch": true
+            }
+        ],
+        "binance_sub_account_2": [
+            {
+                "symbol": "BNBUSDT",
+                "id": 69038213,
+                "orderId": 683611562,
+                "price": "22.46610000",
+                "qty": "11.00000000",
+                "quote_qty": "",
+                "commission": "0.00825000",
+                "commissionAsset": "BNB",
+                "time": 1597086408332,
+                "isBuyer": true,
+                "isMaker": false,
+                "isBestMatch": true
+            },
+            {
+                "symbol": "BNBUSDT",
+                "id": 69038233,
+                "orderId": 683611816,
+                "price": "22.46100000",
+                "qty": "11.00000000",
+                "quote_qty": "",
+                "commission": "0.00825000",
+                "commissionAsset": "BNB",
+                "time": 1597086416630,
+                "isBuyer": true,
+                "isMaker": false,
+                "isBestMatch": true
+            }
+        ]
     },
     "huobi": {
         "id": 59378,

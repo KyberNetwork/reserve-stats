@@ -105,11 +105,30 @@ func (r *EtherscanContractTimestampResolver) Resolve(address common.Address) (ti
 	if len(firstTx.ContractAddress) == 0 {
 		// fallback check internal tx
 		logger.Debug("fallback calling internal tx due to tx contract address is empty")
-		contractTimeStamp, err := r.resolveUsingInternalTx(address)
+		contractTimestamp, err := r.resolveUsingInternalTx(address)
 		if err != nil {
-			return time.Time{}, err
+			logger.Info("Check erc20 txs, get timestamp as the first tx available")
+			contractTimestamp = firstTx.TimeStamp.Time()
+			accountAddress := address.String()
+			txs, err := r.client.ERC20Transfers(nil, &accountAddress, nil, nil, 1, 200) //
+			if err != nil {
+				// if could not get txs, return  timestamp as first normal txs
+				logger.Debug("failed to get erc20 transfers txs", "error", err)
+				return contractTimestamp, nil
+			}
+			if len(txs) == 0 {
+				logger.Debug("failed to get erc20 tranfers txs, length txs equal to 0")
+				// if could not get txs, return  timestamp as first normal txs
+				return contractTimestamp, nil
+			}
+			firstTransferTx := txs[0]
+			logger.Debug("got first erc20 transfer tx", "tx", firstTransferTx)
+			if firstTransferTx.TimeStamp.Time().Before(contractTimestamp) {
+				// if firstTransfer is first tx then account timestamp is first tranfer timestamp
+				contractTimestamp = firstTransferTx.TimeStamp.Time()
+			}
 		}
-		return contractTimeStamp, nil
+		return contractTimestamp, nil
 	}
 
 	return firstTx.TimeStamp.Time(), nil

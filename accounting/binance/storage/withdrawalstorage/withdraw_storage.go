@@ -36,6 +36,9 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 	);
 	CREATE INDEX IF NOT EXISTS binance_withdrawals_time_idx ON binance_withdrawals ((data ->> 'applyTime'));
 	CREATE INDEX IF NOT EXISTS binance_withdrawals_txid_idx ON binance_withdrawals ((data ->> 'txId'));
+
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS account TEXT;
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS timestamp TIMESTAMP;
 	`
 
 	s := &BinanceStorage{
@@ -63,17 +66,20 @@ func (bd *BinanceStorage) Close() error {
 }
 
 //UpdateWithdrawHistory save withdraw history to db
-func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.WithdrawHistory) (err error) {
+func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.WithdrawHistory, account string) (err error) {
 	var (
 		logger       = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		withdrawJSON []byte
 		ids          []string
 		dataJSON     [][]byte
+		timestamps   []time.Time
 	)
-	const updateQuery = `INSERT INTO binance_withdrawals (id, data)
+	const updateQuery = `INSERT INTO binance_withdrawals (id, data, timestamp, account)
 	VALUES(
 		unnest($1::TEXT[]),
-		unnest($2::JSONB[])
+		unnest($2::JSONB[]),
+		unnest($3::TIMESTAMP[]),
+		$4
 	) ON CONFLICT ON CONSTRAINT binance_withdrawals_pk DO UPDATE SET data = EXCLUDED.data;
 	`
 
@@ -93,10 +99,12 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 			return
 		}
 		ids = append(ids, withdraw.ID)
+		timestamp := timeutil.TimestampMsToTime(withdraw.ApplyTime)
+		timestamps = append(timestamps, timestamp)
 		dataJSON = append(dataJSON, withdrawJSON)
 	}
 
-	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON)); err != nil {
+	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps), account); err != nil {
 		return
 	}
 
@@ -139,7 +147,7 @@ func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) ([]bina
 }
 
 //GetLastStoredTimestamp return last timestamp stored in database
-func (bd *BinanceStorage) GetLastStoredTimestamp() (time.Time, error) {
+func (bd *BinanceStorage) GetLastStoredTimestamp(account string) (time.Time, error) {
 	var (
 		logger   = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
@@ -147,19 +155,19 @@ func (bd *BinanceStorage) GetLastStoredTimestamp() (time.Time, error) {
 		statuses = []string{strconv.Itoa(int(common.AwaitingApproval)), strconv.Itoa(int(common.Processing))}
 	)
 	const (
-		selectStmt = `SELECT COALESCE(MAX(data->>'applyTime'), '0') FROM binance_withdrawals`
+		selectStmt = `SELECT COALESCE(MAX(data->>'applyTime'), '0') FROM binance_withdrawals WHERE account = $1`
 		//handle not completed withdraw
-		latestNotCompleted = `SELECT COALESCE(MIN(data->>'applyTime'), '0') FROM binance_withdrawals WHERE data->>'status' = any($1)`
+		latestNotCompleted = `SELECT COALESCE(MIN(data->>'applyTime'), '0') FROM binance_withdrawals WHERE data->>'status' = any($1) AND account = $2`
 	)
 	logger.Debugw("querying last stored timestamp", "query", selectStmt)
 
-	if err := bd.db.Get(&dbResult, latestNotCompleted, pq.Array(statuses)); err != nil {
+	if err := bd.db.Get(&dbResult, latestNotCompleted, pq.Array(statuses), account); err != nil {
 		return result, err
 	}
 	logger.Debugw("min processing record time", "time", dbResult)
 
 	if dbResult == 0 {
-		if err := bd.db.Get(&dbResult, selectStmt); err != nil {
+		if err := bd.db.Get(&dbResult, selectStmt, account); err != nil {
 			return result, err
 		}
 	}
@@ -172,7 +180,7 @@ func (bd *BinanceStorage) GetLastStoredTimestamp() (time.Time, error) {
 }
 
 //UpdateWithdrawHistoryWithFee update fee into withdraw history table
-func (bd *BinanceStorage) UpdateWithdrawHistoryWithFee(withdrawHistories []binance.WithdrawHistory) (err error) {
+func (bd *BinanceStorage) UpdateWithdrawHistoryWithFee(withdrawHistories []binance.WithdrawHistory, account string) (err error) {
 	var (
 		logger = bd.sugar.With("func", caller.GetCurrentFunctionName())
 	)

@@ -131,7 +131,7 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 	err = hdb.UpdateWithdrawHistory(huobiTestData)
 	require.NoError(t, err)
 
-	err = bdb.UpdateWithdrawHistory(binanceTestData)
+	err = bdb.UpdateWithdrawHistory(binanceTestData, "binance_1")
 	require.NoError(t, err)
 
 	for _, tc := range tests {

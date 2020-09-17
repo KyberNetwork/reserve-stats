@@ -64,6 +64,7 @@ func run(c *cli.Context) error {
 	var (
 		fromTime, toTime time.Time
 		err              error
+		accounts         []common.BinanceAccount // map account name with its info
 	)
 
 	sugar, flusher, err := libapp.NewSugaredLogger(c)
@@ -74,11 +75,6 @@ func run(c *cli.Context) error {
 	defer flusher()
 
 	sugar.Info("initiate fetcher")
-
-	binanceClient, err := binance.NewClientFromContext(c, sugar)
-	if err != nil {
-		return err
-	}
 
 	db, err := libapp.NewDBFromContext(c)
 	if err != nil {
@@ -96,18 +92,6 @@ func run(c *cli.Context) error {
 		}
 	}()
 
-	fromTime, err = timeutil.FromTimeMillisFromContext(c)
-	if err != nil {
-		return err
-	}
-	if fromTime.IsZero() {
-		sugar.Info("from time is not provided, get latest timestamp from database")
-		fromTime, err = binanceStorage.GetLastStoredTimestamp()
-		if err != nil {
-			return err
-		}
-	}
-
 	sugar.Infow("from timestamp", "fromTime", fromTime)
 
 	toTime, err = timeutil.ToTimeMillisFromContext(c)
@@ -121,15 +105,40 @@ func run(c *cli.Context) error {
 	retryDelay := c.Duration(retryDelayFlag)
 	attempt := c.Int(attemptFlag)
 	batchSize := c.Int(batchSizeFlag)
-	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, nil, "")
 
-	withdrawHistory, err := binanceFetcher.GetWithdrawHistory(fromTime, toTime)
+	accounts, err = binance.AccountsFromContext(c)
 	if err != nil {
 		return err
 	}
+	for _, account := range accounts {
 
-	if err := binanceStorage.UpdateWithdrawHistory(withdrawHistory); err != nil {
-		return err
+		fromTime, err = timeutil.FromTimeMillisFromContext(c)
+		if err != nil {
+			return err
+		}
+		if fromTime.IsZero() {
+			sugar.Info("from time is not provided, get latest timestamp from database")
+			fromTime, err = binanceStorage.GetLastStoredTimestamp(account.Name)
+			if err != nil {
+				return err
+			}
+		}
+
+		binanceClient, err := binance.NewBinance(account.APIKey, account.SecretKey, sugar)
+		if err != nil {
+			return err
+		}
+
+		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, nil, "")
+
+		withdrawHistory, err := binanceFetcher.GetWithdrawHistory(fromTime, toTime)
+		if err != nil {
+			return err
+		}
+
+		if err := binanceStorage.UpdateWithdrawHistory(withdrawHistory, account.Name); err != nil {
+			return err
+		}
 	}
 	return binanceStorage.Close()
 }

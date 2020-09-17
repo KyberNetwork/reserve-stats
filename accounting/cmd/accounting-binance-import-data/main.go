@@ -94,7 +94,7 @@ func importWithdrawHistory(sugar *zap.SugaredLogger, historyFile string, hdb *wi
 			Status:    status,
 		})
 	}
-	return hdb.UpdateWithdrawHistoryWithFee(withdrawHistories)
+	return hdb.UpdateWithdrawHistoryWithFee(withdrawHistories, "binance_v1_main")
 }
 
 func run(c *cli.Context) error {

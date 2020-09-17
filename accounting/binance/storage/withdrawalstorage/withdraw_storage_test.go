@@ -84,13 +84,13 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 		require.NoError(t, teardown())
 	}()
 
-	_, err = binanceStorage.GetLastStoredTimestamp()
+	_, err = binanceStorage.GetLastStoredTimestamp("binance_1")
 	require.NoError(t, err)
 
-	err = binanceStorage.UpdateWithdrawHistory(testData)
+	err = binanceStorage.UpdateWithdrawHistory(testData, "binance_1")
 	assert.NoError(t, err)
 
-	lastStoredTimestamp, err := binanceStorage.GetLastStoredTimestamp()
+	lastStoredTimestamp, err := binanceStorage.GetLastStoredTimestamp("binance_1")
 	require.NoError(t, err)
 	assert.Equal(t, uint64(1522037352000), timeutil.TimeToTimestampMs(lastStoredTimestamp))
 
@@ -103,7 +103,7 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 	assert.Equal(t, expectedData, withdrawHistory)
 
 	// test stored duplicate data
-	err = binanceStorage.UpdateWithdrawHistory(testData)
+	err = binanceStorage.UpdateWithdrawHistory(testData, "binance_1")
 	assert.NoError(t, err)
 
 	withdrawHistory, err = binanceStorage.GetWithdrawHistory(fromTime, toTime)

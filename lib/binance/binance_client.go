@@ -182,6 +182,14 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 		err = errors.New("ip has been auto-banned by binance for continuing to send requests after receiving 429 codes")
 	case 500:
 		err = errors.New("500 from Binance, its fault")
+		errRsp, err := decodeErrorResponse(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("unexpected response: failed to decode error response: err=%s", err.Error())
+		}
+		logger.Errorw("unexpected response from Binance API",
+			"code", errRsp.Code,
+			"msg", errRsp.Msg,
+		)
 	case 401:
 		errRsp, err := decodeErrorResponse(resp.Body)
 		if err != nil {

@@ -37,6 +37,17 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 	CREATE INDEX IF NOT EXISTS binance_trades_time_idx ON binance_trades (timestamp);
 	CREATE INDEX IF NOT EXISTS binance_trades_symbol_idx ON binance_trades (symbol);
 	ALTER TABLE binance_trades ADD COLUMN IF NOT EXISTS account TEXT;
+
+	CREATE TABLE IF NOT EXISTS "binance_margin_trades"
+	(
+		id bigint NOT NULL,
+		symbol TEXT NOT NULL,
+		data JSONB,
+		timestamp TIMESTAMP NOT NULL,
+		CONSTRAINT binance_margin_trades_pk PRIMARY KEY(id, symbol)
+	);
+	CREATE INDEX IF NOT EXISTS binance_margin_trades_time_idx ON binance_trades (timestamp);
+	CREATE INDEX IF NOT EXISTS binance_margin_trades_symbol_idx ON binance_trades (symbol);
 	`
 
 	s := &BinanceStorage{
@@ -161,4 +172,22 @@ func (bd *BinanceStorage) GetLastStoredID(symbol, account string) (uint64, error
 	}
 
 	return result, nil
+}
+
+// UpdateMarginTradeHistory update margin trades into db
+func (bd *BinanceStorage) UpdateMarginTradeHistory(marginTrades []binance.TradeHistory, symbol string) error {
+	return nil
+}
+
+// GetMarginTradeHistory return list of trade history from time to time
+func (bd *BinanceStorage) GetMarginTradeHistory(fromTime, toTime time.Time) (map[string][]binance.TradeHistory, error) {
+	var (
+		result map[string][]binance.TradeHistory
+	)
+	return result, nil
+}
+
+// GetLastStoredMarginTradeID return last stored margin trade id
+func (bd *BinanceStorage) GetLastStoredMarginTradeID(symbol, account string) (uint64, error) {
+	return 0, nil
 }

@@ -371,3 +371,27 @@ func (bc *Client) GetAccountInfo() (AccountInfo, error) {
 	err = json.Unmarshal(res, &result)
 	return result, err
 }
+
+// GetMarginTradeHistory return margin trade history
+func (bc *Client) GetMarginTradeHistory(symbol string, fromID uint64) ([]TradeHistory, error) {
+	var (
+		result []TradeHistory
+		err    error
+	)
+	endpoint := fmt.Sprintf("%s/sapi/v1/margin/myTrades", endpointPrefix)
+	res, err := bc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		map[string]string{
+			"symbol": symbol,
+			"fromID": strconv.FormatUint(fromID, 10),
+		},
+		true,
+		time.Now(),
+	)
+	if err != nil {
+		return result, err
+	}
+	err = json.Unmarshal(res, &result)
+	return result, err
+}

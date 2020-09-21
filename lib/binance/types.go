@@ -7,13 +7,14 @@ type TradeHistory struct {
 	OrderID         int64  `json:"orderId"`
 	Price           string `json:"price"`
 	Quantity        string `json:"qty"`
-	QuoteQuantity   string `json:"quote_qty"`
+	QuoteQuantity   string `json:"quote_qty,omitempty"`
 	Commission      string `json:"commission"`
 	CommissionAsset string `json:"commissionAsset"`
 	Time            uint64 `json:"time"`
 	IsBuyer         bool   `json:"isBuyer"`
 	IsMaker         bool   `json:"isMaker"`
 	IsBestMatch     bool   `json:"isBestMatch"`
+	IsIsolated      bool   `json:"isIsolated,omitempty"`
 }
 
 //DetailOfAsset return detail of an asset

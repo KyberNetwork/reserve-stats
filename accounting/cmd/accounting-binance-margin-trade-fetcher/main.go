@@ -107,7 +107,13 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	tokenPairs = exchangeInfo.Symbols
+	for _, symbol := range exchangeInfo.Symbols {
+		for _, permission := range symbol.Permissions {
+			if permission == "MARGIN" { // pair have margin trades
+				tokenPairs = append(tokenPairs, symbol)
+			}
+		}
+	}
 
 	retryDelay := c.Duration(retryDelayFlag)
 	attempt := c.Int(attemptFlag)

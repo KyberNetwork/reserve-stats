@@ -219,7 +219,7 @@ func (f *Fetcher) GetMarginTradeHistory(fromIDs map[string]uint64, tokenPairs []
 						if err != nil {
 							return err
 						}
-						return f.storage.UpdateTradeHistory(oneSymbolTradeHistory, account)
+						return f.storage.UpdateMarginTradeHistory(oneSymbolTradeHistory, account)
 					}
 				}(pair),
 			)

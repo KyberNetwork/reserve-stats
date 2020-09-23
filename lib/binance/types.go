@@ -77,6 +77,7 @@ type Symbol struct {
 	OrderTypes          []string           `json:"orderTypes"`
 	IcebergAllowed      bool               `json:"icebergAllowed"`
 	Filters             []SymbolFilterType `json:"filters"`
+	Permissions         []string           `json:"permissions"`
 }
 
 //SymbolFilterType is a

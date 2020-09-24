@@ -37,6 +37,18 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 	CREATE INDEX IF NOT EXISTS binance_trades_time_idx ON binance_trades (timestamp);
 	CREATE INDEX IF NOT EXISTS binance_trades_symbol_idx ON binance_trades (symbol);
 	ALTER TABLE binance_trades ADD COLUMN IF NOT EXISTS account TEXT;
+
+	CREATE TABLE IF NOT EXISTS "binance_margin_trades"
+	(
+		id bigint NOT NULL,
+		symbol TEXT NOT NULL,
+		data JSONB,
+		timestamp TIMESTAMP NOT NULL,
+		account TEXT,
+		CONSTRAINT binance_margin_trades_pk PRIMARY KEY(id, symbol)
+	);
+	CREATE INDEX IF NOT EXISTS binance_margin_trades_time_idx ON binance_trades (timestamp);
+	CREATE INDEX IF NOT EXISTS binance_margin_trades_symbol_idx ON binance_trades (symbol);
 	`
 
 	s := &BinanceStorage{
@@ -155,6 +167,100 @@ func (bd *BinanceStorage) GetLastStoredID(symbol, account string) (uint64, error
 	const selectStmt = `SELECT COALESCE(MAX(id), 0) FROM binance_trades WHERE symbol=$1 AND account=$2`
 
 	logger.Debugw("querying last stored id", "query", selectStmt)
+
+	if err := bd.db.Get(&result, selectStmt, symbol, account); err != nil {
+		return 0, err
+	}
+
+	return result, nil
+}
+
+// UpdateMarginTradeHistory update margin trades into db
+func (bd *BinanceStorage) UpdateMarginTradeHistory(marginTrades []binance.TradeHistory, account string) error {
+	var (
+		logger     = bd.sugar.With("func", caller.GetCurrentFunctionName())
+		tradeJSON  []byte
+		dataJSON   [][]byte
+		ids        []uint64
+		timestamps []time.Time
+		symbols    []string
+	)
+	const updateQuery = `INSERT INTO binance_margin_trades (id, data, timestamp, symbol, account)
+	VALUES(
+		unnest($1::BIGINT[]),
+		unnest($2::JSONB[]),
+		unnest($3::TIMESTAMP[]),
+		unnest($4::TEXT[]),
+		$5
+	) ON CONFLICT ON CONSTRAINT binance_margin_trades_pk DO NOTHING;
+	`
+
+	tx, err := bd.db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	defer pgsql.CommitOrRollback(tx, bd.sugar, &err)
+	logger.Debugw("query update trade history", "query", updateQuery)
+
+	// prepare data for insert into db
+	for _, trade := range marginTrades {
+		tradeJSON, err = json.Marshal(trade)
+		if err != nil {
+			return err
+		}
+		time := timeutil.TimestampMsToTime(trade.Time)
+		ids = append(ids, trade.ID)
+		dataJSON = append(dataJSON, tradeJSON)
+		timestamps = append(timestamps, time)
+		symbols = append(symbols, trade.Symbol)
+	}
+
+	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps), pq.Array(symbols), account); err != nil {
+		return err
+	}
+
+	return err
+}
+
+// GetMarginTradeHistory return list of trade history from time to time
+func (bd *BinanceStorage) GetMarginTradeHistory(fromTime, toTime time.Time) (map[string][]binance.TradeHistory, error) {
+	var (
+		logger   = bd.sugar.With("func", caller.GetCurrentFunctionName())
+		result   = make(map[string][]binance.TradeHistory)
+		dbResult []TradeHistoryDB
+		tmp      binance.TradeHistory
+	)
+	const selectStmt = `SELECT account, ARRAY_AGG(data) as data FROM binance_margin_trades WHERE timestamp >=$1::TIMESTAMP AND timestamp <=$2::TIMESTAMP GROUP BY account`
+
+	logger.Debugw("querying margin trade history...", "query", selectStmt)
+
+	if err := bd.db.Select(&dbResult, selectStmt, fromTime.UTC(), toTime.UTC()); err != nil {
+		return result, err
+	}
+	for _, record := range dbResult {
+		arrResult := []binance.TradeHistory{}
+		for _, data := range record.Data {
+			if err := json.Unmarshal(data, &tmp); err != nil {
+				return result, err
+			}
+			arrResult = append(arrResult, tmp)
+		}
+		result[record.Account] = arrResult
+	}
+
+	return result, nil
+}
+
+// GetLastStoredMarginTradeID return last stored margin trade id
+func (bd *BinanceStorage) GetLastStoredMarginTradeID(symbol, account string) (uint64, error) {
+	var (
+		logger = bd.sugar.With("func", caller.GetCurrentFunctionName())
+		result uint64
+	)
+	const selectStmt = `SELECT COALESCE(MAX(id), 0) FROM binance_margin_trades WHERE symbol=$1 AND account=$2`
+
+	logger.Debugw("querying last stored margin trade id", "query", selectStmt)
 
 	if err := bd.db.Get(&result, selectStmt, symbol, account); err != nil {
 		return 0, err

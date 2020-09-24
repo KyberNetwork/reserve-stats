@@ -64,7 +64,7 @@ var (
 		},
 	}
 	binanceTrades = map[string][]binance.TradeHistory{
-		"binance_1": []binance.TradeHistory{
+		"binance_1": {
 			{
 				Symbol:          "BNBBTC",
 				ID:              28457,

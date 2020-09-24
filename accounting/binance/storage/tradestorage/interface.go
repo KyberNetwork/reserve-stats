@@ -11,4 +11,8 @@ type Interface interface {
 	UpdateTradeHistory([]binance.TradeHistory, string) error
 	GetTradeHistory(fromTime, toTime time.Time) (map[string][]binance.TradeHistory, error)
 	GetLastStoredID(symbol, account string) (uint64, error)
+
+	UpdateMarginTradeHistory([]binance.TradeHistory, string) error
+	GetMarginTradeHistory(fromTime, toTime time.Time) (map[string][]binance.TradeHistory, error)
+	GetLastStoredMarginTradeID(symbol, account string) (uint64, error)
 }

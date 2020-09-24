@@ -35,7 +35,7 @@ func (s *Server) getTrades(c *gin.Context) {
 		logger        = s.sugar.With("func", caller.GetCurrentFunctionName())
 		query         getTradesQuery
 		huobiTrades   []huobi.TradeHistory
-		binanceTrades = make(map[string][]binance.TradeHistory)
+		binanceTrades = make(map[string][]binance.TradeHistory) // map account with its trades
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -90,6 +90,18 @@ func (s *Server) getTrades(c *gin.Context) {
 					err,
 				)
 				return
+			}
+			binanceMarginTrades, err := s.bs.GetMarginTradeHistory(fromTime, toTime)
+			if err != nil {
+				httputil.ResponseFailure(
+					c,
+					http.StatusInternalServerError,
+					err,
+				)
+				return
+			}
+			for account := range binanceMarginTrades {
+				binanceTrades[account] = append(binanceTrades[account], binanceMarginTrades[account]...) // append margin trades into spot trades
 			}
 		}
 	}

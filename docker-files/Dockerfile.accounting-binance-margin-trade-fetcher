@@ -2,10 +2,10 @@ FROM golang:1.12-stretch AS build-env
 
 COPY . /reserve-stats
 WORKDIR /reserve-stats/accounting/cmd/accounting-binance-margin-trade-fetcher
-RUN go build -v -mod=vendor -o /accounting-binance-margin-trade-fetcher
+RUN go build -v -o /accounting-binance-margin-trade-fetcher
 
 FROM debian:stretch
-COPY --from=build-env /accounting-binancer-trade-fetcher /
+COPY --from=build-env /accounting-binance-margin-trade-fetcher /
 
 RUN apt-get update && \
     apt-get install -y ca-certificates && \

@@ -14,7 +14,7 @@ type TradeHistory struct {
 	IsBuyer         bool   `json:"isBuyer"`
 	IsMaker         bool   `json:"isMaker"`
 	IsBestMatch     bool   `json:"isBestMatch"`
-	IsIsolated      bool   `json:"isIsolated,omitempty"`
+	IsIsolated      *bool  `json:"isIsolated,omitempty"`
 }
 
 //DetailOfAsset return detail of an asset

@@ -1,8 +1,8 @@
-FROM golang:1.12-stretch AS build-env
+FROM golang:1.14-stretch AS build-env
 
 COPY . /reserve-stats
 WORKDIR /reserve-stats/accounting/cmd/accounting-binance-trade-fetcher
-RUN go build -v -mod=vendor -o /accounting-binance-trade-fetcher
+RUN go build -v -mod=mod -o /accounting-binance-trade-fetcher
 
 FROM debian:stretch
 COPY --from=build-env /accounting-binance-trade-fetcher /

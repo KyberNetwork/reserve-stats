@@ -1,8 +1,8 @@
-FROM golang:1.12-stretch AS build-env
+FROM golang:1.14-stretch AS build-env
 
 COPY . /reserve-stats
 WORKDIR /reserve-stats/app-names/cmd/app-names-api
-RUN go build -v -mod=vendor -o /app-names-api
+RUN go build -v -mod=mod -o /app-names-api
 
 FROM debian:stretch
 COPY --from=build-env /app-names-api /

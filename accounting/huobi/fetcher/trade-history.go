@@ -19,7 +19,11 @@ func (fc *Fetcher) retry(fn tradeHistoryFetcher, symbol string, startTime, endTi
 	var (
 		result huobi.TradeHistoryList
 		err    error
-		logger = fc.sugar.With("func", caller.GetCurrentFunctionName())
+		logger = fc.sugar.With(
+			"func", caller.GetCurrentFunctionName(),
+			"startTime", startTime,
+			"endTime", endTime,
+		)
 	)
 	for i := 0; i < fc.attempt; i++ {
 		result, err = fn(symbol, startTime, endTime, extras)
@@ -39,6 +43,11 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time) 
 		result    []huobi.TradeHistory
 		lastID    string
 		extras    huobi.ExtrasTradeHistoryParams
+		logger    = fc.sugar.With(
+			"func", caller.GetCurrentFunctionName(),
+			"from", from,
+			"to", to,
+		)
 	)
 	for {
 		if lastID != "" {
@@ -63,10 +72,12 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time) 
 			break
 		}
 		lastID = strconv.FormatInt(lastTrade.ID, 10)
+		logger.Infow("trade list", "list", tradeHistoriesResponse)
 
 		result = append(result, tradeHistoriesResponse.Data...)
 
 		startTime = timeutil.TimestampMsToTime(lastTrade.CreatedAt)
+		logger.Infow("last trade from time", "from", startTime)
 		if endTime.Before(startTime) {
 			break
 		}
@@ -88,7 +99,7 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 		assertError error
 		errGroup    errgroup.Group
 	)
-
+	logger.Info("get trade history")
 	symbols, err := fc.client.GetSymbolsPair()
 	if err != nil {
 		return result, err
@@ -104,7 +115,6 @@ func (fc *Fetcher) GetTradeHistory(from, to time.Time) (map[string][]huobi.Trade
 					if len(singleResult) > 0 {
 						fetchResult.Store(symbol, singleResult)
 					}
-					logger.Infow("Fetching done", "symbol", symbol, "error", err, "time", time.Now())
 					return nil
 				}
 			}(sym.SymBol),

@@ -19,6 +19,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
@@ -204,21 +205,10 @@ func (hc *Client) GetTradeHistory(symbol string, startDate, endDate time.Time, e
 		params = map[string]string{
 			"states":     "filled",
 			"symbol":     strings.ToLower(symbol),
-			"start-date": startDate.Format("2006-01-02"),
-			"end-date":   endDate.Format("2006-01-02"),
+			"start-time": strconv.FormatUint(timeutil.TimeToTimestampMs(startDate), 10),
+			"end-time":   strconv.FormatUint(timeutil.TimeToTimestampMs(endDate), 10),
 		}
 	)
-	if len(extras) > 0 {
-		if extras[0].From != "" {
-			params["from"] = extras[0].From
-		}
-		if extras[0].Size != "" {
-			params["size"] = extras[0].Size
-		}
-		if extras[0].Direct != "" {
-			params["direct"] = extras[0].Direct
-		}
-	}
 	endpoint := fmt.Sprintf("%s/v1/order/orders", huobiEndpoint)
 	res, err := hc.sendRequest(
 		http.MethodGet,

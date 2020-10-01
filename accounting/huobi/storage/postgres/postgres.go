@@ -31,7 +31,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*HuobiStorage, error) {
 	CONSTRAINT huobi_trades_pk PRIMARY KEY(id)
 ) ;
 CREATE INDEX IF NOT EXISTS huobi_trades_time_idx ON huobi_trades ((data ->> 'created-at'));
-ALTER TABLE huobi_trades ADD COLUMN IF NOT EXISTS created TIMESTAMP;
+ALTER TABLE huobi_trades ADD COLUMN IF NOT EXISTS created TIMESTAMPTZ;
 `
 	var (
 		logger = sugar.With("func", caller.GetCurrentFunctionName())
@@ -73,7 +73,7 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory)
 	VALUES ( 
 		unnest($1::BIGINT[]),
 		unnest($2::JSONB[]),
-		unnest($3::TIMESTAMP[])
+		unnest($3::TIMESTAMPTZ[])
 	)
 	ON CONFLICT ON CONSTRAINT huobi_trades_pk DO UPDATE SET created = EXCLUDED.created;`
 	logger.Debugw("updating tradeHistory...", "query", updateStmt)

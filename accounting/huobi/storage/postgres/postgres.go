@@ -31,6 +31,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*HuobiStorage, error) {
 	CONSTRAINT huobi_trades_pk PRIMARY KEY(id)
 ) ;
 CREATE INDEX IF NOT EXISTS huobi_trades_time_idx ON huobi_trades ((data ->> 'created-at'));
+ALTER TABLE huobi_trades ADD COLUMN IF NOT EXISTS created TIMESTAMPTZ;
 `
 	var (
 		logger = sugar.With("func", caller.GetCurrentFunctionName())
@@ -63,16 +64,18 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory)
 			"func", caller.GetCurrentFunctionName(),
 			"number of records", nTrades,
 		)
-		ids      []int64
-		dataJSON [][]byte
+		ids        []int64
+		dataJSON   [][]byte
+		timestamps []time.Time
 	)
 
-	const updateStmt = `INSERT INTO huobi_trades (id, data)
+	const updateStmt = `INSERT INTO huobi_trades (id, data, created)
 	VALUES ( 
 		unnest($1::BIGINT[]),
-		unnest($2::JSONB[])
+		unnest($2::JSONB[]),
+		unnest($3::TIMESTAMPTZ[])
 	)
-	ON CONFLICT ON CONSTRAINT huobi_trades_pk DO NOTHING;`
+	ON CONFLICT ON CONSTRAINT huobi_trades_pk DO UPDATE SET created = EXCLUDED.created;`
 	logger.Debugw("updating tradeHistory...", "query", updateStmt)
 
 	tx, err := hdb.db.Beginx()
@@ -86,10 +89,12 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory)
 		if err != nil {
 			return
 		}
+		createdAt := timeutil.TimestampMsToTime(trade.CreatedAt)
 		ids = append(ids, trade.ID)
 		dataJSON = append(dataJSON, data)
+		timestamps = append(timestamps, createdAt)
 	}
-	_, err = tx.Exec(updateStmt, pq.Array(ids), pq.Array(dataJSON))
+	_, err = tx.Exec(updateStmt, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps))
 	if err != nil {
 		return
 	}

@@ -9,6 +9,6 @@ import (
 //Interface is inteface for binance storage
 type Interface interface {
 	UpdateWithdrawHistory([]binance.WithdrawHistory, string) error
-	GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.WithdrawHistory, error)
+	GetWithdrawHistory(fromTime, toTime time.Time) (map[string][]binance.WithdrawHistory, error)
 	GetLastStoredTimestamp(account string) (time.Time, error)
 }

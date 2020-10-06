@@ -105,8 +105,10 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 					err := json.NewDecoder(resp.Body).Decode(&result)
 					require.NoError(t, err)
 					assert.Equal(t, response{
-						Huobi:   huobiTestData,
-						Binance: binanceTestData,
+						Huobi: huobiTestData,
+						Binance: map[string][]binance.WithdrawHistory{
+							"binance_1": binanceTestData,
+						},
 					}, result)
 				},
 			},

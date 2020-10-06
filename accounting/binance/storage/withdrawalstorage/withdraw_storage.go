@@ -113,19 +113,19 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 
 //WithdrawRecord represent a record of binace withdraw
 type WithdrawRecord struct {
-	ID   string `db:"id"`
-	Data []byte `db:"data"`
+	Account string        `db:"account"`
+	Data    pq.ByteaArray `db:"data"`
 }
 
 //GetWithdrawHistory return list of withdraw fromTime to toTime
-func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.WithdrawHistory, error) {
+func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) (map[string][]binance.WithdrawHistory, error) {
 	var (
 		logger   = bd.sugar.With("func", caller.GetCurrentFunctionName())
-		result   []binance.WithdrawHistory
+		result   = make(map[string][]binance.WithdrawHistory)
 		dbResult []WithdrawRecord
 		tmp      binance.WithdrawHistory
 	)
-	const selectStmt = `SELECT id, data FROM binance_withdrawals WHERE data->>'applyTime'>=$1 AND data->>'applyTime'<=$2`
+	const selectStmt = `SELECT account, ARRAY_AGG(data) as data FROM binance_withdrawals WHERE data->>'applyTime'>=$1 AND data->>'applyTime'<=$2 GROUP BY account;`
 
 	logger.Debugw("querying trade history...", "query", selectStmt)
 
@@ -135,12 +135,15 @@ func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) ([]bina
 		return result, err
 	}
 
-	for _, data := range dbResult {
-		if err := json.Unmarshal(data.Data, &tmp); err != nil {
-			return result, err
+	for _, record := range dbResult {
+		arrResult := []binance.WithdrawHistory{}
+		for _, data := range record.Data {
+			if err := json.Unmarshal(data, &tmp); err != nil {
+				return result, err
+			}
+			arrResult = append(arrResult, tmp)
 		}
-		tmp.ID = data.ID
-		result = append(result, tmp)
+		result[record.Account] = arrResult
 	}
 
 	return result, nil

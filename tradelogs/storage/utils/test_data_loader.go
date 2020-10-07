@@ -13,7 +13,6 @@ func GetSampleTradeLogs(dataPath string) ([]common.TradelogV4, error) {
 	var tradeLogs []common.TradelogV4
 	byteValue, err := os.Open(dataPath)
 	if err != nil {
-		fmt.Println("error")
 		return nil, err
 	}
 	if err = json.NewDecoder(byteValue).Decode(&tradeLogs); err != nil {
@@ -28,7 +27,6 @@ func GetSampleReserves(dataPath string) ([]common.Reserve, error) {
 	var reserves []common.Reserve
 	byteValue, err := os.Open(dataPath)
 	if err != nil {
-		fmt.Println("error")
 		return nil, err
 	}
 	if err = json.NewDecoder(byteValue).Decode(&reserves); err != nil {

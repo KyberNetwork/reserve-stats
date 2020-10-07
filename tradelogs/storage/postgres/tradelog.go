@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"encoding/json"
-	"fmt"
 	"math/big"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
@@ -259,8 +258,6 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 		users = make(map[ethereum.Address]struct{})
 	)
 	if crResult != nil {
-		byteRecords, _ := json.Marshal(crResult)
-		fmt.Printf("record %s\n", byteRecords)
 		if len(crResult.Reserves) > 0 {
 			if err := tldb.saveReserve(crResult.Reserves); err != nil {
 				return err

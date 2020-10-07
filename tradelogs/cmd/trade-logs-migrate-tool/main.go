@@ -87,7 +87,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	var updatedTradeLogs []common.TradeLog
+	var updatedTradeLogs []common.TradelogV4
 	for _, r := range duneData.QueryResult.Data.Rows {
 		walletAddr := ethereum.HexToAddress(addHexPrefix(r.WalletID))
 		if !r.CallSuccess || blockchain.IsZeroAddress(walletAddr) {
@@ -108,8 +108,8 @@ func run(c *cli.Context) error {
 				continue
 			}
 			var (
-				isSameSrc       = tl.SrcAddress == ethereum.HexToAddress(r.Src)
-				isSameDst       = tl.DestAddress == ethereum.HexToAddress(r.Dest)
+				isSameSrc       = tl.TokenInfo.SrcAddress == ethereum.HexToAddress(r.Src)
+				isSameDst       = tl.TokenInfo.DestAddress == ethereum.HexToAddress(r.Dest)
 				isSameReceiver  = tl.ReceiverAddress == ethereum.HexToAddress(r.DestAddress)
 				isSameSrcAmount = tl.SrcAmount.Cmp(r.SrcAmount) == 0
 			)
@@ -119,7 +119,9 @@ func run(c *cli.Context) error {
 				updatedTradeLogs = append(updatedTradeLogs, tl)
 				sugar.Infow("update wallet", "block", tl.BlockNumber)
 				if len(updatedTradeLogs) == int(maxRecordSavePerTime) {
-					if errS := storageInterface.SaveTradeLogs(updatedTradeLogs); errS != nil {
+					var r *common.CrawlResult
+					r.Trades = updatedTradeLogs
+					if errS := storageInterface.SaveTradeLogs(r); errS != nil {
 						return errS
 					}
 					updatedTradeLogs = nil
@@ -128,7 +130,9 @@ func run(c *cli.Context) error {
 		}
 	}
 	if len(updatedTradeLogs) > 0 {
-		return storageInterface.SaveTradeLogs(updatedTradeLogs)
+		var r *common.CrawlResult
+		r.Trades = updatedTradeLogs
+		return storageInterface.SaveTradeLogs(r)
 	}
 	return nil
 }

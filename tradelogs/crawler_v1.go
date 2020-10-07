@@ -20,8 +20,7 @@ const (
 	internalNetworkAddrV1 = "0x964F35fAe36d75B1e72770e244F6595B68508CF5"
 )
 
-func (crawler *Crawler) fetchTradeLogV1(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
-	var result []common.TradeLog
+func (crawler *Crawler) fetchTradeLogV1(fromBlock, toBlock *big.Int, timeout time.Duration) (*common.CrawlResult, error) {
 	topics := [][]ethereum.Hash{
 		{
 			ethereum.HexToHash(executeTradeEvent),
@@ -36,16 +35,11 @@ func (crawler *Crawler) fetchTradeLogV1(fromBlock, toBlock *big.Int, timeout tim
 		return nil, errors.Wrap(err, "failed to fetch log by topic")
 	}
 
-	result, err = crawler.assembleTradeLogsV1(typeLogs)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return crawler.assembleTradeLogsV1(typeLogs)
 }
 
-func (crawler *Crawler) getTransactionReceiptV1(tradeLog common.TradeLog, receipt *types.Receipt, logIndex uint,
-	shouldGetReserveAddr bool) (common.TradeLog, error) {
+func (crawler *Crawler) getTransactionReceiptV1(tradeLog common.TradelogV4, receipt *types.Receipt, logIndex uint,
+	shouldGetReserveAddr bool) (common.TradelogV4, error) {
 
 	for index := mathutil.MinInt64(int64(len(receipt.Logs)-1), int64(logIndex)); index >= 0; index-- {
 		log := receipt.Logs[index]
@@ -72,7 +66,7 @@ func (crawler *Crawler) getTransactionReceiptV1(tradeLog common.TradeLog, receip
 	return tradeLog, nil
 }
 
-func (crawler *Crawler) getInternalTransaction(tradeLog common.TradeLog) (common.TradeLog, error) {
+func (crawler *Crawler) getInternalTransaction(tradeLog common.TradelogV4) (common.TradelogV4, error) {
 	blockInt := int(tradeLog.BlockNumber)
 	internalTxs, err := crawler.etherscanClient.InternalTxByAddress(internalNetworkAddrV1, &blockInt, &blockInt, 0, 0, false)
 	if err != nil {
@@ -100,10 +94,10 @@ func (crawler *Crawler) getInternalTransaction(tradeLog common.TradeLog) (common
 	return tradeLog, nil
 }
 
-func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.TradeLog, error) {
+func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) (*common.CrawlResult, error) {
 	var (
-		result   []common.TradeLog
-		tradeLog common.TradeLog
+		result   common.CrawlResult
+		tradeLog common.TradelogV4
 		err      error
 	)
 
@@ -113,7 +107,7 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 		}
 
 		if len(log.Topics) == 0 {
-			return result, errors.New("log item has no topic")
+			return &result, errors.New("log item has no topic")
 		}
 
 		topic := log.Topics[0]
@@ -131,6 +125,7 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 				return nil, err
 			}
 		case executeTradeEvent:
+			tradeLog.Version = 1 // tradelog version 1
 			if tradeLog, err = fillExecuteTrade(tradeLog, log); err != nil {
 				return nil, err
 			}
@@ -138,19 +133,17 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 				return nil, errors.Wrapf(err, "failed to resolve timestamp by block_number %v", log.BlockNumber)
 			}
 
-			tradeLog = assembleTradeLogsReserveAddr(tradeLog, crawler.sugar)
-
 			receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)
 			}
-			tradeLog.GasUsed = receipt.GasUsed
+			tradeLog.TxDetail.GasUsed = receipt.GasUsed
 
 			// when the tradelog does not contain burnfee and etherReceival event
 			// or trasaction is not from token to ether
 			// get tx receipt to get reserve address, receiver address
-			shouldGetReserveAddr := len(tradeLog.BurnFees) == 0 && blockchain.IsZeroAddress(tradeLog.SrcReserveAddress)
-			if shouldGetReserveAddr || tradeLog.DestAddress != blockchain.ETHAddr {
+			shouldGetReserveAddr := common.LengthBurnFees(tradeLog) == 0 && len(tradeLog.T2EReserves)+len(tradeLog.E2TReserves) == 0
+			if shouldGetReserveAddr || tradeLog.TokenInfo.DestAddress != blockchain.ETHAddr {
 				crawler.sugar.Debug("trade logs  has no burn fee, no ethReceival event, no wallet fee, getting reserve address from tx receipt")
 				tradeLog, err = crawler.getTransactionReceiptV1(tradeLog, receipt, log.Index, shouldGetReserveAddr)
 				if err != nil {
@@ -158,7 +151,7 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 				}
 			}
 
-			if tradeLog.DestAddress == blockchain.ETHAddr {
+			if tradeLog.TokenInfo.DestAddress == blockchain.ETHAddr {
 				// if transaction is from token to eth
 				// get internal transaction to detect receiver address
 				crawler.sugar.Debugw("get internal transaction", "tx_hash", tradeLog.TransactionHash.Hex(), "block_number", tradeLog.BlockNumber)
@@ -169,9 +162,9 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 			}
 
 			// set tradeLog.EthAmount
-			if tradeLog.SrcAddress == blockchain.ETHAddr {
+			if tradeLog.TokenInfo.SrcAddress == blockchain.ETHAddr {
 				tradeLog.EthAmount = tradeLog.SrcAmount
-			} else if tradeLog.DestAddress == blockchain.ETHAddr {
+			} else if tradeLog.TokenInfo.DestAddress == blockchain.ETHAddr {
 				tradeLog.EthAmount = tradeLog.DestAmount
 			}
 			tradeLog.OriginalEthAmount = tradeLog.EthAmount // some case EthAmount
@@ -179,19 +172,19 @@ func (crawler *Crawler) assembleTradeLogsV1(eventLogs []types.Log) ([]common.Tra
 
 			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
 			if err != nil {
-				return result, errors.Wrap(err, "could not update trade log basic info")
+				return &result, errors.Wrap(err, "could not update trade log basic info")
 			}
-			tradeLog.TransactionFee = big.NewInt(0).Mul(tradeLog.GasPrice, big.NewInt(int64(tradeLog.GasUsed)))
+			tradeLog.TxDetail.TransactionFee = big.NewInt(0).Mul(tradeLog.TxDetail.GasPrice, big.NewInt(int64(tradeLog.TxDetail.GasUsed)))
 
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 
 			// one trade only has one and only ExecuteTrade event
-			result = append(result, tradeLog)
-			tradeLog = common.TradeLog{}
+			result.Trades = append(result.Trades, tradeLog)
+			tradeLog = common.TradelogV4{}
 		default:
 			return nil, errUnknownLogTopic
 		}
 	}
 
-	return result, nil
+	return &result, nil
 }

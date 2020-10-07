@@ -1,7 +1,6 @@
 package postgres
 
 import (
-	"fmt"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -24,7 +23,7 @@ func (tldb *TradeLogDB) GetTokenHeatmap(asset ethereum.Address, from, to time.Ti
 	from = schema.RoundTime(from, "day", timezone)
 	to = schema.RoundTime(to, "day", timezone).Add(time.Hour * 24)
 	// nested query with filter by src_address_id and dst_address_id
-	tokenHeatMapQuery = fmt.Sprintf(`
+	tokenHeatMapQuery = `
 		SELECT country, 
 			SUM(eth_amount) AS eth_volume,
 			SUM(token_volume) AS token_volume,
@@ -32,19 +31,19 @@ func (tldb *TradeLogDB) GetTokenHeatmap(asset ethereum.Address, from, to time.Ti
 		FROM (
 			SELECT country, src_amount AS token_volume, 
 				eth_amount, eth_amount * eth_usd_rate AS usd_volume
-			FROM "%[1]s"
+			FROM "tradelogs"
 			WHERE timestamp >= $1 and timestamp < $2
-			AND EXISTS (SELECT NULL FROM "%[2]s" WHERE address = $3 and id = src_address_id)
+			AND EXISTS (SELECT NULL FROM "token" WHERE address = $3 and id = src_address_id)
 			AND country IS NOT NULL
 		UNION ALL
 			SELECT country, dst_amount AS token_volume, eth_amount, 
 				eth_amount*eth_usd_rate AS usd_volume
-			FROM "%[1]s"
+			FROM "tradelogs"
 			WHERE timestamp >= $1 and timestamp < $2
-			AND EXISTS (SELECT NULL FROM "%[2]s" WHERE address = $3 and id = dst_address_id)
+			AND EXISTS (SELECT NULL FROM "token" WHERE address = $3 and id = dst_address_id)
 			AND country IS NOT NULL
 		)a GROUP BY country
-	`, schema.TradeLogsTableName, schema.TokenTableName)
+	`
 	logger.Debugw("prepare statement", "stmt", tokenHeatMapQuery)
 
 	var records []struct {

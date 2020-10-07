@@ -253,6 +253,11 @@ func run(c *cli.Context) error {
 			for i := fromBlock; i <= toBlock; i += maxBlocks {
 				end := mathutil.MinInt64(i+maxBlocks, toBlock)
 				switch {
+				case uint64(end) >= startingBlocks.V4() && uint64(i) < startingBlocks.V4():
+					jobOrder++
+					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(i), big.NewInt(int64(startingBlocks.V4())), attempts, etherscanClient, networkProxyAddr))
+					jobOrder++
+					p.Run(workers.NewFetcherJob(c, jobOrder, big.NewInt(int64(startingBlocks.V4())), big.NewInt(end), attempts, etherscanClient, networkProxyAddr))
 				//if job start at block v2 and end at block v3 then split job
 				case uint64(end) >= startingBlocks.V3() && uint64(i) < startingBlocks.V3():
 					jobOrder++

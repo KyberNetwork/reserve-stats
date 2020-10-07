@@ -29,7 +29,7 @@ func TestTokenAmountFormatter(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		decimals, fErr := f.getDecimals(tc.address)
+		decimals, fErr := f.GetDecimals(tc.address)
 		require.NoError(t, fErr)
 		assert.Equal(t, tc.decimals, decimals)
 	}

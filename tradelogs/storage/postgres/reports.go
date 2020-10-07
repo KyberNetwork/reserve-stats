@@ -19,15 +19,18 @@ func (tldb *TradeLogDB) GetStats(from, to time.Time) (common.StatsResponse, erro
 			"func", caller.GetCurrentFunctionName(),
 		)
 		query = `
-	 SELECT SUM(eth_amount) as eth_volume,
-	  SUM(eth_amount*eth_usd_rate) as usd_volume,
-	  SUM(src_burn_amount+dst_burn_amount+src_wallet_fee_amount+dst_wallet_fee_amount) as collected_fee,
-	  COUNT(*) as total_trades,
-	  COUNT(CASE WHEN is_first_trade THEN 1 END) AS new_users,
-	  COUNT(distinct(user_address_id)) AS unique_addresses,
-	  AVG(eth_amount*eth_usd_rate) as average_trade_size
-	  from tradelogs
-	  WHERE timestamp >= $1 and timestamp <= $2
+		SELECT 
+		COALESCE(SUM(split.eth_amount), 0) AS eth_volume,
+		COALESCE(SUM(split.eth_amount*eth_usd_rate), 0) AS usd_volume,
+		COALESCE(SUM(platform_fee+burn+rebate+reward), 0) as collected_fee,
+		COUNT(DISTINCT(tx_hash, tradelogs.index)) as total_trades,
+		COUNT(CASE WHEN is_first_trade THEN 1 END) AS new_users,
+		COUNT(distinct(user_address_id)) AS unique_addresses,
+		COALESCE(AVG(split.eth_amount*eth_usd_rate), 0) as average_trade_size
+		FROM tradelogs
+		LEFT JOIN fee ON fee.trade_id = tradelogs.id
+		LEFT JOIN split ON split.trade_id = tradelogs.id
+	  WHERE timestamp >= $1 AND timestamp <= $2
 	`
 		statsRecord struct {
 			ETHVolume        float64 `db:"eth_volume"`
@@ -174,31 +177,20 @@ func (tldb *TradeLogDB) GetTopReserves(from, to time.Time, limit uint64) (common
 			"limit", limit,
 		)
 		query = `
-	  SELECT
-	    address as reserve_address,
-		sum(usd_amount) as usd_amount 
-	  FROM
-	  (
-	  SELECT
-	    sum(tradelogs.original_eth_amount*tradelogs.eth_usd_rate) usd_amount,
-	    reserve.address,
-		reserve.id
-	  FROM tradelogs
-	    left join reserve on tradelogs.src_reserve_address_id = reserve.id
-	  WHERE
-		timestamp >= $1 AND timestamp <= $2
-	  GROUP BY reserve.id
-	  UNION ALL
-	  SELECT
-	    sum(tradelogs.original_eth_amount*tradelogs.eth_usd_rate) usd_amount,
-	    reserve.address,
-		reserve.id
-	  FROM tradelogs
-	    left join reserve on tradelogs.dst_reserve_address_id = reserve.id
-	  WHERE
-		timestamp >= $1 AND timestamp <= $2
-	  GROUP BY reserve.id
-	  ) a GROUP BY a.address ORDER BY usd_amount DESC
+	  SELECT 
+		  reserve.address as reserve_address, 
+		  SUM(
+			CASE 
+		  		WHEN split.src = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
+				THEN split.src_amount*tradelogs.eth_usd_rate
+				ELSE split.dst_amount*tradelogs.eth_usd_rate
+			END
+		  ) AS usd_amount
+	  FROM split
+	  JOIN tradelogs on tradelogs.id = split.trade_id
+	  JOIN reserve on split.reserve_id = reserve.id
+	  WHERE tradelogs.timestamp >= $1 AND tradelogs.timestamp <= $2
+	  GROUP BY reserve.address ORDER BY usd_amount DESC
 		`
 		topReserves []struct {
 			ReserveAddress string  `db:"reserve_address"`

@@ -11,6 +11,7 @@ import (
 )
 
 func TestInfluxStorage_GetAggregatedWalletFee(t *testing.T) {
+	t.Skip()
 	const (
 		dbName = "test_aggregated_wallet_fee"
 		// These params are expected to be change when export.dat changes.

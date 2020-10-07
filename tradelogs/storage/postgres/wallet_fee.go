@@ -39,22 +39,22 @@ func (tldb *TradeLogDB) GetAggregatedWalletFee(reserveAddr, walletAddr, freq str
 		SELECT time, SUM(fee_amount) as fee_amount 
 		FROM (
 			SELECT %[1]s as time, src_wallet_fee_amount AS fee_amount 
-			FROM "%[2]s"
+			FROM "tradelogs"
 			WHERE timestamp >= $1 and timestamp < $2
-			AND EXISTS (SELECT NULL FROM "%[3]s"
+			AND EXISTS (SELECT NULL FROM "wallet"
 				WHERE address = $3 and id = wallet_address_id)
-			AND EXISTS (SELECT NULL FROM "%[4]s"
+			AND EXISTS (SELECT NULL FROM "reserve"
 				WHERE address = $4 and id = src_reserve_address_id)
 		UNION ALL
 			SELECT %[1]s as time, dst_wallet_fee_amount AS fee_amount 
-			FROM "%[2]s"
+			FROM "tradelogs"
 			WHERE timestamp >= $1 and timestamp < $2
-			AND EXISTS (SELECT NULL FROM "%[3]s"
+			AND EXISTS (SELECT NULL FROM "wallet"
 				WHERE address = $3 and id = wallet_address_id)
-			AND EXISTS (SELECT NULL FROM "%[4]s"
+			AND EXISTS (SELECT NULL FROM "reserve"
 				WHERE address = $4 and id = dst_reserve_address_id)
 		) a GROUP BY time
-	`, timeField, schema.TradeLogsTableName, schema.WalletTableName, schema.ReserveTableName)
+	`, timeField)
 
 	var records []struct {
 		Timestamp time.Time `db:"time"`

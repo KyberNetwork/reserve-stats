@@ -1,8 +1,8 @@
-FROM golang:1.12-stretch AS build-env
+FROM golang:1.14-stretch AS build-env
 
 COPY . /reserve-stats
 WORKDIR /reserve-stats/users/cmd/users-internal-cacher
-RUN go build -v -mod=vendor -o /users-internal-cacher
+RUN go build -v -mod=mod -o /users-internal-cacher
 
 FROM debian:stretch
 COPY --from=build-env /users-internal-cacher /

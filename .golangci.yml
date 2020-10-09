@@ -1,7 +1,10 @@
 run:
   deadline: 5m
-  modules-download-mode: vendor
-
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - unused
 linters:
   disable-all: true
   enable:

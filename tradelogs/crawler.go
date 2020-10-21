@@ -445,22 +445,13 @@ func (crawler *Crawler) updateBasicInfo(log types.Log, tradeLog common.TradelogV
 
 	if common.LengthBurnFees(tradeLog) == 0 { // in case there's no fee, we try to get wallet addr from tradeWithHint input
 		if tx.To() != nil && bytes.Equal(tx.To().Bytes(), crawler.networkProxy.Bytes()) { // try to fail early, tx must have dst == networkProxy
-			if tradeLog.Version == 3 {
-				tradeParam, err := decodeTradeInputParamV3(tx.Data())
-				if err != nil {
-					return tradeLog, errors.Wrapf(err, "failed to decode input param, tx %s", tx.Hash().String())
-				}
-				tradeLog.WalletAddress = tradeParam.WalletID
-				tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
-			} else if tradeLog.Version == 4 {
-				tradeParam, err := decodeTradeInputParamV4(tx.Data())
-				if err != nil {
-					return tradeLog, errors.Wrapf(err, "failed to decode input param, tx %s", tx.Hash().String())
-				}
-				tradeLog.WalletAddress = tradeParam.PlatformWallet
-				tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
+			tradeParam, err := decodeTradeInputParamV3(tx.Data())
+			if err != nil {
+				return tradeLog, errors.Wrapf(err, "failed to decode input param, tx %s", tx.Hash().String())
 			}
-		} else {
+			tradeLog.WalletAddress = tradeParam.WalletID
+			tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
+		} else { // try to fail early, tx must have dst == networkProxy
 			crawler.sugar.Warnw("no walletFee but tx is not with dest is networkProxy, skip get wallet addr")
 		}
 	} else {
@@ -490,6 +481,29 @@ func (crawler *Crawler) updateBasicInfoV4(log types.Log, tradeLog common.Tradelo
 	tradeLog.TxDetail.TxSender = txSender
 	tradeLog.TxDetail.GasPrice = tx.GasPrice()
 	tradeLog.User.UserAddress = txSender
+
+	if common.LengthBurnFees(tradeLog) == 0 { // in case there's no fee, we try to get wallet addr from tradeWithHint input
+		if tx.To() != nil && bytes.Equal(tx.To().Bytes(), crawler.networkProxy.Bytes()) { // try to fail early, tx must have dst == networkProxy
+			tradeParam, err := decodeTradeInputParamV4(tx.Data())
+			if err != nil {
+				return tradeLog, errors.Wrapf(err, "failed to decode input param, tx %s", tx.Hash().String())
+			}
+			tradeLog.WalletAddress = tradeParam.PlatformWallet
+			tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
+		} else { // try to fail early, tx must have dst == networkProxy
+			crawler.sugar.Warnw("no walletFee but tx is not with dest is networkProxy, skip get wallet addr")
+		}
+	} else {
+		for _, fee := range tradeLog.Fees {
+			if fee.PlatformFee != nil {
+				if fee.PlatformFee.Cmp(big.NewInt(0)) != 0 {
+					tradeLog.WalletAddress = fee.PlatformWallet
+					tradeLog.WalletName = WalletAddrToName(tradeLog.WalletAddress)
+					break
+				}
+			}
+		}
+	}
 
 	return tradeLog, err
 }

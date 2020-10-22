@@ -70,7 +70,7 @@ func run(c *cli.Context) error {
 	var (
 		flusher  func()
 		err      error
-		accounts []common.BinanceAccount // map account name with its info
+		accounts []common.Account
 	)
 	sugar, flusher, err = libapp.NewSugaredLogger(c)
 	if err != nil {

@@ -70,11 +70,6 @@ func run(c *cli.Context) error {
 
 	defer flusher()
 
-	huobiClient, err := huobi.NewClientFromContext(c, sugar)
-	if err != nil {
-		return err
-	}
-
 	db, err := libapp.NewDBFromContext(c)
 	if err != nil {
 		return fmt.Errorf("cannot create db from flags: %v", err)
@@ -93,31 +88,44 @@ func run(c *cli.Context) error {
 	}()
 
 	fromID := c.Uint64(fromIDFlag)
-	if fromID == 0 {
-		sugar.Info("From id is not provided, get last id stored in db")
-		fromID, err = hdb.GetLastIDStored()
-		if err != nil {
-			return err
-		}
-	}
 	sugar.Infow("get withdraw history from", "ID", fromID+1)
 
 	retryDelay := c.Duration(retryDelayFlag)
 	maxAttempts := c.Int(maxAttemptFlag)
-
-	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts)
-	data, err := fetcher.GetWithdrawHistory(fromID + 1)
+	options, err := huobi.ClientOptionFromContext(c)
 	if err != nil {
 		return err
 	}
-	var records []huobi.WithdrawHistory
-
-	for _, record := range data {
-		records = append(records, record...)
-	}
-
-	if err = hdb.UpdateWithdrawHistory(records); err != nil {
+	accounts, err := huobi.AccountsFromContext(c)
+	if err != nil {
 		return err
+	}
+	for _, account := range accounts {
+		if fromID == 0 {
+			sugar.Info("From id is not provided, get last id stored in db")
+			fromID, err = hdb.GetLastIDStored(account.Name)
+			if err != nil {
+				return err
+			}
+		}
+		huobiClient, err := huobi.NewClient(account.APIKey, account.SecretKey, sugar, options...)
+		if err != nil {
+			return err
+		}
+		fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts)
+		data, err := fetcher.GetWithdrawHistory(fromID + 1)
+		if err != nil {
+			return err
+		}
+		var records []huobi.WithdrawHistory
+
+		for _, record := range data {
+			records = append(records, record...)
+		}
+
+		if err = hdb.UpdateWithdrawHistory(records, account.Name); err != nil {
+			return err
+		}
 	}
 	return hdb.Close()
 }

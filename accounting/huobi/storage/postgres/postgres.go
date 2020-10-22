@@ -32,6 +32,7 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*HuobiStorage, error) {
 ) ;
 CREATE INDEX IF NOT EXISTS huobi_trades_time_idx ON huobi_trades ((data ->> 'created-at'));
 ALTER TABLE huobi_trades ADD COLUMN IF NOT EXISTS created TIMESTAMPTZ;
+ALTER TABLE huobi_trades ADD COLUMN IF NOT EXISTS account TEXT;
 `
 	var (
 		logger = sugar.With("func", caller.GetCurrentFunctionName())
@@ -57,7 +58,7 @@ func (hdb *HuobiStorage) Close() error {
 }
 
 //UpdateTradeHistory store the TradeHistory rate at that blockInfo
-func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory) (err error) {
+func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory, account string) (err error) {
 	var (
 		nTrades = len(trades)
 		logger  = hdb.sugar.With(
@@ -69,11 +70,12 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory)
 		timestamps []time.Time
 	)
 
-	const updateStmt = `INSERT INTO huobi_trades (id, data, created)
+	const updateStmt = `INSERT INTO huobi_trades (id, data, created, account)
 	VALUES ( 
 		unnest($1::BIGINT[]),
 		unnest($2::JSONB[]),
-		unnest($3::TIMESTAMPTZ[])
+		unnest($3::TIMESTAMPTZ[]),
+		$4
 	)
 	ON CONFLICT ON CONSTRAINT huobi_trades_pk DO UPDATE SET created = EXCLUDED.created;`
 	logger.Debugw("updating tradeHistory...", "query", updateStmt)
@@ -94,18 +96,24 @@ func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory)
 		dataJSON = append(dataJSON, data)
 		timestamps = append(timestamps, createdAt)
 	}
-	_, err = tx.Exec(updateStmt, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps))
+	_, err = tx.Exec(updateStmt, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps), account)
 	if err != nil {
 		return
 	}
 	return err
 }
 
+// TradeHistoryDB ...
+type TradeHistoryDB struct {
+	Account string        `db:"account"`
+	Data    pq.ByteaArray `db:"data"`
+}
+
 //GetTradeHistory return tradehistory between from.. to.. in its json []byte form
-func (hdb *HuobiStorage) GetTradeHistory(from, to time.Time) ([]huobi.TradeHistory, error) {
+func (hdb *HuobiStorage) GetTradeHistory(from, to time.Time) (map[string][]huobi.TradeHistory, error) {
 	var (
-		dbResult [][]byte
-		result   []huobi.TradeHistory
+		dbResult []TradeHistoryDB
+		result   map[string][]huobi.TradeHistory
 		logger   = hdb.sugar.With(
 			"func", caller.GetCurrentFunctionName(),
 			"from", from.String(),
@@ -113,30 +121,34 @@ func (hdb *HuobiStorage) GetTradeHistory(from, to time.Time) ([]huobi.TradeHisto
 		)
 		tmp huobi.TradeHistory
 	)
-	const selectStmt = `SELECT data FROM huobi_trades WHERE data->>'created-at'>=$1 AND data->>'created-at'<$2`
+	const selectStmt = `SELECT account, ARRAY_AGG(data) FROM huobi_trades WHERE data->>'created-at'>=$1 AND data->>'created-at'<$2`
 	logger.Debugw("querying trade history...", "query", selectStmt)
 	if err := hdb.db.Select(&dbResult, selectStmt, timeutil.TimeToTimestampMs(from), timeutil.TimeToTimestampMs(to)); err != nil {
 		return result, err
 	}
-	for _, data := range dbResult {
-		if err := json.Unmarshal(data, &tmp); err != nil {
-			return result, err
+	for _, record := range dbResult {
+		arrResult := []huobi.TradeHistory{}
+		for _, data := range record.Data {
+			if err := json.Unmarshal(data, &tmp); err != nil {
+				return result, err
+			}
+			arrResult = append(arrResult, tmp)
 		}
-		result = append(result, tmp)
+		result[record.Account] = arrResult
 	}
 	return result, nil
 }
 
 //GetLastStoredTimestamp return the last stored timestamp in database
-func (hdb *HuobiStorage) GetLastStoredTimestamp() (time.Time, error) {
+func (hdb *HuobiStorage) GetLastStoredTimestamp(account string) (time.Time, error) {
 	var (
 		dbResult uint64
 		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
 		logger   = hdb.sugar.With("func", caller.GetCurrentFunctionName())
 	)
-	const selectStmt = `SELECT COALESCE(MAX(data->>'created-at'), '0') FROM huobi_trades`
+	const selectStmt = `SELECT COALESCE(MAX(data->>'created-at'), '0') FROM huobi_trades WHERE account = $1`
 	logger.Debugw("querying trade history...", "query", selectStmt)
-	if err := hdb.db.Get(&dbResult, selectStmt); err != nil {
+	if err := hdb.db.Get(&dbResult, selectStmt, account); err != nil {
 		return result, err
 	}
 	if dbResult != 0 {

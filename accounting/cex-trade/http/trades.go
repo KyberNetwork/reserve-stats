@@ -25,7 +25,7 @@ type getTradesQuery struct {
 }
 
 type getTradesResponse struct {
-	Huobi   []huobi.TradeHistory              `json:"huobi,omitempty"`
+	Huobi   map[string][]huobi.TradeHistory   `json:"huobi,omitempty"`
 	Binance map[string][]binance.TradeHistory `json:"binance,omitempty"`
 }
 
@@ -34,7 +34,7 @@ func (s *Server) getTrades(c *gin.Context) {
 	var (
 		logger        = s.sugar.With("func", caller.GetCurrentFunctionName())
 		query         getTradesQuery
-		huobiTrades   []huobi.TradeHistory
+		huobiTrades   = make(map[string][]huobi.TradeHistory)
 		binanceTrades = make(map[string][]binance.TradeHistory) // map account with its trades
 	)
 

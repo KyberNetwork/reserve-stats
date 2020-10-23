@@ -7,7 +7,6 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	"github.com/urfave/cli"
-	"go.uber.org/zap"
 )
 
 const (
@@ -39,8 +38,8 @@ func NewCliFlags() []cli.Flag {
 }
 
 // AccountsFromContext get accounts from file config
-func AccountsFromContext(c *cli.Context) ([]common.BinanceAccount, error) {
-	var accounts []common.BinanceAccount
+func AccountsFromContext(c *cli.Context) ([]common.Account, error) {
+	var accounts []common.Account
 	configFile := c.String(binanceAccountsConfigFileFlag)
 	data, err := ioutil.ReadFile(configFile)
 	if err != nil {
@@ -50,11 +49,10 @@ func AccountsFromContext(c *cli.Context) ([]common.BinanceAccount, error) {
 	return accounts, err
 }
 
-//NewClientFromContext return binance client
-func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, error) {
+// ClientOptionFromContext return options for binance client
+func ClientOptionFromContext(c *cli.Context) ([]Option, error) {
 	var (
-		apiKey, secretKey string
-		options           []Option
+		options []Option
 	)
 	rps := c.Float64(binanceRequestPerSecond)
 	if rps <= 0 {
@@ -65,5 +63,5 @@ func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, er
 	if validateRequire := c.BoolT(binanceClientValidationFlag); validateRequire {
 		options = append(options, WithValidation())
 	}
-	return NewBinance(apiKey, secretKey, sugar, options...)
+	return options, nil
 }

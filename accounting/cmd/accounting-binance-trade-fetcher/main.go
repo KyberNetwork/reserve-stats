@@ -70,7 +70,7 @@ func run(c *cli.Context) error {
 	var (
 		flusher  func()
 		err      error
-		accounts []common.BinanceAccount // map account name with its info
+		accounts []common.Account
 	)
 	sugar, flusher, err = libapp.NewSugaredLogger(c)
 	if err != nil {
@@ -112,6 +112,10 @@ func run(c *cli.Context) error {
 	retryDelay := c.Duration(retryDelayFlag)
 	attempt := c.Int(attemptFlag)
 	batchSize := c.Int(batchSizeFlag)
+	options, err := binance.ClientOptionFromContext(c)
+	if err != nil {
+		return err
+	}
 	accounts, err = binance.AccountsFromContext(c)
 	if err != nil {
 		return err
@@ -127,7 +131,7 @@ func run(c *cli.Context) error {
 			fromIDs[pair.Symbol] = from
 		}
 
-		binanceClient, err := binance.NewBinance(account.APIKey, account.SecretKey, sugar)
+		binanceClient, err := binance.NewBinance(account.APIKey, account.SecretKey, sugar, options...)
 		if err != nil {
 			return err
 		}

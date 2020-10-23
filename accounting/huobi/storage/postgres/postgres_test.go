@@ -13,7 +13,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
-func TestSaveAndGetAccountingRates(t *testing.T) {
+func TestSaveAndGetAccountingTrades(t *testing.T) {
 	var (
 		testData = map[int64]huobi.TradeHistory{
 			15584072551: {
@@ -53,14 +53,14 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 		assert.NoError(t, teardown())
 	}()
 
-	ts, err := hdb.GetLastStoredTimestamp()
+	ts, err := hdb.GetLastStoredTimestamp("huobi_v1_main")
 	require.NoError(t, err)
 	assert.Equal(t, ts, time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC))
 
-	err = hdb.UpdateTradeHistory(testData)
+	err = hdb.UpdateTradeHistory(testData, "huobi_v1_main")
 	require.NoError(t, err)
 
-	latestTimestamp, err := hdb.GetLastStoredTimestamp()
+	latestTimestamp, err := hdb.GetLastStoredTimestamp("huobi_v1_main")
 	require.NoError(t, err)
 	assert.Equal(t, uint64(1540793585778), timeutil.TimeToTimestampMs(latestTimestamp))
 	sugar.Debugw("latest time stamp", "value", timeutil.TimeToTimestampMs(latestTimestamp))
@@ -69,7 +69,7 @@ func TestSaveAndGetAccountingRates(t *testing.T) {
 	data, err := hdb.GetTradeHistory(timeutil.TimestampMsToTime(1540793585600), timeutil.TimestampMsToTime(1540793585699))
 	require.NoError(t, err)
 	assert.Equal(t, len(data), 1)
-	assert.Equal(t, testData[15584072551].FieldAmount, data[0].FieldAmount)
+	assert.Equal(t, testData[15584072551].FieldAmount, data["huobi_v1_main"][0].FieldAmount)
 
 	// test database does not stored duplicated records(with the same id)
 	data, err = hdb.GetTradeHistory(timeutil.TimestampMsToTime(1540793585679), timeutil.TimestampMsToTime(1540793586000))

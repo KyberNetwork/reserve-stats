@@ -64,7 +64,7 @@ func run(c *cli.Context) error {
 	var (
 		fromTime, toTime time.Time
 		err              error
-		accounts         []common.BinanceAccount // map account name with its info
+		accounts         []common.Account
 	)
 
 	sugar, flusher, err := libapp.NewSugaredLogger(c)

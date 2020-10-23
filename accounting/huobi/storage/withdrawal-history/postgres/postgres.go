@@ -71,7 +71,7 @@ func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory
 		dataJSON   [][]byte
 		timestamps []time.Time
 	)
-	const updateStmt = `INSERT INTO huobi_withdrawals(id, data, account)
+	const updateStmt = `INSERT INTO huobi_withdrawals(id, data, timestamp, account)
 	VALUES ( 
 		unnest($1::BIGINT[]),
 		unnest($2::JSONB[]),

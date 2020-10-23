@@ -67,14 +67,16 @@ func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory
 			"func", caller.GetCurrentFunctionName(),
 			"len(withdraws)", len(withdraws),
 		)
-		ids      []uint64
-		dataJSON [][]byte
+		ids        []uint64
+		dataJSON   [][]byte
+		timestamps []time.Time
 	)
 	const updateStmt = `INSERT INTO huobi_withdrawals(id, data, account)
 	VALUES ( 
 		unnest($1::BIGINT[]),
 		unnest($2::JSONB[]),
-		$3
+		unnest($3::TIMESTAMPTZ[]),
+		$4
 	)
 	ON CONFLICT ON CONSTRAINT huobi_withdrawals_pk DO NOTHING;`
 	logger.Debugw("updating tradeHistory...", "query", updateStmt)
@@ -90,10 +92,12 @@ func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory
 		if err != nil {
 			return err
 		}
+		createdAt := timeutil.TimestampMsToTime(withdraw.CreatedAt)
 		ids = append(ids, withdraw.ID)
 		dataJSON = append(dataJSON, data)
+		timestamps = append(timestamps, createdAt)
 	}
-	_, err = tx.Exec(updateStmt, pq.Array(ids), pq.Array(dataJSON))
+	_, err = tx.Exec(updateStmt, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps), account)
 	if err != nil {
 		return err
 	}

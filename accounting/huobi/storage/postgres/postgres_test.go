@@ -13,7 +13,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
-func TestSaveAndGetAccountingRates(t *testing.T) {
+func TestSaveAndGetAccountingTrades(t *testing.T) {
 	var (
 		testData = map[int64]huobi.TradeHistory{
 			15584072551: {

@@ -113,7 +113,7 @@ type TradeHistoryDB struct {
 func (hdb *HuobiStorage) GetTradeHistory(from, to time.Time) (map[string][]huobi.TradeHistory, error) {
 	var (
 		dbResult []TradeHistoryDB
-		result   map[string][]huobi.TradeHistory
+		result   = make(map[string][]huobi.TradeHistory)
 		logger   = hdb.sugar.With(
 			"func", caller.GetCurrentFunctionName(),
 			"from", from.String(),
@@ -121,7 +121,7 @@ func (hdb *HuobiStorage) GetTradeHistory(from, to time.Time) (map[string][]huobi
 		)
 		tmp huobi.TradeHistory
 	)
-	const selectStmt = `SELECT account, ARRAY_AGG(data) FROM huobi_trades WHERE data->>'created-at'>=$1 AND data->>'created-at'<$2`
+	const selectStmt = `SELECT account, ARRAY_AGG(data) as data FROM huobi_trades WHERE data->>'created-at'>=$1 AND data->>'created-at'<$2 GROUP BY account;`
 	logger.Debugw("querying trade history...", "query", selectStmt)
 	if err := hdb.db.Select(&dbResult, selectStmt, timeutil.TimeToTimestampMs(from), timeutil.TimeToTimestampMs(to)); err != nil {
 		return result, err

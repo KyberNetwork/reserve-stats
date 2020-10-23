@@ -231,7 +231,7 @@ func (bd *BinanceStorage) GetMarginTradeHistory(fromTime, toTime time.Time) (map
 		dbResult []TradeHistoryDB
 		tmp      binance.TradeHistory
 	)
-	const selectStmt = `SELECT account, ARRAY_AGG(data) as data FROM binance_margin_trades WHERE timestamp >=$1::TIMESTAMP AND timestamp <=$2::TIMESTAMP GROUP BY account`
+	const selectStmt = `SELECT account, ARRAY_AGG(data) as data FROM binance_margin_trades WHERE timestamp >=$1::TIMESTAMP AND timestamp <=$2::TIMESTAMP GROUP BY account;`
 
 	logger.Debugw("querying margin trade history...", "query", selectStmt)
 

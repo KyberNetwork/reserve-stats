@@ -111,7 +111,7 @@ type WithdrawRecord struct {
 func (hdb *HuobiStorage) GetWithdrawHistory(from, to time.Time) (map[string][]huobi.WithdrawHistory, error) {
 	var (
 		dbResult []WithdrawRecord
-		result   map[string][]huobi.WithdrawHistory
+		result   = make(map[string][]huobi.WithdrawHistory)
 		logger   = hdb.sugar.With(
 			"func", caller.GetCurrentFunctionName(),
 			"from", from.String(),
@@ -119,7 +119,7 @@ func (hdb *HuobiStorage) GetWithdrawHistory(from, to time.Time) (map[string][]hu
 		)
 		tmp huobi.WithdrawHistory
 	)
-	const selectStmt = `SELECT data FROM huobi_withdrawals WHERE data->>'created-at'>=$1 AND data->>'created-at'<$2`
+	const selectStmt = `SELECT account, ARRAY_AGG(data) as data FROM huobi_withdrawals WHERE data->>'created-at'>=$1 AND data->>'created-at'<$2 GROUP BY account;`
 	logger.Debugw("querying trade history...", "query", selectStmt)
 	if err := hdb.db.Select(&dbResult, selectStmt, timeutil.TimeToTimestampMs(from), timeutil.TimeToTimestampMs(to)); err != nil {
 		return result, err

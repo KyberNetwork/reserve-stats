@@ -78,7 +78,7 @@ func (irc *InternalRedisCacher) cache24hVolumeByUID() error {
 		uid := user.UserID
 
 		// save to cache with configured expiration duration
-		if err := irc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", uidPrefix, uid), user.Volume, irc.expiration); err != nil {
+		if err := irc.pushToPipeline(pipe, fmt.Sprintf("%s:%d", uidPrefix, uid), user.Volume, irc.expiration); err != nil {
 			if dErr := pipe.Discard(); dErr != nil {
 				err = fmt.Errorf("%s - %s", dErr.Error(), err.Error())
 			}

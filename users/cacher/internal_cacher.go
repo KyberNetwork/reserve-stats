@@ -5,12 +5,10 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
-	"github.com/influxdata/influxdb/client/v2"
+	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx/schema/tradelog"
 )
 
 const (
@@ -19,20 +17,21 @@ const (
 
 //InternalRedisCacher is instance for redis cache
 type InternalRedisCacher struct {
-	sugar          *zap.SugaredLogger
-	influxDBClient client.Client
-	redisClient    *redis.Client
-	expiration     time.Duration
+	sugar       *zap.SugaredLogger
+	redisClient *redis.Client
+	expiration  time.Duration
+	db          *sqlx.DB
 }
 
 //NewInternalRedisCacher returns a new redis cacher instance
-func NewInternalRedisCacher(sugar *zap.SugaredLogger, influxDBClient client.Client,
-	redisClient *redis.Client, expiration time.Duration) *InternalRedisCacher {
+func NewInternalRedisCacher(sugar *zap.SugaredLogger,
+	redisClient *redis.Client, expiration time.Duration,
+	db *sqlx.DB) *InternalRedisCacher {
 	return &InternalRedisCacher{
-		sugar:          sugar,
-		influxDBClient: influxDBClient,
-		redisClient:    redisClient,
-		expiration:     expiration,
+		sugar:       sugar,
+		redisClient: redisClient,
+		expiration:  expiration,
+		db:          db,
 	}
 }
 
@@ -44,42 +43,42 @@ func (irc *InternalRedisCacher) Cache24hVolume() error {
 	return nil
 }
 
+// User24hVolume ...
+type User24hVolume struct {
+	UserID int64   `db:"user_id"`
+	Volume float64 `db:"volume"`
+}
+
 func (irc *InternalRedisCacher) cache24hVolumeByUID() error {
 	var (
 		logger = irc.sugar.With("func", caller.GetCurrentFunctionName())
+		res    []User24hVolume
 	)
 
 	// read total trade 24h
-	query := fmt.Sprintf(`SELECT SUM(amount) FROM (SELECT %s*%s as amount FROM trades WHERE time >= now()-24h AND uid != '') WHERE time >= now()-24h  GROUP BY uid`,
-		logSchema.EthAmount.String(),
-		logSchema.EthUSDRate.String())
+	query := `
+		SELECT 
+			users.id as user_id,
+			SUM(split.eth_amount * tradelogs.eth_usd_rate) as volume
+		FROM split
+		JOIN tradelogs on tradelogs.id = split.trade_id
+		JOIN users on tradelogs.user_address_id = users.id
+		WHERE tradelogs.timestamp > now() - interval '24' hour 
+		GROUP BY user.id
+		`
 
 	logger.Debugw("query", "query 24h fiat volume", query)
-
-	res, err := influxdb.QueryDB(irc.influxDBClient, query, influxDB)
-	if err != nil {
-		logger.Errorw("error from query", "err", err)
+	if err := irc.db.Select(&res, query); err != nil {
+		logger.Errorw("failed to get user volume 24 hours", "error", err)
 		return err
 	}
 
-	if len(res) == 0 || len(res[0].Series) == 0 || len(res[0].Series[0].Values) == 0 || len(res[0].Series[0].Values[0]) < 2 {
-		logger.Debugw("influx db is empty", "result", res)
-		return nil
-	}
-
 	pipe := irc.redisClient.Pipeline()
-	for _, serie := range res[0].Series {
-		uid := serie.Tags[logSchema.UID.String()]
-
-		// check rich
-		userTradeAmount, err := influxdb.GetFloat64FromInterface(serie.Values[0][1])
-		if err != nil {
-			logger.Errorw("values second should be a float", "value", serie.Values[0][1])
-			return nil
-		}
+	for _, user := range res {
+		uid := user.UserID
 
 		// save to cache with configured expiration duration
-		if err := irc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", uidPrefix, uid), userTradeAmount, irc.expiration); err != nil {
+		if err := irc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", uidPrefix, uid), user.Volume, irc.expiration); err != nil {
 			if dErr := pipe.Discard(); dErr != nil {
 				err = fmt.Errorf("%s - %s", dErr.Error(), err.Error())
 			}

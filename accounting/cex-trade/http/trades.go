@@ -111,3 +111,34 @@ func (s *Server) getTrades(c *gin.Context) {
 		Binance: binanceTrades,
 	})
 }
+
+type getSpecialTradesQuery struct {
+	httputil.TimeRangeQuery
+}
+
+func (s *Server) getConvertToETHPrice(c *gin.Context) {
+	var (
+		query getSpecialTradesQuery
+	)
+	if err := c.ShouldBindQuery(&query); err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusBadRequest,
+			err,
+		)
+		return
+	}
+	result, err := s.bs.GetConvertToETHPrice(query.From, query.To)
+	if err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		result,
+	)
+}

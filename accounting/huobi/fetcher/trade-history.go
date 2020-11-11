@@ -78,7 +78,7 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time) 
 
 		startTime = timeutil.TimestampMsToTime(lastTrade.CreatedAt)
 		logger.Infow("last trade from time", "from", startTime)
-		if endTime.Before(startTime) {
+		if !endTime.After(startTime) {
 			break
 		}
 	}

@@ -5,9 +5,7 @@ import (
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
-	"github.com/KyberNetwork/reserve-stats/tradelogs"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	ethereum "github.com/ethereum/go-ethereum/common"
 )
 
 // GetStats return tradelogs stats in a time range
@@ -185,7 +183,8 @@ func (tldb *TradeLogDB) GetTopReserves(from, to time.Time, limit uint64) (common
 				THEN split.src_amount*tradelogs.eth_usd_rate
 				ELSE split.dst_amount*tradelogs.eth_usd_rate
 			END
-		  ) AS usd_amount
+		  ) AS usd_amount,
+		  reserve.name
 	  FROM split
 	  JOIN tradelogs on tradelogs.id = split.trade_id
 	  JOIN reserve on split.reserve_id = reserve.id
@@ -195,6 +194,7 @@ func (tldb *TradeLogDB) GetTopReserves(from, to time.Time, limit uint64) (common
 		topReserves []struct {
 			ReserveAddress string  `db:"reserve_address"`
 			USDAmount      float64 `db:"usd_amount"`
+			Name           string  `db:"name"`
 		}
 	)
 	if limit > 0 {
@@ -206,11 +206,10 @@ func (tldb *TradeLogDB) GetTopReserves(from, to time.Time, limit uint64) (common
 	}
 	var result = make(common.TopReserves)
 	for _, reserve := range topReserves {
-		reserveName, err := tradelogs.ReserveAddressToName(ethereum.HexToAddress(reserve.ReserveAddress))
-		if err == nil {
-			result[reserveName] = reserve.USDAmount
+		if reserve.Name != "" {
+			result[reserve.Name] = reserve.USDAmount
 		} else {
-			logger.Warnw("reserve address does not have name", "error", err)
+			logger.Warnw("reserve address does not have name", "address", reserve.ReserveAddress)
 			result[reserve.ReserveAddress] = reserve.USDAmount
 		}
 	}

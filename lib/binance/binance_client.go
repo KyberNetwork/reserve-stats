@@ -406,3 +406,38 @@ func (bc *Client) GetMarginTradeHistory(symbol string, fromID uint64) ([]TradeHi
 	err = json.Unmarshal(res, &result)
 	return result, err
 }
+
+// AggregatedTrade ...
+type AggregatedTrade struct {
+	AggregateTradeID uint64 `json:"a"`
+	Price            string `json:"p"`
+	Quantity         string `json:"q"`
+	FirstTradeID     uint64 `json:"f"`
+	LastTradeID      uint64 `json:"l"`
+	Timestamp        uint64 `json:"T"`
+}
+
+// GetAggregatedTrades ...
+func (bc *Client) GetAggregatedTrades(symbol string, startTime, endTime uint64) ([]AggregatedTrade, error) {
+	var (
+		result []AggregatedTrade
+		err    error
+	)
+	endpoint := fmt.Sprintf("%s/api/v3/aggTrades", endpointPrefix)
+	res, err := bc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		map[string]string{
+			"symbol":    symbol,
+			"startTime": strconv.FormatUint(startTime, 10),
+			"endTime":   strconv.FormatUint(endTime, 10),
+		},
+		false,
+		time.Now(),
+	)
+	if err != nil {
+		return result, err
+	}
+	err = json.Unmarshal(res, &result)
+	return result, err
+}

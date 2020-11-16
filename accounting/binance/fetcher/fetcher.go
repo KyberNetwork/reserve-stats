@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"strconv"
 	"time"
 
 	"go.uber.org/zap"
@@ -9,6 +10,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/binance/storage/tradestorage"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
@@ -100,6 +102,14 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binanc
 						if err != nil {
 							return err
 						}
+						// handle not eth trade
+						if pair.BaseAsset != "ETH" && pair.QuoteAsset != "ETH" && len(oneSymbolTradeHistory) > 0 {
+							symbol := "ETH" + pair.QuoteAsset
+							if err := f.updateTradeNotETH(pair.Symbol, symbol, oneSymbolTradeHistory); err != nil {
+								logger.Errorw("failed to update trade with no eth as quote", "error", err)
+							}
+						}
+
 						return f.storage.UpdateTradeHistory(oneSymbolTradeHistory, account)
 					}
 				}(pair),
@@ -109,6 +119,57 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binanc
 			return err
 		}
 		index += f.batchSize
+	}
+	return nil
+}
+
+func (f *Fetcher) updateTradeNotETH(originalSymbol, symbol string, oneSymbolTradeHistory []binance.TradeHistory) error {
+	var (
+		logger = f.sugar.With(
+			"func", caller.GetCurrentFunctionName(),
+		)
+	)
+	for _, trade := range oneSymbolTradeHistory {
+		endTime := trade.Time
+
+		// get aggregated trade for that timestamp
+		var (
+			delta uint64 = 5 // default 5 senconds
+			res   []binance.AggregatedTrade
+			err   error
+		)
+		for {
+			startTime := endTime - delta
+			res, err = f.client.GetAggregatedTrades(symbol, startTime, endTime)
+			if err != nil {
+				logger.Errorw("failed to get aggregated trades from binance", "error", err)
+				return err
+			}
+			// increase delta if there is no result
+			if len(res) == 0 {
+				delta += 5
+				continue
+			}
+			break
+		}
+		price, err := strconv.ParseFloat(res[0].Price, 64)
+		if err != nil {
+			logger.Errorw("failed to parse price", "error", err)
+			return err
+		}
+		// find the trade which is timestamp < endTime - 2mins
+		timestampMillis := endTime - 2*60*1000 // 2 min in millisecond
+		timestamp := timeutil.TimestampMsToTime(timestampMillis)
+		ethTrade, err := f.storage.GetTradeByTimestamp(symbol, timestamp)
+		if err != nil {
+			logger.Errorw("failed to get trade by timestamp", "error", err)
+			return err
+		}
+
+		// store info to persistent storage
+		if err := f.storage.UpdateConvertToETHPrice(originalSymbol, symbol, price, endTime, trade, ethTrade); err != nil {
+			return err
+		}
 	}
 	return nil
 }

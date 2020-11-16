@@ -1,6 +1,7 @@
 package tradestorage
 
 import (
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -49,6 +50,18 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 	);
 	CREATE INDEX IF NOT EXISTS binance_margin_trades_time_idx ON binance_trades (timestamp);
 	CREATE INDEX IF NOT EXISTS binance_margin_trades_symbol_idx ON binance_trades (symbol);
+
+	CREATE TABLE IF NOT EXISTS "binance_convert_to_eth_price"
+	(
+		original_symbol TEXT NOT NULL,
+		symbol TEXT NOT NULL,
+		price FLOAT NOT NULL,
+		timestamp BIGINT NOT NULL,
+		original_trade JSONB,
+		trade JSONB,
+		CONSTRAINT binance_convert_to_eth_price_pk PRIMARY KEY(symbol, price, timestamp)
+	);
+	CREATE INDEX IF NOT EXISTS binance_convert_to_eth_price_time_idx ON binance_convert_to_eth_price(timestamp);
 	`
 
 	s := &BinanceStorage{
@@ -267,4 +280,77 @@ func (bd *BinanceStorage) GetLastStoredMarginTradeID(symbol, account string) (ui
 	}
 
 	return result, nil
+}
+
+// GetTradeByTimestamp ...
+func (bd *BinanceStorage) GetTradeByTimestamp(symbol string, timestamp time.Time) (binance.TradeHistory, error) {
+	var (
+		logger = bd.sugar.With(
+			"func", caller.GetCurrentFunctionName(),
+			"symbol", symbol,
+			"timestamp", timestamp,
+		)
+		result   binance.TradeHistory
+		resultDB []byte
+	)
+	const query = "SELECT data FROM binance_trades where timestamp <= $1::TIMESTAMP AND data->>'symbol' = $2 LIMIT 1;"
+	logger.Infow("Get trade history by timestamp", "query", query)
+	if err := bd.db.Get(&resultDB, query, timestamp, symbol); err != nil {
+		if err == sql.ErrNoRows {
+			return result, nil
+		}
+		logger.Errorw("failed to get trade", "error", err)
+		return result, err
+	}
+	err := json.Unmarshal(resultDB, &result)
+	return result, err
+}
+
+// UpdateConvertToETHPrice ...
+func (bd *BinanceStorage) UpdateConvertToETHPrice(originalSymbol, symbol string, price float64, timestamp uint64, originalTrade, trade binance.TradeHistory) error {
+	var (
+		logger = bd.sugar.With(
+			"func", caller.GetCurrentFunctionName(),
+			"symbol", symbol,
+			"price", price,
+			"timestamp", timestamp,
+		)
+	)
+	logger.Info("update eth trade")
+	const query = `INSERT INTO binance_convert_to_eth_price (original_symbol, symbol, price, timestamp, original_trade, trade)
+				   VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (symbol, price, timestamp) DO NOTHING;`
+	tradeJSON, err := json.Marshal(trade)
+	if err != nil {
+		logger.Errorw("failed to marshal trade", "error", err)
+		return err
+	}
+	originalTradeJSON, err := json.Marshal(originalTrade)
+	if err != nil {
+		logger.Errorw("failed to marshal trade", "error", err)
+		return err
+	}
+	if _, err := bd.db.Exec(query, originalSymbol, symbol, price, timestamp, originalTradeJSON, tradeJSON); err != nil {
+		logger.Errorw("failed to update eth trade", "error", err)
+		return err
+	}
+	return nil
+}
+
+// GetConvertToETHPrice ...
+func (bd *BinanceStorage) GetConvertToETHPrice(fromTime, toTime uint64) ([]binance.ConvertToETHPrice, error) {
+	var (
+		logger = bd.sugar.With(
+			"func", caller.GetCurrentFunctionName(),
+			"fromTime", fromTime,
+			"toTime", toTime,
+		)
+		result []binance.ConvertToETHPrice
+		err    error
+	)
+	logger.Infow("get convert to eth price")
+	const query = `SELECT symbol, price, timestamp FROM binance_convert_to_eth_price WHERE timestamp >= $1 AND timestamp <= $2;`
+	if err := bd.db.Select(&result, query, fromTime, toTime); err != nil {
+		return result, err
+	}
+	return result, err
 }

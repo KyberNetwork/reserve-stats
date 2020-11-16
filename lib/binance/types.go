@@ -17,6 +17,13 @@ type TradeHistory struct {
 	IsIsolated      *bool  `json:"isIsolated,omitempty"`
 }
 
+// ConvertToETHPrice ...
+type ConvertToETHPrice struct {
+	Symbol    string  `db:"symbol"`
+	Price     float64 `db:"price"`
+	Timestamp uint64  `db:"timestamp"`
+}
+
 //DetailOfAsset return detail of an asset
 type DetailOfAsset struct {
 	MinWithdrawAmount float64 `json:"minWithdrawAmount"`

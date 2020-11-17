@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"testing"
-	"time"
 
 	_ "github.com/lib/pq" // sql driver name: "postgres"
 	"github.com/stretchr/testify/assert"
@@ -53,9 +52,8 @@ func TestSaveAndGetAccountingTrades(t *testing.T) {
 		assert.NoError(t, teardown())
 	}()
 
-	ts, err := hdb.GetLastStoredTimestamp("huobi_v1_main")
+	_, err = hdb.GetLastStoredTimestamp("huobi_v1_main")
 	require.NoError(t, err)
-	assert.Equal(t, ts, time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 	err = hdb.UpdateTradeHistory(testData, "huobi_v1_main")
 	require.NoError(t, err)

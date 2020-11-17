@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -143,13 +144,15 @@ func (hdb *HuobiStorage) GetTradeHistory(from, to time.Time) (map[string][]huobi
 func (hdb *HuobiStorage) GetLastStoredTimestamp(account string) (time.Time, error) {
 	var (
 		dbResult uint64
-		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
+		result   = time.Now().Add(time.Hour * 24 * 90 * -1) // 90 days ago
 		logger   = hdb.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	const selectStmt = `SELECT COALESCE(MAX(data->>'created-at'), '0') FROM huobi_trades WHERE account = $1`
 	logger.Debugw("querying trade history...", "query", selectStmt)
 	if err := hdb.db.Get(&dbResult, selectStmt, account); err != nil {
-		return result, err
+		if err != sql.ErrNoRows {
+			return result, err
+		}
 	}
 	if dbResult != 0 {
 		result = timeutil.TimestampMsToTime(dbResult)

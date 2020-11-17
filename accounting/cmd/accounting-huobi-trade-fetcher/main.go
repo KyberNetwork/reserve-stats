@@ -97,7 +97,6 @@ func run(c *cli.Context) error {
 	retryDelay := c.Duration(retryDelayFlag)
 	maxAttempts := c.Int(maxAttemptFlag)
 
-	startTime := from
 	batchDuration := c.Duration(batchDurationFlag)
 	accounts, err := huobi.AccountsFromContext(c)
 	if err != nil {
@@ -105,9 +104,10 @@ func run(c *cli.Context) error {
 	}
 
 	for _, account := range accounts {
+		startTime := from
 		if from.IsZero() {
 			sugar.Info("from timestamp is not provided, get latest timestamp from database")
-			from, err = hdb.GetLastStoredTimestamp(account.Name)
+			startTime, err = hdb.GetLastStoredTimestamp(account.Name)
 			if err != nil {
 				return err
 			}

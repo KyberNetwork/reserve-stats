@@ -189,7 +189,7 @@ func (tldb *TradeLogDB) GetTopReserves(from, to time.Time, limit uint64) (common
 	  JOIN tradelogs on tradelogs.id = split.trade_id
 	  JOIN reserve on split.reserve_id = reserve.id
 	  WHERE tradelogs.timestamp >= $1 AND tradelogs.timestamp <= $2
-	  GROUP BY reserve.address ORDER BY usd_amount DESC
+	  GROUP BY reserve.address, reserve.name ORDER BY usd_amount DESC
 		`
 		topReserves []struct {
 			ReserveAddress string  `db:"reserve_address"`

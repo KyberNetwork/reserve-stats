@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/urfave/cli"
-	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/node"
 )
@@ -79,7 +78,7 @@ func NewEthereumClientFromFlag(c *cli.Context) (*ethclient.Client, error) {
 	cc := &http.Client{Transport: roundTripperExt{c: &http.Client{}}}
 	r, err := rpc.DialHTTPWithClient(ethereumNodeURL, cc)
 	if err != nil {
-		zap.S().Panicw("init custom ethclient failed", "err", err)
+		return nil, err 
 	}
 	client := ethclient.NewClient(r)
 	return client, nil

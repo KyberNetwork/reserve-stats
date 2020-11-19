@@ -22,10 +22,7 @@ import (
 )
 
 const (
-	endpointPrefix = "https://api.binance.com"
-)
-
-const (
+	endpointPrefix      = "https://api.binance.com"
 	badAPIKeyFormatCode = -2014
 	rejfectedMbxKeyCode = -2015
 )
@@ -37,6 +34,9 @@ var (
 	// ErrRejectedMBxKey is the error to returns in
 	// https://github.com/binance-exchange/binance-official-api-docs/blob/master/errors.md#-2015-rejected_mbx_key
 	ErrRejectedMBxKey = errors.New("invalid API-key, IP, or permissions for action")
+
+	// Err500 ...
+	Err500 = errors.New("500 from Binance, its fault")
 )
 
 //Client represent a binance api client
@@ -181,7 +181,15 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 	case 418:
 		err = errors.New("ip has been auto-banned by binance for continuing to send requests after receiving 429 codes")
 	case 500:
-		err = errors.New("500 from Binance, its fault")
+		err = Err500
+		errRsp, err := decodeErrorResponse(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("unexpected response: failed to decode error response: err=%s", err.Error())
+		}
+		logger.Errorw("unexpected response from Binance API",
+			"code", errRsp.Code,
+			"msg", errRsp.Msg,
+		)
 	case 401:
 		errRsp, err := decodeErrorResponse(resp.Body)
 		if err != nil {
@@ -329,7 +337,7 @@ func (bc *Client) GetExchangeInfo() (ExchangeInfo, error) {
 		return result, err
 	}
 
-	endpoint := fmt.Sprintf("%s/api/v1/exchangeInfo", endpointPrefix)
+	endpoint := fmt.Sprintf("%s/api/v3/exchangeInfo", endpointPrefix)
 	res, err := bc.sendRequest(
 		http.MethodGet,
 		endpoint,
@@ -368,6 +376,68 @@ func (bc *Client) GetAccountInfo() (AccountInfo, error) {
 		return result, err
 	}
 
+	err = json.Unmarshal(res, &result)
+	return result, err
+}
+
+// GetMarginTradeHistory return margin trade history
+func (bc *Client) GetMarginTradeHistory(symbol string, fromID uint64) ([]TradeHistory, error) {
+	var (
+		result []TradeHistory
+		err    error
+	)
+	endpoint := fmt.Sprintf("%s/sapi/v1/margin/myTrades", endpointPrefix)
+	res, err := bc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		map[string]string{
+			"symbol": symbol,
+			"fromId": strconv.FormatUint(fromID, 10),
+		},
+		true,
+		time.Now(),
+	)
+	if err == Err500 { // currently if we does not enabled margin trade, binance will return 500, ignore it (Spiros said)
+		return result, nil
+	}
+	if err != nil {
+		return result, err
+	}
+	err = json.Unmarshal(res, &result)
+	return result, err
+}
+
+// AggregatedTrade ...
+type AggregatedTrade struct {
+	AggregateTradeID uint64 `json:"a"`
+	Price            string `json:"p"`
+	Quantity         string `json:"q"`
+	FirstTradeID     uint64 `json:"f"`
+	LastTradeID      uint64 `json:"l"`
+	Timestamp        uint64 `json:"T"`
+}
+
+// GetAggregatedTrades ...
+func (bc *Client) GetAggregatedTrades(symbol string, startTime, endTime uint64) ([]AggregatedTrade, error) {
+	var (
+		result []AggregatedTrade
+		err    error
+	)
+	endpoint := fmt.Sprintf("%s/api/v3/aggTrades", endpointPrefix)
+	res, err := bc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		map[string]string{
+			"symbol":    symbol,
+			"startTime": strconv.FormatUint(startTime, 10),
+			"endTime":   strconv.FormatUint(endTime, 10),
+		},
+		false,
+		time.Now(),
+	)
+	if err != nil {
+		return result, err
+	}
 	err = json.Unmarshal(res, &result)
 	return result, err
 }

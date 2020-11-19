@@ -1,8 +1,8 @@
-FROM golang:1.12-stretch AS build-env
+FROM golang:1.14-stretch AS build-env
 
 COPY . /reserve-stats
 WORKDIR /reserve-stats/burnedfees/cmd/burned-fees-crawler
-RUN go build -v -mod=vendor -o /burned-fees-crawler
+RUN go build -v -mod=mod -o /burned-fees-crawler
 
 FROM debian:stretch
 COPY --from=build-env /burned-fees-crawler /

@@ -8,7 +8,7 @@ import (
 
 //Interface is the storage for withdrawal history
 type Interface interface {
-	UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory) error
-	GetWithdrawHistory(from, to time.Time) ([]huobi.WithdrawHistory, error)
-	GetLastIDStored() (uint64, error)
+	UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory, account string) error
+	GetWithdrawHistory(from, to time.Time) (map[string][]huobi.WithdrawHistory, error)
+	GetLastIDStored(account string) (uint64, error)
 }

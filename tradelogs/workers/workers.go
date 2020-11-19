@@ -22,10 +22,10 @@ import (
 	"github.com/KyberNetwork/tokenrate/coingecko"
 )
 
-type executeJob func(*zap.SugaredLogger) ([]common.TradeLog, error)
+type executeJob func(*zap.SugaredLogger) (*common.CrawlResult, error)
 
 type job interface {
-	execute(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
+	execute(sugar *zap.SugaredLogger) (*common.CrawlResult, error)
 	info() (order int, from, to *big.Int)
 }
 
@@ -54,9 +54,9 @@ type FetcherJob struct {
 }
 
 // retry the given fn function for attempts time with sleep duration between before returns an error.
-func retry(fn executeJob, attempts int, logger *zap.SugaredLogger) ([]common.TradeLog, error) {
+func retry(fn executeJob, attempts int, logger *zap.SugaredLogger) (*common.CrawlResult, error) {
 	var (
-		result []common.TradeLog
+		result *common.CrawlResult
 		err    error
 	)
 
@@ -73,7 +73,7 @@ func retry(fn executeJob, attempts int, logger *zap.SugaredLogger) ([]common.Tra
 	return result, err
 }
 
-func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error) {
+func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (*common.CrawlResult, error) {
 	logger := sugar.With(
 		"from", fj.from.String(),
 		"to", fj.to.String())
@@ -97,26 +97,32 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) ([]common.TradeLog, error)
 	addresses = append(addresses, contracts.OldBurnerContractAddress().MustGetFromContext(fj.c)...)
 	addresses = append(addresses, contracts.OldNetworkContractAddress().MustGetFromContext(fj.c)...)
 	addresses = append(addresses, contracts.OldProxyContractAddress().MustGetFromContext(fj.c)...)
+	addresses = append(addresses, contracts.KyberFeeHandlerContractAddress().MustGetFromContext(fj.c)...)
+	addresses = append(addresses, contracts.KyberStorageContractAddress().MustGetFromContext(fj.c)...)
 
 	// logger.Fatalw("addresses", "addresses", addresses)
 
 	volumeExcludedReserve := contracts.VolumeExcludedReserves().MustGetFromContext(fj.c)
 
+	kyberStorageAddr := contracts.KyberStorageContractAddress().MustGetOneFromContext(fj.c)
+	feeHandlerAddr := contracts.KyberFeeHandlerContractAddress().MustGetOneFromContext(fj.c)
+	kyberNetworkAddr := contracts.NetworkContractAddress().MustGetOneFromContext(fj.c)
+
 	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks,
-		fj.etherscanClient, volumeExcludedReserve, fj.networkProxyAddr)
+		fj.etherscanClient, volumeExcludedReserve, fj.networkProxyAddr, kyberStorageAddr, feeHandlerAddr, kyberNetworkAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	tradeLogs, err := crawler.GetTradeLogs(fj.from, fj.to, time.Second*5)
+	result, err := crawler.GetTradeLogs(fj.from, fj.to, time.Second*5)
 	if err != nil {
 		return nil, err
 	}
 
-	return tradeLogs, nil
+	return result, nil
 }
 
-func (fj *FetcherJob) execute(sugar *zap.SugaredLogger) ([]common.TradeLog, error) {
+func (fj *FetcherJob) execute(sugar *zap.SugaredLogger) (*common.CrawlResult, error) {
 	return retry(fj.fetch, fj.attempts, sugar)
 }
 
@@ -168,7 +174,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 					"from", from.String(),
 					"to", to.String())
 
-				tradeLogs, err := j.execute(sugar)
+				result, err := j.execute(sugar)
 				if err != nil {
 					logger.Errorw("fetcher job execution failed",
 						"from", from.String(),
@@ -183,7 +189,7 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 					"order", order,
 					"from", from.String(),
 					"to", to.String())
-				if err = p.serialSaveTradeLogs(order, tradeLogs, from.Uint64()); err != nil {
+				if err = p.serialSaveTradeLogs(order, result, from.Uint64()); err != nil {
 					p.errCh <- err
 					break
 				}
@@ -221,7 +227,7 @@ func (p *Pool) markAsFailed(order int) {
 }
 
 // serialSaveTradeLogs waits until the job with order right before it completed and saving the logs to database.
-func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradeLog, fromBlock uint64) error {
+func (p *Pool) serialSaveTradeLogs(order int, log *common.CrawlResult, fromBlock uint64) error {
 	var (
 		logger = p.sugar.With(
 			"func", caller.GetCurrentFunctionName(),
@@ -239,7 +245,7 @@ func (p *Pool) serialSaveTradeLogs(order int, logs []common.TradeLog, fromBlock 
 		}
 
 		if order == p.lastCompletedJobOrder+1 {
-			if err = p.storage.SaveTradeLogs(logs); err != nil {
+			if err = p.storage.SaveTradeLogs(log); err != nil {
 				logger.Errorw("save trade logs into db failed",
 					"err", err)
 				p.mutex.Unlock()

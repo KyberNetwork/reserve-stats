@@ -10,7 +10,7 @@ build() {
     local build_dir="$1"
     pushd "$build_dir"
     golangci-lint run --config ${golangci_config} -v
-    go test -v -race -mod=vendor ./...
+    go test -v -race -mod=mod ./...
     popd
 }
 
@@ -55,7 +55,7 @@ case "$build_part" in
         exclude_pattern=${exclude_pattern:2}
         exclude_pattern=$(printf 'github.com/KyberNetwork/reserve-stats/\(%s\)' "$exclude_pattern")
         golangci-lint run --config ${golangci_config}  --exclude "$exclude_pattern"
-        go test -v -race -mod=vendor $(go list -mod=vendor ./... | grep -v "$exclude_pattern")
+        go test -v -race -mod=mod $(go list -mod=mod ./... | grep -v "$exclude_pattern")
 
         if [[ $TRAVIS_BRANCH == 'develop' ]]; then
             build_docs

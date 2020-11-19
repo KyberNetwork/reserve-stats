@@ -10,6 +10,7 @@ import (
 )
 
 func TestTradeLogDB_GetCountryStats(t *testing.T) {
+	t.Skip()
 	const (
 		dbName  = "test_country_stats_volume"
 		country = "DE"

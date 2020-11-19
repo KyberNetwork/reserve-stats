@@ -1,8 +1,8 @@
-FROM golang:1.12-stretch AS build-env
+FROM golang:1.14-stretch AS build-env
 
 COPY . /reserve-stats
 WORKDIR /reserve-stats/accounting/cmd/accounting-listed-token-fetcher
-RUN go build -v -mod=vendor -o /accounting-listed-token-fetcher
+RUN go build -v -mod=mod -o /accounting-listed-token-fetcher
 
 FROM debian:stretch
 COPY --from=build-env /accounting-listed-token-fetcher /

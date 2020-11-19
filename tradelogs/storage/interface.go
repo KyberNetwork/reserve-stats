@@ -11,9 +11,7 @@ import (
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres"
 )
 
@@ -32,8 +30,8 @@ const (
 
 // Interface represent a storage for TradeLogs data
 type Interface interface {
-	LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradeLog, error)
-	LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error)
+	LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradelogV4, error)
+	LoadTradeLogs(from, to time.Time) ([]common.TradelogV4, error)
 	GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[ethereum.Address]map[string]float64, error)
 	GetAssetVolume(token ethereum.Address, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error)
 	GetReserveVolume(rsvAddr ethereum.Address, token ethereum.Address, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error)
@@ -48,7 +46,7 @@ type Interface interface {
 	GetTokenHeatmap(asset ethereum.Address, from, to time.Time, timezone int8) (map[string]common.Heatmap, error)
 	GetIntegrationVolume(fromTime, toTime time.Time) (map[uint64]*common.IntegrationVolume, error)
 	LastBlock() (int64, error)
-	SaveTradeLogs(logs []common.TradeLog) error
+	SaveTradeLogs(log *common.CrawlResult) error
 	GetTokenSymbol(address string) (string, error)
 	UpdateTokens(tokenAddresses, symbols []string) error
 	GetStats(from, to time.Time) (common.StatsResponse, error)
@@ -88,23 +86,23 @@ func NewStorageInterfaceFromContext(sugar *zap.SugaredLogger, c *cli.Context, to
 	dbEngine := c.String(DBEngineFlag)
 	kncAddr := KNCAddressFromContext(c)
 	switch dbEngine {
-	case InfluxDBEngine:
-		influxClient, err := influxdb.NewClientFromContext(c)
-		if err != nil {
-			return nil, err
-		}
+	// case InfluxDBEngine:
+	// 	influxClient, err := influxdb.NewClientFromContext(c)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
 
-		influxStorage, err := influx.NewInfluxStorage(
-			sugar,
-			common.DatabaseName,
-			influxClient,
-			tokenAmountFormatter,
-			kncAddr,
-		)
-		if err != nil {
-			return nil, err
-		}
-		return influxStorage, nil
+	// 	influxStorage, err := influx.NewInfluxStorage(
+	// 		sugar,
+	// 		common.DatabaseName,
+	// 		influxClient,
+	// 		tokenAmountFormatter,
+	// 		kncAddr,
+	// 	)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	return influxStorage, nil
 	case PostgresDBEngine:
 		db, err := libapp.NewDBFromContext(c)
 		if err != nil {

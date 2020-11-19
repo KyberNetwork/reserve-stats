@@ -25,7 +25,7 @@ func (tldb *TradeLogDB) GetTradeSummary(from, to time.Time, timezone int8) (map[
 
 	tradelogQuery = `SELECT ` + timeField + ` AS time, 
 		COUNT(DISTINCT(user_address_id)) AS unique_address,
-		SUM(src_burn_amount) + SUM(dst_burn_amount) AS total_burn_fee,
+		-- SUM(src_burn_amount) + SUM(dst_burn_amount) AS total_burn_fee,
 		COUNT(CASE WHEN kyced THEN 1 END) AS kyced,
 		COUNT(CASE WHEN is_first_trade THEN 1 END) AS count_new_trades
 		FROM tradelogs
@@ -63,7 +63,7 @@ func (tldb *TradeLogDB) GetTradeSummary(from, to time.Time, timezone int8) (map[
 		AVG(eth_amount) eth_per_trade,
 		SUM(eth_amount*eth_usd_rate) as total_usd_volume, 
 		AVG(eth_amount*eth_usd_rate) usd_per_trade, count(1) as total_trade 
-	FROM "%[2]s"
+	FROM "tradelogs"
 	WHERE timestamp >= $1 AND timestamp < $2
 	GROUP BY time
 	`, timeField, schema.TradeLogsTableName)

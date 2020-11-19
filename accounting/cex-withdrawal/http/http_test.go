@@ -86,7 +86,9 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 					err := json.NewDecoder(resp.Body).Decode(&result)
 					require.NoError(t, err)
 					assert.Equal(t, response{
-						Huobi: huobiTestData,
+						Huobi: map[string][]huobi.WithdrawHistory{
+							"huobi_v1_main": huobiTestData,
+						},
 					}, result)
 				},
 			},
@@ -105,8 +107,12 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 					err := json.NewDecoder(resp.Body).Decode(&result)
 					require.NoError(t, err)
 					assert.Equal(t, response{
-						Huobi:   huobiTestData,
-						Binance: binanceTestData,
+						Huobi: map[string][]huobi.WithdrawHistory{
+							"huobi_v1_main": huobiTestData,
+						},
+						Binance: map[string][]binance.WithdrawHistory{
+							"binance_1": binanceTestData,
+						},
 					}, result)
 				},
 			},
@@ -128,10 +134,10 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 		err error
 	)
 
-	err = hdb.UpdateWithdrawHistory(huobiTestData)
+	err = hdb.UpdateWithdrawHistory(huobiTestData, "huobi_v1_main")
 	require.NoError(t, err)
 
-	err = bdb.UpdateWithdrawHistory(binanceTestData)
+	err = bdb.UpdateWithdrawHistory(binanceTestData, "binance_1")
 	require.NoError(t, err)
 
 	for _, tc := range tests {

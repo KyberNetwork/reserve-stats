@@ -42,41 +42,45 @@ var (
 			Batch:           "",
 		},
 	}
-	expectedHuobiTrades = []huobi.TradeHistory{
-		{
-			ID:              59378,
-			Symbol:          "ethusdt",
-			AccountID:       100009,
-			Amount:          "10.1000000000",
-			Price:           "100.1000000000",
-			CreatedAt:       1526428800000,
-			Type:            "buy-limit",
-			FieldAmount:     "10.1000000000",
-			FieldCashAmount: "1011.0100000000",
-			FieldFees:       "0.0202000000",
-			FinishedAt:      1526428800000,
-			UserID:          1000,
-			Source:          "api",
-			State:           "filled",
-			CanceledAt:      0,
-			Exchange:        "huobi",
-			Batch:           "",
+	expectedHuobiTrades = map[string][]huobi.TradeHistory{
+		"huobi_v1_main": {
+			{
+				ID:              59378,
+				Symbol:          "ethusdt",
+				AccountID:       100009,
+				Amount:          "10.1000000000",
+				Price:           "100.1000000000",
+				CreatedAt:       1526428800000,
+				Type:            "buy-limit",
+				FieldAmount:     "10.1000000000",
+				FieldCashAmount: "1011.0100000000",
+				FieldFees:       "0.0202000000",
+				FinishedAt:      1526428800000,
+				UserID:          1000,
+				Source:          "api",
+				State:           "filled",
+				CanceledAt:      0,
+				Exchange:        "huobi",
+				Batch:           "",
+			},
 		},
 	}
-	binanceTrades = []binance.TradeHistory{
-		{
-			Symbol:          "BNBBTC",
-			ID:              28457,
-			OrderID:         100234,
-			Price:           "4.00000100",
-			Quantity:        "12.00000000",
-			QuoteQuantity:   "48.000012",
-			Commission:      "10.10000000",
-			CommissionAsset: "BNB",
-			Time:            1528675200000,
-			IsBuyer:         true,
-			IsMaker:         false,
-			IsBestMatch:     false,
+	binanceTrades = map[string][]binance.TradeHistory{
+		"binance_1": {
+			{
+				Symbol:          "BNBBTC",
+				ID:              28457,
+				OrderID:         100234,
+				Price:           "4.00000100",
+				Quantity:        "12.00000000",
+				QuoteQuantity:   "48.000012",
+				Commission:      "10.10000000",
+				CommissionAsset: "BNB",
+				Time:            1528675200000,
+				IsBuyer:         true,
+				IsMaker:         false,
+				IsBestMatch:     false,
+			},
 		},
 	}
 )
@@ -220,7 +224,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	if err = hs.UpdateTradeHistory(huobiTrades); err != nil {
+	if err = hs.UpdateTradeHistory(huobiTrades, "huobi_v1_main"); err != nil {
 		log.Fatal(err)
 	}
 
@@ -229,7 +233,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	if err = bs.UpdateTradeHistory(binanceTrades); err != nil {
+	if err = bs.UpdateTradeHistory(binanceTrades["binance_1"], "binance_1"); err != nil {
 		log.Fatal(err)
 	}
 

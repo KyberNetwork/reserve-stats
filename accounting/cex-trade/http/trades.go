@@ -25,8 +25,8 @@ type getTradesQuery struct {
 }
 
 type getTradesResponse struct {
-	Huobi   []huobi.TradeHistory   `json:"huobi,omitempty"`
-	Binance []binance.TradeHistory `json:"binance,omitempty"`
+	Huobi   map[string][]huobi.TradeHistory   `json:"huobi,omitempty"`
+	Binance map[string][]binance.TradeHistory `json:"binance,omitempty"`
 }
 
 // getTrades returns list of trades from centralized exchanges.
@@ -34,8 +34,8 @@ func (s *Server) getTrades(c *gin.Context) {
 	var (
 		logger        = s.sugar.With("func", caller.GetCurrentFunctionName())
 		query         getTradesQuery
-		huobiTrades   []huobi.TradeHistory
-		binanceTrades []binance.TradeHistory
+		huobiTrades   = make(map[string][]huobi.TradeHistory)
+		binanceTrades = make(map[string][]binance.TradeHistory) // map account with its trades
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -91,6 +91,18 @@ func (s *Server) getTrades(c *gin.Context) {
 				)
 				return
 			}
+			binanceMarginTrades, err := s.bs.GetMarginTradeHistory(fromTime, toTime)
+			if err != nil {
+				httputil.ResponseFailure(
+					c,
+					http.StatusInternalServerError,
+					err,
+				)
+				return
+			}
+			for account := range binanceMarginTrades {
+				binanceTrades[account] = append(binanceTrades[account], binanceMarginTrades[account]...) // append margin trades into spot trades
+			}
 		}
 	}
 
@@ -98,4 +110,35 @@ func (s *Server) getTrades(c *gin.Context) {
 		Huobi:   huobiTrades,
 		Binance: binanceTrades,
 	})
+}
+
+type getSpecialTradesQuery struct {
+	httputil.TimeRangeQuery
+}
+
+func (s *Server) getConvertToETHPrice(c *gin.Context) {
+	var (
+		query getSpecialTradesQuery
+	)
+	if err := c.ShouldBindQuery(&query); err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusBadRequest,
+			err,
+		)
+		return
+	}
+	result, err := s.bs.GetConvertToETHPrice(query.From, query.To)
+	if err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		result,
+	)
 }

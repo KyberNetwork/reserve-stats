@@ -52,14 +52,14 @@ func TestBinanceTradeStorage(t *testing.T) {
 		require.NoError(t, teardown())
 	}()
 
-	ts, err := binanceStorage.GetLastStoredID("KNCETH")
+	ts, err := binanceStorage.GetLastStoredID("KNCETH", "binance_1")
 	require.NoError(t, err)
 	assert.Zero(t, ts)
 
-	err = binanceStorage.UpdateTradeHistory(testData)
+	err = binanceStorage.UpdateTradeHistory(testData, "binance_1")
 	assert.NoError(t, err)
 
-	lastStoredID, err := binanceStorage.GetLastStoredID("KNCETH")
+	lastStoredID, err := binanceStorage.GetLastStoredID("KNCETH", "binance_1")
 	require.NoError(t, err)
 	assert.Equal(t, uint64(961633), lastStoredID)
 
@@ -69,17 +69,17 @@ func TestBinanceTradeStorage(t *testing.T) {
 
 	tradeHistories, err := binanceStorage.GetTradeHistory(fromTime, toTime)
 	require.NoError(t, err)
-	assert.Equal(t, testData, tradeHistories)
+	assert.Equal(t, testData, tradeHistories["binance_1"])
 
-	ts, err = binanceStorage.GetLastStoredID("KNCETH")
+	ts, err = binanceStorage.GetLastStoredID("KNCETH", "binance_1")
 	require.NoError(t, err)
 	assert.NotZero(t, ts)
 
 	// test stored duplicate data
-	err = binanceStorage.UpdateTradeHistory(testData)
+	err = binanceStorage.UpdateTradeHistory(testData, "binance_1")
 	assert.NoError(t, err)
 
 	tradeHistories, err = binanceStorage.GetTradeHistory(fromTime, toTime)
 	require.NoError(t, err)
-	assert.Equal(t, testData, tradeHistories)
+	assert.Equal(t, testData, tradeHistories["binance_1"])
 }

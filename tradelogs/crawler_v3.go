@@ -25,14 +25,14 @@ func init() {
 		panic(err)
 	}
 }
-func (crawler *Crawler) fetchTradeLogV3(fromBlock, toBlock *big.Int, timeout time.Duration) ([]common.TradeLog, error) {
-	var result []common.TradeLog
-
+func (crawler *Crawler) fetchTradeLogV3(fromBlock, toBlock *big.Int, timeout time.Duration) (*common.CrawlResult, error) {
 	topics := [][]ethereum.Hash{
 		{
 			ethereum.HexToHash(burnFeeEvent),
 			ethereum.HexToHash(feeToWalletEvent),
 			ethereum.HexToHash(kyberTradeEvent),
+			ethereum.HexToHash(addReserveToStorageEvent),
+			ethereum.HexToHash(reserveRebateWalletSetEvent),
 		},
 	}
 
@@ -41,12 +41,7 @@ func (crawler *Crawler) fetchTradeLogV3(fromBlock, toBlock *big.Int, timeout tim
 		return nil, errors.Wrap(err, "failed to fetch log by topic")
 	}
 
-	result, err = crawler.assembleTradeLogsV3(typeLogs)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return crawler.assembleTradeLogsV3(typeLogs)
 }
 
 type tradeWithHintParam struct {
@@ -85,10 +80,10 @@ func decodeTradeInputParam(data []byte) (out tradeWithHintParam, err error) { //
 		return tradeWithHintParam{}, errors.Errorf("unexpected method %s", method.Name)
 	}
 }
-func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.TradeLog, error) {
+func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) (*common.CrawlResult, error) {
 	var (
-		result   []common.TradeLog
-		tradeLog common.TradeLog
+		result   common.CrawlResult
+		tradeLog common.TradelogV4
 		err      error
 	)
 
@@ -98,11 +93,19 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 		}
 
 		if len(log.Topics) == 0 {
-			return result, errors.New("log item has no topic")
+			return &result, errors.New("log item has no topic")
 		}
 
 		topic := log.Topics[0]
 		switch topic.Hex() {
+		case addReserveToStorageEvent:
+			if err = crawler.fillAddReserveToStorage(&result, log); err != nil {
+				return &result, err
+			}
+		case reserveRebateWalletSetEvent:
+			if err = crawler.fillRebateWalletSet(&result, log); err != nil {
+				return &result, err
+			}
 		case feeToWalletEvent:
 			if tradeLog, err = fillWalletFees(tradeLog, log); err != nil {
 				return nil, err
@@ -112,6 +115,7 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 				return nil, err
 			}
 		case kyberTradeEvent:
+			tradeLog.Version = 3 // tradelog version 3
 			if tradeLog, err = fillKyberTradeV3(tradeLog, log, crawler.volumeExludedReserves); err != nil {
 				return nil, err
 			}
@@ -119,23 +123,22 @@ func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) ([]common.Tra
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)
 			}
-			tradeLog.GasUsed = receipt.GasUsed
+			tradeLog.TxDetail.GasUsed = receipt.GasUsed
 			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
 				return nil, errors.Wrapf(err, "failed to resolve timestamp by block_number %v", log.BlockNumber)
 			}
 			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
 			if err != nil {
-				return result, errors.Wrap(err, "could not update trade log basic info")
+				return &result, errors.Wrap(err, "could not update trade log basic info")
 			}
-			tradeLog.TransactionFee = big.NewInt(0).Mul(tradeLog.GasPrice, big.NewInt(int64(tradeLog.GasUsed)))
+			tradeLog.TxDetail.TransactionFee = big.NewInt(0).Mul(tradeLog.TxDetail.GasPrice, big.NewInt(int64(tradeLog.TxDetail.GasUsed)))
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
-			// one trade only has one and only ExecuteTrade event
-			result = append(result, tradeLog)
-			tradeLog = common.TradeLog{}
+			result.Trades = append(result.Trades, tradeLog)
+			tradeLog = common.TradelogV4{}
 		default:
 			return nil, errUnknownLogTopic
 		}
 	}
 
-	return result, nil
+	return &result, nil
 }

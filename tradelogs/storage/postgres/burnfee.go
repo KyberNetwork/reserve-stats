@@ -14,7 +14,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 )
 
-// Get aggregated Burn fee by hour or day
+// GetAggregatedBurnFee Get aggregated Burn fee by hour or day
 func (tldb *TradeLogDB) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[ethereum.Address]map[string]float64, error) {
 	var (
 		timeField string
@@ -55,17 +55,12 @@ func (tldb *TradeLogDB) GetAggregatedBurnFee(from, to time.Time, freq string, re
 	integrationQuery := fmt.Sprintf(`
 		SELECT time, address , SUM(amount) as amount
 		FROM (
-			SELECT %[1]s as time, src_burn_amount AS amount, c.address AS address
-			FROM "%[2]s" b
-			INNER JOIN "%[3]s" c ON b.src_reserve_address_id=c.id
-			WHERE timestamp >= $1 AND timestamp < $2 %[4]s
-		UNION ALL
-			SELECT %[1]s as time, dst_burn_amount AS amount, c.address AS address
-			FROM "%[2]s" b
-			INNER JOIN "%[3]s" c ON b.dst_reserve_address_id=c.id
-			WHERE timestamp >= $1 AND timestamp < $2 %[4]s
+			SELECT %[1]s as time, burn AS amount, reserve_address AS address
+			FROM "fee" b
+			JOIN tradelogs on tradelogs.id = fee.trade_id
+			WHERE tradelogs.timestamp >= $1 AND tradelogs.timestamp < $2 %[2]s
 		) a GROUP BY time,address
-	`, timeField, schema.TradeLogsTableName, schema.ReserveTableName, addrCondition)
+	`, timeField, addrCondition)
 
 	var records []struct {
 		Amount  float64   `db:"amount"`

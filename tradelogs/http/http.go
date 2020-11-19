@@ -16,6 +16,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
+	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
@@ -136,7 +137,7 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 
 	for i, log := range tradeLogs {
 		// get user profile
-		up, err := sv.getUserProfile(tradeLogs[i].UserAddress)
+		up, err := sv.getUserProfile(tradeLogs[i].User.UserAddress)
 		if err != nil {
 			sv.sugar.Errorw(err.Error(), "fromTime", fromTime, "toTime", toTime)
 			libhttputil.ResponseFailure(
@@ -146,18 +147,18 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 			)
 			return
 		}
-		tradeLogs[i].UserName = up.UserName
-		tradeLogs[i].ProfileID = up.ProfileID
-		if (tradeLogs[i].IntegrationApp != appname.KyberSwapAppName) && (len(log.WalletFees) > 0) {
-			name, avai := addrToAppName[log.WalletFees[0].WalletAddress]
+		tradeLogs[i].User.UserName = up.UserName
+		tradeLogs[i].User.ProfileID = up.ProfileID
+		if tradeLogs[i].IntegrationApp != appname.KyberSwapAppName {
+			name, avai := addrToAppName[log.WalletAddress]
 			if avai {
 				tradeLogs[i].IntegrationApp = name
 			}
 		}
 
 		// resolve token symbol
-		if !blockchain.IsZeroAddress(log.SrcAddress) {
-			srcSymbol, err := sv.getTokenSymbol(log.SrcAddress)
+		if !blockchain.IsZeroAddress(log.TokenInfo.SrcAddress) {
+			srcSymbol, err := sv.getTokenSymbol(log.TokenInfo.SrcAddress)
 			if err != nil {
 				libhttputil.ResponseFailure(
 					c,
@@ -166,11 +167,11 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 				)
 				return
 			}
-			tradeLogs[i].SrcSymbol = srcSymbol
+			tradeLogs[i].TokenInfo.SrcSymbol = srcSymbol
 		}
 
-		if !blockchain.IsZeroAddress(log.DestAddress) {
-			dstSymbol, err := sv.getTokenSymbol(log.DestAddress)
+		if !blockchain.IsZeroAddress(log.TokenInfo.DestAddress) {
+			dstSymbol, err := sv.getTokenSymbol(log.TokenInfo.DestAddress)
 			if err != nil {
 				libhttputil.ResponseFailure(
 					c,
@@ -179,7 +180,7 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 				)
 				return
 			}
-			tradeLogs[i].DestSymbol = dstSymbol
+			tradeLogs[i].TokenInfo.DestSymbol = dstSymbol
 		}
 	}
 
@@ -309,6 +310,7 @@ type tradeLogsByTxHashParam struct {
 func (sv *Server) getTradeLogsByTx(c *gin.Context) {
 	var param tradeLogsByTxHashParam
 	if err := c.ShouldBindUri(&param); err != nil {
+		sv.sugar.Errorw("failed to bind uri query", "error", err)
 		libhttputil.ResponseFailure(
 			c, http.StatusInternalServerError, err,
 		)
@@ -322,6 +324,7 @@ func (sv *Server) getTradeLogsByTx(c *gin.Context) {
 	}
 	tradeLogs, err := sv.storage.LoadTradeLogsByTxHash(ethereum.HexToHash(param.TxHash))
 	if err != nil {
+		sv.sugar.Errorw("failed to get tradelog from database", "error", err)
 		libhttputil.ResponseFailure(
 			c, http.StatusInternalServerError, err,
 		)
@@ -428,6 +431,58 @@ func (sv *Server) getTopReserves(c *gin.Context) {
 	)
 }
 
+type bigTradesQuery struct {
+	FromTime uint64 `form:"from"`
+	ToTime   uint64 `form:"to"`
+}
+
+func (sv *Server) getBigTrades(c *gin.Context) {
+	var (
+		query bigTradesQuery
+	)
+	if err := c.ShouldBindQuery(&query); err != nil {
+		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
+	fromTime := timeutil.TimestampMsToTime(query.FromTime)
+	toTime := timeutil.TimestampMsToTime(query.ToTime)
+	if query.ToTime == 0 {
+		toTime = time.Now()
+	}
+	bigTrades, err := sv.storage.GetNotTwittedTrades(fromTime, toTime)
+	if err != nil {
+		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		bigTrades,
+	)
+}
+
+type updateBigTradesTwittedRequest struct {
+	IDs []uint64 `json:"ids"`
+}
+
+func (sv *Server) updateBigTradesTwitted(c *gin.Context) {
+	var (
+		query updateBigTradesTwittedRequest
+	)
+	if err := c.ShouldBindJSON(&query); err != nil {
+		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := sv.storage.UpdateBigTradesTwitted(query.IDs); err != nil {
+		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		nil,
+	)
+}
+
 func (sv *Server) setupRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/trade-logs", sv.getTradeLogs)
@@ -454,6 +509,9 @@ func (sv *Server) setupRouter() *gin.Engine {
 	r.GET("/top-tokens", sv.getTopTokens)
 	r.GET("/top-integrations", sv.getTopIntegration)
 	r.GET("/top-reserves", sv.getTopReserves)
+
+	r.GET("/big-trades", sv.getBigTrades)
+	r.PUT("/big-trades", sv.updateBigTradesTwitted)
 
 	return r
 }

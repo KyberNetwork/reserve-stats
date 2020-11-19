@@ -20,10 +20,10 @@ func (tldb *TradeLogDB) GetIntegrationVolume(fromTime, toTime time.Time) (map[ui
 			SUM(eth_amount * (CASE WHEN integration_app = '%[1]s' then 1 else 0 end)) as integration_volume,
 			SUM(eth_amount * (CASE WHEN integration_app != '%[1]s' then 1 else 0 end)) as non_integration_volume,
 			%[2]s AS time
-		FROM "%[3]s" 
+		FROM "tradelogs" 
 		WHERE timestamp >= $1 and timestamp < $2
 		GROUP BY time`,
-		appname.KyberSwapAppName, schema.BuildDateTruncField("day", 0), schema.TradeLogsTableName)
+		appname.KyberSwapAppName, schema.BuildDateTruncField("day", 0))
 	logger.Debugw("prepare statement", "stmt", integrationQuery)
 	fromTime = schema.RoundTime(fromTime, "day", 0)
 	toTime = schema.RoundTime(toTime, "day", 0).Add(time.Hour * 24)

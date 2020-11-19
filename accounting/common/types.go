@@ -157,3 +157,10 @@ func (l *ListedToken) MarshalJSON() ([]byte, error) {
 		Timestamp:        ts,
 	})
 }
+
+// Account represent an account in binance, huobi
+type Account struct {
+	Name      string `json:"name"`
+	APIKey    string `json:"api_key"`
+	SecretKey string `json:"secret_key"`
+}

@@ -179,7 +179,7 @@ func (p *Pool) markAsFailed(order int) {
 	}
 }
 
-func (p *Pool) serialSaveTradeLogs(
+func (p *Pool) serialSaveTradeLogs( // TODO: rename this as it is rates record not tradelogs
 	order int,
 	blockNumber uint64,
 	rates map[string]map[string]common.ReserveRateEntry) error {
@@ -202,7 +202,7 @@ func (p *Pool) serialSaveTradeLogs(
 
 		if order == p.lastCompletedJobOrder+1 {
 			if err = p.rateStorage.UpdateRatesRecords(blockNumber, rates); err != nil {
-				logger.Error("saving rates to persistent storage",
+				logger.Errorw("saving rates to persistent storage",
 					"err", err)
 				p.mutex.Unlock()
 				p.markAsFailed(order)

@@ -94,7 +94,7 @@ func (adb *AppNameDB) Update(app common.Application) error {
 		if !ok {
 			return err
 		}
-		if pErr.Code = "P0002"; pErr != nil {
+		if pErr != nil && pErr.Code == "P0002" {
 			return ErrNotExists
 		}
 		return pErr

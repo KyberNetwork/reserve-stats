@@ -37,16 +37,17 @@ type queryInput struct {
 }
 
 type response struct {
-	Huobi   []huobi.WithdrawHistory   `json:"huobi,omitempty"`
-	Binance []binance.WithdrawHistory `json:"binance,omitempty"`
+	Huobi   map[string][]huobi.WithdrawHistory   `json:"huobi,omitempty"`
+	Binance map[string][]binance.WithdrawHistory `json:"binance,omitempty"`
 }
 
 func (sv *Server) get(c *gin.Context) {
 	var (
-		query              queryInput
-		logger             = sv.sugar.With("func", caller.GetCurrentFunctionName())
-		huobiWithdrawals   []huobi.WithdrawHistory
-		binanceWithdrawals []binance.WithdrawHistory
+		query            queryInput
+		logger           = sv.sugar.With("func", caller.GetCurrentFunctionName())
+		huobiWithdrawals = make(map[string][]huobi.WithdrawHistory)
+		// binanceWithdrawals []binance.WithdrawHistory
+		binanceWithdrawals = make(map[string][]binance.WithdrawHistory) // map account with its trades
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {

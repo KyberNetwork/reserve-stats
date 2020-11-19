@@ -1,8 +1,8 @@
-FROM golang:1.12-stretch AS build-env
+FROM golang:1.14-stretch AS build-env
 
 COPY . /reserve-stats
 WORKDIR /reserve-stats/accounting/cmd/accounting-reserve-transactions-api
-RUN go build -v -mod=vendor -o /accounting-reserve-transactions-api
+RUN go build -v -mod=mod -o /accounting-reserve-transactions-api
 
 FROM debian:stretch
 COPY --from=build-env /accounting-reserve-transactions-api /

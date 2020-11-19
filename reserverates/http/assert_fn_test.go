@@ -22,7 +22,7 @@ func expectCorrectRate(t *testing.T, resp *httptest.ResponseRecorder) {
 		testRsvAddress: {
 			"ETH-KNC": {
 				{
-					Timestamp: timeutil.TimestampMsToTime(testTs),
+					Timestamp: timeutil.TimestampMsToTime(testTS),
 					FromBlock: testFromBlock,
 					ToBlock:   testToBlock,
 					Rates: common.ReserveRateEntry{
@@ -35,7 +35,7 @@ func expectCorrectRate(t *testing.T, resp *httptest.ResponseRecorder) {
 			},
 			"ETH-ZRX": {
 				{
-					Timestamp: timeutil.TimestampMsToTime(testTs),
+					Timestamp: timeutil.TimestampMsToTime(testTS),
 					FromBlock: testFromBlock,
 					ToBlock:   testToBlock,
 					Rates: common.ReserveRateEntry{

@@ -71,11 +71,6 @@ func run(c *cli.Context) error {
 	}
 	defer flush()
 
-	huobiClient, err := huobi.NewClientFromContext(c, sugar)
-	if err != nil {
-		return err
-	}
-
 	db, err := libapp.NewDBFromContext(c)
 	if err != nil {
 		return fmt.Errorf("cannot create db from flags: %v", err)
@@ -84,21 +79,12 @@ func run(c *cli.Context) error {
 	hdb, err := postgres.NewDB(sugar, db)
 	if err != nil {
 		return fmt.Errorf("cannot create huobi database instance: %v", err)
-
 	}
 
 	from, err := timeutil.FromTimeMillisFromContext(c)
 	if err != nil {
 		return fmt.Errorf("cannot get from time: %v", err)
 	}
-	if from.IsZero() {
-		sugar.Info("from timestamp is not provided, get latest timestamp from database")
-		from, err = hdb.GetLastStoredTimestamp()
-		if err != nil {
-			return err
-		}
-	}
-	sugar.Infow("fetch trade from time", "time", from)
 
 	to, err := timeutil.ToTimeMillisFromContext(c)
 	if err != nil {
@@ -111,36 +97,55 @@ func run(c *cli.Context) error {
 	retryDelay := c.Duration(retryDelayFlag)
 	maxAttempts := c.Int(maxAttemptFlag)
 
-	startTime := from
-	fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts)
 	batchDuration := c.Duration(batchDurationFlag)
-	// fetch each day to reduce memory footprint of the fetch and storage
-	for {
-		next := startTime.Add(batchDuration)
-		if to.Before(next) {
-			next = to
+	accounts, err := huobi.AccountsFromContext(c)
+	if err != nil {
+		return err
+	}
+
+	for _, account := range accounts {
+		startTime := from
+		if from.IsZero() {
+			sugar.Info("from timestamp is not provided, get latest timestamp from database")
+			startTime, err = hdb.GetLastStoredTimestamp(account.Name)
+			if err != nil {
+				return err
+			}
 		}
-		data, err := fetcher.GetTradeHistory(startTime, next)
+		sugar.Infow("fetch trade from time", "time", from)
+		// fetch each day to reduce memory footprint of the fetch and storage
+		huobiClient, err := huobi.NewClient(account.APIKey, account.SecretKey, sugar)
 		if err != nil {
 			return err
 		}
+		fetcher := huobiFetcher.NewFetcher(sugar, huobiClient, retryDelay, maxAttempts)
+		for {
+			next := startTime.Add(batchDuration)
+			if to.Before(next) {
+				next = to
+			}
+			data, err := fetcher.GetTradeHistory(startTime, next)
+			if err != nil {
+				return err
+			}
 
-		var trades = make(map[int64]huobi.TradeHistory)
-		for _, record := range data {
-			for _, trade := range record {
-				if err := updateTradeRecord(trades, trade); err != nil {
-					return err
+			var trades = make(map[int64]huobi.TradeHistory)
+			for _, record := range data {
+				for _, trade := range record {
+					if err := updateTradeRecord(trades, trade); err != nil {
+						return err
+					}
 				}
 			}
-		}
 
-		if err = hdb.UpdateTradeHistory(trades); err != nil {
-			return err
-		}
+			if err = hdb.UpdateTradeHistory(trades, account.Name); err != nil {
+				return err
+			}
 
-		startTime = next
-		if !startTime.Before(to) {
-			break
+			startTime = next
+			if !startTime.Before(to) {
+				break
+			}
 		}
 	}
 	return nil

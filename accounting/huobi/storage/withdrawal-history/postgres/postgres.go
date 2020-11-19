@@ -35,7 +35,8 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*HuobiStorage, error) {
 ) ;
 
 CREATE INDEX IF NOT EXISTS huobi_withdrawals_time_idx ON huobi_withdrawals ((data ->> 'created-at'));
-
+ALTER TABLE huobi_withdrawals ADD COLUMN IF NOT EXISTS account TEXT;
+ALTER TABLE huobi_withdrawals ADD COLUMN IF NOT EXISTS timestamp TIMESTAMPTZ;
 `
 
 	hs := &HuobiStorage{
@@ -60,19 +61,22 @@ func (hdb *HuobiStorage) Close() error {
 }
 
 //UpdateWithdrawHistory store the WithdrawHistory rate at that blockInfo
-func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory) (err error) {
+func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory, account string) (err error) {
 	var (
 		logger = hdb.sugar.With(
 			"func", caller.GetCurrentFunctionName(),
 			"len(withdraws)", len(withdraws),
 		)
-		ids      []uint64
-		dataJSON [][]byte
+		ids        []uint64
+		dataJSON   [][]byte
+		timestamps []time.Time
 	)
-	const updateStmt = `INSERT INTO huobi_withdrawals(id, data)
+	const updateStmt = `INSERT INTO huobi_withdrawals(id, data, timestamp, account)
 	VALUES ( 
 		unnest($1::BIGINT[]),
-		unnest($2::JSONB[])
+		unnest($2::JSONB[]),
+		unnest($3::TIMESTAMPTZ[]),
+		$4
 	)
 	ON CONFLICT ON CONSTRAINT huobi_withdrawals_pk DO NOTHING;`
 	logger.Debugw("updating tradeHistory...", "query", updateStmt)
@@ -88,10 +92,12 @@ func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory
 		if err != nil {
 			return err
 		}
+		createdAt := timeutil.TimestampMsToTime(withdraw.CreatedAt)
 		ids = append(ids, withdraw.ID)
 		dataJSON = append(dataJSON, data)
+		timestamps = append(timestamps, createdAt)
 	}
-	_, err = tx.Exec(updateStmt, pq.Array(ids), pq.Array(dataJSON))
+	_, err = tx.Exec(updateStmt, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps), account)
 	if err != nil {
 		return err
 	}
@@ -99,11 +105,17 @@ func (hdb *HuobiStorage) UpdateWithdrawHistory(withdraws []huobi.WithdrawHistory
 	return err
 }
 
+// WithdrawRecord ...
+type WithdrawRecord struct {
+	Account string        `db:"account"`
+	Data    pq.ByteaArray `db:"data"`
+}
+
 //GetWithdrawHistory return tradehistory between from.. to.. in its json []byte form
-func (hdb *HuobiStorage) GetWithdrawHistory(from, to time.Time) ([]huobi.WithdrawHistory, error) {
+func (hdb *HuobiStorage) GetWithdrawHistory(from, to time.Time) (map[string][]huobi.WithdrawHistory, error) {
 	var (
-		dbResult [][]byte
-		result   []huobi.WithdrawHistory
+		dbResult []WithdrawRecord
+		result   = make(map[string][]huobi.WithdrawHistory)
 		logger   = hdb.sugar.With(
 			"func", caller.GetCurrentFunctionName(),
 			"from", from.String(),
@@ -111,32 +123,36 @@ func (hdb *HuobiStorage) GetWithdrawHistory(from, to time.Time) ([]huobi.Withdra
 		)
 		tmp huobi.WithdrawHistory
 	)
-	const selectStmt = `SELECT data FROM huobi_withdrawals WHERE data->>'created-at'>=$1 AND data->>'created-at'<$2`
+	const selectStmt = `SELECT account, ARRAY_AGG(data) as data FROM huobi_withdrawals WHERE data->>'created-at'>=$1 AND data->>'created-at'<$2 GROUP BY account;`
 	logger.Debugw("querying trade history...", "query", selectStmt)
 	if err := hdb.db.Select(&dbResult, selectStmt, timeutil.TimeToTimestampMs(from), timeutil.TimeToTimestampMs(to)); err != nil {
 		return result, err
 	}
-	for _, data := range dbResult {
-		if err := json.Unmarshal(data, &tmp); err != nil {
-			return result, err
+	for _, record := range dbResult {
+		arrResult := []huobi.WithdrawHistory{}
+		for _, data := range record.Data {
+			if err := json.Unmarshal(data, &tmp); err != nil {
+				return result, err
+			}
+			arrResult = append(arrResult, tmp)
 		}
-		result = append(result, tmp)
+		result[record.Account] = arrResult
 	}
 	return result, nil
 }
 
 //GetLastIDStored return lastest id stored in database
-func (hdb *HuobiStorage) GetLastIDStored() (uint64, error) {
+func (hdb *HuobiStorage) GetLastIDStored(account string) (uint64, error) {
 	var (
 		result uint64
 		logger = hdb.sugar.With(
 			"func", caller.GetCurrentFunctionName(),
 		)
 	)
-	const selectStmt = `SELECT COALESCE(MAX(id),0) FROM huobi_withdrawals`
+	const selectStmt = `SELECT COALESCE(MAX(id),0) FROM huobi_withdrawals WHERE account = $1`
 	logger.Debugw("querying trade history...", "query", selectStmt)
 
-	if err := hdb.db.Get(&result, selectStmt); err != nil {
+	if err := hdb.db.Get(&result, selectStmt, account); err != nil {
 		return 0, err
 	}
 

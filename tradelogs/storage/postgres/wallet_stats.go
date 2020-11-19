@@ -13,31 +13,31 @@ import (
 // GetWalletStats return wallet stats group by day
 func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, timezone int8) (map[uint64]common.WalletStats, error) {
 	var (
-		err          error
-		ethCondition string
+		err error
 	)
-	logger := tldb.sugar.With("from", from, "to", to, "walletAddr", walletAddr,
-		"timezone", timezone, "func", caller.GetCurrentFunctionName())
+	logger := tldb.sugar.With(
+		"from", from,
+		"to", to,
+		"walletAddr", walletAddr,
+		"timezone", timezone,
+		"func", caller.GetCurrentFunctionName(),
+	)
 
 	from = schema.RoundTime(from, "day", timezone)
 	to = schema.RoundTime(to, "day", timezone).Add(time.Hour * 24)
 	timeField := schema.BuildDateTruncField("day", timezone)
 
-	if ethCondition, err = schema.BuildEthWethExcludingCondition(); err != nil {
-		return nil, err
-	}
-
 	walletStatsQuery := fmt.Sprintf(`
 		SELECT %[1]s as time,
 			COUNT(DISTINCT(user_address_id)) AS unique_address,
-			SUM(src_burn_amount) + SUM(dst_burn_amount) AS total_burn_fee,
+			-- SUM(src_burn_amount) + SUM(dst_burn_amount) AS total_burn_fee,
 			COUNT(CASE WHEN kyced THEN 1 END) AS kyced,
 			COUNT(CASE WHEN is_first_trade THEN 1 END) AS count_new_trades
-		FROM "%[2]s" 
+		FROM "tradelogs" 
 		WHERE timestamp >= $1 AND timestamp < $2
-		AND EXISTS (SELECT NULL FROM "%[3]s" WHERE address = $3 AND id=wallet_address_id)
+		AND EXISTS (SELECT NULL FROM "wallet" WHERE address = $3 AND id=wallet_address_id)
 		GROUP BY time
-	`, timeField, schema.TradeLogsTableName, schema.WalletTableName)
+	`, timeField)
 	logger.Debugw("prepare statement", "stmt", walletStatsQuery)
 
 	var records []struct {
@@ -70,13 +70,13 @@ func (tldb *TradeLogDB) GetWalletStats(from, to time.Time, walletAddr string, ti
 		SUM(eth_amount) total_eth_volume, 
 		AVG(eth_amount) eth_per_trade,
 		SUM(eth_amount*eth_usd_rate) as total_usd_volume, 
-		AVG(eth_amount*eth_usd_rate) usd_per_trade, count(1) as total_trade
-		FROM "%[2]s" 
+		AVG(eth_amount*eth_usd_rate) usd_per_trade, 
+		COUNT(1) as total_trade
+		FROM "tradelogs" 
 		WHERE timestamp >= $1 AND timestamp < $2
-		AND EXISTS (SELECT NULL FROM "%[3]s" WHERE address = $3 AND id=wallet_address_id)
-		AND %[4]s
+		AND EXISTS (SELECT NULL FROM "wallet" WHERE address = $3 AND id=wallet_address_id)
 		GROUP BY time
-	`, timeField, schema.TradeLogsTableName, schema.WalletTableName, ethCondition)
+	`, timeField)
 	logger.Debugw("prepare statement", "stmt", walletStatsQuery)
 
 	var records2 []struct {

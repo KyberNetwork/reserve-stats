@@ -146,7 +146,7 @@ func importTradeHistory(sugar *zap.SugaredLogger, historyFile string, hdb *postg
 			tradeHistories[orderID] = order
 		}
 	}
-	return hdb.UpdateTradeHistory(tradeHistories)
+	return hdb.UpdateTradeHistory(tradeHistories, "huobi_v1_main")
 }
 
 func importWithdrawHistory(sugar *zap.SugaredLogger, historyFile string, hdb *withdrawstorage.HuobiStorage) error {
@@ -204,7 +204,7 @@ func importWithdrawHistory(sugar *zap.SugaredLogger, historyFile string, hdb *wi
 			State:     "confirmed",
 		})
 	}
-	return hdb.UpdateWithdrawHistory(withdrawHistories)
+	return hdb.UpdateWithdrawHistory(withdrawHistories, "huobi_v1_main") // fixed as import data only for v1
 }
 
 func run(c *cli.Context) error {

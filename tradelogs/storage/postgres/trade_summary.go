@@ -14,7 +14,6 @@ import (
 func (tldb *TradeLogDB) GetTradeSummary(from, to time.Time, timezone int8) (map[uint64]*common.TradeSummary, error) {
 	var (
 		err           error
-		ethCondition  string
 		tradelogQuery string
 		timeField     = schema.BuildDateTruncField("day", timezone)
 	)
@@ -23,13 +22,10 @@ func (tldb *TradeLogDB) GetTradeSummary(from, to time.Time, timezone int8) (map[
 	from = schema.RoundTime(from, "day", timezone)
 	to = schema.RoundTime(to, "day", timezone).Add(time.Hour * 24)
 	results := make(map[uint64]*common.TradeSummary)
-	if ethCondition, err = schema.BuildEthWethExcludingCondition(); err != nil {
-		return nil, err
-	}
 
 	tradelogQuery = `SELECT ` + timeField + ` AS time, 
 		COUNT(DISTINCT(user_address_id)) AS unique_address,
-		SUM(src_burn_amount) + SUM(dst_burn_amount) AS total_burn_fee,
+		-- SUM(src_burn_amount) + SUM(dst_burn_amount) AS total_burn_fee,
 		COUNT(CASE WHEN kyced THEN 1 END) AS kyced,
 		COUNT(CASE WHEN is_first_trade THEN 1 END) AS count_new_trades
 		FROM tradelogs
@@ -67,11 +63,10 @@ func (tldb *TradeLogDB) GetTradeSummary(from, to time.Time, timezone int8) (map[
 		AVG(eth_amount) eth_per_trade,
 		SUM(eth_amount*eth_usd_rate) as total_usd_volume, 
 		AVG(eth_amount*eth_usd_rate) usd_per_trade, count(1) as total_trade 
-	FROM "%[2]s"
-	WHERE %[3]s
-	AND timestamp >= $1 AND timestamp < $2
+	FROM "tradelogs"
+	WHERE timestamp >= $1 AND timestamp < $2
 	GROUP BY time
-	`, timeField, schema.TradeLogsTableName, ethCondition)
+	`, timeField, schema.TradeLogsTableName)
 	logger.Debugw("prepare statement", "stmt", tradelogQuery)
 	var records []struct {
 		Time           time.Time `db:"time"`

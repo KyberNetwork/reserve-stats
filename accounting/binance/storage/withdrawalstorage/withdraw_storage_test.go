@@ -45,33 +45,35 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 				Status:    6,
 			},
 		}
-		expectedData = []binance.WithdrawHistory{
-			{
-				ID:        "3c3bd6d1adb742f0bf8586bb7bb614cb",
-				Amount:    4.7,
-				Address:   "0x93Dc33d2EAFcD212879d4833202F99eC453A6e18",
-				Asset:     "KNC",
-				TxID:      "0x102556d7ebb4e8aea93dca7c61c5926946312af98d3c38e48b062e06582 4b70f",
-				ApplyTime: 1516886594000,
-				Status:    6,
-			},
-			{
-				ID:        "53bb6b37ce61443f9d7fd99c21652baa",
-				Amount:    0.64,
-				Address:   "0xe813dee553d09567D4873d9bd5A 4914796367082",
-				Asset:     "ETH",
-				TxID:      "0x679d514dafb4c8eee1fce3b00a984167bed02bf69ca278e49fa4c4a8fb2308ed",
-				ApplyTime: 1522037352000,
-				Status:    6,
-			},
-			{
-				ID:        "53bb6b37ce61443f9d7fd99c21652baaa",
-				Amount:    0.64,
-				Address:   "0xe813dee553d09567D4873d9bd5A 4914796367082",
-				Asset:     "ETH",
-				TxID:      "0x679d514dafb4c8eee1fce3b00a984167bed02bf69ca278e49fa4c4a8fb2308ed",
-				ApplyTime: 1522037352000,
-				Status:    6,
+		expectedData = map[string][]binance.WithdrawHistory{
+			"binance_1": []binance.WithdrawHistory{
+				{
+					ID:        "3c3bd6d1adb742f0bf8586bb7bb614cb",
+					Amount:    4.7,
+					Address:   "0x93Dc33d2EAFcD212879d4833202F99eC453A6e18",
+					Asset:     "KNC",
+					TxID:      "0x102556d7ebb4e8aea93dca7c61c5926946312af98d3c38e48b062e06582 4b70f",
+					ApplyTime: 1516886594000,
+					Status:    6,
+				},
+				{
+					ID:        "53bb6b37ce61443f9d7fd99c21652baa",
+					Amount:    0.64,
+					Address:   "0xe813dee553d09567D4873d9bd5A 4914796367082",
+					Asset:     "ETH",
+					TxID:      "0x679d514dafb4c8eee1fce3b00a984167bed02bf69ca278e49fa4c4a8fb2308ed",
+					ApplyTime: 1522037352000,
+					Status:    6,
+				},
+				{
+					ID:        "53bb6b37ce61443f9d7fd99c21652baaa",
+					Amount:    0.64,
+					Address:   "0xe813dee553d09567D4873d9bd5A 4914796367082",
+					Asset:     "ETH",
+					TxID:      "0x679d514dafb4c8eee1fce3b00a984167bed02bf69ca278e49fa4c4a8fb2308ed",
+					ApplyTime: 1522037352000,
+					Status:    6,
+				},
 			},
 		}
 	)
@@ -84,13 +86,13 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 		require.NoError(t, teardown())
 	}()
 
-	_, err = binanceStorage.GetLastStoredTimestamp()
+	_, err = binanceStorage.GetLastStoredTimestamp("binance_1")
 	require.NoError(t, err)
 
-	err = binanceStorage.UpdateWithdrawHistory(testData)
+	err = binanceStorage.UpdateWithdrawHistory(testData, "binance_1")
 	assert.NoError(t, err)
 
-	lastStoredTimestamp, err := binanceStorage.GetLastStoredTimestamp()
+	lastStoredTimestamp, err := binanceStorage.GetLastStoredTimestamp("binance_1")
 	require.NoError(t, err)
 	assert.Equal(t, uint64(1522037352000), timeutil.TimeToTimestampMs(lastStoredTimestamp))
 
@@ -103,7 +105,7 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 	assert.Equal(t, expectedData, withdrawHistory)
 
 	// test stored duplicate data
-	err = binanceStorage.UpdateWithdrawHistory(testData)
+	err = binanceStorage.UpdateWithdrawHistory(testData, "binance_1")
 	assert.NoError(t, err)
 
 	withdrawHistory, err = binanceStorage.GetWithdrawHistory(fromTime, toTime)

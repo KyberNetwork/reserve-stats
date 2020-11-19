@@ -34,11 +34,11 @@ func (s *mockStorage) UpdateTokens(addresses, symbols []string) error {
 func (s *mockStorage) LastBlock() (int64, error) {
 	return 0, nil
 }
-func (s *mockStorage) SaveTradeLogs(logs []common.TradeLog) error {
+func (s *mockStorage) SaveTradeLogs(logs *common.CrawlResult) error {
 	return nil
 }
 
-func (s *mockStorage) LoadTradeLogs(from, to time.Time) ([]common.TradeLog, error) {
+func (s *mockStorage) LoadTradeLogs(from, to time.Time) ([]common.TradelogV4, error) {
 	return nil, nil
 }
 
@@ -70,7 +70,7 @@ func (s *mockStorage) GetTokenHeatmap(token ethereum.Address, from, to time.Time
 	return nil, nil
 }
 
-func (s *mockStorage) LoadTradeLogsByTxHash(txHash ethereum.Hash) ([]common.TradeLog, error) {
+func (s *mockStorage) LoadTradeLogsByTxHash(txHash ethereum.Hash) ([]common.TradelogV4, error) {
 	return nil, nil
 }
 
@@ -88,6 +88,18 @@ func (s *mockStorage) GetTopIntegrations(from, to time.Time, limit uint64) (comm
 
 func (s *mockStorage) GetTopReserves(from, to time.Time, limit uint64) (common.TopReserves, error) {
 	return common.TopReserves{}, nil
+}
+
+func (s *mockStorage) GetNotTwittedTrades(from, to time.Time) ([]common.BigTradeLog, error) {
+	return nil, nil
+}
+
+func (s *mockStorage) SaveBigTrades(bigVolume float32, fromBlock uint64) error {
+	return nil
+}
+
+func (s *mockStorage) UpdateBigTradesTwitted(trades []uint64) error {
+	return nil
 }
 
 func newTestServer() (*Server, error) {

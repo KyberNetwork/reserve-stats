@@ -57,11 +57,24 @@ var reserves = map[ethereum.Address]string{
 	ethereum.HexToAddress("0xb45C8956a080d336934cEE52A35D4dbABF025b6F"): "MKR APR reserve",
 	ethereum.HexToAddress("0x05461124c86c0ad7c5d8e012e1499fd9109ffb7d"): "GNO APR reserve",
 	ethereum.HexToAddress("0x4Cb01bd05E4652CbB9F312aE604f4549D2bf2C99"): "Synth USD APR reserve",
+
 	ethereum.HexToAddress("0x54A4a1167B004b004520c605E3f01906f683413d"): "Uniswap bridge reserve v3",
 	ethereum.HexToAddress("0x3480e12b6c2438e02319e34b4c23770679169190"): "TKN APR reserve",
 	ethereum.HexToAddress("0x08030715560a146e306b87ca93fd618bb2a80363"): "BTU APR reserve",
 	ethereum.HexToAddress("0x751eea622edd1e3d768c18afbcaec7dce7750c65"): "RAE APR reserve",
 	ethereum.HexToAddress("0x1833ad67362249823515b59a8aa8b4f6b4358d1b"): "MYB APR reserve",
+
+	ethereum.HexToAddress("0x053aa84fcc676113a57e0ebb0bd1913839874be4"): "Bancor Reserve",
+	ethereum.HexToAddress("0xa9742ee9a5407f4c2f8a49f65e3a440f3694960a"): "Santiment Reserve",
+	ethereum.HexToAddress("0x7e2fd015616263add31a2acc2a437557cee80fc4"): "UPP Reserve",
+	ethereum.HexToAddress("0xc6c8bce5e9383df025f982d6bbd84163957a6979"): "Nexxo Reserve",
+	ethereum.HexToAddress("0x6b84dbd29643294703dbabf8ed97cdef74edd227"): "Sapien",
+
+	ethereum.HexToAddress("0x1fe867bfe9cbe0045467605b959a355223e3885d"): "Bancor Bridge Reserve",
+	ethereum.HexToAddress("0x31e085afd48a1d6e51cc193153d625e8f0514c7f"): "Uniswap Bridge Reserve V4",
+
+	ethereum.HexToAddress("0x1e158c0e93c30d24e918ef83d1e0be23595c3c0f"): "Oasis Bridge Reserve V3",
+	ethereum.HexToAddress("0x4f32BbE8dFc9efD54345Fc936f9fEF1048746fCF"): "OneBit Quant",
 }
 
 // ReserveAddressToName return reserve name by its address

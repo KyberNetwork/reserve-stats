@@ -1,34 +1,25 @@
 package huobi
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
+	"io/ioutil"
 
 	"github.com/urfave/cli"
-	"go.uber.org/zap"
 	"golang.org/x/time/rate"
+
+	"github.com/KyberNetwork/reserve-stats/accounting/common"
 )
 
 const (
-	huobiAPIKeyFlag       = "huobi-api-key"
-	huobiSecretKeyFlag    = "huobi-secret-key"
-	huobiRequestPerSecond = "huobi-requests-per-second"
-	huobiClientValidation = "huobi-client-validation"
+	huobiRequestPerSecond      = "huobi-requests-per-second"
+	huobiClientValidation      = "huobi-client-validation"
+	huobiAccountConfigFileFlag = "huobi-account-config-file"
 )
 
 //NewCliFlags return cli flags to configure cex-trade client
 func NewCliFlags() []cli.Flag {
 	return []cli.Flag{
-		cli.StringFlag{
-			Name:   huobiAPIKeyFlag,
-			Usage:  "API key for huobi client",
-			EnvVar: "HUOBI_API_KEY",
-		},
-		cli.StringFlag{
-			Name:   huobiSecretKeyFlag,
-			Usage:  "secret key for huobi client",
-			EnvVar: "HUOBI_SECRET_KEY",
-		},
 		cli.Float64Flag{
 			Name:   huobiRequestPerSecond,
 			Usage:  "huobi request limit per second, default to 8 which huobi's tested rate limit",
@@ -40,24 +31,31 @@ func NewCliFlags() []cli.Flag {
 			Usage:  "if set to true, the client is validate by calling GetAccounts with its API key",
 			EnvVar: "HUOBI_CLIENT_VALIDATION",
 		},
+		cli.StringFlag{
+			Name:   huobiAccountConfigFileFlag,
+			Usage:  "huobi account config file",
+			EnvVar: "HUOBI_ACCOUNT_CONFIG_FILE",
+		},
 	}
 }
 
-// NewClientFromContext return huobi client
-func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, error) {
-	var (
-		apiKey, secretKey string
-		options           []Option
-	)
-	if c.String(huobiAPIKeyFlag) == "" {
-		return nil, fmt.Errorf("cannot create huobi client, lack of api key")
+// AccountsFromContext get accounts from file config
+func AccountsFromContext(c *cli.Context) ([]common.Account, error) {
+	var accounts []common.Account
+	configFile := c.String(huobiAccountConfigFileFlag)
+	data, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		return accounts, err
 	}
-	apiKey = c.String(huobiAPIKeyFlag)
+	err = json.Unmarshal(data, &accounts)
+	return accounts, err
+}
 
-	if c.String(huobiSecretKeyFlag) == "" {
-		return nil, fmt.Errorf("cannot create huobi client, lack of secret key")
-	}
-	secretKey = c.String(huobiSecretKeyFlag)
+// ClientOptionFromContext ...
+func ClientOptionFromContext(c *cli.Context) ([]Option, error) {
+	var (
+		options []Option
+	)
 
 	rps := c.Float64(huobiRequestPerSecond)
 	if rps <= 0 {
@@ -68,5 +66,5 @@ func NewClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) (*Client, er
 	if validateRequire := c.BoolT(huobiClientValidation); validateRequire {
 		options = append(options, WithValidation())
 	}
-	return NewClient(apiKey, secretKey, sugar, options...)
+	return options, nil
 }

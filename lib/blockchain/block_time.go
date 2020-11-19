@@ -57,7 +57,7 @@ func (btr *BlockTimeResolver) Resolve(blockNumber uint64) (time.Time, error) {
 	header, ok := btr.cachedHeaders[blockNumber]
 	if ok {
 		//btr.sugar.Debugw("block timestamp resolver cache hit", "block_number", blockNumber)
-		ts := time.Unix(header.Time.Int64(), 0).UTC()
+		ts := time.Unix(int64(header.Time), 0).UTC()
 		btr.mu.RUnlock()
 		return ts, nil
 	}
@@ -91,5 +91,5 @@ func (btr *BlockTimeResolver) Resolve(blockNumber uint64) (time.Time, error) {
 	sortUint64s(btr.cachedIndices)
 	btr.cachedHeaders[blockNumber] = header
 
-	return time.Unix(header.Time.Int64(), 0).UTC(), nil
+	return time.Unix(int64(header.Time), 0).UTC(), nil
 }

@@ -1,11 +1,11 @@
 package main
 
 import (
-	"log"
 	"os"
 	"time"
 
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	fetcher "github.com/KyberNetwork/reserve-stats/accounting/binance/fetcher"
 	"github.com/KyberNetwork/reserve-stats/accounting/binance/storage/tradestorage"
@@ -15,14 +15,16 @@ import (
 )
 
 const (
-	fromIDFlag        = "from-id"
 	retryDelayFlag    = "retry-delay"
 	attemptFlag       = "attempt"
 	batchSizeFlag     = "batch-size"
+	symbolsFlag       = "symbols"
 	defaultRetryDelay = 2 * time.Minute
 	defaultAttempt    = 4
 	defaultBatchSize  = 20
 )
+
+var sugar *zap.SugaredLogger
 
 func main() {
 	app := libapp.NewApp()
@@ -49,10 +51,10 @@ func main() {
 			EnvVar: "BATCH_SIZE",
 			Value:  defaultBatchSize,
 		},
-		cli.Uint64Flag{
-			Name:   fromIDFlag,
-			Usage:  "id to get trade history from",
-			EnvVar: "FROM_ID",
+		cli.StringSliceFlag{
+			Name:   symbolsFlag,
+			Usage:  "symbol to get trade history for, if not provide then get from binance",
+			EnvVar: "SYMBOLS",
 		},
 	)
 
@@ -60,12 +62,17 @@ func main() {
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultCexTradesDB)...)
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		sugar.Fatal(err)
 	}
 }
 
 func run(c *cli.Context) error {
-	sugar, flusher, err := libapp.NewSugaredLogger(c)
+	var (
+		flusher  func()
+		err      error
+		accounts []common.Account
+	)
+	sugar, flusher, err = libapp.NewSugaredLogger(c)
 	if err != nil {
 		return err
 	}
@@ -73,11 +80,6 @@ func run(c *cli.Context) error {
 	defer flusher()
 
 	sugar.Info("initiate fetcher")
-
-	binanceClient, err := binance.NewClientFromContext(c, sugar)
-	if err != nil {
-		return err
-	}
 
 	storage, err := libapp.NewDBFromContext(c)
 	if err != nil {
@@ -95,41 +97,51 @@ func run(c *cli.Context) error {
 		}
 	}()
 
+	binanceClient, err := binance.NewBinance("", "", sugar) // this is public client to get exchange info
+	if err != nil {
+		return err
+	}
+
+	var tokenPairs []binance.Symbol
 	exchangeInfo, err := binanceClient.GetExchangeInfo()
 	if err != nil {
 		return err
 	}
-	tokenPairs := exchangeInfo.Symbols
+	tokenPairs = exchangeInfo.Symbols
 
-	var fromIDs = make(map[string]uint64)
-	fromID := c.Uint64(fromIDFlag)
-	for _, pair := range tokenPairs {
-		fromIDs[pair.Symbol] = fromID
-		if fromID == 0 {
+	retryDelay := c.Duration(retryDelayFlag)
+	attempt := c.Int(attemptFlag)
+	batchSize := c.Int(batchSizeFlag)
+	options, err := binance.ClientOptionFromContext(c)
+	if err != nil {
+		return err
+	}
+	accounts, err = binance.AccountsFromContext(c)
+	if err != nil {
+		return err
+	}
+	for _, account := range accounts {
+		fromIDs := make(map[string]uint64)
+		for _, pair := range tokenPairs {
 			sugar.Info("from id is not provided, get latest from id stored in database")
-			from, err := binanceStorage.GetLastStoredID(pair.Symbol)
+			from, err := binanceStorage.GetLastStoredID(pair.Symbol, account.Name)
 			if err != nil {
 				return err
 			}
 			fromIDs[pair.Symbol] = from
 		}
+
+		binanceClient, err := binance.NewBinance(account.APIKey, account.SecretKey, sugar, options...)
+		if err != nil {
+			return err
+		}
+
+		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, account.Name)
+
+		if err := binanceFetcher.GetTradeHistory(fromIDs, tokenPairs, account.Name); err != nil {
+			return err
+		}
 	}
 
-	sugar.Infow("fetch trade from id", "id", fromID+1)
-
-	retryDelay := c.Duration(retryDelayFlag)
-	attempt := c.Int(attemptFlag)
-	batchSize := c.Int(batchSizeFlag)
-	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize)
-
-	tradeHistories, err := binanceFetcher.GetTradeHistory(fromIDs)
-	if err != nil {
-		return err
-	}
-	sugar.Debugw("trade histories", "result", tradeHistories)
-
-	if err := binanceStorage.UpdateTradeHistory(tradeHistories); err != nil {
-		return err
-	}
 	return binanceStorage.Close()
 }

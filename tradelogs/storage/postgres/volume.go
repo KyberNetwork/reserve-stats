@@ -36,10 +36,6 @@ func (tldb *TradeLogDB) GetAssetVolume(token ethereum.Address, fromTime, toTime 
 	default:
 		return nil, fmt.Errorf("frequency not supported: %v", frequency)
 	}
-	ethCondition, err := schema.BuildEthWethExcludingCondition()
-	if err != nil {
-		return nil, err
-	}
 
 	queryStmt := fmt.Sprintf(`
 		SELECT time, 
@@ -48,18 +44,16 @@ func (tldb *TradeLogDB) GetAssetVolume(token ethereum.Address, fromTime, toTime 
 		SUM(eth_amount * eth_usd_rate) usd_volume
 		FROM (
 			SELECT %[1]s AS time, src_amount token_volume, eth_amount, eth_usd_rate
-			FROM %[2]s 
-			WHERE EXISTS (SELECT NULL FROM %[3]s WHERE address = $3 AND id=src_address_id)
+			FROM tradelogs
+			WHERE EXISTS (SELECT NULL FROM "token" WHERE address = $3 AND id=src_address_id)
 				AND timestamp >= $1 AND timestamp < $2
-				AND %[4]s
 			UNION ALL
 			SELECT %[1]s AS time, dst_amount token_volume, eth_amount, eth_usd_rate
-			FROM %[2]s 
-			WHERE EXISTS (SELECT NULL FROM %[3]s WHERE address = $3 AND id=dst_address_id)
+			FROM "tradelogs" 
+			WHERE EXISTS (SELECT NULL FROM "token" WHERE address = $3 AND id=dst_address_id)
 				AND timestamp >= $1 AND timestamp < $2
-				AND %[4]s
 		) a GROUP BY time;
-	`, timeField, schema.TradeLogsTableName, schema.TokenTableName, ethCondition)
+	`, timeField)
 	logger.Debugw("prepare statement", "stmt", queryStmt)
 
 	var records []struct {
@@ -88,7 +82,7 @@ func (tldb *TradeLogDB) GetAssetVolume(token ethereum.Address, fromTime, toTime 
 	return result, nil
 }
 
-// GetAssetVolume returns eth_amount, usd_amount, volume filter by reserve addr and token addr in a time range group by day or hour
+// GetReserveVolume returns eth_amount, usd_amount, volume filter by reserve addr and token addr in a time range group by day or hour
 func (tldb *TradeLogDB) GetReserveVolume(rsvAddr ethereum.Address, token ethereum.Address,
 	fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
 	var (
@@ -111,30 +105,33 @@ func (tldb *TradeLogDB) GetReserveVolume(rsvAddr ethereum.Address, token ethereu
 	default:
 		return nil, fmt.Errorf("frequency not supported: %v", frequency)
 	}
-	ethCondition, err := schema.BuildEthWethExcludingCondition()
-	if err != nil {
-		return nil, err
-	}
 
 	reserveQuery := fmt.Sprintf(`
-		SELECT time, SUM(token_volume) token_volume, SUM(eth_amount) eth_volume,
-		SUM(eth_amount * eth_usd_rate) usd_volume
+		SELECT 
+			time, 
+			SUM(token_volume) token_volume, 
+			SUM(eth_amount) eth_volume,
+			SUM(eth_amount * eth_usd_rate) usd_volume
 		FROM (
-		SELECT %[1]s AS time, src_amount token_volume, eth_amount, eth_usd_rate
-		FROM "%[2]s" 
-		WHERE EXISTS (SELECT NULL FROM "%[3]s" WHERE address = $1 AND id=src_address_id)
-			AND EXISTS (SELECT NULL FROM "%[4]s" WHERE address = $2 AND (id= src_reserve_address_id OR id = dst_reserve_address_id))
-			AND timestamp >= $3 AND timestamp < $4 
-			AND %[5]s
-		UNION ALL
-		SELECT %[1]s AS time, dst_amount token_volume, eth_amount, eth_usd_rate
-		FROM "%[2]s"
-			WHERE EXISTS (SELECT NULL FROM "%[3]s" WHERE address = $1 AND id=dst_address_id)
-			AND EXISTS (SELECT NULL FROM "%[4]s" WHERE address = $2 AND (id= src_reserve_address_id OR id = dst_reserve_address_id))
-			AND timestamp >= $3 AND timestamp < $4
-			AND %[5]s
-		) a GROUP BY time
-	`, timeField, schema.TradeLogsTableName, schema.TokenTableName, schema.ReserveTableName, ethCondition)
+			SELECT %[1]s AS time, 
+				src_amount token_volume, 
+				eth_amount, 
+				eth_usd_rate
+			FROM "tradelogs" 
+			WHERE EXISTS (SELECT NULL FROM "token" WHERE address = $1 AND id=src_address_id)
+				AND EXISTS (SELECT NULL FROM "reserve" WHERE address = $2 AND (id= src_reserve_address_id OR id = dst_reserve_address_id))
+				AND timestamp >= $3 AND timestamp < $4 
+			UNION ALL
+			SELECT %[1]s AS time, 
+				dst_amount token_volume, 
+				eth_amount, 
+				eth_usd_rate
+			FROM "tradelogs"
+			WHERE EXISTS (SELECT NULL FROM "token" WHERE address = $1 AND id=dst_address_id)
+				AND EXISTS (SELECT NULL FROM "reserve" WHERE address = $2 AND (id= src_reserve_address_id OR id = dst_reserve_address_id))
+				AND timestamp >= $3 AND timestamp < $4
+			) a GROUP BY time
+	`, timeField)
 	logger.Debugw("prepare statement", "stmt", reserveQuery)
 	var records []struct {
 		TokenVolume float64   `db:"token_volume"`

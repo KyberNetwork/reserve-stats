@@ -299,6 +299,22 @@ func (_Wrapper *WrapperCaller) GetReserveRate(opts *bind.CallOpts, reserve commo
 // GetReserveRate is a free data retrieval call binding the contract method 0x91eb1c69.
 //
 // Solidity: function getReserveRate(address reserve, address[] srcs, address[] dests) constant returns(uint256[], uint256[])
+func (_Wrapper *WrapperCaller) GetReserveRateV3(opts *bind.CallOpts, reserve common.Address, srcs []common.Address, dests []common.Address) ([]*big.Int, []*big.Int, error) {
+	var (
+		ret0 = new([]*big.Int)
+		ret1 = new([]*big.Int)
+	)
+	out := &[]interface{}{
+		ret0,
+		ret1,
+	}
+	err := _Wrapper.contract.Call(opts, out, "getReserveRates", reserve, srcs, dests)
+	return *ret0, *ret1, err
+}
+
+// GetReserveRate is a free data retrieval call binding the contract method 0x91eb1c69.
+//
+// Solidity: function getReserveRate(address reserve, address[] srcs, address[] dests) constant returns(uint256[], uint256[])
 func (_Wrapper *WrapperSession) GetReserveRate(reserve common.Address, srcs []common.Address, dests []common.Address) ([]*big.Int, []*big.Int, error) {
 	return _Wrapper.Contract.GetReserveRate(&_Wrapper.CallOpts, reserve, srcs, dests)
 }

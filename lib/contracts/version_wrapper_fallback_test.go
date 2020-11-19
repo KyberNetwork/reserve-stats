@@ -38,32 +38,3 @@ func TestVersionedWrapperFallback_GetReserveRate(t *testing.T) {
 	assert.Zero(t, sanityRates[0].Int64())
 	assert.Zero(t, sanityRates[1].Int64())
 }
-
-func TestVersionedWrapperFallback_GetReserveRateV3(t *testing.T) {
-	// testutil.SkipExternal(t)
-
-	const (
-		blockNumber       = 11284340
-		internalReserveV2 = "0xAa448eFF88B1E752D50b87220B543d79eac15a0E"
-		yfiAddr           = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
-		ethAddr           = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
-	)
-
-	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	client := testutil.MustNewDevelopmentwEthereumClient()
-	vwf, err := NewVersionedWrapperFallback(sugar, client)
-	require.NoError(t, err)
-	rates, sanityRates, err := vwf.GetReserveRate(
-		blockNumber,
-		common.HexToAddress(internalReserveV2),
-		[]common.Address{common.HexToAddress(ethAddr), common.HexToAddress(yfiAddr)},
-		[]common.Address{common.HexToAddress(yfiAddr), common.HexToAddress(ethAddr)},
-	)
-	require.NoError(t, err)
-	require.Len(t, rates, 2)
-	assert.NotZero(t, rates[0].Int64())
-	assert.NotZero(t, rates[1].Int64())
-	require.Len(t, sanityRates, 2)
-	// assert.Zero(t, sanityRates[0].Int64())
-	// assert.Zero(t, sanityRates[1].Int64())
-}

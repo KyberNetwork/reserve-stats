@@ -78,7 +78,7 @@ func NewEthereumClientFromFlag(c *cli.Context) (*ethclient.Client, error) {
 	cc := &http.Client{Transport: roundTripperExt{c: &http.Client{}}}
 	r, err := rpc.DialHTTPWithClient(ethereumNodeURL, cc)
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
 	client := ethclient.NewClient(r)
 	return client, nil

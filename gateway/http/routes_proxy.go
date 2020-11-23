@@ -98,6 +98,7 @@ func WithCexTradesURL(cexTradeURL string) Option {
 			return err
 		}
 		s.r.GET("/trades", cexTradeURLMW)
+		s.r.GET("/convert_to_eth_price", cexTradeURLMW)
 		return nil
 	}
 }

@@ -18,7 +18,10 @@ func (tldb *TradeLogDB) GetStats(from, to time.Time) (common.StatsResponse, erro
 		)
 		query = `
 		SELECT 
-		COALESCE(SUM(split.eth_amount), 0) AS eth_volume,
+		COALESCE(SUM(
+			CASE WHEN split.src != '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' AND split.dst != '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+			THEN split.eth_amount
+			END), 0) AS eth_volume,
 		COALESCE(SUM(split.eth_amount*eth_usd_rate), 0) AS usd_volume,
 		COALESCE(SUM(platform_fee+burn+rebate+reward), 0) as collected_fee,
 		COUNT(DISTINCT(tx_hash, tradelogs.index)) as total_trades,

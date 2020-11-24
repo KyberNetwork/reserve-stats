@@ -5,11 +5,15 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"net/http"
 	"os"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
@@ -112,6 +116,16 @@ func main() {
 	}
 }
 
+func mustNewClient(url string) *ethclient.Client {
+	cc := &http.Client{Transport: roundTripperExt{c: &http.Client{}}}
+	r, err := rpc.DialHTTPWithClient(url, cc)
+	if err != nil {
+		zap.S().Panicw("init custom ethclient failed", "err", err)
+	}
+	client := ethclient.NewClient(r)
+	return client
+}
+
 func run(c *cli.Context) error {
 	var (
 		err                error
@@ -125,10 +139,8 @@ func run(c *cli.Context) error {
 	}
 	defer flush()
 
-	ethClient, err := blockchain.NewEthereumClientFromFlag(c)
-	if err != nil {
-		return err
-	}
+	nodeURL := blockchain.NodeURLFromFlag(c)
+	ethClient := mustNewClient(nodeURL)
 
 	blockTimeResolver, err := blockchain.NewBlockTimeResolver(sugar, ethClient)
 	if err != nil {

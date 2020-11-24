@@ -77,7 +77,7 @@ func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 
 	reserveRates, sanityRates, err := rrc.wrapperContract.GetReserveRate(block, rsvAddr, srcAddresses, destAddresses)
 	if err != nil {
-		logger.Errorw("failed to get rates for reserve", "tokens", tokens)
+		logger.Errorw("failed to get rates for reserve", "tokens", tokens, "error", err)
 		return nil, fmt.Errorf("cannot get rates for reserve %s. Error: %s", rsvAddr.Hex(), err)
 	}
 

@@ -33,7 +33,7 @@ func NewMarketDataClient(baseURL string, sugar *zap.SugaredLogger) *Client {
 
 // PairSupportedResponse ...
 type PairSupportedResponse struct {
-	Valid bool `json:"valid"`
+	IsValid bool `json:"is_valid"`
 }
 
 // PairSupported return if pair is supported by binance
@@ -53,23 +53,23 @@ func (c *Client) PairSupported(source, symbol string) (bool, error) {
 		nil,
 	)
 	if err != nil {
-		return result.Valid, err
+		return result.IsValid, err
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return result.Valid, err
+		return result.IsValid, err
 	}
 	switch resp.StatusCode {
 	case http.StatusOK:
 		respBody, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return result.Valid, err
+			return result.IsValid, err
 		}
 		if err := json.Unmarshal(respBody, &result); err != nil {
-			return result.Valid, err
+			return result.IsValid, err
 		}
 	default:
-		return result.Valid, fmt.Errorf("market data return with error code: %d", resp.StatusCode)
+		return result.IsValid, fmt.Errorf("market data return with error code: %d", resp.StatusCode)
 	}
-	return result.Valid, nil
+	return result.IsValid, nil
 }

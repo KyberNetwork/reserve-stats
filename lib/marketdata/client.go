@@ -63,7 +63,7 @@ func (c *Client) PairSupported(source, symbol string) (bool, error) {
 	case http.StatusOK:
 		respBody, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return result.Valid, nil
+			return result.Valid, err
 		}
 		if err := json.Unmarshal(respBody, &result); err != nil {
 			return result.Valid, err

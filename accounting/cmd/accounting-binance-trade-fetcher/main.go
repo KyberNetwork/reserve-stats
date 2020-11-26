@@ -127,6 +127,17 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	if err := fetchTradeHisoryFromBinance(binanceStorage, marketDataClient, tokenPairs, retryDelay, attempt, batchSize, options, accounts); err != nil {
+		return err
+	}
+
+	return binanceStorage.Close()
+}
+
+func fetchTradeHisoryFromBinance(binanceStorage *tradestorage.BinanceStorage, marketDataClient *marketdata.Client, tokenPairs []binance.Symbol,
+	retryDelay time.Duration, attempt, batchSize int, options []binance.Option,
+	accounts []common.Account) error {
 	for _, account := range accounts {
 		fromIDs := make(map[string]uint64)
 		for _, pair := range tokenPairs {
@@ -154,6 +165,5 @@ func run(c *cli.Context) error {
 	if err := errGroup.Wait(); err != nil {
 		return err
 	}
-
-	return binanceStorage.Close()
+	return nil
 }

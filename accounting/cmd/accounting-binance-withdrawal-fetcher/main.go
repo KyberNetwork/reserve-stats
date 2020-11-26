@@ -129,7 +129,7 @@ func run(c *cli.Context) error {
 			return err
 		}
 
-		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, nil, "")
+		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, nil, "", nil)
 
 		withdrawHistory, err := binanceFetcher.GetWithdrawHistory(fromTime, toTime)
 		if err != nil {

@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -10,6 +11,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/binance/storage/tradestorage"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
+	"github.com/KyberNetwork/reserve-stats/lib/marketdata"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
@@ -19,24 +21,26 @@ const (
 
 //Fetcher is a fetcher for get binance data
 type Fetcher struct {
-	sugar      *zap.SugaredLogger
-	client     *binance.Client
-	retryDelay time.Duration
-	storage    tradestorage.Interface
-	attempt    int
-	batchSize  int
+	sugar            *zap.SugaredLogger
+	client           *binance.Client
+	retryDelay       time.Duration
+	storage          tradestorage.Interface
+	attempt          int
+	batchSize        int
+	marketDataClient *marketdata.Client
 }
 
 //NewFetcher return a new fetcher instance
 func NewFetcher(sugar *zap.SugaredLogger, client *binance.Client, retryDelay time.Duration, attempt, batchSize int, storage tradestorage.Interface,
-	accountName string) *Fetcher {
+	accountName string, marketDataClient *marketdata.Client) *Fetcher {
 	return &Fetcher{
-		sugar:      sugar,
-		client:     client,
-		retryDelay: retryDelay,
-		attempt:    attempt,
-		batchSize:  batchSize,
-		storage:    storage,
+		sugar:            sugar,
+		client:           client,
+		retryDelay:       retryDelay,
+		attempt:          attempt,
+		batchSize:        batchSize,
+		storage:          storage,
+		marketDataClient: marketDataClient,
 	}
 }
 
@@ -130,6 +134,14 @@ func (f *Fetcher) updateTradeNotETH(originalSymbol, symbol string, oneSymbolTrad
 			"func", caller.GetCurrentFunctionName(),
 		)
 	)
+	isPairValid, err := f.marketDataClient.PairSupported("binance", strings.ToLower(symbol))
+	if err != nil {
+		return err
+	}
+	if !isPairValid {
+		logger.Infow("pair is not supported", "pair", symbol)
+		return nil
+	}
 	for _, trade := range oneSymbolTradeHistory {
 		endTime := trade.Time
 

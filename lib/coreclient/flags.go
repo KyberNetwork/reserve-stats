@@ -33,23 +33,18 @@ func NewCoreClientFlags() []cli.Flag {
 }
 
 // NewCoreClientFromContext return new core client object
-func NewCoreClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) CoreClient {
+func NewCoreClientFromContext(c *cli.Context, sugar *zap.SugaredLogger) *CoreClient {
 	endpoint := c.String(coreEndpointFlag)
 	if endpoint == "" {
 		sugar.Error("core endpoint is not provided")
 	}
-	apiKey := c.String(coreEndpointFlag)
+	apiKey := c.String(coreClientAPIKeyFlag)
 	if apiKey == "" {
 		sugar.Error("core api key is not provided")
 	}
-	secretKey := c.String(coreEndpointFlag)
+	secretKey := c.String(coreClientAPISecretFlag)
 	if secretKey == "" {
 		sugar.Error("core secret key is not provided")
 	}
-	return CoreClient{
-		Endpoint:  endpoint,
-		APIKey:    apiKey,
-		SecretKey: secretKey,
-		sugar:     sugar,
-	}
+	return NewCoreClient(endpoint, apiKey, secretKey, sugar)
 }

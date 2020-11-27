@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
@@ -39,8 +38,23 @@ func NewCoreClient(endpoint, apiKey, secretKey string, sugar *zap.SugaredLogger)
 
 // TradingPairSymbols is a pair of token trading
 type TradingPairSymbols struct {
+	TradingPair
 	BaseSymbol  string `json:"base_symbol"`
 	QuoteSymbol string `json:"quote_symbol"`
+}
+
+// TradingPair ...
+type TradingPair struct {
+	ID              uint64  `json:"id"`
+	Base            uint64  `json:"base"`
+	Quote           uint64  `json:"quote"`
+	PricePrecision  uint64  `json:"price_precision"`
+	AmountPrecision uint64  `json:"amount_precision"`
+	AmountLimitMin  float64 `json:"amount_limit_min"`
+	AmountLimitMax  float64 `json:"amount_limit_max"`
+	PriceLimitMin   float64 `json:"price_limit_min"`
+	PriceLimitMax   float64 `json:"price_limit_max"`
+	MinNotional     float64 `json:"min_notional"`
 }
 
 func (cc *CoreClient) sendRequest(method, endpoint string, params map[string]string, signNeeded bool,
@@ -61,6 +75,8 @@ func (cc *CoreClient) sendRequest(method, endpoint string, params map[string]str
 	}
 	req.URL.RawQuery = q.Encode()
 
+	logger.Infow("request", "url", req.URL)
+
 	req, err = httputil.Sign(req, cc.APIKey, cc.SecretKey)
 	if err != nil {
 		return respBody, err
@@ -79,7 +95,11 @@ func (cc *CoreClient) sendRequest(method, endpoint string, params map[string]str
 	case 200:
 		respBody, err = ioutil.ReadAll(resp.Body)
 	default:
-		err = fmt.Errorf("return with code: %d", resp.StatusCode)
+		respBody, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			logger.Errorw("failed to read response body", "error", err)
+		}
+		err = fmt.Errorf("return with code: %d, content: %s", resp.StatusCode, respBody)
 	}
 	return respBody, err
 }
@@ -87,12 +107,14 @@ func (cc *CoreClient) sendRequest(method, endpoint string, params map[string]str
 // GetBinanceSupportedPairs ...
 func (cc *CoreClient) GetBinanceSupportedPairs(exchangeID int64) ([]binance.Symbol, error) {
 	var (
-		coreResponse []TradingPairSymbols
-		result       []binance.Symbol
+		coreResponse struct {
+			Data []TradingPairSymbols `json:"data"`
+		}
+		result []binance.Symbol
 	)
 	endpoint := fmt.Sprintf("%s/v3/trading-pair", cc.Endpoint)
 	params := map[string]string{
-		"id": strconv.FormatInt(exchangeID, 10),
+		"exchange_id": strconv.FormatInt(exchangeID, 10),
 	}
 
 	res, err := cc.sendRequest(
@@ -105,10 +127,11 @@ func (cc *CoreClient) GetBinanceSupportedPairs(exchangeID int64) ([]binance.Symb
 	if err != nil {
 		return result, err
 	}
+	fmt.Printf("%s", res)
 	err = json.Unmarshal(res, &coreResponse)
-	for _, pair := range coreResponse {
+	for _, pair := range coreResponse.Data {
 		result = append(result, binance.Symbol{
-			Symbol:     strings.ToLower(pair.BaseSymbol) + strings.ToLower(pair.QuoteSymbol),
+			Symbol:     pair.BaseSymbol + pair.QuoteSymbol,
 			BaseAsset:  pair.BaseSymbol,
 			QuoteAsset: pair.QuoteSymbol,
 		})

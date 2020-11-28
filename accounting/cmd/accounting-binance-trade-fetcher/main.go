@@ -6,6 +6,7 @@ import (
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	fetcher "github.com/KyberNetwork/reserve-stats/accounting/binance/fetcher"
 	"github.com/KyberNetwork/reserve-stats/accounting/binance/storage/tradestorage"
@@ -74,6 +75,7 @@ func run(c *cli.Context) error {
 		flusher  func()
 		err      error
 		accounts []common.Account
+		errGroup errgroup.Group
 	)
 	sugar, flusher, err = libapp.NewSugaredLogger(c)
 	if err != nil {
@@ -142,10 +144,15 @@ func run(c *cli.Context) error {
 		}
 
 		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, account.Name, marketDataClient)
-
-		if err := binanceFetcher.GetTradeHistory(fromIDs, tokenPairs, account.Name); err != nil {
-			return err
-		}
+		errGroup.Go(
+			func(accountName string) func() error {
+				return func() error {
+					return binanceFetcher.GetTradeHistory(fromIDs, tokenPairs, accountName)
+				}
+			}(account.Name))
+	}
+	if err := errGroup.Wait(); err != nil {
+		return err
 	}
 
 	return binanceStorage.Close()

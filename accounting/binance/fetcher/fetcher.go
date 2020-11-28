@@ -132,7 +132,7 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binanc
 							symbol := "ETH" + pair.QuoteAsset
 							if err := f.updateTradeNotETH(pair.Symbol, symbol, oneSymbolTradeHistory); err != nil {
 								logger.Errorw("failed to update trade with no eth as quote", "symbol", symbol, "error", err)
-								return err
+								// return err // ignore error until find a better way
 							}
 						}
 

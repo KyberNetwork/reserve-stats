@@ -307,29 +307,41 @@ func (bd *BinanceStorage) GetTradeByTimestamp(symbol string, timestamp time.Time
 }
 
 // UpdateConvertToETHPrice ...
-func (bd *BinanceStorage) UpdateConvertToETHPrice(originalSymbol, symbol string, price float64, timestamp uint64, originalTrade, trade binance.TradeHistory) error {
+func (bd *BinanceStorage) UpdateConvertToETHPrice(originalSymbol, symbol string, prices []float64, timestamps []uint64, originalTrades, trades []binance.TradeHistory) error {
 	var (
 		logger = bd.sugar.With(
 			"func", caller.GetCurrentFunctionName(),
 			"symbol", symbol,
-			"price", price,
-			"timestamp", timestamp,
 		)
+		tradesJSON, originalTradesJSON [][]byte
 	)
 	logger.Info("update eth trade")
 	const query = `INSERT INTO binance_convert_to_eth_price (original_symbol, symbol, price, timestamp, original_trade, trade)
-				   VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (symbol, price, timestamp) DO NOTHING;`
-	tradeJSON, err := json.Marshal(trade)
-	if err != nil {
-		logger.Errorw("failed to marshal trade", "error", err)
-		return err
+				   VALUES (
+					   $1, 
+					   $2, 
+					   unnest($3::FLOAT[]), 
+					   unnest($4::BIGINT[]), 
+					   unnest($5::JSONB[]), 
+					   unnest($6::JSONB[])
+					   ) ON CONFLICT (symbol, price, timestamp) DO NOTHING;`
+	for _, trade := range trades {
+		tradeJSON, err := json.Marshal(trade)
+		if err != nil {
+			logger.Errorw("failed to marshal trade", "error", err)
+			return err
+		}
+		tradesJSON = append(tradesJSON, tradeJSON)
 	}
-	originalTradeJSON, err := json.Marshal(originalTrade)
-	if err != nil {
-		logger.Errorw("failed to marshal trade", "error", err)
-		return err
+	for _, originalTrade := range originalTrades {
+		originalTradeJSON, err := json.Marshal(originalTrade)
+		if err != nil {
+			logger.Errorw("failed to marshal trade", "error", err)
+			return err
+		}
+		originalTradesJSON = append(originalTradesJSON, originalTradeJSON)
 	}
-	if _, err := bd.db.Exec(query, originalSymbol, symbol, price, timestamp, originalTradeJSON, tradeJSON); err != nil {
+	if _, err := bd.db.Exec(query, originalSymbol, symbol, pq.Array(prices), pq.Array(timestamps), pq.Array(originalTradesJSON), pq.Array(tradesJSON)); err != nil {
 		logger.Errorw("failed to update eth trade", "error", err)
 		return err
 	}

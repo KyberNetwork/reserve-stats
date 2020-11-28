@@ -12,7 +12,7 @@ type Interface interface {
 	GetTradeHistory(fromTime, toTime time.Time) (map[string][]binance.TradeHistory, error)
 	GetLastStoredID(symbol, account string) (uint64, error)
 	GetTradeByTimestamp(symbol string, timestamp time.Time) (binance.TradeHistory, error)
-	UpdateConvertToETHPrice(originalSymbol, symbol string, price float64, timestamp uint64, originalTrade, trade binance.TradeHistory) error
+	UpdateConvertToETHPrice(originalSymbol, symbol string, price []float64, timestamp []uint64, originalTrade, trade []binance.TradeHistory) error
 	GetConvertToETHPrice(fromTime, toTime uint64) ([]binance.ConvertToETHPrice, error)
 
 	UpdateMarginTradeHistory([]binance.TradeHistory, string) error

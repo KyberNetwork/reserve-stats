@@ -65,6 +65,27 @@ func (f *Fetcher) getTradeHistoryWithRetry(symbol string, fromID uint64) ([]bina
 	return tradeHistoriesResponse, err
 }
 
+func (f *Fetcher) getGetAggregatedTradesWithRetry(symbol string, startTime, endTime uint64) ([]binance.AggregatedTrade, error) {
+	var (
+		aggregatedTrades []binance.AggregatedTrade
+		err              error
+		logger           = f.sugar.With("func", caller.GetCurrentFunctionName())
+	)
+	for attempt := 0; attempt < f.attempt; attempt++ {
+		aggregatedTrades, err = f.client.GetAggregatedTrades(symbol, startTime, endTime)
+		switch err {
+		case binance.ErrBadAPIKeyFormat, binance.ErrRejectedMBxKey:
+			return nil, err
+		case nil:
+			return aggregatedTrades, nil
+		default:
+			logger.Warnw("get aggregated trade failed", "error", err, "attempt", attempt)
+			time.Sleep(f.retryDelay)
+		}
+	}
+	return aggregatedTrades, err
+}
+
 func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]binance.TradeHistory, error) {
 	var (
 		logger = f.sugar.With("func", caller.GetCurrentFunctionName())
@@ -88,7 +109,7 @@ func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]b
 	return result, nil
 }
 
-//GetTradeHistory get all trade history from trades for all token and save them into database
+// GetTradeHistory get all trade history from trades for all token and save them into database
 func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binance.Symbol, account string) error {
 	var (
 		logger   = f.sugar.With("func", caller.GetCurrentFunctionName())
@@ -111,7 +132,7 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binanc
 							symbol := "ETH" + pair.QuoteAsset
 							if err := f.updateTradeNotETH(pair.Symbol, symbol, oneSymbolTradeHistory); err != nil {
 								logger.Errorw("failed to update trade with no eth as quote", "symbol", symbol, "error", err)
-								return err
+								// return err // ignore error until find a better way
 							}
 						}
 
@@ -156,7 +177,7 @@ func (f *Fetcher) updateTradeNotETH(originalSymbol, symbol string, oneSymbolTrad
 		)
 		for {
 			startTime := endTime - delta
-			res, err = f.client.GetAggregatedTrades(symbol, startTime, endTime)
+			res, err = f.getGetAggregatedTradesWithRetry(symbol, startTime, endTime)
 			if err != nil {
 				logger.Errorw("failed to get aggregated trades from binance", "error", err)
 				return err
@@ -211,7 +232,7 @@ func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (bin
 	return withdrawHistory, err
 }
 
-//GetWithdrawHistory get all withdraw history in time range fromTime to toTime
+// GetWithdrawHistory get all withdraw history in time range fromTime to toTime
 func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.WithdrawHistory, error) {
 	var (
 		result []binance.WithdrawHistory

@@ -155,6 +155,5 @@ func run(c *cli.Context) error {
 	if err := errGroup.Wait(); err != nil {
 		return err
 	}
-
-	return binanceStorage.Close()
+	return nil
 }

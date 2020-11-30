@@ -91,14 +91,14 @@ func (cc *CoreClient) sendRequest(method, endpoint string, params map[string]str
 			logger.Errorw("Response body close error", "error", cErr.Error())
 		}
 	}()
+	respBody, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		logger.Errorw("failed to read response body", "error", err)
+	}
 	switch resp.StatusCode {
-	case 200:
-		respBody, err = ioutil.ReadAll(resp.Body)
+	case http.StatusOK:
+		logger.Info("get token pair successfully")
 	default:
-		respBody, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			logger.Errorw("failed to read response body", "error", err)
-		}
 		err = fmt.Errorf("return with code: %d, content: %s", resp.StatusCode, respBody)
 	}
 	return respBody, err
@@ -127,7 +127,6 @@ func (cc *CoreClient) GetBinanceSupportedPairs(exchangeID int64) ([]binance.Symb
 	if err != nil {
 		return result, err
 	}
-	fmt.Printf("%s", res)
 	err = json.Unmarshal(res, &coreResponse)
 	for _, pair := range coreResponse.Data {
 		result = append(result, binance.Symbol{

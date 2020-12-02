@@ -114,12 +114,12 @@ func (bd *BinanceStorage) UpdateTradeHistory(trades []binance.TradeHistory, acco
 	}
 
 	defer pgsql.CommitOrRollback(tx, bd.sugar, &err)
-	logger.Debugw("query update trade history", "query", updateQuery)
 
 	// prepare data for insert into db
 	for _, trade := range trades {
 		tradeJSON, err = json.Marshal(trade)
 		if err != nil {
+			logger.Errorw("failed to marshal trade", "error", err)
 			return
 		}
 		time := timeutil.TimestampMsToTime(trade.Time)
@@ -273,9 +273,8 @@ func (bd *BinanceStorage) GetLastStoredMarginTradeID(symbol, account string) (ui
 	)
 	const selectStmt = `SELECT COALESCE(MAX(id), 0) FROM binance_margin_trades WHERE symbol=$1 AND account=$2`
 
-	logger.Debugw("querying last stored margin trade id", "query", selectStmt)
-
 	if err := bd.db.Get(&result, selectStmt, symbol, account); err != nil {
+		logger.Errorw("failed to get last stored margin trade id", "error", err)
 		return 0, err
 	}
 
@@ -294,7 +293,6 @@ func (bd *BinanceStorage) GetTradeByTimestamp(symbol string, timestamp time.Time
 		resultDB []byte
 	)
 	const query = "SELECT data FROM binance_trades where timestamp <= $1::TIMESTAMP AND data->>'symbol' = $2 LIMIT 1;"
-	logger.Infow("Get trade history by timestamp", "query", query)
 	if err := bd.db.Get(&resultDB, query, timestamp, symbol); err != nil {
 		if err == sql.ErrNoRows {
 			return result, nil
@@ -359,9 +357,9 @@ func (bd *BinanceStorage) GetConvertToETHPrice(fromTime, toTime uint64) ([]binan
 		result []binance.ConvertToETHPrice
 		err    error
 	)
-	logger.Infow("get convert to eth price")
 	const query = `SELECT symbol, price, timestamp FROM binance_convert_to_eth_price WHERE timestamp >= $1 AND timestamp <= $2;`
 	if err := bd.db.Select(&result, query, fromTime, toTime); err != nil {
+		logger.Errorw("failed to get convert eth price", "error", err)
 		return result, err
 	}
 	return result, err

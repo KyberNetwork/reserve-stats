@@ -45,6 +45,7 @@ type Client struct {
 	SecretKey   string
 	sugar       *zap.SugaredLogger
 	rateLimiter Limiter
+	client      *http.Client
 }
 
 //Option sets the initialization behavior for binance instance
@@ -71,10 +72,14 @@ func WithValidation() Option {
 
 //NewBinance return a new client for binance api
 func NewBinance(apiKey, secretKey string, sugar *zap.SugaredLogger, options ...Option) (*Client, error) {
+	client := &http.Client{
+		Transport: NewTransportRateLimiter(&http.Client{Timeout: time.Second * 30}),
+	}
 	clnt := &Client{
 		APIKey:    apiKey,
 		SecretKey: secretKey,
 		sugar:     sugar,
+		client:    client,
 	}
 	for _, opt := range options {
 		if err := opt(clnt); err != nil {
@@ -149,9 +154,6 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 		respBody []byte
 		logger   = bc.sugar.With("func", caller.GetCurrentFunctionName())
 	)
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
 	req, err := http.NewRequest(method, endpoint, nil)
 	if err != nil {
 		return nil, err
@@ -166,7 +168,7 @@ func (bc *Client) sendRequest(method, endpoint string, params map[string]string,
 		return respBody, err
 	}
 
-	resp, err := client.Do(req)
+	resp, err := bc.client.Do(req)
 	if err != nil {
 		return respBody, err
 	}

@@ -18,7 +18,6 @@ func CommitOrRollback(tx *sqlx.Tx, sugar *zap.SugaredLogger, err *error) {
 	var logger = sugar.With("func", caller.GetCurrentFunctionName())
 
 	if *err == nil {
-		logger.Debugw("committing transaction")
 		if cErr := tx.Commit(); cErr != nil {
 			*err = fmt.Errorf("failed to commit transaction: %v", cErr)
 		}

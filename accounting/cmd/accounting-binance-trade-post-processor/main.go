@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
-	"golang.org/x/sync/errgroup"
 
 	fetcher "github.com/KyberNetwork/reserve-stats/accounting/binance/fetcher"
 	"github.com/KyberNetwork/reserve-stats/accounting/binance/storage/tradestorage"
@@ -72,10 +74,8 @@ func main() {
 
 func run(c *cli.Context) error {
 	var (
-		flusher  func()
-		err      error
-		accounts []common.Account
-		errGroup errgroup.Group
+		flusher func()
+		err     error
 	)
 	sugar, flusher, err = libapp.NewSugaredLogger(c)
 	if err != nil {
@@ -109,59 +109,51 @@ func run(c *cli.Context) error {
 
 	marketDataClient := marketdata.NewMarketDataClient(marketDataBaseURL, sugar)
 
-	var tokenPairs []binance.Symbol
+	var (
+		tokenPairs []binance.Symbol
+		quotes     = make(map[string]string)
+	)
 	exchangeInfo, err := binanceClient.GetExchangeInfo()
 	if err != nil {
 		return err
 	}
 	tokenPairs = exchangeInfo.Symbols
+	for _, pair := range tokenPairs {
+		if _, exist := quotes[pair.QuoteAsset]; !exist {
+			quotes[pair.QuoteAsset] = pair.QuoteAsset
+		}
+	}
+
+	sugar.Infow("quotes", "list", quotes)
 
 	retryDelay := c.Duration(retryDelayFlag)
 	attempt := c.Int(attemptFlag)
 	batchSize := c.Int(batchSizeFlag)
-	options, err := binance.ClientOptionFromContext(c)
-	if err != nil {
-		return err
-	}
-	accounts, err = binance.AccountsFromContext(c)
-	if err != nil {
-		return err
-	}
-	// notETHTrades := make(map[*binance.Symbol][]binance.TradeHistory)
-	for _, account := range accounts {
-		fromIDs := make(map[string]uint64)
-		for _, pair := range tokenPairs {
-			sugar.Info("from id is not provided, get latest from id stored in database")
-			from, err := binanceStorage.GetLastStoredID(pair.Symbol, account.Name)
-			if err != nil {
-				return err
-			}
-			fromIDs[pair.Symbol] = from
-		}
 
-		binanceClient, err := binance.NewBinance(account.APIKey, account.SecretKey, sugar, options...)
-		if err != nil {
+	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, "", marketDataClient)
+	ethTrades, err := binanceStorage.GetNotETHTrades()
+	if err != nil {
+		return err
+	}
+	for originalSymbol, trades := range ethTrades {
+		quote := quoteFromOriginalSymbol(quotes, originalSymbol)
+		symbol := "ETH" + quote
+		if err := binanceFetcher.UpdateTradeNotETH(originalSymbol, symbol, trades); err != nil {
 			return err
 		}
-
-		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, account.Name, marketDataClient)
-		errGroup.Go(
-			func(accountName string) func() error {
-				return func() error {
-					err := binanceFetcher.GetTradeHistory(fromIDs, tokenPairs, accountName)
-					// for symbol, trades := range neTrades {
-					// 	if _, exist := notETHTrades[symbol]; exist {
-					// 		notETHTrades[symbol] = append(notETHTrades[symbol], trades...)
-					// 	} else {
-					// 		notETHTrades[symbol] = trades
-					// 	}
-					// }
-					return err
-				}
-			}(account.Name))
-	}
-	if err := errGroup.Wait(); err != nil {
-		return err
 	}
 	return nil
+}
+
+func quoteFromOriginalSymbol(quotes map[string]string, symbol string) string {
+	var (
+		quoteString []string
+	)
+	for _, v := range quotes {
+		quoteString = append(quoteString, v)
+	}
+	regexpString := fmt.Sprintf(".*(%s)$", strings.Join(quoteString, "|"))
+	re := regexp.MustCompile(regexpString)
+	res := re.FindAllStringSubmatch(symbol, -1)
+	return res[0][1]
 }

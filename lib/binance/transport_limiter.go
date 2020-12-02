@@ -114,6 +114,8 @@ func (b *TransportRateLimiter) findRetryAt(resp *http.Response, body []byte) tim
 	}
 	return retryAt
 }
+
+// RoundTrip ...
 func (b *TransportRateLimiter) RoundTrip(request *http.Request) (*http.Response, error) {
 	if request.URL.Host != "api.binance.com" {
 		return b.c.Do(request)

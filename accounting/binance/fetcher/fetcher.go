@@ -154,10 +154,9 @@ func (f *Fetcher) UpdateTradeNotETH(originalSymbol, symbol string, notETHTrades 
 		logger = f.sugar.With(
 			"func", caller.GetCurrentFunctionName(),
 		)
-		symbols, originalSymbols []string
-		prices                   []float64
-		endTimes                 []uint64
-		trades, ethTrades        []binance.TradeHistory
+		prices            []float64
+		endTimes          []uint64
+		trades, ethTrades []binance.TradeHistory
 	)
 	isPairValid, err := f.marketDataClient.PairSupported("binance", strings.ToLower(symbol))
 	if err != nil {
@@ -201,15 +200,13 @@ func (f *Fetcher) UpdateTradeNotETH(originalSymbol, symbol string, notETHTrades 
 			logger.Errorw("failed to get trade by timestamp", "error", err)
 			return err
 		}
-		originalSymbols = append(originalSymbols, originalSymbol)
-		symbols = append(symbols, symbol)
 		prices = append(prices, price)
 		endTimes = append(endTimes, endTime)
 		trades = append(trades, trade)
 		ethTrades = append(ethTrades, ethTrade)
 	}
 	// store info to persistent storage
-	return f.storage.UpdateConvertToETHPrice(originalSymbols, symbols, prices, endTimes, trades, ethTrades)
+	return f.storage.UpdateConvertToETHPrice(originalSymbol, symbol, prices, endTimes, trades, ethTrades)
 }
 
 func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (binance.WithdrawHistoryList, error) {

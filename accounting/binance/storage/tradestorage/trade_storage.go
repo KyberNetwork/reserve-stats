@@ -305,19 +305,20 @@ func (bd *BinanceStorage) GetTradeByTimestamp(symbol string, timestamp time.Time
 }
 
 // UpdateConvertToETHPrice ...
-func (bd *BinanceStorage) UpdateConvertToETHPrice(originalSymbols, symbols []string, prices []float64, timestamps []uint64, originalTrades, trades []binance.TradeHistory) error {
+func (bd *BinanceStorage) UpdateConvertToETHPrice(originalSymbol, symbol string, prices []float64, timestamps []uint64, originalTrades, trades []binance.TradeHistory) error {
 	var (
 		logger = bd.sugar.With(
 			"func", caller.GetCurrentFunctionName(),
-			"symbol", symbols,
+			"original symbol", originalSymbol,
+			"symbol", symbol,
 		)
 		tradesJSON, originalTradesJSON [][]byte
 	)
 	logger.Info("update eth trade")
 	const query = `INSERT INTO binance_convert_to_eth_price (original_symbol, symbol, price, timestamp, original_trade, trade)
 				   VALUES (
-					   unnest($1::TEXT[]), 
-					   unnest($2::TEXT[]), 
+					   $1, 
+					   $2,
 					   unnest($3::FLOAT[]), 
 					   unnest($4::BIGINT[]), 
 					   unnest($5::JSONB[]), 
@@ -339,7 +340,7 @@ func (bd *BinanceStorage) UpdateConvertToETHPrice(originalSymbols, symbols []str
 		}
 		originalTradesJSON = append(originalTradesJSON, originalTradeJSON)
 	}
-	if _, err := bd.db.Exec(query, pq.Array(originalSymbols), pq.Array(symbols), pq.Array(prices), pq.Array(timestamps), pq.Array(originalTradesJSON), pq.Array(tradesJSON)); err != nil {
+	if _, err := bd.db.Exec(query, originalSymbol, symbol, pq.Array(prices), pq.Array(timestamps), pq.Array(originalTradesJSON), pq.Array(tradesJSON)); err != nil {
 		logger.Errorw("failed to update eth trade", "error", err)
 		return err
 	}

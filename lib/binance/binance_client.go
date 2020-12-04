@@ -433,6 +433,7 @@ func (bc *Client) GetAggregatedTrades(symbol string, startTime, endTime uint64) 
 			"symbol":    symbol,
 			"startTime": strconv.FormatUint(startTime, 10),
 			"endTime":   strconv.FormatUint(endTime, 10),
+			"limit":     "1",
 		},
 		false,
 		time.Now(),

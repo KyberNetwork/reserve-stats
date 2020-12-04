@@ -153,37 +153,16 @@ func run(c *cli.Context) error {
 
 		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, account.Name, marketDataClient)
 
-		// if err := binanceFetcher.GetTradeHistory(fromIDs, tokenPairs, account.Name); err != nil {
-		// 	return err
-		// }
 		errGroup.Go(
 			func(accountName string) func() error {
 				return func() error {
-					err := binanceFetcher.GetTradeHistory(fromIDs, tokenPairs, accountName)
-					// for symbol, trades := range neTrades {
-					// 	if _, exist := notETHTrades[symbol]; exist {
-					// 		notETHTrades[symbol] = append(notETHTrades[symbol], trades...)
-					// 	} else {
-					// 		notETHTrades[symbol] = trades
-					// 	}
-					// }
-					return err
+					return binanceFetcher.GetTradeHistory(fromIDs, tokenPairs, accountName)
 				}
 			}(account.Name))
 	}
 	if err := errGroup.Wait(); err != nil {
 		return err
 	}
-	// binanceClient, err := binance.NewBinance("", "", sugar)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, "", marketDataClient)
-	// sugar.Infow("notETHTrades", "legth", len(notETHTrades))
-	// if err := binanceFetcher.UpdateTradeNotETH(notETHTrades); err != nil {
-	// 	return err
-	// }
 
 	return binanceStorage.Close()
 }

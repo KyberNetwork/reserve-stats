@@ -129,12 +129,6 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binanc
 						if err != nil {
 							return err
 						}
-						// handle not eth trade
-						// if pair.BaseAsset != "ETH" && pair.QuoteAsset != "ETH" && len(oneSymbolTradeHistory) > 0 {
-						// 	if _, exist := notETHTrade[&pair]; exist {
-						// 		notETHTrade[&pair] = append(notETHTrade[&pair], oneSymbolTradeHistory...)
-						// 	}
-						// }
 						return f.storage.UpdateTradeHistory(oneSymbolTradeHistory, account)
 					}
 				}(pair),
@@ -183,8 +177,6 @@ func (f *Fetcher) UpdateTradeNotETH(originalSymbol, symbol string, notETHTrades 
 		}
 		// increase delta if there is no result
 		if len(res) == 0 {
-			// logger.Infow("increase time range", "startTime", startTime, "endTime", endTime, "symbol", symbol)
-			// delta += 50
 			return fmt.Errorf("no trade in 1 hour")
 		}
 		price, err := strconv.ParseFloat(res[0].Price, 64)

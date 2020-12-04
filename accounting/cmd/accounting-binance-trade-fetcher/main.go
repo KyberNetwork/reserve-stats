@@ -148,15 +148,7 @@ func run(c *cli.Context) error {
 		errGroup.Go(
 			func(accountName string) func() error {
 				return func() error {
-					err := binanceFetcher.GetTradeHistory(fromIDs, tokenPairs, accountName)
-					// for symbol, trades := range neTrades {
-					// 	if _, exist := notETHTrades[symbol]; exist {
-					// 		notETHTrades[symbol] = append(notETHTrades[symbol], trades...)
-					// 	} else {
-					// 		notETHTrades[symbol] = trades
-					// 	}
-					// }
-					return err
+					return binanceFetcher.GetTradeHistory(fromIDs, tokenPairs, accountName)
 				}
 			}(account.Name))
 	}

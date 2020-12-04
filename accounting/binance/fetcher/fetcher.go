@@ -73,7 +73,7 @@ func (f *Fetcher) getGetAggregatedTradesWithRetry(symbol string, startTime, endT
 		logger           = f.sugar.With("func", caller.GetCurrentFunctionName(), "symbol", symbol)
 	)
 	for attempt := 0; attempt < f.attempt; attempt++ {
-		aggregatedTrades, err = f.client.GetAggregatedTrades(symbol, startTime, endTime)
+		aggregatedTrades, err = f.client.GetAggregatedTrades(symbol, startTime, endTime, 1) // we only want to get 1 nearest price
 		switch err {
 		case binance.ErrBadAPIKeyFormat, binance.ErrRejectedMBxKey:
 			return nil, err

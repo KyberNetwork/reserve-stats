@@ -409,11 +409,7 @@ func (bd *BinanceStorage) GetNotETHTrades() (map[string][]binance.TradeHistory, 
 			}
 			arrResult = append(arrResult, tmp)
 		}
-		if _, exist := result[record.Symbol]; exist {
-			result[record.Symbol] = append(result[record.Symbol], arrResult...)
-		} else {
-			result[record.Symbol] = arrResult
-		}
+		result[record.Symbol] = append(result[record.Symbol], arrResult...)
 	}
 	return result, nil
 }

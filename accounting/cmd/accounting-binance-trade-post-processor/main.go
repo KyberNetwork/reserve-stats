@@ -96,8 +96,9 @@ func run(c *cli.Context) error {
 	marketDataClient := marketdata.NewMarketDataClient(marketDataBaseURL, sugar)
 
 	var (
-		tokenPairs []binance.Symbol
-		quotes     = make(map[string]string)
+		tokenPairs  []binance.Symbol
+		quotes      = make(map[string]string)
+		quoteString []string
 	)
 	exchangeInfo, err := binanceClient.GetExchangeInfo()
 	if err != nil {
@@ -107,8 +108,11 @@ func run(c *cli.Context) error {
 	for _, pair := range tokenPairs {
 		if _, exist := quotes[pair.QuoteAsset]; !exist {
 			quotes[pair.QuoteAsset] = pair.QuoteAsset
+			quoteString = append(quoteString, pair.QuoteAsset)
 		}
 	}
+	regexpString := fmt.Sprintf(".*(%s)$", strings.Join(quoteString, "|"))
+	re := regexp.MustCompile(regexpString)
 
 	sugar.Infow("quotes", "list", quotes)
 
@@ -117,12 +121,12 @@ func run(c *cli.Context) error {
 	batchSize := 5 // dummy batch size to init fetcher
 
 	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, "", marketDataClient)
-	ethTrades, err := binanceStorage.GetNotETHTrades()
+	notEthTrades, err := binanceStorage.GetNotETHTrades()
 	if err != nil {
 		return err
 	}
-	for originalSymbol, trades := range ethTrades {
-		quote := quoteFromOriginalSymbol(quotes, originalSymbol)
+	for originalSymbol, trades := range notEthTrades {
+		quote := quoteFromOriginalSymbol(re, originalSymbol)
 		symbol := "ETH" + quote
 		if err := binanceFetcher.UpdateTradeNotETH(originalSymbol, symbol, trades); err != nil {
 			return err
@@ -131,15 +135,7 @@ func run(c *cli.Context) error {
 	return nil
 }
 
-func quoteFromOriginalSymbol(quotes map[string]string, symbol string) string {
-	var (
-		quoteString []string
-	)
-	for _, v := range quotes {
-		quoteString = append(quoteString, v)
-	}
-	regexpString := fmt.Sprintf(".*(%s)$", strings.Join(quoteString, "|"))
-	re := regexp.MustCompile(regexpString)
+func quoteFromOriginalSymbol(re *regexp.Regexp, symbol string) string {
 	res := re.FindAllStringSubmatch(symbol, -1)
 	return res[0][1]
 }

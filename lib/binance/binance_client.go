@@ -420,7 +420,7 @@ type AggregatedTrade struct {
 }
 
 // GetAggregatedTrades ...
-func (bc *Client) GetAggregatedTrades(symbol string, startTime, endTime uint64) ([]AggregatedTrade, error) {
+func (bc *Client) GetAggregatedTrades(symbol string, startTime, endTime uint64, limit int) ([]AggregatedTrade, error) {
 	var (
 		result []AggregatedTrade
 		err    error
@@ -433,7 +433,7 @@ func (bc *Client) GetAggregatedTrades(symbol string, startTime, endTime uint64) 
 			"symbol":    symbol,
 			"startTime": strconv.FormatUint(startTime, 10),
 			"endTime":   strconv.FormatUint(endTime, 10),
-			"limit":     "1",
+			"limit":     strconv.Itoa(limit),
 		},
 		false,
 		time.Now(),

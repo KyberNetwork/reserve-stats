@@ -394,9 +394,20 @@ func (bd *BinanceStorage) GetNotETHTrades() (map[string][]binance.TradeHistory, 
 		dbResult []NotETHTradeDB
 		tmp      binance.TradeHistory
 	)
-	query := `SELECT symbol, ARRAY_AGG(data) as data FROM binance_trades WHERE RIGHT(symbol, 3) != 'ETH' and LEFT(symbol, 3) != 'ETH' AND
-			 EXTRACT(EPOCH FROM timestamp) * 1000 > (SELECT COALESCE(MAX(timestamp), 0) FROM binance_convert_to_eth_price) 
-			 GROUP BY symbol, timestamp ORDER BY timestamp ASC;`
+	query := `WITH max_timestamp AS (
+		SELECT 
+			COALESCE(MAX(timestamp), 0) as max_timestamp,
+			original_symbol
+		FROM binance_convert_to_eth_price
+		GROUP BY original_symbol
+	)
+	SELECT symbol, ARRAY_AGG(data) as data  
+	FROM binance_trades
+	LEFT JOIN max_timestamp ON symbol = original_symbol
+	WHERE
+		RIGHT(symbol, 3) != 'ETH' and LEFT(symbol, 3) != 'ETH' AND
+		EXTRACT(EPOCH FROM timestamp) * 1000 > COALESCE(max_timestamp, 0)
+	GROUP BY symbol, "timestamp" ORDER BY timestamp ASC;`
 	logger.Infow("Get not eth trades", "query", query)
 	if err := bd.db.Select(&dbResult, query); err != nil {
 		return result, err

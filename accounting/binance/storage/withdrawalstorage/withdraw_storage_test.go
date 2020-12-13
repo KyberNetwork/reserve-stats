@@ -46,7 +46,7 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 			},
 		}
 		expectedData = map[string][]binance.WithdrawHistory{
-			"binance_1": []binance.WithdrawHistory{
+			"binance_1": {
 				{
 					ID:        "3c3bd6d1adb742f0bf8586bb7bb614cb",
 					Amount:    4.7,

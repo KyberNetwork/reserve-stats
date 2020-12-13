@@ -16,14 +16,14 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 )
 
-//Fetcher to get token listed in a reserve
+// Fetcher to get token listed in a reserve
 type Fetcher struct {
 	ethClient                 *ethclient.Client
 	contractTimestampResolver *blockchain.EtherscanContractTimestampResolver
 	sugar                     *zap.SugaredLogger
 }
 
-//NewListedTokenFetcher return new fetcher for listed token
+// NewListedTokenFetcher return new fetcher for listed token
 func NewListedTokenFetcher(ethClient *ethclient.Client, contractTimestampResolver *blockchain.EtherscanContractTimestampResolver,
 	sugar *zap.SugaredLogger) *Fetcher {
 	return &Fetcher{
@@ -67,7 +67,7 @@ func updateListedToken(listedToken map[string]common.ListedToken, symbol, name s
 	return listedToken
 }
 
-//GetListedToken return listed token for a reserve address
+// GetListedToken return listed token for a reserve address
 func (f *Fetcher) GetListedToken(block *big.Int, reserveAddr ethereum.Address,
 	tokenSymbol *blockchain.TokenInfoGetter) ([]common.ListedToken, error) {
 	var (

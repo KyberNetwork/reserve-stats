@@ -6,9 +6,11 @@ import (
 	"time"
 
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/binance/fetcher"
-	withdrawstorage "github.com/KyberNetwork/reserve-stats/accounting/binance/storage/withdrawalstorage"
+	depositstorage "github.com/KyberNetwork/reserve-stats/accounting/binance/storage/depositstorage"
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
@@ -26,8 +28,8 @@ const (
 
 func main() {
 	app := libapp.NewApp()
-	app.Name = "Accounting binance trades fetcher"
-	app.Usage = "Fetch and store trades history from binance"
+	app.Name = "Accounting binance deposit fetcher"
+	app.Usage = "Fetch and store deposit history from binance"
 	app.Action = run
 
 	app.Flags = append(app.Flags,
@@ -53,7 +55,7 @@ func main() {
 
 	app.Flags = append(app.Flags, binance.NewCliFlags()...)
 	app.Flags = append(app.Flags, timeutil.NewMilliTimeRangeCliFlags()...)
-	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultCexWithdrawalsDB)...)
+	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultCexDepositsDB)...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -65,6 +67,7 @@ func run(c *cli.Context) error {
 		fromTime, toTime time.Time
 		err              error
 		accounts         []common.Account
+		errGroup         errgroup.Group
 	)
 
 	sugar, flusher, err := libapp.NewSugaredLogger(c)
@@ -81,7 +84,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	binanceStorage, err := withdrawstorage.NewDB(sugar, db)
+	binanceStorage, err := depositstorage.NewDB(sugar, db)
 	if err != nil {
 		return err
 	}
@@ -101,6 +104,10 @@ func run(c *cli.Context) error {
 	if toTime.IsZero() {
 		toTime = time.Now()
 	}
+	fromTime, err = timeutil.ToTimeMillisFromContext(c)
+	if err != nil {
+		return err
+	}
 
 	retryDelay := c.Duration(retryDelayFlag)
 	attempt := c.Int(attemptFlag)
@@ -110,35 +117,52 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	//
+	assets, err := getAssetsList(accounts, sugar)
+	if err != nil {
+		return err
+	}
 	for _, account := range accounts {
-
-		fromTime, err = timeutil.FromTimeMillisFromContext(c)
-		if err != nil {
-			return err
-		}
-		if fromTime.IsZero() {
-			sugar.Info("from time is not provided, get latest timestamp from database")
-			fromTime, err = binanceStorage.GetLastStoredTimestamp(account.Name)
-			if err != nil {
-				return err
-			}
-		}
 
 		binanceClient, err := binance.NewBinance(account.APIKey, account.SecretKey, sugar)
 		if err != nil {
 			return err
 		}
 
-		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, nil, "", nil, nil)
+		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, nil, "", nil, binanceStorage)
 
-		withdrawHistory, err := binanceFetcher.GetWithdrawHistory(fromTime, toTime)
-		if err != nil {
-			return err
-		}
-
-		if err := binanceStorage.UpdateWithdrawHistory(withdrawHistory, account.Name); err != nil {
-			return err
-		}
+		errGroup.Go(
+			func(accountName string) func() error {
+				return func() error {
+					_, err = binanceFetcher.GetDepositHistory(assets, fromTime, toTime, account.Name)
+					return err
+				}
+			}(account.Name),
+		)
+	}
+	if err := errGroup.Wait(); err != nil {
+		return err
 	}
 	return binanceStorage.Close()
+}
+
+func getAssetsList(accounts []common.Account, sugar *zap.SugaredLogger) ([]string, error) {
+	var (
+		assets []string
+		err    error
+	)
+	// init a binance client
+	binanceClient, err := binance.NewBinance(accounts[0].APIKey, accounts[0].SecretKey, sugar)
+
+	// get account info
+	accountInfo, err := binanceClient.GetAccountInfo()
+	if err != nil {
+		sugar.Errorw("failed dto get assets list", "error", err)
+		return assets, err
+	}
+
+	for _, balance := range accountInfo.Balances {
+		assets = append(assets, balance.Asset)
+	}
+	return assets, nil
 }

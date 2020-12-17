@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/KyberNetwork/reserve-stats/accounting/binance/storage/depositstorage"
 	"github.com/KyberNetwork/reserve-stats/accounting/binance/storage/tradestorage"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
@@ -17,7 +18,8 @@ import (
 )
 
 const (
-	withdrawalTimeLimit = time.Hour * 24 * 90 // 90 days
+	withdrawalTimeLimit     = time.Hour * 24 * 90 // 90 days
+	depositHistoryTimeLimit = time.Hour * 24 * 90 // 90 days
 )
 
 //Fetcher is a fetcher for get binance data
@@ -29,11 +31,12 @@ type Fetcher struct {
 	attempt          int
 	batchSize        int
 	marketDataClient *marketdata.Client
+	depositStorage   *depositstorage.Storage
 }
 
 //NewFetcher return a new fetcher instance
 func NewFetcher(sugar *zap.SugaredLogger, client *binance.Client, retryDelay time.Duration, attempt, batchSize int, storage tradestorage.Interface,
-	accountName string, marketDataClient *marketdata.Client) *Fetcher {
+	accountName string, marketDataClient *marketdata.Client, depositStorage *depositstorage.Storage) *Fetcher {
 	return &Fetcher{
 		sugar:            sugar,
 		client:           client,
@@ -42,6 +45,7 @@ func NewFetcher(sugar *zap.SugaredLogger, client *binance.Client, retryDelay tim
 		batchSize:        batchSize,
 		storage:          storage,
 		marketDataClient: marketDataClient,
+		depositStorage:   depositStorage,
 	}
 }
 
@@ -259,7 +263,7 @@ func (f *Fetcher) getMarginTradeHistoryWithRetry(symbol string, fromID uint64) (
 		case nil:
 			return tradeHistoriesResponse, nil
 		default:
-			logger.Warnw("get trade history failed", "error", err, "attempt", attempt)
+			logger.Warnw("get margin trade history failed", "error", err, "attempt", attempt)
 			time.Sleep(f.retryDelay)
 		}
 	}
@@ -274,7 +278,7 @@ func (f *Fetcher) getMarginTradeHistoryForOneSymBol(fromID uint64, symbol string
 	for {
 		tradeHistoriesResponse, err := f.getMarginTradeHistoryWithRetry(symbol, fromID)
 		if err != nil {
-			logger.Errorw("get trade history error", "symbol", symbol, "error", err)
+			logger.Errorw("get margin trade history error", "symbol", symbol, "error", err)
 			return result, err
 		}
 		// while result != empty, get trades latest time to toTime
@@ -318,4 +322,77 @@ func (f *Fetcher) GetMarginTradeHistory(fromIDs map[string]uint64, tokenPairs []
 		index += f.batchSize
 	}
 	return nil
+}
+
+func (f *Fetcher) getDepositHistoryWithRetry(asset string, fromTime, toTime time.Time) ([]binance.DepositHistory, error) {
+	var (
+		depositHistoryResponse []binance.DepositHistory
+		err                    error
+		logger                 = f.sugar.With("func", caller.GetCurrentFunctionName())
+	)
+	for attempt := 0; attempt < f.attempt; attempt++ {
+		depositHistoryResponse, err = f.client.GetDepositHistory(asset, fromTime, toTime)
+		switch err {
+		case binance.ErrBadAPIKeyFormat, binance.ErrRejectedMBxKey:
+			return nil, err
+		case nil:
+			return depositHistoryResponse, nil
+		default:
+			logger.Warnw("get deposit history failed", "error", err, "attempt", attempt)
+			time.Sleep(f.retryDelay)
+		}
+	}
+	return depositHistoryResponse, err
+}
+
+func (f *Fetcher) getDepositHistoryForOneSymbol(asset string, fromTime, toTime time.Time) ([]binance.DepositHistory, error) {
+	var (
+		logger = f.sugar.With("func", caller.GetCurrentFunctionName())
+		result []binance.DepositHistory
+	)
+	endTime := toTime
+	for toTime.After(fromTime) {
+		endTime = fromTime.Add(depositHistoryTimeLimit)
+		if endTime.After(toTime) {
+			endTime = toTime
+		}
+		depositHistory, err := f.getDepositHistoryWithRetry(asset, fromTime, endTime)
+		if err != nil {
+			logger.Errorw("failed to get withdraw history", "error", err)
+			return result, err
+		}
+		result = append(result, depositHistory...)
+		fromTime = endTime
+	}
+	return result, nil
+}
+
+//GetDepositHistory get all trade history from trades for all token and save them into database
+func (f *Fetcher) GetDepositHistory(assets []string, fromTime, toTime time.Time, account string) ([]binance.DepositHistory, error) {
+	var (
+		logger         = f.sugar.With("func", caller.GetCurrentFunctionName())
+		depositHistory []binance.DepositHistory
+		err            error
+	)
+	for _, asset := range assets {
+		logger.Infow("token", "asset", asset)
+		startTime := fromTime
+		if startTime.IsZero() {
+			startTime, err = f.depositStorage.GetLastStoredTimestamp(account, asset)
+			if err != nil {
+				return nil, err
+			}
+		}
+		oneSymbolDepositHistory, err := f.getDepositHistoryForOneSymbol(asset, startTime, toTime)
+		if err != nil {
+			return depositHistory, err
+		}
+		// depositHistory = append(depositHistory, oneSymbolDepositHistory...)
+		if len(oneSymbolDepositHistory) > 0 {
+			if err := f.depositStorage.UpdateDepositHistory(oneSymbolDepositHistory, account); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return depositHistory, nil
 }

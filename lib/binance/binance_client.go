@@ -444,3 +444,32 @@ func (bc *Client) GetAggregatedTrades(symbol string, startTime, endTime uint64, 
 	err = json.Unmarshal(res, &result)
 	return result, err
 }
+
+// GetDepositHistory return deposit history from binance
+func (bc *Client) GetDepositHistory(asset string, fromTime, toTime time.Time) ([]DepositHistory, error) {
+	var (
+		result DepositHistoryList
+	)
+	endpoint := fmt.Sprintf("%s/wapi/v3/depositHistory.html", endpointPrefix)
+	params := make(map[string]string)
+	params["asset"] = asset
+	if !fromTime.IsZero() {
+		params["startTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(fromTime), 10)
+	}
+
+	if !toTime.IsZero() {
+		params["endTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(toTime), 10)
+	}
+	res, err := bc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		params,
+		true,
+		time.Now(),
+	)
+	if err != nil {
+		return result.DepositList, err
+	}
+	err = json.Unmarshal(res, &result)
+	return result.DepositList, err
+}

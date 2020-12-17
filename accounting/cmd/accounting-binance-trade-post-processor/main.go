@@ -120,7 +120,7 @@ func run(c *cli.Context) error {
 	attempt := c.Int(attemptFlag)
 	batchSize := 5 // dummy batch size to init fetcher
 
-	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, "", marketDataClient)
+	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, "", marketDataClient, nil)
 	notEthTrades, err := binanceStorage.GetNotETHTrades()
 	if err != nil {
 		return err

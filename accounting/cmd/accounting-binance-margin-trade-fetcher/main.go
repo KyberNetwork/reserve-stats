@@ -138,7 +138,7 @@ func run(c *cli.Context) error {
 			return err
 		}
 
-		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, account.Name, nil)
+		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, account.Name, nil, nil)
 
 		if err := binanceFetcher.GetMarginTradeHistory(fromIDs, tokenPairs, account.Name); err != nil {
 			return err

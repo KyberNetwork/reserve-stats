@@ -38,6 +38,22 @@ type AssetDetailResponse struct {
 	AssetDetail map[string]DetailOfAsset `json:"assetDetail"`
 }
 
+//DepositHistory is a binance withdraw history
+type DepositHistory struct {
+	Amount     float64 `json:"amount"`
+	Address    string  `json:"address"`
+	Asset      string  `json:"asset"`
+	TxID       string  `json:"txId"`
+	InsertTime uint64  `json:"insertTime"`
+	Status     int64   `json:"status"`
+}
+
+// DepositHistoryList ...
+type DepositHistoryList struct {
+	DepositList []DepositHistory `json:"depositList"`
+	Success     bool             `json:"success"`
+}
+
 //WithdrawHistory is a binance withdraw history
 type WithdrawHistory struct {
 	ID        string  `json:"id"`
@@ -107,8 +123,16 @@ type SymbolFilterType struct {
 
 //AccountInfo is the object to store account info from binance
 type AccountInfo struct {
-	CanTrade    bool   `json:"canTrade"`
-	CanDeposit  bool   `json:"canDeposit"`
-	CanWithdraw bool   `json:"canWithdraw"`
-	UpdateTime  uint64 `json:"updateTime"`
+	CanTrade    bool           `json:"canTrade"`
+	CanDeposit  bool           `json:"canDeposit"`
+	CanWithdraw bool           `json:"canWithdraw"`
+	UpdateTime  uint64         `json:"updateTime"`
+	Balances    []AssetBalance `json:"balances"`
+}
+
+// AssetBalance ...
+type AssetBalance struct {
+	Asset  string `json:"asset"`
+	Free   string `json:"free"`
+	Locked string `json:"locked"`
 }

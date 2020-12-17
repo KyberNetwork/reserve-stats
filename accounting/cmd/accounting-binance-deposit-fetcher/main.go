@@ -153,6 +153,9 @@ func getAssetsList(accounts []common.Account, sugar *zap.SugaredLogger) ([]strin
 	)
 	// init a binance client
 	binanceClient, err := binance.NewBinance(accounts[0].APIKey, accounts[0].SecretKey, sugar)
+	if err != nil {
+		return nil, err
+	}
 
 	// get account info
 	accountInfo, err := binanceClient.GetAccountInfo()

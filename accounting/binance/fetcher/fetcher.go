@@ -1,7 +1,9 @@
 package fetcher
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -10,6 +12,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/binance/storage/tradestorage"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
+	"github.com/KyberNetwork/reserve-stats/lib/marketdata"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
@@ -19,24 +22,26 @@ const (
 
 //Fetcher is a fetcher for get binance data
 type Fetcher struct {
-	sugar      *zap.SugaredLogger
-	client     *binance.Client
-	retryDelay time.Duration
-	storage    tradestorage.Interface
-	attempt    int
-	batchSize  int
+	sugar            *zap.SugaredLogger
+	client           *binance.Client
+	retryDelay       time.Duration
+	storage          tradestorage.Interface
+	attempt          int
+	batchSize        int
+	marketDataClient *marketdata.Client
 }
 
 //NewFetcher return a new fetcher instance
 func NewFetcher(sugar *zap.SugaredLogger, client *binance.Client, retryDelay time.Duration, attempt, batchSize int, storage tradestorage.Interface,
-	accountName string) *Fetcher {
+	accountName string, marketDataClient *marketdata.Client) *Fetcher {
 	return &Fetcher{
-		sugar:      sugar,
-		client:     client,
-		retryDelay: retryDelay,
-		attempt:    attempt,
-		batchSize:  batchSize,
-		storage:    storage,
+		sugar:            sugar,
+		client:           client,
+		retryDelay:       retryDelay,
+		attempt:          attempt,
+		batchSize:        batchSize,
+		storage:          storage,
+		marketDataClient: marketDataClient,
 	}
 }
 
@@ -59,6 +64,27 @@ func (f *Fetcher) getTradeHistoryWithRetry(symbol string, fromID uint64) ([]bina
 		}
 	}
 	return tradeHistoriesResponse, err
+}
+
+func (f *Fetcher) getGetAggregatedTradesWithRetry(symbol string, startTime, endTime uint64) ([]binance.AggregatedTrade, error) {
+	var (
+		aggregatedTrades []binance.AggregatedTrade
+		err              error
+		logger           = f.sugar.With("func", caller.GetCurrentFunctionName(), "symbol", symbol)
+	)
+	for attempt := 0; attempt < f.attempt; attempt++ {
+		aggregatedTrades, err = f.client.GetAggregatedTrades(symbol, startTime, endTime, 1) // we only want to get 1 nearest price
+		switch err {
+		case binance.ErrBadAPIKeyFormat, binance.ErrRejectedMBxKey:
+			return nil, err
+		case nil:
+			return aggregatedTrades, nil
+		default:
+			logger.Warnw("get aggregated trade failed", "error", err, "attempt", attempt)
+			time.Sleep(f.retryDelay)
+		}
+	}
+	return aggregatedTrades, err
 }
 
 func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]binance.TradeHistory, error) {
@@ -84,11 +110,12 @@ func (f *Fetcher) getTradeHistoryForOneSymBol(fromID uint64, symbol string) ([]b
 	return result, nil
 }
 
-//GetTradeHistory get all trade history from trades for all token and save them into database
+// GetTradeHistory get all trade history from trades for all token and save them into database
 func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binance.Symbol, account string) error {
 	var (
 		logger   = f.sugar.With("func", caller.GetCurrentFunctionName())
 		errGroup errgroup.Group
+		// notETHTrade = make(map[*binance.Symbol][]binance.TradeHistory)
 	)
 	index := 0
 	for index < len(tokenPairs) {
@@ -102,14 +129,6 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binanc
 						if err != nil {
 							return err
 						}
-						// handle not eth trade
-						if pair.BaseAsset != "ETH" && pair.QuoteAsset != "ETH" && len(oneSymbolTradeHistory) > 0 {
-							symbol := "ETH" + pair.QuoteAsset
-							if err := f.updateTradeNotETH(pair.Symbol, symbol, oneSymbolTradeHistory); err != nil {
-								logger.Errorw("failed to update trade with no eth as quote", "error", err)
-							}
-						}
-
 						return f.storage.UpdateTradeHistory(oneSymbolTradeHistory, account)
 					}
 				}(pair),
@@ -123,34 +142,42 @@ func (f *Fetcher) GetTradeHistory(fromIDs map[string]uint64, tokenPairs []binanc
 	return nil
 }
 
-func (f *Fetcher) updateTradeNotETH(originalSymbol, symbol string, oneSymbolTradeHistory []binance.TradeHistory) error {
+// UpdateTradeNotETH ...
+func (f *Fetcher) UpdateTradeNotETH(originalSymbol, symbol string, notETHTrades []binance.TradeHistory) error {
 	var (
 		logger = f.sugar.With(
 			"func", caller.GetCurrentFunctionName(),
 		)
+		prices            []float64
+		endTimes          []uint64
+		trades, ethTrades []binance.TradeHistory
 	)
-	for _, trade := range oneSymbolTradeHistory {
+	isPairValid, err := f.marketDataClient.PairSupported("binance", strings.ToLower(symbol))
+	if err != nil {
+		return err
+	}
+	if !isPairValid {
+		logger.Infow("pair is not supported", "pair", symbol)
+		return nil
+	}
+	for _, trade := range notETHTrades {
 		endTime := trade.Time
 
 		// get aggregated trade for that timestamp
 		var (
-			delta uint64 = 5 // default 5 senconds
+			delta uint64 = 60 * 60 * 1000 // default 5 seconds
 			res   []binance.AggregatedTrade
 			err   error
 		)
-		for {
-			startTime := endTime - delta
-			res, err = f.client.GetAggregatedTrades(symbol, startTime, endTime)
-			if err != nil {
-				logger.Errorw("failed to get aggregated trades from binance", "error", err)
-				return err
-			}
-			// increase delta if there is no result
-			if len(res) == 0 {
-				delta += 5
-				continue
-			}
-			break
+		startTime := endTime - delta + 1000
+		res, err = f.getGetAggregatedTradesWithRetry(symbol, startTime, endTime)
+		if err != nil {
+			logger.Errorw("failed to get aggregated trades from binance", "error", err)
+			return err
+		}
+		// increase delta if there is no result
+		if len(res) == 0 {
+			return fmt.Errorf("no trade in 1 hour")
 		}
 		price, err := strconv.ParseFloat(res[0].Price, 64)
 		if err != nil {
@@ -165,13 +192,13 @@ func (f *Fetcher) updateTradeNotETH(originalSymbol, symbol string, oneSymbolTrad
 			logger.Errorw("failed to get trade by timestamp", "error", err)
 			return err
 		}
-
-		// store info to persistent storage
-		if err := f.storage.UpdateConvertToETHPrice(originalSymbol, symbol, price, endTime, trade, ethTrade); err != nil {
-			return err
-		}
+		prices = append(prices, price)
+		endTimes = append(endTimes, endTime)
+		trades = append(trades, trade)
+		ethTrades = append(ethTrades, ethTrade)
 	}
-	return nil
+	// store info to persistent storage
+	return f.storage.UpdateConvertToETHPrice(originalSymbol, symbol, prices, endTimes, trades, ethTrades)
 }
 
 func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (binance.WithdrawHistoryList, error) {
@@ -192,7 +219,7 @@ func (f *Fetcher) getWithdrawHistoryWithRetry(startTime, endTime time.Time) (bin
 	return withdrawHistory, err
 }
 
-//GetWithdrawHistory get all withdraw history in time range fromTime to toTime
+// GetWithdrawHistory get all withdraw history in time range fromTime to toTime
 func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.WithdrawHistory, error) {
 	var (
 		result []binance.WithdrawHistory

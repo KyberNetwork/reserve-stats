@@ -1,28 +1,28 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
-	"golang.org/x/sync/errgroup"
 
 	fetcher "github.com/KyberNetwork/reserve-stats/accounting/binance/fetcher"
 	"github.com/KyberNetwork/reserve-stats/accounting/binance/storage/tradestorage"
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
+	"github.com/KyberNetwork/reserve-stats/lib/marketdata"
 )
 
 const (
 	retryDelayFlag    = "retry-delay"
 	attemptFlag       = "attempt"
-	batchSizeFlag     = "batch-size"
-	symbolsFlag       = "symbols"
 	defaultRetryDelay = 2 * time.Minute
 	defaultAttempt    = 4
-	defaultBatchSize  = 20
 )
 
 var sugar *zap.SugaredLogger
@@ -46,21 +46,11 @@ func main() {
 			EnvVar: "ATTEMPT",
 			Value:  defaultAttempt,
 		},
-		cli.IntFlag{
-			Name:   batchSizeFlag,
-			Usage:  "batch to request to binance",
-			EnvVar: "BATCH_SIZE",
-			Value:  defaultBatchSize,
-		},
-		cli.StringSliceFlag{
-			Name:   symbolsFlag,
-			Usage:  "symbol to get trade history for, if not provide then get from binance",
-			EnvVar: "SYMBOLS",
-		},
 	)
 
 	app.Flags = append(app.Flags, binance.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultCexTradesDB)...)
+	app.Flags = append(app.Flags, marketdata.NewMarketDataFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		sugar.Fatal(err)
@@ -69,10 +59,8 @@ func main() {
 
 func run(c *cli.Context) error {
 	var (
-		flusher  func()
-		err      error
-		accounts []common.Account
-		errGroup errgroup.Group
+		flusher func()
+		err     error
 	)
 	sugar, flusher, err = libapp.NewSugaredLogger(c)
 	if err != nil {
@@ -103,52 +91,50 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	marketDataBaseURL := marketdata.GetMarketDataBaseURLFromContext(c)
+	marketDataClient := marketdata.NewMarketDataClient(marketDataBaseURL, sugar)
 
-	var tokenPairs []binance.Symbol
+	var (
+		tokenPairs  []binance.Symbol
+		quotes      = make(map[string]string)
+		quoteString []string
+	)
 	exchangeInfo, err := binanceClient.GetExchangeInfo()
 	if err != nil {
 		return err
 	}
 	tokenPairs = exchangeInfo.Symbols
+	for _, pair := range tokenPairs {
+		if _, exist := quotes[pair.QuoteAsset]; !exist {
+			quotes[pair.QuoteAsset] = pair.QuoteAsset
+			quoteString = append(quoteString, pair.QuoteAsset)
+		}
+	}
+	regexpString := fmt.Sprintf(".*(%s)$", strings.Join(quoteString, "|"))
+	re := regexp.MustCompile(regexpString)
+
+	sugar.Infow("quotes", "list", quotes)
 
 	retryDelay := c.Duration(retryDelayFlag)
 	attempt := c.Int(attemptFlag)
-	batchSize := c.Int(batchSizeFlag)
-	options, err := binance.ClientOptionFromContext(c)
-	if err != nil {
-		return err
-	}
-	accounts, err = binance.AccountsFromContext(c)
-	if err != nil {
-		return err
-	}
-	// notETHTrades := make(map[*binance.Symbol][]binance.TradeHistory)
-	for _, account := range accounts {
-		fromIDs := make(map[string]uint64)
-		for _, pair := range tokenPairs {
-			sugar.Info("from id is not provided, get latest from id stored in database")
-			from, err := binanceStorage.GetLastStoredID(pair.Symbol, account.Name)
-			if err != nil {
-				return err
-			}
-			fromIDs[pair.Symbol] = from
-		}
+	batchSize := 5 // dummy batch size to init fetcher
 
-		binanceClient, err := binance.NewBinance(account.APIKey, account.SecretKey, sugar, options...)
-		if err != nil {
+	binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, "", marketDataClient)
+	notEthTrades, err := binanceStorage.GetNotETHTrades()
+	if err != nil {
+		return err
+	}
+	for originalSymbol, trades := range notEthTrades {
+		quote := quoteFromOriginalSymbol(re, originalSymbol)
+		symbol := "ETH" + quote
+		if err := binanceFetcher.UpdateTradeNotETH(originalSymbol, symbol, trades); err != nil {
 			return err
 		}
-
-		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, account.Name, nil)
-		errGroup.Go(
-			func(accountName string) func() error {
-				return func() error {
-					return binanceFetcher.GetTradeHistory(fromIDs, tokenPairs, accountName)
-				}
-			}(account.Name))
-	}
-	if err := errGroup.Wait(); err != nil {
-		return err
 	}
 	return nil
+}
+
+func quoteFromOriginalSymbol(re *regexp.Regexp, symbol string) string {
+	res := re.FindAllStringSubmatch(symbol, -1)
+	return res[0][1]
 }

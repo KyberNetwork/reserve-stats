@@ -1,5 +1,5 @@
-accounting accounting-binance-trade-fetcher accounting-binance-margin-trade-fetcher accounting-binance-withdrawal-fetcher 
-accounting accounting-cex-trades-api accounting-cex-withdrawals-api 
+accounting accounting-binance-trade-fetcher accounting-binance-margin-trade-fetcher accounting-binance-withdrawal-fetcher accounting-binance-frequent-trade-fetcher
+accounting accounting-cex-trades-api accounting-cex-withdrawals-api accounting-binance-trade-post-processor
 accounting accounting-gateway 
 accounting accounting-huobi-trade-fetcher accounting-huobi-withdrawal-fetcher 
 accounting accounting-reserve-addresses-api 

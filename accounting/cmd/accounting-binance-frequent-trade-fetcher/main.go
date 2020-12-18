@@ -13,6 +13,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
+	"github.com/KyberNetwork/reserve-stats/lib/coreclient"
 )
 
 const (
@@ -23,13 +24,16 @@ const (
 	defaultRetryDelay = 2 * time.Minute
 	defaultAttempt    = 4
 	defaultBatchSize  = 20
+
+	binance1ID = 1
+	binance2ID = 2
 )
 
 var sugar *zap.SugaredLogger
 
 func main() {
 	app := libapp.NewApp()
-	app.Name = "Accounting binance trades fetcher"
+	app.Name = "Accounting binance frequent trades fetcher"
 	app.Usage = "Fetch and store trades history from binance"
 	app.Action = run
 
@@ -61,6 +65,7 @@ func main() {
 
 	app.Flags = append(app.Flags, binance.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultCexTradesDB)...)
+	app.Flags = append(app.Flags, coreclient.NewCoreClientFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		sugar.Fatal(err)
@@ -99,17 +104,20 @@ func run(c *cli.Context) error {
 		}
 	}()
 
-	binanceClient, err := binance.NewBinance("", "", sugar) // this is public client to get exchange info
-	if err != nil {
-		return err
-	}
-
+	coreClient := coreclient.NewCoreClientFromContext(c, sugar)
 	var tokenPairs []binance.Symbol
-	exchangeInfo, err := binanceClient.GetExchangeInfo()
+
+	binance1Tokens, err := coreClient.GetBinanceSupportedPairs(binance1ID)
 	if err != nil {
 		return err
 	}
-	tokenPairs = exchangeInfo.Symbols
+	tokenPairs = append(tokenPairs, binance1Tokens...)
+
+	binance2Tokens, err := coreClient.GetBinanceSupportedPairs(binance2ID)
+	if err != nil {
+		return err
+	}
+	tokenPairs = append(tokenPairs, binance2Tokens...)
 
 	retryDelay := c.Duration(retryDelayFlag)
 	attempt := c.Int(attemptFlag)
@@ -122,6 +130,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
 	// notETHTrades := make(map[*binance.Symbol][]binance.TradeHistory)
 	for _, account := range accounts {
 		fromIDs := make(map[string]uint64)
@@ -140,6 +149,7 @@ func run(c *cli.Context) error {
 		}
 
 		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, account.Name, nil)
+
 		errGroup.Go(
 			func(accountName string) func() error {
 				return func() error {
@@ -150,5 +160,6 @@ func run(c *cli.Context) error {
 	if err := errGroup.Wait(); err != nil {
 		return err
 	}
-	return nil
+
+	return binanceStorage.Close()
 }

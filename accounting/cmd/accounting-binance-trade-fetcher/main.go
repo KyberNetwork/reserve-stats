@@ -13,7 +13,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
-	"github.com/KyberNetwork/reserve-stats/lib/marketdata"
 )
 
 const (
@@ -24,8 +23,6 @@ const (
 	defaultRetryDelay = 2 * time.Minute
 	defaultAttempt    = 4
 	defaultBatchSize  = 20
-
-	marketDataBaseURL = "https://staging-market-data.knstats.com"
 )
 
 var sugar *zap.SugaredLogger
@@ -107,8 +104,6 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	marketDataClient := marketdata.NewMarketDataClient(marketDataBaseURL, sugar)
-
 	var tokenPairs []binance.Symbol
 	exchangeInfo, err := binanceClient.GetExchangeInfo()
 	if err != nil {
@@ -144,7 +139,7 @@ func run(c *cli.Context) error {
 			return err
 		}
 
-		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, account.Name, marketDataClient)
+		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, account.Name, nil)
 		errGroup.Go(
 			func(accountName string) func() error {
 				return func() error {

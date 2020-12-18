@@ -23,8 +23,6 @@ const (
 	attemptFlag       = "attempt"
 	defaultRetryDelay = 2 * time.Minute
 	defaultAttempt    = 4
-
-	marketDataBaseURL = "https://staging-market-data.knstats.com"
 )
 
 var sugar *zap.SugaredLogger
@@ -52,6 +50,7 @@ func main() {
 
 	app.Flags = append(app.Flags, binance.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(common.DefaultCexTradesDB)...)
+	app.Flags = append(app.Flags, marketdata.NewMarketDataFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		sugar.Fatal(err)
@@ -92,7 +91,7 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
+	marketDataBaseURL := marketdata.GetMarketDataBaseURLFromContext(c)
 	marketDataClient := marketdata.NewMarketDataClient(marketDataBaseURL, sugar)
 
 	var (

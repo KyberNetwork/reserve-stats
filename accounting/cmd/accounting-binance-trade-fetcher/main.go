@@ -139,7 +139,7 @@ func run(c *cli.Context) error {
 			return err
 		}
 
-		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, account.Name, nil, nil)
+		binanceFetcher := fetcher.NewFetcher(sugar, binanceClient, retryDelay, attempt, batchSize, binanceStorage, account.Name, nil)
 		errGroup.Go(
 			func(accountName string) func() error {
 				return func() error {

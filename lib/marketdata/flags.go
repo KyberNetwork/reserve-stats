@@ -4,7 +4,7 @@ import "github.com/urfave/cli"
 
 const (
 	marketDataBaseURLFlag    = "market-data-base-url"
-	defaultMarketDataBaseURL = "https://staging-market-data.ksntats.com"
+	defaultMarketDataBaseURL = "https://staging-market-data.knstats.com"
 )
 
 // NewMarketDataFlags ...

@@ -60,6 +60,7 @@ func (fc *Fetcher) getTradeHistoryWithSymbol(symbol string, from, to time.Time) 
 		}
 		tradeHistoriesResponse, err := fc.retry(fc.client.GetTradeHistory, symbol, startTime, endTime, extras)
 		if err != nil {
+			logger.Errorw("failed to fetch trade history after retry", "attempts", fc.attempt, "error", err)
 			return result, err
 		}
 		// while result != empty, get trades latest time to toTime

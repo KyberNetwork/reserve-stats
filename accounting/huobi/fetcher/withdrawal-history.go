@@ -35,10 +35,12 @@ func (fc *Fetcher) getWithdrawHistoryWithSymbol(symbol string, fromID uint64) ([
 	var (
 		nextFromID = fromID
 		result     []huobi.WithdrawHistory
+		logger     = fc.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 	for {
 		tradeHistoriesResponse, err := fc.retryGetWithdrawal(fc.client.GetWithdrawHistory, symbol, nextFromID)
 		if err != nil {
+			logger.Errorw("failed to get withdrawal history", "attempts", fc.attempt, "error", err)
 			return result, err
 		}
 

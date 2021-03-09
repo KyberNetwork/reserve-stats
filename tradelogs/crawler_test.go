@@ -1,33 +1,25 @@
 package tradelogs
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
-	"fmt"
 	"math/big"
 	"testing"
 	"time"
 
-	ether "github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/nanmu42/etherscan-api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 	"github.com/KyberNetwork/reserve-stats/lib/tokenrate"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
-const (
-	alchemyRopsten = "https://eth-ropsten.alchemyapi.io/v2/GvXu_IIrL0U10ZpgTXKjOGIA06KcwzEK"
-)
+// const (
+// 	alchemyRopsten = "https://eth-ropsten.alchemyapi.io/v2/GvXu_IIrL0U10ZpgTXKjOGIA06KcwzEK"
+// )
 
 type mockBroadCastClient struct{}
 
@@ -63,13 +55,6 @@ func assertTradeLog(t *testing.T, tradeLog common.TradelogV4) {
 	assert.NotZero(t, tradeLog.ETHUSDProvider)
 	assert.NotZero(t, tradeLog.Index)
 }
-
-var (
-	nwProxyAddr      = ethereum.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")
-	kyberStorageAddr = ethereum.HexToAddress("")
-	feeHandlerAddr   = ethereum.HexToAddress("")
-	kyberNetwork     = ethereum.HexToAddress("")
-)
 
 func TestCrawlerGetTradeLogs(t *testing.T) {
 	testutil.SkipExternal(t)
@@ -306,103 +291,5 @@ func TestCrawler_GetEthAmount(t *testing.T) {
 	require.Len(t, tradeLogs, 7)
 	for _, tradeLog := range tradeLogs {
 		assertTradeLog(t, tradeLog)
-	}
-}
-
-func TestTraceAddReserve(t *testing.T) {
-	c, err := ethclient.Dial(alchemyRopsten)
-	require.NoError(t, err)
-	topics := [][]ethereum.Hash{
-		{
-			ethereum.HexToHash(addReserveToStorageEvent),
-		},
-	}
-	query := ether.FilterQuery{
-		FromBlock: big.NewInt(8008389),
-		ToBlock:   big.NewInt(8008389),
-		Addresses: []ethereum.Address{ethereum.HexToAddress("0xa4ead31a6c8e047e01ce1128e268c101ad391959")},
-		Topics:    topics,
-	}
-	logs, err := c.FilterLogs(context.Background(), query)
-	require.NoError(t, err)
-	ab, err := abi.JSON(bytes.NewReader([]byte(contracts.KyberStorageABI)))
-	require.NoError(t, err)
-
-	type AddReserveToStorageEvent struct {
-		ReserveType uint8
-		Add         bool
-	}
-
-	for _, log := range logs {
-		t.Log("hash", log.TxHash.String())
-		var d AddReserveToStorageEvent
-		for _, d := range log.Topics {
-			t.Log("topic", d.String())
-		}
-		err = ab.Unpack(&d, "AddReserveToStorage", log.Data)
-		require.NoError(t, err)
-		t.Log("rawdata", log.Data)
-	}
-}
-
-func TestCrawlFeeDistributed(t *testing.T) {
-	c, err := ethclient.Dial(alchemyRopsten)
-	require.NoError(t, err)
-	topics := [][]ethereum.Hash{
-		{
-			ethereum.HexToHash(feeDistributedEvent),
-		},
-	}
-	query := ether.FilterQuery{
-		FromBlock: big.NewInt(8151682),
-		ToBlock:   big.NewInt(8152370),
-		Addresses: []ethereum.Address{ethereum.HexToAddress("0xe57B2c3b4E44730805358131a6Fc244C57178Da7")},
-		Topics:    topics,
-	}
-	logs, err := c.FilterLogs(context.Background(), query)
-	require.NoError(t, err)
-	kyberFeeHandlerContract, err := contracts.NewKyberFeeHandler(ethereum.HexToAddress("0xe57B2c3b4E44730805358131a6Fc244C57178Da7"), c)
-	require.NoError(t, err)
-
-	for _, log := range logs {
-		fmt.Printf("hash: %s\n", log.TxHash.String())
-		for _, t := range log.Topics {
-			fmt.Printf("topic: %s\n", t.String())
-		}
-		d, err := kyberFeeHandlerContract.ParseFeeDistributed(log)
-		require.NoError(t, err)
-		dataByte, _ := json.Marshal(d)
-		fmt.Printf("%s\n", dataByte)
-	}
-}
-
-func TestCrawlKyberTrade(t *testing.T) {
-	c, err := ethclient.Dial(alchemyRopsten)
-	require.NoError(t, err)
-	topics := [][]ethereum.Hash{
-		{
-			ethereum.HexToHash(kyberTradeEventV4),
-		},
-	}
-	query := ether.FilterQuery{
-		FromBlock: big.NewInt(8111308),
-		ToBlock:   big.NewInt(8111408),
-		Addresses: []ethereum.Address{ethereum.HexToAddress("0x9EC49C41Fdc4C79fDb042AF37659f2E3220ad0a4")},
-		Topics:    topics,
-	}
-	logs, err := c.FilterLogs(context.Background(), query)
-	require.NoError(t, err)
-	kyberNetworkContract, err := contracts.NewKyberNetwork(ethereum.HexToAddress("0x9EC49C41Fdc4C79fDb042AF37659f2E3220ad0a4"), c)
-	require.NoError(t, err)
-
-	for _, log := range logs {
-		fmt.Printf("hash: %s\n", log.TxHash.String())
-		for _, t := range log.Topics {
-			fmt.Printf("topic: %s\n", t.String())
-		}
-		d, err := kyberNetworkContract.ParseKyberTrade(log)
-		require.NoError(t, err)
-		dataByte, _ := json.Marshal(d)
-		fmt.Printf("%s\n", dataByte)
 	}
 }

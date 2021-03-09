@@ -91,25 +91,12 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (*common.CrawlResult, erro
 
 	startingBlocks := deployment.MustGetStartingBlocksFromContext(fj.c)
 	addresses := []ethereum.Address{contracts.PricingContractAddress().MustGetOneFromContext(fj.c)}
-	addresses = append(addresses, contracts.NetworkContractAddress().MustGetOneFromContext(fj.c))
-	addresses = append(addresses, contracts.BurnerContractAddress().MustGetOneFromContext(fj.c))
-	addresses = append(addresses, contracts.ProxyContractAddress().MustGetOneFromContext(fj.c))
-	addresses = append(addresses, contracts.OldBurnerContractAddress().MustGetFromContext(fj.c)...)
-	addresses = append(addresses, contracts.OldNetworkContractAddress().MustGetFromContext(fj.c)...)
-	addresses = append(addresses, contracts.OldProxyContractAddress().MustGetFromContext(fj.c)...)
-	addresses = append(addresses, contracts.KyberFeeHandlerContractAddress().MustGetFromContext(fj.c)...)
-	addresses = append(addresses, contracts.KyberStorageContractAddress().MustGetFromContext(fj.c)...)
-
 	// logger.Fatalw("addresses", "addresses", addresses)
 
 	volumeExcludedReserve := contracts.VolumeExcludedReserves().MustGetFromContext(fj.c)
 
-	kyberStorageAddr := contracts.KyberStorageContractAddress().MustGetOneFromContext(fj.c)
-	feeHandlerAddr := contracts.KyberFeeHandlerContractAddress().MustGetOneFromContext(fj.c)
-	kyberNetworkAddr := contracts.NetworkContractAddress().MustGetOneFromContext(fj.c)
-
 	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks,
-		fj.etherscanClient, volumeExcludedReserve, fj.networkProxyAddr, kyberStorageAddr, feeHandlerAddr, kyberNetworkAddr)
+		fj.etherscanClient, volumeExcludedReserve)
 	if err != nil {
 		return nil, err
 	}

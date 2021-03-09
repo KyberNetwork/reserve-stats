@@ -12,7 +12,6 @@ import (
 	ether "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethereum "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/nanmu42/etherscan-api"
 	"github.com/stretchr/testify/assert"
@@ -85,7 +84,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		ethereum.HexToAddress("0x52166528FCC12681aF996e409Ee3a421a4e128A3"), // burner contract
 	}
 	c, err := NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), v3Addresses,
-		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr, kyberStorageAddr, feeHandlerAddr, kyberNetwork)
+		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{})
 	require.NoError(t, err)
 
 	result, err := c.GetTradeLogs(big.NewInt(7025000), big.NewInt(7025100), time.Minute)
@@ -103,7 +102,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 	}
 
 	c, err = NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), v2Addresses,
-		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr, kyberStorageAddr, feeHandlerAddr, kyberNetwork)
+		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{})
 	require.NoError(t, err)
 
 	result, err = c.GetTradeLogs(big.NewInt(6343120), big.NewInt(6343220), time.Minute)
@@ -200,7 +199,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 	}
 
 	c, err = NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), v1Addresses,
-		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr, kyberStorageAddr, feeHandlerAddr, kyberNetwork)
+		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{})
 	require.NoError(t, err)
 
 	result, err = c.GetTradeLogs(big.NewInt(5877442), big.NewInt(5877500), time.Minute)
@@ -253,7 +252,7 @@ func newTestCrawler(t *testing.T, version string) *Crawler {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	client := testutil.MustNewDevelopmentwEthereumClient()
 	c, err := NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), addresses,
-		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr, kyberStorageAddr, feeHandlerAddr, kyberNetwork)
+		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{})
 	require.NoError(t, err)
 	return c
 }
@@ -308,64 +307,6 @@ func TestCrawler_GetEthAmount(t *testing.T) {
 	for _, tradeLog := range tradeLogs {
 		assertTradeLog(t, tradeLog)
 	}
-}
-
-func TestDecodeTradeWithHintTx(t *testing.T) {
-	// example of transaction input data
-	txInput := "0x29589f61000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee00000000000000000000000000000000000000000000000002e0f43384a3591f0000000000000000000000000d8775f648430679a709e98d2b0cb6250d2887ef0000000000000000000000005eee96fa064a571dabcbfe43799d46e5de2f51f98000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000031c454332beb5e2eff000000000000000000000000440bbd6a888a36de6e2f6a25f65bc4e16874faa9000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000045045524d00000000000000000000000000000000000000000000000000000000"
-	var data tradeWithHintParam
-	data, err := decodeTradeInputParamV3(hexutil.MustDecode(txInput))
-	require.NoError(t, err)
-
-	t.Log("src", data.Src.String())
-	t.Log("srcAmount", data.SrcAmount)
-	t.Log("dest", data.Dest.String())
-	t.Log("destAddr", data.DestAddress.String())
-	t.Log("maxDestAmount", data.MaxDestAmount)
-	t.Log("walletID", data.WalletID.String())
-	t.Log("minConversionRate", data.MinConversionRate.String())
-
-	assert.Equal(t, ethereum.HexToAddress("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"), data.Src)
-	assert.Equal(t, ethereum.HexToAddress("0x0D8775F648430679A709E98d2b0Cb6250d2887EF"), data.Dest)
-	assert.Equal(t, ethereum.HexToAddress("0x440bBd6a888a36DE6e2F6A25f65bc4e16874faa9"), data.WalletID)
-}
-
-func TestDecodeTrade(t *testing.T) {
-	txInput := "0xcb3c28c70000000000000000000000006b175474e89094c44da98b954eedeac495271d0f000000000000000000000000000000000000000000000002b5e3af16b1880000000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee000000000000000000000000f76cb72ecfa276d8d64a24f54a94554e2da8f712800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000147c9c7c10adb2000000000000000000000000f1aa99c69715f423086008eb9d06dc1e35cc504d"
-	var data tradeWithHintParam
-	data, err := decodeTradeInputParamV3(hexutil.MustDecode(txInput))
-	require.NoError(t, err)
-	t.Log("src", data.Src.String())
-	t.Log("srcAmount", data.SrcAmount)
-	t.Log("dest", data.Dest.String())
-	t.Log("destAddr", data.DestAddress.String())
-	t.Log("maxDestAmount", data.MaxDestAmount)
-	t.Log("walletID", data.WalletID.String())
-	t.Log("minConversionRate", data.MinConversionRate.String())
-
-	assert.Equal(t, ethereum.HexToAddress("0x6B175474E89094C44Da98b954EedeAC495271d0F"), data.Src)
-	assert.Equal(t, ethereum.HexToAddress("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"), data.Dest)
-	assert.Equal(t, ethereum.HexToAddress("0xF1AA99C69715F423086008eB9D06Dc1E35Cc504d"), data.WalletID)
-}
-
-func TestDecodeTradeWithHintAndFeeTxV4(t *testing.T) {
-	// example of transaction input data
-	txInput := "0xae591d54000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee0000000000000000000000000000000000000000000000001bc16d674ec80000000000000000000000000000d9ec3ff1f8be459bb9369b4e79e9ebcf7141c093000000000000000000000000017cf1489eb1ff78ef8797dfc09662c845e187b9ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000004c083087eefb8b28280000000000000000000000000440bbd6a888a36de6e2f6a25f65bc4e16874faa9000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000001200000000000000000000000000000000000000000000000000000000000000000"
-	var data tradeWithHintParamV4
-	data, err := decodeTradeInputParamV4(hexutil.MustDecode(txInput))
-	require.NoError(t, err)
-
-	t.Log("src", data.Src.String())
-	t.Log("srcAmount", data.SrcAmount)
-	t.Log("dest", data.Dest.String())
-	t.Log("destAddr", data.DestAddress.String())
-	t.Log("maxDestAmount", data.MaxDestAmount)
-	t.Log("walletID", data.PlatformWallet.String())
-	t.Log("minConversionRate", data.MinConversionRate.String())
-
-	assert.Equal(t, ethereum.HexToAddress("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"), data.Src)
-	assert.Equal(t, ethereum.HexToAddress("0xD9Ec3ff1f8be459Bb9369b4E79e9Ebcf7141C093"), data.Dest)
-	assert.Equal(t, ethereum.HexToAddress("0x440bBd6a888a36DE6e2F6A25f65bc4e16874faa9"), data.PlatformWallet)
 }
 
 func TestTraceAddReserve(t *testing.T) {

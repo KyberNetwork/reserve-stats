@@ -1,6 +1,7 @@
 package tradelogs
 
 import (
+	"fmt"
 	"math/big"
 	"time"
 
@@ -12,15 +13,15 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
-// const (
-// use for crawler v4
-// kyberTradeEventV4 = "0x30bbea603a7b36858fe5e3ec6ba5ff59dde039d02120d758eacfaed01520577d"
-// )
+const (
+	// tradeExecute(address sender, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
+	tradeExecuteEvent = "0x4ee2afc3e9f9e97f558641bdc31ff31e4f34a1aaa2390cffbd64ee9ac18dfbec"
+)
 
 func (crawler *Crawler) fetchTradeLog(fromBlock, toBlock *big.Int, timeout time.Duration) (*common.CrawlResult, error) {
 	topics := [][]ethereum.Hash{
 		{
-			ethereum.HexToHash(""), // should be TradeExecuteEvent from reserve contract
+			ethereum.HexToHash(tradeExecuteEvent), // should be TradeExecuteEvent from reserve contract
 		},
 	}
 
@@ -48,11 +49,14 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) (*common.CrawlR
 			return &result, errors.New("log item has no topic")
 		}
 
-		// topic := log.Topics[0]
-		// switch topic.Hex() {
-		// default:
-		// 	return nil, errUnknownLogTopic
-		// }
+		topic := log.Topics[0]
+		switch topic.Hex() {
+		case tradeExecuteEvent:
+			// TODO
+			logger.Info("handle trade execute event")
+		default:
+			return nil, fmt.Errorf("unknown topic")
+		}
 	}
 
 	return &result, err

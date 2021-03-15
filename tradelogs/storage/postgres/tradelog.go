@@ -1,9 +1,6 @@
 package postgres
 
 import (
-	"math/big"
-
-	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
@@ -66,55 +63,6 @@ func (tldb *TradeLogDB) updateRebateWallet(reserves []common.Reserve) error {
 		}
 	}
 	return nil
-}
-
-func (tldb *TradeLogDB) calculateDstAmount(srcAddress, dstAddress string, srcAmount, rate float64) (float64, error) {
-	var (
-		srcDecimals, dstDecimals int64
-		err                      error
-		dstAmount                float64
-	)
-	srcDecimals, err = tldb.tokenAmountFormatter.GetDecimals(ethereum.HexToAddress(srcAddress))
-	if err != nil {
-		return dstAmount, err
-	}
-	dstDecimals, err = tldb.tokenAmountFormatter.GetDecimals(ethereum.HexToAddress(dstAddress))
-	if err != nil {
-		return dstAmount, err
-	}
-	srcAmountBig, err := tldb.tokenAmountFormatter.ToWei(ethereum.HexToAddress(srcAddress), srcAmount)
-	if err != nil {
-		return dstAmount, err
-	}
-
-	rateBig, err := tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, rate)
-	if err != nil {
-		return dstAmount, err
-	}
-	dstAmountTmp := big.NewInt(0).Mul(srcAmountBig, rateBig)
-	// this formula is base on https://github.com/KyberNetwork/smart-contracts/blob/Katalyst/contracts/sol6/utils/Utils5.sol#L88
-	if dstDecimals >= srcDecimals {
-		precision := new(big.Float).SetInt(new(big.Int).Exp(
-			big.NewInt(10), big.NewInt(18), nil,
-		))
-		exp := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(dstDecimals-srcDecimals), nil)
-		tmp := big.NewInt(0).Mul(dstAmountTmp, exp)
-		dstAmountInt, _ := new(big.Float).Quo(new(big.Float).SetInt(tmp), precision).Int(nil)
-		dstAmount, err = tldb.tokenAmountFormatter.FromWei(ethereum.HexToAddress(dstAddress), dstAmountInt)
-		if err != nil {
-			return dstAmount, err
-		}
-	} else {
-		precision := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil)
-		exp := big.NewInt(0).Exp(big.NewInt(10), big.NewInt(srcDecimals-dstDecimals), nil)
-		tmp := big.NewInt(0).Mul(exp, precision)
-		dstAmountInt, _ := new(big.Float).Quo(new(big.Float).SetInt(dstAmountTmp), new(big.Float).SetInt(tmp)).Int(nil)
-		dstAmount, err = tldb.tokenAmountFormatter.FromWei(ethereum.HexToAddress(dstAddress), dstAmountInt)
-		if err != nil {
-			return dstAmount, err
-		}
-	}
-	return dstAmount, nil
 }
 
 // SaveTradeLogs persist trade logs to DB

@@ -15,15 +15,15 @@ import (
 )
 
 const (
-	ethereumNodeFlag = "ethereum-node"
+	nodeFlag = "node"
 )
 
 // NewEthereumNodeFlags returns cli flag for ethereum node url input
 func NewEthereumNodeFlags() cli.Flag {
 	return cli.StringFlag{
-		Name:   ethereumNodeFlag,
-		Usage:  "Ethereum Node URL",
-		EnvVar: "ETHEREUM_NODE",
+		Name:   nodeFlag,
+		Usage:  "node URL",
+		EnvVar: "NODE",
 		Value:  node.InfuraEndpoint(),
 	}
 }
@@ -74,7 +74,7 @@ func (r roundTripperExt) RoundTrip(request *http.Request) (*http.Response, error
 
 // NewEthereumClientFromFlag returns Ethereum client from flag variable, or error if occurs
 func NewEthereumClientFromFlag(c *cli.Context) (*ethclient.Client, error) {
-	ethereumNodeURL := c.GlobalString(ethereumNodeFlag)
+	ethereumNodeURL := c.GlobalString(nodeFlag)
 	cc := &http.Client{Transport: roundTripperExt{c: &http.Client{}}}
 	r, err := rpc.DialHTTPWithClient(ethereumNodeURL, cc)
 	if err != nil {
@@ -86,5 +86,5 @@ func NewEthereumClientFromFlag(c *cli.Context) (*ethclient.Client, error) {
 
 // NodeURLFromFlag ...
 func NodeURLFromFlag(c *cli.Context) string {
-	return c.GlobalString(ethereumNodeFlag)
+	return c.GlobalString(nodeFlag)
 }

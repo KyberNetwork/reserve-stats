@@ -19,9 +19,6 @@ var (
 	wrapperAddrV1 = ethereum.HexToAddress("0x533e6d1ffa2b96cf9c157475c76c38d1b13bc584")
 	//wrapperAddrV2 is the Kyber's wrapper Address after block 5726056
 	wrapperAddrV2 = ethereum.HexToAddress("0x6172AFC8c00c46E0D07ce3AF203828198194620a")
-	//wrapperAddrV3 is the Kyber's wrapper Address after block
-	wrapperAddrV3 = ethereum.HexToAddress("0x221CA93C327eDe7d8f9296E2a790905CD7021105") // fake contract to call in old blocks, please see eth_client.go
-	// wrapperAddrV3 = ethereum.HexToAddress("0x91A49A896CeBaC3B6Ec5B99b678049b9a38aB890")
 )
 
 const (

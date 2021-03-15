@@ -11,11 +11,8 @@ import (
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
-	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
@@ -101,12 +98,8 @@ func main() {
 		},
 	)
 
-	app.Flags = append(app.Flags, storage.NewCliFlags()...)
-	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.PostgresDefaultDB)...)
-	app.Flags = append(app.Flags, broadcast.NewCliFlags()...)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
-	app.Flags = append(app.Flags, cq.NewCQFlags()...)
 	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

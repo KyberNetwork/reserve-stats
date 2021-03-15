@@ -20,12 +20,6 @@ import (
 	"github.com/KyberNetwork/tokenrate"
 )
 
-const (
-
-	// tradeExecute(address sender, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
-	tradeExecuteEvent = "0x4ee2afc3e9f9e97f558641bdc31ff31e4f34a1aaa2390cffbd64ee9ac18dfbec"
-)
-
 // var defaultTimeout = 10 * time.Second
 
 // var errUnknownLogTopic = errors.New("unknown log topic")

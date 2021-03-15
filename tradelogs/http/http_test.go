@@ -226,23 +226,6 @@ func TestBurnFeeRoute(t *testing.T) {
 				assert.Contains(t, result.Error, "invalid frequency")
 			},
 		},
-		{
-			Msg:      "Test time range too broad",
-			Endpoint: fmt.Sprintf("/burn-fee?from=0&to=%d&freq=h&reserve=0x63825c174ab367968EC60f061753D3bbD36A0D8F", hourlyBurnFeeMaxDuration/time.Millisecond+1),
-			Method:   http.MethodGet,
-			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusBadRequest, resp.Code)
-
-				var result struct {
-					Error string `json:"error"`
-				}
-				if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-					t.Error("Could not decode result", "err", err)
-				}
-
-				assert.Contains(t, result.Error, "max time frame exceed")
-			},
-		},
 	}
 	for _, tc := range tests {
 		tc := tc

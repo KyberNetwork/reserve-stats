@@ -61,7 +61,6 @@ func main() {
 		return nil
 	}
 
-	app.Flags = append(app.Flags, storage.NewCliFlags()...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.TradeLogsPort)...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.PostgresDefaultDB)...)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())

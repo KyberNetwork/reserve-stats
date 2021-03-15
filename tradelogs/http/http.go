@@ -17,10 +17,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
 
-const (
-	hourlyBurnFeeMaxDuration = time.Hour * 24 * 180 // 180 days
-)
-
 // NewServer returns an instance of HttpApi to serve trade logs.
 func NewServer(
 	storage storage.Interface,
@@ -51,11 +47,6 @@ type Server struct {
 	host           string
 	sugar          *zap.SugaredLogger
 	symbolResolver blockchain.TokenSymbolResolver
-}
-
-type burnFeeQuery struct {
-	libhttputil.TimeRangeQueryFreq
-	ReserveAddrs []string `form:"reserve" binding:"dive,isAddress"`
 }
 
 func (sv *Server) getTokenSymbol(tokenAddress ethereum.Address) (string, error) {
@@ -125,51 +116,6 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 	c.JSON(
 		http.StatusOK,
 		tradeLogs,
-	)
-}
-
-func (sv *Server) getBurnFee(c *gin.Context) {
-	var (
-		query    burnFeeQuery
-		rsvAddrs []ethereum.Address
-	)
-	if err := c.ShouldBindQuery(&query); err != nil {
-		libhttputil.ResponseFailure(
-			c,
-			http.StatusBadRequest,
-			err,
-		)
-		return
-	}
-
-	fromTime, toTime, err := query.Validate()
-	if err != nil {
-		libhttputil.ResponseFailure(
-			c,
-			http.StatusBadRequest,
-			err,
-		)
-		return
-	}
-
-	for _, rsvAddr := range query.ReserveAddrs {
-		rsvAddrs = append(rsvAddrs, ethereum.HexToAddress(rsvAddr))
-	}
-
-	burnFee, err := sv.storage.GetAggregatedBurnFee(fromTime, toTime, query.Freq, rsvAddrs)
-	if err != nil {
-		sv.sugar.Errorw(err.Error(), "parameter", query)
-		libhttputil.ResponseFailure(
-			c,
-			http.StatusInternalServerError,
-			err,
-		)
-		return
-	}
-
-	c.JSON(
-		http.StatusOK,
-		burnFee,
 	)
 }
 
@@ -325,28 +271,6 @@ func (sv *Server) getTopTokens(c *gin.Context) {
 	)
 }
 
-func (sv *Server) getTopIntegration(c *gin.Context) {
-	var query getReportRequest
-	if err := c.ShouldBindQuery(&query); err != nil {
-		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
-		return
-	}
-	from, to, err := query.Validate()
-	if err != nil {
-		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
-		return
-	}
-	topIntegration, err := sv.storage.GetTopIntegrations(from, to, query.Limit)
-	if err != nil {
-		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
-		return
-	}
-	c.JSON(
-		http.StatusOK,
-		topIntegration,
-	)
-}
-
 func (sv *Server) getTopReserves(c *gin.Context) {
 	var query getReportRequest
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -426,13 +350,8 @@ func (sv *Server) setupRouter() *gin.Engine {
 	r.GET("/trade-logs", sv.getTradeLogs)
 	r.GET("/trade-logs/:tx_hash", sv.getTradeLogsByTx)
 	r.GET("/asset-volume", sv.getAssetVolume)
-	r.GET("/monthly-volume", sv.getMonthlyVolume)
 	r.GET("/reserve-volume", sv.getReserveVolume)
-	r.GET("/trade-summary", sv.getTradeSummary)
 	r.GET("/user-volume", sv.getUserVolume)
-	r.GET("/user-list", sv.getUserList)
-	r.GET("/country-stats", sv.getCountryStats)
-	r.GET("/heat-map", sv.getTokenHeatMap)
 
 	// token symbol
 	r.GET("/symbol", sv.getSymbol)
@@ -441,7 +360,6 @@ func (sv *Server) setupRouter() *gin.Engine {
 	// twitter api
 	r.GET("/stats", sv.getStats)
 	r.GET("/top-tokens", sv.getTopTokens)
-	r.GET("/top-integrations", sv.getTopIntegration)
 	r.GET("/top-reserves", sv.getTopReserves)
 
 	r.GET("/big-trades", sv.getBigTrades)

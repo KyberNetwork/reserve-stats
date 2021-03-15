@@ -43,13 +43,12 @@ func NewFetcherJob(c *cli.Context, order int, from, to *big.Int, attempts int, e
 
 // FetcherJob represent a job to crawl trade logs from block to block
 type FetcherJob struct {
-	c                *cli.Context
-	order            int
-	from             *big.Int
-	to               *big.Int
-	attempts         int
-	etherscanClient  *etherscan.Client
-	networkProxyAddr ethereum.Address
+	c               *cli.Context
+	order           int
+	from            *big.Int
+	to              *big.Int
+	attempts        int
+	etherscanClient *etherscan.Client
 }
 
 // retry the given fn function for attempts time with sleep duration between before returns an error.

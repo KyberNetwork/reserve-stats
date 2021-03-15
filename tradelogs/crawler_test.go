@@ -33,7 +33,7 @@ func (*mockBroadCastClient) GetTxInfo(tx string) (string, string, string, error)
 	return "123", "8.8.8.8", "US", nil
 }
 
-func assertTradeLog(t *testing.T, tradeLog common.TradelogV4) {
+func assertTradeLog(t *testing.T, tradeLog common.Tradelog) {
 	t.Helper()
 
 	assert.NotZero(t, tradeLog.Timestamp)
@@ -69,7 +69,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		ethereum.HexToAddress("0x52166528FCC12681aF996e409Ee3a421a4e128A3"), // burner contract
 	}
 	c, err := NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), v3Addresses,
-		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{})
+		deployment.StartingBlocks[deployment.Production], ec)
 	require.NoError(t, err)
 
 	result, err := c.GetTradeLogs(big.NewInt(7025000), big.NewInt(7025100), time.Minute)
@@ -87,7 +87,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 	}
 
 	c, err = NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), v2Addresses,
-		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{})
+		deployment.StartingBlocks[deployment.Production], ec)
 	require.NoError(t, err)
 
 	result, err = c.GetTradeLogs(big.NewInt(6343120), big.NewInt(6343220), time.Minute)
@@ -115,8 +115,6 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 			// assert.Equal(t, ethereum.HexToAddress("0x57f8160e1c59d16c01bbe181fd94db4e56b60495"), tradeLog.SrcReserveAddress,
 			// 	"WETH --> ETH trade log must have source reserve address")
 
-			assert.Greater(t, tradeLog.T2EReserves, 0) // "WETH --> ETH trade log must have T2E reserves"
-
 			assert.Equal(t, ethereum.HexToAddress("0xd064e4c8f55cff3f45f2e5af5d24bdf0107fe40e"), tradeLog.ReceiverAddress,
 				"Tradelog must have receiver address")
 		}
@@ -142,7 +140,6 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 			// 	ethereum.HexToAddress("0x57f8160e1c59d16c01bbe181fd94db4e56b60495"),
 			// 	tradeLog.SrcReserveAddress,
 			// 	"ETH --> WETH trade log must have dest reserve address")
-			assert.Greater(t, tradeLog.E2TReserves, 0) // 	"ETH --> WETH trade log must have E2T reserves > 0"
 
 			assert.Equal(t, ethereum.HexToAddress("0xf214dde57f32f3f34492ba3148641693058d4a9e"), tradeLog.ReceiverAddress,
 				"Tradelog must have receiver address")
@@ -184,7 +181,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 	}
 
 	c, err = NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), v1Addresses,
-		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{})
+		deployment.StartingBlocks[deployment.Production], ec)
 	require.NoError(t, err)
 
 	result, err = c.GetTradeLogs(big.NewInt(5877442), big.NewInt(5877500), time.Minute)
@@ -237,7 +234,7 @@ func newTestCrawler(t *testing.T, version string) *Crawler {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	client := testutil.MustNewDevelopmentwEthereumClient()
 	c, err := NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), addresses,
-		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{})
+		deployment.StartingBlocks[deployment.Production], ec)
 	require.NoError(t, err)
 	return c
 }

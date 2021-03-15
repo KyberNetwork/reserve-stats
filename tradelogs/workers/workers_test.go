@@ -55,7 +55,7 @@ func (s *mockStorage) SaveTradeLogs(log *common.CrawlResult) error {
 	return nil
 }
 
-func (s *mockStorage) LoadTradeLogs(from, to time.Time) ([]common.TradelogV4, error) {
+func (s *mockStorage) LoadTradeLogs(from, to time.Time) ([]common.Tradelog, error) {
 	return nil, nil
 }
 
@@ -103,7 +103,7 @@ func (s *mockStorage) GetMonthlyVolume(rsvAddr ethereum.Address, from, to time.T
 	return nil, nil
 }
 
-func (s *mockStorage) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradelogV4, error) {
+func (s *mockStorage) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.Tradelog, error) {
 	return nil, nil
 }
 
@@ -145,7 +145,7 @@ func (j *mockJob) execute(sugar *zap.SugaredLogger) (*common.CrawlResult, error)
 		return nil, fmt.Errorf("failed to execute job %d", j.order)
 	}
 	return &common.CrawlResult{
-		Trades: []common.TradelogV4{{
+		Trades: []common.Tradelog{{
 			Timestamp: time.Now(),
 		}},
 	}, nil

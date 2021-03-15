@@ -113,9 +113,9 @@ type tradeLogDBData struct {
 	SplitIndex          pq.Int64Array   `db:"split_index"`
 }
 
-func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4, error) {
+func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.Tradelog, error) {
 	var (
-		tradeLog common.TradelogV4
+		tradeLog common.Tradelog
 		err      error
 
 		ethAmountInWei                     *big.Int
@@ -246,7 +246,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4,
 		})
 	}
 
-	tradeLog = common.TradelogV4{
+	tradeLog = common.Tradelog{
 		TransactionHash:   ethereum.HexToHash(r.TxHash),
 		Index:             r.LogIndex,
 		Timestamp:         r.Timestamp,
@@ -255,8 +255,6 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4,
 		OriginalEthAmount: originalEthAmountInWei,
 		User: common.KyberUserInfo{
 			UserAddress: ethereum.HexToAddress(r.UserAddress[0]),
-			IP:          r.IP.String,
-			Country:     r.Country.String,
 		},
 		TokenInfo: common.TradeTokenInfo{
 			SrcAddress:  SrcAddress,
@@ -264,9 +262,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4,
 		},
 		SrcAmount:       srcAmountInWei,
 		DestAmount:      dstAmountInWei,
-		IntegrationApp:  r.IntegrationApp,
 		FiatAmount:      r.EthAmount * r.EthUsdRate,
-		WalletAddress:   ethereum.HexToAddress(r.WalletAddress[0]),
 		ReceiverAddress: ethereum.HexToAddress(r.ReceiverAddr),
 		ETHUSDRate:      r.EthUsdRate,
 		TxDetail: common.TxDetail{
@@ -275,19 +271,17 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.TradelogV4,
 			TransactionFee: transactionFeeInWei,
 			TxSender:       ethereum.HexToAddress(r.TxSender),
 		},
-		Fees:    fees,
-		Split:   split,
 		Version: r.Version,
 	}
 	return tradeLog, nil
 }
 
 // LoadTradeLogsByTxHash get list of tradelogs by tx hash
-func (tldb *TradeLogDB) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradelogV4, error) {
+func (tldb *TradeLogDB) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.Tradelog, error) {
 	var (
 		logger      = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 		queryResult []tradeLogDBData
-		result      = make([]common.TradelogV4, 0)
+		result      = make([]common.Tradelog, 0)
 	)
 	err := tldb.db.Select(&queryResult, selectTradeLogsWithTxHashQuery, tx.Hex())
 	if err != nil {
@@ -312,11 +306,11 @@ func (tldb *TradeLogDB) LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.Tradel
 }
 
 // LoadTradeLogs get list of tradelogs by timestamp from time to time
-func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradelogV4, error) {
+func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.Tradelog, error) {
 	var (
 		logger      = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 		queryResult []tradeLogDBData
-		result      = make([]common.TradelogV4, 0)
+		result      = make([]common.Tradelog, 0)
 	)
 	err := tldb.db.Select(&queryResult, selectTradeLogsQuery, from, to)
 	if err != nil {

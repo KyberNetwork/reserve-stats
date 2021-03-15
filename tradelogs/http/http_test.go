@@ -38,7 +38,7 @@ func (s *mockStorage) SaveTradeLogs(logs *common.CrawlResult) error {
 	return nil
 }
 
-func (s *mockStorage) LoadTradeLogs(from, to time.Time) ([]common.TradelogV4, error) {
+func (s *mockStorage) LoadTradeLogs(from, to time.Time) ([]common.Tradelog, error) {
 	return nil, nil
 }
 
@@ -70,7 +70,7 @@ func (s *mockStorage) GetTokenHeatmap(token ethereum.Address, from, to time.Time
 	return nil, nil
 }
 
-func (s *mockStorage) LoadTradeLogsByTxHash(txHash ethereum.Hash) ([]common.TradelogV4, error) {
+func (s *mockStorage) LoadTradeLogsByTxHash(txHash ethereum.Hash) ([]common.Tradelog, error) {
 	return nil, nil
 }
 

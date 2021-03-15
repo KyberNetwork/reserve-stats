@@ -10,14 +10,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	appname "github.com/KyberNetwork/reserve-stats/app-names"
-	lipappnames "github.com/KyberNetwork/reserve-stats/lib/appnames"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
-	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
-	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
 
@@ -32,27 +28,15 @@ func NewServer(
 	sugar *zap.SugaredLogger,
 	symbolResolver blockchain.TokenSymbolResolver, options ...ServerOption) *Server {
 	var (
-		logger = sugar.With("func", caller.GetCurrentFunctionName())
-		sv     = &Server{
+		sv = &Server{
 			storage:        storage,
 			host:           host,
 			sugar:          sugar,
 			symbolResolver: symbolResolver,
 		}
 	)
-
 	for _, opt := range options {
 		opt(sv)
-	}
-
-	if sv.getAddrToAppName == nil {
-		logger.Warn("application names integration is not configured")
-		sv.getAddrToAppName = func() (map[ethereum.Address]string, error) { return nil, nil }
-	}
-
-	if sv.getUserProfile == nil {
-		logger.Warn("user profile integration is not configured")
-		sv.getUserProfile = func(ethereum.Address) (userprofile.UserProfile, error) { return userprofile.UserProfile{}, nil }
 	}
 
 	return sv
@@ -61,28 +45,12 @@ func NewServer(
 // ServerOption configures the behaviour of Server constructor.
 type ServerOption func(server *Server)
 
-// WithApplicationNames configures the Server instance to use appname integration.
-func WithApplicationNames(an lipappnames.AddrToAppName) ServerOption {
-	return func(sv *Server) {
-		sv.getAddrToAppName = an.GetAddrToAppName
-	}
-}
-
-// WithUserProfile configures the Server instance to use user profile lookup
-func WithUserProfile(up userprofile.Interface) ServerOption {
-	return func(sv *Server) {
-		sv.getUserProfile = up.LookUpUserProfile
-	}
-}
-
 // Server serve trade logs through http endpoint.
 type Server struct {
-	storage          storage.Interface
-	host             string
-	sugar            *zap.SugaredLogger
-	getAddrToAppName func() (map[ethereum.Address]string, error)
-	getUserProfile   func(ethereum.Address) (userprofile.UserProfile, error)
-	symbolResolver   blockchain.TokenSymbolResolver
+	storage        storage.Interface
+	host           string
+	sugar          *zap.SugaredLogger
+	symbolResolver blockchain.TokenSymbolResolver
 }
 
 type burnFeeQuery struct {
@@ -125,37 +93,7 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 		)
 		return
 	}
-	addrToAppName, err := sv.getAddrToAppName()
-	if err != nil {
-		libhttputil.ResponseFailure(
-			c,
-			http.StatusInternalServerError,
-			err,
-		)
-		return
-	}
-
 	for i, log := range tradeLogs {
-		// get user profile
-		up, err := sv.getUserProfile(tradeLogs[i].User.UserAddress)
-		if err != nil {
-			sv.sugar.Errorw(err.Error(), "fromTime", fromTime, "toTime", toTime)
-			libhttputil.ResponseFailure(
-				c,
-				http.StatusInternalServerError,
-				err,
-			)
-			return
-		}
-		tradeLogs[i].User.UserName = up.UserName
-		tradeLogs[i].User.ProfileID = up.ProfileID
-		if tradeLogs[i].IntegrationApp != appname.KyberSwapAppName {
-			name, avai := addrToAppName[log.WalletAddress]
-			if avai {
-				tradeLogs[i].IntegrationApp = name
-			}
-		}
-
 		// resolve token symbol
 		if !blockchain.IsZeroAddress(log.TokenInfo.SrcAddress) {
 			srcSymbol, err := sv.getTokenSymbol(log.TokenInfo.SrcAddress)
@@ -487,18 +425,14 @@ func (sv *Server) setupRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/trade-logs", sv.getTradeLogs)
 	r.GET("/trade-logs/:tx_hash", sv.getTradeLogsByTx)
-	r.GET("/burn-fee", sv.getBurnFee)
 	r.GET("/asset-volume", sv.getAssetVolume)
 	r.GET("/monthly-volume", sv.getMonthlyVolume)
 	r.GET("/reserve-volume", sv.getReserveVolume)
-	r.GET("/wallet-fee", sv.getWalletFee)
 	r.GET("/trade-summary", sv.getTradeSummary)
 	r.GET("/user-volume", sv.getUserVolume)
 	r.GET("/user-list", sv.getUserList)
-	r.GET("/wallet-stats", sv.getWalletStats)
 	r.GET("/country-stats", sv.getCountryStats)
 	r.GET("/heat-map", sv.getTokenHeatMap)
-	r.GET("/integration-volume", sv.getIntegrationVolume)
 
 	// token symbol
 	r.GET("/symbol", sv.getSymbol)

@@ -41,14 +41,9 @@ func NewVersionedWrapper(client bind.ContractBackend) (*VersionedWrapper, error)
 	if err != nil {
 		return nil, err
 	}
-	wrapperContractV3, err := NewRateHelper(wrapperAddrV3, client)
-	if err != nil {
-		return nil, err
-	}
 	return &VersionedWrapper{
 		WrapperContractV1: wrapperContractV1,
 		WrapperContractV2: wrapperContractV2,
-		WrapperContractV3: wrapperContractV3,
 	}, nil
 }
 

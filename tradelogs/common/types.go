@@ -83,13 +83,13 @@ type TradeLog struct {
 
 // CrawlResult is result of the crawl
 type CrawlResult struct {
-	Reserves      []Reserve    `json:"reserves"` // reserve update on this
-	UpdateWallets []Reserve    `json:"update_wallets"`
-	Trades        []TradelogV4 `json:"trades"`
+	Reserves      []Reserve  `json:"reserves"` // reserve update on this
+	UpdateWallets []Reserve  `json:"update_wallets"`
+	Trades        []Tradelog `json:"trades"`
 }
 
 // TradelogV4 is object for tradelog after katalyst upgrade
-type TradelogV4 struct {
+type Tradelog struct {
 	Timestamp       time.Time     `json:"timestamp"`
 	BlockNumber     uint64        `json:"block_number"`
 	TransactionHash ethereum.Hash `json:"tx_hash"`
@@ -98,15 +98,6 @@ type TradelogV4 struct {
 	// support version before katalyst
 	SrcReserveAddress ethereum.Address `json:"-"`
 	DstReserveAddress ethereum.Address `json:"-"`
-
-	// After katalyst info
-	T2EReserves  [][32]byte    `json:"-"` // reserve_id of reserve for trade from token to ether
-	E2TReserves  [][32]byte    `json:"-"` // reserve_id of reserve for trade from ether to token
-	T2ESrcAmount []*big.Int    `json:"-"`
-	E2TSrcAmount []*big.Int    `json:"-"`
-	T2ERates     []*big.Int    `json:"-"`
-	E2TRates     []*big.Int    `json:"-"`
-	Fees         []TradelogFee `json:"fees"`
 
 	// EthAmount = OriginalEthAmount * len(BurnFees)
 	EthAmount         *big.Int `json:"eth_amount"`
@@ -117,15 +108,9 @@ type TradelogV4 struct {
 	ETHUSDRate        float64  `json:"eth_usd_rate"`
 	ETHUSDProvider    string   `json:"-"`
 
-	WalletAddress ethereum.Address `json:"wallet_addr"`
-	WalletName    string           `json:"wallet_name"`
-
-	IntegrationApp string `json:"integration_app"`
-
 	User            KyberUserInfo    `json:"user"`
 	ReceiverAddress ethereum.Address `json:"receiver_address"`
 	TxDetail        TxDetail         `json:"tx_detail"`
-	Split           []TradeSplit     `json:"split"`
 
 	Index   uint `json:"index"`
 	Version uint `json:"version"`
@@ -186,12 +171,12 @@ type TxDetail struct {
 // KyberUserInfo if available from KS
 type KyberUserInfo struct {
 	UserAddress ethereum.Address `json:"user_addr"`
-	UserName    string           `json:"user_name"`
-	ProfileID   int64            `json:"profile_id"`
-	Index       uint             `json:"index"` // the index of event log in transaction receipt
-	IP          string           `json:"ip"`
-	Country     string           `json:"country"`
-	UID         string           `json:"uid"`
+	// UserName    string           `json:"user_name"`
+	// ProfileID   int64            `json:"profile_id"`
+	// Index       uint             `json:"index"` // the index of event log in transaction receipt
+	// IP          string           `json:"ip"`
+	// Country     string           `json:"country"`
+	// UID         string           `json:"uid"`
 }
 
 // BigTradeLog represent trade event on KyberNetwork
@@ -238,8 +223,8 @@ func (tl *TradeLog) UnmarshalJSON(b []byte) error {
 }
 
 // MarshalJSON implements custom JSON marshaller for TradeLog to format timestamp in unix millis instead of RFC3339.
-func (tl *TradelogV4) MarshalJSON() ([]byte, error) {
-	type AliasTradeLog TradelogV4
+func (tl *Tradelog) MarshalJSON() ([]byte, error) {
+	type AliasTradeLog Tradelog
 	return json.Marshal(struct {
 		Timestamp uint64 `json:"timestamp"`
 		*AliasTradeLog
@@ -250,8 +235,8 @@ func (tl *TradelogV4) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements custom JSON unmarshal for TradeLog
-func (tl *TradelogV4) UnmarshalJSON(b []byte) error {
-	type AliasTradeLog TradelogV4
+func (tl *Tradelog) UnmarshalJSON(b []byte) error {
+	type AliasTradeLog Tradelog
 	type mask struct {
 		Timestamp uint64 `json:"timestamp"`
 		*AliasTradeLog
@@ -385,66 +370,6 @@ type Heatmap struct {
 	TotalTrade           int64   `json:"total_trade"`
 	TotalUniqueAddresses int64   `json:"total_unique_addr"`
 	TotalKYCUser         int64   `json:"total_kyc_user"`
-}
-
-var kyberWallets = map[ethereum.Address]struct{}{
-	ethereum.HexToAddress("0x440bBd6a888a36DE6e2F6A25f65bc4e16874faa9"): {},
-	ethereum.HexToAddress("0xEA1a7dE54a427342c8820185867cF49fc2f95d43"): {},
-}
-
-// LengthWalletFees return true if tradelog have no wallet fee
-func LengthWalletFees(tradelog TradelogV4) int {
-	count := 0
-	for _, fee := range tradelog.Fees {
-		if fee.WalletFee != nil {
-			if fee.WalletFee.Cmp(big.NewInt(0)) != 0 {
-				count++
-			}
-		}
-	}
-	return count
-}
-
-// LengthBurnFees return number of burn fee in a tradelogs
-func LengthBurnFees(tradelog TradelogV4) int {
-	count := 0
-	for _, fee := range tradelog.Fees {
-		if fee.Burn != nil {
-			if fee.Burn.Cmp(big.NewInt(0)) != 0 {
-				count++
-			}
-		}
-	}
-	return count
-}
-
-func isKyberWallet(addr ethereum.Address) bool {
-	if _, exist := kyberWallets[addr]; exist {
-		return true
-	}
-	return false
-}
-
-//IsKyberSwap determine if the tradelog is through KyberSwap
-func (tl TradelogV4) IsKyberSwap() bool {
-	// since block 6715130 KyberSwap add wallet_addr to its tx
-	// then we use only this logic to detect if a tx a KyberSwap tx or not
-	if tl.BlockNumber >= 6715130 {
-		return isKyberWallet(tl.WalletAddress)
-	}
-	// with older block we use logic below to detect if a tx is a KyberSwap tx
-	// if a trade log has no feeToWalletEvent, it is KyberSwap
-	if LengthWalletFees(tl) == 0 {
-		return true
-	}
-	// if Wallet Address < maxUint128, it is KyberSwap
-	// as a result  of history we used to put block number as wallet address (while other put their real wallet addr)
-	// then we use logic below to check if a tx is Kyber Swap tx
-	if new(big.Int).SetBytes(tl.WalletAddress.Bytes()).Cmp(big.NewInt(0).Exp(big.NewInt(2), big.NewInt(128), nil)) == -1 {
-		return true
-	}
-
-	return isKyberWallet(tl.WalletAddress)
 }
 
 // IntegrationVolume represent kyberSwap and non kyberswap volume

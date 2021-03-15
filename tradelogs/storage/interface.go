@@ -30,8 +30,8 @@ const (
 
 // Interface represent a storage for TradeLogs data
 type Interface interface {
-	LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.TradelogV4, error)
-	LoadTradeLogs(from, to time.Time) ([]common.TradelogV4, error)
+	LoadTradeLogsByTxHash(tx ethereum.Hash) ([]common.Tradelog, error)
+	LoadTradeLogs(from, to time.Time) ([]common.Tradelog, error)
 	GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[ethereum.Address]map[string]float64, error)
 	GetAssetVolume(token ethereum.Address, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error)
 	GetReserveVolume(rsvAddr ethereum.Address, token ethereum.Address, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error)

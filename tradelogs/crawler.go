@@ -13,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	appname "github.com/KyberNetwork/reserve-stats/app-names"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
@@ -21,15 +20,11 @@ import (
 	"github.com/KyberNetwork/tokenrate"
 )
 
-// const (
-// executeTradeEvent is the topic of event
-// ExecuteTrade(address indexed sender, ERC20 src, ERC20 dest, uint actualSrcAmount, uint actualDestAmount).
-// executeTradeEvent = ""
+const (
 
-// tradeExecute(address sender, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
-// use for crawler v1 and v2
-// tradeExecuteEvent = ""
-// )
+	// tradeExecute(address sender, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
+	tradeExecuteEvent = "0x4ee2afc3e9f9e97f558641bdc31ff31e4f34a1aaa2390cffbd64ee9ac18dfbec"
+)
 
 // var defaultTimeout = 10 * time.Second
 
@@ -44,8 +39,7 @@ func NewCrawler(sugar *zap.SugaredLogger,
 	rateProvider tokenrate.ETHUSDRateProvider,
 	addresses []ethereum.Address,
 	sb deployment.VersionedStartingBlocks,
-	etherscanClient *etherscan.Client,
-	volumeExcludedReserves []ethereum.Address) (*Crawler, error) {
+	etherscanClient *etherscan.Client) (*Crawler, error) {
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
 	if err != nil {
 		return nil, err
@@ -75,41 +69,6 @@ type Crawler struct {
 	startingBlocks  deployment.VersionedStartingBlocks
 
 	etherscanClient *etherscan.Client
-}
-
-func logDataToExecuteTradeParams(data []byte) (ethereum.Address, ethereum.Address, ethereum.Hash, ethereum.Hash, error) {
-	var srcAddr, desAddr ethereum.Address
-	var srcAmount, desAmount ethereum.Hash
-
-	if len(data) != 128 {
-		err := errors.New("invalid trade data")
-		return srcAddr, desAddr, srcAmount, desAmount, err
-	}
-
-	srcAddr = ethereum.BytesToAddress(data[0:32])
-	desAddr = ethereum.BytesToAddress(data[32:64])
-	srcAmount = ethereum.BytesToHash(data[64:96])
-	desAmount = ethereum.BytesToHash(data[96:128])
-	return srcAddr, desAddr, srcAmount, desAmount, nil
-}
-
-// FillExecuteTrade ...
-func FillExecuteTrade(tradeLog common.TradelogV4, logItem types.Log) (common.TradelogV4, error) {
-	srcAddr, destAddr, srcAmount, destAmount, err := logDataToExecuteTradeParams(logItem.Data)
-	if err != nil {
-		return common.TradelogV4{}, err
-	}
-	tradeLog.TokenInfo.SrcAddress = srcAddr
-	tradeLog.TokenInfo.DestAddress = destAddr
-	tradeLog.SrcAmount = srcAmount.Big()
-	tradeLog.DestAmount = destAmount.Big()
-
-	tradeLog.TransactionHash = logItem.TxHash
-	tradeLog.Index = logItem.Index
-	tradeLog.User.UserAddress = ethereum.BytesToAddress(logItem.Topics[1].Bytes())
-	tradeLog.BlockNumber = logItem.BlockNumber
-
-	return tradeLog, nil
 }
 
 func (crawler *Crawler) fetchLogsWithTopics(fromBlock, toBlock *big.Int, timeout time.Duration, topics [][]ethereum.Hash) ([]types.Log, error) {
@@ -168,21 +127,15 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 		return result, nil
 	}
 	for index, tradeLog := range result.Trades {
-		var uid, ip, country string
-
-		uid, ip, country, err = crawler.broadcastClient.GetTxInfo(tradeLog.TransactionHash.Hex())
-		if err != nil {
-			return result, err
-		}
-		result.Trades[index].User.IP = ip
-		result.Trades[index].User.Country = country
-		result.Trades[index].User.UID = uid
-
-		if tradeLog.IsKyberSwap() {
-			result.Trades[index].IntegrationApp = appname.KyberSwapAppName
-		} else {
-			result.Trades[index].IntegrationApp = appname.ThirdPartyAppName
-		}
+		// TODO: in case we want to get this information later
+		// var uid, ip, country string
+		// uid, ip, country, err = crawler.broadcastClient.GetTxInfo(tradeLog.TransactionHash.Hex())
+		// if err != nil {
+		// 	return result, err
+		// }
+		// result.Trades[index].User.IP = ip
+		// result.Trades[index].User.Country = country
+		// result.Trades[index].User.UID = uid
 
 		rate, err := crawler.rateProvider.USDRate(tradeLog.Timestamp)
 		if err != nil {

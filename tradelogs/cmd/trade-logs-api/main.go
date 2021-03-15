@@ -10,8 +10,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/appnames"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/http"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
@@ -43,23 +41,6 @@ func main() {
 		}
 
 		var options []http.ServerOption
-		addrToAppName, err := appnames.NewClientFromContext(sugar, c)
-		if err != nil {
-			return err
-		}
-		if addrToAppName != nil {
-			options = append(options, http.WithApplicationNames(addrToAppName))
-		}
-
-		userClient, err := userprofile.NewClientFromContext(sugar, c)
-		if err != nil {
-			return err
-		}
-
-		cachedUserClient := userprofile.NewCachedClientFromContext(userClient, c)
-		if cachedUserClient != nil {
-			options = append(options, http.WithUserProfile(cachedUserClient))
-		}
 
 		symbolResolver, err := blockchain.NewTokenInfoGetterFromContext(c, storageInterface)
 		if err != nil {
@@ -82,11 +63,9 @@ func main() {
 
 	app.Flags = append(app.Flags, storage.NewCliFlags()...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.TradeLogsPort)...)
-	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.PostgresDefaultDB)...)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, appnames.NewCliFlags()...)
-	app.Flags = append(app.Flags, userprofile.NewCliFlags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

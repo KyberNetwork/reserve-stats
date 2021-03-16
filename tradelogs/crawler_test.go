@@ -68,8 +68,10 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		ethereum.HexToAddress("0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950"), // internal network contract
 		ethereum.HexToAddress("0x52166528FCC12681aF996e409Ee3a421a4e128A3"), // burner contract
 	}
+	reserveAddress := ethereum.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")
+
 	c, err := NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), v3Addresses,
-		deployment.StartingBlocks[deployment.Production], ec)
+		deployment.StartingBlocks[deployment.Production], reserveAddress, ec)
 	require.NoError(t, err)
 
 	result, err := c.GetTradeLogs(big.NewInt(7025000), big.NewInt(7025100), time.Minute)
@@ -87,7 +89,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 	}
 
 	c, err = NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), v2Addresses,
-		deployment.StartingBlocks[deployment.Production], ec)
+		deployment.StartingBlocks[deployment.Production], reserveAddress, ec)
 	require.NoError(t, err)
 
 	result, err = c.GetTradeLogs(big.NewInt(6343120), big.NewInt(6343220), time.Minute)
@@ -181,7 +183,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 	}
 
 	c, err = NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), v1Addresses,
-		deployment.StartingBlocks[deployment.Production], ec)
+		deployment.StartingBlocks[deployment.Production], reserveAddress, ec)
 	require.NoError(t, err)
 
 	result, err = c.GetTradeLogs(big.NewInt(5877442), big.NewInt(5877500), time.Minute)
@@ -231,10 +233,12 @@ func newTestCrawler(t *testing.T, version string) *Crawler {
 		t.Fatal("not found crawler version")
 
 	}
+	reserveAddress := ethereum.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")
+
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	client := testutil.MustNewDevelopmentwEthereumClient()
 	c, err := NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), addresses,
-		deployment.StartingBlocks[deployment.Production], ec)
+		deployment.StartingBlocks[deployment.Production], reserveAddress, ec)
 	require.NoError(t, err)
 	return c
 }

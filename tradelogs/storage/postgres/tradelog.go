@@ -165,12 +165,6 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 				return err
 			}
 
-			_, err = tx.NamedExec(insertionWalletTemplate, r)
-			if err != nil {
-				logger.Debugw("Error while add wallet", "error", err)
-				return err
-			}
-
 			query := `SELECT _id as id FROM 
 			create_or_update_tradelogs(
 				$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,

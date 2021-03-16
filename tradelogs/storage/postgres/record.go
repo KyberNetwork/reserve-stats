@@ -34,7 +34,7 @@ type record struct {
 	Version           uint      `db:"version"`
 }
 
-func (tldb *TradeLogDB) calculateDstAmountV4(log common.Tradelog) (float64, error) {
+func (tldb *TradeLogDB) calculateDstAmount(log common.Tradelog) (float64, error) {
 	// this formula is base on https://github.com/KyberNetwork/smart-contracts/blob/Katalyst/contracts/sol6/utils/Utils5.sol#L88
 	var (
 		srcDecimals, dstDecimals int64
@@ -45,7 +45,7 @@ func (tldb *TradeLogDB) calculateDstAmountV4(log common.Tradelog) (float64, erro
 	if err != nil {
 		return dstAmount, err
 	}
-	dstDecimals, err = tldb.tokenAmountFormatter.GetDecimals(blockchain.ETHAddr)
+	dstDecimals, err = tldb.tokenAmountFormatter.GetDecimals(blockchain.USDTAddr)
 	if err != nil {
 		return dstAmount, err
 	}
@@ -75,12 +75,12 @@ func (tldb *TradeLogDB) calculateDstAmountV4(log common.Tradelog) (float64, erro
 
 func (tldb *TradeLogDB) recordFromTradeLog(log common.Tradelog) (*record, error) {
 	var dstAmount float64
-	ethAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.EthAmount)
+	ethAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.USDTAddr, log.EthAmount)
 	if err != nil {
 		return nil, err
 	}
 
-	originalEthAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.OriginalEthAmount)
+	originalEthAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.USDTAddr, log.OriginalEthAmount)
 	if err != nil {
 		return nil, err
 	}
@@ -89,13 +89,8 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.Tradelog) (*record, error)
 	if err != nil {
 		return nil, err
 	}
-	if log.Version == 4 {
-		dstAmount, err = tldb.calculateDstAmountV4(log)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		dstAmount, err = tldb.tokenAmountFormatter.FromWei(log.TokenInfo.DestAddress, log.DestAmount)
+	if log.Version == 1 {
+		dstAmount, err = tldb.calculateDstAmount(log)
 		if err != nil {
 			return nil, err
 		}

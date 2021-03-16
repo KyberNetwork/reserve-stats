@@ -91,7 +91,7 @@ BEGIN
     IF _id = 0 THEN
 		INSERT INTO tradelogs (timestamp, block_number, tx_hash, eth_amount, 
 			original_eth_amount, user_address_id, src_address_id, dst_address_id, src_amount, dst_amount,
-			eth_usd_rate, eth_usd_provider, index, kyced, is_first_trade, tx_sender,
+			eth_usd_rate, eth_usd_provider, index, is_first_trade, tx_sender,
 			receiver_address, gas_used, gas_price, transaction_fee, version) 
 		VALUES (_timestamp,
 			_block_number,

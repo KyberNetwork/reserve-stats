@@ -15,14 +15,13 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/tokenrate"
 )
 
-// var defaultTimeout = 10 * time.Second
-
-// var errUnknownLogTopic = errors.New("unknown log topic")
+var defaultTimeout = 10 * time.Second
 
 type tradeLogFetcher func(*big.Int, *big.Int, time.Duration) (*common.CrawlResult, error)
 
@@ -33,8 +32,14 @@ func NewCrawler(sugar *zap.SugaredLogger,
 	rateProvider tokenrate.ETHUSDRateProvider,
 	addresses []ethereum.Address,
 	sb deployment.VersionedStartingBlocks,
+	reserveAddress ethereum.Address,
 	etherscanClient *etherscan.Client) (*Crawler, error) {
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
+	if err != nil {
+		return nil, err
+	}
+
+	reserveContract, err := contracts.NewReserve(reserveAddress, client)
 	if err != nil {
 		return nil, err
 	}
@@ -47,6 +52,7 @@ func NewCrawler(sugar *zap.SugaredLogger,
 		rateProvider:    rateProvider,
 		addresses:       addresses,
 		startingBlocks:  sb,
+		reserveContract: reserveContract,
 		etherscanClient: etherscanClient,
 	}, nil
 }
@@ -61,6 +67,8 @@ type Crawler struct {
 	rateProvider    tokenrate.ETHUSDRateProvider
 	addresses       []ethereum.Address
 	startingBlocks  deployment.VersionedStartingBlocks
+
+	reserveContract *contracts.Reserve
 
 	etherscanClient *etherscan.Client
 }

@@ -226,17 +226,6 @@ const insertionAddressTemplate = `INSERT INTO %[1]s(
 )
 ON CONFLICT ON CONSTRAINT %[1]s_address_key DO NOTHING`
 
-const insertionWalletTemplate string = `
-INSERT INTO wallet(
-	address,
-	name
-) VALUES (
-	:wallet_address,
-	:wallet_name
-)
-ON CONFLICT (address) 
-DO NOTHING;`
-
 const insertionUserTemplate string = `
 INSERT INTO users(
 	address,

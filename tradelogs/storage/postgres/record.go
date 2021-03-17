@@ -10,28 +10,28 @@ import (
 )
 
 type record struct {
-	Timestamp         time.Time `db:"timestamp"`
-	BlockNumber       uint64    `db:"block_number"`
-	TransactionHash   string    `db:"tx_hash"`
-	EthAmount         float64   `db:"eth_amount"`
-	OriginalEthAmount float64   `db:"original_eth_amount"`
-	UserAddress       string    `db:"user_address"`
-	SrcAddress        string    `db:"src_address"`
-	DestAddress       string    `db:"dst_address"`
-	SrcReserveAddress string    `db:"src_reserve_address"`
-	DstReserveAddress string    `db:"dst_reserve_address"`
-	SrcAmount         float64   `db:"src_amount"`
-	DestAmount        float64   `db:"dst_amount"`
-	ETHUSDRate        float64   `db:"eth_usd_rate"`
-	ETHUSDProvider    string    `db:"eth_usd_provider"`
-	Index             string    `db:"index"`
-	IsFirstTrade      bool      `db:"is_first_trade"`
-	TxSender          string    `db:"tx_sender"`
-	ReceiverAddress   string    `db:"receiver_address"`
-	GasUsed           uint64    `db:"gas_used"`
-	GasPrice          float64   `db:"gas_price"`
-	TransactionFee    float64   `db:"transaction_fee"`
-	Version           uint      `db:"version"`
+	Timestamp          time.Time `db:"timestamp"`
+	BlockNumber        uint64    `db:"block_number"`
+	TransactionHash    string    `db:"tx_hash"`
+	USDTAmount         float64   `db:"usdt_amount"`
+	OriginalUSDTAmount float64   `db:"original_usdt_amount"`
+	UserAddress        string    `db:"user_address"`
+	SrcAddress         string    `db:"src_address"`
+	DestAddress        string    `db:"dst_address"`
+	SrcReserveAddress  string    `db:"src_reserve_address"`
+	DstReserveAddress  string    `db:"dst_reserve_address"`
+	SrcAmount          float64   `db:"src_amount"`
+	DestAmount         float64   `db:"dst_amount"`
+	ETHUSDRate         float64   `db:"eth_usd_rate"`
+	ETHUSDProvider     string    `db:"eth_usd_provider"`
+	Index              string    `db:"index"`
+	IsFirstTrade       bool      `db:"is_first_trade"`
+	TxSender           string    `db:"tx_sender"`
+	ReceiverAddress    string    `db:"receiver_address"`
+	GasUsed            uint64    `db:"gas_used"`
+	GasPrice           float64   `db:"gas_price"`
+	TransactionFee     float64   `db:"transaction_fee"`
+	Version            uint      `db:"version"`
 }
 
 func (tldb *TradeLogDB) calculateDstAmount(log common.Tradelog) (float64, error) {
@@ -75,12 +75,12 @@ func (tldb *TradeLogDB) calculateDstAmount(log common.Tradelog) (float64, error)
 
 func (tldb *TradeLogDB) recordFromTradeLog(log common.Tradelog) (*record, error) {
 	var dstAmount float64
-	ethAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.USDTAddr, log.EthAmount)
+	usdtAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.USDTAddr, log.USDTAmount)
 	if err != nil {
 		return nil, err
 	}
 
-	originalEthAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.USDTAddr, log.OriginalEthAmount)
+	originalUSDTAmount, err := tldb.tokenAmountFormatter.FromWei(blockchain.USDTAddr, log.OriginalUSDTAmount)
 	if err != nil {
 		return nil, err
 	}
@@ -106,26 +106,26 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.Tradelog) (*record, error)
 	}
 
 	return &record{
-		Timestamp:         log.Timestamp.UTC(),
-		BlockNumber:       log.BlockNumber,
-		TransactionHash:   log.TransactionHash.String(),
-		EthAmount:         ethAmount,
-		OriginalEthAmount: originalEthAmount,
-		UserAddress:       log.User.UserAddress.String(),
-		SrcAddress:        log.TokenInfo.SrcAddress.String(),
-		DestAddress:       log.TokenInfo.DestAddress.String(),
-		SrcAmount:         srcAmount,
-		DestAmount:        dstAmount,
-		SrcReserveAddress: log.SrcReserveAddress.Hex(),
-		DstReserveAddress: log.DstReserveAddress.Hex(),
-		ETHUSDRate:        log.ETHUSDRate,
-		ETHUSDProvider:    log.ETHUSDProvider,
-		Index:             strconv.FormatUint(uint64(log.Index), 10),
-		TxSender:          log.TxDetail.TxSender.Hex(),
-		ReceiverAddress:   log.ReceiverAddress.Hex(),
-		TransactionFee:    transactionFee,
-		GasPrice:          gasPrice,
-		GasUsed:           log.TxDetail.GasUsed,
-		Version:           log.Version,
+		Timestamp:          log.Timestamp.UTC(),
+		BlockNumber:        log.BlockNumber,
+		TransactionHash:    log.TransactionHash.String(),
+		USDTAmount:         usdtAmount,
+		OriginalUSDTAmount: originalUSDTAmount,
+		UserAddress:        log.User.UserAddress.String(),
+		SrcAddress:         log.TokenInfo.SrcAddress.String(),
+		DestAddress:        log.TokenInfo.DestAddress.String(),
+		SrcAmount:          srcAmount,
+		DestAmount:         dstAmount,
+		SrcReserveAddress:  log.SrcReserveAddress.Hex(),
+		DstReserveAddress:  log.DstReserveAddress.Hex(),
+		ETHUSDRate:         log.ETHUSDRate,
+		ETHUSDProvider:     log.ETHUSDProvider,
+		Index:              strconv.FormatUint(uint64(log.Index), 10),
+		TxSender:           log.TxDetail.TxSender.Hex(),
+		ReceiverAddress:    log.ReceiverAddress.Hex(),
+		TransactionFee:     transactionFee,
+		GasPrice:           gasPrice,
+		GasUsed:            log.TxDetail.GasUsed,
+		Version:            log.Version,
 	}, nil
 }

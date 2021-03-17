@@ -37,8 +37,8 @@ type TradeLog struct {
 	BlockNumber     uint64        `json:"block_number"`
 	TransactionHash ethereum.Hash `json:"tx_hash"`
 	// EthAmount = OriginalEthAmount * len(BurnFees)
-	EthAmount         *big.Int `json:"eth_amount"`
-	OriginalEthAmount *big.Int `json:"original_eth_amount"`
+	USDTAmount         *big.Int `json:"usdt_amount"`
+	OriginalUSDTAmount *big.Int `json:"original_usdt_amount"`
 
 	SrcAddress  ethereum.Address `json:"src_addr"`
 	SrcSymbol   string           `json:"src_symbol,omitempty"`
@@ -100,13 +100,13 @@ type Tradelog struct {
 	DstReserveAddress ethereum.Address `json:"-"`
 
 	// EthAmount = OriginalEthAmount * len(BurnFees)
-	EthAmount         *big.Int `json:"eth_amount"`
-	OriginalEthAmount *big.Int `json:"original_eth_amount"`
-	SrcAmount         *big.Int `json:"src_amount"`
-	DestAmount        *big.Int `json:"dst_amount"`
-	FiatAmount        float64  `json:"fiat_amount"`
-	ETHUSDRate        float64  `json:"eth_usd_rate"`
-	ETHUSDProvider    string   `json:"-"`
+	USDTAmount         *big.Int `json:"usdt_amount"`
+	OriginalUSDTAmount *big.Int `json:"original_usdt_amount"`
+	SrcAmount          *big.Int `json:"src_amount"`
+	DestAmount         *big.Int `json:"dst_amount"`
+	FiatAmount         float64  `json:"fiat_amount"`
+	ETHUSDRate         float64  `json:"eth_usd_rate"`
+	ETHUSDProvider     string   `json:"-"`
 
 	User            KyberUserInfo    `json:"user"`
 	ReceiverAddress ethereum.Address `json:"receiver_address"`
@@ -179,18 +179,6 @@ type KyberUserInfo struct {
 	// UID         string           `json:"uid"`
 }
 
-// BigTradeLog represent trade event on KyberNetwork
-type BigTradeLog struct {
-	TradelogID        uint64        `json:"tradelog_id"`
-	Timestamp         time.Time     `json:"timestamp"`
-	TransactionHash   ethereum.Hash `json:"tx_hash"`
-	EthAmount         *big.Int      `json:"eth_amount"`
-	OriginalETHAmount *big.Int      `json:"original_eth_amount"`
-	SrcSymbol         string        `json:"src_symbol,omitempty"`
-	DestSymbol        string        `json:"dst_symbol,omitempty"`
-	FiatAmount        float64       `json:"fiat_amount"`
-}
-
 // MarshalJSON implements custom JSON marshaller for TradeLog to format timestamp in unix millis instead of RFC3339.
 func (tl *TradeLog) MarshalJSON() ([]byte, error) {
 	type AliasTradeLog TradeLog
@@ -237,37 +225,6 @@ func (tl *Tradelog) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON implements custom JSON unmarshal for TradeLog
 func (tl *Tradelog) UnmarshalJSON(b []byte) error {
 	type AliasTradeLog Tradelog
-	type mask struct {
-		Timestamp uint64 `json:"timestamp"`
-		*AliasTradeLog
-	}
-	m := mask{
-		Timestamp:     0,
-		AliasTradeLog: (*AliasTradeLog)(tl),
-	}
-	err := json.Unmarshal(b, &m)
-	if err != nil {
-		return err
-	}
-	tl.Timestamp = timeutil.TimestampMsToTime(m.Timestamp)
-	return nil
-}
-
-// MarshalJSON implements custom JSON marshaller for TradeLog to format timestamp in unix millis instead of RFC3339.
-func (tl *BigTradeLog) MarshalJSON() ([]byte, error) {
-	type AliasTradeLog BigTradeLog
-	return json.Marshal(struct {
-		Timestamp uint64 `json:"timestamp"`
-		*AliasTradeLog
-	}{
-		AliasTradeLog: (*AliasTradeLog)(tl),
-		Timestamp:     timeutil.TimeToTimestampMs(tl.Timestamp),
-	})
-}
-
-// UnmarshalJSON implements custom JSON unmarshal for TradeLog
-func (tl *BigTradeLog) UnmarshalJSON(b []byte) error {
-	type AliasTradeLog BigTradeLog
 	type mask struct {
 		Timestamp uint64 `json:"timestamp"`
 		*AliasTradeLog

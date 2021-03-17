@@ -71,13 +71,13 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) (*common.CrawlR
 			}
 			tradeLog.TxDetail.GasUsed = receipt.GasUsed
 
-			// set tradeLog.EthAmount
+			// set tradeLog.USDTAmount
 			if tradeLog.TokenInfo.SrcAddress == blockchain.USDTAddr {
-				tradeLog.EthAmount = tradeLog.SrcAmount
+				tradeLog.USDTAmount = tradeLog.SrcAmount
 			} else if tradeLog.TokenInfo.DestAddress == blockchain.USDTAddr {
-				tradeLog.EthAmount = tradeLog.DestAmount
+				tradeLog.USDTAmount = tradeLog.DestAmount
 			}
-			tradeLog.OriginalEthAmount = tradeLog.EthAmount // some case EthAmount
+			tradeLog.OriginalUSDTAmount = tradeLog.USDTAmount // some case USDTAmount
 
 			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
 			if err != nil {

@@ -177,7 +177,7 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 			}
 			if err := tx.Get(&tradelogID, query, 0,
 				r.Timestamp, r.BlockNumber, r.TransactionHash,
-				r.EthAmount, r.OriginalEthAmount, r.UserAddress, r.SrcAddress, r.DestAddress,
+				r.USDTAmount, r.OriginalUSDTAmount, r.UserAddress, r.SrcAddress, r.DestAddress,
 				r.SrcAmount, r.DestAmount,
 				r.ETHUSDRate,
 				r.ETHUSDProvider,

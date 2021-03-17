@@ -41,7 +41,7 @@ func assertTradeLog(t *testing.T, tradeLog common.Tradelog) {
 	assert.NotZero(t, tradeLog.TransactionHash)
 
 	if tradeLog.TokenInfo.SrcAddress != blockchain.ETHAddr {
-		assert.NotZero(t, tradeLog.EthAmount)
+		assert.NotZero(t, tradeLog.USDTAmount)
 	}
 
 	assert.NotZero(t, tradeLog.User.UserAddress)
@@ -152,7 +152,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 	// block: 7000184
 	// tx: 0xbda96c208fee7812f463f1fff515a1c70d9148ffe8b40a91db419a10074d4cc1
 	// conversion : ETH-GTO
-	// ethAmount must equal to : 749378067533693720
+	// usdtAmount must equal to : 749378067533693720
 	result, err = c.GetTradeLogs(big.NewInt(7000184), big.NewInt(7000184), time.Minute)
 	require.NoError(t, err)
 	require.Len(t, result.Trades, 1)
@@ -166,7 +166,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 			found = true
 			assert.Equal(t,
 				big.NewInt(749378067533693720),
-				tradeLog.EthAmount,
+				tradeLog.USDTAmount,
 				"trade log's ETH amount must equal to the 749378067533693720")
 
 			assert.Equal(t, ethereum.HexToAddress("0x85c5c26dc2af5546341fc1988b9d178148b4838b"), tradeLog.ReceiverAddress,
@@ -244,15 +244,15 @@ func newTestCrawler(t *testing.T, version string) *Crawler {
 }
 
 // test function for get eth amount (only run locally)
-func TestCrawler_GetEthAmount(t *testing.T) {
+func TestCrawler_GetUSDTAmount(t *testing.T) {
 	testutil.SkipExternal(t)
 	// test v3 token to token
 	c := newTestCrawler(t, "v3")
 	result, err := c.GetTradeLogs(big.NewInt(8166246), big.NewInt(8166247), time.Minute)
 	require.NoError(t, err)
 	require.Len(t, result.Trades, 1)
-	require.Equal(t, big.NewInt(7543875834785386865), result.Trades[0].OriginalEthAmount)
-	require.Equal(t, big.NewInt(0).Mul(big.NewInt(7543875834785386865), big.NewInt(2)), result.Trades[0].EthAmount)
+	require.Equal(t, big.NewInt(7543875834785386865), result.Trades[0].OriginalUSDTAmount)
+	require.Equal(t, big.NewInt(0).Mul(big.NewInt(7543875834785386865), big.NewInt(2)), result.Trades[0].USDTAmount)
 	for _, tradeLog := range result.Trades {
 		assertTradeLog(t, tradeLog)
 	}
@@ -261,10 +261,10 @@ func TestCrawler_GetEthAmount(t *testing.T) {
 	result, err = c.GetTradeLogs(big.NewInt(8180001), big.NewInt(8180002), time.Minute)
 	require.NoError(t, err)
 	require.Len(t, result.Trades, 2)
-	require.Equal(t, big.NewInt(682000000000000000), result.Trades[0].EthAmount)
+	require.Equal(t, big.NewInt(682000000000000000), result.Trades[0].USDTAmount)
 	// eth to weth
-	require.Equal(t, big.NewInt(500000000000000000), result.Trades[1].OriginalEthAmount)
-	require.Equal(t, int64(0), result.Trades[1].EthAmount.Int64())
+	require.Equal(t, big.NewInt(500000000000000000), result.Trades[1].OriginalUSDTAmount)
+	require.Equal(t, int64(0), result.Trades[1].USDTAmount.Int64())
 	for _, tradeLog := range result.Trades {
 		assertTradeLog(t, tradeLog)
 	}
@@ -278,11 +278,11 @@ func TestCrawler_GetEthAmount(t *testing.T) {
 	for _, tradeLog := range tradeLogs {
 		assertTradeLog(t, tradeLog)
 	}
-	require.Equal(t, big.NewInt(int64(478695176421724747)), tradeLogs[0].OriginalEthAmount)
-	require.Equal(t, big.NewInt(int64(478695176421724747)*2), tradeLogs[0].EthAmount)
-	require.Equal(t, int64(0), tradeLogs[1].EthAmount.Int64())
-	require.Equal(t, big.NewInt(10000000000000000), tradeLogs[1].OriginalEthAmount)
-	require.Equal(t, big.NewInt(int64(1249340978082777639)), tradeLogs[2].EthAmount)
+	require.Equal(t, big.NewInt(int64(478695176421724747)), tradeLogs[0].OriginalUSDTAmount)
+	require.Equal(t, big.NewInt(int64(478695176421724747)*2), tradeLogs[0].USDTAmount)
+	require.Equal(t, int64(0), tradeLogs[1].USDTAmount.Int64())
+	require.Equal(t, big.NewInt(10000000000000000), tradeLogs[1].OriginalUSDTAmount)
+	require.Equal(t, big.NewInt(int64(1249340978082777639)), tradeLogs[2].USDTAmount)
 
 	// test v1
 	c = newTestCrawler(t, "v1")

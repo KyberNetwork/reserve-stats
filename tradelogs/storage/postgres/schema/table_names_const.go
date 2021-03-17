@@ -11,6 +11,4 @@ const (
 	WalletTableName = "wallet"
 	// UserTableName table for user info (id, address)
 	UserTableName = "users"
-	// BigTradeLogsTableName for store big trade
-	BigTradeLogsTableName = "big_tradelogs"
 )

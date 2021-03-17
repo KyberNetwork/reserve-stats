@@ -173,23 +173,23 @@ func TestSaveTradeLogs_Overwrite(t *testing.T) {
 			SrcAddress:  ethereum.HexToAddress("0x0f5d2fb29fb7d3cfee444a200298f468908cc942"),
 			DestAddress: ethereum.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"),
 		},
-		SrcAmount:         big.NewInt(99995137653743),
-		DestAmount:        big.NewInt(99995137653743773),
-		EthAmount:         big.NewInt(100000000000000000),
-		OriginalEthAmount: big.NewInt(100000000000000000),
+		SrcAmount:          big.NewInt(99995137653743),
+		DestAmount:         big.NewInt(99995137653743773),
+		USDTAmount:         big.NewInt(100000000000000000),
+		OriginalUSDTAmount: big.NewInt(100000000000000000),
 	}
 	result := &common.CrawlResult{
 		Trades: []common.Tradelog{tradelog},
 	}
 	require.NoError(t, testStorage.SaveTradeLogs(result))
 	tradelog2 := tradelog
-	tradelog2.EthAmount = big.NewInt(0).Mul(big.NewInt(2), tradelog.EthAmount)
+	tradelog2.USDTAmount = big.NewInt(0).Mul(big.NewInt(2), tradelog.USDTAmount)
 	require.NoError(t, testStorage.SaveTradeLogs(result))
 
 	tls, err := testStorage.LoadTradeLogs(timestamp, timestamp)
 	require.NoError(t, err)
 	require.Equal(t, len(tls), 1)
-	assert.Equal(t, tradelog2.EthAmount, tls[0].EthAmount)
+	assert.Equal(t, tradelog2.USDTAmount, tls[0].USDTAmount)
 
 	tradeSummary, err := testStorage.GetTradeSummary(timestamp, timestamp, 0)
 	require.NoError(t, err)
@@ -215,7 +215,7 @@ func TestTradeLogDB_LoadTradeLogs(t *testing.T) {
 	require.NoError(t, err)
 	t.Log(len(tradeLogs))
 	for _, log := range tradeLogs {
-		t.Logf("%+v %+v", log.OriginalEthAmount, log.EthAmount)
+		t.Logf("%+v %+v", log.OriginalUSDTAmount, log.USDTAmount)
 	}
 }
 

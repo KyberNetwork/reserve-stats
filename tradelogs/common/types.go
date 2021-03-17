@@ -22,65 +22,6 @@ type BurnFee struct {
 	Index          uint             `json:"index"` // the index of event log in transaction receipt
 }
 
-// WalletFee represent feeToWallet event on KyberNetwork
-type WalletFee struct {
-	ReserveAddress ethereum.Address `json:"reserve_addr"`
-	WalletAddress  ethereum.Address `json:"wallet_addr"`
-	WalletName     string           `json:"wallet_name"`
-	Amount         *big.Int         `json:"amount"`
-	Index          uint             `json:"index"` // the index of event log in transaction receipt
-}
-
-// TradeLog represent trade event on KyberNetwork
-type TradeLog struct {
-	Timestamp       time.Time     `json:"timestamp"`
-	BlockNumber     uint64        `json:"block_number"`
-	TransactionHash ethereum.Hash `json:"tx_hash"`
-	// EthAmount = OriginalEthAmount * len(BurnFees)
-	EthAmount         *big.Int `json:"eth_amount"`
-	OriginalEthAmount *big.Int `json:"original_eth_amount"`
-
-	SrcAddress  ethereum.Address `json:"src_addr"`
-	SrcSymbol   string           `json:"src_symbol,omitempty"`
-	DestAddress ethereum.Address `json:"dst_addr"`
-	DestSymbol  string           `json:"dst_symbol,omitempty"`
-
-	UserAddress       ethereum.Address `json:"user_addr"`
-	ReceiverAddress   ethereum.Address `json:"receiver_address"`
-	SrcReserveAddress ethereum.Address `json:"src_reserve_addr"`
-	DstReserveAddress ethereum.Address `json:"dst_reserve_addr"`
-	SrcAmount         *big.Int         `json:"src_amount"`
-	DestAmount        *big.Int         `json:"dst_amount"`
-	FiatAmount        float64          `json:"fiat_amount"`
-	WalletAddress     ethereum.Address `json:"wallet_addr"`
-	WalletName        string           `json:"wallet_name"`
-
-	SrcBurnAmount      float64 `json:"src_burn_amount"`
-	DstBurnAmount      float64 `json:"dst_burn_amount"`
-	SrcWalletFeeAmount float64 `json:"src_wallet_fee_amount"`
-	DstWalletFeeAmount float64 `json:"dst_wallet_fee_amount"`
-
-	BurnFees       []BurnFee   `json:"-"`
-	WalletFees     []WalletFee `json:"-"`
-	IntegrationApp string      `json:"integration_app"`
-
-	IP       string           `json:"ip"`
-	Country  string           `json:"country"`
-	UID      string           `json:"uid"`
-	TxSender ethereum.Address `json:"tx_sender"`
-
-	ETHUSDRate     float64 `json:"eth_usd_rate"`
-	ETHUSDProvider string  `json:"-"`
-
-	UserName  string `json:"user_name"`
-	ProfileID int64  `json:"profile_id"`
-	Index     uint   `json:"index"` // the index of event log in transaction receipt
-
-	GasUsed        uint64   `json:"gas_used"`
-	GasPrice       *big.Int `json:"gas_price"`
-	TransactionFee *big.Int `json:"transaction_fee"`
-}
-
 // CrawlResult is result of the crawl
 type CrawlResult struct {
 	Reserves      []Reserve  `json:"reserves"` // reserve update on this
@@ -99,14 +40,11 @@ type Tradelog struct {
 	SrcReserveAddress ethereum.Address `json:"-"`
 	DstReserveAddress ethereum.Address `json:"-"`
 
-	// EthAmount = OriginalEthAmount * len(BurnFees)
-	EthAmount         *big.Int `json:"eth_amount"`
-	OriginalEthAmount *big.Int `json:"original_eth_amount"`
-	SrcAmount         *big.Int `json:"src_amount"`
-	DestAmount        *big.Int `json:"dst_amount"`
-	FiatAmount        float64  `json:"fiat_amount"`
-	ETHUSDRate        float64  `json:"eth_usd_rate"`
-	ETHUSDProvider    string   `json:"-"`
+	USDTAmount         *big.Int `json:"usdt_amount"`
+	OriginalUSDTAmount *big.Int `json:"original_usdt_amount"`
+	SrcAmount          *big.Int `json:"src_amount"`
+	DestAmount         *big.Int `json:"dst_amount"`
+	FiatAmount         float64  `json:"fiat_amount"`
 
 	User            KyberUserInfo    `json:"user"`
 	ReceiverAddress ethereum.Address `json:"receiver_address"`
@@ -136,22 +74,6 @@ type Reserve struct {
 	BlockNumber  uint64           `json:"block_number"` // block number where reserve value (address, rebate_wallet) is applied
 }
 
-// TradelogFee is fee for a trade
-type TradelogFee struct {
-	ReserveAddr ethereum.Address `json:"reserve_addr"`    // backward compatible for tradelog before katalyst
-	WalletName  string           `json:"wallet_name"`     // backward compatible for tradelog before katalyst
-	WalletFee   *big.Int         `json:"platform_rebate"` // backward compatible for tradelog before katalyst
-
-	PlatformFee               *big.Int           `json:"platform_fee"`
-	PlatformWallet            ethereum.Address   `json:"platform_wallet"`
-	Reward                    *big.Int           `json:"reward"`
-	Rebate                    *big.Int           `json:"reserve_rebate"`
-	RebateWallets             []ethereum.Address `json:"rebate_wallet"`
-	RebatePercentBpsPerWallet []*big.Int         `json:"rebate_percent_per_wallet"`
-	Burn                      *big.Int           `json:"burn"`
-	Index                     uint               `json:"index"`
-}
-
 // TradeTokenInfo is token info
 type TradeTokenInfo struct {
 	SrcAddress  ethereum.Address `json:"src_addr"`
@@ -177,49 +99,6 @@ type KyberUserInfo struct {
 	// IP          string           `json:"ip"`
 	// Country     string           `json:"country"`
 	// UID         string           `json:"uid"`
-}
-
-// BigTradeLog represent trade event on KyberNetwork
-type BigTradeLog struct {
-	TradelogID        uint64        `json:"tradelog_id"`
-	Timestamp         time.Time     `json:"timestamp"`
-	TransactionHash   ethereum.Hash `json:"tx_hash"`
-	EthAmount         *big.Int      `json:"eth_amount"`
-	OriginalETHAmount *big.Int      `json:"original_eth_amount"`
-	SrcSymbol         string        `json:"src_symbol,omitempty"`
-	DestSymbol        string        `json:"dst_symbol,omitempty"`
-	FiatAmount        float64       `json:"fiat_amount"`
-}
-
-// MarshalJSON implements custom JSON marshaller for TradeLog to format timestamp in unix millis instead of RFC3339.
-func (tl *TradeLog) MarshalJSON() ([]byte, error) {
-	type AliasTradeLog TradeLog
-	return json.Marshal(struct {
-		Timestamp uint64 `json:"timestamp"`
-		*AliasTradeLog
-	}{
-		AliasTradeLog: (*AliasTradeLog)(tl),
-		Timestamp:     timeutil.TimeToTimestampMs(tl.Timestamp),
-	})
-}
-
-// UnmarshalJSON implements custom JSON unmarshal for TradeLog
-func (tl *TradeLog) UnmarshalJSON(b []byte) error {
-	type AliasTradeLog TradeLog
-	type mask struct {
-		Timestamp uint64 `json:"timestamp"`
-		*AliasTradeLog
-	}
-	m := mask{
-		Timestamp:     0,
-		AliasTradeLog: (*AliasTradeLog)(tl),
-	}
-	err := json.Unmarshal(b, &m)
-	if err != nil {
-		return err
-	}
-	tl.Timestamp = timeutil.TimestampMsToTime(m.Timestamp)
-	return nil
 }
 
 // MarshalJSON implements custom JSON marshaller for TradeLog to format timestamp in unix millis instead of RFC3339.
@@ -253,55 +132,19 @@ func (tl *Tradelog) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// MarshalJSON implements custom JSON marshaller for TradeLog to format timestamp in unix millis instead of RFC3339.
-func (tl *BigTradeLog) MarshalJSON() ([]byte, error) {
-	type AliasTradeLog BigTradeLog
-	return json.Marshal(struct {
-		Timestamp uint64 `json:"timestamp"`
-		*AliasTradeLog
-	}{
-		AliasTradeLog: (*AliasTradeLog)(tl),
-		Timestamp:     timeutil.TimeToTimestampMs(tl.Timestamp),
-	})
-}
-
-// UnmarshalJSON implements custom JSON unmarshal for TradeLog
-func (tl *BigTradeLog) UnmarshalJSON(b []byte) error {
-	type AliasTradeLog BigTradeLog
-	type mask struct {
-		Timestamp uint64 `json:"timestamp"`
-		*AliasTradeLog
-	}
-	m := mask{
-		Timestamp:     0,
-		AliasTradeLog: (*AliasTradeLog)(tl),
-	}
-	err := json.Unmarshal(b, &m)
-	if err != nil {
-		return err
-	}
-	tl.Timestamp = timeutil.TimestampMsToTime(m.Timestamp)
-	return nil
-}
-
 // VolumeStats struct holds all the volume fields of volume in a specfic time
 type VolumeStats struct {
-	ETHAmount float64 `json:"eth_amount"`
 	USDAmount float64 `json:"usd_amount"`
 	Volume    float64 `json:"volume"`
 }
 
 // TradeSummary struct holds all the fields required for trade summary
 type TradeSummary struct {
-	ETHVolume          float64 `json:"eth_volume"`
 	USDAmount          float64 `json:"usd_volume"`
-	TotalBurnFee       float64 `json:"burn_fee"`
 	TotalTrade         uint64  `json:"total_trade"`
 	UniqueAddresses    uint64  `json:"unique_addresses"`
-	KYCEDAddresses     uint64  `json:"kyced_addresses"`
 	NewUniqueAddresses uint64  `json:"new_unique_addresses"`
 	USDPerTrade        float64 `json:"usd_per_trade"`
-	ETHPerTrade        float64 `json:"eth_per_trade"`
 }
 
 //CountryStats stats for a country a day
@@ -319,7 +162,6 @@ type CountryStats struct {
 
 //UserVolume represent volume of an user from time to time
 type UserVolume struct {
-	ETHAmount float64 `json:"eth_amount"`
 	USDAmount float64 `json:"usd_amount"`
 }
 

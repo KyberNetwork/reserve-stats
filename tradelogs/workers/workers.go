@@ -89,10 +89,13 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (*common.CrawlResult, erro
 
 	startingBlocks := deployment.MustGetStartingBlocksFromContext(fj.c)
 	addresses := []ethereum.Address{contracts.PricingContractAddress().MustGetOneFromContext(fj.c)}
+	addresses = append(addresses, contracts.InternalReserveAddress().MustGetOneFromContext(fj.c))
 	// logger.Fatalw("addresses", "addresses", addresses)
 
+	reserveContract := contracts.InternalReserveAddress().MustGetOneFromContext(fj.c)
+
 	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks,
-		fj.etherscanClient)
+		reserveContract, fj.etherscanClient)
 	if err != nil {
 		return nil, err
 	}
@@ -231,14 +234,6 @@ func (p *Pool) serialSaveTradeLogs(order int, log *common.CrawlResult, fromBlock
 			if err = p.storage.SaveTradeLogs(log); err != nil {
 				logger.Errorw("save trade logs into db failed",
 					"err", err)
-				p.mutex.Unlock()
-				p.markAsFailed(order)
-				return err
-			}
-
-			// save big trades
-			if err = p.storage.SaveBigTrades(p.bigVolume, fromBlock); err != nil {
-				logger.Errorw("save big trades into db failed", "error", err)
 				p.mutex.Unlock()
 				p.markAsFailed(order)
 				return err

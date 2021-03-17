@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
@@ -13,7 +12,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
 	_ "github.com/KyberNetwork/reserve-stats/lib/httputil/validators" // import custom validator functions
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
 
@@ -293,58 +291,6 @@ func (sv *Server) getTopReserves(c *gin.Context) {
 	)
 }
 
-type bigTradesQuery struct {
-	FromTime uint64 `form:"from"`
-	ToTime   uint64 `form:"to"`
-}
-
-func (sv *Server) getBigTrades(c *gin.Context) {
-	var (
-		query bigTradesQuery
-	)
-	if err := c.ShouldBindQuery(&query); err != nil {
-		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
-		return
-	}
-	fromTime := timeutil.TimestampMsToTime(query.FromTime)
-	toTime := timeutil.TimestampMsToTime(query.ToTime)
-	if query.ToTime == 0 {
-		toTime = time.Now()
-	}
-	bigTrades, err := sv.storage.GetNotTwittedTrades(fromTime, toTime)
-	if err != nil {
-		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
-		return
-	}
-	c.JSON(
-		http.StatusOK,
-		bigTrades,
-	)
-}
-
-type updateBigTradesTwittedRequest struct {
-	IDs []uint64 `json:"ids"`
-}
-
-func (sv *Server) updateBigTradesTwitted(c *gin.Context) {
-	var (
-		query updateBigTradesTwittedRequest
-	)
-	if err := c.ShouldBindJSON(&query); err != nil {
-		libhttputil.ResponseFailure(c, http.StatusBadRequest, err)
-		return
-	}
-
-	if err := sv.storage.UpdateBigTradesTwitted(query.IDs); err != nil {
-		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
-		return
-	}
-	c.JSON(
-		http.StatusOK,
-		nil,
-	)
-}
-
 func (sv *Server) setupRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/trade-logs", sv.getTradeLogs)
@@ -361,9 +307,6 @@ func (sv *Server) setupRouter() *gin.Engine {
 	r.GET("/stats", sv.getStats)
 	r.GET("/top-tokens", sv.getTopTokens)
 	r.GET("/top-reserves", sv.getTopReserves)
-
-	r.GET("/big-trades", sv.getBigTrades)
-	r.PUT("/big-trades", sv.updateBigTradesTwitted)
 
 	return r
 }

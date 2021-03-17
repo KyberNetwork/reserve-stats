@@ -28,7 +28,7 @@ var (
 )
 
 // ReserveABI is the input ABI used to generate the binding from.
-const ReserveABI = "[{\"constant\":false,\"inputs\":[],\"name\":\"enableTrade\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"alerter\",\"type\":\"address\"}],\"name\":\"removeAlerter\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"pendingAdmin\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"getOperators\",\"outputs\":[{\"name\":\"\",\"type\":\"address[]\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"},{\"name\":\"sendTo\",\"type\":\"address\"}],\"name\":\"withdrawToken\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"newAlerter\",\"type\":\"address\"}],\"name\":\"addAlerter\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"sanityRatesContract\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"addr\",\"type\":\"address\"},{\"name\":\"approve\",\"type\":\"bool\"}],\"name\":\"approveWithdrawAddress\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"},{\"name\":\"destination\",\"type\":\"address\"}],\"name\":\"withdraw\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"disableTrade\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"srcToken\",\"type\":\"address\"},{\"name\":\"srcAmount\",\"type\":\"uint256\"},{\"name\":\"destToken\",\"type\":\"address\"},{\"name\":\"destAddress\",\"type\":\"address\"},{\"name\":\"conversionRate\",\"type\":\"uint256\"},{\"name\":\"validate\",\"type\":\"bool\"}],\"name\":\"trade\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"newAdmin\",\"type\":\"address\"}],\"name\":\"transferAdmin\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"claimAdmin\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"newAdmin\",\"type\":\"address\"}],\"name\":\"transferAdminQuickly\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"getAlerters\",\"outputs\":[{\"name\":\"\",\"type\":\"address[]\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"src\",\"type\":\"address\"},{\"name\":\"dest\",\"type\":\"address\"},{\"name\":\"srcQty\",\"type\":\"uint256\"},{\"name\":\"blockNumber\",\"type\":\"uint256\"}],\"name\":\"getConversionRate\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"newOperator\",\"type\":\"address\"}],\"name\":\"addOperator\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"src\",\"type\":\"address\"},{\"name\":\"dest\",\"type\":\"address\"},{\"name\":\"dstQty\",\"type\":\"uint256\"},{\"name\":\"rate\",\"type\":\"uint256\"}],\"name\":\"getSrcQty\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"operator\",\"type\":\"address\"}],\"name\":\"removeOperator\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_kyberNetwork\",\"type\":\"address\"},{\"name\":\"_conversionRates\",\"type\":\"address\"},{\"name\":\"_sanityRates\",\"type\":\"address\"}],\"name\":\"setContracts\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"kyberNetwork\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\"},{\"name\":\"sendTo\",\"type\":\"address\"}],\"name\":\"withdrawEther\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"conversionRatesContract\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"tradeEnabled\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"approvedWithdrawAddresses\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"admin\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"token\",\"type\":\"address\"}],\"name\":\"getBalance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"src\",\"type\":\"address\"},{\"name\":\"dest\",\"type\":\"address\"},{\"name\":\"srcQty\",\"type\":\"uint256\"},{\"name\":\"rate\",\"type\":\"uint256\"}],\"name\":\"getDestQty\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"_kyberNetwork\",\"type\":\"address\"},{\"name\":\"_ratesContract\",\"type\":\"address\"},{\"name\":\"_admin\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DepositToken\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"origin\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"src\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"srcAmount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"destToken\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"destAmount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"destAddress\",\"type\":\"address\"}],\"name\":\"TradeExecute\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"enable\",\"type\":\"bool\"}],\"name\":\"TradeEnabled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"approve\",\"type\":\"bool\"}],\"name\":\"WithdrawAddressApproved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"destination\",\"type\":\"address\"}],\"name\":\"WithdrawFunds\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"network\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"rate\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"sanity\",\"type\":\"address\"}],\"name\":\"SetContractAddresses\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"sendTo\",\"type\":\"address\"}],\"name\":\"TokenWithdraw\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"sendTo\",\"type\":\"address\"}],\"name\":\"EtherWithdraw\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"pendingAdmin\",\"type\":\"address\"}],\"name\":\"TransferAdminPending\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"newAdmin\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"previousAdmin\",\"type\":\"address\"}],\"name\":\"AdminClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"newAlerter\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"isAdd\",\"type\":\"bool\"}],\"name\":\"AlerterAdded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"newOperator\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"isAdd\",\"type\":\"bool\"}],\"name\":\"OperatorAdded\",\"type\":\"event\"}]"
+const ReserveABI = "[{\"inputs\":[{\"internalType\":\"contractIConversionRates\",\"name\":\"_ratesContract\",\"type\":\"address\"},{\"internalType\":\"contractIWeth\",\"name\":\"_weth\",\"type\":\"address\"},{\"internalType\":\"contractIERC20Ext\",\"name\":\"_quoteToken\",\"type\":\"address\"},{\"internalType\":\"uint128\",\"name\":\"_maxGasPriceWei\",\"type\":\"uint128\"},{\"internalType\":\"address\",\"name\":\"_admin\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newAdmin\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"previousAdmin\",\"type\":\"address\"}],\"name\":\"AdminClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newAlerter\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"isAdd\",\"type\":\"bool\"}],\"name\":\"AlerterAdded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"contractIERC20Ext\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DepositToken\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"sendTo\",\"type\":\"address\"}],\"name\":\"EtherWithdraw\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint128\",\"name\":\"newMaxGasPrice\",\"type\":\"uint128\"}],\"name\":\"MaxGasPriceUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"contractIERC20Ext\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"wallet\",\"type\":\"address\"}],\"name\":\"NewTokenWallet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newOperator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"isAdd\",\"type\":\"bool\"}],\"name\":\"OperatorAdded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"contractIConversionRates\",\"name\":\"rate\",\"type\":\"address\"}],\"name\":\"SetConversionRateAddress\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"contractIKyberSanity\",\"name\":\"sanity\",\"type\":\"address\"}],\"name\":\"SetSanityRateAddress\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"contractIWeth\",\"name\":\"weth\",\"type\":\"address\"}],\"name\":\"SetWethAddress\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"contractIERC20Ext\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"sendTo\",\"type\":\"address\"}],\"name\":\"TokenWithdraw\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"enable\",\"type\":\"bool\"}],\"name\":\"TradeEnabled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"origin\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"trader\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"contractIERC20Ext\",\"name\":\"src\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"srcAmount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"contractIERC20Ext\",\"name\":\"destToken\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"destAmount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"addresspayable\",\"name\":\"destAddress\",\"type\":\"address\"}],\"name\":\"TradeExecute\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"pendingAdmin\",\"type\":\"address\"}],\"name\":\"TransferAdminPending\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"contractIERC20Ext\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"approve\",\"type\":\"bool\"}],\"name\":\"WithdrawAddressApproved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"contractIERC20Ext\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"}],\"name\":\"WithdrawFunds\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"BPS\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAlerter\",\"type\":\"address\"}],\"name\":\"addAlerter\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOperator\",\"type\":\"address\"}],\"name\":\"addOperator\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"admin\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC20Ext\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"approve\",\"type\":\"bool\"}],\"name\":\"approveWithdrawAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"approvedWithdrawAddresses\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claimAdmin\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"conversionRatesContract\",\"outputs\":[{\"internalType\":\"contractIConversionRates\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"disableTrade\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"enableTrade\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getAlerters\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC20Ext\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"getBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC20Ext\",\"name\":\"src\",\"type\":\"address\"},{\"internalType\":\"contractIERC20Ext\",\"name\":\"dest\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"srcQty\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"blockNumber\",\"type\":\"uint256\"}],\"name\":\"getConversionRate\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getOperators\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC20Ext\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"getTokenWallet\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"wallet\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC20Ext\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"isAddressApprovedForWithdrawal\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxGasPriceWei\",\"outputs\":[{\"internalType\":\"uint128\",\"name\":\"\",\"type\":\"uint128\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pendingAdmin\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"quoteToken\",\"outputs\":[{\"internalType\":\"contractIERC20Ext\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"alerter\",\"type\":\"address\"}],\"name\":\"removeAlerter\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"}],\"name\":\"removeOperator\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"sanityRatesContract\",\"outputs\":[{\"internalType\":\"contractIKyberSanity\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIConversionRates\",\"name\":\"_newConversionRate\",\"type\":\"address\"}],\"name\":\"setConversionRate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint128\",\"name\":\"newMaxGasPrice\",\"type\":\"uint128\"}],\"name\":\"setMaxGasPrice\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIKyberSanity\",\"name\":\"_newSanity\",\"type\":\"address\"}],\"name\":\"setSanityRate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC20Ext\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"wallet\",\"type\":\"address\"}],\"name\":\"setTokenWallet\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIWeth\",\"name\":\"_newWeth\",\"type\":\"address\"}],\"name\":\"setWeth\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"tokenWallet\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC20Ext\",\"name\":\"srcToken\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"srcAmount\",\"type\":\"uint256\"},{\"internalType\":\"contractIERC20Ext\",\"name\":\"destToken\",\"type\":\"address\"},{\"internalType\":\"addresspayable\",\"name\":\"destAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"conversionRate\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"name\":\"trade\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"tradeEnabled\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAdmin\",\"type\":\"address\"}],\"name\":\"transferAdmin\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAdmin\",\"type\":\"address\"}],\"name\":\"transferAdminQuickly\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"weth\",\"outputs\":[{\"internalType\":\"contractIWeth\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC20Ext\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"destination\",\"type\":\"address\"}],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"addresspayable\",\"name\":\"sendTo\",\"type\":\"address\"}],\"name\":\"withdrawEther\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC20Ext\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"sendTo\",\"type\":\"address\"}],\"name\":\"withdrawToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]"
 
 // Reserve is an auto generated Go binding around an Ethereum contract.
 type Reserve struct {
@@ -172,9 +172,35 @@ func (_Reserve *ReserveTransactorRaw) Transact(opts *bind.TransactOpts, method s
 	return _Reserve.Contract.contract.Transact(opts, method, params...)
 }
 
+// BPS is a free data retrieval call binding the contract method 0x249d39e9.
+//
+// Solidity: function BPS() view returns(uint256)
+func (_Reserve *ReserveCaller) BPS(opts *bind.CallOpts) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _Reserve.contract.Call(opts, out, "BPS")
+	return *ret0, err
+}
+
+// BPS is a free data retrieval call binding the contract method 0x249d39e9.
+//
+// Solidity: function BPS() view returns(uint256)
+func (_Reserve *ReserveSession) BPS() (*big.Int, error) {
+	return _Reserve.Contract.BPS(&_Reserve.CallOpts)
+}
+
+// BPS is a free data retrieval call binding the contract method 0x249d39e9.
+//
+// Solidity: function BPS() view returns(uint256)
+func (_Reserve *ReserveCallerSession) BPS() (*big.Int, error) {
+	return _Reserve.Contract.BPS(&_Reserve.CallOpts)
+}
+
 // Admin is a free data retrieval call binding the contract method 0xf851a440.
 //
-// Solidity: function admin() constant returns(address)
+// Solidity: function admin() view returns(address)
 func (_Reserve *ReserveCaller) Admin(opts *bind.CallOpts) (common.Address, error) {
 	var (
 		ret0 = new(common.Address)
@@ -186,21 +212,21 @@ func (_Reserve *ReserveCaller) Admin(opts *bind.CallOpts) (common.Address, error
 
 // Admin is a free data retrieval call binding the contract method 0xf851a440.
 //
-// Solidity: function admin() constant returns(address)
+// Solidity: function admin() view returns(address)
 func (_Reserve *ReserveSession) Admin() (common.Address, error) {
 	return _Reserve.Contract.Admin(&_Reserve.CallOpts)
 }
 
 // Admin is a free data retrieval call binding the contract method 0xf851a440.
 //
-// Solidity: function admin() constant returns(address)
+// Solidity: function admin() view returns(address)
 func (_Reserve *ReserveCallerSession) Admin() (common.Address, error) {
 	return _Reserve.Contract.Admin(&_Reserve.CallOpts)
 }
 
 // ApprovedWithdrawAddresses is a free data retrieval call binding the contract method 0xd7b7024d.
 //
-// Solidity: function approvedWithdrawAddresses(bytes32 ) constant returns(bool)
+// Solidity: function approvedWithdrawAddresses(bytes32 ) view returns(bool)
 func (_Reserve *ReserveCaller) ApprovedWithdrawAddresses(opts *bind.CallOpts, arg0 [32]byte) (bool, error) {
 	var (
 		ret0 = new(bool)
@@ -212,21 +238,21 @@ func (_Reserve *ReserveCaller) ApprovedWithdrawAddresses(opts *bind.CallOpts, ar
 
 // ApprovedWithdrawAddresses is a free data retrieval call binding the contract method 0xd7b7024d.
 //
-// Solidity: function approvedWithdrawAddresses(bytes32 ) constant returns(bool)
+// Solidity: function approvedWithdrawAddresses(bytes32 ) view returns(bool)
 func (_Reserve *ReserveSession) ApprovedWithdrawAddresses(arg0 [32]byte) (bool, error) {
 	return _Reserve.Contract.ApprovedWithdrawAddresses(&_Reserve.CallOpts, arg0)
 }
 
 // ApprovedWithdrawAddresses is a free data retrieval call binding the contract method 0xd7b7024d.
 //
-// Solidity: function approvedWithdrawAddresses(bytes32 ) constant returns(bool)
+// Solidity: function approvedWithdrawAddresses(bytes32 ) view returns(bool)
 func (_Reserve *ReserveCallerSession) ApprovedWithdrawAddresses(arg0 [32]byte) (bool, error) {
 	return _Reserve.Contract.ApprovedWithdrawAddresses(&_Reserve.CallOpts, arg0)
 }
 
 // ConversionRatesContract is a free data retrieval call binding the contract method 0xd5847d33.
 //
-// Solidity: function conversionRatesContract() constant returns(address)
+// Solidity: function conversionRatesContract() view returns(address)
 func (_Reserve *ReserveCaller) ConversionRatesContract(opts *bind.CallOpts) (common.Address, error) {
 	var (
 		ret0 = new(common.Address)
@@ -238,21 +264,21 @@ func (_Reserve *ReserveCaller) ConversionRatesContract(opts *bind.CallOpts) (com
 
 // ConversionRatesContract is a free data retrieval call binding the contract method 0xd5847d33.
 //
-// Solidity: function conversionRatesContract() constant returns(address)
+// Solidity: function conversionRatesContract() view returns(address)
 func (_Reserve *ReserveSession) ConversionRatesContract() (common.Address, error) {
 	return _Reserve.Contract.ConversionRatesContract(&_Reserve.CallOpts)
 }
 
 // ConversionRatesContract is a free data retrieval call binding the contract method 0xd5847d33.
 //
-// Solidity: function conversionRatesContract() constant returns(address)
+// Solidity: function conversionRatesContract() view returns(address)
 func (_Reserve *ReserveCallerSession) ConversionRatesContract() (common.Address, error) {
 	return _Reserve.Contract.ConversionRatesContract(&_Reserve.CallOpts)
 }
 
 // GetAlerters is a free data retrieval call binding the contract method 0x7c423f54.
 //
-// Solidity: function getAlerters() constant returns(address[])
+// Solidity: function getAlerters() view returns(address[])
 func (_Reserve *ReserveCaller) GetAlerters(opts *bind.CallOpts) ([]common.Address, error) {
 	var (
 		ret0 = new([]common.Address)
@@ -264,21 +290,21 @@ func (_Reserve *ReserveCaller) GetAlerters(opts *bind.CallOpts) ([]common.Addres
 
 // GetAlerters is a free data retrieval call binding the contract method 0x7c423f54.
 //
-// Solidity: function getAlerters() constant returns(address[])
+// Solidity: function getAlerters() view returns(address[])
 func (_Reserve *ReserveSession) GetAlerters() ([]common.Address, error) {
 	return _Reserve.Contract.GetAlerters(&_Reserve.CallOpts)
 }
 
 // GetAlerters is a free data retrieval call binding the contract method 0x7c423f54.
 //
-// Solidity: function getAlerters() constant returns(address[])
+// Solidity: function getAlerters() view returns(address[])
 func (_Reserve *ReserveCallerSession) GetAlerters() ([]common.Address, error) {
 	return _Reserve.Contract.GetAlerters(&_Reserve.CallOpts)
 }
 
 // GetBalance is a free data retrieval call binding the contract method 0xf8b2cb4f.
 //
-// Solidity: function getBalance(address token) constant returns(uint256)
+// Solidity: function getBalance(address token) view returns(uint256)
 func (_Reserve *ReserveCaller) GetBalance(opts *bind.CallOpts, token common.Address) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -290,21 +316,21 @@ func (_Reserve *ReserveCaller) GetBalance(opts *bind.CallOpts, token common.Addr
 
 // GetBalance is a free data retrieval call binding the contract method 0xf8b2cb4f.
 //
-// Solidity: function getBalance(address token) constant returns(uint256)
+// Solidity: function getBalance(address token) view returns(uint256)
 func (_Reserve *ReserveSession) GetBalance(token common.Address) (*big.Int, error) {
 	return _Reserve.Contract.GetBalance(&_Reserve.CallOpts, token)
 }
 
 // GetBalance is a free data retrieval call binding the contract method 0xf8b2cb4f.
 //
-// Solidity: function getBalance(address token) constant returns(uint256)
+// Solidity: function getBalance(address token) view returns(uint256)
 func (_Reserve *ReserveCallerSession) GetBalance(token common.Address) (*big.Int, error) {
 	return _Reserve.Contract.GetBalance(&_Reserve.CallOpts, token)
 }
 
 // GetConversionRate is a free data retrieval call binding the contract method 0x7cd44272.
 //
-// Solidity: function getConversionRate(address src, address dest, uint256 srcQty, uint256 blockNumber) constant returns(uint256)
+// Solidity: function getConversionRate(address src, address dest, uint256 srcQty, uint256 blockNumber) view returns(uint256)
 func (_Reserve *ReserveCaller) GetConversionRate(opts *bind.CallOpts, src common.Address, dest common.Address, srcQty *big.Int, blockNumber *big.Int) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
@@ -316,47 +342,21 @@ func (_Reserve *ReserveCaller) GetConversionRate(opts *bind.CallOpts, src common
 
 // GetConversionRate is a free data retrieval call binding the contract method 0x7cd44272.
 //
-// Solidity: function getConversionRate(address src, address dest, uint256 srcQty, uint256 blockNumber) constant returns(uint256)
+// Solidity: function getConversionRate(address src, address dest, uint256 srcQty, uint256 blockNumber) view returns(uint256)
 func (_Reserve *ReserveSession) GetConversionRate(src common.Address, dest common.Address, srcQty *big.Int, blockNumber *big.Int) (*big.Int, error) {
 	return _Reserve.Contract.GetConversionRate(&_Reserve.CallOpts, src, dest, srcQty, blockNumber)
 }
 
 // GetConversionRate is a free data retrieval call binding the contract method 0x7cd44272.
 //
-// Solidity: function getConversionRate(address src, address dest, uint256 srcQty, uint256 blockNumber) constant returns(uint256)
+// Solidity: function getConversionRate(address src, address dest, uint256 srcQty, uint256 blockNumber) view returns(uint256)
 func (_Reserve *ReserveCallerSession) GetConversionRate(src common.Address, dest common.Address, srcQty *big.Int, blockNumber *big.Int) (*big.Int, error) {
 	return _Reserve.Contract.GetConversionRate(&_Reserve.CallOpts, src, dest, srcQty, blockNumber)
 }
 
-// GetDestQty is a free data retrieval call binding the contract method 0xfa64dffa.
-//
-// Solidity: function getDestQty(address src, address dest, uint256 srcQty, uint256 rate) constant returns(uint256)
-func (_Reserve *ReserveCaller) GetDestQty(opts *bind.CallOpts, src common.Address, dest common.Address, srcQty *big.Int, rate *big.Int) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _Reserve.contract.Call(opts, out, "getDestQty", src, dest, srcQty, rate)
-	return *ret0, err
-}
-
-// GetDestQty is a free data retrieval call binding the contract method 0xfa64dffa.
-//
-// Solidity: function getDestQty(address src, address dest, uint256 srcQty, uint256 rate) constant returns(uint256)
-func (_Reserve *ReserveSession) GetDestQty(src common.Address, dest common.Address, srcQty *big.Int, rate *big.Int) (*big.Int, error) {
-	return _Reserve.Contract.GetDestQty(&_Reserve.CallOpts, src, dest, srcQty, rate)
-}
-
-// GetDestQty is a free data retrieval call binding the contract method 0xfa64dffa.
-//
-// Solidity: function getDestQty(address src, address dest, uint256 srcQty, uint256 rate) constant returns(uint256)
-func (_Reserve *ReserveCallerSession) GetDestQty(src common.Address, dest common.Address, srcQty *big.Int, rate *big.Int) (*big.Int, error) {
-	return _Reserve.Contract.GetDestQty(&_Reserve.CallOpts, src, dest, srcQty, rate)
-}
-
 // GetOperators is a free data retrieval call binding the contract method 0x27a099d8.
 //
-// Solidity: function getOperators() constant returns(address[])
+// Solidity: function getOperators() view returns(address[])
 func (_Reserve *ReserveCaller) GetOperators(opts *bind.CallOpts) ([]common.Address, error) {
 	var (
 		ret0 = new([]common.Address)
@@ -368,73 +368,99 @@ func (_Reserve *ReserveCaller) GetOperators(opts *bind.CallOpts) ([]common.Addre
 
 // GetOperators is a free data retrieval call binding the contract method 0x27a099d8.
 //
-// Solidity: function getOperators() constant returns(address[])
+// Solidity: function getOperators() view returns(address[])
 func (_Reserve *ReserveSession) GetOperators() ([]common.Address, error) {
 	return _Reserve.Contract.GetOperators(&_Reserve.CallOpts)
 }
 
 // GetOperators is a free data retrieval call binding the contract method 0x27a099d8.
 //
-// Solidity: function getOperators() constant returns(address[])
+// Solidity: function getOperators() view returns(address[])
 func (_Reserve *ReserveCallerSession) GetOperators() ([]common.Address, error) {
 	return _Reserve.Contract.GetOperators(&_Reserve.CallOpts)
 }
 
-// GetSrcQty is a free data retrieval call binding the contract method 0xa7fca953.
+// GetTokenWallet is a free data retrieval call binding the contract method 0x85d75025.
 //
-// Solidity: function getSrcQty(address src, address dest, uint256 dstQty, uint256 rate) constant returns(uint256)
-func (_Reserve *ReserveCaller) GetSrcQty(opts *bind.CallOpts, src common.Address, dest common.Address, dstQty *big.Int, rate *big.Int) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _Reserve.contract.Call(opts, out, "getSrcQty", src, dest, dstQty, rate)
-	return *ret0, err
-}
-
-// GetSrcQty is a free data retrieval call binding the contract method 0xa7fca953.
-//
-// Solidity: function getSrcQty(address src, address dest, uint256 dstQty, uint256 rate) constant returns(uint256)
-func (_Reserve *ReserveSession) GetSrcQty(src common.Address, dest common.Address, dstQty *big.Int, rate *big.Int) (*big.Int, error) {
-	return _Reserve.Contract.GetSrcQty(&_Reserve.CallOpts, src, dest, dstQty, rate)
-}
-
-// GetSrcQty is a free data retrieval call binding the contract method 0xa7fca953.
-//
-// Solidity: function getSrcQty(address src, address dest, uint256 dstQty, uint256 rate) constant returns(uint256)
-func (_Reserve *ReserveCallerSession) GetSrcQty(src common.Address, dest common.Address, dstQty *big.Int, rate *big.Int) (*big.Int, error) {
-	return _Reserve.Contract.GetSrcQty(&_Reserve.CallOpts, src, dest, dstQty, rate)
-}
-
-// KyberNetwork is a free data retrieval call binding the contract method 0xb78b842d.
-//
-// Solidity: function kyberNetwork() constant returns(address)
-func (_Reserve *ReserveCaller) KyberNetwork(opts *bind.CallOpts) (common.Address, error) {
+// Solidity: function getTokenWallet(address token) view returns(address wallet)
+func (_Reserve *ReserveCaller) GetTokenWallet(opts *bind.CallOpts, token common.Address) (common.Address, error) {
 	var (
 		ret0 = new(common.Address)
 	)
 	out := ret0
-	err := _Reserve.contract.Call(opts, out, "kyberNetwork")
+	err := _Reserve.contract.Call(opts, out, "getTokenWallet", token)
 	return *ret0, err
 }
 
-// KyberNetwork is a free data retrieval call binding the contract method 0xb78b842d.
+// GetTokenWallet is a free data retrieval call binding the contract method 0x85d75025.
 //
-// Solidity: function kyberNetwork() constant returns(address)
-func (_Reserve *ReserveSession) KyberNetwork() (common.Address, error) {
-	return _Reserve.Contract.KyberNetwork(&_Reserve.CallOpts)
+// Solidity: function getTokenWallet(address token) view returns(address wallet)
+func (_Reserve *ReserveSession) GetTokenWallet(token common.Address) (common.Address, error) {
+	return _Reserve.Contract.GetTokenWallet(&_Reserve.CallOpts, token)
 }
 
-// KyberNetwork is a free data retrieval call binding the contract method 0xb78b842d.
+// GetTokenWallet is a free data retrieval call binding the contract method 0x85d75025.
 //
-// Solidity: function kyberNetwork() constant returns(address)
-func (_Reserve *ReserveCallerSession) KyberNetwork() (common.Address, error) {
-	return _Reserve.Contract.KyberNetwork(&_Reserve.CallOpts)
+// Solidity: function getTokenWallet(address token) view returns(address wallet)
+func (_Reserve *ReserveCallerSession) GetTokenWallet(token common.Address) (common.Address, error) {
+	return _Reserve.Contract.GetTokenWallet(&_Reserve.CallOpts, token)
+}
+
+// IsAddressApprovedForWithdrawal is a free data retrieval call binding the contract method 0xa56bb95b.
+//
+// Solidity: function isAddressApprovedForWithdrawal(address token, address addr) view returns(bool)
+func (_Reserve *ReserveCaller) IsAddressApprovedForWithdrawal(opts *bind.CallOpts, token common.Address, addr common.Address) (bool, error) {
+	var (
+		ret0 = new(bool)
+	)
+	out := ret0
+	err := _Reserve.contract.Call(opts, out, "isAddressApprovedForWithdrawal", token, addr)
+	return *ret0, err
+}
+
+// IsAddressApprovedForWithdrawal is a free data retrieval call binding the contract method 0xa56bb95b.
+//
+// Solidity: function isAddressApprovedForWithdrawal(address token, address addr) view returns(bool)
+func (_Reserve *ReserveSession) IsAddressApprovedForWithdrawal(token common.Address, addr common.Address) (bool, error) {
+	return _Reserve.Contract.IsAddressApprovedForWithdrawal(&_Reserve.CallOpts, token, addr)
+}
+
+// IsAddressApprovedForWithdrawal is a free data retrieval call binding the contract method 0xa56bb95b.
+//
+// Solidity: function isAddressApprovedForWithdrawal(address token, address addr) view returns(bool)
+func (_Reserve *ReserveCallerSession) IsAddressApprovedForWithdrawal(token common.Address, addr common.Address) (bool, error) {
+	return _Reserve.Contract.IsAddressApprovedForWithdrawal(&_Reserve.CallOpts, token, addr)
+}
+
+// MaxGasPriceWei is a free data retrieval call binding the contract method 0xef3881c8.
+//
+// Solidity: function maxGasPriceWei() view returns(uint128)
+func (_Reserve *ReserveCaller) MaxGasPriceWei(opts *bind.CallOpts) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _Reserve.contract.Call(opts, out, "maxGasPriceWei")
+	return *ret0, err
+}
+
+// MaxGasPriceWei is a free data retrieval call binding the contract method 0xef3881c8.
+//
+// Solidity: function maxGasPriceWei() view returns(uint128)
+func (_Reserve *ReserveSession) MaxGasPriceWei() (*big.Int, error) {
+	return _Reserve.Contract.MaxGasPriceWei(&_Reserve.CallOpts)
+}
+
+// MaxGasPriceWei is a free data retrieval call binding the contract method 0xef3881c8.
+//
+// Solidity: function maxGasPriceWei() view returns(uint128)
+func (_Reserve *ReserveCallerSession) MaxGasPriceWei() (*big.Int, error) {
+	return _Reserve.Contract.MaxGasPriceWei(&_Reserve.CallOpts)
 }
 
 // PendingAdmin is a free data retrieval call binding the contract method 0x26782247.
 //
-// Solidity: function pendingAdmin() constant returns(address)
+// Solidity: function pendingAdmin() view returns(address)
 func (_Reserve *ReserveCaller) PendingAdmin(opts *bind.CallOpts) (common.Address, error) {
 	var (
 		ret0 = new(common.Address)
@@ -446,21 +472,47 @@ func (_Reserve *ReserveCaller) PendingAdmin(opts *bind.CallOpts) (common.Address
 
 // PendingAdmin is a free data retrieval call binding the contract method 0x26782247.
 //
-// Solidity: function pendingAdmin() constant returns(address)
+// Solidity: function pendingAdmin() view returns(address)
 func (_Reserve *ReserveSession) PendingAdmin() (common.Address, error) {
 	return _Reserve.Contract.PendingAdmin(&_Reserve.CallOpts)
 }
 
 // PendingAdmin is a free data retrieval call binding the contract method 0x26782247.
 //
-// Solidity: function pendingAdmin() constant returns(address)
+// Solidity: function pendingAdmin() view returns(address)
 func (_Reserve *ReserveCallerSession) PendingAdmin() (common.Address, error) {
 	return _Reserve.Contract.PendingAdmin(&_Reserve.CallOpts)
 }
 
+// QuoteToken is a free data retrieval call binding the contract method 0x217a4b70.
+//
+// Solidity: function quoteToken() view returns(address)
+func (_Reserve *ReserveCaller) QuoteToken(opts *bind.CallOpts) (common.Address, error) {
+	var (
+		ret0 = new(common.Address)
+	)
+	out := ret0
+	err := _Reserve.contract.Call(opts, out, "quoteToken")
+	return *ret0, err
+}
+
+// QuoteToken is a free data retrieval call binding the contract method 0x217a4b70.
+//
+// Solidity: function quoteToken() view returns(address)
+func (_Reserve *ReserveSession) QuoteToken() (common.Address, error) {
+	return _Reserve.Contract.QuoteToken(&_Reserve.CallOpts)
+}
+
+// QuoteToken is a free data retrieval call binding the contract method 0x217a4b70.
+//
+// Solidity: function quoteToken() view returns(address)
+func (_Reserve *ReserveCallerSession) QuoteToken() (common.Address, error) {
+	return _Reserve.Contract.QuoteToken(&_Reserve.CallOpts)
+}
+
 // SanityRatesContract is a free data retrieval call binding the contract method 0x47e6924f.
 //
-// Solidity: function sanityRatesContract() constant returns(address)
+// Solidity: function sanityRatesContract() view returns(address)
 func (_Reserve *ReserveCaller) SanityRatesContract(opts *bind.CallOpts) (common.Address, error) {
 	var (
 		ret0 = new(common.Address)
@@ -472,21 +524,47 @@ func (_Reserve *ReserveCaller) SanityRatesContract(opts *bind.CallOpts) (common.
 
 // SanityRatesContract is a free data retrieval call binding the contract method 0x47e6924f.
 //
-// Solidity: function sanityRatesContract() constant returns(address)
+// Solidity: function sanityRatesContract() view returns(address)
 func (_Reserve *ReserveSession) SanityRatesContract() (common.Address, error) {
 	return _Reserve.Contract.SanityRatesContract(&_Reserve.CallOpts)
 }
 
 // SanityRatesContract is a free data retrieval call binding the contract method 0x47e6924f.
 //
-// Solidity: function sanityRatesContract() constant returns(address)
+// Solidity: function sanityRatesContract() view returns(address)
 func (_Reserve *ReserveCallerSession) SanityRatesContract() (common.Address, error) {
 	return _Reserve.Contract.SanityRatesContract(&_Reserve.CallOpts)
 }
 
+// TokenWallet is a free data retrieval call binding the contract method 0xa80cbac6.
+//
+// Solidity: function tokenWallet(address ) view returns(address)
+func (_Reserve *ReserveCaller) TokenWallet(opts *bind.CallOpts, arg0 common.Address) (common.Address, error) {
+	var (
+		ret0 = new(common.Address)
+	)
+	out := ret0
+	err := _Reserve.contract.Call(opts, out, "tokenWallet", arg0)
+	return *ret0, err
+}
+
+// TokenWallet is a free data retrieval call binding the contract method 0xa80cbac6.
+//
+// Solidity: function tokenWallet(address ) view returns(address)
+func (_Reserve *ReserveSession) TokenWallet(arg0 common.Address) (common.Address, error) {
+	return _Reserve.Contract.TokenWallet(&_Reserve.CallOpts, arg0)
+}
+
+// TokenWallet is a free data retrieval call binding the contract method 0xa80cbac6.
+//
+// Solidity: function tokenWallet(address ) view returns(address)
+func (_Reserve *ReserveCallerSession) TokenWallet(arg0 common.Address) (common.Address, error) {
+	return _Reserve.Contract.TokenWallet(&_Reserve.CallOpts, arg0)
+}
+
 // TradeEnabled is a free data retrieval call binding the contract method 0xd621e813.
 //
-// Solidity: function tradeEnabled() constant returns(bool)
+// Solidity: function tradeEnabled() view returns(bool)
 func (_Reserve *ReserveCaller) TradeEnabled(opts *bind.CallOpts) (bool, error) {
 	var (
 		ret0 = new(bool)
@@ -498,16 +576,42 @@ func (_Reserve *ReserveCaller) TradeEnabled(opts *bind.CallOpts) (bool, error) {
 
 // TradeEnabled is a free data retrieval call binding the contract method 0xd621e813.
 //
-// Solidity: function tradeEnabled() constant returns(bool)
+// Solidity: function tradeEnabled() view returns(bool)
 func (_Reserve *ReserveSession) TradeEnabled() (bool, error) {
 	return _Reserve.Contract.TradeEnabled(&_Reserve.CallOpts)
 }
 
 // TradeEnabled is a free data retrieval call binding the contract method 0xd621e813.
 //
-// Solidity: function tradeEnabled() constant returns(bool)
+// Solidity: function tradeEnabled() view returns(bool)
 func (_Reserve *ReserveCallerSession) TradeEnabled() (bool, error) {
 	return _Reserve.Contract.TradeEnabled(&_Reserve.CallOpts)
+}
+
+// Weth is a free data retrieval call binding the contract method 0x3fc8cef3.
+//
+// Solidity: function weth() view returns(address)
+func (_Reserve *ReserveCaller) Weth(opts *bind.CallOpts) (common.Address, error) {
+	var (
+		ret0 = new(common.Address)
+	)
+	out := ret0
+	err := _Reserve.contract.Call(opts, out, "weth")
+	return *ret0, err
+}
+
+// Weth is a free data retrieval call binding the contract method 0x3fc8cef3.
+//
+// Solidity: function weth() view returns(address)
+func (_Reserve *ReserveSession) Weth() (common.Address, error) {
+	return _Reserve.Contract.Weth(&_Reserve.CallOpts)
+}
+
+// Weth is a free data retrieval call binding the contract method 0x3fc8cef3.
+//
+// Solidity: function weth() view returns(address)
+func (_Reserve *ReserveCallerSession) Weth() (common.Address, error) {
+	return _Reserve.Contract.Weth(&_Reserve.CallOpts)
 }
 
 // AddAlerter is a paid mutator transaction binding the contract method 0x408ee7fe.
@@ -596,42 +700,42 @@ func (_Reserve *ReserveTransactorSession) ClaimAdmin() (*types.Transaction, erro
 
 // DisableTrade is a paid mutator transaction binding the contract method 0x6940030f.
 //
-// Solidity: function disableTrade() returns(bool)
+// Solidity: function disableTrade() returns()
 func (_Reserve *ReserveTransactor) DisableTrade(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Reserve.contract.Transact(opts, "disableTrade")
 }
 
 // DisableTrade is a paid mutator transaction binding the contract method 0x6940030f.
 //
-// Solidity: function disableTrade() returns(bool)
+// Solidity: function disableTrade() returns()
 func (_Reserve *ReserveSession) DisableTrade() (*types.Transaction, error) {
 	return _Reserve.Contract.DisableTrade(&_Reserve.TransactOpts)
 }
 
 // DisableTrade is a paid mutator transaction binding the contract method 0x6940030f.
 //
-// Solidity: function disableTrade() returns(bool)
+// Solidity: function disableTrade() returns()
 func (_Reserve *ReserveTransactorSession) DisableTrade() (*types.Transaction, error) {
 	return _Reserve.Contract.DisableTrade(&_Reserve.TransactOpts)
 }
 
 // EnableTrade is a paid mutator transaction binding the contract method 0x0099d386.
 //
-// Solidity: function enableTrade() returns(bool)
+// Solidity: function enableTrade() returns()
 func (_Reserve *ReserveTransactor) EnableTrade(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _Reserve.contract.Transact(opts, "enableTrade")
 }
 
 // EnableTrade is a paid mutator transaction binding the contract method 0x0099d386.
 //
-// Solidity: function enableTrade() returns(bool)
+// Solidity: function enableTrade() returns()
 func (_Reserve *ReserveSession) EnableTrade() (*types.Transaction, error) {
 	return _Reserve.Contract.EnableTrade(&_Reserve.TransactOpts)
 }
 
 // EnableTrade is a paid mutator transaction binding the contract method 0x0099d386.
 //
-// Solidity: function enableTrade() returns(bool)
+// Solidity: function enableTrade() returns()
 func (_Reserve *ReserveTransactorSession) EnableTrade() (*types.Transaction, error) {
 	return _Reserve.Contract.EnableTrade(&_Reserve.TransactOpts)
 }
@@ -678,46 +782,130 @@ func (_Reserve *ReserveTransactorSession) RemoveOperator(operator common.Address
 	return _Reserve.Contract.RemoveOperator(&_Reserve.TransactOpts, operator)
 }
 
-// SetContracts is a paid mutator transaction binding the contract method 0xb3066d49.
+// SetConversionRate is a paid mutator transaction binding the contract method 0xfa307281.
 //
-// Solidity: function setContracts(address _kyberNetwork, address _conversionRates, address _sanityRates) returns()
-func (_Reserve *ReserveTransactor) SetContracts(opts *bind.TransactOpts, _kyberNetwork common.Address, _conversionRates common.Address, _sanityRates common.Address) (*types.Transaction, error) {
-	return _Reserve.contract.Transact(opts, "setContracts", _kyberNetwork, _conversionRates, _sanityRates)
+// Solidity: function setConversionRate(address _newConversionRate) returns()
+func (_Reserve *ReserveTransactor) SetConversionRate(opts *bind.TransactOpts, _newConversionRate common.Address) (*types.Transaction, error) {
+	return _Reserve.contract.Transact(opts, "setConversionRate", _newConversionRate)
 }
 
-// SetContracts is a paid mutator transaction binding the contract method 0xb3066d49.
+// SetConversionRate is a paid mutator transaction binding the contract method 0xfa307281.
 //
-// Solidity: function setContracts(address _kyberNetwork, address _conversionRates, address _sanityRates) returns()
-func (_Reserve *ReserveSession) SetContracts(_kyberNetwork common.Address, _conversionRates common.Address, _sanityRates common.Address) (*types.Transaction, error) {
-	return _Reserve.Contract.SetContracts(&_Reserve.TransactOpts, _kyberNetwork, _conversionRates, _sanityRates)
+// Solidity: function setConversionRate(address _newConversionRate) returns()
+func (_Reserve *ReserveSession) SetConversionRate(_newConversionRate common.Address) (*types.Transaction, error) {
+	return _Reserve.Contract.SetConversionRate(&_Reserve.TransactOpts, _newConversionRate)
 }
 
-// SetContracts is a paid mutator transaction binding the contract method 0xb3066d49.
+// SetConversionRate is a paid mutator transaction binding the contract method 0xfa307281.
 //
-// Solidity: function setContracts(address _kyberNetwork, address _conversionRates, address _sanityRates) returns()
-func (_Reserve *ReserveTransactorSession) SetContracts(_kyberNetwork common.Address, _conversionRates common.Address, _sanityRates common.Address) (*types.Transaction, error) {
-	return _Reserve.Contract.SetContracts(&_Reserve.TransactOpts, _kyberNetwork, _conversionRates, _sanityRates)
+// Solidity: function setConversionRate(address _newConversionRate) returns()
+func (_Reserve *ReserveTransactorSession) SetConversionRate(_newConversionRate common.Address) (*types.Transaction, error) {
+	return _Reserve.Contract.SetConversionRate(&_Reserve.TransactOpts, _newConversionRate)
+}
+
+// SetMaxGasPrice is a paid mutator transaction binding the contract method 0xcac1d649.
+//
+// Solidity: function setMaxGasPrice(uint128 newMaxGasPrice) returns()
+func (_Reserve *ReserveTransactor) SetMaxGasPrice(opts *bind.TransactOpts, newMaxGasPrice *big.Int) (*types.Transaction, error) {
+	return _Reserve.contract.Transact(opts, "setMaxGasPrice", newMaxGasPrice)
+}
+
+// SetMaxGasPrice is a paid mutator transaction binding the contract method 0xcac1d649.
+//
+// Solidity: function setMaxGasPrice(uint128 newMaxGasPrice) returns()
+func (_Reserve *ReserveSession) SetMaxGasPrice(newMaxGasPrice *big.Int) (*types.Transaction, error) {
+	return _Reserve.Contract.SetMaxGasPrice(&_Reserve.TransactOpts, newMaxGasPrice)
+}
+
+// SetMaxGasPrice is a paid mutator transaction binding the contract method 0xcac1d649.
+//
+// Solidity: function setMaxGasPrice(uint128 newMaxGasPrice) returns()
+func (_Reserve *ReserveTransactorSession) SetMaxGasPrice(newMaxGasPrice *big.Int) (*types.Transaction, error) {
+	return _Reserve.Contract.SetMaxGasPrice(&_Reserve.TransactOpts, newMaxGasPrice)
+}
+
+// SetSanityRate is a paid mutator transaction binding the contract method 0x80f4da8b.
+//
+// Solidity: function setSanityRate(address _newSanity) returns()
+func (_Reserve *ReserveTransactor) SetSanityRate(opts *bind.TransactOpts, _newSanity common.Address) (*types.Transaction, error) {
+	return _Reserve.contract.Transact(opts, "setSanityRate", _newSanity)
+}
+
+// SetSanityRate is a paid mutator transaction binding the contract method 0x80f4da8b.
+//
+// Solidity: function setSanityRate(address _newSanity) returns()
+func (_Reserve *ReserveSession) SetSanityRate(_newSanity common.Address) (*types.Transaction, error) {
+	return _Reserve.Contract.SetSanityRate(&_Reserve.TransactOpts, _newSanity)
+}
+
+// SetSanityRate is a paid mutator transaction binding the contract method 0x80f4da8b.
+//
+// Solidity: function setSanityRate(address _newSanity) returns()
+func (_Reserve *ReserveTransactorSession) SetSanityRate(_newSanity common.Address) (*types.Transaction, error) {
+	return _Reserve.Contract.SetSanityRate(&_Reserve.TransactOpts, _newSanity)
+}
+
+// SetTokenWallet is a paid mutator transaction binding the contract method 0x1bc7bfec.
+//
+// Solidity: function setTokenWallet(address token, address wallet) returns()
+func (_Reserve *ReserveTransactor) SetTokenWallet(opts *bind.TransactOpts, token common.Address, wallet common.Address) (*types.Transaction, error) {
+	return _Reserve.contract.Transact(opts, "setTokenWallet", token, wallet)
+}
+
+// SetTokenWallet is a paid mutator transaction binding the contract method 0x1bc7bfec.
+//
+// Solidity: function setTokenWallet(address token, address wallet) returns()
+func (_Reserve *ReserveSession) SetTokenWallet(token common.Address, wallet common.Address) (*types.Transaction, error) {
+	return _Reserve.Contract.SetTokenWallet(&_Reserve.TransactOpts, token, wallet)
+}
+
+// SetTokenWallet is a paid mutator transaction binding the contract method 0x1bc7bfec.
+//
+// Solidity: function setTokenWallet(address token, address wallet) returns()
+func (_Reserve *ReserveTransactorSession) SetTokenWallet(token common.Address, wallet common.Address) (*types.Transaction, error) {
+	return _Reserve.Contract.SetTokenWallet(&_Reserve.TransactOpts, token, wallet)
+}
+
+// SetWeth is a paid mutator transaction binding the contract method 0xb8d1452f.
+//
+// Solidity: function setWeth(address _newWeth) returns()
+func (_Reserve *ReserveTransactor) SetWeth(opts *bind.TransactOpts, _newWeth common.Address) (*types.Transaction, error) {
+	return _Reserve.contract.Transact(opts, "setWeth", _newWeth)
+}
+
+// SetWeth is a paid mutator transaction binding the contract method 0xb8d1452f.
+//
+// Solidity: function setWeth(address _newWeth) returns()
+func (_Reserve *ReserveSession) SetWeth(_newWeth common.Address) (*types.Transaction, error) {
+	return _Reserve.Contract.SetWeth(&_Reserve.TransactOpts, _newWeth)
+}
+
+// SetWeth is a paid mutator transaction binding the contract method 0xb8d1452f.
+//
+// Solidity: function setWeth(address _newWeth) returns()
+func (_Reserve *ReserveTransactorSession) SetWeth(_newWeth common.Address) (*types.Transaction, error) {
+	return _Reserve.Contract.SetWeth(&_Reserve.TransactOpts, _newWeth)
 }
 
 // Trade is a paid mutator transaction binding the contract method 0x6cf69811.
 //
-// Solidity: function trade(address srcToken, uint256 srcAmount, address destToken, address destAddress, uint256 conversionRate, bool validate) returns(bool)
-func (_Reserve *ReserveTransactor) Trade(opts *bind.TransactOpts, srcToken common.Address, srcAmount *big.Int, destToken common.Address, destAddress common.Address, conversionRate *big.Int, validate bool) (*types.Transaction, error) {
-	return _Reserve.contract.Transact(opts, "trade", srcToken, srcAmount, destToken, destAddress, conversionRate, validate)
+// Solidity: function trade(address srcToken, uint256 srcAmount, address destToken, address destAddress, uint256 conversionRate, bool ) payable returns(bool)
+func (_Reserve *ReserveTransactor) Trade(opts *bind.TransactOpts, srcToken common.Address, srcAmount *big.Int, destToken common.Address, destAddress common.Address, conversionRate *big.Int, arg5 bool) (*types.Transaction, error) {
+	return _Reserve.contract.Transact(opts, "trade", srcToken, srcAmount, destToken, destAddress, conversionRate, arg5)
 }
 
 // Trade is a paid mutator transaction binding the contract method 0x6cf69811.
 //
-// Solidity: function trade(address srcToken, uint256 srcAmount, address destToken, address destAddress, uint256 conversionRate, bool validate) returns(bool)
-func (_Reserve *ReserveSession) Trade(srcToken common.Address, srcAmount *big.Int, destToken common.Address, destAddress common.Address, conversionRate *big.Int, validate bool) (*types.Transaction, error) {
-	return _Reserve.Contract.Trade(&_Reserve.TransactOpts, srcToken, srcAmount, destToken, destAddress, conversionRate, validate)
+// Solidity: function trade(address srcToken, uint256 srcAmount, address destToken, address destAddress, uint256 conversionRate, bool ) payable returns(bool)
+func (_Reserve *ReserveSession) Trade(srcToken common.Address, srcAmount *big.Int, destToken common.Address, destAddress common.Address, conversionRate *big.Int, arg5 bool) (*types.Transaction, error) {
+	return _Reserve.Contract.Trade(&_Reserve.TransactOpts, srcToken, srcAmount, destToken, destAddress, conversionRate, arg5)
 }
 
 // Trade is a paid mutator transaction binding the contract method 0x6cf69811.
 //
-// Solidity: function trade(address srcToken, uint256 srcAmount, address destToken, address destAddress, uint256 conversionRate, bool validate) returns(bool)
-func (_Reserve *ReserveTransactorSession) Trade(srcToken common.Address, srcAmount *big.Int, destToken common.Address, destAddress common.Address, conversionRate *big.Int, validate bool) (*types.Transaction, error) {
-	return _Reserve.Contract.Trade(&_Reserve.TransactOpts, srcToken, srcAmount, destToken, destAddress, conversionRate, validate)
+// Solidity: function trade(address srcToken, uint256 srcAmount, address destToken, address destAddress, uint256 conversionRate, bool ) payable returns(bool)
+func (_Reserve *ReserveTransactorSession) Trade(srcToken common.Address, srcAmount *big.Int, destToken common.Address, destAddress common.Address, conversionRate *big.Int, arg5 bool) (*types.Transaction, error) {
+	return _Reserve.Contract.Trade(&_Reserve.TransactOpts, srcToken, srcAmount, destToken, destAddress, conversionRate, arg5)
 }
 
 // TransferAdmin is a paid mutator transaction binding the contract method 0x75829def.
@@ -764,21 +952,21 @@ func (_Reserve *ReserveTransactorSession) TransferAdminQuickly(newAdmin common.A
 
 // Withdraw is a paid mutator transaction binding the contract method 0x69328dec.
 //
-// Solidity: function withdraw(address token, uint256 amount, address destination) returns(bool)
+// Solidity: function withdraw(address token, uint256 amount, address destination) returns()
 func (_Reserve *ReserveTransactor) Withdraw(opts *bind.TransactOpts, token common.Address, amount *big.Int, destination common.Address) (*types.Transaction, error) {
 	return _Reserve.contract.Transact(opts, "withdraw", token, amount, destination)
 }
 
 // Withdraw is a paid mutator transaction binding the contract method 0x69328dec.
 //
-// Solidity: function withdraw(address token, uint256 amount, address destination) returns(bool)
+// Solidity: function withdraw(address token, uint256 amount, address destination) returns()
 func (_Reserve *ReserveSession) Withdraw(token common.Address, amount *big.Int, destination common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.Withdraw(&_Reserve.TransactOpts, token, amount, destination)
 }
 
 // Withdraw is a paid mutator transaction binding the contract method 0x69328dec.
 //
-// Solidity: function withdraw(address token, uint256 amount, address destination) returns(bool)
+// Solidity: function withdraw(address token, uint256 amount, address destination) returns()
 func (_Reserve *ReserveTransactorSession) Withdraw(token common.Address, amount *big.Int, destination common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.Withdraw(&_Reserve.TransactOpts, token, amount, destination)
 }
@@ -823,6 +1011,27 @@ func (_Reserve *ReserveSession) WithdrawToken(token common.Address, amount *big.
 // Solidity: function withdrawToken(address token, uint256 amount, address sendTo) returns()
 func (_Reserve *ReserveTransactorSession) WithdrawToken(token common.Address, amount *big.Int, sendTo common.Address) (*types.Transaction, error) {
 	return _Reserve.Contract.WithdrawToken(&_Reserve.TransactOpts, token, amount, sendTo)
+}
+
+// Receive is a paid mutator transaction binding the contract receive function.
+//
+// Solidity: receive() payable returns()
+func (_Reserve *ReserveTransactor) Receive(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _Reserve.contract.RawTransact(opts, nil) // calldata is disallowed for receive function
+}
+
+// Receive is a paid mutator transaction binding the contract receive function.
+//
+// Solidity: receive() payable returns()
+func (_Reserve *ReserveSession) Receive() (*types.Transaction, error) {
+	return _Reserve.Contract.Receive(&_Reserve.TransactOpts)
+}
+
+// Receive is a paid mutator transaction binding the contract receive function.
+//
+// Solidity: receive() payable returns()
+func (_Reserve *ReserveTransactorSession) Receive() (*types.Transaction, error) {
+	return _Reserve.Contract.Receive(&_Reserve.TransactOpts)
 }
 
 // ReserveAdminClaimedIterator is returned from FilterAdminClaimed and is used to iterate over the raw logs and unpacked data for AdminClaimed events raised by the Reserve contract.
@@ -948,6 +1157,17 @@ func (_Reserve *ReserveFilterer) WatchAdminClaimed(opts *bind.WatchOpts, sink ch
 	}), nil
 }
 
+// ParseAdminClaimed is a log parse operation binding the contract event 0x65da1cfc2c2e81576ad96afb24a581f8e109b7a403b35cbd3243a1c99efdb9ed.
+//
+// Solidity: event AdminClaimed(address newAdmin, address previousAdmin)
+func (_Reserve *ReserveFilterer) ParseAdminClaimed(log types.Log) (*ReserveAdminClaimed, error) {
+	event := new(ReserveAdminClaimed)
+	if err := _Reserve.contract.UnpackLog(event, "AdminClaimed", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
 // ReserveAlerterAddedIterator is returned from FilterAlerterAdded and is used to iterate over the raw logs and unpacked data for AlerterAdded events raised by the Reserve contract.
 type ReserveAlerterAddedIterator struct {
 	Event *ReserveAlerterAdded // Event containing the contract specifics and raw log
@@ -1071,6 +1291,17 @@ func (_Reserve *ReserveFilterer) WatchAlerterAdded(opts *bind.WatchOpts, sink ch
 	}), nil
 }
 
+// ParseAlerterAdded is a log parse operation binding the contract event 0x5611bf3e417d124f97bf2c788843ea8bb502b66079fbee02158ef30b172cb762.
+//
+// Solidity: event AlerterAdded(address newAlerter, bool isAdd)
+func (_Reserve *ReserveFilterer) ParseAlerterAdded(log types.Log) (*ReserveAlerterAdded, error) {
+	event := new(ReserveAlerterAdded)
+	if err := _Reserve.contract.UnpackLog(event, "AlerterAdded", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
 // ReserveDepositTokenIterator is returned from FilterDepositToken and is used to iterate over the raw logs and unpacked data for DepositToken events raised by the Reserve contract.
 type ReserveDepositTokenIterator struct {
 	Event *ReserveDepositToken // Event containing the contract specifics and raw log
@@ -1147,10 +1378,15 @@ type ReserveDepositToken struct {
 
 // FilterDepositToken is a free log retrieval operation binding the contract event 0x2d0c0a8842b9944ece1495eb61121621b5e36bd6af3bba0318c695f525aef79f.
 //
-// Solidity: event DepositToken(address token, uint256 amount)
-func (_Reserve *ReserveFilterer) FilterDepositToken(opts *bind.FilterOpts) (*ReserveDepositTokenIterator, error) {
+// Solidity: event DepositToken(address indexed token, uint256 amount)
+func (_Reserve *ReserveFilterer) FilterDepositToken(opts *bind.FilterOpts, token []common.Address) (*ReserveDepositTokenIterator, error) {
 
-	logs, sub, err := _Reserve.contract.FilterLogs(opts, "DepositToken")
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+
+	logs, sub, err := _Reserve.contract.FilterLogs(opts, "DepositToken", tokenRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1159,10 +1395,15 @@ func (_Reserve *ReserveFilterer) FilterDepositToken(opts *bind.FilterOpts) (*Res
 
 // WatchDepositToken is a free log subscription operation binding the contract event 0x2d0c0a8842b9944ece1495eb61121621b5e36bd6af3bba0318c695f525aef79f.
 //
-// Solidity: event DepositToken(address token, uint256 amount)
-func (_Reserve *ReserveFilterer) WatchDepositToken(opts *bind.WatchOpts, sink chan<- *ReserveDepositToken) (event.Subscription, error) {
+// Solidity: event DepositToken(address indexed token, uint256 amount)
+func (_Reserve *ReserveFilterer) WatchDepositToken(opts *bind.WatchOpts, sink chan<- *ReserveDepositToken, token []common.Address) (event.Subscription, error) {
 
-	logs, sub, err := _Reserve.contract.WatchLogs(opts, "DepositToken")
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+
+	logs, sub, err := _Reserve.contract.WatchLogs(opts, "DepositToken", tokenRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1192,6 +1433,17 @@ func (_Reserve *ReserveFilterer) WatchDepositToken(opts *bind.WatchOpts, sink ch
 			}
 		}
 	}), nil
+}
+
+// ParseDepositToken is a log parse operation binding the contract event 0x2d0c0a8842b9944ece1495eb61121621b5e36bd6af3bba0318c695f525aef79f.
+//
+// Solidity: event DepositToken(address indexed token, uint256 amount)
+func (_Reserve *ReserveFilterer) ParseDepositToken(log types.Log) (*ReserveDepositToken, error) {
+	event := new(ReserveDepositToken)
+	if err := _Reserve.contract.UnpackLog(event, "DepositToken", log); err != nil {
+		return nil, err
+	}
+	return event, nil
 }
 
 // ReserveEtherWithdrawIterator is returned from FilterEtherWithdraw and is used to iterate over the raw logs and unpacked data for EtherWithdraw events raised by the Reserve contract.
@@ -1317,6 +1569,302 @@ func (_Reserve *ReserveFilterer) WatchEtherWithdraw(opts *bind.WatchOpts, sink c
 	}), nil
 }
 
+// ParseEtherWithdraw is a log parse operation binding the contract event 0xec47e7ed86c86774d1a72c19f35c639911393fe7c1a34031fdbd260890da90de.
+//
+// Solidity: event EtherWithdraw(uint256 amount, address sendTo)
+func (_Reserve *ReserveFilterer) ParseEtherWithdraw(log types.Log) (*ReserveEtherWithdraw, error) {
+	event := new(ReserveEtherWithdraw)
+	if err := _Reserve.contract.UnpackLog(event, "EtherWithdraw", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
+// ReserveMaxGasPriceUpdatedIterator is returned from FilterMaxGasPriceUpdated and is used to iterate over the raw logs and unpacked data for MaxGasPriceUpdated events raised by the Reserve contract.
+type ReserveMaxGasPriceUpdatedIterator struct {
+	Event *ReserveMaxGasPriceUpdated // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *ReserveMaxGasPriceUpdatedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(ReserveMaxGasPriceUpdated)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(ReserveMaxGasPriceUpdated)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *ReserveMaxGasPriceUpdatedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *ReserveMaxGasPriceUpdatedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// ReserveMaxGasPriceUpdated represents a MaxGasPriceUpdated event raised by the Reserve contract.
+type ReserveMaxGasPriceUpdated struct {
+	NewMaxGasPrice *big.Int
+	Raw            types.Log // Blockchain specific contextual infos
+}
+
+// FilterMaxGasPriceUpdated is a free log retrieval operation binding the contract event 0x951ddb0e961044819fc0750a51148b147386ae97b72d9b6763f9b943de116e32.
+//
+// Solidity: event MaxGasPriceUpdated(uint128 newMaxGasPrice)
+func (_Reserve *ReserveFilterer) FilterMaxGasPriceUpdated(opts *bind.FilterOpts) (*ReserveMaxGasPriceUpdatedIterator, error) {
+
+	logs, sub, err := _Reserve.contract.FilterLogs(opts, "MaxGasPriceUpdated")
+	if err != nil {
+		return nil, err
+	}
+	return &ReserveMaxGasPriceUpdatedIterator{contract: _Reserve.contract, event: "MaxGasPriceUpdated", logs: logs, sub: sub}, nil
+}
+
+// WatchMaxGasPriceUpdated is a free log subscription operation binding the contract event 0x951ddb0e961044819fc0750a51148b147386ae97b72d9b6763f9b943de116e32.
+//
+// Solidity: event MaxGasPriceUpdated(uint128 newMaxGasPrice)
+func (_Reserve *ReserveFilterer) WatchMaxGasPriceUpdated(opts *bind.WatchOpts, sink chan<- *ReserveMaxGasPriceUpdated) (event.Subscription, error) {
+
+	logs, sub, err := _Reserve.contract.WatchLogs(opts, "MaxGasPriceUpdated")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(ReserveMaxGasPriceUpdated)
+				if err := _Reserve.contract.UnpackLog(event, "MaxGasPriceUpdated", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseMaxGasPriceUpdated is a log parse operation binding the contract event 0x951ddb0e961044819fc0750a51148b147386ae97b72d9b6763f9b943de116e32.
+//
+// Solidity: event MaxGasPriceUpdated(uint128 newMaxGasPrice)
+func (_Reserve *ReserveFilterer) ParseMaxGasPriceUpdated(log types.Log) (*ReserveMaxGasPriceUpdated, error) {
+	event := new(ReserveMaxGasPriceUpdated)
+	if err := _Reserve.contract.UnpackLog(event, "MaxGasPriceUpdated", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
+// ReserveNewTokenWalletIterator is returned from FilterNewTokenWallet and is used to iterate over the raw logs and unpacked data for NewTokenWallet events raised by the Reserve contract.
+type ReserveNewTokenWalletIterator struct {
+	Event *ReserveNewTokenWallet // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *ReserveNewTokenWalletIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(ReserveNewTokenWallet)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(ReserveNewTokenWallet)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *ReserveNewTokenWalletIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *ReserveNewTokenWalletIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// ReserveNewTokenWallet represents a NewTokenWallet event raised by the Reserve contract.
+type ReserveNewTokenWallet struct {
+	Token  common.Address
+	Wallet common.Address
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterNewTokenWallet is a free log retrieval operation binding the contract event 0x81995c7b922889ac0a81e41866106d4046268ea3a9abaae9f9e080a6ce36ee7d.
+//
+// Solidity: event NewTokenWallet(address indexed token, address indexed wallet)
+func (_Reserve *ReserveFilterer) FilterNewTokenWallet(opts *bind.FilterOpts, token []common.Address, wallet []common.Address) (*ReserveNewTokenWalletIterator, error) {
+
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+	var walletRule []interface{}
+	for _, walletItem := range wallet {
+		walletRule = append(walletRule, walletItem)
+	}
+
+	logs, sub, err := _Reserve.contract.FilterLogs(opts, "NewTokenWallet", tokenRule, walletRule)
+	if err != nil {
+		return nil, err
+	}
+	return &ReserveNewTokenWalletIterator{contract: _Reserve.contract, event: "NewTokenWallet", logs: logs, sub: sub}, nil
+}
+
+// WatchNewTokenWallet is a free log subscription operation binding the contract event 0x81995c7b922889ac0a81e41866106d4046268ea3a9abaae9f9e080a6ce36ee7d.
+//
+// Solidity: event NewTokenWallet(address indexed token, address indexed wallet)
+func (_Reserve *ReserveFilterer) WatchNewTokenWallet(opts *bind.WatchOpts, sink chan<- *ReserveNewTokenWallet, token []common.Address, wallet []common.Address) (event.Subscription, error) {
+
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+	var walletRule []interface{}
+	for _, walletItem := range wallet {
+		walletRule = append(walletRule, walletItem)
+	}
+
+	logs, sub, err := _Reserve.contract.WatchLogs(opts, "NewTokenWallet", tokenRule, walletRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(ReserveNewTokenWallet)
+				if err := _Reserve.contract.UnpackLog(event, "NewTokenWallet", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseNewTokenWallet is a log parse operation binding the contract event 0x81995c7b922889ac0a81e41866106d4046268ea3a9abaae9f9e080a6ce36ee7d.
+//
+// Solidity: event NewTokenWallet(address indexed token, address indexed wallet)
+func (_Reserve *ReserveFilterer) ParseNewTokenWallet(log types.Log) (*ReserveNewTokenWallet, error) {
+	event := new(ReserveNewTokenWallet)
+	if err := _Reserve.contract.UnpackLog(event, "NewTokenWallet", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
 // ReserveOperatorAddedIterator is returned from FilterOperatorAdded and is used to iterate over the raw logs and unpacked data for OperatorAdded events raised by the Reserve contract.
 type ReserveOperatorAddedIterator struct {
 	Event *ReserveOperatorAdded // Event containing the contract specifics and raw log
@@ -1440,9 +1988,20 @@ func (_Reserve *ReserveFilterer) WatchOperatorAdded(opts *bind.WatchOpts, sink c
 	}), nil
 }
 
-// ReserveSetContractAddressesIterator is returned from FilterSetContractAddresses and is used to iterate over the raw logs and unpacked data for SetContractAddresses events raised by the Reserve contract.
-type ReserveSetContractAddressesIterator struct {
-	Event *ReserveSetContractAddresses // Event containing the contract specifics and raw log
+// ParseOperatorAdded is a log parse operation binding the contract event 0x091a7a4b85135fdd7e8dbc18b12fabe5cc191ea867aa3c2e1a24a102af61d58b.
+//
+// Solidity: event OperatorAdded(address newOperator, bool isAdd)
+func (_Reserve *ReserveFilterer) ParseOperatorAdded(log types.Log) (*ReserveOperatorAdded, error) {
+	event := new(ReserveOperatorAdded)
+	if err := _Reserve.contract.UnpackLog(event, "OperatorAdded", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
+// ReserveSetConversionRateAddressIterator is returned from FilterSetConversionRateAddress and is used to iterate over the raw logs and unpacked data for SetConversionRateAddress events raised by the Reserve contract.
+type ReserveSetConversionRateAddressIterator struct {
+	Event *ReserveSetConversionRateAddress // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -1456,7 +2015,7 @@ type ReserveSetContractAddressesIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *ReserveSetContractAddressesIterator) Next() bool {
+func (it *ReserveSetConversionRateAddressIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -1465,7 +2024,7 @@ func (it *ReserveSetContractAddressesIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(ReserveSetContractAddresses)
+			it.Event = new(ReserveSetConversionRateAddress)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -1480,7 +2039,7 @@ func (it *ReserveSetContractAddressesIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(ReserveSetContractAddresses)
+		it.Event = new(ReserveSetConversionRateAddress)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -1496,43 +2055,51 @@ func (it *ReserveSetContractAddressesIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *ReserveSetContractAddressesIterator) Error() error {
+func (it *ReserveSetConversionRateAddressIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *ReserveSetContractAddressesIterator) Close() error {
+func (it *ReserveSetConversionRateAddressIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// ReserveSetContractAddresses represents a SetContractAddresses event raised by the Reserve contract.
-type ReserveSetContractAddresses struct {
-	Network common.Address
-	Rate    common.Address
-	Sanity  common.Address
-	Raw     types.Log // Blockchain specific contextual infos
+// ReserveSetConversionRateAddress represents a SetConversionRateAddress event raised by the Reserve contract.
+type ReserveSetConversionRateAddress struct {
+	Rate common.Address
+	Raw  types.Log // Blockchain specific contextual infos
 }
 
-// FilterSetContractAddresses is a free log retrieval operation binding the contract event 0x7a85322644a4462d8ff5482d2a841a4d231f8cfb3c9f4a50f66f8b2bd568c31c.
+// FilterSetConversionRateAddress is a free log retrieval operation binding the contract event 0x333c220e52469bea5ce17b670353e10868f0c96768325592128e44d06e5b99cc.
 //
-// Solidity: event SetContractAddresses(address network, address rate, address sanity)
-func (_Reserve *ReserveFilterer) FilterSetContractAddresses(opts *bind.FilterOpts) (*ReserveSetContractAddressesIterator, error) {
+// Solidity: event SetConversionRateAddress(address indexed rate)
+func (_Reserve *ReserveFilterer) FilterSetConversionRateAddress(opts *bind.FilterOpts, rate []common.Address) (*ReserveSetConversionRateAddressIterator, error) {
 
-	logs, sub, err := _Reserve.contract.FilterLogs(opts, "SetContractAddresses")
+	var rateRule []interface{}
+	for _, rateItem := range rate {
+		rateRule = append(rateRule, rateItem)
+	}
+
+	logs, sub, err := _Reserve.contract.FilterLogs(opts, "SetConversionRateAddress", rateRule)
 	if err != nil {
 		return nil, err
 	}
-	return &ReserveSetContractAddressesIterator{contract: _Reserve.contract, event: "SetContractAddresses", logs: logs, sub: sub}, nil
+	return &ReserveSetConversionRateAddressIterator{contract: _Reserve.contract, event: "SetConversionRateAddress", logs: logs, sub: sub}, nil
 }
 
-// WatchSetContractAddresses is a free log subscription operation binding the contract event 0x7a85322644a4462d8ff5482d2a841a4d231f8cfb3c9f4a50f66f8b2bd568c31c.
+// WatchSetConversionRateAddress is a free log subscription operation binding the contract event 0x333c220e52469bea5ce17b670353e10868f0c96768325592128e44d06e5b99cc.
 //
-// Solidity: event SetContractAddresses(address network, address rate, address sanity)
-func (_Reserve *ReserveFilterer) WatchSetContractAddresses(opts *bind.WatchOpts, sink chan<- *ReserveSetContractAddresses) (event.Subscription, error) {
+// Solidity: event SetConversionRateAddress(address indexed rate)
+func (_Reserve *ReserveFilterer) WatchSetConversionRateAddress(opts *bind.WatchOpts, sink chan<- *ReserveSetConversionRateAddress, rate []common.Address) (event.Subscription, error) {
 
-	logs, sub, err := _Reserve.contract.WatchLogs(opts, "SetContractAddresses")
+	var rateRule []interface{}
+	for _, rateItem := range rate {
+		rateRule = append(rateRule, rateItem)
+	}
+
+	logs, sub, err := _Reserve.contract.WatchLogs(opts, "SetConversionRateAddress", rateRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1542,8 +2109,8 @@ func (_Reserve *ReserveFilterer) WatchSetContractAddresses(opts *bind.WatchOpts,
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(ReserveSetContractAddresses)
-				if err := _Reserve.contract.UnpackLog(event, "SetContractAddresses", log); err != nil {
+				event := new(ReserveSetConversionRateAddress)
+				if err := _Reserve.contract.UnpackLog(event, "SetConversionRateAddress", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1562,6 +2129,303 @@ func (_Reserve *ReserveFilterer) WatchSetContractAddresses(opts *bind.WatchOpts,
 			}
 		}
 	}), nil
+}
+
+// ParseSetConversionRateAddress is a log parse operation binding the contract event 0x333c220e52469bea5ce17b670353e10868f0c96768325592128e44d06e5b99cc.
+//
+// Solidity: event SetConversionRateAddress(address indexed rate)
+func (_Reserve *ReserveFilterer) ParseSetConversionRateAddress(log types.Log) (*ReserveSetConversionRateAddress, error) {
+	event := new(ReserveSetConversionRateAddress)
+	if err := _Reserve.contract.UnpackLog(event, "SetConversionRateAddress", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
+// ReserveSetSanityRateAddressIterator is returned from FilterSetSanityRateAddress and is used to iterate over the raw logs and unpacked data for SetSanityRateAddress events raised by the Reserve contract.
+type ReserveSetSanityRateAddressIterator struct {
+	Event *ReserveSetSanityRateAddress // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *ReserveSetSanityRateAddressIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(ReserveSetSanityRateAddress)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(ReserveSetSanityRateAddress)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *ReserveSetSanityRateAddressIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *ReserveSetSanityRateAddressIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// ReserveSetSanityRateAddress represents a SetSanityRateAddress event raised by the Reserve contract.
+type ReserveSetSanityRateAddress struct {
+	Sanity common.Address
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterSetSanityRateAddress is a free log retrieval operation binding the contract event 0xaa5a0552d43d8d9e7d64c0286bcfceeccb1875e7320c1ac63f71e9894f177166.
+//
+// Solidity: event SetSanityRateAddress(address indexed sanity)
+func (_Reserve *ReserveFilterer) FilterSetSanityRateAddress(opts *bind.FilterOpts, sanity []common.Address) (*ReserveSetSanityRateAddressIterator, error) {
+
+	var sanityRule []interface{}
+	for _, sanityItem := range sanity {
+		sanityRule = append(sanityRule, sanityItem)
+	}
+
+	logs, sub, err := _Reserve.contract.FilterLogs(opts, "SetSanityRateAddress", sanityRule)
+	if err != nil {
+		return nil, err
+	}
+	return &ReserveSetSanityRateAddressIterator{contract: _Reserve.contract, event: "SetSanityRateAddress", logs: logs, sub: sub}, nil
+}
+
+// WatchSetSanityRateAddress is a free log subscription operation binding the contract event 0xaa5a0552d43d8d9e7d64c0286bcfceeccb1875e7320c1ac63f71e9894f177166.
+//
+// Solidity: event SetSanityRateAddress(address indexed sanity)
+func (_Reserve *ReserveFilterer) WatchSetSanityRateAddress(opts *bind.WatchOpts, sink chan<- *ReserveSetSanityRateAddress, sanity []common.Address) (event.Subscription, error) {
+
+	var sanityRule []interface{}
+	for _, sanityItem := range sanity {
+		sanityRule = append(sanityRule, sanityItem)
+	}
+
+	logs, sub, err := _Reserve.contract.WatchLogs(opts, "SetSanityRateAddress", sanityRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(ReserveSetSanityRateAddress)
+				if err := _Reserve.contract.UnpackLog(event, "SetSanityRateAddress", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseSetSanityRateAddress is a log parse operation binding the contract event 0xaa5a0552d43d8d9e7d64c0286bcfceeccb1875e7320c1ac63f71e9894f177166.
+//
+// Solidity: event SetSanityRateAddress(address indexed sanity)
+func (_Reserve *ReserveFilterer) ParseSetSanityRateAddress(log types.Log) (*ReserveSetSanityRateAddress, error) {
+	event := new(ReserveSetSanityRateAddress)
+	if err := _Reserve.contract.UnpackLog(event, "SetSanityRateAddress", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
+// ReserveSetWethAddressIterator is returned from FilterSetWethAddress and is used to iterate over the raw logs and unpacked data for SetWethAddress events raised by the Reserve contract.
+type ReserveSetWethAddressIterator struct {
+	Event *ReserveSetWethAddress // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *ReserveSetWethAddressIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(ReserveSetWethAddress)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(ReserveSetWethAddress)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *ReserveSetWethAddressIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *ReserveSetWethAddressIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// ReserveSetWethAddress represents a SetWethAddress event raised by the Reserve contract.
+type ReserveSetWethAddress struct {
+	Weth common.Address
+	Raw  types.Log // Blockchain specific contextual infos
+}
+
+// FilterSetWethAddress is a free log retrieval operation binding the contract event 0xff8ab24f675c1eee431de04d5ba93b5d6e1e947359771788c5db3968d10c2e3e.
+//
+// Solidity: event SetWethAddress(address indexed weth)
+func (_Reserve *ReserveFilterer) FilterSetWethAddress(opts *bind.FilterOpts, weth []common.Address) (*ReserveSetWethAddressIterator, error) {
+
+	var wethRule []interface{}
+	for _, wethItem := range weth {
+		wethRule = append(wethRule, wethItem)
+	}
+
+	logs, sub, err := _Reserve.contract.FilterLogs(opts, "SetWethAddress", wethRule)
+	if err != nil {
+		return nil, err
+	}
+	return &ReserveSetWethAddressIterator{contract: _Reserve.contract, event: "SetWethAddress", logs: logs, sub: sub}, nil
+}
+
+// WatchSetWethAddress is a free log subscription operation binding the contract event 0xff8ab24f675c1eee431de04d5ba93b5d6e1e947359771788c5db3968d10c2e3e.
+//
+// Solidity: event SetWethAddress(address indexed weth)
+func (_Reserve *ReserveFilterer) WatchSetWethAddress(opts *bind.WatchOpts, sink chan<- *ReserveSetWethAddress, weth []common.Address) (event.Subscription, error) {
+
+	var wethRule []interface{}
+	for _, wethItem := range weth {
+		wethRule = append(wethRule, wethItem)
+	}
+
+	logs, sub, err := _Reserve.contract.WatchLogs(opts, "SetWethAddress", wethRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(ReserveSetWethAddress)
+				if err := _Reserve.contract.UnpackLog(event, "SetWethAddress", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseSetWethAddress is a log parse operation binding the contract event 0xff8ab24f675c1eee431de04d5ba93b5d6e1e947359771788c5db3968d10c2e3e.
+//
+// Solidity: event SetWethAddress(address indexed weth)
+func (_Reserve *ReserveFilterer) ParseSetWethAddress(log types.Log) (*ReserveSetWethAddress, error) {
+	event := new(ReserveSetWethAddress)
+	if err := _Reserve.contract.UnpackLog(event, "SetWethAddress", log); err != nil {
+		return nil, err
+	}
+	return event, nil
 }
 
 // ReserveTokenWithdrawIterator is returned from FilterTokenWithdraw and is used to iterate over the raw logs and unpacked data for TokenWithdraw events raised by the Reserve contract.
@@ -1688,6 +2552,17 @@ func (_Reserve *ReserveFilterer) WatchTokenWithdraw(opts *bind.WatchOpts, sink c
 	}), nil
 }
 
+// ParseTokenWithdraw is a log parse operation binding the contract event 0x72cb8a894ddb372ceec3d2a7648d86f17d5a15caae0e986c53109b8a9a9385e6.
+//
+// Solidity: event TokenWithdraw(address token, uint256 amount, address sendTo)
+func (_Reserve *ReserveFilterer) ParseTokenWithdraw(log types.Log) (*ReserveTokenWithdraw, error) {
+	event := new(ReserveTokenWithdraw)
+	if err := _Reserve.contract.UnpackLog(event, "TokenWithdraw", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
 // ReserveTradeEnabledIterator is returned from FilterTradeEnabled and is used to iterate over the raw logs and unpacked data for TradeEnabled events raised by the Reserve contract.
 type ReserveTradeEnabledIterator struct {
 	Event *ReserveTradeEnabled // Event containing the contract specifics and raw log
@@ -1810,6 +2685,17 @@ func (_Reserve *ReserveFilterer) WatchTradeEnabled(opts *bind.WatchOpts, sink ch
 	}), nil
 }
 
+// ParseTradeEnabled is a log parse operation binding the contract event 0x7d7f00509dd73ac4449f698ae75ccc797895eff5fa9d446d3df387598a26e735.
+//
+// Solidity: event TradeEnabled(bool enable)
+func (_Reserve *ReserveFilterer) ParseTradeEnabled(log types.Log) (*ReserveTradeEnabled, error) {
+	event := new(ReserveTradeEnabled)
+	if err := _Reserve.contract.UnpackLog(event, "TradeEnabled", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
 // ReserveTradeExecuteIterator is returned from FilterTradeExecute and is used to iterate over the raw logs and unpacked data for TradeExecute events raised by the Reserve contract.
 type ReserveTradeExecuteIterator struct {
 	Event *ReserveTradeExecute // Event containing the contract specifics and raw log
@@ -1880,6 +2766,7 @@ func (it *ReserveTradeExecuteIterator) Close() error {
 // ReserveTradeExecute represents a TradeExecute event raised by the Reserve contract.
 type ReserveTradeExecute struct {
 	Origin      common.Address
+	Trader      common.Address
 	Src         common.Address
 	SrcAmount   *big.Int
 	DestToken   common.Address
@@ -1888,34 +2775,52 @@ type ReserveTradeExecute struct {
 	Raw         types.Log // Blockchain specific contextual infos
 }
 
-// FilterTradeExecute is a free log retrieval operation binding the contract event 0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de.
+// FilterTradeExecute is a free log retrieval operation binding the contract event 0x4ee2afc3e9f9e97f558641bdc31ff31e4f34a1aaa2390cffbd64ee9ac18dfbec.
 //
-// Solidity: event TradeExecute(address indexed origin, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
-func (_Reserve *ReserveFilterer) FilterTradeExecute(opts *bind.FilterOpts, origin []common.Address) (*ReserveTradeExecuteIterator, error) {
+// Solidity: event TradeExecute(address origin, address indexed trader, address indexed src, uint256 srcAmount, address indexed destToken, uint256 destAmount, address destAddress)
+func (_Reserve *ReserveFilterer) FilterTradeExecute(opts *bind.FilterOpts, trader []common.Address, src []common.Address, destToken []common.Address) (*ReserveTradeExecuteIterator, error) {
 
-	var originRule []interface{}
-	for _, originItem := range origin {
-		originRule = append(originRule, originItem)
+	var traderRule []interface{}
+	for _, traderItem := range trader {
+		traderRule = append(traderRule, traderItem)
+	}
+	var srcRule []interface{}
+	for _, srcItem := range src {
+		srcRule = append(srcRule, srcItem)
 	}
 
-	logs, sub, err := _Reserve.contract.FilterLogs(opts, "TradeExecute", originRule)
+	var destTokenRule []interface{}
+	for _, destTokenItem := range destToken {
+		destTokenRule = append(destTokenRule, destTokenItem)
+	}
+
+	logs, sub, err := _Reserve.contract.FilterLogs(opts, "TradeExecute", traderRule, srcRule, destTokenRule)
 	if err != nil {
 		return nil, err
 	}
 	return &ReserveTradeExecuteIterator{contract: _Reserve.contract, event: "TradeExecute", logs: logs, sub: sub}, nil
 }
 
-// WatchTradeExecute is a free log subscription operation binding the contract event 0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de.
+// WatchTradeExecute is a free log subscription operation binding the contract event 0x4ee2afc3e9f9e97f558641bdc31ff31e4f34a1aaa2390cffbd64ee9ac18dfbec.
 //
-// Solidity: event TradeExecute(address indexed origin, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
-func (_Reserve *ReserveFilterer) WatchTradeExecute(opts *bind.WatchOpts, sink chan<- *ReserveTradeExecute, origin []common.Address) (event.Subscription, error) {
+// Solidity: event TradeExecute(address origin, address indexed trader, address indexed src, uint256 srcAmount, address indexed destToken, uint256 destAmount, address destAddress)
+func (_Reserve *ReserveFilterer) WatchTradeExecute(opts *bind.WatchOpts, sink chan<- *ReserveTradeExecute, trader []common.Address, src []common.Address, destToken []common.Address) (event.Subscription, error) {
 
-	var originRule []interface{}
-	for _, originItem := range origin {
-		originRule = append(originRule, originItem)
+	var traderRule []interface{}
+	for _, traderItem := range trader {
+		traderRule = append(traderRule, traderItem)
+	}
+	var srcRule []interface{}
+	for _, srcItem := range src {
+		srcRule = append(srcRule, srcItem)
 	}
 
-	logs, sub, err := _Reserve.contract.WatchLogs(opts, "TradeExecute", originRule)
+	var destTokenRule []interface{}
+	for _, destTokenItem := range destToken {
+		destTokenRule = append(destTokenRule, destTokenItem)
+	}
+
+	logs, sub, err := _Reserve.contract.WatchLogs(opts, "TradeExecute", traderRule, srcRule, destTokenRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1945,6 +2850,17 @@ func (_Reserve *ReserveFilterer) WatchTradeExecute(opts *bind.WatchOpts, sink ch
 			}
 		}
 	}), nil
+}
+
+// ParseTradeExecute is a log parse operation binding the contract event 0x4ee2afc3e9f9e97f558641bdc31ff31e4f34a1aaa2390cffbd64ee9ac18dfbec.
+//
+// Solidity: event TradeExecute(address origin, address indexed trader, address indexed src, uint256 srcAmount, address indexed destToken, uint256 destAmount, address destAddress)
+func (_Reserve *ReserveFilterer) ParseTradeExecute(log types.Log) (*ReserveTradeExecute, error) {
+	event := new(ReserveTradeExecute)
+	if err := _Reserve.contract.UnpackLog(event, "TradeExecute", log); err != nil {
+		return nil, err
+	}
+	return event, nil
 }
 
 // ReserveTransferAdminPendingIterator is returned from FilterTransferAdminPending and is used to iterate over the raw logs and unpacked data for TransferAdminPending events raised by the Reserve contract.
@@ -2069,6 +2985,17 @@ func (_Reserve *ReserveFilterer) WatchTransferAdminPending(opts *bind.WatchOpts,
 	}), nil
 }
 
+// ParseTransferAdminPending is a log parse operation binding the contract event 0x3b81caf78fa51ecbc8acb482fd7012a277b428d9b80f9d156e8a54107496cc40.
+//
+// Solidity: event TransferAdminPending(address pendingAdmin)
+func (_Reserve *ReserveFilterer) ParseTransferAdminPending(log types.Log) (*ReserveTransferAdminPending, error) {
+	event := new(ReserveTransferAdminPending)
+	if err := _Reserve.contract.UnpackLog(event, "TransferAdminPending", log); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
 // ReserveWithdrawAddressApprovedIterator is returned from FilterWithdrawAddressApproved and is used to iterate over the raw logs and unpacked data for WithdrawAddressApproved events raised by the Reserve contract.
 type ReserveWithdrawAddressApprovedIterator struct {
 	Event *ReserveWithdrawAddressApproved // Event containing the contract specifics and raw log
@@ -2146,10 +3073,19 @@ type ReserveWithdrawAddressApproved struct {
 
 // FilterWithdrawAddressApproved is a free log retrieval operation binding the contract event 0xd5fd5351efae1f4bb760079da9f0ff9589e2c3e216337ca9d39cdff573b245c4.
 //
-// Solidity: event WithdrawAddressApproved(address token, address addr, bool approve)
-func (_Reserve *ReserveFilterer) FilterWithdrawAddressApproved(opts *bind.FilterOpts) (*ReserveWithdrawAddressApprovedIterator, error) {
+// Solidity: event WithdrawAddressApproved(address indexed token, address indexed addr, bool approve)
+func (_Reserve *ReserveFilterer) FilterWithdrawAddressApproved(opts *bind.FilterOpts, token []common.Address, addr []common.Address) (*ReserveWithdrawAddressApprovedIterator, error) {
 
-	logs, sub, err := _Reserve.contract.FilterLogs(opts, "WithdrawAddressApproved")
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+	var addrRule []interface{}
+	for _, addrItem := range addr {
+		addrRule = append(addrRule, addrItem)
+	}
+
+	logs, sub, err := _Reserve.contract.FilterLogs(opts, "WithdrawAddressApproved", tokenRule, addrRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2158,10 +3094,19 @@ func (_Reserve *ReserveFilterer) FilterWithdrawAddressApproved(opts *bind.Filter
 
 // WatchWithdrawAddressApproved is a free log subscription operation binding the contract event 0xd5fd5351efae1f4bb760079da9f0ff9589e2c3e216337ca9d39cdff573b245c4.
 //
-// Solidity: event WithdrawAddressApproved(address token, address addr, bool approve)
-func (_Reserve *ReserveFilterer) WatchWithdrawAddressApproved(opts *bind.WatchOpts, sink chan<- *ReserveWithdrawAddressApproved) (event.Subscription, error) {
+// Solidity: event WithdrawAddressApproved(address indexed token, address indexed addr, bool approve)
+func (_Reserve *ReserveFilterer) WatchWithdrawAddressApproved(opts *bind.WatchOpts, sink chan<- *ReserveWithdrawAddressApproved, token []common.Address, addr []common.Address) (event.Subscription, error) {
 
-	logs, sub, err := _Reserve.contract.WatchLogs(opts, "WithdrawAddressApproved")
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+	var addrRule []interface{}
+	for _, addrItem := range addr {
+		addrRule = append(addrRule, addrItem)
+	}
+
+	logs, sub, err := _Reserve.contract.WatchLogs(opts, "WithdrawAddressApproved", tokenRule, addrRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2191,6 +3136,17 @@ func (_Reserve *ReserveFilterer) WatchWithdrawAddressApproved(opts *bind.WatchOp
 			}
 		}
 	}), nil
+}
+
+// ParseWithdrawAddressApproved is a log parse operation binding the contract event 0xd5fd5351efae1f4bb760079da9f0ff9589e2c3e216337ca9d39cdff573b245c4.
+//
+// Solidity: event WithdrawAddressApproved(address indexed token, address indexed addr, bool approve)
+func (_Reserve *ReserveFilterer) ParseWithdrawAddressApproved(log types.Log) (*ReserveWithdrawAddressApproved, error) {
+	event := new(ReserveWithdrawAddressApproved)
+	if err := _Reserve.contract.UnpackLog(event, "WithdrawAddressApproved", log); err != nil {
+		return nil, err
+	}
+	return event, nil
 }
 
 // ReserveWithdrawFundsIterator is returned from FilterWithdrawFunds and is used to iterate over the raw logs and unpacked data for WithdrawFunds events raised by the Reserve contract.
@@ -2270,10 +3226,20 @@ type ReserveWithdrawFunds struct {
 
 // FilterWithdrawFunds is a free log retrieval operation binding the contract event 0xb67719fc33c1f17d31bf3a698690d62066b1e0bae28fcd3c56cf2c015c2863d6.
 //
-// Solidity: event WithdrawFunds(address token, uint256 amount, address destination)
-func (_Reserve *ReserveFilterer) FilterWithdrawFunds(opts *bind.FilterOpts) (*ReserveWithdrawFundsIterator, error) {
+// Solidity: event WithdrawFunds(address indexed token, uint256 amount, address indexed destination)
+func (_Reserve *ReserveFilterer) FilterWithdrawFunds(opts *bind.FilterOpts, token []common.Address, destination []common.Address) (*ReserveWithdrawFundsIterator, error) {
 
-	logs, sub, err := _Reserve.contract.FilterLogs(opts, "WithdrawFunds")
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+
+	var destinationRule []interface{}
+	for _, destinationItem := range destination {
+		destinationRule = append(destinationRule, destinationItem)
+	}
+
+	logs, sub, err := _Reserve.contract.FilterLogs(opts, "WithdrawFunds", tokenRule, destinationRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2282,10 +3248,20 @@ func (_Reserve *ReserveFilterer) FilterWithdrawFunds(opts *bind.FilterOpts) (*Re
 
 // WatchWithdrawFunds is a free log subscription operation binding the contract event 0xb67719fc33c1f17d31bf3a698690d62066b1e0bae28fcd3c56cf2c015c2863d6.
 //
-// Solidity: event WithdrawFunds(address token, uint256 amount, address destination)
-func (_Reserve *ReserveFilterer) WatchWithdrawFunds(opts *bind.WatchOpts, sink chan<- *ReserveWithdrawFunds) (event.Subscription, error) {
+// Solidity: event WithdrawFunds(address indexed token, uint256 amount, address indexed destination)
+func (_Reserve *ReserveFilterer) WatchWithdrawFunds(opts *bind.WatchOpts, sink chan<- *ReserveWithdrawFunds, token []common.Address, destination []common.Address) (event.Subscription, error) {
 
-	logs, sub, err := _Reserve.contract.WatchLogs(opts, "WithdrawFunds")
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+
+	var destinationRule []interface{}
+	for _, destinationItem := range destination {
+		destinationRule = append(destinationRule, destinationItem)
+	}
+
+	logs, sub, err := _Reserve.contract.WatchLogs(opts, "WithdrawFunds", tokenRule, destinationRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2315,4 +3291,15 @@ func (_Reserve *ReserveFilterer) WatchWithdrawFunds(opts *bind.WatchOpts, sink c
 			}
 		}
 	}), nil
+}
+
+// ParseWithdrawFunds is a log parse operation binding the contract event 0xb67719fc33c1f17d31bf3a698690d62066b1e0bae28fcd3c56cf2c015c2863d6.
+//
+// Solidity: event WithdrawFunds(address indexed token, uint256 amount, address indexed destination)
+func (_Reserve *ReserveFilterer) ParseWithdrawFunds(log types.Log) (*ReserveWithdrawFunds, error) {
+	event := new(ReserveWithdrawFunds)
+	if err := _Reserve.contract.UnpackLog(event, "WithdrawFunds", log); err != nil {
+		return nil, err
+	}
+	return event, nil
 }

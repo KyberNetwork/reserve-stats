@@ -10,7 +10,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 )
 
-// GetTradeSummary returns trade summary group by day, eth_volume and usd volume are only accounted for not ETH-WETH trades
+// GetTradeSummary returns trade summary group by day, usd volume are only accounted for not ETH-WETH trades
 func (tldb *TradeLogDB) GetTradeSummary(from, to time.Time, timezone int8) (map[uint64]*common.TradeSummary, error) {
 	var (
 		err           error
@@ -51,9 +51,7 @@ func (tldb *TradeLogDB) GetTradeSummary(from, to time.Time, timezone int8) (map[
 		ts := timeutil.TimeToTimestampMs(r.Time)
 		results[ts] = &common.TradeSummary{
 			UniqueAddresses:    r.UniqueAddress,
-			TotalBurnFee:       r.TotalBurnFee,
 			NewUniqueAddresses: r.CountNewTrades,
-			KYCEDAddresses:     r.Kyced,
 		}
 	}
 
@@ -70,8 +68,6 @@ func (tldb *TradeLogDB) GetTradeSummary(from, to time.Time, timezone int8) (map[
 	logger.Debugw("prepare statement", "stmt", tradelogQuery)
 	var records []struct {
 		Time           time.Time `db:"time"`
-		TotalEthVolume float64   `db:"total_eth_volume"`
-		EthPerTrade    float64   `db:"eth_per_trade"`
 		TotalUsdVolume float64   `db:"total_usd_volume"`
 		UsdPerTrade    float64   `db:"usd_per_trade"`
 		TotalTrade     uint64    `db:"total_trade"`
@@ -88,8 +84,6 @@ func (tldb *TradeLogDB) GetTradeSummary(from, to time.Time, timezone int8) (map[
 			continue
 		}
 		summary.USDAmount = r.TotalUsdVolume
-		summary.ETHVolume = r.TotalEthVolume
-		summary.ETHPerTrade = r.EthPerTrade
 		summary.USDPerTrade = r.UsdPerTrade
 		summary.TotalTrade = r.TotalTrade
 	}

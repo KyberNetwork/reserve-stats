@@ -71,10 +71,6 @@ func (s *mockStorage) GetReserveVolume(rsvAddr ethereum.Address, token ethereum.
 	return nil, nil
 }
 
-func (s *mockStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq string, fromTime, toTime time.Time, timezone int8) (map[uint64]float64, error) {
-	return nil, nil
-}
-
 func (s *mockStorage) GetTradeSummary(fromTime, toTime time.Time, timezone int8) (map[uint64]*common.TradeSummary, error) {
 	return nil, nil
 }
@@ -121,18 +117,6 @@ func (s *mockStorage) GetTopIntegrations(from, to time.Time, limit uint64) (comm
 
 func (s *mockStorage) GetTopReserves(from, to time.Time, limit uint64) (common.TopReserves, error) {
 	return common.TopReserves{}, nil
-}
-
-func (s *mockStorage) GetNotTwittedTrades(from, to time.Time) ([]common.BigTradeLog, error) {
-	return nil, nil
-}
-
-func (s *mockStorage) SaveBigTrades(bigVolume float32, fromBlock uint64) error {
-	return nil
-}
-
-func (s *mockStorage) UpdateBigTradesTwitted(trades []uint64) error {
-	return nil
 }
 
 type mockJob struct {

@@ -36,9 +36,6 @@ type Interface interface {
 	GetStats(from, to time.Time) (common.StatsResponse, error)
 	GetTopTokens(from, to time.Time, limit uint64) (common.TopTokens, error)
 	GetTopReserves(from, to time.Time, limit uint64) (common.TopReserves, error)
-	GetNotTwittedTrades(from, to time.Time) ([]common.BigTradeLog, error)
-	SaveBigTrades(bigVolume float32, fromBlock uint64) error
-	UpdateBigTradesTwitted(trades []uint64) error
 }
 
 // KNCAddressFromContext return knc address by deployment mode

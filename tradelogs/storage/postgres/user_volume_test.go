@@ -17,7 +17,6 @@ func TestTradeLogDB_GetUserVolume(t *testing.T) {
 		// These params are expected to be change when export.dat changes.
 		fromTime          = 1539000000000
 		toTime            = 1539250666000
-		expectedEthAmount = 0.05
 		expectedUsdAmount = 11.283100808873083
 		freq              = "h"
 		timeStamp         = "2018-10-11T09:00:00Z"
@@ -44,6 +43,5 @@ func TestTradeLogDB_GetUserVolume(t *testing.T) {
 	timeUint := timeutil.TimeToTimestampMs(timeUnix)
 	require.Contains(t, userVolume, timeUint)
 	result := userVolume[timeUint]
-	require.Equal(t, expectedEthAmount, result.ETHAmount)
 	require.Equal(t, expectedUsdAmount, result.USDAmount)
 }

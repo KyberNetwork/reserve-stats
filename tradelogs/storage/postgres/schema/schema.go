@@ -29,15 +29,13 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	timestamp TIMESTAMPTZ,
 	block_number INTEGER,
 	tx_hash TEXT,
-	eth_amount FLOAT(32),
-	original_eth_amount FLOAT(32),
+	usdt_amount FLOAT(32),
+	original_usdt_amount FLOAT(32),
 	user_address_id BIGINT NOT NULL REFERENCES users,
 	src_address_id BIGINT NOT NULL REFERENCES token,
 	dst_address_id BIGINT NOT NULL REFERENCES token,
 	src_amount FLOAT(32),
 	dst_amount FLOAT(32),
-	eth_usd_rate FLOAT(32),
-	eth_usd_provider TEXT,
 	index INTEGER,
 	is_first_trade BOOLEAN,
 	tx_sender	TEXT,
@@ -51,12 +49,6 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 
 CREATE UNIQUE INDEX IF NOT EXISTS "tradelogs_id_index" ON "` + TradeLogsTableName + `"(id);
 
-CREATE TABLE IF NOT EXISTS "` + BigTradeLogsTableName + `" (
-	id SERIAL PRIMARY KEY,
-	tradelog_id INTEGER UNIQUE NOT NULL REFERENCES tradelogs (id),
-	twitted BOOLEAN DEFAULT FALSE
-);
-
 CREATE INDEX IF NOT EXISTS "trade_timestamp" ON "` + TradeLogsTableName + `"(timestamp);
 CREATE INDEX IF NOT EXISTS "trade_user_address" ON "` + TradeLogsTableName + `"(user_address_id);
 CREATE INDEX IF NOT EXISTS "trade_src_address" ON "` + TradeLogsTableName + `"(src_address_id);
@@ -68,15 +60,13 @@ CREATE OR REPLACE FUNCTION create_or_update_tradelogs(INOUT _id tradelogs.id%TYP
 												_timestamp tradelogs.timestamp%TYPE,
 												_block_number tradelogs.block_number%TYPE,
 												_tx_hash tradelogs.tx_hash%TYPE,
-												_eth_amount tradelogs.eth_amount%TYPE,
-												_original_eth_amount tradelogs.original_eth_amount%TYPE,
+												_usdt_amount tradelogs.usdt_amount%TYPE,
+												_original_usdt_amount tradelogs.original_usdt_amount%TYPE,
 												_user_address TEXT,
 												_src_address TEXT,
 												_dst_address TEXT,
 												_src_amount tradelogs.src_amount%TYPE,
 												_dst_amount tradelogs.dst_amount%TYPE,
-												_eth_usd_rate tradelogs.eth_usd_rate%TYPE,
-												_eth_usd_provider tradelogs.eth_usd_provider%TYPE,
 												_index tradelogs.index%TYPE,
 												_is_first_trade tradelogs.is_first_trade%TYPE,
 												_tx_sender tradelogs.tx_sender%TYPE,
@@ -89,22 +79,20 @@ CREATE OR REPLACE FUNCTION create_or_update_tradelogs(INOUT _id tradelogs.id%TYP
 $$
 BEGIN
     IF _id = 0 THEN
-		INSERT INTO tradelogs (timestamp, block_number, tx_hash, eth_amount, 
-			original_eth_amount, user_address_id, src_address_id, dst_address_id, src_amount, dst_amount,
-			eth_usd_rate, eth_usd_provider, index, kyced, is_first_trade, tx_sender,
+		INSERT INTO tradelogs (timestamp, block_number, tx_hash, usdt_amount, 
+			original_usdt_amount, user_address_id, src_address_id, dst_address_id, src_amount, dst_amount,
+			index, is_first_trade, tx_sender,
 			receiver_address, gas_used, gas_price, transaction_fee, version) 
 		VALUES (_timestamp,
 			_block_number,
 			_tx_hash,
-			_eth_amount,
-			_original_eth_amount,
+			_usdt_amount,
+			_original_usdt_amount,
 			(SELECT id FROM users WHERE address=_user_address),
 			(SELECT id FROM token WHERE address=_src_address),
 			(SELECT id FROM token WHERE address=_dst_address),
 			_src_amount,
 			_dst_amount,
-			_eth_usd_rate, 
-			_eth_usd_provider,
 			_index, 
 			_is_first_trade,
 			_tx_sender,

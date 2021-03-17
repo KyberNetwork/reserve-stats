@@ -15,14 +15,13 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
+	"github.com/KyberNetwork/reserve-stats/lib/contracts"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/tokenrate"
 )
 
-// var defaultTimeout = 10 * time.Second
-
-// var errUnknownLogTopic = errors.New("unknown log topic")
+var defaultTimeout = 10 * time.Second
 
 type tradeLogFetcher func(*big.Int, *big.Int, time.Duration) (*common.CrawlResult, error)
 
@@ -33,8 +32,14 @@ func NewCrawler(sugar *zap.SugaredLogger,
 	rateProvider tokenrate.ETHUSDRateProvider,
 	addresses []ethereum.Address,
 	sb deployment.VersionedStartingBlocks,
+	reserveAddress ethereum.Address,
 	etherscanClient *etherscan.Client) (*Crawler, error) {
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
+	if err != nil {
+		return nil, err
+	}
+
+	reserveContract, err := contracts.NewReserve(reserveAddress, client)
 	if err != nil {
 		return nil, err
 	}
@@ -47,6 +52,7 @@ func NewCrawler(sugar *zap.SugaredLogger,
 		rateProvider:    rateProvider,
 		addresses:       addresses,
 		startingBlocks:  sb,
+		reserveContract: reserveContract,
 		etherscanClient: etherscanClient,
 	}, nil
 }
@@ -61,6 +67,8 @@ type Crawler struct {
 	rateProvider    tokenrate.ETHUSDRateProvider
 	addresses       []ethereum.Address
 	startingBlocks  deployment.VersionedStartingBlocks
+
+	reserveContract *contracts.Reserve
 
 	etherscanClient *etherscan.Client
 }
@@ -79,31 +87,6 @@ func (crawler *Crawler) fetchLogsWithTopics(fromBlock, toBlock *big.Int, timeout
 
 }
 
-// func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time.Duration) (*types.Receipt, error) {
-// 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-// 	defer cancel()
-// 	receipt, err := crawler.ethClient.TransactionReceipt(ctx, txHash)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return receipt, nil
-// }
-
-// func (crawler *Crawler) updateBasicInfo(log types.Log, tradeLog common.TradelogV4, timeout time.Duration) (common.TradelogV4, error) {
-// 	var txSender ethereum.Address
-// 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-// 	defer cancel()
-// 	tx, _, err := crawler.ethClient.TransactionByHash(ctx, log.TxHash)
-// 	if err != nil {
-// 		return tradeLog, err
-// 	}
-// 	txSender, err = crawler.ethClient.TransactionSender(ctx, tx, log.BlockHash, log.TxIndex)
-// 	tradeLog.TxDetail.TxSender = txSender
-// 	tradeLog.TxDetail.GasPrice = tx.GasPrice()
-
-// 	return tradeLog, err
-// }
-
 // GetTradeLogs returns trade logs from KyberNetwork.
 func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.Duration) (*common.CrawlResult, error) {
 	var (
@@ -119,24 +102,6 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 	}
 	if result == nil {
 		return result, nil
-	}
-	for index, tradeLog := range result.Trades {
-		// TODO: in case we want to get this information later
-		// var uid, ip, country string
-		// uid, ip, country, err = crawler.broadcastClient.GetTxInfo(tradeLog.TransactionHash.Hex())
-		// if err != nil {
-		// 	return result, err
-		// }
-		// result.Trades[index].User.IP = ip
-		// result.Trades[index].User.Country = country
-		// result.Trades[index].User.UID = uid
-
-		rate, err := crawler.rateProvider.USDRate(tradeLog.Timestamp)
-		if err != nil {
-			return nil, err
-		}
-		result.Trades[index].ETHUSDProvider = crawler.rateProvider.Name()
-		result.Trades[index].ETHUSDRate = rate
 	}
 	return result, nil
 }

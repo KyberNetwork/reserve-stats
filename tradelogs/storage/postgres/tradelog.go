@@ -168,7 +168,7 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 			query := `SELECT _id as id FROM 
 			create_or_update_tradelogs(
 				$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-				$13, $14, $15, $16, $17, $18, $19, $20, $21
+				$13, $14, $15, $16, $17, $18, $19
 			);`
 			var tradelogID uint64
 			if err != nil {
@@ -179,8 +179,6 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 				r.Timestamp, r.BlockNumber, r.TransactionHash,
 				r.USDTAmount, r.OriginalUSDTAmount, r.UserAddress, r.SrcAddress, r.DestAddress,
 				r.SrcAmount, r.DestAmount,
-				r.ETHUSDRate,
-				r.ETHUSDProvider,
 				r.Index,
 				r.IsFirstTrade,
 				r.TxSender,

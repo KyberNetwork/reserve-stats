@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	testETHAmount = 0.111
 	testUSDAmount = 0.222
 	testVolAmount = 0.333
 )
@@ -37,7 +36,6 @@ func (s *mockStorage) GetAssetVolume(token ethereum.Address, fromTime, toTime ti
 	to := timeutil.TimeToTimestampMs(toTime)
 	var (
 		mockVolumeStat = common.VolumeStats{
-			ETHAmount: testETHAmount,
 			USDAmount: testUSDAmount,
 			Volume:    testVolAmount,
 		}
@@ -58,7 +56,7 @@ func TestAssetVolumeHttp(t *testing.T) {
 		invalidFrom = "xxxx"
 		validTo     = 1539302400000
 		// mock core only return ETH, KNC is not in the list of mock core's clients
-		validAsset               = blockchain.ETHAddr.Hex()
+		validAsset               = blockchain.USDTAddr.Hex()
 		invalidAsset             = "KNC"
 		invalidFromInputEndpoint = fmt.Sprintf("%s?from=%s&to=%d&asset=%s&freq=%s", endpoint, invalidFrom, validTo, validAsset, freq)
 		invalidAssetEndpoint     = fmt.Sprintf("%s?from=%s&to=%d&asset=%s&freq=%s", endpoint, invalidFrom, validTo, invalidAsset, freq)
@@ -107,7 +105,6 @@ func expectCorrectVolume(t *testing.T, resp *httptest.ResponseRecorder) {
 		t.Error("Could not decode result", "err", err)
 	}
 	correctVolume := common.VolumeStats{
-		ETHAmount: testETHAmount,
 		USDAmount: testUSDAmount,
 		Volume:    testVolAmount,
 	}

@@ -19,7 +19,6 @@ const (
 	tradeLogAccessKeyID     = "read-key-id"
 	tradeLogSecretAccessKey = "xx232425xx"
 
-	userAddress     = "0x472dbf5a1b070f9efc2491cb3b98445e06599e21"
 	receiverAddress = "0x63825c174ab367968ec60f061753d3bbd36a0d8f"
 
 	fromTime = 123
@@ -32,10 +31,9 @@ func newTestTradeLog(server *httptest.Server) *Client {
 }
 
 func TestValidGetTradeLog(t *testing.T) {
-	var log = []common.TradeLog{
+	var log = []common.Tradelog{
 		{
 			USDTAmount:      new(big.Int),
-			UserAddress:     ethereum.HexToAddress(userAddress),
 			ReceiverAddress: ethereum.HexToAddress(receiverAddress),
 		},
 	}
@@ -67,9 +65,6 @@ func TestValidGetTradeLog(t *testing.T) {
 		t.Error("tradeLogs should not be empty")
 	}
 	l := tradeLogs[0]
-	if strings.ToLower(l.UserAddress.Hex()) != userAddress {
-		t.Error("Get invalid user address", "result", strings.ToLower(l.UserAddress.Hex()), "expected", userAddress)
-	}
 	if strings.ToLower(l.ReceiverAddress.Hex()) != receiverAddress {
 		t.Error("Get invalid receiver address", "result", strings.ToLower(l.ReceiverAddress.Hex()), "expected", receiverAddress)
 	}

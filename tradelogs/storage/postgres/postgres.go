@@ -67,25 +67,24 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 }
 
 type tradeLogDBData struct {
-	ID                uint64         `db:"id"`
-	Timestamp         time.Time      `db:"timestamp"`
-	BlockNumber       uint64         `db:"block_number"`
-	EthAmount         float64        `db:"eth_amount"`
-	OriginalEthAmount float64        `db:"original_eth_amount"`
-	EthUsdRate        float64        `db:"eth_usd_rate"`
-	UserAddress       pq.StringArray `db:"user_address"`
-	SrcAddress        pq.StringArray `db:"src_address"`
-	DstAddress        pq.StringArray `db:"dst_address"`
-	SrcAmount         float64        `db:"src_amount"`
-	DstAmount         float64        `db:"dst_amount"`
-	LogIndex          uint           `db:"index"`
-	TxHash            string         `db:"tx_hash"`
-	TxSender          string         `db:"tx_sender"`
-	ReceiverAddr      string         `db:"receiver_address"`
-	GasUsed           uint64         `db:"gas_used"`
-	GasPrice          float64        `db:"gas_price"`
-	TransactionFee    float64        `db:"transaction_fee"`
-	Version           uint           `db:"version"`
+	ID                 uint64         `db:"id"`
+	Timestamp          time.Time      `db:"timestamp"`
+	BlockNumber        uint64         `db:"block_number"`
+	USDTAmount         float64        `db:"usdt_amount"`
+	OriginalUSDTAmount float64        `db:"original_usdt_amount"`
+	UserAddress        pq.StringArray `db:"user_address"`
+	SrcAddress         pq.StringArray `db:"src_address"`
+	DstAddress         pq.StringArray `db:"dst_address"`
+	SrcAmount          float64        `db:"src_amount"`
+	DstAmount          float64        `db:"dst_amount"`
+	LogIndex           uint           `db:"index"`
+	TxHash             string         `db:"tx_hash"`
+	TxSender           string         `db:"tx_sender"`
+	ReceiverAddr       string         `db:"receiver_address"`
+	GasUsed            uint64         `db:"gas_used"`
+	GasPrice           float64        `db:"gas_price"`
+	TransactionFee     float64        `db:"transaction_fee"`
+	Version            uint           `db:"version"`
 }
 
 func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.Tradelog, error) {
@@ -93,22 +92,22 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.Tradelog, e
 		tradeLog common.Tradelog
 		err      error
 
-		ethAmountInWei                     *big.Int
+		usdtAmountInWei                    *big.Int
 		srcAmountInWei                     *big.Int
 		dstAmountInWei                     *big.Int
-		originalEthAmountInWei             *big.Int
+		originalUSDTAmountInWei            *big.Int
 		gasPriceInWei, transactionFeeInWei *big.Int
 
 		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 
-	if ethAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.EthAmount); err != nil {
-		logger.Debugw("failed to parse eth amount", "error", err)
+	if usdtAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.USDTAddr, r.USDTAmount); err != nil {
+		logger.Debugw("failed to parse usdt amount", "error", err)
 		return tradeLog, err
 	}
 
-	if originalEthAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.OriginalEthAmount); err != nil {
-		logger.Debugw("failed to parse original eth amount", "error", err)
+	if originalUSDTAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.USDTAddr, r.OriginalUSDTAmount); err != nil {
+		logger.Debugw("failed to parse original usdt amount", "error", err)
 		return tradeLog, err
 	}
 	SrcAddress := ethereum.HexToAddress(r.SrcAddress[0])
@@ -123,12 +122,12 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.Tradelog, e
 	}
 
 	// these conversion below is from Gwei to wei which is used ^18 method, so I used ToWei function with ETHAddr - which have decimals of 18
-	if gasPriceInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.GasPrice); err != nil {
+	if gasPriceInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.USDTAddr, r.GasPrice); err != nil {
 		logger.Debugw("failed to parse gas price", "error", err)
 		return tradeLog, err
 	}
 
-	if transactionFeeInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.ETHAddr, r.TransactionFee); err != nil {
+	if transactionFeeInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.USDTAddr, r.TransactionFee); err != nil {
 		logger.Debugw("failed to parse transaction fee", "error", err)
 		return tradeLog, err
 	}
@@ -137,8 +136,8 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.Tradelog, e
 		Index:              r.LogIndex,
 		Timestamp:          r.Timestamp,
 		BlockNumber:        r.BlockNumber,
-		USDTAmount:         ethAmountInWei,
-		OriginalUSDTAmount: originalEthAmountInWei,
+		USDTAmount:         usdtAmountInWei,
+		OriginalUSDTAmount: originalUSDTAmountInWei,
 		User: common.KyberUserInfo{
 			UserAddress: ethereum.HexToAddress(r.UserAddress[0]),
 		},
@@ -148,9 +147,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.Tradelog, e
 		},
 		SrcAmount:       srcAmountInWei,
 		DestAmount:      dstAmountInWei,
-		FiatAmount:      r.EthAmount * r.EthUsdRate,
 		ReceiverAddress: ethereum.HexToAddress(r.ReceiverAddr),
-		ETHUSDRate:      r.EthUsdRate,
 		TxDetail: common.TxDetail{
 			GasUsed:        r.GasUsed,
 			GasPrice:       gasPriceInWei,

@@ -71,10 +71,6 @@ func (s *mockStorage) GetReserveVolume(rsvAddr ethereum.Address, token ethereum.
 	return nil, nil
 }
 
-func (s *mockStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq string, fromTime, toTime time.Time, timezone int8) (map[uint64]float64, error) {
-	return nil, nil
-}
-
 func (s *mockStorage) GetTradeSummary(fromTime, toTime time.Time, timezone int8) (map[uint64]*common.TradeSummary, error) {
 	return nil, nil
 }

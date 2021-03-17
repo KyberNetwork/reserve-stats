@@ -42,14 +42,6 @@ func (s *mockStorage) LoadTradeLogs(from, to time.Time) ([]common.Tradelog, erro
 	return nil, nil
 }
 
-func (s *mockStorage) GetAggregatedBurnFee(from, to time.Time, freq string, reserveAddrs []ethereum.Address) (map[ethereum.Address]map[string]float64, error) {
-	return nil, nil
-}
-
-func (s *mockStorage) GetAggregatedWalletFee(reserveAddr, walletAddr, freq string, fromTime, toTime time.Time, timezone int8) (map[uint64]float64, error) {
-	return nil, nil
-}
-
 func (s *mockStorage) GetTradeSummary(from, to time.Time, timezone int8) (map[uint64]*common.TradeSummary, error) {
 	return nil, nil
 }
@@ -59,10 +51,6 @@ func (s *mockStorage) GetUserVolume(userAddr ethereum.Address, fromTime, toTime 
 }
 
 func (s *mockStorage) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo, error) {
-	return nil, nil
-}
-
-func (s *mockStorage) GetWalletStats(fromTime, toTime time.Time, walletAddr string, timezone int8) (map[uint64]common.WalletStats, error) {
 	return nil, nil
 }
 
@@ -116,7 +104,7 @@ func TestTradeLogsRoute(t *testing.T) {
 			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, resp.Code)
 
-				var result []common.TradeLog
+				var result []common.Tradelog
 				if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 					t.Error("Could not decode result", "err", err)
 				}

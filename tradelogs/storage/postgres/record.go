@@ -22,8 +22,6 @@ type record struct {
 	DstReserveAddress  string    `db:"dst_reserve_address"`
 	SrcAmount          float64   `db:"src_amount"`
 	DestAmount         float64   `db:"dst_amount"`
-	ETHUSDRate         float64   `db:"eth_usd_rate"`
-	ETHUSDProvider     string    `db:"eth_usd_provider"`
 	Index              string    `db:"index"`
 	IsFirstTrade       bool      `db:"is_first_trade"`
 	TxSender           string    `db:"tx_sender"`
@@ -96,11 +94,11 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.Tradelog) (*record, error)
 		}
 	}
 
-	transactionFee, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.TxDetail.TransactionFee)
+	transactionFee, err := tldb.tokenAmountFormatter.FromWei(blockchain.USDTAddr, log.TxDetail.TransactionFee)
 	if err != nil {
 		return nil, err
 	}
-	gasPrice, err := tldb.tokenAmountFormatter.FromWei(blockchain.ETHAddr, log.TxDetail.GasPrice)
+	gasPrice, err := tldb.tokenAmountFormatter.FromWei(blockchain.USDTAddr, log.TxDetail.GasPrice)
 	if err != nil {
 		return nil, err
 	}
@@ -118,8 +116,6 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.Tradelog) (*record, error)
 		DestAmount:         dstAmount,
 		SrcReserveAddress:  log.SrcReserveAddress.Hex(),
 		DstReserveAddress:  log.DstReserveAddress.Hex(),
-		ETHUSDRate:         log.ETHUSDRate,
-		ETHUSDProvider:     log.ETHUSDProvider,
 		Index:              strconv.FormatUint(uint64(log.Index), 10),
 		TxSender:           log.TxDetail.TxSender.Hex(),
 		ReceiverAddress:    log.ReceiverAddress.Hex(),

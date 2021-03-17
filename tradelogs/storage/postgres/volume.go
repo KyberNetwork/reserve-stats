@@ -40,15 +40,14 @@ func (tldb *TradeLogDB) GetAssetVolume(token ethereum.Address, fromTime, toTime 
 	queryStmt := fmt.Sprintf(`
 		SELECT time, 
 		SUM(token_volume) token_volume, 
-		SUM(eth_amount) eth_volume,
-		SUM(eth_amount * eth_usd_rate) usd_volume
+		SUM(usdt_amount) usd_volume
 		FROM (
-			SELECT %[1]s AS time, src_amount token_volume, eth_amount, eth_usd_rate
+			SELECT %[1]s AS time, src_amount token_volume, usdt_amount
 			FROM tradelogs
 			WHERE EXISTS (SELECT NULL FROM "token" WHERE address = $3 AND id=src_address_id)
 				AND timestamp >= $1 AND timestamp < $2
 			UNION ALL
-			SELECT %[1]s AS time, dst_amount token_volume, eth_amount, eth_usd_rate
+			SELECT %[1]s AS time, dst_amount token_volume, usdt_amount
 			FROM "tradelogs" 
 			WHERE EXISTS (SELECT NULL FROM "token" WHERE address = $3 AND id=dst_address_id)
 				AND timestamp >= $1 AND timestamp < $2
@@ -75,7 +74,6 @@ func (tldb *TradeLogDB) GetAssetVolume(token ethereum.Address, fromTime, toTime 
 		fmt.Println(data.TokenVolume, " ", data.USDVolume)
 		result[timeutil.TimeToTimestampMs(data.Time)] = &common.VolumeStats{
 			Volume:    data.TokenVolume,
-			ETHAmount: data.EthVolume,
 			USDAmount: data.USDVolume,
 		}
 	}
@@ -110,22 +108,17 @@ func (tldb *TradeLogDB) GetReserveVolume(rsvAddr ethereum.Address, token ethereu
 		SELECT 
 			time, 
 			SUM(token_volume) token_volume, 
-			SUM(eth_amount) eth_volume,
-			SUM(eth_amount * eth_usd_rate) usd_volume
+			SUM(usdt_amount) usd_volume
 		FROM (
-			SELECT %[1]s AS time, 
+			SELECT %[1]s AS time, usdt_amount,
 				src_amount token_volume, 
-				eth_amount, 
-				eth_usd_rate
 			FROM "tradelogs" 
 			WHERE EXISTS (SELECT NULL FROM "token" WHERE address = $1 AND id=src_address_id)
 				AND EXISTS (SELECT NULL FROM "reserve" WHERE address = $2 AND (id= src_reserve_address_id OR id = dst_reserve_address_id))
 				AND timestamp >= $3 AND timestamp < $4 
 			UNION ALL
-			SELECT %[1]s AS time, 
+			SELECT %[1]s AS time, usdt_amount,
 				dst_amount token_volume, 
-				eth_amount, 
-				eth_usd_rate
 			FROM "tradelogs"
 			WHERE EXISTS (SELECT NULL FROM "token" WHERE address = $1 AND id=dst_address_id)
 				AND EXISTS (SELECT NULL FROM "reserve" WHERE address = $2 AND (id= src_reserve_address_id OR id = dst_reserve_address_id))
@@ -135,7 +128,6 @@ func (tldb *TradeLogDB) GetReserveVolume(rsvAddr ethereum.Address, token ethereu
 	logger.Debugw("prepare statement", "stmt", reserveQuery)
 	var records []struct {
 		TokenVolume float64   `db:"token_volume"`
-		EthVolume   float64   `db:"eth_volume"`
 		USDVolume   float64   `db:"usd_volume"`
 		Time        time.Time `db:"time"`
 	}
@@ -153,7 +145,6 @@ func (tldb *TradeLogDB) GetReserveVolume(rsvAddr ethereum.Address, token ethereu
 	for _, r := range records {
 		result[timeutil.TimeToTimestampMs(r.Time)] = &common.VolumeStats{
 			Volume:    r.TokenVolume,
-			ETHAmount: r.EthVolume,
 			USDAmount: r.USDVolume,
 		}
 	}

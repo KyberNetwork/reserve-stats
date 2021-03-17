@@ -18,7 +18,7 @@ func TestTradeLogDB_GetAssetVolume(t *testing.T) {
 		// These params are expected to be change when export.dat changes.
 		fromTime    = 1539248043000
 		toTime      = 1539248666000
-		ethAmount   = 238.33849929550047
+		usdtAmount  = 238.33849929550047
 		totalVolume = 1.056174642648189277
 		freq        = "h"
 		timeStamp   = "2018-10-11T09:00:00Z"
@@ -44,7 +44,7 @@ func TestTradeLogDB_GetAssetVolume(t *testing.T) {
 	if !ok {
 		t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))
 	}
-	require.Equal(t, ethAmount, result.USDAmount)
+	require.Equal(t, usdtAmount, result.USDAmount)
 	require.Equal(t, totalVolume, result.Volume)
 }
 
@@ -56,7 +56,7 @@ func TestTradeLogDB_GetReserveVolume(t *testing.T) {
 		// These params are expected to be change when export.dat changes.
 		fromTime    = 1539248043000
 		toTime      = 1539248666000
-		ethAmount   = 227.05539848662738
+		usdtAmount  = 227.05539848662738
 		totalVolume = 1.006174642648189232
 		freq        = "h"
 		timeStamp   = "2018-10-11T09:00:00Z"
@@ -88,6 +88,6 @@ func TestTradeLogDB_GetReserveVolume(t *testing.T) {
 		t.Fatalf("expect to find result at timestamp %s, yet there is none", timeUnix.Format(time.RFC3339))
 	}
 
-	require.Equal(t, ethAmount, result.USDAmount)
+	require.Equal(t, usdtAmount, result.USDAmount)
 	require.Equal(t, totalVolume, result.Volume)
 }

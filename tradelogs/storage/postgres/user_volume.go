@@ -36,8 +36,7 @@ func (tldb *TradeLogDB) GetUserVolume(userAddress ethereum.Address, from, to tim
 
 	query := fmt.Sprintf(
 		`SELECT %[1]s AS time, 
-			SUM(eth_amount) eth_volume,
-			SUM(eth_amount * eth_usd_rate) usd_volume
+			SUM(eth_amount) usd_volume
 		FROM "tradelogs" a
 		WHERE timestamp >= $1 AND timestamp < $2
 		AND EXISTS (SELECT NULL FROM "users" WHERE user_address_id = id AND address = $3)
@@ -47,7 +46,6 @@ func (tldb *TradeLogDB) GetUserVolume(userAddress ethereum.Address, from, to tim
 
 	var records []struct {
 		Time      time.Time `db:"time"`
-		EthAmount float64   `db:"eth_volume"`
 		UsdAmount float64   `db:"usd_volume"`
 	}
 	if err := tldb.db.Select(&records, query, from, to.UTC(), userAddress.Hex()); err != nil {
@@ -58,7 +56,6 @@ func (tldb *TradeLogDB) GetUserVolume(userAddress ethereum.Address, from, to tim
 	for _, r := range records {
 		key := timeutil.TimeToTimestampMs(r.Time)
 		result[key] = common.UserVolume{
-			ETHAmount: r.EthAmount,
 			USDAmount: r.UsdAmount,
 		}
 	}

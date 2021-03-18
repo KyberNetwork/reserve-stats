@@ -141,7 +141,7 @@ func (j *mockJob) info() (order int, from, to *big.Int) {
 
 func newTestWorkerPool(maxWorkers int) *Pool {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
-	return NewPool(sugar, maxWorkers, newMockStorage(), float32(100))
+	return NewPool(sugar, maxWorkers, newMockStorage())
 }
 
 func sendJobsToWorkerPool(pool *Pool, jobs []job, doneCh chan<- struct{}) {

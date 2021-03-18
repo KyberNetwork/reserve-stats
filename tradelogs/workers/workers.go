@@ -129,12 +129,10 @@ type Pool struct {
 	lastCompletedJobOrder int  // Keep the order of the last completed job
 	failed                bool // mark as failed, all subsequent persistent storage will be passed
 	storage               storage.Interface
-
-	bigVolume float32 // for detect big trade
 }
 
 // NewPool returns a pool of workers to handle jobs concurrently
-func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface, bigVolume float32) *Pool {
+func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface) *Pool {
 	var p = &Pool{
 		sugar:                 sugar,
 		jobCh:                 make(chan job),
@@ -142,7 +140,6 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 		mutex:                 &sync.Mutex{},
 		storage:               storage,
 		lastCompletedJobOrder: 0,
-		bigVolume:             bigVolume,
 	}
 
 	p.wg.Add(maxWorkers)

@@ -38,12 +38,12 @@ var (
 	)
 	internalReserveAddress = deployment.NewAddress(
 		[]common.Address{common.HexToAddress("")},
-		[]common.Address{common.HexToAddress("")},
+		[]common.Address{common.HexToAddress("0xb3F787E2A95326C9dBb0e43151e9B94B7f850e7b")},
 		[]common.Address{common.HexToAddress("0xc1F6B9c8c79fD6BE87aB017566A066c10e92e7e0")},
 	)
 	pricingContractAddress = deployment.NewAddress(
 		[]common.Address{},
-		[]common.Address{},
+		[]common.Address{common.HexToAddress("0xD14b35Af7316260454B83739aA377667fDA22627")},
 		[]common.Address{common.HexToAddress("0xfe96C7566c5f5D5555EbDC88B687456081114EBe")},
 	)
 	burnerContractAddress = deployment.NewAddress( // we don't have burner for bsc yet, keep this for compatible purpose

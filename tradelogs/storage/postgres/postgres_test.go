@@ -190,10 +190,6 @@ func TestSaveTradeLogs_Overwrite(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, len(tls), 1)
 	assert.Equal(t, tradelog2.USDTAmount, tls[0].USDTAmount)
-
-	tradeSummary, err := testStorage.GetTradeSummary(timestamp, timestamp, 0)
-	require.NoError(t, err)
-	assert.Equal(t, uint64(1), tradeSummary[timestampMs].NewUniqueAddresses)
 }
 
 func TestTradeLogDB_LoadTradeLogs(t *testing.T) {

@@ -295,9 +295,6 @@ func (sv *Server) setupRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/trade-logs", sv.getTradeLogs)
 	r.GET("/trade-logs/:tx_hash", sv.getTradeLogsByTx)
-	r.GET("/asset-volume", sv.getAssetVolume)
-	r.GET("/reserve-volume", sv.getReserveVolume)
-	r.GET("/user-volume", sv.getUserVolume)
 
 	// token symbol
 	r.GET("/symbol", sv.getSymbol)

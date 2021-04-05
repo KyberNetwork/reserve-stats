@@ -25,7 +25,6 @@ const (
 	reserveRatesAPIURLFlag = "reserve-rate-url"
 	userAPIURLFlag         = "user-url"
 	priceAnalyticURLFlag   = "price-analytic-url"
-	appNamesURLFlag        = "app-names-url"
 )
 
 var (
@@ -88,12 +87,6 @@ func main() {
 			Value:  defaultPriceAnalyticAPIValue,
 			EnvVar: "PRICE_ANALYTIC_URL",
 		},
-		cli.StringFlag{
-			Name:   appNamesURLFlag,
-			Usage:  "Integration Application Manager URL",
-			Value:  defaultAppNamesAPIValue,
-			EnvVar: "APP_NAMES_URL",
-		},
 	)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.GatewayPort)...)
 
@@ -137,13 +130,6 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("invalid price analytic API URL: %s", c.String(priceAnalyticURLFlag))
 	}
 
-	err = validation.Validate(c.String(appNamesURLFlag),
-		validation.Required,
-		is.URL)
-	if err != nil {
-		return fmt.Errorf("app names API URL: %s", c.String(priceAnalyticURLFlag))
-	}
-
 	if err := validation.Validate(c.String(writeAccessKeyFlag), validation.Required); err != nil {
 		return fmt.Errorf("access key error: %s", err.Error())
 	}
@@ -177,7 +163,6 @@ func run(c *cli.Context) error {
 		http.WithReserveRatesURL(c.String(reserveRatesAPIURLFlag)),
 		http.WithPriceAnalyticURL(c.String(priceAnalyticURLFlag)),
 		http.WithUserURL(c.String(userAPIURLFlag)),
-		http.WithAppNamesURL(c.String(appNamesURLFlag)),
 	)
 	if err != nil {
 		return err

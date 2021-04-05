@@ -4,63 +4,26 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/lib/pq"
 )
 
 func (tldb *TradeLogDB) saveReserve(reserves []common.Reserve) error {
 	var (
-		logger                               = tldb.sugar.With("func", caller.GetCurrentFunctionName())
-		addresses, reserveIDs, rebateWallets []string
-		blockNumbers, reserveTypes           []uint64
+		logger    = tldb.sugar.With("func", caller.GetCurrentFunctionName())
+		addresses []string
 	)
-	query := `INSERT INTO reserve (address, reserve_id, rebate_wallet, block_number, reserve_type)
+	query := `INSERT INTO reserve (address)
 	VALUES(
-		UNNEST($1::TEXT[]),
-		UNNEST($2::TEXT[]),
-		UNNEST($3::TEXT[]),
-		UNNEST($4::INTEGER[]),
-		UNNEST($5::INTEGER[])
-	) ON CONFLICT (address, reserve_id, block_number) DO NOTHING;`
+		UNNEST($1::TEXT[])
+	) ON CONFLICT (address) DO NOTHING;`
 	logger.Infow("save reserve", "query", query)
 	for _, r := range reserves {
 		addresses = append(addresses, r.Address.Hex())
-		reserveIDs = append(reserveIDs, ethereum.BytesToHash(r.ReserveID[:]).Hex())
-		rebateWallets = append(rebateWallets, r.RebateWallet.Hex())
-		blockNumbers = append(blockNumbers, r.BlockNumber)
-		reserveTypes = append(reserveTypes, r.ReserveType)
 	}
-	if _, err := tldb.db.Exec(query, pq.StringArray(addresses), pq.StringArray(reserveIDs), pq.StringArray(rebateWallets),
-		pq.Array(blockNumbers), pq.Array(reserveTypes)); err != nil {
+	if _, err := tldb.db.Exec(query, pq.StringArray(addresses)); err != nil {
 		logger.Errorw("failed to add reserve into db", "error", err)
 		return err
-	}
-	return nil
-}
-
-func (tldb *TradeLogDB) updateRebateWallet(reserves []common.Reserve) error {
-	var (
-		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
-	)
-	query := `INSERT INTO reserve(address, reserve_id, rebate_wallet, block_number, reserve_type)
-		VALUES (
-		(SELECT address FROM reserve WHERE reserve_id = $1 order by block_number desc limit 1),
-		$1,
-		$2,
-		$3, 
-		(SELECT reserve_type FROM reserve WHERE reserve_id = $1 order by block_number desc limit 1)
-		) ON CONFLICT (address, reserve_id, block_number) DO NOTHING;`
-	logger.Infow("query update rebate wallet", "value", query)
-	tx, err := tldb.db.Beginx()
-	if err != nil {
-		return err
-	}
-	defer pgsql.CommitOrRollback(tx, logger, &err)
-	for _, r := range reserves {
-		if _, err := tx.Exec(query, ethereum.BytesToHash(r.ReserveID[:]).Hex(), r.RebateWallet.Hex(), r.BlockNumber); err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -80,12 +43,6 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 	if crResult != nil {
 		if len(crResult.Reserves) > 0 {
 			if err := tldb.saveReserve(crResult.Reserves); err != nil {
-				return err
-			}
-		}
-
-		if len(crResult.UpdateWallets) > 0 {
-			if err := tldb.updateRebateWallet(crResult.UpdateWallets); err != nil {
 				return err
 			}
 		}
@@ -199,7 +156,7 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 }
 
 func (tldb *TradeLogDB) isFirstTrade(userAddr ethereum.Address) (bool, error) {
-	query := `SELECT NOT EXISTS(SELECT NULL FROM "` + schema.UserTableName + `" WHERE address=$1);`
+	query := `SELECT NOT EXISTS(SELECT NULL FROM "users" WHERE address=$1);`
 	row := tldb.db.QueryRow(query, userAddr.Hex())
 	var result bool
 	if err := row.Scan(&result); err != nil {

@@ -67,35 +67,11 @@ func (s *mockStorage) GetAssetVolume(token ethereum.Address, fromTime, toTime ti
 	return nil, nil
 }
 
-func (s *mockStorage) GetReserveVolume(rsvAddr ethereum.Address, token ethereum.Address, fromTime, toTime time.Time, frequency string) (map[uint64]*common.VolumeStats, error) {
-	return nil, nil
-}
-
-func (s *mockStorage) GetTradeSummary(fromTime, toTime time.Time, timezone int8) (map[uint64]*common.TradeSummary, error) {
-	return nil, nil
-}
-
 func (s *mockStorage) GetUserVolume(userAddr ethereum.Address, fromTime, toTime time.Time, freq string) (map[uint64]common.UserVolume, error) {
 	return nil, nil
 }
 
-func (s *mockStorage) GetWalletStats(fromTime, toTime time.Time, walletAddr string, timezone int8) (map[uint64]common.WalletStats, error) {
-	return nil, nil
-}
-
 func (s *mockStorage) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo, error) {
-	return nil, nil
-}
-
-func (s *mockStorage) GetCountryStats(country string, fromTime, toTime time.Time, timezone int8) (map[uint64]*common.CountryStats, error) {
-	return nil, nil
-}
-
-func (s *mockStorage) GetTokenHeatmap(token ethereum.Address, fromTime, toTime time.Time, timezone int8) (map[string]common.Heatmap, error) {
-	return nil, nil
-}
-
-func (s *mockStorage) GetMonthlyVolume(rsvAddr ethereum.Address, from, to time.Time) (map[uint64]*common.VolumeStats, error) {
 	return nil, nil
 }
 

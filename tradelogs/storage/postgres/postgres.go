@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"database/sql"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -52,7 +51,7 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 		result sql.NullInt64
 	)
-	stmt := fmt.Sprintf(`SELECT MAX("block_number") FROM "%v"`, schema.TradeLogsTableName)
+	stmt := `SELECT MAX("block_number") FROM "tradelogs"`
 	logger = logger.With("query", stmt)
 	logger.Debug("Start query")
 	err := tldb.db.Get(&result, stmt)
@@ -216,12 +215,12 @@ func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.Tradelog, er
 	return result, nil
 }
 
-const insertionAddressTemplate = `INSERT INTO %[1]s(
+const insertionAddressTemplate = `INSERT INTO token(
 	address
 ) VALUES(
 	unnest($1::TEXT[])
 )
-ON CONFLICT ON CONSTRAINT %[1]s_address_key DO NOTHING`
+ON CONFLICT ON CONSTRAINT token_address_key DO NOTHING`
 
 const insertionUserTemplate string = `
 INSERT INTO users(

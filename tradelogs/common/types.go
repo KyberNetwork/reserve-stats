@@ -15,18 +15,10 @@ func IsETHAddress(addr ethereum.Address) bool {
 	return addr == ethereum.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
 }
 
-// BurnFee represent burnFee event on KyberNetwork
-type BurnFee struct {
-	ReserveAddress ethereum.Address `json:"reserve_addr"`
-	Amount         *big.Int         `json:"amount"`
-	Index          uint             `json:"index"` // the index of event log in transaction receipt
-}
-
 // CrawlResult is result of the crawl
 type CrawlResult struct {
-	Reserves      []Reserve  `json:"reserves"` // reserve update on this
-	UpdateWallets []Reserve  `json:"update_wallets"`
-	Trades        []Tradelog `json:"trades"`
+	Reserves []Reserve  `json:"reserves"` // reserve update on this
+	Trades   []Tradelog `json:"trades"`
 }
 
 // TradelogV4 is object for tradelog after katalyst upgrade
@@ -67,11 +59,10 @@ type TradeSplit struct {
 
 // Reserve represent a reserve in KN
 type Reserve struct {
-	Address      ethereum.Address `json:"reserve"`
-	ReserveID    [32]byte         `json:"reserve_id"`
-	ReserveType  uint64           `json:"reserve_type"`
-	RebateWallet ethereum.Address `json:"rebate_wallet"`
-	BlockNumber  uint64           `json:"block_number"` // block number where reserve value (address, rebate_wallet) is applied
+	Address     ethereum.Address `json:"reserve"`
+	ReserveID   [32]byte         `json:"reserve_id"`
+	ReserveType uint64           `json:"reserve_type"`
+	BlockNumber uint64           `json:"block_number"` // block number where reserve value (address, rebate_wallet) is applied
 }
 
 // TradeTokenInfo is token info
@@ -138,44 +129,9 @@ type VolumeStats struct {
 	Volume    float64 `json:"volume"`
 }
 
-// TradeSummary struct holds all the fields required for trade summary
-type TradeSummary struct {
-	USDAmount          float64 `json:"usd_volume"`
-	TotalTrade         uint64  `json:"total_trade"`
-	UniqueAddresses    uint64  `json:"unique_addresses"`
-	NewUniqueAddresses uint64  `json:"new_unique_addresses"`
-	USDPerTrade        float64 `json:"usd_per_trade"`
-}
-
-//CountryStats stats for a country a day
-type CountryStats struct {
-	TotalETHVolume     float64 `json:"eth_volume"`
-	TotalUSDVolume     float64 `json:"usd_volume"`
-	TotalBurnFee       float64 `json:"burn_fee"`
-	TotalTrade         uint64  `json:"total_trade"`
-	UniqueAddresses    uint64  `json:"unique_addresses"`
-	KYCEDAddresses     uint64  `json:"kyced_addresses"`
-	NewUniqueAddresses uint64  `json:"new_unique_addresses"`
-	USDPerTrade        float64 `json:"usd_per_trade"`
-	ETHPerTrade        float64 `json:"eth_per_trade"`
-}
-
 //UserVolume represent volume of an user from time to time
 type UserVolume struct {
 	USDAmount float64 `json:"usd_amount"`
-}
-
-// WalletStats represent stat for a wallet address
-type WalletStats struct {
-	ETHVolume          float64 `json:"eth_volume"`
-	USDVolume          float64 `json:"usd_volume"`
-	BurnFee            float64 `json:"burn_fee"`
-	TotalTrade         int64   `json:"total_trade"`
-	UniqueAddresses    int64   `json:"unique_addresses"`
-	KYCEDAddresses     int64   `json:"kyced_addresses"`
-	NewUniqueAddresses int64   `json:"new_unique_addresses"`
-	USDPerTrade        float64 `json:"usd_per_trade"`
-	ETHPerTrade        float64 `json:"eth_per_trade"`
 }
 
 // UserInfo represent trade stats of an address
@@ -201,17 +157,6 @@ func (u UserList) Swap(i, j int) {
 //Less for sorting function
 func (u UserList) Less(i, j int) bool {
 	return u[i].ETHVolume < u[j].ETHVolume
-}
-
-//Heatmap represent a country heatmap
-type Heatmap struct {
-	TotalETHValue        float64 `json:"total_eth_value"`
-	TotalTokenValue      float64 `json:"total_token_value"`
-	TotalFiatValue       float64 `json:"total_fiat_value"`
-	ToTalBurnFee         float64 `json:"total_burn_fee"`
-	TotalTrade           int64   `json:"total_trade"`
-	TotalUniqueAddresses int64   `json:"total_unique_addr"`
-	TotalKYCUser         int64   `json:"total_kyc_user"`
 }
 
 // IntegrationVolume represent kyberSwap and non kyberswap volume

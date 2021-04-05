@@ -16,15 +16,12 @@ CREATE TABLE IF NOT EXISTS "token" (
 CREATE TABLE IF NOT EXISTS "reserve" (
 	id SERIAL PRIMARY KEY,
 	address TEXT NOT NULL,
-	reserve_id TEXT DEFAULT '',
-	reserve_type INTEGER DEFAULT 0,
-	block_number INTEGER DEFAULT 0,
 	name TEXT DEFAULT '',
-	CONSTRAINT reserve_pk UNIQUE (address, reserve_id, block_number)
+	CONSTRAINT reserve_pk UNIQUE (address)
 );
 
 
-CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
+CREATE TABLE IF NOT EXISTS "tradelogs" (
 	id SERIAL PRIMARY KEY,
 	timestamp TIMESTAMPTZ,
 	block_number INTEGER,
@@ -47,13 +44,13 @@ CREATE TABLE IF NOT EXISTS "` + TradeLogsTableName + `" (
 	CONSTRAINT tradelog_constraint UNIQUE (tx_hash, index)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS "tradelogs_id_index" ON "` + TradeLogsTableName + `"(id);
+CREATE UNIQUE INDEX IF NOT EXISTS "tradelogs_id_index" ON "tradelogs"(id);
 
-CREATE INDEX IF NOT EXISTS "trade_timestamp" ON "` + TradeLogsTableName + `"(timestamp);
-CREATE INDEX IF NOT EXISTS "trade_user_address" ON "` + TradeLogsTableName + `"(user_address_id);
-CREATE INDEX IF NOT EXISTS "trade_src_address" ON "` + TradeLogsTableName + `"(src_address_id);
-CREATE INDEX IF NOT EXISTS "trade_dst_address" ON "` + TradeLogsTableName + `"(dst_address_id);
-CREATE INDEX IF NOT EXISTS "trade_tx_hash" ON "` + TradeLogsTableName + `"(tx_hash);
+CREATE INDEX IF NOT EXISTS "trade_timestamp" ON "tradelogs"(timestamp);
+CREATE INDEX IF NOT EXISTS "trade_user_address" ON "tradelogs"(user_address_id);
+CREATE INDEX IF NOT EXISTS "trade_src_address" ON "tradelogs"(src_address_id);
+CREATE INDEX IF NOT EXISTS "trade_dst_address" ON "tradelogs"(dst_address_id);
+CREATE INDEX IF NOT EXISTS "trade_tx_hash" ON "tradelogs"(tx_hash);
 
 -- create_or_update_tradelogs creates or update tradelogs
 CREATE OR REPLACE FUNCTION create_or_update_tradelogs(INOUT _id tradelogs.id%TYPE,

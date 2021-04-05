@@ -42,19 +42,11 @@ func (s *mockStorage) LoadTradeLogs(from, to time.Time) ([]common.Tradelog, erro
 	return nil, nil
 }
 
-func (s *mockStorage) GetTradeSummary(from, to time.Time, timezone int8) (map[uint64]*common.TradeSummary, error) {
-	return nil, nil
-}
-
 func (s *mockStorage) GetUserVolume(userAddr ethereum.Address, fromTime, toTime time.Time, freq string) (map[uint64]common.UserVolume, error) {
 	return nil, nil
 }
 
 func (s *mockStorage) GetUserList(fromTime, toTime time.Time) ([]common.UserInfo, error) {
-	return nil, nil
-}
-
-func (s *mockStorage) GetTokenHeatmap(token ethereum.Address, from, to time.Time, timezone int8) (map[string]common.Heatmap, error) {
 	return nil, nil
 }
 

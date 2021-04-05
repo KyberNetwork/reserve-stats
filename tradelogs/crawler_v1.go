@@ -88,6 +88,9 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) (*common.CrawlR
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 
 			result.Trades = append(result.Trades, tradeLog)
+			result.Reserves = append(result.Reserves, common.Reserve{
+				Address: log.Address,
+			})
 			tradeLog = common.Tradelog{}
 
 		default:

@@ -84,6 +84,7 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) (*common.CrawlR
 				return nil, errors.Wrapf(err, "failed to update basic info tx: %v", tradeLog.TransactionHash)
 			}
 			tradeLog.TxDetail.TransactionFee = big.NewInt(0).Mul(tradeLog.TxDetail.GasPrice, big.NewInt(int64(tradeLog.TxDetail.GasUsed)))
+			tradeLog.ReserveAddress = log.Address
 
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 

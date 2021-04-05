@@ -234,24 +234,20 @@ ON CONFLICT (address)
 DO NOTHING;`
 
 const selectTradeLogsQuery = `
-SELECT a.id, a.timestamp AS timestamp, a.block_number, a.eth_amount, original_eth_amount, eth_usd_rate, 
+SELECT a.id, a.timestamp AS timestamp, a.block_number, a.usdt_amount, original_usdt_amount, 
 ARRAY_AGG(d.address) AS user_address,
 ARRAY_AGG(e.address) AS src_address, 
 ARRAY_AGG(f.address) AS dst_address,
 a.src_amount, 
 a.dst_amount, 
-ip, country, integration_app, 
 a.index, tx_hash, tx_sender, receiver_address, 
-ARRAY_AGG(w.address) as wallet_address,
 COALESCE(gas_used, 0) as gas_used, COALESCE(gas_price, 0) as gas_price, 
 COALESCE(transaction_fee, 0) as transaction_fee, 
-version,
-
+version
 FROM tradelogs AS a
 INNER JOIN users AS d ON a.user_address_id = d.id
 INNER JOIN token AS e ON a.src_address_id = e.id
 INNER JOIN token AS f ON a.dst_address_id = f.id
-INNER JOIN wallet as w on a.wallet_address_id = w.id
 WHERE a.timestamp >= $1 and a.timestamp <= $2
 GROUP BY a.id;
 `
@@ -260,35 +256,26 @@ const selectTradeLogsWithTxHashQuery = `
 SELECT 
 a.timestamp AS timestamp, 
 a.block_number, 
-a.eth_amount, 
-original_eth_amount, 
-eth_usd_rate, 
+a.usdt_amount, 
+original_usdt_amount, 
 ARRAY_AGG(d.address) AS user_address,
 ARRAY_AGG(e.address) AS src_address, 
 ARRAY_AGG(f.address) AS dst_address,
 a.src_amount, 
 a.dst_amount, 
-ip, 
-country, 
-integration_app, 
 a.index, 
 tx_hash, 
-ARRAY_AGG(w.address) AS wallet_address, 
 tx_sender, 
 receiver_address, 
 COALESCE(gas_used, 0) as gas_used, 
 COALESCE(gas_price, 0) as gas_price, 
 COALESCE(transaction_fee, 0) as transaction_fee,
-version,
-
+version
 FROM tradelogs AS a
 INNER JOIN users AS d ON a.user_address_id = d.id
 INNER JOIN token AS e ON a.src_address_id = e.id
 INNER JOIN token AS f ON a.dst_address_id = f.id
-INNER JOIN wallet AS w ON a.wallet_address_id = w.id
-LEFT JOIN fee ON fee.trade_id = a.id
-LEFT JOIN split ON split.trade_id = a.id
-INNER JOIN reserve sr ON sr.id = split.reserve_id
+INNER JOIN reserve sr ON a.reserve_address_id= sr.id
 WHERE a.tx_hash=$1
 GROUP BY a.id;
 `

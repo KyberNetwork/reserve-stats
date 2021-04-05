@@ -32,11 +32,12 @@ type Tradelog struct {
 	SrcReserveAddress ethereum.Address `json:"-"`
 	DstReserveAddress ethereum.Address `json:"-"`
 
-	USDTAmount         *big.Int `json:"usdt_amount"`
-	OriginalUSDTAmount *big.Int `json:"original_usdt_amount"`
-	SrcAmount          *big.Int `json:"src_amount"`
-	DestAmount         *big.Int `json:"dst_amount"`
-	FiatAmount         float64  `json:"fiat_amount"`
+	USDTAmount         *big.Int         `json:"usdt_amount"`
+	OriginalUSDTAmount *big.Int         `json:"original_usdt_amount"`
+	SrcAmount          *big.Int         `json:"src_amount"`
+	DestAmount         *big.Int         `json:"dst_amount"`
+	FiatAmount         float64          `json:"fiat_amount"`
+	ReserveAddress     ethereum.Address `json:"reserve_address"`
 
 	User            KyberUserInfo    `json:"user"`
 	ReceiverAddress ethereum.Address `json:"receiver_address"`

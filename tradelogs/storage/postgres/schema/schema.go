@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS "tradelogs" (
 	tx_hash TEXT,
 	usdt_amount FLOAT(32),
 	original_usdt_amount FLOAT(32),
+	reserve_address_id BIGINT NOT NULL REFERENCES reserve,
 	user_address_id BIGINT NOT NULL REFERENCES users,
 	src_address_id BIGINT NOT NULL REFERENCES token,
 	dst_address_id BIGINT NOT NULL REFERENCES token,
@@ -59,6 +60,7 @@ CREATE OR REPLACE FUNCTION create_or_update_tradelogs(INOUT _id tradelogs.id%TYP
 												_tx_hash tradelogs.tx_hash%TYPE,
 												_usdt_amount tradelogs.usdt_amount%TYPE,
 												_original_usdt_amount tradelogs.original_usdt_amount%TYPE,
+												_reserve_address TEXT,
 												_user_address TEXT,
 												_src_address TEXT,
 												_dst_address TEXT,
@@ -77,7 +79,7 @@ $$
 BEGIN
     IF _id = 0 THEN
 		INSERT INTO tradelogs (timestamp, block_number, tx_hash, usdt_amount, 
-			original_usdt_amount, user_address_id, src_address_id, dst_address_id, src_amount, dst_amount,
+			original_usdt_amount, reserve_address_id, user_address_id, src_address_id, dst_address_id, src_amount, dst_amount,
 			index, is_first_trade, tx_sender,
 			receiver_address, gas_used, gas_price, transaction_fee, version) 
 		VALUES (_timestamp,
@@ -85,6 +87,7 @@ BEGIN
 			_tx_hash,
 			_usdt_amount,
 			_original_usdt_amount,
+			(SELECT id FROM reserve WHERE address=_reserve_address),
 			(SELECT id FROM users WHERE address=_user_address),
 			(SELECT id FROM token WHERE address=_src_address),
 			(SELECT id FROM token WHERE address=_dst_address),

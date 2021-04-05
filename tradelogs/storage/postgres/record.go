@@ -15,6 +15,7 @@ type record struct {
 	TransactionHash    string    `db:"tx_hash"`
 	USDTAmount         float64   `db:"usdt_amount"`
 	OriginalUSDTAmount float64   `db:"original_usdt_amount"`
+	ReserveAddress     string    `db:"reserve_address"`
 	UserAddress        string    `db:"user_address"`
 	SrcAddress         string    `db:"src_address"`
 	DestAddress        string    `db:"dst_address"`
@@ -109,6 +110,7 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.Tradelog) (*record, error)
 		TransactionHash:    log.TransactionHash.String(),
 		USDTAmount:         usdtAmount,
 		OriginalUSDTAmount: originalUSDTAmount,
+		ReserveAddress:     log.ReceiverAddress.Hex(),
 		UserAddress:        log.User.UserAddress.String(),
 		SrcAddress:         log.TokenInfo.SrcAddress.String(),
 		DestAddress:        log.TokenInfo.DestAddress.String(),

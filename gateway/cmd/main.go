@@ -32,7 +32,6 @@ var (
 	defaultReserveRatesAPIValue  = fmt.Sprintf("http://127.0.0.1:%d", httputil.ReserveRatesPort)
 	defaultUserAPIValue          = fmt.Sprintf("http://127.0.0.1:%d", httputil.UsersPort)
 	defaultPriceAnalyticAPIValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.PriceAnalytic)
-	defaultAppNamesAPIValue      = fmt.Sprintf("http://127.0.0.1:%d", httputil.AppNames)
 )
 
 func main() {

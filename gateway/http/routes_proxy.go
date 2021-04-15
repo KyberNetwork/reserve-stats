@@ -12,26 +12,15 @@ func WithTradeLogURL(tradeLogsURL string) Option {
 		}
 		s.r.GET("/trade-logs", tradeLogsProxyMW)
 		s.r.GET("/trade-logs/:tx_hash", tradeLogsProxyMW)
-		s.r.GET("/burn-fee", tradeLogsProxyMW)
 		s.r.GET("/asset-volume", tradeLogsProxyMW)
 		s.r.GET("/reserve-volume", tradeLogsProxyMW)
-		s.r.GET("/monthly-volume", tradeLogsProxyMW)
-		s.r.GET("/wallet-fee", tradeLogsProxyMW)
 		s.r.GET("/user-volume", tradeLogsProxyMW)
 		s.r.GET("/user-list", tradeLogsProxyMW)
-		s.r.GET("/trade-summary", tradeLogsProxyMW)
-		s.r.GET("/wallet-stats", tradeLogsProxyMW)
-		s.r.GET("/country-stats", tradeLogsProxyMW)
-		s.r.GET("/heat-map", tradeLogsProxyMW)
-		s.r.GET("/integration-volume", tradeLogsProxyMW)
 		s.r.GET("/symbol", tradeLogsProxyMW)
 		s.r.POST("/symbol", tradeLogsProxyMW)
 		s.r.GET("/stats", tradeLogsProxyMW)
 		s.r.GET("/top-tokens", tradeLogsProxyMW)
-		s.r.GET("/top-integrations", tradeLogsProxyMW)
 		s.r.GET("/top-reserves", tradeLogsProxyMW)
-		s.r.GET("/big-trades", tradeLogsProxyMW)
-		s.r.PUT("/big-trades", tradeLogsProxyMW)
 		return nil
 	}
 }
@@ -71,21 +60,6 @@ func WithPriceAnalyticURL(priceAnalyticURL string) Option {
 		}
 		s.r.GET("/price-analytic-data", priceProxyMW)
 		s.r.POST("/price-analytic-data", priceProxyMW)
-		return nil
-	}
-}
-
-//WithAppNamesURL set price analytic proxy for server
-func WithAppNamesURL(appNamesURL string) Option {
-	return func(s *Server) error {
-		appNamesProxyMW, err := newReverseProxyMW(appNamesURL)
-		if err != nil {
-			return err
-		}
-		s.r.GET("/applications", appNamesProxyMW)
-		s.r.POST("/applications", appNamesProxyMW)
-		s.r.PUT("/applications", appNamesProxyMW)
-		s.r.DELETE("/applications", appNamesProxyMW)
 		return nil
 	}
 }

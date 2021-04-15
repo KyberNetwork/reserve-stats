@@ -26,7 +26,7 @@ type TokenAmountFormatter struct {
 // NewTokenAmountFormatter returns a new TokenAmountFormatter instance.
 func NewTokenAmountFormatter(client *ethclient.Client) (*TokenAmountFormatter, error) {
 	var cachedDecimals = make(map[common.Address]int64)
-	cachedDecimals[ETHAddr] = 18
+	cachedDecimals[USDTAddr] = 18
 
 	return &TokenAmountFormatter{
 		mu:             &sync.RWMutex{},

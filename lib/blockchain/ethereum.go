@@ -22,7 +22,7 @@ const (
 func NewEthereumNodeFlags() cli.Flag {
 	return cli.StringFlag{
 		Name:   ethereumNodeFlag,
-		Usage:  "Ethereum Node URL",
+		Usage:  "node URL",
 		EnvVar: "ETHEREUM_NODE",
 		Value:  node.InfuraEndpoint(),
 	}

@@ -48,9 +48,9 @@ func NewTradeLogClient(sugar *zap.SugaredLogger, host string, options ...TradeLo
 }
 
 // GetTradeLogs get trade logs from `fromTime` to `toTime`
-func (c *Client) GetTradeLogs(fromTime, toTime uint64) ([]common.TradeLog, error) {
+func (c *Client) GetTradeLogs(fromTime, toTime uint64) ([]common.Tradelog, error) {
 	var (
-		tradeLogs []common.TradeLog
+		tradeLogs []common.Tradelog
 		url       = fmt.Sprintf("%s/trade-logs?from=%d&to=%d", c.host, fromTime, toTime)
 	)
 

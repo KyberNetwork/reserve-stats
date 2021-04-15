@@ -30,27 +30,25 @@ type job interface {
 }
 
 // NewFetcherJob return an instance of fetcherJob
-func NewFetcherJob(c *cli.Context, order int, from, to *big.Int, attempts int, etherscanClient *etherscan.Client, networkProxyAddr ethereum.Address) *FetcherJob {
+func NewFetcherJob(c *cli.Context, order int, from, to *big.Int, attempts int, etherscanClient *etherscan.Client) *FetcherJob {
 	return &FetcherJob{
-		c:                c,
-		order:            order,
-		from:             from,
-		to:               to,
-		attempts:         attempts,
-		etherscanClient:  etherscanClient,
-		networkProxyAddr: networkProxyAddr,
+		c:               c,
+		order:           order,
+		from:            from,
+		to:              to,
+		attempts:        attempts,
+		etherscanClient: etherscanClient,
 	}
 }
 
 // FetcherJob represent a job to crawl trade logs from block to block
 type FetcherJob struct {
-	c                *cli.Context
-	order            int
-	from             *big.Int
-	to               *big.Int
-	attempts         int
-	etherscanClient  *etherscan.Client
-	networkProxyAddr ethereum.Address
+	c               *cli.Context
+	order           int
+	from            *big.Int
+	to              *big.Int
+	attempts        int
+	etherscanClient *etherscan.Client
 }
 
 // retry the given fn function for attempts time with sleep duration between before returns an error.
@@ -91,12 +89,13 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (*common.CrawlResult, erro
 
 	startingBlocks := deployment.MustGetStartingBlocksFromContext(fj.c)
 	addresses := []ethereum.Address{contracts.PricingContractAddress().MustGetOneFromContext(fj.c)}
+	addresses = append(addresses, contracts.InternalReserveAddress().MustGetOneFromContext(fj.c))
 	// logger.Fatalw("addresses", "addresses", addresses)
 
-	volumeExcludedReserve := contracts.VolumeExcludedReserves().MustGetFromContext(fj.c)
+	reserveContract := contracts.InternalReserveAddress().MustGetOneFromContext(fj.c)
 
 	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks,
-		fj.etherscanClient, volumeExcludedReserve)
+		reserveContract, fj.etherscanClient)
 	if err != nil {
 		return nil, err
 	}
@@ -130,12 +129,10 @@ type Pool struct {
 	lastCompletedJobOrder int  // Keep the order of the last completed job
 	failed                bool // mark as failed, all subsequent persistent storage will be passed
 	storage               storage.Interface
-
-	bigVolume float32 // for detect big trade
 }
 
 // NewPool returns a pool of workers to handle jobs concurrently
-func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface, bigVolume float32) *Pool {
+func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface) *Pool {
 	var p = &Pool{
 		sugar:                 sugar,
 		jobCh:                 make(chan job),
@@ -143,7 +140,6 @@ func NewPool(sugar *zap.SugaredLogger, maxWorkers int, storage storage.Interface
 		mutex:                 &sync.Mutex{},
 		storage:               storage,
 		lastCompletedJobOrder: 0,
-		bigVolume:             bigVolume,
 	}
 
 	p.wg.Add(maxWorkers)
@@ -235,14 +231,6 @@ func (p *Pool) serialSaveTradeLogs(order int, log *common.CrawlResult, fromBlock
 			if err = p.storage.SaveTradeLogs(log); err != nil {
 				logger.Errorw("save trade logs into db failed",
 					"err", err)
-				p.mutex.Unlock()
-				p.markAsFailed(order)
-				return err
-			}
-
-			// save big trades
-			if err = p.storage.SaveBigTrades(p.bigVolume, fromBlock); err != nil {
-				logger.Errorw("save big trades into db failed", "error", err)
 				p.mutex.Unlock()
 				p.markAsFailed(order)
 				return err

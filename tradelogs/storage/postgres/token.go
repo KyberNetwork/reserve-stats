@@ -5,25 +5,23 @@ import (
 	"fmt"
 
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
 
-const updateTokenSymbolTemplate = `INSERT INTO %[1]s(
+const updateTokenSymbolTemplate = `INSERT INTO token(
 	address,
 	symbol
 ) VALUES (
 	unnest($1::TEXT[]), 
 	unnest($2::TEXT[])
-) ON CONFLICT ON CONSTRAINT %[1]s_address_key DO UPDATE SET symbol = EXCLUDED.symbol`
+) ON CONFLICT ON CONSTRAINT token_address_key DO UPDATE SET symbol = EXCLUDED.symbol`
 
 func (tldb *TradeLogDB) saveTokens(tx *sqlx.Tx, tokensArray []string) error {
 	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
-	query := fmt.Sprintf(insertionAddressTemplate, schema.TokenTableName)
-	logger.Debugw("updating tokens...", "query", query)
-	_, err := tx.Exec(query, pq.StringArray(tokensArray))
+	logger.Debugw("updating tokens...", "query", insertionAddressTemplate)
+	_, err := tx.Exec(insertionAddressTemplate, pq.StringArray(tokensArray))
 	return err
 }
 
@@ -33,7 +31,7 @@ func (tldb *TradeLogDB) GetTokenSymbol(address string) (string, error) {
 		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 		symbol string
 	)
-	query := fmt.Sprintf("SELECT symbol FROM %1s WHERE address = $1;", schema.TokenTableName)
+	query := "SELECT symbol FROM token WHERE address = $1;"
 	logger.Debugw("get token symbol", "token", address, "query", query)
 	if err := tldb.db.Get(&symbol, query, ethereum.HexToAddress(address).Hex()); err != nil {
 		if err != sql.ErrNoRows {
@@ -46,8 +44,7 @@ func (tldb *TradeLogDB) GetTokenSymbol(address string) (string, error) {
 // UpdateTokens update token symbol, insert new record if the token have not yet added to the table
 func (tldb *TradeLogDB) UpdateTokens(tokensArray []string, symbolArray []string) error {
 	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
-	query := fmt.Sprintf(updateTokenSymbolTemplate, schema.TokenTableName)
-	logger.Debugw("updating token symbols ...", "query", query)
-	_, err := tldb.db.Exec(query, pq.StringArray(tokensArray), pq.StringArray(symbolArray))
+	logger.Debugw("updating token symbols ...", "query", updateTokenSymbolTemplate)
+	_, err := tldb.db.Exec(updateTokenSymbolTemplate, pq.StringArray(tokensArray), pq.StringArray(symbolArray))
 	return err
 }

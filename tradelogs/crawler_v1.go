@@ -1,6 +1,8 @@
 package tradelogs
 
 import (
+	"context"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -8,25 +10,20 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
+	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 )
 
 const (
-	// use for crawler v4
-	addReserveToStorageEvent = "0x50b2ce9e8f1a63ceaed262cc854dbf741b216e6429f7ba38403afbcdddc7f1ea"
-
-	reserveRebateWalletSetEvent = "0x42cac9e63e37f62d5689493d04887a67fe3c68e1d3763c3f0890e1620a0465b3"
-
-	feeDistributedEvent = "0x53e2e1b5ab64e0a76fcc6a932558eba265d4e58c512401a7d776ae0f8fc08994"
-
-	kyberTradeEventV4 = "0x30bbea603a7b36858fe5e3ec6ba5ff59dde039d02120d758eacfaed01520577d"
+	// tradeExecute(address sender, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
+	tradeExecuteEvent = "0x4ee2afc3e9f9e97f558641bdc31ff31e4f34a1aaa2390cffbd64ee9ac18dfbec"
 )
 
 func (crawler *Crawler) fetchTradeLog(fromBlock, toBlock *big.Int, timeout time.Duration) (*common.CrawlResult, error) {
 	topics := [][]ethereum.Hash{
 		{
-			ethereum.HexToHash(""), // should be TradeExecuteEvent from reserve contract
+			ethereum.HexToHash(tradeExecuteEvent), // should be TradeExecuteEvent from reserve contract
 		},
 	}
 
@@ -38,44 +35,12 @@ func (crawler *Crawler) fetchTradeLog(fromBlock, toBlock *big.Int, timeout time.
 	return crawler.assembleTradeLogs(typeLogs)
 }
 
-func (crawler *Crawler) fillAddReserveToStorage(crResult *common.CrawlResult, log types.Log) error {
-	reserve, err := crawler.kyberStorageContract.ParseAddReserveToStorage(log)
-	if err != nil {
-		return err
-	}
-
-	if len(crResult.Reserves) == 0 {
-		crResult.Reserves = []common.Reserve{}
-	}
-	crResult.Reserves = append(crResult.Reserves, common.Reserve{
-		Address:      reserve.Reserve,
-		ReserveID:    reserve.ReserveId,
-		ReserveType:  uint64(reserve.ReserveType),
-		RebateWallet: reserve.RebateWallet,
-		BlockNumber:  log.BlockNumber,
-	})
-
-	return nil
-}
-
-func (crawler *Crawler) fillRebateWalletSet(crResult *common.CrawlResult, log types.Log) error {
-	reserve, err := crawler.kyberStorageContract.ParseReserveRebateWalletSet(log)
-	if err != nil {
-		return err
-	}
-	crResult.UpdateWallets = append(crResult.UpdateWallets, common.Reserve{
-		ReserveID:    reserve.ReserveId,
-		RebateWallet: reserve.RebateWallet,
-		BlockNumber:  log.BlockNumber,
-	})
-	return nil
-}
-
 func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) (*common.CrawlResult, error) {
 	var (
-		logger = crawler.sugar.With("func", caller.GetCurrentFunctionName())
-		result common.CrawlResult
-		err    error
+		logger   = crawler.sugar.With("func", caller.GetCurrentFunctionName())
+		result   common.CrawlResult
+		tradeLog common.Tradelog
+		err      error
 	)
 	logger.Info("assemble tradelogs")
 	for _, log := range eventLogs {
@@ -89,10 +54,94 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) (*common.CrawlR
 
 		topic := log.Topics[0]
 		switch topic.Hex() {
+		case tradeExecuteEvent:
+			tradeLog.Version = 1
+
+			if tradeLog.Timestamp, err = crawler.txTime.Resolve(log.BlockNumber); err != nil {
+				return nil, errors.Wrapf(err, "failed to resolve timestamp by block_number %v", log.BlockNumber)
+			}
+
+			if tradeLog, err = crawler.fillExecuteTrade(tradeLog, log); err != nil {
+				return nil, errors.Wrapf(err, "failed to fill execute trade tx: %v", tradeLog.TransactionHash)
+			}
+
+			receipt, err := crawler.getTransactionReceipt(tradeLog.TransactionHash, defaultTimeout)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to get transaction receipt tx: %v", tradeLog.TransactionHash)
+			}
+			tradeLog.TxDetail.GasUsed = receipt.GasUsed
+
+			// set tradeLog.USDTAmount
+			if tradeLog.TokenInfo.SrcAddress == blockchain.USDTAddr {
+				tradeLog.USDTAmount = tradeLog.SrcAmount
+			} else if tradeLog.TokenInfo.DestAddress == blockchain.USDTAddr {
+				tradeLog.USDTAmount = tradeLog.DestAmount
+			}
+			tradeLog.OriginalUSDTAmount = tradeLog.USDTAmount // some case USDTAmount
+
+			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to update basic info tx: %v", tradeLog.TransactionHash)
+			}
+			tradeLog.TxDetail.TransactionFee = big.NewInt(0).Mul(tradeLog.TxDetail.GasPrice, big.NewInt(int64(tradeLog.TxDetail.GasUsed)))
+			tradeLog.ReserveAddress = log.Address
+
+			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
+
+			result.Trades = append(result.Trades, tradeLog)
+			result.Reserves = append(result.Reserves, common.Reserve{
+				Address: log.Address,
+			})
+			tradeLog = common.Tradelog{}
+
 		default:
-			return nil, errUnknownLogTopic
+			return nil, fmt.Errorf("unknown topic")
 		}
 	}
 
 	return &result, err
+}
+
+func (crawler *Crawler) updateBasicInfo(log types.Log, tradeLog common.Tradelog, timeout time.Duration) (common.Tradelog, error) {
+	var txSender ethereum.Address
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	tx, _, err := crawler.ethClient.TransactionByHash(ctx, log.TxHash)
+	if err != nil {
+		return tradeLog, err
+	}
+	txSender, err = crawler.ethClient.TransactionSender(ctx, tx, log.BlockHash, log.TxIndex)
+	tradeLog.TxDetail.TxSender = txSender
+	tradeLog.TxDetail.GasPrice = tx.GasPrice()
+	tradeLog.User.UserAddress = txSender
+
+	return tradeLog, err
+}
+
+func (crawler *Crawler) getTransactionReceipt(txHash ethereum.Hash, timeout time.Duration) (*types.Receipt, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	receipt, err := crawler.ethClient.TransactionReceipt(ctx, txHash)
+	if err != nil {
+		return nil, err
+	}
+	return receipt, nil
+}
+
+func (crawler *Crawler) fillExecuteTrade(tradeLog common.Tradelog, logItem types.Log) (common.Tradelog, error) {
+
+	executeTrade, err := crawler.reserveContract.ParseTradeExecute(logItem)
+	if err != nil {
+		return tradeLog, err
+	}
+
+	tradeLog.TokenInfo.SrcAddress = executeTrade.Src
+	tradeLog.TokenInfo.DestAddress = executeTrade.DestToken
+	tradeLog.SrcAmount = executeTrade.SrcAmount
+	tradeLog.DestAmount = executeTrade.DestAmount
+
+	tradeLog.TransactionHash = logItem.TxHash
+	tradeLog.Index = logItem.Index
+	tradeLog.BlockNumber = logItem.BlockNumber
+	return tradeLog, nil
 }

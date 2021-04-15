@@ -162,49 +162,34 @@ func TestSaveTradeLogs_Overwrite(t *testing.T) {
 	}()
 	var timestampMs uint64 = 1554336000000
 	timestamp := timeutil.TimestampMsToTime(timestampMs)
-	tradelog := common.TradelogV4{
+	tradelog := common.Tradelog{
 		Timestamp:       timestamp,
 		BlockNumber:     uint64(6100010),
 		TransactionHash: ethereum.HexToHash("0x33dcdbed63556a1d90b7e0f626bfaf20f6f532d2ae8bf24c22abb15c4e1fff01"),
-		// T2EReserves: []ethereum.Address{
-		// 	ethereum.HexToAddress("0x63825c174ab367968ec60f061753d3bbd36a0d8f"),
-		// },
 		User: common.KyberUserInfo{
 			UserAddress: ethereum.HexToAddress("0x85c5c26dc2af5546341fc1988b9d178148b4838b"),
-			IP:          "",
-			Country:     "",
 		},
 		TokenInfo: common.TradeTokenInfo{
 			SrcAddress:  ethereum.HexToAddress("0x0f5d2fb29fb7d3cfee444a200298f468908cc942"),
 			DestAddress: ethereum.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"),
 		},
-		SrcAmount:  big.NewInt(99995137653743),
-		DestAmount: big.NewInt(99995137653743773),
-		Fees: []common.TradelogFee{
-			{
-				ReserveAddr: ethereum.HexToAddress("0x63825c174ab367968ec60f061753d3bbd36a0d8f"),
-				Burn:        big.NewInt(1427493059000719235),
-			},
-		},
-		EthAmount:         big.NewInt(100000000000000000),
-		OriginalEthAmount: big.NewInt(100000000000000000),
+		SrcAmount:          big.NewInt(99995137653743),
+		DestAmount:         big.NewInt(99995137653743773),
+		USDTAmount:         big.NewInt(100000000000000000),
+		OriginalUSDTAmount: big.NewInt(100000000000000000),
 	}
 	result := &common.CrawlResult{
-		Trades: []common.TradelogV4{tradelog},
+		Trades: []common.Tradelog{tradelog},
 	}
 	require.NoError(t, testStorage.SaveTradeLogs(result))
 	tradelog2 := tradelog
-	tradelog2.EthAmount = big.NewInt(0).Mul(big.NewInt(2), tradelog.EthAmount)
+	tradelog2.USDTAmount = big.NewInt(0).Mul(big.NewInt(2), tradelog.USDTAmount)
 	require.NoError(t, testStorage.SaveTradeLogs(result))
 
 	tls, err := testStorage.LoadTradeLogs(timestamp, timestamp)
 	require.NoError(t, err)
 	require.Equal(t, len(tls), 1)
-	assert.Equal(t, tradelog2.EthAmount, tls[0].EthAmount)
-
-	tradeSummary, err := testStorage.GetTradeSummary(timestamp, timestamp, 0)
-	require.NoError(t, err)
-	assert.Equal(t, uint64(1), tradeSummary[timestampMs].NewUniqueAddresses)
+	assert.Equal(t, tradelog2.USDTAmount, tls[0].USDTAmount)
 }
 
 func TestTradeLogDB_LoadTradeLogs(t *testing.T) {
@@ -226,7 +211,7 @@ func TestTradeLogDB_LoadTradeLogs(t *testing.T) {
 	require.NoError(t, err)
 	t.Log(len(tradeLogs))
 	for _, log := range tradeLogs {
-		t.Logf("%+v %+v", log.OriginalEthAmount, log.EthAmount)
+		t.Logf("%+v %+v", log.OriginalUSDTAmount, log.USDTAmount)
 	}
 }
 

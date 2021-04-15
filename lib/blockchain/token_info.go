@@ -34,6 +34,10 @@ var cachedName = map[common.Address]string{
 	common.HexToAddress("0x86Fa049857E0209aa7D9e616F7eb3b3B78ECfdb0"): "EOS Token", // special case for EOS cos it does not return name in name function
 }
 
+var cachedDecimals = map[common.Address]uint8{
+	common.HexToAddress("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"): 18,
+}
+
 // TokenInfoGetter is a helper to get token info
 type TokenInfoGetter struct {
 	ethClient      bind.ContractBackend // eth client
@@ -70,6 +74,10 @@ func NewTokenSymbol(client bind.ContractBackend, tokenStorage tokenStorageInterf
 
 	for k, v := range cachedName {
 		ts.cachedName.Store(k, v)
+	}
+
+	for k, v := range cachedDecimals {
+		ts.cachedDecimals.Store(k, v)
 	}
 
 	return ts

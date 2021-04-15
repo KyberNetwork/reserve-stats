@@ -56,7 +56,7 @@ deploy:
     script: bash .travis/docker.sh
     on:
       all_branches: true
-      condition: $TRAVIS_BRANCH =~ ^develop|staging|master|reserve-v4|bsc-develop|bsc-master$
+      condition: $TRAVIS_BRANCH =~ ^develop|staging|master|reserve-v4|bsc-develop|bsc-staging|bsc-master$
 
   - provider: script
     script: bash .travis/docker.sh

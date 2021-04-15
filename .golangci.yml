@@ -20,7 +20,6 @@ linters:
     - deadcode
     - golint
     - stylecheck
-    - interfacer
     - unconvert
     - goconst
     - goimports

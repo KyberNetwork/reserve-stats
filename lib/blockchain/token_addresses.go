@@ -28,4 +28,6 @@ var (
 
 	// SAIAddr is Sai Stablecoin address
 	SAIAddr = common.HexToAddress("0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359")
+
+	USDTAddr = common.HexToAddress("0xfcdccd4cd29bd4b53274c8e900b00a6db3460e08")
 )

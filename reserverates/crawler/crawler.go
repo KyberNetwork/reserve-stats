@@ -71,8 +71,8 @@ func (rrc *ReserveRatesCrawler) getEachReserveRate(block uint64, rsvAddr ethereu
 	}
 
 	for _, token := range tokens {
-		srcAddresses = append(srcAddresses, token.Address, blockchain.ETHAddr)
-		destAddresses = append(destAddresses, blockchain.ETHAddr, token.Address)
+		srcAddresses = append(srcAddresses, token.Address, blockchain.USDTAddr)
+		destAddresses = append(destAddresses, blockchain.USDTAddr, token.Address)
 	}
 
 	reserveRates, sanityRates, err := rrc.wrapperContract.GetReserveRate(block, rsvAddr, srcAddresses, destAddresses)

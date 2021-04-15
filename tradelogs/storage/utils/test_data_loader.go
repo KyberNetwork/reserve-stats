@@ -9,8 +9,8 @@ import (
 )
 
 // GetSampleTradeLogs get sample a tradelogs
-func GetSampleTradeLogs(dataPath string) ([]common.TradelogV4, error) {
-	var tradeLogs []common.TradelogV4
+func GetSampleTradeLogs(dataPath string) ([]common.Tradelog, error) {
+	var tradeLogs []common.Tradelog
 	byteValue, err := os.Open(dataPath)
 	if err != nil {
 		return nil, err

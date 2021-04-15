@@ -306,10 +306,6 @@ func TestHasGroupBy(t *testing.T) {
 			query:      "SELECT * FROM super_database GROUP BY time(1h)",
 			hasGroupBy: true,
 		},
-		{
-			query:      "SELECT COUNT(record) AS unique_addresses INTO trade_summary FROM (SELECT SUM(eth_amount) AS record FROM trades GROUP BY user_addr)",
-			hasGroupBy: false,
-		},
 	}
 
 	for _, tc := range tests {

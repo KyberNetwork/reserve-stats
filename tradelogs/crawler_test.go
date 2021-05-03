@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	alchemyRopsten = "https://eth-ropsten.alchemyapi.io/v2/GvXu_IIrL0U10ZpgTXKjOGIA06KcwzEK"
+	alchemyRopsten = "https://ropsten.infura.io/v3/3243b06bf0334cff8e468bf90ce6e08c"
 )
 
 type mockBroadCastClient struct{}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
+	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
@@ -16,14 +17,14 @@ const updateTokenSymbolTemplate = `INSERT INTO %[1]s(
 	symbol
 ) VALUES (
 	unnest($1::TEXT[]), 
-	unnest($2::TEXT[])
-) ON CONFLICT ON CONSTRAINT %[1]s_address_key DO UPDATE SET symbol = EXCLUDED.symbol`
+	unnest($2::TEXT[]),
+) ON CONFLICT ON CONSTRAINT %[1]s_address_key DO UPDATE SET symbol = EXCLUDED.symbol;`
 
-func (tldb *TradeLogDB) saveTokens(tx *sqlx.Tx, tokensArray []string) error {
+func (tldb *TradeLogDB) saveTokens(tx *sqlx.Tx, tokensArray []string, decimals []int64) error {
 	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 	query := fmt.Sprintf(insertionAddressTemplate, schema.TokenTableName)
 	logger.Debugw("updating tokens...", "query", query)
-	_, err := tx.Exec(query, pq.StringArray(tokensArray))
+	_, err := tx.Exec(query, pq.StringArray(tokensArray), pq.Array(decimals))
 	return err
 }
 
@@ -50,4 +51,14 @@ func (tldb *TradeLogDB) UpdateTokens(tokensArray []string, symbolArray []string)
 	logger.Debugw("updating token symbols ...", "query", query)
 	_, err := tldb.db.Exec(query, pq.StringArray(tokensArray), pq.StringArray(symbolArray))
 	return err
+}
+
+// GetTokens ...
+func (tldb *TradeLogDB) GetTokens() ([]common.TokenInfo, error) {
+	var (
+		result []common.TokenInfo
+		query  = `SELECT * FROM token;`
+	)
+	_, err := tldb.db.Exec(query)
+	return result, err
 }

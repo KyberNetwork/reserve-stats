@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	// ETHAddr is ethereum address
+	// BNBAddr is ethereum address
 	BNBAddr = common.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
 
 	// KNCAddr is KNC token address

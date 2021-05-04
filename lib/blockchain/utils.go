@@ -8,7 +8,7 @@ import (
 )
 
 var notBurnTokens = map[ethereum.Address]struct{}{
-	ETHAddr:  {},
+	BNBAddr:  {},
 	WETHAddr: {},
 }
 

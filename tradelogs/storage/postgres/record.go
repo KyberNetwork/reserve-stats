@@ -12,8 +12,8 @@ type record struct {
 	Timestamp           time.Time `db:"timestamp"`
 	BlockNumber         uint64    `db:"block_number"`
 	TransactionHash     string    `db:"tx_hash"`
-	QuoteAmount         float64   `db:"usdt_amount"`
-	OriginalQuoteAmount float64   `db:"original_usdt_amount"`
+	QuoteAmount         float64   `db:"quote_amount"`
+	OriginalQuoteAmount float64   `db:"original_quote_amount"`
 	ReserveAddress      string    `db:"reserve_address"`
 	UserAddress         string    `db:"user_address"`
 	SrcAddress          string    `db:"src_address"`

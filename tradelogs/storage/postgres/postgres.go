@@ -69,8 +69,8 @@ type tradeLogDBData struct {
 	ID                  uint64         `db:"id"`
 	Timestamp           time.Time      `db:"timestamp"`
 	BlockNumber         uint64         `db:"block_number"`
-	QuoteAmount         float64        `db:"usdt_amount"`
-	OriginalQuoteAmount float64        `db:"original_usdt_amount"`
+	QuoteAmount         float64        `db:"quote_amount"`
+	OriginalQuoteAmount float64        `db:"original_quote_amount"`
 	UserAddress         pq.StringArray `db:"user_address"`
 	SrcAddress          pq.StringArray `db:"src_address"`
 	DstAddress          pq.StringArray `db:"dst_address"`
@@ -236,7 +236,7 @@ ON CONFLICT (address)
 DO NOTHING;`
 
 const selectTradeLogsQuery = `
-SELECT a.id, a.timestamp AS timestamp, a.block_number, a.usdt_amount, original_usdt_amount, 
+SELECT a.id, a.timestamp AS timestamp, a.block_number, a.quote_amount, original_quote_amount, 
 ARRAY_AGG(d.address) AS user_address,
 ARRAY_AGG(e.address) AS src_address, 
 ARRAY_AGG(f.address) AS dst_address,
@@ -260,8 +260,8 @@ const selectTradeLogsWithTxHashQuery = `
 SELECT 
 a.timestamp AS timestamp, 
 a.block_number, 
-a.usdt_amount, 
-original_usdt_amount, 
+a.quote_amount, 
+original_quote_amount, 
 ARRAY_AGG(d.address) AS user_address,
 ARRAY_AGG(e.address) AS src_address, 
 ARRAY_AGG(f.address) AS dst_address,

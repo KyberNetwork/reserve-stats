@@ -139,6 +139,7 @@ func (crawler *Crawler) fillExecuteTrade(tradeLog common.Tradelog, logItem types
 	tradeLog.TokenInfo.DestAddress = executeTrade.DestToken
 	tradeLog.SrcAmount = executeTrade.SrcAmount
 	tradeLog.DestAmount = executeTrade.DestAmount
+	tradeLog.ReceiverAddress = executeTrade.DestAddress
 
 	tradeLog.TransactionHash = logItem.TxHash
 	tradeLog.Index = logItem.Index

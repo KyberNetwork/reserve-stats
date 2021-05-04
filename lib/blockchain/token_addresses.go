@@ -6,7 +6,7 @@ import (
 
 var (
 	// ETHAddr is ethereum address
-	ETHAddr = common.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+	BNBAddr = common.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
 
 	// KNCAddr is KNC token address
 	KNCAddr = common.HexToAddress("") // in bsc not yet available

@@ -131,12 +131,12 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.Tradelog, e
 		return tradeLog, err
 	}
 	tradeLog = common.Tradelog{
-		TransactionHash:    ethereum.HexToHash(r.TxHash),
-		Index:              r.LogIndex,
-		Timestamp:          r.Timestamp,
-		BlockNumber:        r.BlockNumber,
-		USDTAmount:         usdtAmountInWei,
-		OriginalUSDTAmount: originalUSDTAmountInWei,
+		TransactionHash:     ethereum.HexToHash(r.TxHash),
+		Index:               r.LogIndex,
+		Timestamp:           r.Timestamp,
+		BlockNumber:         r.BlockNumber,
+		QuoteAmount:         usdtAmountInWei,
+		OriginalQuoteAmount: originalUSDTAmountInWei,
 		User: common.KyberUserInfo{
 			UserAddress: ethereum.HexToAddress(r.UserAddress[0]),
 		},

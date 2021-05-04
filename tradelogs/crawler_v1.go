@@ -73,11 +73,11 @@ func (crawler *Crawler) assembleTradeLogs(eventLogs []types.Log) (*common.CrawlR
 
 			// set tradeLog.USDTAmount
 			if tradeLog.TokenInfo.SrcAddress == blockchain.USDTAddr {
-				tradeLog.USDTAmount = tradeLog.SrcAmount
+				tradeLog.QuoteAmount = tradeLog.SrcAmount
 			} else if tradeLog.TokenInfo.DestAddress == blockchain.USDTAddr {
-				tradeLog.USDTAmount = tradeLog.DestAmount
+				tradeLog.QuoteAmount = tradeLog.DestAmount
 			}
-			tradeLog.OriginalUSDTAmount = tradeLog.USDTAmount // some case USDTAmount
+			tradeLog.OriginalQuoteAmount = tradeLog.QuoteAmount // some case USDTAmount
 
 			tradeLog, err = crawler.updateBasicInfo(log, tradeLog, defaultTimeout)
 			if err != nil {

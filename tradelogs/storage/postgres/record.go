@@ -69,7 +69,7 @@ func (tldb *TradeLogDB) recordFromTradeLog(log common.Tradelog) (*record, error)
 		TransactionHash:     log.TransactionHash.String(),
 		QuoteAmount:         usdtAmount,
 		OriginalQuoteAmount: originalUSDTAmount,
-		ReserveAddress:      log.ReceiverAddress.Hex(),
+		ReserveAddress:      log.ReserveAddress.Hex(),
 		UserAddress:         log.User.UserAddress.String(),
 		SrcAddress:          log.TokenInfo.SrcAddress.String(),
 		DestAddress:         log.TokenInfo.DestAddress.String(),

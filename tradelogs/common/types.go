@@ -21,7 +21,7 @@ type CrawlResult struct {
 	Trades   []Tradelog `json:"trades"`
 }
 
-// TradelogV4 is object for tradelog after katalyst upgrade
+// Tradelog is object for tradelog after katalyst upgrade
 type Tradelog struct {
 	Timestamp       time.Time     `json:"timestamp"`
 	BlockNumber     uint64        `json:"block_number"`
@@ -32,8 +32,8 @@ type Tradelog struct {
 	SrcReserveAddress ethereum.Address `json:"-"`
 	DstReserveAddress ethereum.Address `json:"-"`
 
-	QuoteAmount         *big.Int         `json:"usdt_amount"`
-	OriginalQuoteAmount *big.Int         `json:"original_usdt_amount"`
+	QuoteAmount         *big.Int         `json:"quote_amount"`
+	OriginalQuoteAmount *big.Int         `json:"original_quote_amount"`
 	SrcAmount           *big.Int         `json:"src_amount"`
 	DestAmount          *big.Int         `json:"dst_amount"`
 	FiatAmount          float64          `json:"fiat_amount"`

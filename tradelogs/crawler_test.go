@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	alchemyRopsten = "https://ropsten.infura.io/v3/3243b06bf0334cff8e468bf90ce6e08c"
+	infuraRopsten = "https://ropsten.infura.io/v3/3243b06bf0334cff8e468bf90ce6e08c"
 )
 
 type mockBroadCastClient struct{}
@@ -369,7 +369,7 @@ func TestDecodeTradeWithHintAndFeeTxV4(t *testing.T) {
 }
 
 func TestTraceAddReserve(t *testing.T) {
-	c, err := ethclient.Dial(alchemyRopsten)
+	c, err := ethclient.Dial(infuraRopsten)
 	require.NoError(t, err)
 	topics := [][]ethereum.Hash{
 		{
@@ -405,7 +405,7 @@ func TestTraceAddReserve(t *testing.T) {
 }
 
 func TestCrawlFeeDistributed(t *testing.T) {
-	c, err := ethclient.Dial(alchemyRopsten)
+	c, err := ethclient.Dial(infuraRopsten)
 	require.NoError(t, err)
 	topics := [][]ethereum.Hash{
 		{
@@ -436,7 +436,7 @@ func TestCrawlFeeDistributed(t *testing.T) {
 }
 
 func TestCrawlKyberTrade(t *testing.T) {
-	c, err := ethclient.Dial(alchemyRopsten)
+	c, err := ethclient.Dial(infuraRopsten)
 	require.NoError(t, err)
 	topics := [][]ethereum.Hash{
 		{

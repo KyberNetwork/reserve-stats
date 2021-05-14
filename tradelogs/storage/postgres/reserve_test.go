@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	alchemyRopsten = "https://ropsten.infura.io/v3/3243b06bf0334cff8e468bf90ce6e08c"
+	infuraRopsten = "https://ropsten.infura.io/v3/3243b06bf0334cff8e468bf90ce6e08c"
 )
 
 func TestAddUpdateReserve(t *testing.T) {
@@ -28,7 +28,7 @@ func TestAddUpdateReserve(t *testing.T) {
 		require.NoError(t, testStorage.tearDown(dbName))
 	}()
 
-	c, err := ethclient.Dial(alchemyRopsten)
+	c, err := ethclient.Dial(infuraRopsten)
 	require.NoError(t, err)
 	topics := [][]ethereum.Hash{
 		{

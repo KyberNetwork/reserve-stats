@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
 	ethereum "github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
@@ -17,7 +16,7 @@ const updateTokenSymbolTemplate = `INSERT INTO %[1]s(
 	symbol
 ) VALUES (
 	unnest($1::TEXT[]), 
-	unnest($2::TEXT[]),
+	unnest($2::TEXT[])
 ) ON CONFLICT ON CONSTRAINT %[1]s_address_key DO UPDATE SET symbol = EXCLUDED.symbol;`
 
 func (tldb *TradeLogDB) saveTokens(tx *sqlx.Tx, tokensArray []string, decimals []int64) error {
@@ -51,14 +50,4 @@ func (tldb *TradeLogDB) UpdateTokens(tokensArray []string, symbolArray []string)
 	logger.Debugw("updating token symbols ...", "query", query)
 	_, err := tldb.db.Exec(query, pq.StringArray(tokensArray), pq.StringArray(symbolArray))
 	return err
-}
-
-// GetTokens ...
-func (tldb *TradeLogDB) GetTokens() ([]common.TokenInfo, error) {
-	var (
-		result []common.TokenInfo
-		query  = `SELECT * FROM token;`
-	)
-	_, err := tldb.db.Exec(query)
-	return result, err
 }

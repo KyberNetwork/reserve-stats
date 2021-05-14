@@ -70,6 +70,10 @@ func (s *mockStorage) GetTopReserves(from, to time.Time, limit uint64) (common.T
 	return common.TopReserves{}, nil
 }
 
+func (s *mockStorage) GetTokenInfo() ([]common.TokenInfo, error) {
+	return nil, nil
+}
+
 func newTestServer() (*Server, error) {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	return NewServer(

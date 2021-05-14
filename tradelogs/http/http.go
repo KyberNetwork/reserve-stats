@@ -291,6 +291,32 @@ func (sv *Server) getTopReserves(c *gin.Context) {
 	)
 }
 
+func (sv *Server) getTokenInfo(c *gin.Context) {
+	result, err := sv.storage.GetTokenInfo()
+	if err != nil {
+		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
+		return
+	}
+	for i, token := range result {
+		if !blockchain.IsZeroAddress(token.Address) {
+			symbol, err := sv.getTokenSymbol(token.Address)
+			if err != nil {
+				libhttputil.ResponseFailure(
+					c,
+					http.StatusInternalServerError,
+					err,
+				)
+				return
+			}
+			result[i].Symbol = symbol
+		}
+	}
+	c.JSON(
+		http.StatusOK,
+		result,
+	)
+}
+
 func (sv *Server) setupRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/trade-logs", sv.getTradeLogs)
@@ -299,6 +325,7 @@ func (sv *Server) setupRouter() *gin.Engine {
 	// token symbol
 	r.GET("/symbol", sv.getSymbol)
 	r.POST("/symbol", sv.updateSymbol)
+	r.GET("/token-info", sv.getTokenInfo)
 
 	// twitter api
 	r.GET("/stats", sv.getStats)

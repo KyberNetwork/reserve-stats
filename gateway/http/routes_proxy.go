@@ -21,6 +21,7 @@ func WithTradeLogURL(tradeLogsURL string) Option {
 		s.r.GET("/stats", tradeLogsProxyMW)
 		s.r.GET("/top-tokens", tradeLogsProxyMW)
 		s.r.GET("/top-reserves", tradeLogsProxyMW)
+		s.r.GET("/token-info", tradeLogsProxyMW)
 		return nil
 	}
 }

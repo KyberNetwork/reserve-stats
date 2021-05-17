@@ -17,15 +17,11 @@ import (
 
 var cachedSymbols = map[deployment.Deployment]map[common.Address]string{
 	deployment.Production: {
-		ETHAddr:  "ETH",
-		BQXAddr:  "BQX",
-		OSTAddr:  "OST",
-		SAIAddr:  "SAI",
+		BNBAddr:  "BNB",
 		USDTAddr: "USDT",
 	},
 	deployment.Staging: {
-		ETHAddr:  "ETH",
-		SAIAddr:  "SAI",
+		BNBAddr:  "BNB",
 		USDTAddr: "USDT",
 	},
 }

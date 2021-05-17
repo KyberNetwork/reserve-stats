@@ -33,7 +33,7 @@ func newTestTradeLog(server *httptest.Server) *Client {
 func TestValidGetTradeLog(t *testing.T) {
 	var log = []common.Tradelog{
 		{
-			USDTAmount:      new(big.Int),
+			QuoteAmount:     new(big.Int),
 			ReceiverAddress: ethereum.HexToAddress(receiverAddress),
 		},
 	}
@@ -68,7 +68,7 @@ func TestValidGetTradeLog(t *testing.T) {
 	if strings.ToLower(l.ReceiverAddress.Hex()) != receiverAddress {
 		t.Error("Get invalid receiver address", "result", strings.ToLower(l.ReceiverAddress.Hex()), "expected", receiverAddress)
 	}
-	if l.USDTAmount.Cmp(new(big.Int)) != 0 {
-		t.Error("Get invalid eth amount", "result", l.USDTAmount, "expected", new(big.Int))
+	if l.QuoteAmount.Cmp(new(big.Int)) != 0 {
+		t.Error("Get invalid eth amount", "result", l.QuoteAmount, "expected", new(big.Int))
 	}
 }

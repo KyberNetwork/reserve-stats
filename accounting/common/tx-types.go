@@ -227,7 +227,7 @@ func DetectTradeInternalTransaction(txHash ethereum.Hash, ethAmount *big.Int, et
 				destAddress := ethereum.BytesToAddress(log.Data[64:96])
 
 				//only compare if the destAddress is ethereum
-				if destAddress == blockchain.ETHAddr {
+				if destAddress == blockchain.BNBAddr {
 					destAmount := ethereum.BytesToHash(log.Data[96:128])
 					if destAmount.Big().Cmp(ethAmount) == 0 {
 						return true, nil
@@ -238,7 +238,7 @@ func DetectTradeInternalTransaction(txHash ethereum.Hash, ethAmount *big.Int, et
 				srcAddress := ethereum.BytesToAddress(log.Data[0:32])
 
 				//only compare if the destAddress is ethereum
-				if srcAddress == blockchain.ETHAddr {
+				if srcAddress == blockchain.BNBAddr {
 					srcAmount := ethereum.BytesToHash(log.Data[32:64])
 					if srcAmount.Big().Cmp(ethAmount) == 0 {
 						return true, nil
@@ -325,7 +325,7 @@ func DetectTradeTransaction(tx etherscan.ERC20Transfer, ethClient *ethclient.Cli
 				// if trade from ETH - Token,
 				// the transfer event appear before the trade is not a trade transfer event
 				srcToken := ethereum.BytesToAddress(log.Data[0:32])
-				if srcToken == blockchain.ETHAddr {
+				if srcToken == blockchain.BNBAddr {
 					return false, nil
 				}
 				// if trade from Token - ETH,

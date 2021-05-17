@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS "token" (
 	symbol TEXT DEFAULT ''
 );
 
+ALTER TABLE "token" ADD COLUMN IF NOT EXISTS "decimals" INTEGER DEFAULT 0;
+
 CREATE TABLE IF NOT EXISTS "reserve" (
 	id SERIAL PRIMARY KEY,
 	address TEXT NOT NULL,
@@ -26,8 +28,8 @@ CREATE TABLE IF NOT EXISTS "tradelogs" (
 	timestamp TIMESTAMPTZ,
 	block_number INTEGER,
 	tx_hash TEXT,
-	usdt_amount FLOAT(32),
-	original_usdt_amount FLOAT(32),
+	quote_amount FLOAT(32),
+	original_quote_amount FLOAT(32),
 	reserve_address_id BIGINT NOT NULL REFERENCES reserve,
 	user_address_id BIGINT NOT NULL REFERENCES users,
 	src_address_id BIGINT NOT NULL REFERENCES token,
@@ -58,8 +60,8 @@ CREATE OR REPLACE FUNCTION create_or_update_tradelogs(INOUT _id tradelogs.id%TYP
 												_timestamp tradelogs.timestamp%TYPE,
 												_block_number tradelogs.block_number%TYPE,
 												_tx_hash tradelogs.tx_hash%TYPE,
-												_usdt_amount tradelogs.usdt_amount%TYPE,
-												_original_usdt_amount tradelogs.original_usdt_amount%TYPE,
+												_quote_amount tradelogs.quote_amount%TYPE,
+												_original_quote_amount tradelogs.original_quote_amount%TYPE,
 												_reserve_address TEXT,
 												_user_address TEXT,
 												_src_address TEXT,
@@ -78,15 +80,15 @@ CREATE OR REPLACE FUNCTION create_or_update_tradelogs(INOUT _id tradelogs.id%TYP
 $$
 BEGIN
     IF _id = 0 THEN
-		INSERT INTO tradelogs (timestamp, block_number, tx_hash, usdt_amount, 
-			original_usdt_amount, reserve_address_id, user_address_id, src_address_id, dst_address_id, src_amount, dst_amount,
+		INSERT INTO tradelogs (timestamp, block_number, tx_hash, quote_amount, 
+			original_quote_amount, reserve_address_id, user_address_id, src_address_id, dst_address_id, src_amount, dst_amount,
 			index, is_first_trade, tx_sender,
 			receiver_address, gas_used, gas_price, transaction_fee, version) 
 		VALUES (_timestamp,
 			_block_number,
 			_tx_hash,
-			_usdt_amount,
-			_original_usdt_amount,
+			_quote_amount,
+			_original_quote_amount,
 			(SELECT id FROM reserve WHERE address=_reserve_address),
 			(SELECT id FROM users WHERE address=_user_address),
 			(SELECT id FROM token WHERE address=_src_address),

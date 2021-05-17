@@ -66,24 +66,25 @@ func (tldb *TradeLogDB) LastBlock() (int64, error) {
 }
 
 type tradeLogDBData struct {
-	ID                 uint64         `db:"id"`
-	Timestamp          time.Time      `db:"timestamp"`
-	BlockNumber        uint64         `db:"block_number"`
-	USDTAmount         float64        `db:"usdt_amount"`
-	OriginalUSDTAmount float64        `db:"original_usdt_amount"`
-	UserAddress        pq.StringArray `db:"user_address"`
-	SrcAddress         pq.StringArray `db:"src_address"`
-	DstAddress         pq.StringArray `db:"dst_address"`
-	SrcAmount          float64        `db:"src_amount"`
-	DstAmount          float64        `db:"dst_amount"`
-	LogIndex           uint           `db:"index"`
-	TxHash             string         `db:"tx_hash"`
-	TxSender           string         `db:"tx_sender"`
-	ReceiverAddr       string         `db:"receiver_address"`
-	GasUsed            uint64         `db:"gas_used"`
-	GasPrice           float64        `db:"gas_price"`
-	TransactionFee     float64        `db:"transaction_fee"`
-	Version            uint           `db:"version"`
+	ID                  uint64         `db:"id"`
+	Timestamp           time.Time      `db:"timestamp"`
+	BlockNumber         uint64         `db:"block_number"`
+	QuoteAmount         float64        `db:"quote_amount"`
+	OriginalQuoteAmount float64        `db:"original_quote_amount"`
+	UserAddress         pq.StringArray `db:"user_address"`
+	SrcAddress          pq.StringArray `db:"src_address"`
+	DstAddress          pq.StringArray `db:"dst_address"`
+	ReserveAddress      string         `db:"reserve_address"`
+	SrcAmount           float64        `db:"src_amount"`
+	DstAmount           float64        `db:"dst_amount"`
+	LogIndex            uint           `db:"index"`
+	TxHash              string         `db:"tx_hash"`
+	TxSender            string         `db:"tx_sender"`
+	ReceiverAddr        string         `db:"receiver_address"`
+	GasUsed             uint64         `db:"gas_used"`
+	GasPrice            float64        `db:"gas_price"`
+	TransactionFee      float64        `db:"transaction_fee"`
+	Version             uint           `db:"version"`
 }
 
 func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.Tradelog, error) {
@@ -100,12 +101,12 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.Tradelog, e
 		logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 	)
 
-	if usdtAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.USDTAddr, r.USDTAmount); err != nil {
+	if usdtAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.USDTAddr, r.QuoteAmount); err != nil {
 		logger.Debugw("failed to parse usdt amount", "error", err)
 		return tradeLog, err
 	}
 
-	if originalUSDTAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.USDTAddr, r.OriginalUSDTAmount); err != nil {
+	if originalUSDTAmountInWei, err = tldb.tokenAmountFormatter.ToWei(blockchain.USDTAddr, r.OriginalQuoteAmount); err != nil {
 		logger.Debugw("failed to parse original usdt amount", "error", err)
 		return tradeLog, err
 	}
@@ -131,12 +132,12 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.Tradelog, e
 		return tradeLog, err
 	}
 	tradeLog = common.Tradelog{
-		TransactionHash:    ethereum.HexToHash(r.TxHash),
-		Index:              r.LogIndex,
-		Timestamp:          r.Timestamp,
-		BlockNumber:        r.BlockNumber,
-		USDTAmount:         usdtAmountInWei,
-		OriginalUSDTAmount: originalUSDTAmountInWei,
+		TransactionHash:     ethereum.HexToHash(r.TxHash),
+		Index:               r.LogIndex,
+		Timestamp:           r.Timestamp,
+		BlockNumber:         r.BlockNumber,
+		QuoteAmount:         usdtAmountInWei,
+		OriginalQuoteAmount: originalUSDTAmountInWei,
 		User: common.KyberUserInfo{
 			UserAddress: ethereum.HexToAddress(r.UserAddress[0]),
 		},
@@ -144,6 +145,7 @@ func (tldb *TradeLogDB) tradeLogFromDBData(r tradeLogDBData) (common.Tradelog, e
 			SrcAddress:  SrcAddress,
 			DestAddress: DstAddress,
 		},
+		ReserveAddress:  ethereum.HexToAddress(r.ReserveAddress),
 		SrcAmount:       srcAmountInWei,
 		DestAmount:      dstAmountInWei,
 		ReceiverAddress: ethereum.HexToAddress(r.ReceiverAddr),
@@ -215,10 +217,65 @@ func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.Tradelog, er
 	return result, nil
 }
 
+// Token db query result
+type Token struct {
+	Address  string `db:"address"`
+	Symbol   string `db:"symbol"`
+	Decimals int64  `db:"decimals"`
+}
+
+// GetTokenInfo ...
+func (tldb *TradeLogDB) GetTokenInfo() ([]common.TokenInfo, error) {
+	var (
+		dbResult []Token
+		result   []common.TokenInfo
+	)
+	query := `SELECT address, symbol, decimals FROM token;`
+	if err := tldb.db.Select(&dbResult, query); err != nil {
+		tldb.sugar.Errorw("failed to get token info", "error", err)
+		return nil, err
+	}
+	for _, token := range dbResult {
+		if token.Decimals == 0 {
+			decimals, err := tldb.tokenAmountFormatter.GetDecimals(ethereum.HexToAddress(token.Address))
+			if err != nil {
+				tldb.sugar.Errorw("failed to get token decimals", "error", err)
+				return nil, err
+			}
+			token.Decimals = decimals
+			if err := tldb.UpdateTokenDecimals(token.Address, decimals); err != nil {
+				tldb.sugar.Errorw("failed to update token decimals to db", "error", err)
+				// we can ignore error here as it is not important
+			}
+		}
+		result = append(result, common.TokenInfo{
+			Address:  ethereum.HexToAddress(token.Address),
+			Symbol:   token.Symbol,
+			Decimals: token.Decimals,
+		})
+	}
+	return result, nil
+}
+
+// UpdateTokenDecimals ...
+func (tldb *TradeLogDB) UpdateTokenDecimals(address string, decimals int64) error {
+	var (
+		logger = tldb.sugar.With("address", address, "decimals", decimals)
+	)
+	query := `UPDATE token SET decimals = $1 WHERE address = $2;`
+	if _, err := tldb.db.Exec(query, decimals, address); err != nil {
+		logger.Errorw("failed to update token decimals", "address", address)
+		return err
+	}
+	return nil
+}
+
 const insertionAddressTemplate = `INSERT INTO token(
-	address
+	address,
+	decimals
 ) VALUES(
-	unnest($1::TEXT[])
+	unnest($1::TEXT[]),
+	unnest($1::INTEGER[])
 )
 ON CONFLICT ON CONSTRAINT token_address_key DO NOTHING`
 
@@ -234,7 +291,7 @@ ON CONFLICT (address)
 DO NOTHING;`
 
 const selectTradeLogsQuery = `
-SELECT a.id, a.timestamp AS timestamp, a.block_number, a.usdt_amount, original_usdt_amount, 
+SELECT a.id, a.timestamp AS timestamp, a.block_number, a.quote_amount, original_quote_amount, 
 ARRAY_AGG(d.address) AS user_address,
 ARRAY_AGG(e.address) AS src_address, 
 ARRAY_AGG(f.address) AS dst_address,
@@ -243,21 +300,23 @@ a.dst_amount,
 a.index, tx_hash, tx_sender, receiver_address, 
 COALESCE(gas_used, 0) as gas_used, COALESCE(gas_price, 0) as gas_price, 
 COALESCE(transaction_fee, 0) as transaction_fee, 
+r.address as reserve_address,
 version
 FROM tradelogs AS a
 INNER JOIN users AS d ON a.user_address_id = d.id
 INNER JOIN token AS e ON a.src_address_id = e.id
 INNER JOIN token AS f ON a.dst_address_id = f.id
+INNER JOIN reserve AS r on a.reserve_address_id = r.id
 WHERE a.timestamp >= $1 and a.timestamp <= $2
-GROUP BY a.id;
+GROUP BY a.id, r.address;
 `
 
 const selectTradeLogsWithTxHashQuery = `
 SELECT 
 a.timestamp AS timestamp, 
 a.block_number, 
-a.usdt_amount, 
-original_usdt_amount, 
+a.quote_amount, 
+original_quote_amount, 
 ARRAY_AGG(d.address) AS user_address,
 ARRAY_AGG(e.address) AS src_address, 
 ARRAY_AGG(f.address) AS dst_address,
@@ -270,6 +329,7 @@ receiver_address,
 COALESCE(gas_used, 0) as gas_used, 
 COALESCE(gas_price, 0) as gas_price, 
 COALESCE(transaction_fee, 0) as transaction_fee,
+sr.address as reserve_address,
 version
 FROM tradelogs AS a
 INNER JOIN users AS d ON a.user_address_id = d.id
@@ -277,5 +337,5 @@ INNER JOIN token AS e ON a.src_address_id = e.id
 INNER JOIN token AS f ON a.dst_address_id = f.id
 INNER JOIN reserve sr ON a.reserve_address_id= sr.id
 WHERE a.tx_hash=$1
-GROUP BY a.id;
+GROUP BY a.id, sr.address;
 `

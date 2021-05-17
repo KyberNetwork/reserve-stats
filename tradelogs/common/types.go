@@ -21,7 +21,7 @@ type CrawlResult struct {
 	Trades   []Tradelog `json:"trades"`
 }
 
-// TradelogV4 is object for tradelog after katalyst upgrade
+// Tradelog is object for tradelog after katalyst upgrade
 type Tradelog struct {
 	Timestamp       time.Time     `json:"timestamp"`
 	BlockNumber     uint64        `json:"block_number"`
@@ -32,12 +32,12 @@ type Tradelog struct {
 	SrcReserveAddress ethereum.Address `json:"-"`
 	DstReserveAddress ethereum.Address `json:"-"`
 
-	USDTAmount         *big.Int         `json:"usdt_amount"`
-	OriginalUSDTAmount *big.Int         `json:"original_usdt_amount"`
-	SrcAmount          *big.Int         `json:"src_amount"`
-	DestAmount         *big.Int         `json:"dst_amount"`
-	FiatAmount         float64          `json:"fiat_amount"`
-	ReserveAddress     ethereum.Address `json:"reserve_address"`
+	QuoteAmount         *big.Int         `json:"quote_amount"`
+	OriginalQuoteAmount *big.Int         `json:"original_quote_amount"`
+	SrcAmount           *big.Int         `json:"src_amount"`
+	DestAmount          *big.Int         `json:"dst_amount"`
+	FiatAmount          float64          `json:"fiat_amount"`
+	ReserveAddress      ethereum.Address `json:"reserve_address"`
 
 	User            KyberUserInfo    `json:"user"`
 	ReceiverAddress ethereum.Address `json:"receiver_address"`
@@ -72,6 +72,13 @@ type TradeTokenInfo struct {
 	SrcSymbol   string           `json:"src_symbol,omitempty"`
 	DestAddress ethereum.Address `json:"dst_addr"`
 	DestSymbol  string           `json:"dst_symbol,omitempty"`
+}
+
+// TokenInfo ...
+type TokenInfo struct {
+	Address  ethereum.Address `json:"address"`
+	Symbol   string           `json:"symbol"`
+	Decimals int64            `json:"decimals"`
 }
 
 // TxDetail about the tx fee

@@ -23,5 +23,4 @@ linters:
     - unconvert
     - goconst
     - goimports
-    - scopelint
-    - gocritic
+    - exportloopref

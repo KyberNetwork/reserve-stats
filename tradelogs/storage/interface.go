@@ -56,6 +56,7 @@ type Interface interface {
 	GetNotTwittedTrades(from, to time.Time) ([]common.BigTradeLog, error)
 	SaveBigTrades(bigVolume float32, fromBlock uint64) error
 	UpdateBigTradesTwitted(trades []uint64) error
+	GetTokenInfo() ([]common.TokenInfo, error)
 }
 
 // NewCliFlags return dbEngine flag option

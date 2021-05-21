@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS "token" (
 	address TEXT UNIQUE NOT NULL
 );
 
+ALTER TABLE "token" ADD COLUMN IF NOT EXISTS "decimals" INTEGER DEFAULT 0;
+
 DO $$ 
     BEGIN
         BEGIN

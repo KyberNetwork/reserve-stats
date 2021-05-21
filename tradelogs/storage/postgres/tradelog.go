@@ -253,6 +253,7 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 		reserveAddressArray []string
 		tokens              = make(map[string]struct{})
 		tokensArray         []string
+		decimals            []int64
 		records             []*record
 
 		users = make(map[ethereum.Address]struct{})
@@ -295,11 +296,15 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 			if _, ok := tokens[token]; !ok {
 				tokens[token] = struct{}{}
 				tokensArray = append(tokensArray, token)
+				decimal, _ := tldb.tokenAmountFormatter.GetDecimals(ethereum.HexToAddress(token))
+				decimals = append(decimals, decimal)
 			}
 			token = r.DestAddress
 			if _, ok := tokens[token]; !ok {
 				tokens[token] = struct{}{}
 				tokensArray = append(tokensArray, token)
+				decimal, _ := tldb.tokenAmountFormatter.GetDecimals(ethereum.HexToAddress(token))
+				decimals = append(decimals, decimal)
 			}
 			reserve := r.SrcReserveAddress
 			if reserve != "" {
@@ -330,7 +335,7 @@ func (tldb *TradeLogDB) SaveTradeLogs(crResult *common.CrawlResult) (err error) 
 			}
 		}
 
-		err = tldb.saveTokens(tx, tokensArray)
+		err = tldb.saveTokens(tx, tokensArray, decimals)
 		if err != nil {
 			logger.Debugw("failed to save token", "error", err)
 			return err

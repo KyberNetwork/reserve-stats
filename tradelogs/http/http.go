@@ -25,6 +25,16 @@ const (
 	hourlyBurnFeeMaxDuration = time.Hour * 24 * 180 // 180 days
 )
 
+// Server serve trade logs through http endpoint.
+type Server struct {
+	storage          storage.Interface
+	host             string
+	sugar            *zap.SugaredLogger
+	getAddrToAppName func() (map[ethereum.Address]string, error)
+	getUserProfile   func(ethereum.Address) (userprofile.UserProfile, error)
+	symbolResolver   blockchain.TokenSymbolResolver
+}
+
 // NewServer returns an instance of HttpApi to serve trade logs.
 func NewServer(
 	storage storage.Interface,
@@ -73,16 +83,6 @@ func WithUserProfile(up userprofile.Interface) ServerOption {
 	return func(sv *Server) {
 		sv.getUserProfile = up.LookUpUserProfile
 	}
-}
-
-// Server serve trade logs through http endpoint.
-type Server struct {
-	storage          storage.Interface
-	host             string
-	sugar            *zap.SugaredLogger
-	getAddrToAppName func() (map[ethereum.Address]string, error)
-	getUserProfile   func(ethereum.Address) (userprofile.UserProfile, error)
-	symbolResolver   blockchain.TokenSymbolResolver
 }
 
 type burnFeeQuery struct {
@@ -483,6 +483,32 @@ func (sv *Server) updateBigTradesTwitted(c *gin.Context) {
 	)
 }
 
+func (sv *Server) getTokenInfo(c *gin.Context) {
+	result, err := sv.storage.GetTokenInfo()
+	if err != nil {
+		libhttputil.ResponseFailure(c, http.StatusInternalServerError, err)
+		return
+	}
+	for i, token := range result {
+		if !blockchain.IsZeroAddress(token.Address) {
+			symbol, err := sv.getTokenSymbol(token.Address)
+			if err != nil {
+				libhttputil.ResponseFailure(
+					c,
+					http.StatusInternalServerError,
+					err,
+				)
+				return
+			}
+			result[i].Symbol = symbol
+		}
+	}
+	c.JSON(
+		http.StatusOK,
+		result,
+	)
+}
+
 func (sv *Server) setupRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/trade-logs", sv.getTradeLogs)
@@ -499,6 +525,7 @@ func (sv *Server) setupRouter() *gin.Engine {
 	r.GET("/country-stats", sv.getCountryStats)
 	r.GET("/heat-map", sv.getTokenHeatMap)
 	r.GET("/integration-volume", sv.getIntegrationVolume)
+	r.GET("/token-info", sv.getTokenInfo)
 
 	// token symbol
 	r.GET("/symbol", sv.getSymbol)

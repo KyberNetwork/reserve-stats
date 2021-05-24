@@ -152,7 +152,7 @@ func run(c *cli.Context) error {
 }
 
 func updateTradeRecord(trades map[int64]huobi.TradeHistory, trade huobi.TradeHistory) error {
-	//if trade does not exist, add it to the list
+	// if trade does not exist, add it to the list
 	if _, exist := trades[trade.ID]; !exist {
 		trades[trade.ID] = trade
 	} else if trade.State == "partial-filled" || (trade.State == "filled" && trades[trade.ID].State != "filled") {

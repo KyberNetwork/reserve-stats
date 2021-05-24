@@ -135,6 +135,10 @@ func (s *mockStorage) UpdateBigTradesTwitted(trades []uint64) error {
 	return nil
 }
 
+func (s *mockStorage) GetTokenInfo() ([]common.TokenInfo, error) {
+	return nil, nil
+}
+
 type mockJob struct {
 	order   int
 	failure bool

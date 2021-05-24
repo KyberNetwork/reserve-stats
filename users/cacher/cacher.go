@@ -18,7 +18,7 @@ const (
 	richPrefix = "rich"
 )
 
-//RedisCacher is instance for redis cache
+// RedisCacher is instance for redis cache
 type RedisCacher struct {
 	sugar          *zap.SugaredLogger
 	influxDBClient client.Client
@@ -26,7 +26,7 @@ type RedisCacher struct {
 	expiration     time.Duration
 }
 
-//NewRedisCacher returns a new redis cacher instance
+// NewRedisCacher returns a new redis cacher instance
 func NewRedisCacher(sugar *zap.SugaredLogger, influxDBClient client.Client,
 	redisClient *redis.Client, expiration time.Duration) *RedisCacher {
 	return &RedisCacher{
@@ -38,7 +38,7 @@ func NewRedisCacher(sugar *zap.SugaredLogger, influxDBClient client.Client,
 	}
 }
 
-//CacheUserInfo save user info to redis cache
+// CacheUserInfo save user info to redis cache
 func (rc *RedisCacher) CacheUserInfo() error {
 	if err := rc.cacheRichUser(); err != nil {
 		return err

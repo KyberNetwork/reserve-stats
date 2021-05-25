@@ -99,6 +99,7 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (*common.CrawlResult, erro
 	addresses = append(addresses, contracts.OldProxyContractAddress().MustGetFromContext(fj.c)...)
 	addresses = append(addresses, contracts.KyberFeeHandlerContractAddress().MustGetFromContext(fj.c)...)
 	addresses = append(addresses, contracts.KyberStorageContractAddress().MustGetFromContext(fj.c)...)
+	addresses = append(addresses, contracts.OldFeeHandlerContractAddress().MustGetFromContext(fj.c)...)
 
 	// logger.Fatalw("addresses", "addresses", addresses)
 

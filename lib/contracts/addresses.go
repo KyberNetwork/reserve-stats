@@ -60,6 +60,10 @@ func KyberFeeHandlerContractAddress() deployment.Address {
 	return feeHandlerContractAddress
 }
 
+func OldFeeHandlerContractAddress() deployment.Address {
+	return oldFeeHandlerContractAddress
+}
+
 var (
 	networkContractAddress = deployment.NewAddress(
 		// update address for istanbul fork
@@ -90,7 +94,7 @@ var (
 	)
 
 	feeHandlerContractAddress = deployment.NewAddress(
-		[]common.Address{common.HexToAddress("0xd3d2b5643e506c6d9B7099E9116D7aAa941114fe")}, // production
+		[]common.Address{common.HexToAddress("0x9Fb131eFbac23b735d7764AB12F9e52cC68401CA")}, // production
 		[]common.Address{common.HexToAddress("0xEc30037C9A8A6A3f42734c30Dfa0a208aF71b40C")}, // staging
 		[]common.Address{common.HexToAddress("0xfF456D9A8cbB5352eF77dEc2337bAC8dEC63bEAC")}, // ropsten
 	)
@@ -99,6 +103,14 @@ var (
 		[]common.Address{common.HexToAddress("0xC8fb12402cB16970F3C5F4b48Ff68Eb9D1289301")},
 		[]common.Address{common.HexToAddress("0xB18D90bE9ADD2a6c9F2c3943B264c3dC86E30cF5")},
 		[]common.Address{common.HexToAddress("0x688bf5EeC43E0799c5B9c1612F625F7b93FE5434")},
+	)
+
+	oldFeeHandlerContractAddress = deployment.NewAddress(
+		[]common.Address{
+			common.HexToAddress("0xd3d2b5643e506c6d9B7099E9116D7aAa941114fe"),
+		},
+		[]common.Address{},
+		[]common.Address{},
 	)
 
 	oldProxyContractAddress = deployment.NewAddress(

@@ -339,10 +339,65 @@ func (tldb *TradeLogDB) LoadTradeLogs(from, to time.Time) ([]common.TradelogV4, 
 	return result, nil
 }
 
+// Token db query result
+type Token struct {
+	Address  string `db:"address"`
+	Symbol   string `db:"symbol"`
+	Decimals int64  `db:"decimals"`
+}
+
+// GetTokenInfo ...
+func (tldb *TradeLogDB) GetTokenInfo() ([]common.TokenInfo, error) {
+	var (
+		dbResult []Token
+		result   []common.TokenInfo
+	)
+	query := `SELECT address, symbol, decimals FROM token;`
+	if err := tldb.db.Select(&dbResult, query); err != nil {
+		tldb.sugar.Errorw("failed to get token info", "error", err)
+		return nil, err
+	}
+	for _, token := range dbResult {
+		if token.Decimals == 0 {
+			decimals, err := tldb.tokenAmountFormatter.GetDecimals(ethereum.HexToAddress(token.Address))
+			if err != nil {
+				tldb.sugar.Errorw("failed to get token decimals", "error", err)
+				return nil, err
+			}
+			token.Decimals = decimals
+			if err := tldb.UpdateTokenDecimals(token.Address, decimals); err != nil {
+				tldb.sugar.Errorw("failed to update token decimals to db", "error", err)
+				// we can ignore error here as it is not important
+			}
+		}
+		result = append(result, common.TokenInfo{
+			Address:  ethereum.HexToAddress(token.Address),
+			Symbol:   token.Symbol,
+			Decimals: token.Decimals,
+		})
+	}
+	return result, nil
+}
+
+// UpdateTokenDecimals ...
+func (tldb *TradeLogDB) UpdateTokenDecimals(address string, decimals int64) error {
+	var (
+		logger = tldb.sugar.With("address", address, "decimals", decimals)
+	)
+	query := `UPDATE token SET decimals = $1 WHERE address = $2;`
+	if _, err := tldb.db.Exec(query, decimals, address); err != nil {
+		logger.Errorw("failed to update token decimals", "address", address)
+		return err
+	}
+	return nil
+}
+
 const insertionAddressTemplate = `INSERT INTO %[1]s(
-	address
+	address,
+	decimals
 ) VALUES(
-	unnest($1::TEXT[])
+	unnest($1::TEXT[]),
+	unnest($2::INTEGER[])
 )
 ON CONFLICT ON CONSTRAINT %[1]s_address_key DO NOTHING`
 

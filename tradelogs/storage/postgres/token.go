@@ -17,13 +17,13 @@ const updateTokenSymbolTemplate = `INSERT INTO %[1]s(
 ) VALUES (
 	unnest($1::TEXT[]), 
 	unnest($2::TEXT[])
-) ON CONFLICT ON CONSTRAINT %[1]s_address_key DO UPDATE SET symbol = EXCLUDED.symbol`
+) ON CONFLICT ON CONSTRAINT %[1]s_address_key DO UPDATE SET symbol = EXCLUDED.symbol;`
 
-func (tldb *TradeLogDB) saveTokens(tx *sqlx.Tx, tokensArray []string) error {
+func (tldb *TradeLogDB) saveTokens(tx *sqlx.Tx, tokensArray []string, decimals []int64) error {
 	var logger = tldb.sugar.With("func", caller.GetCurrentFunctionName())
 	query := fmt.Sprintf(insertionAddressTemplate, schema.TokenTableName)
 	logger.Debugw("updating tokens...", "query", query)
-	_, err := tx.Exec(query, pq.StringArray(tokensArray))
+	_, err := tx.Exec(query, pq.StringArray(tokensArray), pq.Array(decimals))
 	return err
 }
 

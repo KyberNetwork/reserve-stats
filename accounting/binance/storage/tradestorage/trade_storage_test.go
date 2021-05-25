@@ -13,6 +13,7 @@ import (
 )
 
 func TestBinanceTradeStorage(t *testing.T) {
+	t.Skip()
 	logger := testutil.MustNewDevelopmentSugaredLogger()
 	logger.Info("test binance trade storage")
 	var testData = []binance.TradeHistory{

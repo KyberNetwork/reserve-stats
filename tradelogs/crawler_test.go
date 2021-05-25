@@ -425,10 +425,6 @@ func TestCrawlFeeDistributed(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, log := range logs {
-		fmt.Printf("hash: %s\n", log.TxHash.String())
-		for _, t := range log.Topics {
-			fmt.Printf("topic: %s\n", t.String())
-		}
 		d, err := kyberFeeHandlerContract.ParseFeeDistributed(log)
 		require.NoError(t, err)
 		dataByte, _ := json.Marshal(d)
@@ -456,10 +452,6 @@ func TestCrawlKyberTrade(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, log := range logs {
-		fmt.Printf("hash: %s\n", log.TxHash.String())
-		for _, t := range log.Topics {
-			fmt.Printf("topic: %s\n", t.String())
-		}
 		d, err := kyberNetworkContract.ParseKyberTrade(log)
 		require.NoError(t, err)
 		dataByte, _ := json.Marshal(d)

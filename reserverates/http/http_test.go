@@ -64,6 +64,7 @@ func tearDownTestDB(t *testing.T, influxClient client.Client) {
 }
 
 func TestHTTPRateServer(t *testing.T) {
+	t.Skip()
 	const requestEndpoint = "reserve-rates"
 
 	sugar := testutil.MustNewDevelopmentSugaredLogger()

@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	alchemyRopsten = "https://eth-ropsten.alchemyapi.io/v2/GvXu_IIrL0U10ZpgTXKjOGIA06KcwzEK"
+	infuraRopsten = "https://ropsten.infura.io/v3/3243b06bf0334cff8e468bf90ce6e08c"
 )
 
 type mockBroadCastClient struct{}
@@ -314,7 +314,7 @@ func TestDecodeTradeWithHintTx(t *testing.T) {
 	// example of transaction input data
 	txInput := "0x29589f61000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee00000000000000000000000000000000000000000000000002e0f43384a3591f0000000000000000000000000d8775f648430679a709e98d2b0cb6250d2887ef0000000000000000000000005eee96fa064a571dabcbfe43799d46e5de2f51f98000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000031c454332beb5e2eff000000000000000000000000440bbd6a888a36de6e2f6a25f65bc4e16874faa9000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000045045524d00000000000000000000000000000000000000000000000000000000"
 	var data tradeWithHintParam
-	data, err := decodeTradeInputParam(hexutil.MustDecode(txInput))
+	data, err := decodeTradeInputParamV3(hexutil.MustDecode(txInput))
 	require.NoError(t, err)
 
 	t.Log("src", data.Src.String())
@@ -333,7 +333,7 @@ func TestDecodeTradeWithHintTx(t *testing.T) {
 func TestDecodeTrade(t *testing.T) {
 	txInput := "0xcb3c28c70000000000000000000000006b175474e89094c44da98b954eedeac495271d0f000000000000000000000000000000000000000000000002b5e3af16b1880000000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee000000000000000000000000f76cb72ecfa276d8d64a24f54a94554e2da8f712800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000147c9c7c10adb2000000000000000000000000f1aa99c69715f423086008eb9d06dc1e35cc504d"
 	var data tradeWithHintParam
-	data, err := decodeTradeInputParam(hexutil.MustDecode(txInput))
+	data, err := decodeTradeInputParamV3(hexutil.MustDecode(txInput))
 	require.NoError(t, err)
 	t.Log("src", data.Src.String())
 	t.Log("srcAmount", data.SrcAmount)
@@ -348,8 +348,28 @@ func TestDecodeTrade(t *testing.T) {
 	assert.Equal(t, ethereum.HexToAddress("0xF1AA99C69715F423086008eB9D06Dc1E35Cc504d"), data.WalletID)
 }
 
+func TestDecodeTradeWithHintAndFeeTxV4(t *testing.T) {
+	// example of transaction input data
+	txInput := "0xae591d54000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee0000000000000000000000000000000000000000000000001bc16d674ec80000000000000000000000000000d9ec3ff1f8be459bb9369b4e79e9ebcf7141c093000000000000000000000000017cf1489eb1ff78ef8797dfc09662c845e187b9ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000004c083087eefb8b28280000000000000000000000000440bbd6a888a36de6e2f6a25f65bc4e16874faa9000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000001200000000000000000000000000000000000000000000000000000000000000000"
+	var data tradeWithHintParamV4
+	data, err := decodeTradeInputParamV4(hexutil.MustDecode(txInput))
+	require.NoError(t, err)
+
+	t.Log("src", data.Src.String())
+	t.Log("srcAmount", data.SrcAmount)
+	t.Log("dest", data.Dest.String())
+	t.Log("destAddr", data.DestAddress.String())
+	t.Log("maxDestAmount", data.MaxDestAmount)
+	t.Log("walletID", data.PlatformWallet.String())
+	t.Log("minConversionRate", data.MinConversionRate.String())
+
+	assert.Equal(t, ethereum.HexToAddress("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"), data.Src)
+	assert.Equal(t, ethereum.HexToAddress("0xD9Ec3ff1f8be459Bb9369b4E79e9Ebcf7141C093"), data.Dest)
+	assert.Equal(t, ethereum.HexToAddress("0x440bBd6a888a36DE6e2F6A25f65bc4e16874faa9"), data.PlatformWallet)
+}
+
 func TestTraceAddReserve(t *testing.T) {
-	c, err := ethclient.Dial(alchemyRopsten)
+	c, err := ethclient.Dial(infuraRopsten)
 	require.NoError(t, err)
 	topics := [][]ethereum.Hash{
 		{
@@ -385,7 +405,7 @@ func TestTraceAddReserve(t *testing.T) {
 }
 
 func TestCrawlFeeDistributed(t *testing.T) {
-	c, err := ethclient.Dial(alchemyRopsten)
+	c, err := ethclient.Dial(infuraRopsten)
 	require.NoError(t, err)
 	topics := [][]ethereum.Hash{
 		{
@@ -416,7 +436,7 @@ func TestCrawlFeeDistributed(t *testing.T) {
 }
 
 func TestCrawlKyberTrade(t *testing.T) {
-	c, err := ethclient.Dial(alchemyRopsten)
+	c, err := ethclient.Dial(infuraRopsten)
 	require.NoError(t, err)
 	topics := [][]ethereum.Hash{
 		{

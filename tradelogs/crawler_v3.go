@@ -15,12 +15,16 @@ import (
 )
 
 var (
-	networkABI abi.ABI
+	networkABI, networkABIV4 abi.ABI
 )
 
 func init() {
 	var err error
 	networkABI, err = abi.JSON(strings.NewReader(contracts.NetworkProxyABI))
+	if err != nil {
+		panic(err)
+	}
+	networkABIV4, err = abi.JSON(strings.NewReader(contracts.KyberNetworkProxyV4ABI))
 	if err != nil {
 		panic(err)
 	}
@@ -55,11 +59,10 @@ type tradeWithHintParam struct {
 	Hint              []byte
 }
 
-func decodeTradeInputParam(data []byte) (out tradeWithHintParam, err error) { // decode txInput method signature
+func decodeTradeInputParamV3(data []byte) (out tradeWithHintParam, err error) {
 	if len(data) < 4 {
 		return tradeWithHintParam{}, errors.New("input data not valid")
 	}
-	// recover Method from signature and ABI
 	method, err := networkABI.MethodById(data[0:4])
 	if err != nil {
 		return tradeWithHintParam{}, errors.Wrap(err, "cannot find method for correspond data")
@@ -78,6 +81,60 @@ func decodeTradeInputParam(data []byte) (out tradeWithHintParam, err error) { //
 		return tradeWithHintParam{}, nil
 	default:
 		return tradeWithHintParam{}, errors.Errorf("unexpected method %s", method.Name)
+	}
+}
+
+type tradeWithHintParamV4 struct {
+	Src               ethereum.Address
+	SrcAmount         *big.Int
+	Dest              ethereum.Address
+	DestAddress       ethereum.Address
+	MaxDestAmount     *big.Int
+	MinConversionRate *big.Int
+	PlatformWallet    ethereum.Address `abi:"platformWallet"`
+	PlatformFeeBps    *big.Int
+	Hint              []byte
+}
+
+func decodeTradeInputParamV4(data []byte) (out tradeWithHintParamV4, err error) { // decode txInput method signature
+	if len(data) < 4 {
+		return tradeWithHintParamV4{}, errors.New("input data not valid")
+	}
+	method, err := networkABIV4.MethodById(data[0:4])
+	if err != nil {
+		return tradeWithHintParamV4{}, errors.Wrap(err, "cannot find method for correspond data")
+	}
+	switch method.Name {
+	case "trade", "tradeWithHintAndFee":
+		// unpack method inputs
+		var out tradeWithHintParamV4
+		err = method.Inputs.Unpack(&out, data[4:])
+		if err != nil {
+			return tradeWithHintParamV4{}, errors.Wrap(err, "unpack param failed")
+		}
+		return out, nil
+	case "tradeWithHint":
+		// unpack method inputs
+		var out tradeWithHintParam
+		err = method.Inputs.Unpack(&out, data[4:])
+		if err != nil {
+			return tradeWithHintParamV4{}, errors.Wrap(err, "unpack param failed")
+		}
+		return tradeWithHintParamV4{
+			Src:               out.Src,
+			SrcAmount:         out.SrcAmount,
+			Dest:              out.Dest,
+			DestAddress:       out.DestAddress,
+			MaxDestAmount:     out.MaxDestAmount,
+			MinConversionRate: out.MinConversionRate,
+			PlatformWallet:    out.WalletID,
+			Hint:              out.Hint,
+		}, nil
+	case "swapTokenToToken", "swapTokenToEther", "swapEtherToToken":
+		// no wallet this trade, just return empty
+		return tradeWithHintParamV4{}, nil
+	default:
+		return tradeWithHintParamV4{}, errors.Errorf("unexpected method %s", method.Name)
 	}
 }
 func (crawler *Crawler) assembleTradeLogsV3(eventLogs []types.Log) (*common.CrawlResult, error) {

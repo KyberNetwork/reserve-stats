@@ -10,7 +10,7 @@ go:
   # happens with
   # - 1.11.6
   # - go 1.11.7
-  - 1.14.9
+  - 1.15.5
 
 services:
   - docker

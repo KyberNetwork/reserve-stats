@@ -175,6 +175,13 @@ type TradeTokenInfo struct {
 	DestSymbol  string           `json:"dst_symbol,omitempty"`
 }
 
+// TokenInfo ...
+type TokenInfo struct {
+	Address  ethereum.Address `json:"address"`
+	Symbol   string           `json:"symbol"`
+	Decimals int64            `json:"decimals"`
+}
+
 // TxDetail about the tx fee
 type TxDetail struct {
 	GasUsed        uint64           `json:"gas_used"`

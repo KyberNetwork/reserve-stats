@@ -184,8 +184,8 @@ func (s *Storage) GetNormalTx(from time.Time, to time.Time) ([]common.NormalTx, 
 	)
 	const selectStmt = `SELECT data
 FROM "rsv_tx_normal"
-WHERE data ->> 'timestamp' >= $1
-  AND data ->> 'timestamp' < $2`
+WHERE (data ->> 'timestamp')::bigint>= $1
+  AND (data ->> 'timestamp')::bigint < $2;`
 	logger.Debugw("querying normal transactions from database", "query", selectStmt)
 	if err := s.db.Select(
 		&dbResult,
@@ -266,8 +266,8 @@ func (s *Storage) GetInternalTx(from time.Time, to time.Time) ([]common.Internal
 	)
 	const selectStmt = `SELECT data
 FROM "rsv_tx_internal"
-WHERE data ->> 'timestamp' >= $1
-  AND data ->> 'timestamp' < $2`
+WHERE (data ->> 'timestamp')::bigint >= $1
+  AND (data ->> 'timestamp')::bigint < $2`
 	logger.Debugw("querying internal transactions from database", "query", selectStmt)
 	if err := s.db.Select(
 		&dbResult,
@@ -351,18 +351,19 @@ func (s *Storage) GetERC20Transfer(from time.Time, to time.Time) ([]common.ERC20
 	)
 	const selectStmt = `SELECT data
 FROM "rsv_tx_erc20"
-JOIN "rsv_tx_erc20_tx_reserve" AS a ON a.tx_id = rsv_tx_erc20.id
-JOIN "rsv_tx_reserve" AS reserve ON a.address_key = reserve.address 
-WHERE data ->> 'timestamp' >= $1
-	AND data ->> 'timestamp' < $2
-	AND reserve.address_type <> $3`
+WHERE (data ->> 'timestamp')::bigint >= $1
+	AND (data ->> 'timestamp')::bigint < $2;`
+	// JOIN "rsv_tx_erc20_tx_reserve" AS a ON a.tx_id = rsv_tx_erc20.id
+	// JOIN "rsv_tx_reserve" AS reserve ON a.address_key = reserve.address
+	// AND reserve.address_type <> $3 // backup here for future review
 	logger.Debugw("querying ERC20 transfers from database", "query", selectStmt)
 	if err := s.db.Select(
 		&dbResult,
 		selectStmt,
 		timeutil.TimeToTimestampMs(from),
 		timeutil.TimeToTimestampMs(to),
-		common.CompanyWallet.String()); err != nil {
+		// common.CompanyWallet.String() // remove filter out company wallet
+	); err != nil {
 		return nil, err
 	}
 	for _, data := range dbResult {
@@ -435,7 +436,7 @@ func (s *Storage) GetWalletERC20Transfers(wallet, token ethereum.Address, from, 
 	)
 	const selectStmt = `SELECT data FROM rsv_tx_erc20 
 	JOIN "rsv_tx_erc20_tx_reserve" as a ON a.tx_id = rsv_tx_erc20.id
-	JOIN "rsv_tx_reserve" as reserve ON a.address_key = reserve.address WHERE ((data->>'timestamp')>=$1::text AND (data->>'timestamp')<$2::text) AND
+	JOIN "rsv_tx_reserve" as reserve ON a.address_key = reserve.address WHERE ((data->>'timestamp')::bigint>=$1 AND (data->>'timestamp')::bigint<$2) AND
 	($3 OR (data->>'from'=$4 OR data->>'to'=$4)) AND
 	($5 OR data->>'contractAddress'=$6)
 	AND reserve.address_type = $7`

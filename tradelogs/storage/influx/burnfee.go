@@ -99,7 +99,7 @@ func (is *Storage) GetAggregatedBurnFee(from, to time.Time, freq string, reserve
 		if !ok {
 			result[reserve] = make(map[string]float64)
 		}
-		//if the reserve is already there, that mean it already has either src_amount/dest_amount previously. Sum them up.
+		// if the reserve is already there, that mean it already has either src_amount/dest_amount previously. Sum them up.
 		result[reserve][key] += amount
 	}
 

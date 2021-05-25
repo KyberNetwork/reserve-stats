@@ -32,6 +32,7 @@ func (crawler *Crawler) fetchTradeLogV4(fromBlock, toBlock *big.Int, timeout tim
 			ethereum.HexToHash(feeToWalletEvent),
 			ethereum.HexToHash(kyberTradeEvent),
 			ethereum.HexToHash(feeDistributedEvent),
+			ethereum.HexToHash(feeDistributedEventV2),
 			ethereum.HexToHash(kyberTradeEventV4),
 			ethereum.HexToHash(addReserveToStorageEvent),
 			ethereum.HexToHash(reserveRebateWalletSetEvent),

@@ -20,6 +20,8 @@ const (
 
 	feeDistributedEvent = "0x53e2e1b5ab64e0a76fcc6a932558eba265d4e58c512401a7d776ae0f8fc08994"
 
+	feeDistributedEventV2 = "0xc207a63c18c4070ce1e33e5fcc02efb09ac984caa6a2046e2b1d2811723846f1"
+
 	kyberTradeEventV4 = "0x30bbea603a7b36858fe5e3ec6ba5ff59dde039d02120d758eacfaed01520577d"
 )
 
@@ -159,7 +161,7 @@ func (crawler *Crawler) assembleTradeLogsV4(eventLogs []types.Log) (*common.Craw
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			result.Trades = append(result.Trades, tradeLog)
 			tradeLog = common.TradelogV4{}
-		case feeDistributedEvent:
+		case feeDistributedEvent, feeDistributedEventV2:
 			if tradeLog, err = crawler.fillFeeDistributed(tradeLog, log); err != nil {
 				return nil, err
 			}

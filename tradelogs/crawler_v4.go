@@ -106,6 +106,32 @@ func (crawler *Crawler) fillFeeDistributed(tradelog common.TradelogV4, log types
 	return tradelog, nil
 }
 
+func (crawler *Crawler) fillFeeDistributedV2(tradelog common.TradelogV4, log types.Log) (common.TradelogV4, error) {
+	var (
+		logger = crawler.sugar.With("func", caller.GetCurrentFunctionName())
+	)
+	fee, err := crawler.kyberFeeHandlerContractV2.ParseFeeDistributed(log)
+	if err != nil {
+		logger.Errorw("failed to parse fee distributed event", "error", err)
+		return tradelog, err
+	}
+
+	tradelog.Fees = append(tradelog.Fees,
+		common.TradelogFee{
+			PlatformFee:               fee.PlatformFeeWei,
+			PlatformWallet:            fee.PlatformWallet,
+			Burn:                      fee.BurnAmtWei,
+			Rebate:                    fee.RebateWei,
+			Reward:                    fee.RewardWei,
+			RebateWallets:             fee.RebateWallets,
+			RebatePercentBpsPerWallet: fee.RebatePercentBpsPerWallet,
+			Index:                     log.Index,
+		})
+	tradelog.WalletAddress = fee.PlatformWallet
+	tradelog.WalletName = WalletAddrToName(fee.PlatformWallet)
+	return tradelog, nil
+}
+
 func (crawler *Crawler) assembleTradeLogsV4(eventLogs []types.Log) (*common.CrawlResult, error) {
 	var (
 		logger   = crawler.sugar.With("func", caller.GetCurrentFunctionName())
@@ -162,8 +188,12 @@ func (crawler *Crawler) assembleTradeLogsV4(eventLogs []types.Log) (*common.Craw
 			crawler.sugar.Infow("gathered new trade log", "trade_log", tradeLog)
 			result.Trades = append(result.Trades, tradeLog)
 			tradeLog = common.TradelogV4{}
-		case feeDistributedEvent, feeDistributedEventV2:
+		case feeDistributedEvent:
 			if tradeLog, err = crawler.fillFeeDistributed(tradeLog, log); err != nil {
+				return nil, err
+			}
+		case feeDistributedEventV2:
+			if tradeLog, err = crawler.fillFeeDistributedV2(tradeLog, log); err != nil {
 				return nil, err
 			}
 		case kyberTradeEventV4:

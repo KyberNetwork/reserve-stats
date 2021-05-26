@@ -80,25 +80,31 @@ func NewCrawler(sugar *zap.SugaredLogger,
 		return nil, err
 	}
 
+	kyberFeeHandlerV2Contract, err := contracts.NewKyberFeeHandlerV2(feeHandlerV2Addr, client)
+	if err != nil {
+		return nil, err
+	}
+
 	kyberNetworkContract, err := contracts.NewKyberNetwork(kyberNetwork, client)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Crawler{
-		sugar:                   sugar,
-		ethClient:               client,
-		txTime:                  resolver,
-		broadcastClient:         broadcastClient,
-		rateProvider:            rateProvider,
-		addresses:               addresses,
-		startingBlocks:          sb,
-		etherscanClient:         etherscanClient,
-		volumeExludedReserves:   volumeExcludedReserves,
-		networkProxy:            networkProxy,
-		kyberStorageContract:    kyberStorageContract,
-		kyberFeeHandlerContract: kyberFeeHandlerContract,
-		kyberNetworkContract:    kyberNetworkContract,
+		sugar:                     sugar,
+		ethClient:                 client,
+		txTime:                    resolver,
+		broadcastClient:           broadcastClient,
+		rateProvider:              rateProvider,
+		addresses:                 addresses,
+		startingBlocks:            sb,
+		etherscanClient:           etherscanClient,
+		volumeExludedReserves:     volumeExcludedReserves,
+		networkProxy:              networkProxy,
+		kyberStorageContract:      kyberStorageContract,
+		kyberFeeHandlerContract:   kyberFeeHandlerContract,
+		kyberFeeHandlerContractV2: kyberFeeHandlerV2Contract,
+		kyberNetworkContract:      kyberNetworkContract,
 	}, nil
 }
 

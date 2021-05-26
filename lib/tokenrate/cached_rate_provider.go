@@ -30,7 +30,7 @@ func WithTodayExpires(exp time.Duration) CachedRateProviderOption {
 	}
 }
 
-//NewCachedRateProvider return cached provider for eth usd rate
+// NewCachedRateProvider return cached provider for eth usd rate
 func NewCachedRateProvider(sugar *zap.SugaredLogger, provider tokenrate.ETHUSDRateProvider, options ...CachedRateProviderOption) *CachedRateProvider {
 	crp := &CachedRateProvider{
 		sugar:                sugar,
@@ -45,7 +45,7 @@ func NewCachedRateProvider(sugar *zap.SugaredLogger, provider tokenrate.ETHUSDRa
 	return crp
 }
 
-//CachedRateProvider is cached provider for eth usd rate
+// CachedRateProvider is cached provider for eth usd rate
 type CachedRateProvider struct {
 	sugar                *zap.SugaredLogger
 	expiresDuration      time.Duration
@@ -54,7 +54,7 @@ type CachedRateProvider struct {
 	cache                *gocache.Cache
 }
 
-//USDRate return usd rate
+// USDRate return usd rate
 func (crp *CachedRateProvider) USDRate(timestamp time.Time) (float64, error) {
 	var (
 		rate   float64
@@ -82,7 +82,7 @@ func (crp *CachedRateProvider) USDRate(timestamp time.Time) (float64, error) {
 	return rate, nil
 }
 
-//Name return the original provider name
+// Name return the original provider name
 func (crp *CachedRateProvider) Name() string {
 	return crp.provider.Name()
 }

@@ -17,7 +17,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/reserverates/crawler"
 )
 
-//Fetcher is the struct taking care of fetching reserve-rates for accounting
+// Fetcher is the struct taking care of fetching reserve-rates for accounting
 type Fetcher struct {
 	sugar                 *zap.SugaredLogger
 	storage               rrstorage.Interface
@@ -33,7 +33,7 @@ type Fetcher struct {
 	addressClient         client.Interface
 }
 
-//Option set the init behaviour of Fetcher
+// Option set the init behaviour of Fetcher
 type Option func(fc *Fetcher)
 
 //NewFetcher return a fetcher with options
@@ -67,7 +67,7 @@ func NewFetcher(sugar *zap.SugaredLogger,
 	return fetcher, nil
 }
 
-//Fetch get and store data from time-to time With addresses
+// Fetch get and store data from time-to time With addresses
 func (fc *Fetcher) Fetch(fromTime, toTime time.Time, addresses []ethereumCommon.Address) error {
 	var (
 		lastBlockErrCh = make(chan error)
@@ -168,9 +168,9 @@ func retryFetchETHUSDRate(maxAttempt int,
 	for i := 0; i < maxAttempt; i++ {
 		result, err = fetcher.USDRate(timestamp)
 		if err == nil {
-			//ETHUSD rate is defined as "how much ETH I have to sell to get one USD"
-			//coingecko return how much USD will I have to sell to get one ETH
-			//Hence we do the inverse here. rate expected to be !=0, if result is 0 it will panic
+			// ETHUSD rate is defined as "how much ETH I have to sell to get one USD"
+			// coingecko return how much USD will I have to sell to get one ETH
+			// Hence we do the inverse here. rate expected to be !=0, if result is 0 it will panic
 			return 1 / result, nil
 		}
 		logger.Debugw("failed to fetch ETH-USD rate", "attempt", i, "error", err)

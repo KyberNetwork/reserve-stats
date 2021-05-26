@@ -15,7 +15,7 @@ const (
 	uidPrefix = "uid"
 )
 
-//InternalRedisCacher is instance for redis cache
+// InternalRedisCacher is instance for redis cache
 type InternalRedisCacher struct {
 	sugar       *zap.SugaredLogger
 	redisClient *redis.Client
@@ -23,7 +23,7 @@ type InternalRedisCacher struct {
 	db          *sqlx.DB
 }
 
-//NewInternalRedisCacher returns a new redis cacher instance
+// NewInternalRedisCacher returns a new redis cacher instance
 func NewInternalRedisCacher(sugar *zap.SugaredLogger,
 	redisClient *redis.Client, expiration time.Duration,
 	db *sqlx.DB) *InternalRedisCacher {
@@ -35,7 +35,7 @@ func NewInternalRedisCacher(sugar *zap.SugaredLogger,
 	}
 }
 
-//Cache24hVolume cache user volume daily by uid
+// Cache24hVolume cache user volume daily by uid
 func (irc *InternalRedisCacher) Cache24hVolume() error {
 	if err := irc.cache24hVolumeByUID(); err != nil {
 		return err

@@ -11,12 +11,10 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/burnedfees/crawler"
 	"github.com/KyberNetwork/reserve-stats/burnedfees/storage"
-	influxdbstorage "github.com/KyberNetwork/reserve-stats/burnedfees/storage/influxdb"
 	"github.com/KyberNetwork/reserve-stats/burnedfees/storage/postgres"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 )
 
 const (
@@ -27,8 +25,6 @@ const (
 
 	maxBlocksFlag    = "max-blocks"
 	defaultMaxBlocks = 100000
-
-	dbEngineFlag = "db-engine"
 )
 
 func main() {
@@ -36,7 +32,6 @@ func main() {
 	app.Name = "Burned Fees Crawler"
 	app.Action = run
 	app.Version = "0.0.1"
-	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags,
 		cli.StringFlag{
@@ -54,11 +49,6 @@ func main() {
 			Usage:  "The maximum number of block on each query",
 			EnvVar: "MAX_BLOCKS",
 			Value:  defaultMaxBlocks,
-		},
-		cli.StringFlag{
-			Name:   dbEngineFlag,
-			Usage:  "database engine to store burned fee",
-			EnvVar: "DB_ENGINE",
 		},
 	)
 
@@ -104,26 +94,14 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	dbEngine := c.String(dbEngineFlag)
 	var st storage.Interface
-	if dbEngine == storage.PostgresDBEngine {
-		db, err := libapp.NewDBFromContext(c)
-		if err != nil {
-			return err
-		}
-		st, err = postgres.NewPostgresStorage(db, sugar, blkTimeRsv, amountFmt)
-		if err != nil {
-			return err
-		}
-	} else {
-		influxClient, err := influxdb.NewClientFromContext(c)
-		if err != nil {
-			return err
-		}
-		st, err = influxdbstorage.NewBurnedFeesStorage(sugar, influxClient, blkTimeRsv, amountFmt)
-		if err != nil {
-			return err
-		}
+	db, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return err
+	}
+	st, err = postgres.NewPostgresStorage(db, sugar, blkTimeRsv, amountFmt)
+	if err != nil {
+		return err
 	}
 
 	cr := crawler.NewBurnedFeesCrawler(sugar, ethClient, st, burners)

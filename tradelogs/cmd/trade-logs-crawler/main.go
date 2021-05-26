@@ -7,22 +7,16 @@ import (
 	"os"
 	"time"
 
-	"github.com/influxdata/influxdb/client/v2"
 	"github.com/urfave/cli"
-	"go.uber.org/zap"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/contracts"
-	"github.com/KyberNetwork/reserve-stats/lib/cq"
 	"github.com/KyberNetwork/reserve-stats/lib/deployment"
 	"github.com/KyberNetwork/reserve-stats/lib/etherscan"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/mathutil"
-	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
-	tradelogcq "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx/cq"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/workers"
 )
 
@@ -106,66 +100,13 @@ func main() {
 		},
 	)
 
-	app.Flags = append(app.Flags, storage.NewCliFlags()...)
-	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.PostgresDefaultDB)...)
 	app.Flags = append(app.Flags, broadcast.NewCliFlags()...)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
-	app.Flags = append(app.Flags, cq.NewCQFlags()...)
 	app.Flags = append(app.Flags, etherscan.NewCliFlags()...)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func manageCQFromContext(c *cli.Context, influxClient client.Client, sugar *zap.SugaredLogger) error {
-	//Deploy CQ	before get/store trade logs
-	cqs, err := tradelogcq.CreateAssetVolumeCqs(common.DatabaseName)
-	if err != nil {
-		return err
-	}
-	reserveVolumeCqs, err := tradelogcq.CreateReserveVolumeCqs(common.DatabaseName)
-	if err != nil {
-		return err
-	}
-	cqs = append(cqs, reserveVolumeCqs...)
-	userVolumeCqs, err := tradelogcq.CreateUserVolumeCqs(common.DatabaseName)
-	if err != nil {
-		return err
-	}
-	cqs = append(cqs, userVolumeCqs...)
-	burnFeeCqs, err := tradelogcq.CreateBurnFeeCqs(common.DatabaseName)
-	if err != nil {
-		return err
-	}
-	cqs = append(cqs, burnFeeCqs...)
-	walletFeeCqs, err := tradelogcq.CreateWalletFeeCqs(common.DatabaseName)
-	if err != nil {
-		return err
-	}
-	cqs = append(cqs, walletFeeCqs...)
-	summaryCqs, err := tradelogcq.CreateSummaryCqs(common.DatabaseName)
-	if err != nil {
-		return err
-	}
-	cqs = append(cqs, summaryCqs...)
-	walletStatsCqs, err := tradelogcq.CreateWalletStatsCqs(common.DatabaseName)
-	if err != nil {
-		return err
-	}
-	cqs = append(cqs, walletStatsCqs...)
-	countryStatsCqs, err := tradelogcq.CreateCountryCqs(common.DatabaseName)
-	if err != nil {
-		return err
-	}
-	cqs = append(cqs, countryStatsCqs...)
-	integrationVolumeCqs, err := tradelogcq.CreateIntegrationVolumeCq(common.DatabaseName)
-	if err != nil {
-		return err
-	}
-	cqs = append(cqs, integrationVolumeCqs...)
-
-	return cq.ManageCQs(c, cqs, influxClient, sugar)
 }
 
 // requiredWorkers returns number of workers to start. If the number of jobs is smaller than max workers,
@@ -198,18 +139,6 @@ func run(c *cli.Context) error {
 	storageInterface, err = storage.NewStorageInterfaceFromContext(sugar, c, tokenAmountFormatter)
 	if err != nil {
 		return err
-	}
-
-	//if db = influx check cq flags
-	if c.String(storage.DBEngineFlag) == storage.InfluxDBEngine {
-		influxClient, err := influxdb.NewClientFromContext(c)
-		if err != nil {
-			return err
-		}
-
-		if err = manageCQFromContext(c, influxClient, sugar); err != nil {
-			return err
-		}
 	}
 
 	etherscanClient, err := etherscan.NewEtherscanClientFromContext(c)

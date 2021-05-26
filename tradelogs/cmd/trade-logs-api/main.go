@@ -10,7 +10,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/appnames"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/userprofile"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/http"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
@@ -80,9 +79,7 @@ func main() {
 		return nil
 	}
 
-	app.Flags = append(app.Flags, storage.NewCliFlags()...)
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.TradeLogsPort)...)
-	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(storage.PostgresDefaultDB)...)
 	app.Flags = append(app.Flags, blockchain.NewEthereumNodeFlags())
 	app.Flags = append(app.Flags, appnames.NewCliFlags()...)

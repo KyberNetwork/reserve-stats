@@ -6,7 +6,6 @@ import (
 	"time"
 
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	tokenrate "github.com/KyberNetwork/reserve-stats/tokenratefetcher"
 	"github.com/KyberNetwork/reserve-stats/tokenratefetcher/storage"
@@ -20,9 +19,6 @@ const (
 	kyberNetworkTokenID = "kyber-network"
 	usdCurrencyID       = "usd"
 	dbName              = "token_rate"
-
-	dbEngineFlag    = "db-engine"
-	defaultDBEngine = "postgres"
 )
 
 func main() {
@@ -32,16 +28,7 @@ func main() {
 	app.Version = "0.0.1"
 	app.Action = run
 	app.Flags = append(app.Flags, timeutil.NewTimeRangeCliFlags()...)
-	app.Flags = append(app.Flags, influxdb.NewCliFlags()...)
 	app.Flags = append(app.Flags, libapp.NewPostgreSQLFlags(dbName)...)
-	app.Flags = append(app.Flags,
-		cli.StringFlag{
-			Name:   dbEngineFlag,
-			Usage:  "engine database (influxdb or postgres)",
-			EnvVar: "DB_ENGINE",
-			Value:  defaultDBEngine, // default value
-		},
-	)
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
@@ -59,24 +46,12 @@ func run(c *cli.Context) error {
 
 	cgk := coingecko.New()
 
-	if c.String(dbEngineFlag) != "postgres" {
-		influxClient, err := influxdb.NewClientFromContext(c)
-		if err != nil {
-			return err
-		}
-
-		dbStorage, err = storage.NewInfluxStorage(influxClient, dbName, sugar)
-		if err != nil {
-			return err
-		}
-	} else {
-		db, err := libapp.NewDBFromContext(c)
-		if err != nil {
-			return err
-		}
-		if dbStorage, err = postgres.NewPostgresStorage(sugar, db); err != nil {
-			return err
-		}
+	db, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return err
+	}
+	if dbStorage, err = postgres.NewPostgresStorage(sugar, db); err != nil {
+		return err
 	}
 
 	tokenRate, err := tokenrate.NewRateFetcher(sugar, dbStorage, cgk)

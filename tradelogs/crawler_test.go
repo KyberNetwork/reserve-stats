@@ -69,6 +69,7 @@ var (
 	nwProxyAddr      = ethereum.HexToAddress("0x818E6FECD516Ecc3849DAf6845e3EC868087B755")
 	kyberStorageAddr = ethereum.HexToAddress("")
 	feeHandlerAddr   = ethereum.HexToAddress("")
+	feeHandlerV2Addr = ethereum.HexToAddress("")
 	kyberNetwork     = ethereum.HexToAddress("")
 )
 
@@ -85,7 +86,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 		ethereum.HexToAddress("0x52166528FCC12681aF996e409Ee3a421a4e128A3"), // burner contract
 	}
 	c, err := NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), v3Addresses,
-		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr, kyberStorageAddr, feeHandlerAddr, kyberNetwork)
+		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr, kyberStorageAddr, feeHandlerAddr, feeHandlerV2Addr, kyberNetwork)
 	require.NoError(t, err)
 
 	result, err := c.GetTradeLogs(big.NewInt(7025000), big.NewInt(7025100), time.Minute)
@@ -103,7 +104,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 	}
 
 	c, err = NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), v2Addresses,
-		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr, kyberStorageAddr, feeHandlerAddr, kyberNetwork)
+		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr, kyberStorageAddr, feeHandlerAddr, feeHandlerV2Addr, kyberNetwork)
 	require.NoError(t, err)
 
 	result, err = c.GetTradeLogs(big.NewInt(6343120), big.NewInt(6343220), time.Minute)
@@ -200,7 +201,7 @@ func TestCrawlerGetTradeLogs(t *testing.T) {
 	}
 
 	c, err = NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), v1Addresses,
-		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr, kyberStorageAddr, feeHandlerAddr, kyberNetwork)
+		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr, kyberStorageAddr, feeHandlerAddr, feeHandlerV2Addr, kyberNetwork)
 	require.NoError(t, err)
 
 	result, err = c.GetTradeLogs(big.NewInt(5877442), big.NewInt(5877500), time.Minute)
@@ -253,7 +254,7 @@ func newTestCrawler(t *testing.T, version string) *Crawler {
 	sugar := testutil.MustNewDevelopmentSugaredLogger()
 	client := testutil.MustNewDevelopmentwEthereumClient()
 	c, err := NewCrawler(sugar, client, newMockBroadCastClient(), tokenrate.NewMock(), addresses,
-		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr, kyberStorageAddr, feeHandlerAddr, kyberNetwork)
+		deployment.StartingBlocks[deployment.Production], ec, []ethereum.Address{}, nwProxyAddr, kyberStorageAddr, feeHandlerAddr, feeHandlerV2Addr, kyberNetwork)
 	require.NoError(t, err)
 	return c
 }

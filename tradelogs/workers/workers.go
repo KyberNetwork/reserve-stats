@@ -22,6 +22,11 @@ import (
 	"github.com/KyberNetwork/tokenrate/coingecko"
 )
 
+var ( // TODO: find a better way to put it as config
+	feeHandlerAddr   = ethereum.HexToAddress("0xd3d2b5643e506c6d9B7099E9116D7aAa941114fe")
+	feeHandlerV2Addr = ethereum.HexToAddress("0x9Fb131eFbac23b735d7764AB12F9e52cC68401CA")
+)
+
 type executeJob func(*zap.SugaredLogger) (*common.CrawlResult, error)
 
 type job interface {
@@ -106,11 +111,10 @@ func (fj *FetcherJob) fetch(sugar *zap.SugaredLogger) (*common.CrawlResult, erro
 	volumeExcludedReserve := contracts.VolumeExcludedReserves().MustGetFromContext(fj.c)
 
 	kyberStorageAddr := contracts.KyberStorageContractAddress().MustGetOneFromContext(fj.c)
-	feeHandlerAddr := contracts.KyberFeeHandlerContractAddress().MustGetOneFromContext(fj.c)
 	kyberNetworkAddr := contracts.NetworkContractAddress().MustGetOneFromContext(fj.c)
 
 	crawler, err := tradelogs.NewCrawler(logger, client, bc, coingecko.New(), addresses, startingBlocks,
-		fj.etherscanClient, volumeExcludedReserve, fj.networkProxyAddr, kyberStorageAddr, feeHandlerAddr, kyberNetworkAddr)
+		fj.etherscanClient, volumeExcludedReserve, fj.networkProxyAddr, kyberStorageAddr, feeHandlerAddr, feeHandlerV2Addr, kyberNetworkAddr)
 	if err != nil {
 		return nil, err
 	}

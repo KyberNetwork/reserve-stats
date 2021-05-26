@@ -64,7 +64,7 @@ func NewCrawler(sugar *zap.SugaredLogger,
 	sb deployment.VersionedStartingBlocks,
 	etherscanClient *etherscan.Client,
 	volumeExcludedReserves []ethereum.Address,
-	networkProxy, kyberStorage, kyberFeeHandler, kyberNetwork ethereum.Address) (*Crawler, error) {
+	networkProxy, kyberStorage, kyberFeeHandler, feeHandlerV2Addr, kyberNetwork ethereum.Address) (*Crawler, error) {
 	resolver, err := blockchain.NewBlockTimeResolver(sugar, client)
 	if err != nil {
 		return nil, err
@@ -114,9 +114,10 @@ type Crawler struct {
 	startingBlocks        deployment.VersionedStartingBlocks
 	volumeExludedReserves []ethereum.Address
 
-	kyberStorageContract    *contracts.KyberStorage
-	kyberFeeHandlerContract *contracts.KyberFeeHandler
-	kyberNetworkContract    *contracts.KyberNetwork
+	kyberStorageContract      *contracts.KyberStorage
+	kyberFeeHandlerContract   *contracts.KyberFeeHandler
+	kyberFeeHandlerContractV2 *contracts.KyberFeeHandlerV2
+	kyberNetworkContract      *contracts.KyberNetwork
 
 	etherscanClient *etherscan.Client
 	networkProxy    ethereum.Address

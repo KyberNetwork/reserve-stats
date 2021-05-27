@@ -15,7 +15,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
-//HuobiStorage defines the object to store Huobi data
+// HuobiStorage defines the object to store Huobi data
 type HuobiStorage struct {
 	sugar *zap.SugaredLogger
 	db    *sqlx.DB
@@ -50,7 +50,7 @@ ALTER TABLE huobi_trades ADD COLUMN IF NOT EXISTS account TEXT;
 	return hs, nil
 }
 
-//Close close DB connection
+// Close close DB connection
 func (hdb *HuobiStorage) Close() error {
 	if hdb.db != nil {
 		return hdb.db.Close()
@@ -58,7 +58,7 @@ func (hdb *HuobiStorage) Close() error {
 	return nil
 }
 
-//UpdateTradeHistory store the TradeHistory rate at that blockInfo
+// UpdateTradeHistory store the TradeHistory rate at that blockInfo
 func (hdb *HuobiStorage) UpdateTradeHistory(trades map[int64]huobi.TradeHistory, account string) (err error) {
 	var (
 		nTrades = len(trades)
@@ -110,7 +110,7 @@ type TradeHistoryDB struct {
 	Data    pq.ByteaArray `db:"data"`
 }
 
-//GetTradeHistory return tradehistory between from.. to.. in its json []byte form
+// GetTradeHistory return tradehistory between from.. to.. in its json []byte form
 func (hdb *HuobiStorage) GetTradeHistory(from, to time.Time) (map[string][]huobi.TradeHistory, error) {
 	var (
 		dbResult []TradeHistoryDB
@@ -140,7 +140,7 @@ func (hdb *HuobiStorage) GetTradeHistory(from, to time.Time) (map[string][]huobi
 	return result, nil
 }
 
-//GetLastStoredTimestamp return the last stored timestamp in database
+// GetLastStoredTimestamp return the last stored timestamp in database
 func (hdb *HuobiStorage) GetLastStoredTimestamp(account string) (time.Time, error) {
 	var (
 		dbResult uint64

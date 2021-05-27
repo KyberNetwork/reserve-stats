@@ -1,39 +1,36 @@
 package cacher
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/go-redis/redis"
-	"github.com/influxdata/influxdb/client/v2"
+	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
-	"github.com/KyberNetwork/reserve-stats/lib/influxdb"
-	logSchema "github.com/KyberNetwork/reserve-stats/tradelogs/storage/influx/schema/tradelog"
 )
 
 const (
-	influxDB   = "trade_logs"
 	richPrefix = "rich"
 )
 
 // RedisCacher is instance for redis cache
 type RedisCacher struct {
-	sugar          *zap.SugaredLogger
-	influxDBClient client.Client
-	redisClient    *redis.Client
-	expiration     time.Duration
+	sugar       *zap.SugaredLogger
+	redisClient *redis.Client
+	expiration  time.Duration
+	db          *sqlx.DB
 }
 
 // NewRedisCacher returns a new redis cacher instance
-func NewRedisCacher(sugar *zap.SugaredLogger, influxDBClient client.Client,
-	redisClient *redis.Client, expiration time.Duration) *RedisCacher {
+func NewRedisCacher(sugar *zap.SugaredLogger, redisClient *redis.Client, db *sqlx.DB, expiration time.Duration) *RedisCacher {
 	return &RedisCacher{
-		sugar:          sugar,
-		influxDBClient: influxDBClient,
-		redisClient:    redisClient,
-		expiration:     expiration,
+		sugar:       sugar,
+		redisClient: redisClient,
+		expiration:  expiration,
+		db:          db,
 		//userCapConf:    userCapConf,
 	}
 }
@@ -46,38 +43,42 @@ func (rc *RedisCacher) CacheUserInfo() error {
 	return nil
 }
 
+type UserDailyVolume struct {
+	UserAddress     string  `db:"user_addr"`
+	DailyFiatAmount float64 `db:"daily_fiat_amount"`
+}
+
 func (rc *RedisCacher) cacheRichUser() error {
 	var (
 		logger = rc.sugar.With("func", caller.GetCurrentFunctionName())
+		result []UserDailyVolume
 	)
 
 	// read total trade 24h
-	query := fmt.Sprintf(`SELECT SUM(amount) as daily_fiat_amount FROM 
-	(SELECT %s*%s as amount FROM trades WHERE time >= (now()-24h)) GROUP BY user_addr`, logSchema.EthAmount.String(), logSchema.EthUSDRate.String())
+	query := `SELECT 
+		users.address as user_addr,
+		sum(eth_amount*eth_usd_rate) as daily_fiat_amount
+		FROM tradelogs WHERE timestamp > now() - interval 24 hour 
+		JOIN users ON tradelogs.user_address_id = users.id
+		GROUP BY users.address`
 
 	logger.Debugw("query", "query 24h trades", query)
 
-	res, err := influxdb.QueryDB(rc.influxDBClient, query, influxDB)
+	err := rc.db.Select(&result, query)
+	if err == sql.ErrNoRows {
+		return nil
+	}
 	if err != nil {
 		logger.Errorw("error from query", "err", err)
 		return err
 	}
 
-	if len(res) == 0 || len(res[0].Series) == 0 || len(res[0].Series[0].Values) == 0 || len(res[0].Series[0].Values[0]) < 2 {
-		logger.Debugw("influx db is empty", "result", res)
-		return nil
-	}
-
 	pipe := rc.redisClient.Pipeline()
-	for _, serie := range res[0].Series {
-		userAddress := serie.Tags[logSchema.UserAddr.String()]
+	for _, r := range result {
+		userAddress := r.UserAddress
 
 		// check rich
-		userTradeAmount, err := influxdb.GetFloat64FromInterface(serie.Values[0][1])
-		if err != nil {
-			logger.Errorw("values second should be a float", "value", serie.Values[0][1])
-			return nil
-		}
+		userTradeAmount := r.DailyFiatAmount
 
 		// save to cache with configured expiration duration
 		if err := rc.pushToPipeline(pipe, fmt.Sprintf("%s:%s", richPrefix, userAddress), userTradeAmount, rc.expiration); err != nil {

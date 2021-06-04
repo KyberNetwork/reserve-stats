@@ -326,7 +326,7 @@ type TradeSummary struct {
 	ETHPerTrade        float64 `json:"eth_per_trade"`
 }
 
-//CountryStats stats for a country a day
+// CountryStats stats for a country a day
 type CountryStats struct {
 	TotalETHVolume     float64 `json:"eth_volume"`
 	TotalUSDVolume     float64 `json:"usd_volume"`
@@ -339,7 +339,7 @@ type CountryStats struct {
 	ETHPerTrade        float64 `json:"eth_per_trade"`
 }
 
-//UserVolume represent volume of an user from time to time
+// UserVolume represent volume of an user from time to time
 type UserVolume struct {
 	ETHAmount float64 `json:"eth_amount"`
 	USDAmount float64 `json:"usd_amount"`
@@ -365,25 +365,25 @@ type UserInfo struct {
 	USDVolume float64 `json:"total_usd_volume" db:"total_usd_volume"`
 }
 
-//UserList - list of user
+// UserList - list of user
 type UserList []UserInfo
 
-//Len length of user list for sorting function
+// Len length of user list for sorting function
 func (u UserList) Len() int {
 	return len(u)
 }
 
-//Swap swap 2 item of user list
+// Swap swap 2 item of user list
 func (u UserList) Swap(i, j int) {
 	u[i], u[j] = u[j], u[i]
 }
 
-//Less for sorting function
+// Less for sorting function
 func (u UserList) Less(i, j int) bool {
 	return u[i].ETHVolume < u[j].ETHVolume
 }
 
-//Heatmap represent a country heatmap
+// Heatmap represent a country heatmap
 type Heatmap struct {
 	TotalETHValue        float64 `json:"total_eth_value"`
 	TotalTokenValue      float64 `json:"total_token_value"`
@@ -432,7 +432,7 @@ func isKyberWallet(addr ethereum.Address) bool {
 	return false
 }
 
-//IsKyberSwap determine if the tradelog is through KyberSwap
+// IsKyberSwap determine if the tradelog is through KyberSwap
 func (tl TradelogV4) IsKyberSwap() bool {
 	// since block 6715130 KyberSwap add wallet_addr to its tx
 	// then we use only this logic to detect if a tx a KyberSwap tx or not

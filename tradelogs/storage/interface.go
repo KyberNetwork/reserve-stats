@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	"time"
 
 	ethereum "github.com/ethereum/go-ethereum/common"
@@ -16,11 +15,6 @@ import (
 )
 
 const (
-	// DbEngineFlag flag option
-	DBEngineFlag    = "db-engine"
-	defaultDBEngine = "influx"
-	// InfluxDBEngine influxdb
-	InfluxDBEngine = "influx"
 	// PostgresDBEngine postgres db
 	PostgresDBEngine = "postgres"
 
@@ -59,18 +53,6 @@ type Interface interface {
 	GetTokenInfo() ([]common.TokenInfo, error)
 }
 
-// NewCliFlags return dbEngine flag option
-func NewCliFlags() []cli.Flag {
-	return []cli.Flag{
-		cli.StringFlag{
-			Name:   DBEngineFlag,
-			Usage:  "db engine to write trade logs, pls select influx or postgres",
-			EnvVar: "DB_ENGINE",
-			Value:  defaultDBEngine,
-		},
-	}
-}
-
 // KNCAddressFromContext return knc address by deployment mode
 func KNCAddressFromContext(c *cli.Context) ethereum.Address {
 	deploymentMode := deployment.MustGetDeploymentFromContext(c)
@@ -84,38 +66,15 @@ func KNCAddressFromContext(c *cli.Context) ethereum.Address {
 
 // NewStorageInterfaceFromContext return new storage interface
 func NewStorageInterfaceFromContext(sugar *zap.SugaredLogger, c *cli.Context, tokenAmountFormatter blockchain.TokenAmountFormatterInterface) (Interface, error) {
-	dbEngine := c.String(DBEngineFlag)
 	kncAddr := KNCAddressFromContext(c)
-	switch dbEngine {
-	// case InfluxDBEngine:
-	// 	influxClient, err := influxdb.NewClientFromContext(c)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-
-	// 	influxStorage, err := influx.NewInfluxStorage(
-	// 		sugar,
-	// 		common.DatabaseName,
-	// 		influxClient,
-	// 		tokenAmountFormatter,
-	// 		kncAddr,
-	// 	)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	return influxStorage, nil
-	case PostgresDBEngine:
-		db, err := libapp.NewDBFromContext(c)
-		if err != nil {
-			return nil, err
-		}
-		postgresStorage, err := postgres.NewTradeLogDB(sugar, db, tokenAmountFormatter, kncAddr)
-		if err != nil {
-			sugar.Errorw("failed to initiate postgres storage", "error", err)
-			return nil, err
-		}
-		return postgresStorage, nil
-	default:
-		return nil, fmt.Errorf("invalid db engine: %q", dbEngine)
+	db, err := libapp.NewDBFromContext(c)
+	if err != nil {
+		return nil, err
 	}
+	postgresStorage, err := postgres.NewTradeLogDB(sugar, db, tokenAmountFormatter, kncAddr)
+	if err != nil {
+		sugar.Errorw("failed to initiate postgres storage", "error", err)
+		return nil, err
+	}
+	return postgresStorage, nil
 }

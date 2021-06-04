@@ -31,7 +31,7 @@ func NewRateFetcher(sugar *zap.SugaredLogger, str storage.Interface, rp tokenrat
 	return fetcher, nil
 }
 
-//FetchRatesInRanges fetch and saves times into influxDB
+// FetchRatesInRanges fetch and saves times
 func (rf *RateFetcher) FetchRatesInRanges(from, to time.Time, tokenID, currency string) error {
 	var (
 		logger = rf.sugar.With(

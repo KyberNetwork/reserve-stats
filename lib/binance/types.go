@@ -50,12 +50,29 @@ type WithdrawHistory struct {
 	TxFee     float64 `json:"transactionFee"`
 }
 
-//WithdrawHistoryList is a list of binance withdraw history
+// DepositHistory is a binance withdraw history
+type DepositHistory struct {
+	Amount       string `json:"amount"`
+	Coin         string `json:"coin"`
+	Network      string `json:"network"`
+	Status       int64  `json:"status"`
+	Address      string `json:"address"`
+	AddressTag   string `json:"addressTag"`
+	TxID         string `json:"txId"`
+	InsertTime   uint64 `json:"insertTime"`
+	TransferType int64  `json:"transferType"`
+	ConfirmTimes string `json:"confirmTimes"`
+}
+
+// WithdrawHistoryList is a list of binance withdraw history
 type WithdrawHistoryList struct {
 	WithdrawList []WithdrawHistory `json:"withdrawList"`
 	Success      bool              `json:"success"`
 	Message      string            `json:"msg"`
 }
+
+// DepositHistoryList ...
+type DepositHistoryList []DepositHistory
 
 //ExchangeInfo is info of binance
 type ExchangeInfo struct {

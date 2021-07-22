@@ -23,6 +23,7 @@ const (
 	cexTradeAPIURLFlag         = "cex-trade-url"
 	reserveAddressesAPIURLFlag = "reserve-addresses-url"
 	cexWithdrawalURLFlag       = "cex-withdrawal-url"
+	cexDepositURLFlag          = "cex-deposit-url"
 	reserveTokenURLFlag        = "reserve-token-url"
 	reserveTransactionURLFlag  = "reserve-transaction-url"
 	erc20APIURLFlag            = "erc20-api-url"
@@ -33,6 +34,7 @@ var (
 	defaultCexTradeAPIValue           = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingCEXTradesPort)
 	defaultReserveAddressAPIValue     = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingReserveAddressPort)
 	defaultCexWithdrawalAPIValue      = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingCEXWithdrawalsPort)
+	defaultCexDepositAPIValue         = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingCEXDepositPort)
 	defaultReserveTokenAPIValue       = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingReserveTokensPort)
 	defaultReserveTransactionAPIValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingTransactionsPort)
 	defaultERC20APIValue              = fmt.Sprintf("http://127.0.0.1:%d", httputil.AccountingWalletErc20Port)
@@ -205,6 +207,7 @@ func run(c *cli.Context) error {
 		http.WithCexTradesURL(c.String(cexTradeAPIURLFlag)),
 		http.WithResreveAddressesURL(c.String(reserveAddressesAPIURLFlag)),
 		http.WithCexWithdrawalURL(c.String(cexWithdrawalURLFlag)),
+		http.WithCexDepositURL(c.String(cexDepositURLFlag)),
 		http.WithReserveTokenURL(c.String(reserveTokenURLFlag)),
 		http.WithReserveTransactionURL(c.String(reserveTransactionURLFlag)),
 		http.WithERC20APIURL(c.String(erc20APIURLFlag)),

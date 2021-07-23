@@ -18,6 +18,7 @@ import (
 
 const (
 	withdrawalTimeLimit = time.Hour * 24 * 90 // 90 days
+	depositTimeLimit    = time.Hour * 24 * 90 // 90 days
 )
 
 //Fetcher is a fetcher for get binance data
@@ -319,4 +320,49 @@ func (f *Fetcher) GetMarginTradeHistory(fromIDs map[string]uint64, tokenPairs []
 		index += f.batchSize
 	}
 	return nil
+}
+
+func (f *Fetcher) getDepositHistoryWithRetry(startTime, endTime time.Time) ([]binance.DepositHistory, error) {
+	var (
+		depositHistory []binance.DepositHistory
+		err            error
+		logger         = f.sugar.With("func", caller.GetCurrentFunctionName())
+	)
+	for attempt := 0; attempt < f.attempt; attempt++ {
+		logger.Infow("attempt to get deposit history", "attempt", attempt, "startTime", startTime, "endTime", endTime)
+		depositHistory, err = f.client.GetDepositHistory(startTime, endTime)
+		if err == nil {
+			return depositHistory, nil
+		}
+		logger.Warnw("get deposit history failed", "error", err, "attempt", attempt)
+		time.Sleep(f.retryDelay)
+	}
+	return depositHistory, err
+}
+
+// GetDepositHistory get all deposit history in time range fromTime to toTime
+func (f *Fetcher) GetDepositHistory(fromTime, toTime time.Time) ([]binance.DepositHistory, error) {
+	var (
+		result []binance.DepositHistory
+		logger = f.sugar.With("func", caller.GetCurrentFunctionName())
+	)
+	logger.Info("Start get deposit history")
+	endTime := toTime
+	for toTime.After(fromTime) {
+		endTime = fromTime.Add(depositTimeLimit)
+		if endTime.After(toTime) {
+			endTime = toTime
+		}
+		depositHistory, err := f.getDepositHistoryWithRetry(fromTime, endTime)
+		if err != nil {
+			logger.Errorw("get deposit history failed after retry", "attempts", f.attempt, "error", err)
+			return result, err
+		}
+		result = append(result, depositHistory...)
+		fromTime = endTime
+	}
+	// log for test get deposit history successfully
+	logger.Infow("deposit history", "list", result)
+
+	return result, nil
 }

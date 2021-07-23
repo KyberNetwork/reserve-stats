@@ -119,7 +119,7 @@ func WithResreveAddressesURL(reserveAddressesURL string) Option {
 	}
 }
 
-//WithCexWithdrawalURL return withdraw proxy
+// WithCexWithdrawalURL return withdraw proxy
 func WithCexWithdrawalURL(cexWithdrawalURL string) Option {
 	return func(s *Server) error {
 		cexWithdrawalURLMW, err := newReverseProxyMW(cexWithdrawalURL)
@@ -127,6 +127,18 @@ func WithCexWithdrawalURL(cexWithdrawalURL string) Option {
 			return err
 		}
 		s.r.GET("/withdrawals", cexWithdrawalURLMW)
+		return nil
+	}
+}
+
+// WithCexDepositURL return withdraw proxy
+func WithCexDepositURL(cexDepositURL string) Option {
+	return func(s *Server) error {
+		cexDepositURLMW, err := newReverseProxyMW(cexDepositURL)
+		if err != nil {
+			return err
+		}
+		s.r.GET("/deposits", cexDepositURLMW)
 		return nil
 	}
 }

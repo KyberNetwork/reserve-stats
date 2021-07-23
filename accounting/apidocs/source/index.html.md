@@ -15,6 +15,7 @@ includes:
   - reserve_listed_tokens
   - cex/trades_history
   - cex/withdrawal_history
+  - cex/deposit_history
   - errors
 
 search: true

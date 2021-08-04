@@ -14,13 +14,18 @@ jobs:
     outputs:
       current_branch: ${{ steps.current_branch.outputs.value }}
       commit_tag: ${{ steps.commit_tag.outputs.value }}
+      config: ${{ steps.config.outputs.value }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - name: Extract branch
         shell: bash
         id: current_branch
         run: |
           BRANCH="${GITHUB_REF#refs/heads/}"
           echo "::set-output name=value::$BRANCH"
+
       - name: Get Git Commit Tag
         shell: bash
         id: commit_tag
@@ -28,23 +33,25 @@ jobs:
           COMMIT_HASH="$(echo $GITHUB_SHA | head -c7)"
           echo "::set-output name=value::$COMMIT_HASH"
 
+      - name: Read config file
+        id: config
+        shell: bash
+        run: |
+          config=$(cat ./.github/config.json)
+          # the following lines are only required for multi line json
+          config="${config//'%'/'%25'}"
+          config="${config//$'\n'/'%0A'}"
+          config="${config//$'\r'/'%0D'}"
+          # end of optional handling for multi line json
+          echo "::set-output name=value::$config"
+
   lint:
     needs:
       - prepare
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        dir:
-          [
-            "reserverates",
-            "users",
-            "gateway",
-            "burnedfees",
-            "tradelogs",
-            "tokenratefetcher",
-            "app-names",
-            "accounting",
-          ]
+        dir: ${{ fromJson(needs.prepare.output.config).directories }}
     env:
       TARGET_DIR: ${{ matrix.dir }}
     steps:
@@ -62,4 +69,4 @@ jobs:
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.39.0
-          args: -v --config ../.golangci.yml
+          args: -v --config ./.golangci.yml

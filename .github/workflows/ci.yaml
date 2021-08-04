@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        dir: ${{ fromJson(needs.prepare.output.config).directories }}
+        dir: ${{ fromJson(needs.prepare.outputs.config).directories }}
     env:
       TARGET_DIR: ${{ matrix.dir }}
     steps:

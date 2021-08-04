@@ -29,6 +29,8 @@ jobs:
           echo "::set-output name=value::$COMMIT_HASH"
 
   lint:
+    needs:
+      - prepare
     runs-on: ubuntu-18.04
     strategy:
       matrix:
@@ -53,5 +55,5 @@ jobs:
       - name: Golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.27.0
+          version: v1.39.0
           args: -v --config ../.golangci.yml

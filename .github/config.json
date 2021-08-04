@@ -1,5 +1,12 @@
 {
   "directories": [
-  
+    "reserverates",
+    "users",
+    "gateway",
+    "burnedfees",
+    "tradelogs",
+    "tokenratefetcher",
+    "app-names",
+    "accounting"
   ]
 }

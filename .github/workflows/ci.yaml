@@ -45,12 +45,18 @@ jobs:
             "app-names",
             "accounting",
           ]
-    defaults:
-      run:
-        working-directory: "./${{ matrix.dir }}"
+    env:
+      TARGET_DIR: ${{ matrix.dir }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Prepare before run lint check
+        run: |
+          # copy golangci
+          cp .golangci.yml $TARGET_DIR
+          # switch to target dir
+          cd $TARGET_DIR
 
       - name: Golangci-lint
         uses: golangci/golangci-lint-action@v2

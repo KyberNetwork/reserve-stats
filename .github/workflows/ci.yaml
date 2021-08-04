@@ -68,5 +68,5 @@ jobs:
       - name: Golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.39.0
+          version: v1.28.3
           args: -v --config ./.golangci.yml

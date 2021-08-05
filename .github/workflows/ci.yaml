@@ -77,8 +77,9 @@ jobs:
           # parse JSON to bash array
           excludes=($(echo "$excludes" | jq -r -c '.[]'))
           # remove 'other' from exclude array
-          excludes=("${excludes[*]/other}")
-          exclude_pattern=$(printf 'github.com/KyberNetwork/reserve-stats/\(%s\)' "$excludes")
+          excludes="${excludes[*]/other}"
+          exclude_pattern=$(echo "$excludes" | sed 's/ *$//g' | sed -e 's/ /\\|/g')
+          exclude_pattern=$(printf 'github.com/KyberNetwork/reserve-stats/\(%s\)' "$exclude_pattern")
           exclude_pattern=" --exclude $exclude_pattern"
           echo "::set-output name=value::$exclude_pattern"
 

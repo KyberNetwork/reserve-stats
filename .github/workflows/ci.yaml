@@ -6,6 +6,9 @@ on:
       - "github-actions"
   workflow_dispatch:
 
+env:
+  GO111MODULE: on
+  
 jobs:
   # prepare the outputs to serve the next phases
   # allow branchs: all
@@ -15,6 +18,7 @@ jobs:
       current_branch: ${{ steps.current_branch.outputs.value }}
       commit_tag: ${{ steps.commit_tag.outputs.value }}
       config: ${{ steps.config.outputs.value }}
+      excludes: ${{ steps.excludes.outputs.value }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -45,6 +49,22 @@ jobs:
           # end of optional handling for multi line json
           echo "::set-output name=value::$config"
 
+      - name: Prepare excludes
+        id: excludes
+        shell: bash
+        run: | 
+          excludes=$(cat <<-END
+            ${{ toJSON(fromJSON(steps.config.outputs.value).directories) }} 
+          END
+          )
+          # parse JSON to bash array
+          excludes=($(echo "$excludes" | jq -r -c '.[]'))
+          # remove 'other' from exclude array
+          excludes="${excludes[*]/other}"
+          exclude_pattern=$(echo "$excludes" | sed 's/ *$//g' | sed -e 's/ /\\|/g')
+          exclude_pattern=$(printf 'github.com/KyberNetwork/reserve-stats/\(%s\)' "$exclude_pattern")
+          echo "::set-output name=value::$exclude_pattern"
+
   lint:
     needs:
       - prepare
@@ -70,17 +90,7 @@ jobs:
         if: matrix.dir == 'other'
         id: exclude
         run: |
-          excludes=$(cat <<-END
-            ${{ toJSON(fromJSON(needs.prepare.outputs.config).directories) }} 
-          END
-          )
-          # parse JSON to bash array
-          excludes=($(echo "$excludes" | jq -r -c '.[]'))
-          # remove 'other' from exclude array
-          excludes="${excludes[*]/other}"
-          exclude_pattern=$(echo "$excludes" | sed 's/ *$//g' | sed -e 's/ /\\|/g')
-          exclude_pattern=$(printf 'github.com/KyberNetwork/reserve-stats/\(%s\)' "$exclude_pattern")
-          exclude_pattern=" --exclude $exclude_pattern"
+          exclude_pattern=" --exclude ${{ needs.prepare.outputs.excludes }}"
           echo "::set-output name=value::$exclude_pattern"
 
       - name: Golangci-lint
@@ -90,3 +100,88 @@ jobs:
         with:
           version: v1.28.3
           args: -v --config ./.golangci.yml ${{ env.EXCLUDE }}
+  
+  test:
+    needs:
+      - prepare
+      - lint 
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix: 
+        dir: ${{ fromJson(needs.prepare.outputs.config).directories }} 
+    services:
+      postgres:
+        image: postgres:12-alpine
+        env:
+          POSTGRES_PASSWORD: reserve_stats
+          POSTGRES_USER: reserve_stats
+          POSTGRES_DB: reserve_stats
+        # health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # map tcp port on container to the host
+          - 5432:5432
+    env:
+      TARGET_DIR: ${{ matrix.dir }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: "1.15.5"
+      
+      - name: Get Go cache paths
+        id: cache_paths
+        run: |
+          echo "::set-output name=go-build::$(go env GOCACHE)"
+          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+      
+      - name: Go Build Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.cache_paths.outputs.go-build }}
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+      
+      - name: Go Mod Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.cache_paths.outputs.go-mod }}
+          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+        
+      - name: Prepare before run test
+        id: prepare
+        if: matrix.dir != 'other'
+        run: |
+          cd $TARGET_DIR
+          echo "::set-output name=packages::./..."  
+      
+      - name: Run test
+        shell: bash
+        env:
+          PACKAGES: ${{ steps.prepare.outputs.packages }}
+          EXCLUDES: ${{ needs.prepare.outputs.excludes }}
+        run: |
+            # this means that we will test the excluded dirs
+            if [[ -z "$PACKAGES" ]]; then
+              go test -v -race -mod=mod  $(go list -mod=mod ./... | grep -v "$EXCLUDES")
+            else
+              go test -v -race -mod=mod $PACKAGES
+            fi
+       
+
+          
+          
+
+        
+
+          
+
+
+      
+      

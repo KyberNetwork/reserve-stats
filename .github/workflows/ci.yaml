@@ -59,14 +59,33 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Prepare before run lint check
+        if: matrix.dir != 'other'
         run: |
           # copy golangci
           cp .golangci.yml $TARGET_DIR
           # switch to target dir
           cd $TARGET_DIR
 
+      - name: Prepare excludes
+        if: matrix.dir == 'other'
+        id: exclude
+        run: |
+          excludes=$(cat <<-END
+            ${{ toJSON(fromJSON(needs.prepare.outputs.config).dir) }} 
+          END
+          )
+          # parse JSON to bash array
+          excludes=($(echo "$excludes" | jq -r -c '.[]'))
+          # remove 'other' from exclude array
+          excludes=("${excludes[*]/other}")
+          exclude_pattern=$(printf 'github.com/KyberNetwork/reserve-stats/\(%s\)' "$excludes")
+          exclude_pattern=" --exclude $exclude_pattern"
+          echo "::set-output name=value::$exclude_pattern"
+
       - name: Golangci-lint
         uses: golangci/golangci-lint-action@v2
+        env:
+          EXCLUDE: ${{ steps.exclude.outputs.value }}
         with:
           version: v1.28.3
-          args: -v --config ./.golangci.yml
+          args: -v --config ./.golangci.yml ${{ env.EXCLUDE }}

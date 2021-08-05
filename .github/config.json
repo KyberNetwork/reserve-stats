@@ -7,6 +7,8 @@
     "tradelogs",
     "tokenratefetcher",
     "app-names",
-    "accounting"
-  ]
+    "accounting",
+    "other"
+  ],
+  "images": []
 }

@@ -71,7 +71,7 @@ jobs:
         id: exclude
         run: |
           excludes=$(cat <<-END
-            ${{ toJSON(fromJSON(needs.prepare.outputs.config).dir) }} 
+            ${{ toJSON(fromJSON(needs.prepare.outputs.config).directories) }} 
           END
           )
           # parse JSON to bash array

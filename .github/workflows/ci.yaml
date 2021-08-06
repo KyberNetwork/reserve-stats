@@ -183,7 +183,44 @@ jobs:
             go test -v -race -mod=mod $PACKAGES
           fi
 
-  # TODO: Build api docs and upload to S3
+  build-api-docs:
+    needs:
+      - prepare
+      - test
+    # if: needs.prepare.outputs.current_branch == 'develop'
+    strategy:
+      matrix:
+        include:
+          - source: apidocs/source
+            output_dir: apidocs/build
+            bucket: dev-stats-docs.knstats.com
+          - source: accounting/apidocs/source
+            output_dir: accounting/apidocs/build
+            bucket: dev-accounting-docs.knstats.com
+    env:
+      SOURCE: ${{ matrix.source }} 
+      OUTPUT_DIR: ${{ matrix.output_dir }} 
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build docs
+        run: |
+          docker run -v $PWD/$SOURCE:/slate/source:ro \
+            -v $PWD/$OUTPUT_DIR:/slate/build \
+            kybernetwork/slate:latest
+
+      - name: Upload to S3
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --acl public-read
+        env:
+          AWS_S3_BUCKET: ${{ matrix.bucket }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ap-southeast-1
+          SOURCE_DIR: ${{ matrix.output_dir }} 
 
   build-docker:
     needs:
@@ -255,3 +292,23 @@ jobs:
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+  deploy-awx:
+    needs:
+      - prepare
+      - build-docker
+    runs-on: ubuntu-18.04
+    if: contains(fromJson('["develop", "staging"]'), needs.prepare.outputs.current_branch)
+    env:
+      BRANCH: ${{ needs.prepare.outputs.current_branch }}
+      AWX_USERNAME: ${{ secrets.AWX_USERNAME }}
+      AWX_PASSWORD: ${{ secrets.AWX_PASSWORD }}
+      AWX_DEV_URL: ${{ secrets.AWX_DEV_URL }}
+      AWX_STG_URL: ${{ secrets.AWX_STG_URL }}
+    steps:
+      - name: Notify to server
+        shell: bash
+        run: |
+          [[ "$BRANCH" == "develop" ]] && AWX_URL="$AWX_DEV_URL" || AWX_URL="$AWX_STG_URL"
+          CODE=$(curl -XPOST -o /dev/null -s -w "%{http_code}" --user "$AWX_USERNAME:$AWX_PASSWORD" $AWX_URL)
+          [[ "$CODE" == 20* ]] || exit 1

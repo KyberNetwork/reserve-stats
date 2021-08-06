@@ -1,15 +1,16 @@
 name: "Reserve Stats CI"
 
-on:
-  push:
-    branches:
-      - "github-actions"
-  workflow_dispatch:
+# accept 2 events: on push, and workflow dispatch (manual)
+on: [push, workflow_dispatch]
 
+# global environments
 env:
   GO111MODULE: on
 
 jobs:
+  # the prepare phase prepares output variables for use
+  # in the next phases. 
+  # prepare phase will run on all branches
   prepare:
     runs-on: ubuntu-18.04
     outputs:
@@ -22,7 +23,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Extract branch
+      # extract the current branch this step required checkout action
+      # the push event has 2 types `push_commit` and `push_tag` with 
+      # each type willhave 1 different refs. 
+      # push_commit: refs/heads/<ref_branch>
+      # push_tag: refs/tags/<tag_version> 
+      - name: Extract current branch
         shell: bash
         id: current_branch
         run: |
@@ -40,12 +46,15 @@ jobs:
           COMMIT_HASH="$(echo $GITHUB_SHA | head -c7)"
           echo "::set-output name=value::$COMMIT_HASH"
 
+      # get version tag, if this is a push_commit 
+      # this step will return empty
       - name: Get version tag
         id: version_tag
         run: |
           [[ ! "$GITHUB_REF" =~ refs/tags ]] && exit
           echo "::set-output name=value::${GITHUB_REF#refs/tags/}"
 
+      # read json config file and export the output
       - name: Read config file
         id: config
         shell: bash
@@ -58,7 +67,7 @@ jobs:
           # end of optional handling for multi line json
           echo "::set-output name=value::$config"
 
-      - name: Prepare excludes
+      - name: Prepare exculude pattern
         id: excludes
         shell: bash
         run: |
@@ -74,6 +83,11 @@ jobs:
           exclude_pattern=$(printf 'github.com/KyberNetwork/reserve-stats/\(%s\)' "$exclude_pattern")
           echo "::set-output name=value::$exclude_pattern"
 
+  # the lint phase runs lint check for the directories declared
+  # in the "directories" block (./github/config.json)
+  # make sure that the directory exists and declared
+  # by default, this phase runs on all branches 
+  # and using matrix stratedy
   lint:
     needs:
       - prepare
@@ -95,6 +109,9 @@ jobs:
           # switch to target dir
           cd $TARGET_DIR
 
+      # default if the directory is `other`,
+      # the step will check for directories other
+      # than those declared in the "directories" block
       - name: Prepare excludes
         if: matrix.dir == 'other'
         id: exclude
@@ -109,7 +126,12 @@ jobs:
         with:
           version: v1.28.3
           args: -v --config ./.golangci.yml ${{ env.EXCLUDE }}
-
+  
+  # similar to the lint phase, the test phase  
+  # runs tests on the directories declared in
+  # the "directories" block (.github/config.json)
+  # the test phase runs on all branches and using
+  # matrix stratedy
   test:
     needs:
       - prepare
@@ -170,6 +192,8 @@ jobs:
           cd $TARGET_DIR
           echo "::set-output name=packages::./..."
 
+      # if the directory is `other`, this step runs tests
+      # for directories except those declared in the "directories" block
       - name: Run test
         shell: bash
         env:
@@ -183,11 +207,14 @@ jobs:
             go test -v -race -mod=mod $PACKAGES
           fi
 
+  # build-api-docs only run with the 'develop' branch
+  # this phase builds and deploys API Docs to AWS S3
+  # target: apidocs, accounting/apidocs
   build-api-docs:
     needs:
       - prepare
       - test
-    # if: needs.prepare.outputs.current_branch == 'develop'
+    if: needs.prepare.outputs.current_branch == 'develop'
     strategy:
       matrix:
         include:
@@ -222,6 +249,10 @@ jobs:
           AWS_REGION: ap-southeast-1
           SOURCE_DIR: ${{ matrix.output_dir }} 
 
+  # build-docker builds the images declared in the 'services' block 
+  # these services correspond to the Dockerfiles in the 'docker-files' directory
+  # the build-docker run on 'develop', 'staging', 'master' and 'github-actions' 
+  # this phase using matrix strategy
   build-docker:
     needs:
       - prepare
@@ -277,8 +308,7 @@ jobs:
         with:
           context: .
           file: "docker-files/Dockerfile.${{ matrix.service }}"
-          # TODO: change to TRUE after ci integrated
-          push: false
+          push: true
           labels: |
             commit=${{ github.sha }}
           tags: |

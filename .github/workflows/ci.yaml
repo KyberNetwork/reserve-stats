@@ -215,7 +215,7 @@ jobs:
           IMAGE_WITH_BRANCH_TAG="$DOCKER_REPO:$BRANCH_TAG"
           echo "::set-output name=branch::$IMAGE_WITH_BRANCH_TAG" 
 
-          [[ -n "$VERSION_TAG" ]] || exit
+          [[ -n "$VERSION_TAG" ]] || exit 0
 
           IMAGE_WITH_VERSION_TAG="$DOCKER_REPO:$VERSION_TAG"
           echo "::set-output name=version::$IMAGE_WITH_VERSION_TAG"
@@ -239,13 +239,11 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: ${{ matrix.dockerfile }}
+          file: "docker-files/Dockerfile.${{ matrix.service }}"
           # TODO: change to TRUE after ci integrated
           push: false
           labels: |
             commit=${{ github.sha }}
-          build-args: |
-            COMMIT=${{ github.sha }}
           tags: |
             ${{ steps.images.outputs.branch }}
             ${{ steps.images.outputs.commit }}

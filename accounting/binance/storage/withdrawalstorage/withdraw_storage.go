@@ -99,8 +99,7 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 			return
 		}
 		ids = append(ids, withdraw.ID)
-		timestamp := timeutil.TimestampMsToTime(withdraw.ApplyTime)
-		timestamps = append(timestamps, timestamp)
+		timestamps = append(timestamps, withdraw.ApplyTime)
 		dataJSON = append(dataJSON, withdrawJSON)
 	}
 

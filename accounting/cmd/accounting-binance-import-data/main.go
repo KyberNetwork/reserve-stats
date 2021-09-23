@@ -16,7 +16,6 @@ import (
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 )
 
 const (
@@ -79,18 +78,18 @@ func importWithdrawHistory(sugar *zap.SugaredLogger, historyFile string, hdb *wi
 		if err != nil {
 			fmt.Println(err)
 		}
-		logger.Infow("apply time", "time", applyTime)
-		applyTimeMs := timeutil.TimeToTimestampMs(applyTime)
+		// logger.Infow("apply time", "time", applyTime)
+		// applyTimeMs := timeutil.TimeToTimestampMs(applyTime)
 
 		status := int64(common.WithdrawStatuses[line[8]])
 
 		withdrawHistories = append(withdrawHistories, binance.WithdrawHistory{
 			Asset:     line[1],
-			Amount:    amount,
-			TxFee:     fee,
+			Amount:    fmt.Sprintf("%f", amount),
+			TxFee:     fmt.Sprintf("%f", fee),
 			Address:   line[4],
 			TxID:      line[5],
-			ApplyTime: applyTimeMs,
+			ApplyTime: applyTime,
 			Status:    status,
 		})
 	}

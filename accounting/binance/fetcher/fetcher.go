@@ -238,7 +238,7 @@ func (f *Fetcher) GetWithdrawHistory(fromTime, toTime time.Time) ([]binance.With
 			logger.Errorw("get withdraw history failed after retry", "attempts", f.attempt, "error", err)
 			return result, err
 		}
-		result = append(result, withdrawHistory.WithdrawList...)
+		result = append(result, withdrawHistory...)
 		fromTime = endTime
 	}
 	// log for test get withdraw history successfully

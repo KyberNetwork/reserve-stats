@@ -52,20 +52,20 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 		binanceTestData = []binance.WithdrawHistory{
 			{
 				ID:        "7213fea8e94b4a5593d507237e5a555b",
-				Amount:    1,
+				Amount:    "1",
 				Address:   "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
 				Asset:     "ETH",
 				TxID:      "0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
-				ApplyTime: testTimestamp + 1,
+				ApplyTime: "2018-05-08 4:35:26",
 				Status:    4,
 			},
 			{
 				ID:        "7213fea8e94b4a5534ggsd237e5a555b",
-				Amount:    1000,
+				Amount:    "1000",
 				Address:   "463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvyV3z8zctJLPCZy24jvb3NiTcTJ",
 				Asset:     "XMR",
 				TxID:      "b3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",
-				ApplyTime: testTimestamp + 2,
+				ApplyTime: "2018-05-08 4:35:27",
 				Status:    4,
 			},
 		}
@@ -74,8 +74,8 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 				Msg:      "get an existing test record for huobi",
 				Endpoint: "/withdrawals",
 				Params: map[string]string{
-					"from": strconv.FormatUint(testTimestamp-10, 10),
-					"to":   strconv.FormatUint(testTimestamp+10, 10),
+					"from": strconv.FormatUint(testTimestamp-10000, 10),
+					"to":   strconv.FormatUint(testTimestamp+10000, 10),
 					"cex":  "huobi",
 				},
 				Method: http.MethodGet,
@@ -96,8 +96,8 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 				Msg:      "get an existing test record for all exchanges",
 				Endpoint: "/withdrawals",
 				Params: map[string]string{
-					"from": strconv.FormatUint(testTimestamp-10, 10),
-					"to":   strconv.FormatUint(testTimestamp+10, 10),
+					"from": strconv.FormatUint(testTimestamp-10000, 10),
+					"to":   strconv.FormatUint(testTimestamp+10000, 10),
 				},
 				Method: http.MethodGet,
 				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
@@ -120,8 +120,8 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 				Msg:      "get an invalid exchange name",
 				Endpoint: "/withdrawals",
 				Params: map[string]string{
-					"from": strconv.FormatUint(testTimestamp-10, 10),
-					"to":   strconv.FormatUint(testTimestamp+10, 10),
+					"from": strconv.FormatUint(testTimestamp-10000, 10),
+					"to":   strconv.FormatUint(testTimestamp+10000, 10),
 					"cex":  "huoxbxix",
 				},
 				Method: http.MethodGet,

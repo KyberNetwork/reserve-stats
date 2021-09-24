@@ -296,7 +296,7 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 		return result, err
 	}
 
-	endpoint := fmt.Sprintf("%s/wapi/v3/withdrawHistory.html", endpointPrefix)
+	endpoint := fmt.Sprintf("%s/sapi/v1/capital/withdraw/history", endpointPrefix)
 
 	params := map[string]string{}
 	if !fromTime.IsZero() {
@@ -319,12 +319,6 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 	}
 
 	err = json.Unmarshal(res, &result)
-	if err != nil {
-		return result, err
-	}
-	if !result.Success {
-		return result, fmt.Errorf("failed to get binance withdrawal history, reason: %s", result.Message)
-	}
 	return result, err
 }
 

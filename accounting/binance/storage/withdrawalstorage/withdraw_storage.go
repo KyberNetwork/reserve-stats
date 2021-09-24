@@ -157,9 +157,9 @@ func (bd *BinanceStorage) GetLastStoredTimestamp(account string) (time.Time, err
 		statuses = []string{strconv.Itoa(int(common.AwaitingApproval)), strconv.Itoa(int(common.Processing))}
 	)
 	const (
-		selectStmt = `SELECT COALESCE(MAX(data->>'applyTime'), '0') FROM binance_withdrawals WHERE account = $1`
+		selectStmt = `SELECT COALESCE(MAX(timestamp), 0) FROM binance_withdrawals WHERE account = $1`
 		//handle not completed withdraw
-		latestNotCompleted = `SELECT COALESCE(MIN(data->>'applyTime'), '0') FROM binance_withdrawals WHERE data->>'status' = any($1) AND account = $2`
+		latestNotCompleted = `SELECT COALESCE(MIN(timestamp), 0) FROM binance_withdrawals WHERE data->>'status' = any($1) AND account = $2`
 	)
 	logger.Debugw("querying last stored timestamp", "query", selectStmt)
 

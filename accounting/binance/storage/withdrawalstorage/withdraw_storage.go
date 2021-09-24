@@ -1,6 +1,7 @@
 package withdrawalstorage
 
 import (
+	"database/sql"
 	"encoding/json"
 	"strconv"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/lib/pq"
 )
 
@@ -99,7 +99,8 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 			return
 		}
 		ids = append(ids, withdraw.ID)
-		timestamps = append(timestamps, withdraw.ApplyTime)
+		timestamp, _ := time.Parse("2006-01-02 15:04:05", withdraw.ApplyTime)
+		timestamps = append(timestamps, timestamp)
 		dataJSON = append(dataJSON, withdrawJSON)
 	}
 
@@ -124,13 +125,11 @@ func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) (map[st
 		dbResult []WithdrawRecord
 		tmp      binance.WithdrawHistory
 	)
-	const selectStmt = `SELECT account, ARRAY_AGG(data) as data FROM binance_withdrawals WHERE data->>'applyTime'>=$1 AND data->>'applyTime'<=$2 GROUP BY account;`
+	const selectStmt = `SELECT account, ARRAY_AGG(data) as data FROM binance_withdrawals WHERE timestamp >=$1 AND timestamp <=$2 GROUP BY account;`
 
 	logger.Debugw("querying trade history...", "query", selectStmt)
 
-	from := timeutil.TimeToTimestampMs(fromTime)
-	to := timeutil.TimeToTimestampMs(toTime)
-	if err := bd.db.Select(&dbResult, selectStmt, from, to); err != nil {
+	if err := bd.db.Select(&dbResult, selectStmt, fromTime, toTime); err != nil {
 		return result, err
 	}
 
@@ -157,24 +156,29 @@ func (bd *BinanceStorage) GetLastStoredTimestamp(account string) (time.Time, err
 		statuses = []string{strconv.Itoa(int(common.AwaitingApproval)), strconv.Itoa(int(common.Processing))}
 	)
 	const (
-		selectStmt = `SELECT COALESCE(MAX(timestamp), 0) FROM binance_withdrawals WHERE account = $1`
+		selectStmt = `SELECT timestamp FROM binance_withdrawals WHERE account = $1 ORDER BY timestamp DESC LIMIT 1;`
 		//handle not completed withdraw
-		latestNotCompleted = `SELECT COALESCE(MIN(timestamp), 0) FROM binance_withdrawals WHERE data->>'status' = any($1) AND account = $2`
+		latestNotCompleted = `SELECT timestamp FROM binance_withdrawals WHERE data->>'status' = any($1) AND account = $2 ORDER BY timestamp ASC LIMIT 1;`
 	)
 	logger.Debugw("querying last stored timestamp", "query", selectStmt)
 
-	if err := bd.db.Get(&dbResult, latestNotCompleted, pq.Array(statuses), account); err != nil {
+	err := bd.db.Get(&dbResult, latestNotCompleted, pq.Array(statuses), account)
+	if err != nil && err != sql.ErrNoRows {
 		return result, err
 	}
 	logger.Debugw("min processing record time", "time", dbResult)
 
 	if dbResult.IsZero() {
-		if err := bd.db.Get(&dbResult, selectStmt, account); err != nil {
+		err := bd.db.Get(&dbResult, selectStmt, account)
+		if err != nil && err != sql.ErrNoRows {
 			return result, err
 		}
 	}
+	if !dbResult.IsZero() {
+		result = dbResult
+	}
 
-	return dbResult, nil
+	return result, nil
 }
 
 //UpdateWithdrawHistoryWithFee update fee into withdraw history table

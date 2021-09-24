@@ -1,10 +1,5 @@
 package binance
 
-import (
-	"encoding/json"
-	"time"
-)
-
 //TradeHistory return a history of a trade
 type TradeHistory struct {
 	Symbol          string `json:"symbol"`
@@ -45,36 +40,18 @@ type AssetDetailResponse struct {
 
 //WithdrawHistory is a binance withdraw history
 type WithdrawHistory struct {
-	ID             string    `json:"id"`
-	Amount         string    `json:"amount"`
-	Address        string    `json:"address"`
-	Asset          string    `json:"coin"`
-	TxID           string    `json:"txId"`
-	ApplyTime      time.Time `json:"applyTime"`
-	Status         int64     `json:"status"`
-	TxFee          string    `json:"transactionFee"`
-	WithrawOrderID string    `json:"withdrawOrderId"`
-	Network        string    `json:"network"`
-	TransferType   int64     `json:"transferType"`
-	ConfirmNumber  int64     `json:"confirmNo"`
-}
-
-func (w *WithdrawHistory) UnmarshalJSON(data []byte) error {
-	var (
-		err error
-	)
-	type Alias WithdrawHistory
-	temp := &struct {
-		ApplyTime string `json:"applyTime"`
-		*Alias
-	}{
-		Alias: (*Alias)(w),
-	}
-	if err := json.Unmarshal(data, &temp); err != nil {
-		return err
-	}
-	w.ApplyTime, err = time.Parse("2006-01-02 15:04:05", temp.ApplyTime)
-	return err
+	ID             string `json:"id"`
+	Amount         string `json:"amount"`
+	Address        string `json:"address"`
+	Asset          string `json:"coin"`
+	TxID           string `json:"txId"`
+	ApplyTime      string `json:"applyTime"`
+	Status         int64  `json:"status"`
+	TxFee          string `json:"transactionFee"`
+	WithrawOrderID string `json:"withdrawOrderId"`
+	Network        string `json:"network"`
+	TransferType   int64  `json:"transferType"`
+	ConfirmNumber  int64  `json:"confirmNo"`
 }
 
 //WithdrawHistoryList is a list of binance withdraw history

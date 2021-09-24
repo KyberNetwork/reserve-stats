@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -74,12 +73,13 @@ func importWithdrawHistory(sugar *zap.SugaredLogger, historyFile string, hdb *wi
 			return err
 		}
 
-		applyTime, err := time.Parse("2006-01-02 15:04:05", line[0])
-		if err != nil {
-			fmt.Println(err)
-		}
+		// applyTime, err := time.Parse("2006-01-02 15:04:05", line[0])
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
 		// logger.Infow("apply time", "time", applyTime)
 		// applyTimeMs := timeutil.TimeToTimestampMs(applyTime)
+		applyTime := line[0]
 
 		status := int64(common.WithdrawStatuses[line[8]])
 

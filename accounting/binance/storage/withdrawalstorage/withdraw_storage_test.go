@@ -23,7 +23,7 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 				Address:   "0x93Dc33d2EAFcD212879d4833202F99eC453A6e18",
 				Asset:     "KNC",
 				TxID:      "0x102556d7ebb4e8aea93dca7c61c5926946312af98d3c38e48b062e06582 4b70f",
-				ApplyTime: timeutil.TimestampMsToTime(1516886594000),
+				ApplyTime: "2018-01-25 13:23:14",
 				Status:    6,
 			},
 			{
@@ -32,7 +32,7 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 				Address:   "0xe813dee553d09567D4873d9bd5A 4914796367082",
 				Asset:     "ETH",
 				TxID:      "0x679d514dafb4c8eee1fce3b00a984167bed02bf69ca278e49fa4c4a8fb2308ed",
-				ApplyTime: timeutil.TimestampMsToTime(1522037352000),
+				ApplyTime: "2018-03-26 4:09:12",
 				Status:    6,
 			},
 			{
@@ -41,7 +41,7 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 				Address:   "0xe813dee553d09567D4873d9bd5A 4914796367082",
 				Asset:     "ETH",
 				TxID:      "0x679d514dafb4c8eee1fce3b00a984167bed02bf69ca278e49fa4c4a8fb2308ed",
-				ApplyTime: timeutil.TimestampMsToTime(1522037352000),
+				ApplyTime: "2018-03-26 4:09:12",
 				Status:    6,
 			},
 		}
@@ -53,7 +53,7 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 					Address:   "0x93Dc33d2EAFcD212879d4833202F99eC453A6e18",
 					Asset:     "KNC",
 					TxID:      "0x102556d7ebb4e8aea93dca7c61c5926946312af98d3c38e48b062e06582 4b70f",
-					ApplyTime: timeutil.TimestampMsToTime(1516886594000),
+					ApplyTime: "2018-01-25 13:23:14",
 					Status:    6,
 				},
 				{
@@ -62,7 +62,7 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 					Address:   "0xe813dee553d09567D4873d9bd5A 4914796367082",
 					Asset:     "ETH",
 					TxID:      "0x679d514dafb4c8eee1fce3b00a984167bed02bf69ca278e49fa4c4a8fb2308ed",
-					ApplyTime: timeutil.TimestampMsToTime(1522037352000),
+					ApplyTime: "2018-03-26 4:09:12",
 					Status:    6,
 				},
 				{
@@ -71,7 +71,7 @@ func TestBinanceWithdrawStorage(t *testing.T) {
 					Address:   "0xe813dee553d09567D4873d9bd5A 4914796367082",
 					Asset:     "ETH",
 					TxID:      "0x679d514dafb4c8eee1fce3b00a984167bed02bf69ca278e49fa4c4a8fb2308ed",
-					ApplyTime: timeutil.TimestampMsToTime(1522037352000),
+					ApplyTime: "2018-03-26 4:09:12",
 					Status:    6,
 				},
 			},

@@ -153,7 +153,7 @@ func (bd *BinanceStorage) GetLastStoredTimestamp(account string) (time.Time, err
 	var (
 		logger   = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
-		dbResult uint64
+		dbResult time.Time
 		statuses = []string{strconv.Itoa(int(common.AwaitingApproval)), strconv.Itoa(int(common.Processing))}
 	)
 	const (
@@ -168,17 +168,13 @@ func (bd *BinanceStorage) GetLastStoredTimestamp(account string) (time.Time, err
 	}
 	logger.Debugw("min processing record time", "time", dbResult)
 
-	if dbResult == 0 {
+	if dbResult.IsZero() {
 		if err := bd.db.Get(&dbResult, selectStmt, account); err != nil {
 			return result, err
 		}
 	}
 
-	if dbResult != 0 {
-		result = timeutil.TimestampMsToTime(dbResult)
-	}
-
-	return result, nil
+	return dbResult, nil
 }
 
 //UpdateWithdrawHistoryWithFee update fee into withdraw history table

@@ -36,9 +36,25 @@ type queryInput struct {
 	Exchanges []string `form:"cex" binding:"dive,isValidCEXName"`
 }
 
+// BinanceWithdrawalResponse ...
+type BinanceWithdrawalResponse struct {
+	ID             string `json:"id"`
+	Amount         string `json:"amount"`
+	Address        string `json:"address"`
+	Asset          string `json:"coin"`
+	TxID           string `json:"txId"`
+	ApplyTime      int64  `json:"applyTime"`
+	Status         int64  `json:"status"`
+	TxFee          string `json:"transactionFee"`
+	WithrawOrderID string `json:"withdrawOrderId"`
+	Network        string `json:"network"`
+	TransferType   int64  `json:"transferType"`
+	ConfirmNumber  int64  `json:"confirmNo"`
+}
+
 type response struct {
-	Huobi   map[string][]huobi.WithdrawHistory   `json:"huobi,omitempty"`
-	Binance map[string][]binance.WithdrawHistory `json:"binance,omitempty"`
+	Huobi   map[string][]huobi.WithdrawHistory     `json:"huobi,omitempty"`
+	Binance map[string][]BinanceWithdrawalResponse `json:"binance,omitempty"`
 }
 
 func (sv *Server) get(c *gin.Context) {
@@ -48,6 +64,7 @@ func (sv *Server) get(c *gin.Context) {
 		huobiWithdrawals = make(map[string][]huobi.WithdrawHistory)
 		// binanceWithdrawals []binance.WithdrawHistory
 		binanceWithdrawals = make(map[string][]binance.WithdrawHistory) // map account with its trades
+		binanceResponse    = make(map[string][]BinanceWithdrawalResponse)
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -103,12 +120,36 @@ func (sv *Server) get(c *gin.Context) {
 				)
 				return
 			}
+			for account, withdrawals := range binanceWithdrawals {
+				response := []BinanceWithdrawalResponse{}
+				for _, withdrawal := range withdrawals {
+					applyTime, sErr := time.Parse("2006-01-02 15:04:05", withdrawal.ApplyTime)
+					if sErr != nil {
+						return
+					}
+					response = append(response, BinanceWithdrawalResponse{
+						ID:             withdrawal.ID,
+						Amount:         withdrawal.Amount,
+						Address:        withdrawal.Address,
+						Asset:          withdrawal.Asset,
+						TxID:           withdrawal.TxID,
+						ApplyTime:      applyTime.UnixMilli(),
+						Status:         withdrawal.Status,
+						TxFee:          withdrawal.TxFee,
+						WithrawOrderID: withdrawal.WithrawOrderID,
+						Network:        withdrawal.Network,
+						TransferType:   withdrawal.TransferType,
+						ConfirmNumber:  withdrawal.ConfirmNumber,
+					})
+				}
+				binanceResponse[account] = response
+			}
 		}
 	}
 
 	c.JSON(http.StatusOK, response{
 		Huobi:   huobiWithdrawals,
-		Binance: binanceWithdrawals,
+		Binance: binanceResponse,
 	})
 }
 

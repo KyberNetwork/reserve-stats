@@ -11,7 +11,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	_ "github.com/KyberNetwork/reserve-stats/accounting/common/validators" // import custom validator functions
 	huobiStorage "github.com/KyberNetwork/reserve-stats/accounting/huobi/storage/withdrawal-history"
-	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
@@ -63,8 +62,7 @@ func (sv *Server) get(c *gin.Context) {
 		logger           = sv.sugar.With("func", caller.GetCurrentFunctionName())
 		huobiWithdrawals = make(map[string][]huobi.WithdrawHistory)
 		// binanceWithdrawals []binance.WithdrawHistory
-		binanceWithdrawals = make(map[string][]binance.WithdrawHistory) // map account with its trades
-		binanceResponse    = make(map[string][]BinanceWithdrawalResponse)
+		binanceResponse = make(map[string][]BinanceWithdrawalResponse)
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -111,7 +109,7 @@ func (sv *Server) get(c *gin.Context) {
 				return
 			}
 		case common.Binance.String():
-			binanceWithdrawals, err = sv.binanceDB.GetWithdrawHistory(from, to)
+			binanceWithdrawals, err := sv.binanceDB.GetWithdrawHistory(from, to)
 			if err != nil {
 				httputil.ResponseFailure(
 					c,

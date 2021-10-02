@@ -124,11 +124,17 @@ func (sv *Server) get(c *gin.Context) {
 					}
 					amount, err := strconv.ParseFloat(withdrawal.Amount, 64)
 					if err != nil {
+						sv.sugar.Errorw("failed to parse withdraw amount", "error", err)
+						httputil.ResponseFailure(
+							c,
+							http.StatusInternalServerError,
+							err,
+						)
 						return
 					}
 					txFee, err := strconv.ParseFloat(withdrawal.TxFee, 64)
 					if err != nil {
-						return
+						sv.sugar.Errorw("failed to parse tx fee", "error", err)
 					}
 					response = append(response, BinanceWithdrawalResponse{
 						ID:        withdrawal.ID,

@@ -39,6 +39,14 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 
 	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS account TEXT;
 	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS timestamp TIMESTAMP;
+
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS amount FLOAT;
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS address TEXT;
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS asset TEXT;
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS tx TEXT;
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS apply_time BIGINT;
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS status INTEGER;
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS tx_fee FLOAT;
 	`
 
 	s := &BinanceStorage{

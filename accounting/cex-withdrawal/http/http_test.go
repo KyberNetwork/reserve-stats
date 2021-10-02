@@ -73,7 +73,7 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 		binanceExpectedResponse = []BinanceWithdrawalResponse{
 			{
 				ID:        "7213fea8e94b4a5593d507237e5a555b",
-				Amount:    "1",
+				Amount:    1,
 				Address:   "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
 				Asset:     "ETH",
 				TxID:      "0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
@@ -82,7 +82,7 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 			},
 			{
 				ID:        "7213fea8e94b4a5534ggsd237e5a555b",
-				Amount:    "1000",
+				Amount:    1000,
 				Address:   "463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvyV3z8zctJLPCZy24jvb3NiTcTJ",
 				Asset:     "XMR",
 				TxID:      "b3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",

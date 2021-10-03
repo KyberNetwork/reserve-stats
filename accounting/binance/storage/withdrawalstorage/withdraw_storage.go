@@ -76,18 +76,27 @@ func (bd *BinanceStorage) Close() error {
 //UpdateWithdrawHistory save withdraw history to db
 func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.WithdrawHistory, account string) (err error) {
 	var (
-		logger       = bd.sugar.With("func", caller.GetCurrentFunctionName())
-		withdrawJSON []byte
-		ids          []string
-		dataJSON     [][]byte
-		timestamps   []time.Time
+		logger                      = bd.sugar.With("func", caller.GetCurrentFunctionName())
+		withdrawJSON                []byte
+		ids, assets, addresses, txs []string
+		amounts, txFees             []float64
+		statuses, applyTimes        []int64
+		dataJSON                    [][]byte
+		timestamps                  []time.Time
 	)
-	const updateQuery = `INSERT INTO binance_withdrawals (id, data, timestamp, account)
+	const updateQuery = `INSERT INTO binance_withdrawals (id, data, timestamp, account, amount, address, asset, tx, apply_time, status, tx_fee)
 	VALUES(
 		unnest($1::TEXT[]),
 		unnest($2::JSONB[]),
 		unnest($3::TIMESTAMP[]),
-		$4
+		$4,
+		unnest($5::FLOAT[]),
+		unnest($6::TEXT[]),
+		unnest($7::TEXT[]),
+		unnest($8::TEXT[]),
+		unnest($9::BIGINT[]),
+		unnest($10::INTEGER[]),
+		unnest($11::FLOAT[])
 	) ON CONFLICT ON CONSTRAINT binance_withdrawals_pk DO UPDATE SET data = EXCLUDED.data;
 	`
 
@@ -113,19 +122,41 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 		}
 		timestamps = append(timestamps, timestamp)
 		dataJSON = append(dataJSON, withdrawJSON)
+		assets = append(assets, withdraw.Asset)
+		addresses = append(addresses, withdraw.Address)
+		txs = append(txs, withdraw.TxID)
+		amount, err := strconv.ParseFloat(withdraw.Amount, 64)
+		if err != nil {
+			return err
+		}
+		amounts = append(amounts, amount)
+		txFee, err := strconv.ParseFloat(withdraw.TxFee, 64)
+		if err != nil {
+			return err
+		}
+		txFees = append(txFees, txFee)
+		statuses = append(statuses, withdraw.Status)
+		applyTimes = append(applyTimes, timestamp.UnixMilli())
 	}
 
-	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps), account); err != nil {
-		return
+	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps), account, pq.Array(amounts), pq.Array(addresses), pq.Array(assets), pq.Array(txs), pq.Array(applyTimes), pq.Array(statuses), pq.Array(txFees)); err != nil {
+		return err
 	}
 
-	return
+	return err
 }
 
 //WithdrawRecord represent a record of binace withdraw
 type WithdrawRecord struct {
-	Account string        `db:"account"`
-	Data    pq.ByteaArray `db:"data"`
+	Account    string          `db:"account"`
+	Ids        pq.StringArray  `db:"ids"`
+	Amounts    pq.Float64Array `db:"amounts"`
+	Assets     pq.StringArray  `db:"assets"`
+	Addresses  pq.StringArray  `db:"addresses"`
+	ApplyTimes pq.Int64Array   `db:"apply_times"`
+	Txs        pq.StringArray  `db:"txs"`
+	Statuses   pq.Int64Array   `db:"statuses"`
+	TxFees     pq.Float64Array `db:"tx_fees"`
 }
 
 //GetWithdrawHistory return list of withdraw fromTime to toTime
@@ -134,23 +165,39 @@ func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) (map[st
 		logger   = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		result   = make(map[string][]binance.WithdrawHistory)
 		dbResult []WithdrawRecord
-		tmp      binance.WithdrawHistory
 	)
-	const selectStmt = `SELECT account, ARRAY_AGG(data) as data FROM binance_withdrawals WHERE timestamp >=$1 AND timestamp <=$2 GROUP BY account;`
+	const selectStmt = `SELECT account, 
+	ARRAY_AGG(id) as ids, 
+	ARRAY_AGG(asset) as assets, 
+	ARRAY_AGG(address) as addresses, 
+	ARRAY_AGG(apply_time) as apply_times, 
+	ARRAY_AGG(tx) as txs, 
+	ARRAY_AGG(tx_fee) as tx_fees, 
+	ARRAY_AGG(status) as statuses, 
+	ARRAY_AGG(amount) as amounts FROM binance_withdrawals WHERE timestamp >=$1 AND timestamp <=$2 GROUP BY account;`
 
 	logger.Debugw("querying trade history...", "query", selectStmt)
 
 	if err := bd.db.Select(&dbResult, selectStmt, fromTime, toTime); err != nil {
+		logger.Errorw("failed to get withdraw history", "error", err)
 		return result, err
 	}
 
 	for _, record := range dbResult {
 		arrResult := []binance.WithdrawHistory{}
-		for _, data := range record.Data {
-			if err := json.Unmarshal(data, &tmp); err != nil {
-				return result, err
-			}
-			arrResult = append(arrResult, tmp)
+		for index := range record.Ids {
+			applyTime := time.UnixMilli(record.ApplyTimes[index])
+			apTime := applyTime.Format("2006-01-02 15:04:05")
+			arrResult = append(arrResult, binance.WithdrawHistory{
+				ID:        record.Ids[index],
+				Asset:     record.Assets[index],
+				Amount:    strconv.FormatFloat(record.Amounts[index], 'f', -1, 64),
+				Address:   record.Addresses[index],
+				TxID:      record.Txs[index],
+				ApplyTime: apTime,
+				Status:    record.Statuses[index],
+				TxFee:     strconv.FormatFloat(record.TxFees[index], 'f', -1, 64),
+			})
 		}
 		result[record.Account] = arrResult
 	}

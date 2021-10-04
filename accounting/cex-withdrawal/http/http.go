@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -37,18 +38,14 @@ type queryInput struct {
 
 // BinanceWithdrawalResponse ...
 type BinanceWithdrawalResponse struct {
-	ID             string `json:"id"`
-	Amount         string `json:"amount"`
-	Address        string `json:"address"`
-	Asset          string `json:"coin"`
-	TxID           string `json:"txId"`
-	ApplyTime      int64  `json:"applyTime"`
-	Status         int64  `json:"status"`
-	TxFee          string `json:"transactionFee"`
-	WithrawOrderID string `json:"withdrawOrderId"`
-	Network        string `json:"network"`
-	TransferType   int64  `json:"transferType"`
-	ConfirmNumber  int64  `json:"confirmNo"`
+	ID        string  `json:"id"`
+	Amount    float64 `json:"amount"`
+	Address   string  `json:"address"`
+	Asset     string  `json:"asset"`
+	TxID      string  `json:"txId"`
+	ApplyTime int64   `json:"applyTime"`
+	Status    int64   `json:"status"`
+	TxFee     float64 `json:"transactionFee"`
 }
 
 type response struct {
@@ -125,19 +122,29 @@ func (sv *Server) get(c *gin.Context) {
 					if sErr != nil {
 						return
 					}
+					amount, err := strconv.ParseFloat(withdrawal.Amount, 64)
+					if err != nil {
+						sv.sugar.Errorw("failed to parse withdraw amount", "error", err)
+						httputil.ResponseFailure(
+							c,
+							http.StatusInternalServerError,
+							err,
+						)
+						return
+					}
+					txFee, err := strconv.ParseFloat(withdrawal.TxFee, 64)
+					if err != nil {
+						sv.sugar.Errorw("failed to parse tx fee", "error", err)
+					}
 					response = append(response, BinanceWithdrawalResponse{
-						ID:             withdrawal.ID,
-						Amount:         withdrawal.Amount,
-						Address:        withdrawal.Address,
-						Asset:          withdrawal.Asset,
-						TxID:           withdrawal.TxID,
-						ApplyTime:      applyTime.UnixMilli(),
-						Status:         withdrawal.Status,
-						TxFee:          withdrawal.TxFee,
-						WithrawOrderID: withdrawal.WithrawOrderID,
-						Network:        withdrawal.Network,
-						TransferType:   withdrawal.TransferType,
-						ConfirmNumber:  withdrawal.ConfirmNumber,
+						ID:        withdrawal.ID,
+						Amount:    amount,
+						Address:   withdrawal.Address,
+						Asset:     withdrawal.Asset,
+						TxID:      withdrawal.TxID,
+						ApplyTime: applyTime.UnixMilli(),
+						Status:    withdrawal.Status,
+						TxFee:     txFee,
 					})
 				}
 				binanceResponse[account] = response

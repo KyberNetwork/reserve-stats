@@ -125,14 +125,20 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 		assets = append(assets, withdraw.Asset)
 		addresses = append(addresses, withdraw.Address)
 		txs = append(txs, withdraw.TxID)
-		amount, err := strconv.ParseFloat(withdraw.Amount, 64)
-		if err != nil {
-			return err
+		amount := float64(0)
+		if withdraw.Amount != "" {
+			amount, err = strconv.ParseFloat(withdraw.Amount, 64)
+			if err != nil {
+				return err
+			}
 		}
 		amounts = append(amounts, amount)
-		txFee, err := strconv.ParseFloat(withdraw.TxFee, 64)
-		if err != nil {
-			return err
+		txFee := float64(0)
+		if withdraw.TxFee != "" {
+			txFee, err = strconv.ParseFloat(withdraw.TxFee, 64)
+			if err != nil {
+				return err
+			}
 		}
 		txFees = append(txFees, txFee)
 		statuses = append(statuses, withdraw.Status)

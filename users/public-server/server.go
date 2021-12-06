@@ -39,7 +39,7 @@ type Server struct {
 //UserQuery is query for user info
 type userQuery struct {
 	//Address is user address
-	Address string `form:"address" binding:"required,isAddress"`
+	Address string `form:"address" binding:"required"`
 }
 
 //NewServer return new server instance

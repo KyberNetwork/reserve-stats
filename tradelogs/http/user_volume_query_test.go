@@ -19,6 +19,7 @@ const (
 )
 
 func TestUserVolume(t *testing.T) {
+	t.Skip()
 	s, err := newTestServer()
 	if err != nil {
 		t.Fatal(err)

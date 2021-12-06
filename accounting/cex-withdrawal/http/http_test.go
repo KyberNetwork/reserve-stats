@@ -142,20 +142,6 @@ func TestGetHuobiWithdrawal(t *testing.T) {
 					}, result)
 				},
 			},
-			{
-				Msg:      "get an invalid exchange name",
-				Endpoint: "/withdrawals",
-				Params: map[string]string{
-					"from": strconv.FormatUint(testTimestamp-10000, 10),
-					"to":   strconv.FormatUint(testTimestamp+10000, 10),
-					"cex":  "huoxbxix",
-				},
-				Method: http.MethodGet,
-				Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-					t.Helper()
-					require.Equal(t, http.StatusBadRequest, resp.Code)
-				},
-			},
 		}
 		err error
 	)

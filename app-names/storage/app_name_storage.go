@@ -72,7 +72,7 @@ func (adb *AppNameDB) CreateOrUpdate(app common.Application) (int64, bool, error
 	return result.ID, result.Updated, nil
 }
 
-//Update add addresses to list address of appID
+// Update add addresses to list address of appID
 func (adb *AppNameDB) Update(app common.Application) error {
 	var (
 		logger    = adb.sugar.With("func", caller.GetCurrentFunctionName())
@@ -205,7 +205,7 @@ GROUP BY apps.id, apps.name;`, appID)
 	return app, nil
 }
 
-//Delete set app active is false
+// Delete set app active is false
 func (adb *AppNameDB) Delete(appID int64) (err error) {
 	var (
 		logger = adb.sugar.With(

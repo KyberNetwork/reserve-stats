@@ -11,9 +11,9 @@ import (
 
 type walletFeeQuery struct {
 	httputil.TimeRangeQueryFreq
-	ReserveAddr string `form:"reserve" binding:"required,isAddress"`
-	WalletAddr  string `form:"walletAddr" binding:"required,isAddress"`
-	Timezone    int8   `form:"timezone" binding:"isSupportedTimezone"`
+	ReserveAddr string `form:"reserve" binding:"required"`
+	WalletAddr  string `form:"walletAddr" binding:"required"`
+	Timezone    int8   `form:"timezone"`
 }
 
 func (sv *Server) getWalletFee(c *gin.Context) {

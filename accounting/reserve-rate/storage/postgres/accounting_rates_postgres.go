@@ -17,14 +17,14 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
 )
 
-//RatesStorage defines the object to store rates
+// RatesStorage defines the object to store rates
 type RatesStorage struct {
 	sugar      *zap.SugaredLogger
 	db         *sqlx.DB
 	tableNames map[string]string
 }
 
-//Close close DB connection
+// Close close DB connection
 func (rdb *RatesStorage) Close() error {
 	if rdb.db != nil {
 		return rdb.db.Close()
@@ -32,7 +32,7 @@ func (rdb *RatesStorage) Close() error {
 	return nil
 }
 
-//getTokenQuote from pair return token and quote from quote-token pair
+// getTokenQuote from pair return token and quote from quote-token pair
 func getTokenQuoteFromPair(pair string) (string, string, error) {
 	ids := strings.Split(strings.TrimSpace(pair), "-")
 	if len(ids) != 2 {
@@ -77,7 +77,7 @@ func (rdb *RatesStorage) updateQuotes(tx *sqlx.Tx, quotes []string) error {
 	return err
 }
 
-//UpdateRatesRecords update mutiple rate records from a block with mutiple reserve address into the DB
+// UpdateRatesRecords update mutiple rate records from a block with mutiple reserve address into the DB
 func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lbdCommon.BlockInfo, rateRecords map[string]map[string]float64, ethusdRate float64) (err error) {
 	var (
 		rsvAddrs    = make(map[string]bool)
@@ -177,7 +177,7 @@ func (rdb *RatesStorage) UpdateRatesRecords(blockInfo lbdCommon.BlockInfo, rateR
 	return err
 }
 
-//GetETHUSDRates  return the ETH/USD  rate in  a period of times
+// GetETHUSDRates  return the ETH/USD  rate in  a period of times
 func (rdb *RatesStorage) GetETHUSDRates(from, to time.Time) (storage.AccountingReserveRates, error) {
 	var (
 		result = make(storage.AccountingReserveRates)
@@ -206,7 +206,7 @@ func (rdb *RatesStorage) GetETHUSDRates(from, to time.Time) (storage.AccountingR
 	return result, nil
 }
 
-//GetRates return the reserve rates in a period of times
+// GetRates return the reserve rates in a period of times
 func (rdb *RatesStorage) GetRates(from, to time.Time) (map[string]storage.AccountingReserveRates, error) {
 	var (
 		result  = make(map[string]storage.AccountingReserveRates)
@@ -260,7 +260,7 @@ func (rdb *RatesStorage) GetRates(from, to time.Time) (map[string]storage.Accoun
 	return result, nil
 }
 
-//updateETHUSDPrice store the ETHUSD rate at that blockInfo
+// updateETHUSDPrice store the ETHUSD rate at that blockInfo
 func (rdb *RatesStorage) updateETHUSDPrice(blockInfo lbdCommon.BlockInfo, ethusdRate float64, tx *sqlx.Tx) error {
 	var logger = rdb.sugar.With(
 		"func", caller.GetCurrentFunctionName(),
@@ -284,7 +284,7 @@ func (rdb *RatesStorage) updateETHUSDPrice(blockInfo lbdCommon.BlockInfo, ethusd
 	return err
 }
 
-//GetLastResolvedBlockInfo return block info of the rate with latest timestamp
+// GetLastResolvedBlockInfo return block info of the rate with latest timestamp
 func (rdb *RatesStorage) GetLastResolvedBlockInfo(reserveAddr ethereum.Address) (lbdCommon.BlockInfo, error) {
 	const (
 		selectStmt = `SELECT time,block FROM token_rates WHERE time=

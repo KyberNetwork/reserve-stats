@@ -37,12 +37,10 @@ func NewRedisCacher(sugar *zap.SugaredLogger, redisClient *redis.Client, db *sql
 
 // CacheUserInfo save user info to redis cache
 func (rc *RedisCacher) CacheUserInfo() error {
-	if err := rc.cacheRichUser(); err != nil {
-		return err
-	}
-	return nil
+	return rc.cacheRichUser()
 }
 
+// UserDailyVolume ...
 type UserDailyVolume struct {
 	UserAddress     string  `db:"user_addr"`
 	DailyFiatAmount float64 `db:"daily_fiat_amount"`

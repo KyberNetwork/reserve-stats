@@ -112,7 +112,7 @@ func (bd *BinanceStorage) UpdateDepositHistory(depositHistories []binance.Deposi
 	return nil
 }
 
-// WithdrawRecord represent a record of binace withdraw
+// DepositRecord represent a record of binace withdraw
 type DepositRecord struct {
 	Account string        `db:"account"`
 	Data    pq.ByteaArray `db:"data"`

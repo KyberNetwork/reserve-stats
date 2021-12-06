@@ -8,7 +8,7 @@ const DefaultDB = "users"
 //Info an information of an user
 type Info struct {
 	//Address add of user
-	Address string `json:"address" binding:"required,isAddress"`
+	Address string `json:"address" binding:"required"`
 	//Timestamp return timestamp of adding address
 	Timestamp int64 `json:"timestamp" binding:"required"`
 }
@@ -22,7 +22,7 @@ type UserResponse struct {
 //UserData user data post through post request to store in stats database
 type UserData struct {
 	//Email user email - unique
-	Email string `json:"email" binding:"required,isEmail" db:"email"`
+	Email string `json:"email" binding:"required" db:"email"`
 	//UserInfo user info include
 	UserInfo []Info `json:"user_info" binding:"required,dive"`
 }

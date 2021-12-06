@@ -147,8 +147,5 @@ func run(c *cli.Context) error {
 				}
 			}(account.Name))
 	}
-	if err := errGroup.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return errGroup.Wait()
 }

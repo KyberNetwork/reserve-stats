@@ -124,7 +124,7 @@ jobs:
         env:
           EXCLUDE: ${{ steps.exclude.outputs.value }}
         with:
-          version: v1.28.3
+          version: v1.40.1
           args: -v --config ./.golangci.yml ${{ env.EXCLUDE }}
   
   # similar to the lint phase, the test phase  

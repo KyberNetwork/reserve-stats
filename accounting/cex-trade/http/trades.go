@@ -21,7 +21,7 @@ const (
 
 type getTradesQuery struct {
 	httputil.TimeRangeQuery
-	Exchanges []string `form:"cex" binding:"dive,isValidCEXName"`
+	Exchanges []string `form:"cex"`
 }
 
 type getTradesResponse struct {
@@ -129,6 +129,33 @@ func (s *Server) getConvertToETHPrice(c *gin.Context) {
 		return
 	}
 	result, err := s.bs.GetConvertToETHPrice(query.From, query.To)
+	if err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+	c.JSON(
+		http.StatusOK,
+		result,
+	)
+}
+
+func (s *Server) get0xConvertTrades(c *gin.Context) {
+	var (
+		query getSpecialTradesQuery
+	)
+	if err := c.ShouldBindQuery(&query); err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusBadRequest,
+			err,
+		)
+		return
+	}
+	result, err := s.zs.GetConvertTrades(int64(query.From), int64(query.To))
 	if err != nil {
 		httputil.ResponseFailure(
 			c,

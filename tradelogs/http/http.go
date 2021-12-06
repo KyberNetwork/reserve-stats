@@ -87,7 +87,7 @@ func WithUserProfile(up userprofile.Interface) ServerOption {
 
 type burnFeeQuery struct {
 	libhttputil.TimeRangeQueryFreq
-	ReserveAddrs []string `form:"reserve" binding:"dive,isAddress"`
+	ReserveAddrs []string `form:"reserve"`
 }
 
 func (sv *Server) getTokenSymbol(tokenAddress ethereum.Address) (string, error) {

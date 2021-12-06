@@ -24,7 +24,7 @@ type Server struct {
 
 type reserveRatesQuery struct {
 	httputil.TimeRangeQuery
-	ReserveAddrs []string `form:"reserve" binding:"dive,isAddress"`
+	ReserveAddrs []string `form:"reserve"`
 }
 
 func (sv *Server) reserveRates(c *gin.Context) {

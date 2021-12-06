@@ -193,21 +193,6 @@ func TestTrades(t *testing.T) {
 				}, trades)
 			},
 		},
-		{
-			Msg:      "get getTrades with invalid exchange",
-			Endpoint: "/trades",
-			Method:   http.MethodGet,
-			Params: map[string]string{
-				"from": "1494901162000",
-				"to":   "1499865549600",
-				"cex":  "world_bank",
-			},
-			Body: nil,
-			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-				t.Helper()
-				require.Equal(t, http.StatusBadRequest, resp.Code)
-			},
-		},
 	}
 	for _, tc := range tests {
 		tc := tc
@@ -237,7 +222,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	ts = NewServer(sugar, "", hs, bs)
+	ts = NewServer(sugar, "", hs, bs, nil)
 	ts.register()
 
 	ret := m.Run()

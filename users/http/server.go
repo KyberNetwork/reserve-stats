@@ -63,7 +63,7 @@ type Server struct {
 
 type userStatsQuery struct {
 	UID     string `form:"uid" binding:"required"`
-	Address string `form:"address" binding:"required,isAddress"`
+	Address string `form:"address" binding:"required"`
 	KYCed   bool   `form:"kyced"`
 }
 

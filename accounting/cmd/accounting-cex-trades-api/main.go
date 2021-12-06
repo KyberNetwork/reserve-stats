@@ -10,6 +10,7 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/cex-trade/http"
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	huobistorage "github.com/KyberNetwork/reserve-stats/accounting/huobi/storage/postgres"
+	"github.com/KyberNetwork/reserve-stats/accounting/zerox/storage"
 	libapp "github.com/KyberNetwork/reserve-stats/lib/app"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 )
@@ -60,7 +61,11 @@ func run(c *cli.Context) error {
 		}
 	}()
 
-	s := http.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), hs, bs)
+	st, err := storage.NewZeroxStorage(db, sugar)
+	if err != nil {
+		return err
+	}
+	s := http.NewServer(sugar, httputil.NewHTTPAddressFromContext(c), hs, bs, st)
 
 	if err = s.Run(); err != nil {
 		return err

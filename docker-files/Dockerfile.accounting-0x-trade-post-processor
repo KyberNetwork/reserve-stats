@@ -1,4 +1,4 @@
-FROM golang:1.15 AS build-env
+FROM golang:1.17 AS build-env
 
 COPY . /reserve-stats
 WORKDIR /reserve-stats/accounting/cmd/accounting-0x-trade-post-processor

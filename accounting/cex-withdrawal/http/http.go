@@ -33,7 +33,7 @@ type Server struct {
 
 type queryInput struct {
 	httputil.TimeRangeQuery
-	Exchanges []string `form:"cex" binding:"dive,isValidCEXName"`
+	Exchanges []string `form:"cex"`
 }
 
 // BinanceWithdrawalResponse ...

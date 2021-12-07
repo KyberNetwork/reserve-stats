@@ -8,7 +8,7 @@ import (
 	lastblockdaily "github.com/KyberNetwork/reserve-stats/lib/lastblockdaily/common"
 )
 
-//Interface defines a set of interface for reserve rate storage, which can be implemented by any DB
+// Interface defines a set of interface for reserve rate storage, which can be implemented by any DB
 type Interface interface {
 	UpdateRatesRecords(lastblockdaily.BlockInfo, map[string]map[string]float64, float64) error
 	GetLastResolvedBlockInfo(ethereum.Address) (lastblockdaily.BlockInfo, error)

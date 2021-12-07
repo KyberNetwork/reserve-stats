@@ -37,10 +37,7 @@ func NewInternalRedisCacher(sugar *zap.SugaredLogger,
 
 // Cache24hVolume cache user volume daily by uid
 func (irc *InternalRedisCacher) Cache24hVolume() error {
-	if err := irc.cache24hVolumeByUID(); err != nil {
-		return err
-	}
-	return nil
+	return irc.cache24hVolumeByUID()
 }
 
 // User24hVolume ...

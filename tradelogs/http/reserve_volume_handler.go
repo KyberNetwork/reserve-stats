@@ -11,8 +11,8 @@ import (
 
 type reserveVolumeQuery struct {
 	httputil.TimeRangeQueryFreq
-	Asset   string `form:"asset" binding:"required,isAddress"`
-	Reserve string `form:"reserve" binding:"isAddress"`
+	Asset   string `form:"asset" binding:"required"`
+	Reserve string `form:"reserve"`
 }
 
 func (sv *Server) getReserveVolume(c *gin.Context) {

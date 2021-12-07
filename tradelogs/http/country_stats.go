@@ -11,8 +11,8 @@ import (
 
 type countryStatsQuery struct {
 	httputil.TimeRangeQuery
-	CountryCode string `form:"country" binding:"required,isValidCountryCode"`
-	Timezone    int8   `form:"timezone" binding:"isSupportedTimezone"`
+	CountryCode string `form:"country" binding:"required"`
+	Timezone    int8   `form:"timezone"`
 }
 
 func (sv *Server) getCountryStats(c *gin.Context) {

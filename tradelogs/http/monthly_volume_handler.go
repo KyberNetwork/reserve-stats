@@ -17,7 +17,7 @@ var (
 
 type monthlyVolumeQuery struct {
 	httputil.TimeRangeQuery
-	Reserve string `form:"reserve" binding:"isAddress"`
+	Reserve string `form:"reserve"`
 }
 
 func (sv *Server) getMonthlyVolume(c *gin.Context) {

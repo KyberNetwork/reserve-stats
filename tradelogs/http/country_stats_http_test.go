@@ -43,7 +43,6 @@ func TestCountryStatsHttp(t *testing.T) {
 	var (
 		endpoint       = "/country-stats"
 		country        = "VN"
-		invalidCountry = "xqdc"
 		unknownCountry = "UNKNOWN"
 		validFrom      = 1539129600000
 		invalidFrom    = "xxxx"
@@ -51,7 +50,6 @@ func TestCountryStatsHttp(t *testing.T) {
 		timezone       = 0
 		// mock core only return ETH, KNC is not in the list of mock core's clients
 		invalidFromInputEndpoint = fmt.Sprintf("%s?from=%s&to=%d&country=%s", endpoint, invalidFrom, validTo, country)
-		invalidCountryEndpoint   = fmt.Sprintf("%s?from=%d&to=%d&country=%s", endpoint, validFrom, validTo, invalidCountry)
 		validEndpoint            = fmt.Sprintf("%s?from=%d&to=%d&country=%s&timezone=%d", endpoint, validFrom, validTo, country, timezone)
 		unknownCountryEndpoint   = fmt.Sprintf("%s?from=%d&to=%d&country=%s", endpoint, validFrom, validTo, unknownCountry)
 	)
@@ -65,12 +63,6 @@ func TestCountryStatsHttp(t *testing.T) {
 		{
 			Msg:      "Test invalid from Input",
 			Endpoint: invalidFromInputEndpoint,
-			Method:   http.MethodGet,
-			Assert:   expectInvalidInput,
-		},
-		{
-			Msg:      "Test invalid country Input",
-			Endpoint: invalidCountryEndpoint,
 			Method:   http.MethodGet,
 			Assert:   expectInvalidInput,
 		},

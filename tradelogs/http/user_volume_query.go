@@ -10,7 +10,7 @@ import (
 
 type userVolumeQuery struct {
 	httputil.TimeRangeQueryFreq
-	UserAddress string `form:"userAddr" binding:"required,isAddress"`
+	UserAddress string `form:"userAddr" binding:"required"`
 }
 
 func (sv *Server) getUserVolume(c *gin.Context) {

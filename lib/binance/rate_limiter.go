@@ -56,20 +56,12 @@ func (r *RateLimiter) WaitN(ctx context.Context, n int) error {
 	defer r.m.Unlock()
 	errGr := errgroup.Group{}
 	errGr.Go(func() error {
-		if err := r.wafLimiter.Wait(ctx); err != nil {
-			return err
-		}
-		return nil
-	},
-	)
+		return r.wafLimiter.Wait(ctx)
+	})
 
 	errGr.Go(func() error {
-		if err := r.hardLimiter.WaitN(ctx, n); err != nil {
-			return err
-		}
-		return nil
-	},
-	)
+		return r.hardLimiter.WaitN(ctx, n)
+	})
 
 	return errGr.Wait()
 }

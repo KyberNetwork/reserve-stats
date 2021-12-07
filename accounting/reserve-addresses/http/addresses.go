@@ -16,7 +16,7 @@ import (
 )
 
 type createInput struct {
-	Address     string `json:"address" binding:"required,isAddress"`
+	Address     string `json:"address" binding:"required"`
 	Type        string `json:"type" binding:"required"`
 	Description string `json:"description"`
 }
@@ -149,7 +149,7 @@ func (s *Server) getAll(c *gin.Context) {
 }
 
 type updateInput struct {
-	Address     string  `json:"address" binding:"isAddress"`
+	Address     string  `json:"address"`
 	Type        *string `json:"type"`
 	Description string  `json:"description"`
 }

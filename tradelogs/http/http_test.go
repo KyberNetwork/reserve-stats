@@ -197,23 +197,6 @@ func TestBurnFeeRoute(t *testing.T) {
 			},
 		},
 		{
-			Msg:      "Test invalid reserve address",
-			Endpoint: "/burn-fee?freq=h&reserve=invalidAddress",
-			Method:   http.MethodGet,
-			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusBadRequest, resp.Code)
-
-				var result struct {
-					Error string `json:"error"`
-				}
-				if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-					t.Error("Could not decode result", "err", err)
-				}
-
-				assert.Contains(t, result.Error, "Field validation for 'ReserveAddrs[0]' failed on the 'isAddress' tag")
-			},
-		},
-		{
 			Msg:      "Test invalid frequency",
 			Endpoint: "/burn-fee?freq=invalid&reserve=0x63825c174ab367968EC60f061753D3bbD36A0D8F",
 			Method:   http.MethodGet,

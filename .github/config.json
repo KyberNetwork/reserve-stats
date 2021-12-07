@@ -38,6 +38,7 @@
      "accounting-cex-trades-api",
      "accounting-cex-withdrawals-api", 
      "accounting-binance-trade-post-processor",
+     "accounting-0x-trade-post-processor",
 
      "accounting-gateway", 
      "accounting-cex-deposits-api", 

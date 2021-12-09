@@ -21,10 +21,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage"
 )
 
-const (
-	hourlyBurnFeeMaxDuration = time.Hour * 24 * 180 // 180 days
-)
-
 // Server serve trade logs through http endpoint.
 type Server struct {
 	storage          storage.Interface

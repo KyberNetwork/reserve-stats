@@ -1,24 +1,18 @@
 {
   "directories": [
     "reserverates",
-    "users",
     "gateway",
-    "burnedfees",
     "tradelogs",
     "tokenratefetcher",
-    "app-names",
     "accounting",
     "other"
   ],
   "services": [
      "reserve-rates-api",
      "reserve-rates-crawler",
-     
      "gateway",
-
      "trade-logs-api",
      "trade-logs-crawler",
-     
      "token-rate-fetcher",
 
      "accounting-binance-trade-fetcher",
@@ -37,7 +31,6 @@
 
      "accounting-huobi-trade-fetcher", 
      "accounting-huobi-withdrawal-fetcher",
-
      "accounting-reserve-addresses-api",
 
      "accounting-listed-token-fetcher",

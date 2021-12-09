@@ -86,10 +86,6 @@ func run(c *cli.Context) error {
 	binanceClient := binance.NewClient("", "")
 	client := zerox.NewZeroXTradelogClient(baseURL, binanceClient, marketDataClient, l)
 
-	endTime := c.Int64(toTimeFlag)
-	if endTime == 0 {
-		endTime = time.Now().Unix() // default timestamp is now
-	}
 	ticker := time.NewTicker(time.Minute)
 	for ; true; <-ticker.C {
 		startTime := c.Int64(fromTimeFlag)
@@ -102,6 +98,10 @@ func run(c *cli.Context) error {
 			if startTime == 0 {
 				startTime = defaultFromTime
 			}
+		}
+		endTime := c.Int64(toTimeFlag)
+		if endTime == 0 {
+			endTime = time.Now().Unix() // default timestamp is now
 		}
 		if err := findConvertTrade(startTime, endTime, client, st); err != nil {
 			return err

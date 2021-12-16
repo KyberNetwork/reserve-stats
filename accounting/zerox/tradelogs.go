@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"net/http"
 	"strconv"
 	"time"
@@ -96,6 +97,10 @@ type ConvertTrades struct {
 	Symbols         []string
 	Prices          []float64
 	Timestamps      []int64
+	InToken         []string
+	InTokenAmount   []float64
+	OutToken        []string
+	OutTokenAmount  []float64
 	OriginalTrades  [][]byte
 	Trades          [][]byte
 }
@@ -165,6 +170,18 @@ func (z *TradelogClient) updateTrade(result ConvertTrades, originalSymbol, symbo
 		return result, err
 	}
 	result.OriginalTrades = append(result.OriginalTrades, originalTradeB)
+	result.InToken = append(result.InToken, trade.InputToken.Symbol)
+	result.OutToken = append(result.OutToken, trade.OutputToken.Symbol)
+	inTokenAmount, err := z.convertAmount(trade.InputTokenAmount, trade.InputToken.Decimals)
+	if err != nil {
+		return result, err
+	}
+	outTokenAmount, err := z.convertAmount(trade.OutputTokenAmount, trade.OutputToken.Decimals)
+	if err != nil {
+		return result, err
+	}
+	result.InTokenAmount = append(result.InTokenAmount, inTokenAmount)
+	result.OutTokenAmount = append(result.OutTokenAmount, outTokenAmount)
 	return result, nil
 }
 
@@ -182,4 +199,21 @@ func (z *TradelogClient) getGetAggregatedTradesWithRetry(symbol string, startTim
 		aggregatedTrades = append(aggregatedTrades, aggTrades...)
 	}
 	return aggregatedTrades, err
+}
+
+func (z *TradelogClient) convertAmount(amountStr, decimalsStr string) (float64, error) {
+	decimals, err := strconv.ParseInt(decimalsStr, 10, 64)
+	if err != nil {
+		z.sugar.Errorw("failed to parse decimals", "error", err)
+		return 0, err
+	}
+	pow := new(big.Int).Exp(big.NewInt(10), big.NewInt(decimals), nil)
+	amountFloat, ok := big.NewFloat(0).SetString(amountStr)
+	if !ok {
+		z.sugar.Error("failed to parse amount")
+		return 0, fmt.Errorf("failed to parse amount")
+	}
+	amountF := new(big.Float).Quo(amountFloat, big.NewFloat(0).SetInt(pow))
+	amount, _ := amountF.Float64()
+	return amount, nil
 }

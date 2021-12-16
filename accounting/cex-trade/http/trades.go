@@ -1,6 +1,8 @@
 package http
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -8,6 +10,7 @@ import (
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	_ "github.com/KyberNetwork/reserve-stats/accounting/common/validators" // import custom validator functions
+	"github.com/KyberNetwork/reserve-stats/accounting/zerox"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
@@ -168,4 +171,103 @@ func (s *Server) get0xConvertTrades(c *gin.Context) {
 		http.StatusOK,
 		result,
 	)
+}
+
+// ConvertTrade ...
+type ConvertTrade struct {
+	Timestamp int64   `json:"timestamp"`
+	Symbol    string  `json:"symbol"`
+	Side      string  `json:"side"`
+	Rate      float64 `json:"rate"`
+}
+
+func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
+	var (
+		result    = []ConvertTrade{}
+		ethAmount float64
+	)
+
+	// find eth amount
+	if trade.InToken == "USDT" {
+		ethAmount = trade.InTokenAmount / trade.ETHRate
+	} else if trade.OutToken == "USDT" {
+		ethAmount = trade.OutTokenAmount / trade.ETHRate
+	} else {
+		ethAmount = trade.InTokenAmount * trade.InTokenRate / trade.ETHRate
+	}
+
+	// find side and rate
+	if trade.InToken != "USDT" {
+		symbol, side, rate := convertRateToBinance(trade.InTokenAmount, ethAmount, trade.InToken, "ETH")
+		result = append(result, ConvertTrade{Timestamp: trade.Timestamp, Symbol: symbol, Side: side, Rate: rate})
+	}
+	if trade.OutToken != "USDT" {
+		symbol, side, rate := convertRateToBinance(ethAmount, trade.OutTokenAmount, "ETH", trade.OutToken)
+		result = append(result, ConvertTrade{Timestamp: trade.Timestamp, Symbol: symbol, Side: side, Rate: rate})
+	}
+
+	return result
+}
+
+func (s *Server) getConvertTrades(c *gin.Context) {
+	var (
+		query    getSpecialTradesQuery
+		response []ConvertTrade
+	)
+	if err := c.ShouldBindQuery(&query); err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusBadRequest,
+			err,
+		)
+		return
+	}
+	result, err := s.zs.GetConvertTradeInfo(int64(query.From), int64(query.To))
+	if err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+	for _, trade := range result {
+		r := process(trade)
+		response = append(response, r...)
+	}
+	c.JSON(
+		http.StatusOK,
+		response,
+	)
+}
+
+func convertRateToBinance(inAmount, outAmount float64, inToken, outToken string) (string, string, float64) {
+	var (
+		in, out     = 100, 100
+		quoteTokens = []string{"DAI", "USDT", "BUSD", "USDC", "BTC", "WBTC", "WETH", "ETH"}
+	)
+	for i, t := range quoteTokens {
+		if inToken == t {
+			in = i
+			continue
+		}
+		if outToken == t {
+			out = i
+			continue
+		}
+	}
+	if in == out {
+		log.Printf("%d - %d", in, out)
+		return "", "", 0
+	}
+	if in < out {
+		symbol := fmt.Sprintf("%s%s", outToken, inToken)
+		side := "ask"
+		rate := inAmount / outAmount
+		return symbol, side, rate
+	}
+	symbol := fmt.Sprintf("%s%s", inToken, outToken)
+	side := "bid"
+	rate := outAmount / inAmount
+	return symbol, side, rate
 }

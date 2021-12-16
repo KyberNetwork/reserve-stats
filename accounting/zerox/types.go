@@ -37,3 +37,15 @@ type ConvertTrade struct {
 	Price     float64 `db:"price"`
 	Timestamp uint64  `db:"timestamp"`
 }
+
+// ConvertTradeInfo ...
+type ConvertTradeInfo struct {
+	ETHRate        float64 `db:"eth_rate"`
+	InToken        string  `db:"in_token"`
+	InTokenAmount  float64 `db:"in_token_amount"`
+	InTokenRate    float64 `db:"in_token_rate"`
+	OutToken       string  `db:"out_token"`
+	OutTokenAmount float64 `db:"out_token_amount"`
+	OutTokenRate   float64 `db:"out_token_rate"`
+	Timestamp      int64   `db:"timestamp"`
+}

@@ -22,7 +22,7 @@ import (
 const (
 	maxTimeFrame     = time.Hour * 24 * 30 // 30 days
 	defaultTimeFrame = time.Hour * 24      // 1 day
-	USDT             = "USDT"
+	usdt             = "USDT"
 )
 
 type getTradesQuery struct {
@@ -193,20 +193,20 @@ func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
 	)
 
 	// find eth amount
-	if trade.InToken == USDT {
+	if trade.InToken == usdt {
 		ethAmount = trade.InTokenAmount / trade.ETHRate
-	} else if trade.OutToken == USDT {
+	} else if trade.OutToken == usdt {
 		ethAmount = trade.OutTokenAmount / trade.ETHRate
 	} else {
 		ethAmount = trade.InTokenAmount * trade.InTokenRate / trade.ETHRate
 	}
 
 	// find side and rate
-	if trade.InToken != USDT {
+	if trade.InToken != usdt {
 		symbol, side, rate := convertRateToBinance(trade.InTokenAmount, ethAmount, trade.InToken, "ETH")
 		result = append(result, ConvertTrade{Timestamp: trade.Timestamp, Symbol: symbol, Side: side, Rate: rate, ETHAmount: ethAmount, Origin: trade.Origin})
 	}
-	if trade.OutToken != USDT {
+	if trade.OutToken != usdt {
 		symbol, side, rate := convertRateToBinance(ethAmount, trade.OutTokenAmount, "ETH", trade.OutToken)
 		result = append(result, ConvertTrade{Timestamp: trade.Timestamp, Symbol: symbol, Side: side, Rate: rate, ETHAmount: ethAmount, Origin: trade.Origin})
 	}

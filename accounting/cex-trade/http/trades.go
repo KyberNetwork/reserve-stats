@@ -22,6 +22,7 @@ import (
 const (
 	maxTimeFrame     = time.Hour * 24 * 30 // 30 days
 	defaultTimeFrame = time.Hour * 24      // 1 day
+	USDT             = "USDT"
 )
 
 type getTradesQuery struct {
@@ -181,6 +182,8 @@ type ConvertTrade struct {
 	Symbol    string  `json:"symbol"`
 	Side      string  `json:"side"`
 	Rate      float64 `json:"rate"`
+	ETHAmount float64 `json:"eth_amount"`
+	Origin    string  `json:"origin"`
 }
 
 func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
@@ -190,22 +193,22 @@ func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
 	)
 
 	// find eth amount
-	if trade.InToken == "USDT" {
+	if trade.InToken == USDT {
 		ethAmount = trade.InTokenAmount / trade.ETHRate
-	} else if trade.OutToken == "USDT" {
+	} else if trade.OutToken == USDT {
 		ethAmount = trade.OutTokenAmount / trade.ETHRate
 	} else {
 		ethAmount = trade.InTokenAmount * trade.InTokenRate / trade.ETHRate
 	}
 
 	// find side and rate
-	if trade.InToken != "USDT" {
+	if trade.InToken != USDT {
 		symbol, side, rate := convertRateToBinance(trade.InTokenAmount, ethAmount, trade.InToken, "ETH")
-		result = append(result, ConvertTrade{Timestamp: trade.Timestamp, Symbol: symbol, Side: side, Rate: rate})
+		result = append(result, ConvertTrade{Timestamp: trade.Timestamp, Symbol: symbol, Side: side, Rate: rate, ETHAmount: ethAmount, Origin: trade.Origin})
 	}
-	if trade.OutToken != "USDT" {
+	if trade.OutToken != USDT {
 		symbol, side, rate := convertRateToBinance(ethAmount, trade.OutTokenAmount, "ETH", trade.OutToken)
-		result = append(result, ConvertTrade{Timestamp: trade.Timestamp, Symbol: symbol, Side: side, Rate: rate})
+		result = append(result, ConvertTrade{Timestamp: trade.Timestamp, Symbol: symbol, Side: side, Rate: rate, ETHAmount: ethAmount, Origin: trade.Origin})
 	}
 
 	return result
@@ -329,7 +332,7 @@ func processBinanceConvertTrade(trade zerox.ConvertTradeInfo) []ConvertTrade {
 	} else {
 		symbol, side, rate = convertRateToBinance(ethAmount, trade.InTokenAmount, "ETH", inToken)
 	}
-	result = append(result, ConvertTrade{Timestamp: trade.Timestamp, Symbol: symbol, Side: side, Rate: rate})
+	result = append(result, ConvertTrade{Timestamp: trade.Timestamp, Symbol: symbol, Side: side, Rate: rate, Origin: trade.Origin, ETHAmount: ethAmount})
 
 	return result
 }

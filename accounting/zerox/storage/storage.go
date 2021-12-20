@@ -161,8 +161,10 @@ func (zs *ZeroxStorage) GetConvertTradeInfo(fromTime, toTime int64) ([]zerox.Con
 	const query = `WITH 
 intoken AS (SELECT price AS in_token_rate, timestamp FROM convert_trades WHERE symbol = concat(original_trade->'inputToken'->>'symbol','USDT')),
 outtoken AS (SELECT price as out_token_rate, timestamp FROM convert_trades WHERE symbol = concat(original_trade->'outputToken'->>'symbol','USDT')),
-ethtoken AS (SELECT symbol, price as eth_usdt_rate, timestamp,in_token, in_token_amount, out_token, out_token_amount FROM convert_trades WHERE symbol = 'ETHUSDT')
-SELECT in_token, COALESCE(in_token_rate, 0) AS in_token_rate, in_token_amount, eth_usdt_rate as eth_rate, out_token, out_token_amount, COALESCE(out_token_rate, 0) AS out_token_rate, ethtoken.timestamp
+ethtoken AS (SELECT symbol, price as eth_usdt_rate, timestamp,in_token, in_token_amount, out_token, out_token_amount,
+	original_trade->'transaction'->>'id' as origin FROM convert_trades WHERE symbol = 'ETHUSDT')
+SELECT in_token, COALESCE(in_token_rate, 0) AS in_token_rate, in_token_amount, eth_usdt_rate as eth_rate, out_token, out_token_amount, COALESCE(out_token_rate, 0) AS out_token_rate, ethtoken.timestamp,
+origin
 FROM ethtoken
 FULL JOIN intoken ON intoken.timestamp = ethtoken.timestamp
 FULL JOIN outtoken ON ethtoken.timestamp = outtoken.timestamp
@@ -179,7 +181,7 @@ func (zs *ZeroxStorage) GetBinanceConvertTradeInfo(fromTime, toTime int64) ([]ze
 	)
 	const query = `
 SELECT original_symbol AS in_token, price as eth_rate, timestamp, original_trade->>'qty' AS in_token_amount, original_trade->>'price' AS in_token_rate,
-original_trade->>'isBuyer' as isBuyer 
+original_trade->>'isBuyer' as is_buyer, original_trade->>'id' as origin
 FROM binance_convert_to_eth_price
 WHERE timestamp >= $1 AND timestamp <= $2;`
 	err := zs.db.Select(&temp, query, fromTime, toTime)
@@ -198,6 +200,8 @@ WHERE timestamp >= $1 AND timestamp <= $2;`
 			InToken:       t.InToken,
 			InTokenAmount: inTokenAmount,
 			InTokenRate:   inTokenRate,
+			IsBuyer:       t.IsBuyer,
+			Origin:        t.Origin,
 		})
 	}
 	return result, err

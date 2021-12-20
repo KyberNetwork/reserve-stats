@@ -170,3 +170,35 @@ WHERE ethtoken.timestamp >= $1 AND ethtoken.timestamp <= $2;`
 	err := zs.db.Select(&result, query, fromTime, toTime)
 	return result, err
 }
+
+// GetBinanceConvertTradeInfo ...
+func (zs *ZeroxStorage) GetBinanceConvertTradeInfo(fromTime, toTime int64) ([]zerox.ConvertTradeInfo, error) {
+	var (
+		temp   []zerox.CexConvertTradeInfo
+		result []zerox.ConvertTradeInfo
+	)
+	const query = `
+SELECT original_symbol AS in_token, price as eth_rate, timestamp, original_trade->>'qty' AS in_token_amount, original_trade->>'price' AS in_token_rate,
+original_trade->>'isBuyer' as isBuyer 
+FROM binance_convert_to_eth_price
+WHERE timestamp >= $1 AND timestamp <= $2;`
+	err := zs.db.Select(&temp, query, fromTime, toTime)
+	for _, t := range temp {
+		inTokenAmount, err := strconv.ParseFloat(t.InTokenAmount, 64)
+		if err != nil {
+			return nil, err
+		}
+		inTokenRate, err := strconv.ParseFloat(t.InTokenRate, 64)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, zerox.ConvertTradeInfo{
+			Timestamp:     t.Timestamp,
+			ETHRate:       t.ETHRate,
+			InToken:       t.InToken,
+			InTokenAmount: inTokenAmount,
+			InTokenRate:   inTokenRate,
+		})
+	}
+	return result, err
+}

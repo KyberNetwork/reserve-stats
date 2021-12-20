@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -270,4 +272,69 @@ func convertRateToBinance(inAmount, outAmount float64, inToken, outToken string)
 	side := "bid"
 	rate := outAmount / inAmount
 	return symbol, side, rate
+}
+
+func (s *Server) getConvertCexTrades(c *gin.Context) {
+	var (
+		query    getSpecialTradesQuery
+		response []ConvertTrade
+	)
+	if err := c.ShouldBindQuery(&query); err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusBadRequest,
+			err,
+		)
+		return
+	}
+	result, err := s.zs.GetBinanceConvertTradeInfo(int64(query.From), int64(query.To))
+	if err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+	for _, trade := range result {
+		r := processBinanceConvertTrade(trade)
+		response = append(response, r...)
+	}
+	c.JSON(
+		http.StatusOK,
+		response,
+	)
+}
+
+func processBinanceConvertTrade(trade zerox.ConvertTradeInfo) []ConvertTrade {
+	var (
+		result       = []ConvertTrade{}
+		ethAmount    float64
+		quoteString  = []string{"BTC", "USDT"}
+		symbol, side string
+		rate         float64
+	)
+
+	regexpString := fmt.Sprintf(".*(%s)$", strings.Join(quoteString, "|"))
+	re := regexp.MustCompile(regexpString)
+	// find eth amount
+	quote := quoteFromOriginalSymbol(re, trade.InToken)
+	inToken := strings.ReplaceAll(trade.InToken, quote, "")
+
+	ethAmount = (trade.InTokenAmount * trade.InTokenRate) / trade.ETHRate
+
+	// find side and rate
+	if trade.IsBuyer {
+		symbol, side, rate = convertRateToBinance(trade.InTokenAmount, ethAmount, inToken, "ETH")
+	} else {
+		symbol, side, rate = convertRateToBinance(ethAmount, trade.InTokenAmount, "ETH", inToken)
+	}
+	result = append(result, ConvertTrade{Timestamp: trade.Timestamp, Symbol: symbol, Side: side, Rate: rate})
+
+	return result
+}
+
+func quoteFromOriginalSymbol(re *regexp.Regexp, symbol string) string {
+	res := re.FindAllStringSubmatch(symbol, -1)
+	return res[0][1]
 }

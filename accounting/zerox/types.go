@@ -48,4 +48,15 @@ type ConvertTradeInfo struct {
 	OutTokenAmount float64 `db:"out_token_amount"`
 	OutTokenRate   float64 `db:"out_token_rate"`
 	Timestamp      int64   `db:"timestamp"`
+	IsBuyer        bool    `db:"isBuyer"`
+}
+
+// CexConvertTradeInfo ...
+type CexConvertTradeInfo struct {
+	ETHRate       float64 `db:"eth_rate"`
+	InToken       string  `db:"in_token"`
+	InTokenAmount string  `db:"in_token_amount"`
+	InTokenRate   string  `db:"in_token_rate"`
+	Timestamp     int64   `db:"timestamp"`
+	IsBuyer       bool    `db:"isBuyer"`
 }

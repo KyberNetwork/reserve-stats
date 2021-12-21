@@ -52,7 +52,7 @@ func (z *TradelogClient) GetTradelogsFromHTTP(fromTime, toTime time.Time) ([]Tra
 	)
 	for {
 		z.sugar.Infow("get tradelogs", "from time", fromTime.Unix(), "to time", toTime.Unix())
-		requestBody := []byte(`{"query": "{ maker(id: \"0xbc33a1f908612640f2849b56b67a4de4d179c151\") { nativeOrderFills( orderBy: timestamp, orderDirection: desc, first: 1000, skip: 0, where: { timestamp_lt: ` + fmt.Sprintf("%d", toTime.Unix()) + `, timestamp_gt: ` + fmt.Sprintf("%d", fromTime.Unix()) + ` } ) { timestamp, transaction{ id } inputToken{ id, symbol, decimals } outputToken{ id, symbol, decimals } inputTokenAmount, outputTokenAmount } } }"}`)
+		requestBody := []byte(`{"query": "{ maker(id: \"0xbc33a1f908612640f2849b56b67a4de4d179c151\") { nativeOrderFills( orderBy: timestamp, orderDirection: desc, first: 1000, skip: 0, where: { timestamp_lt: ` + fmt.Sprintf("%d", toTime.Unix()) + `, timestamp_gt: ` + fmt.Sprintf("%d", fromTime.Unix()) + ` } ) { timestamp taker{ id } transaction{ id } inputToken{ id, symbol, decimals } outputToken{ id, symbol, decimals } inputTokenAmount, outputTokenAmount } } }"}`)
 		endpoint := fmt.Sprintf("%s/0x-exchange", z.baseURL)
 		request, err := http.NewRequest(
 			http.MethodPost,

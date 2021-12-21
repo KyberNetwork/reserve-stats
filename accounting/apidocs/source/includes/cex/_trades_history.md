@@ -122,3 +122,35 @@ Params | Type | Required | Default | Description
 ------ | ---- | -------- | ------- | -----------
 from | integer | true | no | from time to get trades
 to | integer | true | now | to time to get trades
+
+## Get convert trades from 0x trades
+
+```shell
+curl -X GET "http://gateway.local/convert_to_eth_price?from=1494901162000&to=1499865549600"
+```
+
+> the above request will return reponse like this:
+
+```json
+[
+    {
+        "Symbol": "ETHBTC",
+        "Price": 0.027756,
+        "Timestamp": 1595471651724
+    },
+    {
+        "Symbol": "ETHBTC",
+        "Price": 0.02775,
+        "Timestamp": 1595500928416
+    }
+]
+```
+
+### HTTP request
+
+`GET http://gateway.local/convert_to_eth_price`
+
+Params | Type | Required | Default | Description
+------ | ---- | -------- | ------- | -----------
+from | integer | true | no | from time to get trades
+to | integer | true | now | to time to get trades

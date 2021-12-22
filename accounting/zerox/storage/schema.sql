@@ -14,6 +14,11 @@ CREATE TABLE IF NOT EXISTS convert_trades(
 	symbol TEXT NOT NULL,
 	price FLOAT NOT NULL,
 	timestamp BIGINT NOT NULL,
+	in_token TEXT NOT NULL,
+	in_token_amount FLOAT NOT NULL,
+	out_token TEXT NOT NULL,
+	out_token_amount FLOAT NOT NULL,
 	original_trade JSONB,
-	convert_trade JSONB 
+	convert_trade JSONB,
+	UNIQUE(symbol, timestamp)
 )

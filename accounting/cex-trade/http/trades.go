@@ -1,13 +1,19 @@
 package http
 
 import (
+	"fmt"
+	"math"
 	"net/http"
+	"regexp"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	_ "github.com/KyberNetwork/reserve-stats/accounting/common/validators" // import custom validator functions
+	"github.com/KyberNetwork/reserve-stats/accounting/zerox"
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
@@ -17,6 +23,10 @@ import (
 const (
 	maxTimeFrame     = time.Hour * 24 * 30 // 30 days
 	defaultTimeFrame = time.Hour * 24      // 1 day
+	usdt             = "USDT"
+	sellType         = "sell"
+	buyType          = "buy"
+	askSide          = "ask"
 )
 
 type getTradesQuery struct {
@@ -114,6 +124,7 @@ func (s *Server) getTrades(c *gin.Context) {
 
 type getSpecialTradesQuery struct {
 	httputil.TimeRangeQuery
+	Sort string `form:"sort"`
 }
 
 func (s *Server) getConvertToETHPrice(c *gin.Context) {
@@ -143,9 +154,88 @@ func (s *Server) getConvertToETHPrice(c *gin.Context) {
 	)
 }
 
-func (s *Server) get0xConvertTrades(c *gin.Context) {
+// ConvertTrade ...
+type ConvertTrade struct {
+	Timestamp    int64   `json:"timestamp"`
+	Rate         float64 `json:"rate"`
+	AccountName  string  `json:"account_name"`
+	Pair         string  `json:"pair"`
+	Type         string  `json:"type"`
+	Qty          float64 `json:"qty"` // amount of base token
+	ETHChange    float64 `json:"eth_change"`
+	TokenChange  float64 `json:"token_change"`
+	Hash         string  `json:"hash"`
+	TakerAddress string  `json:"taker_address"`
+}
+
+func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
 	var (
-		query getSpecialTradesQuery
+		result    = []ConvertTrade{}
+		ethAmount float64
+	)
+
+	// find eth amount
+	if trade.InToken == usdt {
+		ethAmount = trade.InTokenAmount / trade.ETHRate
+	} else if trade.OutToken == usdt {
+		ethAmount = trade.OutTokenAmount / trade.ETHRate
+	} else {
+		ethAmount = trade.InTokenAmount * trade.InTokenRate / trade.ETHRate
+	}
+
+	// find side and rate
+	if trade.InToken != usdt {
+		symbol, side, rate := convertRateToBinance(trade.InTokenAmount, ethAmount, trade.InToken, "ETH")
+		tradeType := sellType
+		tokenChange := trade.InTokenAmount * -1
+		if side == askSide {
+			tradeType = buyType
+			ethAmount *= -1
+			tokenChange = trade.InTokenAmount
+		}
+		result = append(result, ConvertTrade{
+			AccountName:  trade.AccountName,
+			Timestamp:    trade.Timestamp,
+			Pair:         symbol,
+			Type:         tradeType,
+			Rate:         rate,
+			ETHChange:    ethAmount,
+			TokenChange:  tokenChange,
+			Qty:          trade.InTokenAmount,
+			Hash:         trade.TxHash,
+			TakerAddress: trade.Taker,
+		})
+	}
+	if trade.OutToken != usdt {
+		symbol, side, rate := convertRateToBinance(ethAmount, trade.OutTokenAmount, "ETH", trade.OutToken)
+		tradeType := sellType
+		tokenChange := trade.InTokenAmount * -1
+		if side == askSide {
+			tradeType = buyType
+			ethAmount *= -1
+			tokenChange = trade.InTokenAmount
+		}
+		result = append(result, ConvertTrade{
+			AccountName:  trade.AccountName,
+			Timestamp:    trade.Timestamp,
+			Pair:         symbol,
+			Type:         tradeType,
+			Rate:         rate,
+			ETHChange:    ethAmount,
+			TokenChange:  tokenChange,
+			Qty:          trade.OutTokenAmount,
+			Hash:         trade.TxHash,
+			TakerAddress: trade.Taker,
+		})
+	}
+
+	return result
+}
+
+func (s *Server) getConvertTrades(c *gin.Context) {
+	var (
+		query    getSpecialTradesQuery
+		response []ConvertTrade
 	)
 	if err := c.ShouldBindQuery(&query); err != nil {
 		httputil.ResponseFailure(
@@ -155,7 +245,7 @@ func (s *Server) get0xConvertTrades(c *gin.Context) {
 		)
 		return
 	}
-	result, err := s.zs.GetConvertTrades(int64(query.From), int64(query.To))
+	result, err := s.zs.GetConvertTradeInfo(int64(query.From), int64(query.To))
 	if err != nil {
 		httputil.ResponseFailure(
 			c,
@@ -164,8 +254,120 @@ func (s *Server) get0xConvertTrades(c *gin.Context) {
 		)
 		return
 	}
+	for _, trade := range result {
+		r := process(trade)
+		response = append(response, r...)
+	}
+
+	result, err = s.zs.GetBinanceConvertTradeInfo(int64(query.From), int64(query.To))
+	if err != nil {
+		httputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+	for _, trade := range result {
+		r := processBinanceConvertTrade(trade)
+		response = append(response, r...)
+	}
+
+	sort.Slice(response, func(i, j int) bool {
+		return response[i].Timestamp > response[j].Timestamp
+	})
+
+	if strings.ToLower(query.Sort) == "asc" {
+		sort.Slice(response, func(i, j int) bool {
+			return response[i].Timestamp < response[j].Timestamp
+		})
+	}
+
 	c.JSON(
 		http.StatusOK,
-		result,
+		response,
 	)
+}
+
+func convertRateToBinance(inAmount, outAmount float64, inToken, outToken string) (string, string, float64) {
+	var (
+		in, out     = math.MaxInt64, math.MaxInt64
+		quoteTokens = []string{"DAI", "USDT", "BUSD", "USDC", "BTC", "WBTC", "WETH", "ETH"}
+	)
+	for i, t := range quoteTokens {
+		if inToken == t {
+			in = i
+			continue
+		}
+		if outToken == t {
+			out = i
+			continue
+		}
+	}
+	if in == out {
+		return "", "", 0
+	}
+	if in < out {
+		symbol := fmt.Sprintf("%s%s", outToken, inToken)
+		side := "ask"
+		rate := inAmount / outAmount
+		return symbol, side, rate
+	}
+	symbol := fmt.Sprintf("%s%s", inToken, outToken)
+	side := "bid"
+	rate := outAmount / inAmount
+	return symbol, side, rate
+}
+
+func processBinanceConvertTrade(trade zerox.ConvertTradeInfo) []ConvertTrade {
+	var (
+		result       = []ConvertTrade{}
+		ethAmount    float64
+		quoteString  = []string{"BTC", "USDT", "USDC", "WETH", "ETH"}
+		symbol, side string
+		rate         float64
+	)
+
+	regexpString := fmt.Sprintf(".*(%s)$", strings.Join(quoteString, "|"))
+	re := regexp.MustCompile(regexpString)
+	// find eth amount
+	quote := quoteFromOriginalSymbol(re, trade.InToken)
+	inToken := strings.TrimSuffix(trade.InToken, quote)
+
+	ethAmount = (trade.InTokenAmount * trade.InTokenRate) / trade.ETHRate
+
+	// find side and rate
+	if trade.IsBuyer {
+		symbol, side, rate = convertRateToBinance(trade.InTokenAmount, ethAmount, inToken, "ETH")
+	} else {
+		symbol, side, rate = convertRateToBinance(ethAmount, trade.InTokenAmount, "ETH", inToken)
+	}
+	tradeType := "sell"
+	tokenChange := trade.InTokenAmount * -1
+	if side == "ask" {
+		tradeType = "buy"
+		ethAmount *= -1
+		tokenChange = trade.InTokenAmount
+	}
+	result = append(result, ConvertTrade{
+		AccountName: trade.AccountName,
+		Timestamp:   trade.Timestamp,
+		Pair:        symbol,
+		Type:        tradeType,
+		Rate:        rate,
+		ETHChange:   ethAmount,
+		TokenChange: tokenChange,
+		Qty:         trade.InTokenAmount,
+	},
+	)
+
+	return result
+}
+
+func quoteFromOriginalSymbol(re *regexp.Regexp, symbol string) string {
+	res := re.FindAllStringSubmatch(symbol, -1)
+	if len(res) == 0 {
+		return ""
+	}
+	return res[0][1]
 }

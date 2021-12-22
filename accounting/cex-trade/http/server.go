@@ -36,7 +36,9 @@ func NewServer(sugar *zap.SugaredLogger, host string, hs huobistorage.Interface,
 func (s *Server) register() {
 	s.r.GET("/trades", s.getTrades)
 	s.r.GET("/convert_to_eth_price", s.getConvertToETHPrice)
-	s.r.GET("/convert_0x_trades", s.get0xConvertTrades)
+	// s.r.GET("/convert_cex_trades", s.getConvertCexTrades)
+	// s.r.GET("/convert_0x_trades", s.get0xConvertTrades)
+	s.r.GET("/convert_trades", s.getConvertTrades)
 }
 
 // Run starts the HTTP server and runs in foreground until terminate by user.

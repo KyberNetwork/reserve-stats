@@ -210,7 +210,7 @@ func (z *TradelogClient) convertAmount(amountStr, decimalsStr string) (float64, 
 	pow := new(big.Int).Exp(big.NewInt(10), big.NewInt(decimals), nil)
 	amountFloat, ok := big.NewFloat(0).SetString(amountStr)
 	if !ok {
-		z.sugar.Error("failed to parse amount")
+		z.sugar.Errorw("failed to parse amount", "amount str", amountStr)
 		return 0, fmt.Errorf("failed to parse amount")
 	}
 	amountF := new(big.Float).Quo(amountFloat, big.NewFloat(0).SetInt(pow))

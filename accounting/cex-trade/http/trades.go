@@ -2,9 +2,9 @@ package http
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -123,6 +123,7 @@ func (s *Server) getTrades(c *gin.Context) {
 
 type getSpecialTradesQuery struct {
 	httputil.TimeRangeQuery
+	Sort string `form:"sort"`
 }
 
 func (s *Server) getConvertToETHPrice(c *gin.Context) {
@@ -270,6 +271,17 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 		r := processBinanceConvertTrade(trade)
 		response = append(response, r...)
 	}
+
+	sort.Slice(response, func(i, j int) bool {
+		return response[i].Timestamp > response[j].Timestamp
+	})
+
+	if strings.ToLower(query.Sort) == "asc" {
+		sort.Slice(response, func(i, j int) bool {
+			return response[i].Timestamp < response[j].Timestamp
+		})
+	}
+
 	c.JSON(
 		http.StatusOK,
 		response,
@@ -292,7 +304,6 @@ func convertRateToBinance(inAmount, outAmount float64, inToken, outToken string)
 		}
 	}
 	if in == out {
-		log.Printf("%d - %d", in, out)
 		return "", "", 0
 	}
 	if in < out {
@@ -320,7 +331,7 @@ func processBinanceConvertTrade(trade zerox.ConvertTradeInfo) []ConvertTrade {
 	re := regexp.MustCompile(regexpString)
 	// find eth amount
 	quote := quoteFromOriginalSymbol(re, trade.InToken)
-	inToken := strings.ReplaceAll(trade.InToken, quote, "")
+	inToken := strings.TrimSuffix(trade.InToken, quote)
 
 	ethAmount = (trade.InTokenAmount * trade.InTokenRate) / trade.ETHRate
 
@@ -354,5 +365,8 @@ func processBinanceConvertTrade(trade zerox.ConvertTradeInfo) []ConvertTrade {
 
 func quoteFromOriginalSymbol(re *regexp.Regexp, symbol string) string {
 	res := re.FindAllStringSubmatch(symbol, -1)
+	if len(res) == 0 {
+		return ""
+	}
 	return res[0][1]
 }

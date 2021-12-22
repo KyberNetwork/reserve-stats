@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"regexp"
 	"sort"
@@ -290,7 +291,7 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 
 func convertRateToBinance(inAmount, outAmount float64, inToken, outToken string) (string, string, float64) {
 	var (
-		in, out     = 100, 100
+		in, out     = math.MaxInt64, math.MaxInt64
 		quoteTokens = []string{"DAI", "USDT", "BUSD", "USDC", "BTC", "WBTC", "WETH", "ETH"}
 	)
 	for i, t := range quoteTokens {

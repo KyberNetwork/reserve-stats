@@ -37,11 +37,11 @@ func NewZeroxStorage(db *sqlx.DB, sugar *zap.SugaredLogger) (*ZeroxStorage, erro
 // InsertTradelogs ...
 func (zs *ZeroxStorage) InsertTradelogs(tradelogs []zerox.Tradelog) error {
 	var (
-		tx, inputTokenSymbol, inputTokenAddress, outputTokenSymbol, outputTokenAddress []string
-		timestamp                                                                      []int64
-		inputTokenAmount, outputTokenAmount                                            []float64
+		tx, inputTokenSymbol, inputTokenAddress, outputTokenSymbol, outputTokenAddress, takerAddress []string
+		timestamp                                                                                    []int64
+		inputTokenAmount, outputTokenAmount                                                          []float64
 	)
-	query := `INSERT INTO tradelogs (tx, timestamp, input_token_symbol, input_token_address, input_token_amount, output_token_symbol, output_token_address, output_token_amount)
+	query := `INSERT INTO tradelogs (tx, timestamp, input_token_symbol, input_token_address, input_token_amount, output_token_symbol, output_token_address, output_token_amount, taker_address)
 	VALUES(
 		unnest($1::TEXT[]),
 		unnest($2::BIGINT[]),
@@ -50,7 +50,8 @@ func (zs *ZeroxStorage) InsertTradelogs(tradelogs []zerox.Tradelog) error {
 		unnest($5::FLOAT[]),
 		unnest($6::TEXT[]),
 		unnest($7::TEXT[]),
-		unnest($8::FLOAT[])
+		unnest($8::FLOAT[]),
+		unnest($9::TEXT[])
 	) ON CONFLICT (tx) DO NOTHING;`
 
 	for _, trade := range tradelogs {
@@ -77,10 +78,11 @@ func (zs *ZeroxStorage) InsertTradelogs(tradelogs []zerox.Tradelog) error {
 			return err
 		}
 		outputTokenAmount = append(outputTokenAmount, outputAmount)
+		takerAddress = append(takerAddress, trade.Taker.ID)
 	}
 
 	if _, err := zs.db.Exec(query, pq.Array(tx), pq.Array(timestamp), pq.Array(inputTokenSymbol), pq.Array(inputTokenAddress), pq.Array(inputTokenAmount),
-		pq.Array(outputTokenSymbol), pq.Array(outputTokenAddress), pq.Array(outputTokenAmount)); err != nil {
+		pq.Array(outputTokenSymbol), pq.Array(outputTokenAddress), pq.Array(outputTokenAmount), pq.Array(takerAddress)); err != nil {
 		zs.sugar.Errorw("failed to insert trades", "error", err)
 		return err
 	}
@@ -133,7 +135,7 @@ func (zs *ZeroxStorage) InsertConvertTrades(convertTrades zerox.ConvertTrades) e
 		unnest($8::FLOAT[]),
 		unnest($9::TEXT[]),
 		unnest($10::FLOAT[])
-	) ON CONFLICT DO NOTHING;`
+	) ON CONFLICT (symbol, timestamp) DO NOTHING;`
 	if _, err := zs.db.Exec(query, pq.Array(convertTrades.OriginalSymbols), pq.Array(convertTrades.Symbols),
 		pq.Array(convertTrades.Prices), pq.Array(convertTrades.Timestamps), pq.Array(convertTrades.OriginalTrades), pq.Array(convertTrades.Trades),
 		pq.Array(convertTrades.InToken), pq.Array(convertTrades.InTokenAmount), pq.Array(convertTrades.OutToken), pq.Array(convertTrades.OutTokenAmount)); err != nil {
@@ -151,6 +153,18 @@ func (zs *ZeroxStorage) GetConvertTrades(fromTime, toTime int64) ([]zerox.Conver
 	const query = `SELECT symbol, price, timestamp FROM convert_trades WHERE timestamp >= $1 AND timestamp <= $2;`
 	err := zs.db.Select(&result, query, fromTime, toTime)
 	return result, err
+}
+
+// Get0xTrades ...
+func (zs *ZeroxStorage) Get0xTrades(fromTime, toTime int64) ([]zerox.SimpleTradelog, error) {
+	var (
+		result []zerox.SimpleTradelog
+	)
+	query := `SELECT tx, timestamp, input_token_symbol, input_token_amount, output_token_symbol, output_token_amount, taker_address FROM tradelogs WHERE timestamp * 1000 >= $1 AND timestamp <= $2;`
+	if err := zs.db.Select(&result, query, fromTime, toTime); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // GetConvertTradeInfo ...

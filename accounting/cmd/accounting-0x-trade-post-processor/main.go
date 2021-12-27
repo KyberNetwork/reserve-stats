@@ -158,7 +158,7 @@ func findConvertTrade(startTime, endTime int64, client *zerox.TradelogClient, st
 			break
 		}
 
-		fromTime = toTime.Add(time.Second)
+		fromTime = toTime
 	}
 	return nil
 }

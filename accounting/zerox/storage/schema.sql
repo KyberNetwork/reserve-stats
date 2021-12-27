@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS tradelogs(
 	input_token_amount FLOAT NOT NULL,
 	output_token_symbol TEXT NOT NULL,
 	output_token_address TEXT NOT NULL,
-	output_token_amount FLOAT NOT NULL
+	output_token_amount FLOAT NOT NULL,
+	taker_address TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS convert_trades(

@@ -28,6 +28,17 @@ type Tradelog struct {
 	Taker             Taker       `json:"taker"`
 }
 
+// SimpleTradelog ...
+type SimpleTradelog struct {
+	Tx           string  `db:"tx"`
+	Timestamp    int64   `db:"timestamp"`
+	InputToken   string  `db:"input_token_symbol"`
+	InputAmount  float64 `db:"input_token_amount"`
+	OutputToken  string  `db:"output_token_symbol"`
+	OutputAmount float64 `db:"output_token_amount"`
+	TakerAddress string  `db:"taker_address"`
+}
+
 // TradelogsResponse ...
 type TradelogsResponse struct {
 	Data struct {

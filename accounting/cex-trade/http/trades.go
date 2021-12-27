@@ -254,6 +254,11 @@ func process(trade zerox.ConvertTradeInfo, originalTrades []zerox.SimpleTradelog
 		ethChange = ethAmount
 		if side == askSide {
 			tradeType = buyType
+			if strings.HasSuffix(symbol, eth) {
+				ethChange = ethAmount * -1
+				tokenChange = trade.OutTokenAmount
+			}
+		} else if strings.HasPrefix(symbol, eth) {
 			ethChange = ethAmount * -1
 			tokenChange = trade.OutTokenAmount
 		}
@@ -342,7 +347,7 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 	convertTrades := []ConvertTrade{}
 	for accountName, oTrades := range originalTrades {
 		for _, t := range oTrades {
-			if strings.HasPrefix(t.Symbol[:3], eth) || strings.HasSuffix(t.Symbol, eth) {
+			if strings.HasPrefix(t.Symbol, eth) || strings.HasSuffix(t.Symbol, eth) {
 				rate, err := strconv.ParseFloat(t.Price, 64)
 				if err != nil {
 					s.sugar.Errorw("failed to parse rate", "err", err)

@@ -250,12 +250,12 @@ func process(trade zerox.ConvertTradeInfo, originalTrades []zerox.SimpleTradelog
 	if trade.OutToken != usdt {
 		symbol, side, rate := convertRateToBinance(ethAmount, trade.OutTokenAmount, eth, trade.OutToken)
 		tradeType := sellType
-		tokenChange := trade.InTokenAmount * -1
+		tokenChange := trade.OutTokenAmount * -1
 		ethChange = ethAmount
 		if side == askSide {
 			tradeType = buyType
 			ethChange = ethAmount * -1
-			tokenChange = trade.InTokenAmount
+			tokenChange = trade.OutTokenAmount
 		}
 		result = append(result, ConvertTrade{
 			AccountName:  trade.AccountName,

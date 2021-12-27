@@ -51,6 +51,7 @@ func (s *Server) getTrades(c *gin.Context) {
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
+		s.sugar.Errorw("failed to validate query", "error", err)
 		httputil.ResponseFailure(
 			c,
 			http.StatusBadRequest,
@@ -69,7 +70,9 @@ func (s *Server) getTrades(c *gin.Context) {
 		httputil.TimeRangeQueryWithMaxTimeFrame(maxTimeFrame),
 		httputil.TimeRangeQueryWithDefaultTimeFrame(defaultTimeFrame),
 	)
+
 	if err != nil {
+		s.sugar.Errorw("faield to validate time range query", "error", err)
 		httputil.ResponseFailure(
 			c,
 			http.StatusBadRequest,
@@ -86,6 +89,7 @@ func (s *Server) getTrades(c *gin.Context) {
 		case common.Huobi.String():
 			huobiTrades, err = s.hs.GetTradeHistory(fromTime, toTime)
 			if err != nil {
+				s.sugar.Errorw("failed to get huobi trade history", "error", err)
 				httputil.ResponseFailure(
 					c,
 					http.StatusInternalServerError,
@@ -96,6 +100,7 @@ func (s *Server) getTrades(c *gin.Context) {
 		case common.Binance.String():
 			binanceTrades, err = s.bs.GetTradeHistory(fromTime, toTime)
 			if err != nil {
+				s.sugar.Errorw("failed to get binance trade history", "error", err)
 				httputil.ResponseFailure(
 					c,
 					http.StatusInternalServerError,
@@ -105,6 +110,7 @@ func (s *Server) getTrades(c *gin.Context) {
 			}
 			binanceMarginTrades, err := s.bs.GetMarginTradeHistory(fromTime, toTime)
 			if err != nil {
+				s.sugar.Errorw("failed to get binance margin trade history", "error", err)
 				httputil.ResponseFailure(
 					c,
 					http.StatusInternalServerError,
@@ -134,6 +140,7 @@ func (s *Server) getConvertToETHPrice(c *gin.Context) {
 		query getSpecialTradesQuery
 	)
 	if err := c.ShouldBindQuery(&query); err != nil {
+		s.sugar.Errorw("failed to validate query", "error", err)
 		httputil.ResponseFailure(
 			c,
 			http.StatusBadRequest,
@@ -143,6 +150,7 @@ func (s *Server) getConvertToETHPrice(c *gin.Context) {
 	}
 	result, err := s.bs.GetConvertToETHPrice(query.From, query.To)
 	if err != nil {
+		s.sugar.Errorw("failed to get convert eth price", "error", err)
 		httputil.ResponseFailure(
 			c,
 			http.StatusInternalServerError,
@@ -272,6 +280,7 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 		response []ConvertTrade
 	)
 	if err := c.ShouldBindQuery(&query); err != nil {
+		s.sugar.Errorw("failed to validate query", "error", err)
 		httputil.ResponseFailure(
 			c,
 			http.StatusBadRequest,
@@ -282,6 +291,7 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 	// on chain convert trades
 	result, err := s.zs.GetConvertTradeInfo(int64(query.From), int64(query.To))
 	if err != nil {
+		s.sugar.Errorw("failed to get convert trade info", "error", err)
 		httputil.ResponseFailure(
 			c,
 			http.StatusInternalServerError,
@@ -292,6 +302,7 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 
 	zeroxTrades, err := s.zs.Get0xTrades(int64(query.From), int64(query.To))
 	if err != nil {
+		s.sugar.Errorw("failed to get zerox trades", "error", err)
 		httputil.ResponseFailure(
 			c,
 			http.StatusInternalServerError,
@@ -308,6 +319,7 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 	// off chain (binance) convert trades
 	result, err = s.zs.GetBinanceConvertTradeInfo(int64(query.From), int64(query.To))
 	if err != nil {
+		s.sugar.Errorw("failed to get binance convert trade info", "error", err)
 		httputil.ResponseFailure(
 			c,
 			http.StatusInternalServerError,
@@ -319,6 +331,7 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 	toTime := time.UnixMilli(int64(query.To))
 	originalTrades, err := s.bs.GetTradeHistory(fromTime, toTime)
 	if err != nil {
+		s.sugar.Errorw("failed to get original trades", "error", err)
 		httputil.ResponseFailure(
 			c,
 			http.StatusInternalServerError,

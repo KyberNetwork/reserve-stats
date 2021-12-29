@@ -304,6 +304,7 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 		}
 		rate := t.OutputAmount / t.InputAmount
 		r = append(r, ConvertTrade{
+			AccountName:  "0xRFQ",
 			Timestamp:    t.Timestamp,
 			Rate:         rate,
 			Pair:         symbol,

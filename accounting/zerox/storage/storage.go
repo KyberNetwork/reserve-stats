@@ -160,7 +160,7 @@ func (zs *ZeroxStorage) Get0xTrades(fromTime, toTime int64) ([]zerox.SimpleTrade
 	var (
 		result []zerox.SimpleTradelog
 	)
-	query := `SELECT tx, timestamp, input_token_symbol, input_token_amount, output_token_symbol, output_token_amount, taker_address FROM tradelogs WHERE timestamp * 1000 >= $1 AND timestamp <= $2;`
+	query := `SELECT tx, timestamp, input_token_symbol, input_token_amount, output_token_symbol, output_token_amount, taker_address FROM tradelogs WHERE timestamp * 1000 >= $1 AND timestamp * 1000 <= $2;`
 	if err := zs.db.Select(&result, query, fromTime, toTime); err != nil {
 		return nil, err
 	}

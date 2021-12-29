@@ -178,41 +178,11 @@ type ConvertTrade struct {
 	TakerAddress string  `json:"taker_address"`
 }
 
-func process(trade zerox.ConvertTradeInfo, originalTrades []zerox.SimpleTradelog) []ConvertTrade {
+func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
 	var (
 		result               = []ConvertTrade{}
 		ethAmount, ethChange float64
-		symbol               string
 	)
-
-	// trade with ETH already
-	for _, t := range originalTrades {
-		symbol = t.InputToken + eth
-		tradeType := buyType
-		qty := t.InputAmount
-		ethAmount := t.OutputAmount
-		ethChange := ethAmount * -1
-		tokenChange := qty
-		if t.InputToken == "WETH" {
-			symbol = t.OutputToken + eth
-			tradeType = sellType
-			qty = t.OutputAmount
-			ethChange *= -1
-			tokenChange *= -1
-		}
-		rate := t.OutputAmount / t.InputAmount
-		result = append(result, ConvertTrade{
-			Timestamp:    t.Timestamp,
-			Rate:         rate,
-			Pair:         symbol,
-			Type:         tradeType,
-			Qty:          qty,
-			ETHChange:    ethChange,
-			TokenChange:  tokenChange,
-			Hash:         t.Tx,
-			TakerAddress: t.TakerAddress,
-		})
-	}
 
 	// find eth amount
 	if trade.InToken == usdt {
@@ -316,8 +286,39 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 		return
 	}
 
+	var r []ConvertTrade
+	// trade with ETH already
+	for _, t := range zeroxTrades {
+		symbol := t.InputToken + eth
+		tradeType := buyType
+		qty := t.InputAmount
+		ethAmount := t.OutputAmount
+		ethChange := ethAmount * -1
+		tokenChange := qty
+		if t.InputToken == "WETH" {
+			symbol = t.OutputToken + eth
+			tradeType = sellType
+			qty = t.OutputAmount
+			ethChange *= -1
+			tokenChange *= -1
+		}
+		rate := t.OutputAmount / t.InputAmount
+		r = append(r, ConvertTrade{
+			Timestamp:    t.Timestamp,
+			Rate:         rate,
+			Pair:         symbol,
+			Type:         tradeType,
+			Qty:          qty,
+			ETHChange:    ethChange,
+			TokenChange:  tokenChange,
+			Hash:         t.Tx,
+			TakerAddress: t.TakerAddress,
+		})
+	}
+	response = append(response, r...)
+
 	for _, trade := range result {
-		r := process(trade, zeroxTrades)
+		r := process(trade)
 		response = append(response, r...)
 	}
 

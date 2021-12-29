@@ -494,7 +494,7 @@ func (s *Server) processBinanceConvertTrade(trade zerox.ConvertTradeInfo, origin
 					tokenChange = inTokenAmount
 				}
 				result = append(result, ConvertTrade{
-					AccountName: trade.AccountName,
+					AccountName: trade.AccountName, //
 					Timestamp:   trade.Timestamp,
 					Pair:        symbol,
 					Type:        tradeType,

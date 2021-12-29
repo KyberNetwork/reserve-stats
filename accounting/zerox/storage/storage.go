@@ -197,7 +197,9 @@ func (zs *ZeroxStorage) GetBinanceConvertTradeInfo(fromTime, toTime int64) ([]ze
 SELECT original_symbol AS in_token, price as eth_rate, binance_convert_to_eth_price.timestamp as timestamp, original_trade->>'qty' AS in_token_amount, original_trade->>'price' AS in_token_rate,
 original_trade->>'isBuyer' as is_buyer, account as account_name
 FROM binance_convert_to_eth_price
-JOIN binance_trades on binance_convert_to_eth_price.original_trade->'id' = binance_trades."data"->'id'
+JOIN binance_trades 
+ON binance_convert_to_eth_price.original_trade->'id' = binance_trades."data"->'id'
+AND binance_convert_to_eth_price.original_symbol = binance_trades.symbol
 WHERE binance_convert_to_eth_price.timestamp >= $1 AND binance_convert_to_eth_price.timestamp <= $2;`
 	err := zs.db.Select(&temp, query, fromTime, toTime)
 	for _, t := range temp {

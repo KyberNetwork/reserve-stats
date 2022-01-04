@@ -14,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	appname "github.com/KyberNetwork/reserve-stats/app-names"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/broadcast"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
@@ -48,6 +47,9 @@ const (
 	// tradeExecute(address sender, address src, uint256 srcAmount, address destToken, uint256 destAmount, address destAddress)
 	// use for crawler v1 and v2
 	tradeExecuteEvent = "0xea9415385bae08fe9f6dc457b02577166790cde83bb18cc340aac6cb81b824de"
+
+	kyberSwapAppName  = "KyberSwap"
+	thirdPartyAppName = "ThirdParty"
 )
 
 var defaultTimeout = 10 * time.Second
@@ -554,9 +556,9 @@ func (crawler *Crawler) GetTradeLogs(fromBlock, toBlock *big.Int, timeout time.D
 		result.Trades[index].User.UID = uid
 
 		if tradeLog.IsKyberSwap() {
-			result.Trades[index].IntegrationApp = appname.KyberSwapAppName
+			result.Trades[index].IntegrationApp = kyberSwapAppName
 		} else {
-			result.Trades[index].IntegrationApp = appname.ThirdPartyAppName
+			result.Trades[index].IntegrationApp = thirdPartyAppName
 		}
 
 		rate, err := crawler.rateProvider.USDRate(tradeLog.Timestamp)

@@ -10,8 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	appname "github.com/KyberNetwork/reserve-stats/app-names"
-	lipappnames "github.com/KyberNetwork/reserve-stats/lib/appnames"
 	"github.com/KyberNetwork/reserve-stats/lib/blockchain"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	libhttputil "github.com/KyberNetwork/reserve-stats/lib/httputil"
@@ -23,6 +21,8 @@ import (
 
 const (
 	hourlyBurnFeeMaxDuration = time.Hour * 24 * 180 // 180 days
+
+	kyberSwapAppName = "KyberSwap"
 )
 
 // Server serve trade logs through http endpoint.
@@ -70,13 +70,6 @@ func NewServer(
 
 // ServerOption configures the behaviour of Server constructor.
 type ServerOption func(server *Server)
-
-// WithApplicationNames configures the Server instance to use appname integration.
-func WithApplicationNames(an lipappnames.AddrToAppName) ServerOption {
-	return func(sv *Server) {
-		sv.getAddrToAppName = an.GetAddrToAppName
-	}
-}
 
 // WithUserProfile configures the Server instance to use user profile lookup
 func WithUserProfile(up userprofile.Interface) ServerOption {
@@ -149,7 +142,7 @@ func (sv *Server) getTradeLogs(c *gin.Context) {
 		}
 		tradeLogs[i].User.UserName = up.UserName
 		tradeLogs[i].User.ProfileID = up.ProfileID
-		if tradeLogs[i].IntegrationApp != appname.KyberSwapAppName {
+		if tradeLogs[i].IntegrationApp != kyberSwapAppName {
 			name, avai := addrToAppName[log.WalletAddress]
 			if avai {
 				tradeLogs[i].IntegrationApp = name

@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"time"
 
-	appname "github.com/KyberNetwork/reserve-stats/app-names"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/common"
 	"github.com/KyberNetwork/reserve-stats/tradelogs/storage/postgres/schema"
+)
+
+const (
+	kyberSwapAppName = "KyberSwap"
 )
 
 // GetIntegrationVolume returns integration_volume and non_integration_volume groups by day
@@ -23,7 +26,7 @@ func (tldb *TradeLogDB) GetIntegrationVolume(fromTime, toTime time.Time) (map[ui
 		FROM "tradelogs" 
 		WHERE timestamp >= $1 and timestamp < $2
 		GROUP BY time`,
-		appname.KyberSwapAppName, schema.BuildDateTruncField("day", 0))
+		kyberSwapAppName, schema.BuildDateTruncField("day", 0))
 	logger.Debugw("prepare statement", "stmt", integrationQuery)
 	fromTime = schema.RoundTime(fromTime, "day", 0)
 	toTime = schema.RoundTime(toTime, "day", 0).Add(time.Hour * 24)

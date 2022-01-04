@@ -42,13 +42,6 @@ func main() {
 		}
 
 		var options []http.ServerOption
-		addrToAppName, err := appnames.NewClientFromContext(sugar, c)
-		if err != nil {
-			return err
-		}
-		if addrToAppName != nil {
-			options = append(options, http.WithApplicationNames(addrToAppName))
-		}
 
 		userClient, err := userprofile.NewClientFromContext(sugar, c)
 		if err != nil {

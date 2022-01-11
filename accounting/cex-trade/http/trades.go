@@ -299,13 +299,13 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 			symbol = t.OutputToken + eth
 			tradeType = sellType
 			qty = t.OutputAmount
-			ethChange *= -1
-			tokenChange *= -1
+			ethChange = t.InputAmount
+			tokenChange = t.OutputAmount * -1
 		}
 		rate := t.OutputAmount / t.InputAmount
 		r = append(r, ConvertTrade{
 			AccountName:  "0xRFQ",
-			Timestamp:    t.Timestamp,
+			Timestamp:    t.Timestamp * 1000,
 			Rate:         rate,
 			Pair:         symbol,
 			Type:         tradeType,

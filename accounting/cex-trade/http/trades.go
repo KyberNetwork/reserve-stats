@@ -483,7 +483,7 @@ func (s *Server) processBinanceConvertTrade(trade zerox.ConvertTradeInfo, origin
 				ethAmount = (inTokenAmount * trade.InTokenRate) / trade.ETHRate
 
 				// find side and rate
-				if trade.IsBuyer {
+				if !trade.IsBuyer {
 					symbol, side, rate = convertRateToBinance(inTokenAmount, ethAmount, inToken, eth)
 				} else {
 					symbol, side, rate = convertRateToBinance(ethAmount, inTokenAmount, eth, inToken)

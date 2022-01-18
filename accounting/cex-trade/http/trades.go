@@ -289,20 +289,19 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 	var r []ConvertTrade
 	// trade with ETH already
 	for _, t := range zeroxTrades {
-		symbol := t.InputToken + eth
 		tradeType := buyType
 		qty := t.InputAmount
 		ethAmount := t.OutputAmount
 		ethChange := ethAmount * -1
 		tokenChange := qty
+		symbol, _, rate := convertRateToBinance(t.InputAmount, t.OutputAmount, t.InputToken, eth)
 		if t.InputToken == "WETH" {
-			symbol = t.OutputToken + eth
 			tradeType = sellType
 			qty = t.OutputAmount
 			ethChange = t.InputAmount
 			tokenChange = t.OutputAmount * -1
+			symbol, _, rate = convertRateToBinance(t.InputAmount, t.OutputAmount, eth, t.OutputToken)
 		}
-		rate := t.OutputAmount / t.InputAmount
 		r = append(r, ConvertTrade{
 			AccountName:  "0xRFQ",
 			Timestamp:    t.Timestamp * 1000,

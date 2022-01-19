@@ -108,9 +108,6 @@ func run(c *cli.Context) error {
 		}
 		l.Info("Done. Wait for next loop")
 	}
-	// host := httputil.NewHTTPAddressFromContext(c)
-	// s := server.NewServer(l, host, st)
-	// return s.Run()
 	return nil
 }
 

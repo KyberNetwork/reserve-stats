@@ -128,11 +128,18 @@ func (z *TradelogClient) ConvertTrades(tradelogs []Tradelog) (ConvertTrades, err
 			continue
 		}
 		symbol = trade.InputToken.Symbol + "USDT"
+		if trade.InputToken.Symbol == "DAI" {
+			symbol = "USDT" + trade.InputToken.Symbol
+		}
 		result, err = z.updateTrade(result, originalSymbol, symbol, startTime, endTime, trade)
 		if err != nil {
 			return result, err
 		}
+
 		symbol = trade.OutputToken.Symbol + "USDT"
+		if trade.OutputToken.Symbol == "DAI" {
+			symbol = trade.OutputToken.Symbol + "USDT"
+		}
 		result, err = z.updateTrade(result, originalSymbol, symbol, startTime, endTime, trade)
 		if err != nil {
 			return result, err

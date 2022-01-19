@@ -26,6 +26,7 @@ const (
 	defaultTimeFrame = time.Hour * 24      // 1 day
 	usdt             = "USDT"
 	eth              = "ETH"
+	weth             = "WETH"
 	sellType         = "sell"
 	buyType          = "buy"
 	askSide          = "ask"
@@ -180,8 +181,8 @@ type ConvertTrade struct {
 
 func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
 	var (
-		result               = []ConvertTrade{}
-		ethAmount, ethChange float64
+		result    = []ConvertTrade{}
+		ethAmount float64
 	)
 
 	// find eth amount
@@ -196,14 +197,7 @@ func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
 	// find side and rate
 	if trade.InToken != usdt {
 		symbol, side, rate := convertRateToBinance(trade.InTokenAmount, ethAmount, trade.InToken, eth)
-		tradeType := sellType
-		tokenChange := trade.InTokenAmount * -1
-		ethChange = ethAmount
-		if side == askSide {
-			tradeType = buyType
-			ethChange = ethAmount * -1
-			tokenChange = trade.InTokenAmount
-		}
+		tradeType, ethChange, tokenChange := getAmountAndType(symbol, side, ethAmount, trade.InTokenAmount)
 		result = append(result, ConvertTrade{
 			AccountName:  trade.AccountName,
 			Timestamp:    trade.Timestamp,
@@ -219,19 +213,7 @@ func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
 	}
 	if trade.OutToken != usdt {
 		symbol, side, rate := convertRateToBinance(ethAmount, trade.OutTokenAmount, eth, trade.OutToken)
-		tradeType := sellType
-		tokenChange := trade.OutTokenAmount * -1
-		ethChange = ethAmount
-		if side == askSide {
-			tradeType = buyType
-			if strings.HasSuffix(symbol, eth) {
-				ethChange = ethAmount * -1
-				tokenChange = trade.OutTokenAmount
-			}
-		} else if strings.HasPrefix(symbol, eth) {
-			ethChange = ethAmount * -1
-			tokenChange = trade.OutTokenAmount
-		}
+		tradeType, ethChange, tokenChange := getAmountAndType(symbol, side, ethAmount, trade.OutTokenAmount)
 		result = append(result, ConvertTrade{
 			AccountName:  trade.AccountName,
 			Timestamp:    trade.Timestamp,
@@ -289,13 +271,16 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 	var r []ConvertTrade
 	// trade with ETH already
 	for _, t := range zeroxTrades {
+		if t.InputToken != weth && t.OutputToken != weth {
+			continue
+		}
 		tradeType := buyType
 		qty := t.InputAmount
 		ethAmount := t.OutputAmount
 		ethChange := ethAmount * -1
 		tokenChange := qty
 		symbol, _, rate := convertRateToBinance(t.InputAmount, t.OutputAmount, t.InputToken, eth)
-		if t.InputToken == "WETH" {
+		if t.InputToken == weth {
 			tradeType = sellType
 			qty = t.OutputAmount
 			ethChange = t.InputAmount
@@ -457,11 +442,32 @@ func convertRateToBinance(inAmount, outAmount float64, inToken, outToken string)
 	return symbol, side, rate
 }
 
+// return ethChange, tokenChange and ty
+func getAmountAndType(symbol, side string, ethAmount, qty float64) (string, float64, float64) {
+	var (
+		ethChange, tokenChange float64
+	)
+	tradeType := sellType
+	tokenChange = qty * -1
+	ethChange = ethAmount
+	if side == askSide {
+		tradeType = buyType
+		if strings.HasSuffix(symbol, eth) {
+			ethChange = ethAmount * -1
+			tokenChange = qty
+		}
+	} else if strings.HasPrefix(symbol, eth) {
+		ethChange = ethAmount * -1
+		tokenChange = qty
+	}
+	return tradeType, ethChange, tokenChange
+}
+
 func (s *Server) processBinanceConvertTrade(trade zerox.ConvertTradeInfo, originalTrades map[string][]binance.TradeHistory) []ConvertTrade {
 	var (
 		result       = []ConvertTrade{}
 		ethAmount    float64
-		quoteString  = []string{"BTC", "USDT", "USDC", "WETH", "ETH"}
+		quoteString  = []string{"DAI", "USDT", "BUSD", "USDC", "BTC", "WBTC", "WETH", "ETH"}
 		symbol, side string
 		rate         float64
 	)
@@ -487,20 +493,14 @@ func (s *Server) processBinanceConvertTrade(trade zerox.ConvertTradeInfo, origin
 				} else {
 					symbol, side, rate = convertRateToBinance(ethAmount, inTokenAmount, eth, inToken)
 				}
-				tradeType := "sell"
-				tokenChange := inTokenAmount * -1
-				if side == "ask" {
-					tradeType = "buy"
-					ethAmount *= -1
-					tokenChange = inTokenAmount
-				}
+				tradeType, ethChange, tokenChange := getAmountAndType(symbol, side, ethAmount, inTokenAmount)
 				result = append(result, ConvertTrade{
 					AccountName: trade.AccountName, //
 					Timestamp:   trade.Timestamp,
 					Pair:        symbol,
 					Type:        tradeType,
 					Rate:        rate,
-					ETHChange:   ethAmount,
+					ETHChange:   ethChange,
 					TokenChange: tokenChange,
 					Qty:         inTokenAmount,
 				},

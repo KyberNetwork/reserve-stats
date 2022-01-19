@@ -274,19 +274,14 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 		if t.InputToken != weth && t.OutputToken != weth {
 			continue
 		}
-		tradeType := buyType
 		qty := t.InputAmount
 		ethAmount := t.OutputAmount
-		ethChange := ethAmount * -1
-		tokenChange := qty
-		symbol, _, rate := convertRateToBinance(t.InputAmount, t.OutputAmount, t.InputToken, eth)
+		symbol, side, rate := convertRateToBinance(t.InputAmount, t.OutputAmount, t.InputToken, eth)
 		if t.InputToken == weth {
-			tradeType = sellType
 			qty = t.OutputAmount
-			ethChange = t.InputAmount
-			tokenChange = t.OutputAmount * -1
-			symbol, _, rate = convertRateToBinance(t.InputAmount, t.OutputAmount, eth, t.OutputToken)
+			symbol, side, rate = convertRateToBinance(t.InputAmount, t.OutputAmount, eth, t.OutputToken)
 		}
+		tradeType, ethChange, tokenChange := getAmountAndType(symbol, side, ethAmount, qty)
 		r = append(r, ConvertTrade{
 			AccountName:  "0xRFQ",
 			Timestamp:    t.Timestamp * 1000,
@@ -331,6 +326,10 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 		return
 	}
 	convertTrades := []ConvertTrade{}
+	var (
+		ethChange, tokenChange float64
+		tradeType              string
+	)
 	for accountName, oTrades := range originalTrades {
 		for _, t := range oTrades {
 			if strings.HasPrefix(t.Symbol, eth) || strings.HasSuffix(t.Symbol, eth) {
@@ -344,48 +343,38 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 					s.sugar.Errorw("failed to parse quantity", "err", err)
 					break
 				}
-				tradeType := "sell"
+				tradeType = "sell"
 				if t.IsBuyer {
 					tradeType = "buy"
 				}
 				if strings.HasPrefix(t.Symbol, eth) {
-					ethChange := qty
+					ethChange = qty
 					inTokenAmount := qty * rate
-					tokenChange := inTokenAmount * -1
+					tokenChange = inTokenAmount * -1
 					if !t.IsBuyer {
-						ethChange = ethChange * -1
+						ethChange *= -1
 						tokenChange = inTokenAmount
 					}
-					convertTrades = append(convertTrades, ConvertTrade{
-						AccountName: accountName,
-						Timestamp:   int64(t.Time),
-						Pair:        t.Symbol,
-						Type:        tradeType,
-						Rate:        rate,
-						ETHChange:   ethChange,
-						TokenChange: tokenChange,
-						Qty:         inTokenAmount,
-					})
 				} else {
 					inTokenAmount := qty
 					ethAmount := inTokenAmount * rate
-					tokenChange := inTokenAmount * -1
-					ethChange := ethAmount
+					tokenChange = inTokenAmount * -1
+					ethChange = ethAmount
 					if t.IsBuyer {
 						ethChange = ethChange * -1
 						tokenChange = inTokenAmount
 					}
-					convertTrades = append(convertTrades, ConvertTrade{
-						AccountName: accountName,
-						Timestamp:   int64(t.Time),
-						Pair:        t.Symbol,
-						Type:        tradeType,
-						Rate:        rate,
-						ETHChange:   ethChange,
-						TokenChange: tokenChange,
-						Qty:         inTokenAmount,
-					})
 				}
+				convertTrades = append(convertTrades, ConvertTrade{
+					AccountName: accountName,
+					Timestamp:   int64(t.Time),
+					Pair:        t.Symbol,
+					Type:        tradeType,
+					Rate:        rate,
+					ETHChange:   ethChange,
+					TokenChange: tokenChange,
+					Qty:         qty,
+				})
 				continue
 			}
 		}

@@ -177,6 +177,8 @@ type ConvertTrade struct {
 	TokenChange  float64 `json:"token_change"`
 	Hash         string  `json:"hash"`
 	TakerAddress string  `json:"taker_address"`
+	PricingGood  bool    `json:"pricing_good"`
+	PnLBPS       float64 `json:"pnl_bps"`
 }
 
 func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
@@ -274,19 +276,15 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 		if t.InputToken != weth && t.OutputToken != weth {
 			continue
 		}
-		tradeType := buyType
 		qty := t.InputAmount
 		ethAmount := t.OutputAmount
-		ethChange := ethAmount * -1
-		tokenChange := qty
-		symbol, _, rate := convertRateToBinance(t.InputAmount, t.OutputAmount, t.InputToken, eth)
+		symbol, side, rate := convertRateToBinance(t.InputAmount, t.OutputAmount, t.InputToken, eth)
 		if t.InputToken == weth {
-			tradeType = sellType
 			qty = t.OutputAmount
-			ethChange = t.InputAmount
-			tokenChange = t.OutputAmount * -1
-			symbol, _, rate = convertRateToBinance(t.InputAmount, t.OutputAmount, eth, t.OutputToken)
+			ethAmount = t.InputAmount
+			symbol, side, rate = convertRateToBinance(t.InputAmount, t.OutputAmount, eth, t.OutputToken)
 		}
+		tradeType, ethChange, tokenChange := getAmountAndType(symbol, side, ethAmount, qty)
 		r = append(r, ConvertTrade{
 			AccountName:  "0xRFQ",
 			Timestamp:    t.Timestamp * 1000,
@@ -331,6 +329,10 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 		return
 	}
 	convertTrades := []ConvertTrade{}
+	var (
+		ethChange, tokenChange float64
+		tradeType              string
+	)
 	for accountName, oTrades := range originalTrades {
 		for _, t := range oTrades {
 			if strings.HasPrefix(t.Symbol, eth) || strings.HasSuffix(t.Symbol, eth) {
@@ -344,48 +346,38 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 					s.sugar.Errorw("failed to parse quantity", "err", err)
 					break
 				}
-				tradeType := "sell"
+				tradeType = "sell"
 				if t.IsBuyer {
 					tradeType = "buy"
 				}
 				if strings.HasPrefix(t.Symbol, eth) {
-					ethChange := qty
+					ethChange = qty
 					inTokenAmount := qty * rate
-					tokenChange := inTokenAmount * -1
+					tokenChange = inTokenAmount * -1
 					if !t.IsBuyer {
-						ethChange = ethChange * -1
+						ethChange *= -1
 						tokenChange = inTokenAmount
 					}
-					convertTrades = append(convertTrades, ConvertTrade{
-						AccountName: accountName,
-						Timestamp:   int64(t.Time),
-						Pair:        t.Symbol,
-						Type:        tradeType,
-						Rate:        rate,
-						ETHChange:   ethChange,
-						TokenChange: tokenChange,
-						Qty:         inTokenAmount,
-					})
 				} else {
 					inTokenAmount := qty
 					ethAmount := inTokenAmount * rate
-					tokenChange := inTokenAmount * -1
-					ethChange := ethAmount
+					tokenChange = inTokenAmount * -1
+					ethChange = ethAmount
 					if t.IsBuyer {
 						ethChange = ethChange * -1
 						tokenChange = inTokenAmount
 					}
-					convertTrades = append(convertTrades, ConvertTrade{
-						AccountName: accountName,
-						Timestamp:   int64(t.Time),
-						Pair:        t.Symbol,
-						Type:        tradeType,
-						Rate:        rate,
-						ETHChange:   ethChange,
-						TokenChange: tokenChange,
-						Qty:         inTokenAmount,
-					})
 				}
+				convertTrades = append(convertTrades, ConvertTrade{
+					AccountName: accountName,
+					Timestamp:   int64(t.Time),
+					Pair:        t.Symbol,
+					Type:        tradeType,
+					Rate:        rate,
+					ETHChange:   ethChange,
+					TokenChange: tokenChange,
+					Qty:         qty,
+				})
 				continue
 			}
 		}
@@ -397,12 +389,22 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 	}
 
 	sort.Slice(response, func(i, j int) bool {
-		return response[i].Timestamp > response[j].Timestamp
+		return response[i].Timestamp < response[j].Timestamp
 	})
 
-	if strings.ToLower(query.Sort) == "asc" {
+	if err := s.updatePricingGood(response); err != nil {
+		s.sugar.Errorw("failed to get original trades", "error", err)
+		httputil.ResponseFailure(
+			c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+
+	if strings.ToLower(query.Sort) == "desc" {
 		sort.Slice(response, func(i, j int) bool {
-			return response[i].Timestamp < response[j].Timestamp
+			return response[i].Timestamp > response[j].Timestamp
 		})
 	}
 
@@ -518,4 +520,89 @@ func quoteFromOriginalSymbol(re *regexp.Regexp, symbol string) string {
 		return ""
 	}
 	return res[0][1]
+}
+
+func (s *Server) updatePricingGood(trades []ConvertTrade) error {
+	var (
+		onchainTrades   = make(map[string][]int) // save the index of the convert trades
+		rebalanceTrades = make(map[string][]int) // save the index of the convert trades
+		pnlRate         float64
+	)
+	s.sugar.Infow("update pricing good", "length", len(trades))
+	for index, t := range trades {
+		if t.AccountName == "0xRFQ" {
+			s.sugar.Infow("check", "pair", t.Pair)
+			if o, exist := onchainTrades[t.Pair]; exist {
+				lastOnchainTrades := trades[o[len(o)-1]]
+				timeDiff := t.Timestamp - lastOnchainTrades.Timestamp
+				s.sugar.Infow("timediff", "diff", timeDiff, "diff number", timeDiff-30*time.Minute.Milliseconds())
+				if timeDiff < 30*time.Minute.Milliseconds() {
+					onchainTrades[t.Pair] = append(onchainTrades[t.Pair], index)
+					continue
+				}
+
+				if len(rebalanceTrades[t.Pair]) > 0 {
+					s.sugar.Infow("update pricing good or not", "pair", t.Pair)
+					// detect is pricing good
+					var (
+						oTrades, rbTrades []ConvertTrade
+					)
+					for _, ot := range onchainTrades[t.Pair] {
+						oTrades = append(oTrades, trades[ot])
+					}
+					for _, rt := range rebalanceTrades[t.Pair] {
+						rbTrades = append(rbTrades, trades[rt])
+					}
+					onchainAVGPrice := avgPrice(oTrades)
+					rebalanceAVGPrice := avgPrice(rbTrades)
+
+					if t.Type == buyType {
+						pnlRate = rebalanceAVGPrice / onchainAVGPrice
+					} else {
+						pnlRate = onchainAVGPrice / rebalanceAVGPrice
+					}
+					s.sugar.Infow("rate", "pnlRate", pnlRate)
+				} else {
+					pnlRate = 0
+				}
+
+				pricingGood := false
+				if pnlRate > 1.0010 {
+					pricingGood = true
+				}
+				for _, tt := range onchainTrades[t.Pair] {
+					trades[tt].PricingGood = pricingGood
+					trades[tt].PnLBPS = pnlRate - 1
+				}
+
+				onchainTrades[t.Pair] = []int{index} // reset
+				rebalanceTrades[t.Pair] = []int{}    // reset
+				continue
+			}
+			onchainTrades[t.Pair] = []int{index} // init
+			continue
+		}
+		rebalanceTrades[t.Pair] = append(rebalanceTrades[t.Pair], index)
+	}
+	return nil
+}
+
+func avgPrice(trades []ConvertTrade) float64 {
+	var (
+		qty, ethQty float64
+	)
+	for _, t := range trades {
+		qty += t.TokenChange
+		ethQty += t.ETHChange
+	}
+	if ethQty < 0 {
+		ethQty *= -1
+	}
+	if qty < 0 {
+		qty *= -1
+	}
+	if strings.HasPrefix(trades[0].Pair, eth) {
+		return qty / ethQty
+	}
+	return ethQty / qty
 }

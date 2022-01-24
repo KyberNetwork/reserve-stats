@@ -285,6 +285,11 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 			symbol, side, rate = convertRateToBinance(t.InputAmount, t.OutputAmount, eth, t.OutputToken)
 		}
 		tradeType, ethChange, tokenChange := getAmountAndType(symbol, side, ethAmount, qty)
+		if tradeType == buyType {
+			tradeType = sellType
+		} else {
+			tradeType = buyType
+		}
 		r = append(r, ConvertTrade{
 			AccountName:  "0xRFQ",
 			Timestamp:    t.Timestamp * 1000,
@@ -292,8 +297,8 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 			Pair:         symbol,
 			Type:         tradeType,
 			Qty:          qty,
-			ETHChange:    ethChange,
-			TokenChange:  tokenChange,
+			ETHChange:    ethChange * -1,
+			TokenChange:  tokenChange * -1,
 			Hash:         t.Tx,
 			TakerAddress: t.TakerAddress,
 		})
@@ -572,7 +577,9 @@ func (s *Server) updatePricingGood(trades []ConvertTrade) error {
 				}
 				for _, tt := range onchainTrades[t.Pair] {
 					trades[tt].PricingGood = pricingGood
-					trades[tt].PnLBPS = pnlRate - 1
+					if pnlRate != 0 {
+						trades[tt].PnLBPS = pnlRate - 1
+					}
 				}
 
 				onchainTrades[t.Pair] = []int{index} // reset

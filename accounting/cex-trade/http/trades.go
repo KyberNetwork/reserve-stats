@@ -456,39 +456,54 @@ func quoteFromOriginalSymbol(re *regexp.Regexp, symbol string) string {
 
 func (s *Server) updatePricingGood(trades []ConvertTrade) error {
 	var (
-		onchainTrades   = make(map[string][]int) // save the index of the convert trades
-		rebalanceTrades = make(map[string][]int) // save the index of the convert trades
-		pnlRate         float64
+		onchainTrades     = make(map[string][]int) // save the index of the convert trades
+		rebalanceTrades   = make(map[string][]int) // save the index of the convert trades
+		pnlRate           float64
+		rebalancePair     string
+		lastOnchainTrades ConvertTrade
 	)
 	s.sugar.Infow("update pricing good", "length", len(trades))
 	for index, t := range trades {
 		if t.AccountName == "0xRFQ" {
 			s.sugar.Infow("check", "pair", t.Pair)
-			if o, exist := onchainTrades[t.Pair]; exist {
-				lastOnchainTrades := trades[o[len(o)-1]]
-				timeDiff := t.Timestamp - lastOnchainTrades.Timestamp
-				s.sugar.Infow("timediff", "diff", timeDiff, "diff number", timeDiff-30*time.Minute.Milliseconds())
-				if timeDiff < 30*time.Minute.Milliseconds() {
-					onchainTrades[t.Pair] = append(onchainTrades[t.Pair], index)
-					continue
+			ok := false
+			if o, e := onchainTrades["ETHUSDT"]; e && len(rebalanceTrades["ETHUSDT"]) > 0 { // edge case on USDT, if trade ETHUSDT will match with any on chain trades
+				rebalancePair = "ETHUSDT"
+				ok = true
+				lastOnchainTrades = trades[o[len(o)-1]]
+			}
+			if o, exist := onchainTrades[t.Pair]; exist || ok {
+				if exist {
+					lastOnchainTrades = trades[o[len(o)-1]]
+					if t.Type == lastOnchainTrades.Type { // if 2 on-chain have the same type, it could count as one trade
+						timeDiff := t.Timestamp - lastOnchainTrades.Timestamp
+						s.sugar.Infow("timediff", "diff", timeDiff, "diff number", timeDiff-30*time.Minute.Milliseconds())
+						if timeDiff < 30*time.Minute.Milliseconds() { // if 2 trades happen within 30 minutes, we combine it
+							onchainTrades[t.Pair] = append(onchainTrades[t.Pair], index)
+							continue
+						}
+					} else { // if 2 on-chain trades has different types, they rebalance themselves
+						rebalanceTrades[t.Pair] = append(rebalanceTrades[t.Pair], index)
+					}
+					rebalancePair = t.Pair
 				}
 
-				if len(rebalanceTrades[t.Pair]) > 0 {
+				if len(rebalanceTrades[rebalancePair]) > 0 {
 					s.sugar.Infow("update pricing good or not", "pair", t.Pair)
 					// detect is pricing good
 					var (
 						oTrades, rbTrades []ConvertTrade
 					)
-					for _, ot := range onchainTrades[t.Pair] {
+					for _, ot := range onchainTrades[rebalancePair] {
 						oTrades = append(oTrades, trades[ot])
 					}
-					for _, rt := range rebalanceTrades[t.Pair] {
+					for _, rt := range rebalanceTrades[rebalancePair] {
 						rbTrades = append(rbTrades, trades[rt])
 					}
 					onchainAVGPrice := avgPrice(oTrades)
 					rebalanceAVGPrice := avgPrice(rbTrades)
 
-					if t.Type == buyType {
+					if lastOnchainTrades.Type == buyType {
 						pnlRate = rebalanceAVGPrice / onchainAVGPrice
 					} else {
 						pnlRate = onchainAVGPrice / rebalanceAVGPrice

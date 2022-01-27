@@ -2,7 +2,6 @@ package http
 
 import (
 	"fmt"
-	"math"
 	"net/http"
 	"regexp"
 	"sort"
@@ -165,22 +164,6 @@ func (s *Server) getConvertToETHPrice(c *gin.Context) {
 	)
 }
 
-// ConvertTrade ...
-type ConvertTrade struct {
-	Timestamp    int64   `json:"timestamp"`
-	Rate         float64 `json:"rate"`
-	AccountName  string  `json:"account_name"`
-	Pair         string  `json:"pair"`
-	Type         string  `json:"type"`
-	Qty          float64 `json:"qty"` // amount of base token
-	ETHChange    float64 `json:"eth_change"`
-	TokenChange  float64 `json:"token_change"`
-	Hash         string  `json:"hash"`
-	TakerAddress string  `json:"taker_address"`
-	PricingGood  bool    `json:"pricing_good"`
-	PnLBPS       float64 `json:"pnl_bps"`
-}
-
 func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
 	var (
 		result    = []ConvertTrade{}
@@ -199,7 +182,7 @@ func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
 	// find side and rate
 	if trade.InToken != usdt {
 		symbol, side, rate := convertRateToBinance(trade.InTokenAmount, ethAmount, trade.InToken, eth)
-		tradeType, ethChange, tokenChange := getAmountAndType(symbol, side, ethAmount, trade.InTokenAmount)
+		tradeType, ethChange, tokenChange := getAmountAndTypeOnchain(symbol, side, ethAmount, trade.InTokenAmount)
 		result = append(result, ConvertTrade{
 			AccountName:  trade.AccountName,
 			Timestamp:    trade.Timestamp,
@@ -215,7 +198,7 @@ func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
 	}
 	if trade.OutToken != usdt {
 		symbol, side, rate := convertRateToBinance(ethAmount, trade.OutTokenAmount, eth, trade.OutToken)
-		tradeType, ethChange, tokenChange := getAmountAndType(symbol, side, ethAmount, trade.OutTokenAmount)
+		tradeType, ethChange, tokenChange := getAmountAndTypeOnchain(symbol, side, ethAmount, trade.OutTokenAmount)
 		result = append(result, ConvertTrade{
 			AccountName:  trade.AccountName,
 			Timestamp:    trade.Timestamp,
@@ -284,12 +267,7 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 			ethAmount = t.InputAmount
 			symbol, side, rate = convertRateToBinance(t.InputAmount, t.OutputAmount, eth, t.OutputToken)
 		}
-		tradeType, ethChange, tokenChange := getAmountAndType(symbol, side, ethAmount, qty)
-		if tradeType == buyType {
-			tradeType = sellType
-		} else {
-			tradeType = buyType
-		}
+		tradeType, ethChange, tokenChange := getAmountAndTypeOnchain(symbol, side, ethAmount, qty)
 		r = append(r, ConvertTrade{
 			AccountName:  "0xRFQ",
 			Timestamp:    t.Timestamp * 1000,
@@ -297,8 +275,8 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 			Pair:         symbol,
 			Type:         tradeType,
 			Qty:          qty,
-			ETHChange:    ethChange * -1,
-			TokenChange:  tokenChange * -1,
+			ETHChange:    ethChange,
+			TokenChange:  tokenChange,
 			Hash:         t.Tx,
 			TakerAddress: t.TakerAddress,
 		})
@@ -417,57 +395,6 @@ func (s *Server) getConvertTrades(c *gin.Context) {
 		http.StatusOK,
 		response,
 	)
-}
-
-func convertRateToBinance(inAmount, outAmount float64, inToken, outToken string) (string, string, float64) {
-	var (
-		in, out     = math.MaxInt64, math.MaxInt64
-		quoteTokens = []string{"DAI", "USDT", "BUSD", "USDC", "BTC", "WBTC", "WETH", "ETH"}
-	)
-	for i, t := range quoteTokens {
-		if inToken == t {
-			in = i
-			continue
-		}
-		if outToken == t {
-			out = i
-			continue
-		}
-	}
-	if in == out {
-		return "", "", 0
-	}
-	if in < out {
-		symbol := fmt.Sprintf("%s%s", outToken, inToken)
-		side := "ask"
-		rate := inAmount / outAmount
-		return symbol, side, rate
-	}
-	symbol := fmt.Sprintf("%s%s", inToken, outToken)
-	side := "bid"
-	rate := outAmount / inAmount
-	return symbol, side, rate
-}
-
-// return ethChange, tokenChange and ty
-func getAmountAndType(symbol, side string, ethAmount, qty float64) (string, float64, float64) {
-	var (
-		ethChange, tokenChange float64
-	)
-	tradeType := sellType
-	tokenChange = qty * -1
-	ethChange = ethAmount
-	if side == askSide {
-		tradeType = buyType
-		if strings.HasSuffix(symbol, eth) {
-			ethChange = ethAmount * -1
-			tokenChange = qty
-		}
-	} else if strings.HasPrefix(symbol, eth) {
-		ethChange = ethAmount * -1
-		tokenChange = qty
-	}
-	return tradeType, ethChange, tokenChange
 }
 
 func (s *Server) processBinanceConvertTrade(trade zerox.ConvertTradeInfo, originalTrades map[string][]binance.TradeHistory) []ConvertTrade {
@@ -592,24 +519,4 @@ func (s *Server) updatePricingGood(trades []ConvertTrade) error {
 		rebalanceTrades[t.Pair] = append(rebalanceTrades[t.Pair], index)
 	}
 	return nil
-}
-
-func avgPrice(trades []ConvertTrade) float64 {
-	var (
-		qty, ethQty float64
-	)
-	for _, t := range trades {
-		qty += t.TokenChange
-		ethQty += t.ETHChange
-	}
-	if ethQty < 0 {
-		ethQty *= -1
-	}
-	if qty < 0 {
-		qty *= -1
-	}
-	if strings.HasPrefix(trades[0].Pair, eth) {
-		return qty / ethQty
-	}
-	return ethQty / qty
 }

@@ -37,24 +37,17 @@ func convertRateToBinance(inAmount, outAmount float64, inToken, outToken string)
 }
 
 // avgPrice calculate average price of a slice of trade
-func avgPrice(trades []ConvertTrade) float64 {
+func avgPrice(trades []*ConvertTrade) float64 {
 	var (
-		qty, ethQty float64
+		rate float64
 	)
+	if len(trades) == 0 {
+		return 0
+	}
 	for _, t := range trades {
-		qty += t.TokenChange
-		ethQty += t.ETHChange
+		rate += t.Rate
 	}
-	if ethQty < 0 {
-		ethQty *= -1
-	}
-	if qty < 0 {
-		qty *= -1
-	}
-	if strings.HasPrefix(trades[0].Pair, eth) {
-		return qty / ethQty
-	}
-	return ethQty / qty
+	return rate / float64(len(trades))
 }
 
 // return ethChange, tokenChange and ty

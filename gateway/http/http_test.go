@@ -17,16 +17,20 @@ import (
 	"github.com/KyberNetwork/httpsign-utils/authenticator"
 	"github.com/KyberNetwork/httpsign-utils/sign"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
+	"github.com/KyberNetwork/reserve-stats/lib/testutil"
 )
 
 const (
-	fromParams      = 12342082
-	tradeLogsURL    = "127.0.0.1:7000"
-	testAddr        = "127.0.0.1:7001"
-	writeKeyID      = "writekeyID"
-	writeSigningKey = "fdsr122541"
-	readKeyID       = "readKeyID"
-	readSigningKey  = "xxx123xxx"
+	fromParams   = 12342082
+	tradeLogsURL = "127.0.0.1:7000"
+	testAddr     = "127.0.0.1:7001"
+)
+
+var (
+	writeKeyID      = testutil.RandomString(10)
+	writeSigningKey = testutil.RandomString(10)
+	readKeyID       = testutil.RandomString(10)
+	readSigningKey  = testutil.RandomString(10)
 )
 
 //WrappedRecorded wrap the gin response from proxy server

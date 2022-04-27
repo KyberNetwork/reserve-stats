@@ -131,6 +131,9 @@ func (z *TradelogClient) ConvertTrades(tradelogs []Tradelog) (ConvertTrades, err
 		if trade.InputToken.Symbol == "DAI" {
 			symbol = "USDT" + trade.InputToken.Symbol
 		}
+		if trade.InputToken.Symbol == "WBTC" { // WBTC does not have pair with USDT on binance
+			symbol = trade.InputToken.Symbol + "ETH"
+		}
 		result, err = z.updateTrade(result, originalSymbol, symbol, startTime, endTime, trade)
 		if err != nil {
 			return result, err
@@ -139,6 +142,9 @@ func (z *TradelogClient) ConvertTrades(tradelogs []Tradelog) (ConvertTrades, err
 		symbol = trade.OutputToken.Symbol + "USDT"
 		if trade.OutputToken.Symbol == "DAI" {
 			symbol = trade.OutputToken.Symbol + "USDT"
+		}
+		if trade.OutputToken.Symbol == "WBTC" { // WBTC does not have pair with USDT on binance
+			symbol = trade.OutputToken.Symbol + "ETH"
 		}
 		result, err = z.updateTrade(result, originalSymbol, symbol, startTime, endTime, trade)
 		if err != nil {

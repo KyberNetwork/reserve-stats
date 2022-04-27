@@ -26,6 +26,21 @@ type TradelogClient struct {
 	baseURL          string
 	binanceClient    *binance.Client
 	marketDataClient *marketdata.Client
+	symbols          []string
+}
+
+func updateBinaceSupportedSymbol(binanceClient *binance.Client) ([]string, error) {
+	var (
+		symbols []string
+	)
+	exchangeInfo, err := binanceClient.NewExchangeInfoService().Do(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	for _, s := range exchangeInfo.Symbols {
+		symbols = append(symbols, s.Symbol)
+	}
+	return symbols, nil
 }
 
 // NewZeroXTradelogClient ...
@@ -34,6 +49,11 @@ func NewZeroXTradelogClient(baseURL string, binanceClient *binance.Client, marke
 		Timeout: 5 * time.Second,
 	}
 	graphqlClient := graphql.NewClient("https://gateway.thegraph.com/api/6c2fe0823843837e65ab636c0a861158/subgraphs/id/0x36c057dd1850fad3c075ba83105e67d2448dedaf-0", &client)
+
+	symbols, err := updateBinaceSupportedSymbol(binanceClient)
+	if err != nil {
+		sugar.Errorw("failed to get symbols", "error", err)
+	}
 	return &TradelogClient{
 		graphqlClient:    graphqlClient,
 		httpClient:       &client,
@@ -41,6 +61,7 @@ func NewZeroXTradelogClient(baseURL string, binanceClient *binance.Client, marke
 		sugar:            sugar,
 		binanceClient:    binanceClient,
 		marketDataClient: marketDataClient,
+		symbols:          symbols,
 	}
 }
 
@@ -105,6 +126,15 @@ type ConvertTrades struct {
 	Trades          [][]byte
 }
 
+func (z *TradelogClient) checkSymbolIsSupported(symbol string) bool {
+	for _, s := range z.symbols {
+		if symbol == s {
+			return true
+		}
+	}
+	return false
+}
+
 // ConvertTrades convert trades to trades with ETH
 func (z *TradelogClient) ConvertTrades(tradelogs []Tradelog) (ConvertTrades, error) {
 	var (
@@ -131,7 +161,7 @@ func (z *TradelogClient) ConvertTrades(tradelogs []Tradelog) (ConvertTrades, err
 		if trade.InputToken.Symbol == "DAI" {
 			symbol = "USDT" + trade.InputToken.Symbol
 		}
-		if trade.InputToken.Symbol == "WBTC" { // WBTC does not have pair with USDT on binance
+		if z.checkSymbolIsSupported(symbol) { // WBTC does not have pair with USDT on binance
 			symbol = trade.InputToken.Symbol + "ETH"
 		}
 		result, err = z.updateTrade(result, originalSymbol, symbol, startTime, endTime, trade)
@@ -143,7 +173,7 @@ func (z *TradelogClient) ConvertTrades(tradelogs []Tradelog) (ConvertTrades, err
 		if trade.OutputToken.Symbol == "DAI" {
 			symbol = trade.OutputToken.Symbol + "USDT"
 		}
-		if trade.OutputToken.Symbol == "WBTC" { // WBTC does not have pair with USDT on binance
+		if z.checkSymbolIsSupported(symbol) { // WBTC does not have pair with USDT on binance
 			symbol = trade.OutputToken.Symbol + "ETH"
 		}
 		result, err = z.updateTrade(result, originalSymbol, symbol, startTime, endTime, trade)

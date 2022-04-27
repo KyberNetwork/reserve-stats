@@ -101,6 +101,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: "1.17.x"
+
       - name: Prepare before run lint check
         if: matrix.dir != 'other'
         run: |
@@ -126,6 +131,7 @@ jobs:
         with:
           version: v1.40.1
           args: -v --config ./.golangci.yml ${{ env.EXCLUDE }}
+          skip-go-installation: true
   
   # similar to the lint phase, the test phase  
   # runs tests on the directories declared in

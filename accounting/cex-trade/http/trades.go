@@ -171,12 +171,16 @@ func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
 	)
 
 	// find eth amount
-	if trade.InToken == usdt {
-		ethAmount = trade.InTokenAmount / trade.ETHRate
-	} else if trade.OutToken == usdt {
-		ethAmount = trade.OutTokenAmount / trade.ETHRate
+	if trade.ETHRate == 0 {
+		ethAmount = 0
 	} else {
-		ethAmount = trade.InTokenAmount * trade.InTokenRate / trade.ETHRate
+		if trade.InToken == usdt {
+			ethAmount = trade.InTokenAmount / trade.ETHRate
+		} else if trade.OutToken == usdt {
+			ethAmount = trade.OutTokenAmount / trade.ETHRate
+		} else {
+			ethAmount = trade.InTokenAmount * trade.InTokenRate / trade.ETHRate
+		}
 	}
 
 	// find side and rate
@@ -419,7 +423,9 @@ func (s *Server) processBinanceConvertTrade(trade zerox.ConvertTradeInfo, origin
 					s.sugar.Errorw("failed to parse token amount", "err", err)
 					break
 				}
-				ethAmount = (inTokenAmount * trade.InTokenRate) / trade.ETHRate
+				if trade.ETHRate != 0 {
+					ethAmount = (inTokenAmount * trade.InTokenRate) / trade.ETHRate
+				}
 
 				// find side and rate
 				if !trade.IsBuyer {
@@ -469,9 +475,13 @@ func (s *Server) detectPricingGood(pair string, onchainTrades, rebalanceTrades [
 		s.sugar.Infow("price", "onchain", onchainAVGPrice, "rebalance", rebalanceAVGPrice)
 
 		if lastOnchainTrades.Type == buyType {
-			pnlRate = rebalanceAVGPrice / onchainAVGPrice
+			if onchainAVGPrice != 0 {
+				pnlRate = rebalanceAVGPrice / onchainAVGPrice
+			}
 		} else {
-			pnlRate = onchainAVGPrice / rebalanceAVGPrice
+			if rebalanceAVGPrice != 0 {
+				pnlRate = onchainAVGPrice / rebalanceAVGPrice
+			}
 		}
 		s.sugar.Infow("rate", "pnlRate", pnlRate)
 	} else {

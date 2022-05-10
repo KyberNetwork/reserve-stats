@@ -166,27 +166,13 @@ func (s *Server) getConvertToETHPrice(c *gin.Context) {
 
 func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
 	var (
-		result    = []ConvertTrade{}
-		ethAmount float64
+		result = []ConvertTrade{}
 	)
-
-	// find eth amount
-	if trade.ETHRate == 0 {
-		ethAmount = 0
-	} else {
-		if trade.InToken == usdt {
-			ethAmount = trade.InTokenAmount / trade.ETHRate
-		} else if trade.OutToken == usdt {
-			ethAmount = trade.OutTokenAmount / trade.ETHRate
-		} else {
-			ethAmount = trade.InTokenAmount * trade.InTokenRate / trade.ETHRate
-		}
-	}
 
 	// find side and rate
 	if trade.InToken != usdt {
-		symbol, side, rate := convertRateToBinance(trade.InTokenAmount, ethAmount, trade.InToken, eth)
-		tradeType, ethChange, tokenChange := getAmountAndTypeOnchain(symbol, side, ethAmount, trade.InTokenAmount)
+		symbol, side, rate := convertRateToBinance(trade.InTokenAmount, trade.ETHAmount, trade.InToken, eth)
+		tradeType, ethChange, tokenChange := getAmountAndTypeOnchain(symbol, side, trade.ETHAmount, trade.InTokenAmount)
 		result = append(result, ConvertTrade{
 			AccountName:  trade.AccountName,
 			Timestamp:    trade.Timestamp,
@@ -201,8 +187,8 @@ func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
 		})
 	}
 	if trade.OutToken != usdt {
-		symbol, side, rate := convertRateToBinance(ethAmount, trade.OutTokenAmount, eth, trade.OutToken)
-		tradeType, ethChange, tokenChange := getAmountAndTypeOnchain(symbol, side, ethAmount, trade.OutTokenAmount)
+		symbol, side, rate := convertRateToBinance(trade.ETHAmount, trade.OutTokenAmount, eth, trade.OutToken)
+		tradeType, ethChange, tokenChange := getAmountAndTypeOnchain(symbol, side, trade.ETHAmount, trade.OutTokenAmount)
 		result = append(result, ConvertTrade{
 			AccountName:  trade.AccountName,
 			Timestamp:    trade.Timestamp,
@@ -467,12 +453,10 @@ func (s *Server) detectPricingGood(pair string, onchainTrades, rebalanceTrades [
 	)
 	const pnlGoodConstValue = 1.001
 	if len(rebalanceTrades) > 0 {
-		s.sugar.Infow("update pricing good or not", "pair", pair)
 		// detect is pricing good
 		lastOnchainTrades := onchainTrades[len(onchainTrades)-1]
 		onchainAVGPrice := avgPrice(onchainTrades)
 		rebalanceAVGPrice := avgPrice(rebalanceTrades)
-		s.sugar.Infow("price", "onchain", onchainAVGPrice, "rebalance", rebalanceAVGPrice)
 
 		if lastOnchainTrades.Type == buyType {
 			if onchainAVGPrice != 0 {
@@ -483,7 +467,6 @@ func (s *Server) detectPricingGood(pair string, onchainTrades, rebalanceTrades [
 				pnlRate = onchainAVGPrice / rebalanceAVGPrice
 			}
 		}
-		s.sugar.Infow("rate", "pnlRate", pnlRate)
 	} else {
 		pnlRate = 0
 	}
@@ -503,7 +486,6 @@ func (s *Server) updatePricingGood(trades []ConvertTrade) error {
 	s.sugar.Infow("update pricing good", "length", len(trades))
 	for i, t := range trades {
 		if t.AccountName == "0xRFQ" {
-			s.sugar.Infow("check", "pair", t.Pair)
 			ok := false
 			if o, e := onchainTrades["ETHUSDT"]; e && len(rebalanceTrades["ETHUSDT"]) > 0 { // edge case on USDT, if trade ETHUSDT will match with any on chain trades
 				rebalancePair = "ETHUSDT"
@@ -512,11 +494,9 @@ func (s *Server) updatePricingGood(trades []ConvertTrade) error {
 			}
 			if o, exist := onchainTrades[t.Pair]; exist || ok {
 				if exist {
-					s.sugar.Debugw("pair", "pair", t.Pair, "len", len(o))
 					lastOnchainTrades = *o[len(o)-1]
 					if t.Type == lastOnchainTrades.Type { // if 2 on-chain have the same type, it could count as one trade
 						timeDiff := t.Timestamp - lastOnchainTrades.Timestamp
-						s.sugar.Infow("timediff", "diff", timeDiff, "diff number", timeDiff-30*time.Minute.Milliseconds())
 						if timeDiff < 30*time.Minute.Milliseconds() { // if 2 trades happen within 30 minutes, we combine it
 							onchainTrades[t.Pair] = append(onchainTrades[t.Pair], &trades[i])
 							continue
@@ -546,7 +526,6 @@ func (s *Server) updatePricingGood(trades []ConvertTrade) error {
 
 	// calculate all the left trade
 	for pair, t := range onchainTrades {
-		s.sugar.Infow("left over pair", "name", pair)
 		pnlRate, pricingGood := s.detectPricingGood(pair, t, rebalanceTrades[pair])
 		for index := range t {
 			t[index].PricingGood = pricingGood

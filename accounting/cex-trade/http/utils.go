@@ -11,6 +11,7 @@ func convertRateToBinance(inAmount, outAmount float64, inToken, outToken string)
 		in, out     = math.MaxInt64, math.MaxInt64
 		quoteTokens = []string{"DAI", "USDT", "BUSD", "USDC", "BTC", "WBTC", "WETH", "ETH"}
 	)
+
 	for i, t := range quoteTokens {
 		if inToken == t {
 			in = i

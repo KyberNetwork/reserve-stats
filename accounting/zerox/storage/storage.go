@@ -170,20 +170,73 @@ func (zs *ZeroxStorage) Get0xTrades(fromTime, toTime int64) ([]zerox.SimpleTrade
 // GetConvertTradeInfo ...
 func (zs *ZeroxStorage) GetConvertTradeInfo(fromTime, toTime int64) ([]zerox.ConvertTradeInfo, error) {
 	var (
-		result []zerox.ConvertTradeInfo
+		temp, result []zerox.ConvertTradeInfo
 	)
+	// pair with USDT
 	const query = `WITH 
-intoken AS (SELECT price AS in_token_rate, timestamp FROM convert_trades WHERE symbol = concat(original_trade->'inputToken'->>'symbol','USDT') OR symbol = concat('USDT', original_trade->'inputToken'->>'symbol')),
-outtoken AS (SELECT price as out_token_rate, timestamp FROM convert_trades WHERE symbol = concat(original_trade->'outputToken'->>'symbol','USDT') OR symbol = concat('USDT', original_trade->'outputToken'->>'symbol')),
+intoken AS (SELECT price AS in_token_rate, timestamp 
+	FROM convert_trades 
+	WHERE symbol = concat(original_trade->'inputToken'->>'symbol','USDT') 
+	OR symbol = concat('USDT', original_trade->'inputToken'->>'symbol')),
+outtoken AS (SELECT price as out_token_rate, timestamp 
+	FROM convert_trades 
+	WHERE symbol = concat(original_trade->'outputToken'->>'symbol','USDT')
+	OR symbol = concat('USDT', original_trade->'outputToken'->>'symbol')),
 ethtoken AS (SELECT symbol, price as eth_usdt_rate, timestamp,in_token, in_token_amount, out_token, out_token_amount,
 	original_trade->'transaction'->>'id' as tx_hash, original_trade->'taker'->>'id' as taker  FROM convert_trades WHERE symbol = 'ETHUSDT')
-SELECT in_token, COALESCE(in_token_rate, 0) AS in_token_rate, in_token_amount, eth_usdt_rate as eth_rate, out_token, out_token_amount, COALESCE(out_token_rate, 0) AS out_token_rate, ethtoken.timestamp,
-tx_hash, taker, '0xRFQ' as account_name
+SELECT in_token, COALESCE(in_token_rate, 0) AS in_token_rate, in_token_amount, 
+	eth_usdt_rate as eth_rate, out_token, out_token_amount, COALESCE(out_token_rate, 0) AS out_token_rate, ethtoken.timestamp,
+	tx_hash, taker, '0xRFQ' as account_name
 FROM ethtoken
 FULL JOIN intoken ON intoken.timestamp = ethtoken.timestamp
 FULL JOIN outtoken ON ethtoken.timestamp = outtoken.timestamp
-WHERE ethtoken.timestamp >= $1 AND ethtoken.timestamp <= $2;`
+WHERE ethtoken.timestamp >= $1 AND ethtoken.timestamp <= $2 AND (in_token_rate != 0 OR out_token_rate != 0);`
 	err := zs.db.Select(&result, query, fromTime, toTime)
+	if err != nil {
+		return result, err
+	}
+	for index, r := range result {
+		var ethAmount float64
+		if r.InTokenRate != 0 {
+			ethAmount = (r.InTokenAmount * r.InTokenRate) / r.ETHRate
+		} else {
+			ethAmount = (r.OutTokenAmount * r.OutTokenAmount) / r.ETHRate
+		}
+		result[index].ETHAmount = ethAmount
+	}
+
+	/// pair with ETH
+	q := `WITH
+intoken AS (SELECT price AS in_token_rate, timestamp 
+	FROM convert_trades 
+	WHERE symbol = concat(original_trade->'inputToken'->>'symbol','ETH') 
+	OR symbol = concat('ETH', original_trade->'inputToken'->>'symbol')),
+outtoken AS (SELECT price as out_token_rate, timestamp 
+	FROM convert_trades 
+	WHERE symbol = concat(original_trade->'outputToken'->>'symbol','ETH')
+	OR symbol = concat('ETH', original_trade->'outputToken'->>'symbol')),
+ethtoken AS (SELECT symbol, price as eth_usdt_rate, timestamp,in_token, in_token_amount, out_token, out_token_amount,
+	original_trade->'transaction'->>'id' as tx_hash, original_trade->'taker'->>'id' as taker  FROM convert_trades WHERE symbol = 'ETHUSDT')
+SELECT in_token, COALESCE(in_token_rate, 0) AS in_token_rate, in_token_amount, 
+	eth_usdt_rate as eth_rate, out_token, out_token_amount, COALESCE(out_token_rate, 0) AS out_token_rate, ethtoken.timestamp,
+	tx_hash, taker, '0xRFQ' as account_name
+FROM ethtoken
+FULL JOIN intoken ON intoken.timestamp = ethtoken.timestamp
+FULL JOIN outtoken ON ethtoken.timestamp = outtoken.timestamp
+WHERE ethtoken.timestamp >= $1 AND ethtoken.timestamp <= $2 AND (in_token_rate != 0 OR out_token_rate != 0);
+	`
+	err = zs.db.Select(&temp, q, fromTime, toTime)
+	for _, r := range temp {
+		var ethAmount float64
+		if r.InTokenRate != 0 {
+			ethAmount = r.InTokenAmount * r.InTokenRate
+		} else {
+			ethAmount = r.OutTokenAmount * r.OutTokenRate
+		}
+		r.ETHAmount = ethAmount
+		result = append(result, r)
+	}
+
 	return result, err
 }
 

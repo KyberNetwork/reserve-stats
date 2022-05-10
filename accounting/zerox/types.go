@@ -69,6 +69,7 @@ type ConvertTradeInfo struct {
 	IsBuyer        bool    `db:"is_buyer"`
 	TxHash         string  `db:"tx_hash"`
 	Taker          string  `db:"taker"`
+	ETHAmount      float64 `db:"eth_amount"`
 }
 
 // CexConvertTradeInfo ...

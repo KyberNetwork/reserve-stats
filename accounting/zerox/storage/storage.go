@@ -200,7 +200,7 @@ WHERE ethtoken.timestamp >= $1 AND ethtoken.timestamp <= $2 AND (in_token_rate !
 		if r.InTokenRate != 0 {
 			ethAmount = (r.InTokenAmount * r.InTokenRate) / r.ETHRate
 		} else {
-			ethAmount = (r.OutTokenAmount * r.OutTokenAmount) / r.ETHRate
+			ethAmount = (r.OutTokenAmount * r.OutTokenRate) / r.ETHRate
 		}
 		result[index].ETHAmount = ethAmount
 	}

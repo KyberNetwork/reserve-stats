@@ -170,7 +170,7 @@ func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
 	)
 
 	// find side and rate
-	if trade.InToken != usdt {
+	if trade.InToken != usdt && trade.InTokenRate != 0 {
 		symbol, side, rate := convertRateToBinance(trade.InTokenAmount, trade.ETHAmount, trade.InToken, eth)
 		tradeType, ethChange, tokenChange := getAmountAndTypeOnchain(symbol, side, trade.ETHAmount, trade.InTokenAmount)
 		result = append(result, ConvertTrade{
@@ -186,7 +186,7 @@ func process(trade zerox.ConvertTradeInfo) []ConvertTrade {
 			TakerAddress: trade.Taker,
 		})
 	}
-	if trade.OutToken != usdt {
+	if trade.OutToken != usdt && trade.OutTokenRate != 0 {
 		symbol, side, rate := convertRateToBinance(trade.ETHAmount, trade.OutTokenAmount, eth, trade.OutToken)
 		tradeType, ethChange, tokenChange := getAmountAndTypeOnchain(symbol, side, trade.ETHAmount, trade.OutTokenAmount)
 		result = append(result, ConvertTrade{

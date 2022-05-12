@@ -6,8 +6,8 @@ type CEXName int
 
 const (
 	// Binance is exchange name for Binance
-	Binance CEXName = iota //binance
-	//Huobi is exchange name for Huobi
+	Binance CEXName = iota // binance
+	// Huobi is exchange name for Huobi
 	Huobi // huobi
 )
 

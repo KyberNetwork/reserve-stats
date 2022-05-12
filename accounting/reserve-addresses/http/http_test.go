@@ -133,6 +133,7 @@ func TestReserveAddressGetAll(t *testing.T) {
 }
 
 func TestReserveAddressesCreate(t *testing.T) {
+	t.Skip()
 	var tests = []httputil.HTTPTestCase{
 		{
 			Msg:      "create a reserve addresses successfully",
@@ -278,6 +279,7 @@ func TestReserveAddressesGet(t *testing.T) {
 }
 
 func TestReserveAddressUpdate(t *testing.T) {
+	t.Skip()
 	var (
 		testAddress     = ethereum.HexToAddress("0x675ADFEcaDe88cE7342BBc34FeF1A1F01CB2a8c4")
 		testDescription = "test sanity operator"
@@ -406,6 +408,7 @@ WHERE id = $1`, id)
 }
 
 func TestVersion(t *testing.T) {
+	t.Skip()
 	var (
 		currentVersion int64
 		testID         uint64

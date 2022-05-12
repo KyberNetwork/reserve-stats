@@ -72,11 +72,7 @@ func main() {
 			return err
 		}
 
-		if err = api.Start(); err != nil {
-			return err
-		}
-
-		return nil
+		return api.Start()
 	}
 
 	app.Flags = append(app.Flags, httputil.NewHTTPCliFlags(httputil.TradeLogsPort)...)

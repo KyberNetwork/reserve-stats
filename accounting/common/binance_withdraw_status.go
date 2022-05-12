@@ -5,20 +5,20 @@ package common
 type BinanceWithdrawStatus int
 
 const (
-	//EmailSent ís initial status of binance withdraw
-	EmailSent BinanceWithdrawStatus = iota //email-sent
-	//Cancelled withdraw status
-	Cancelled //cancelled
-	//AwaitingApproval withdraw status
+	// EmailSent ís initial status of binance withdraw
+	EmailSent BinanceWithdrawStatus = iota // email-sent
+	// Cancelled withdraw status
+	Cancelled // cancelled
+	// AwaitingApproval withdraw status
 	AwaitingApproval // awaiting-approval
-	//Rejected withdraw status
-	Rejected //rejected
-	//Processing withdraw status
-	Processing //processing
-	//Failure withdraw status
-	Failure //failure
-	//Completed withdraw status
-	Completed //completed
+	// Rejected withdraw status
+	Rejected // rejected
+	// Processing withdraw status
+	Processing // processing
+	// Failure withdraw status
+	Failure // failure
+	// Completed withdraw status
+	Completed // completed
 )
 
 // WithdrawStatuses map a string to BinanceWithdrawStatus

@@ -60,10 +60,7 @@ func createDatabase(dbName string) error {
 	if _, err = db.Exec(fmt.Sprintf(`CREATE DATABASE %v`, dbName)); err != nil {
 		return err
 	}
-	if err = db.Close(); err != nil {
-		return err
-	}
-	return nil
+	return db.Close()
 }
 
 func (tldb *TradeLogDB) tearDown(dbName string) error {
@@ -88,10 +85,7 @@ func dropDatabaseIfExists(dbName string) error {
 	if _, err = db.Exec(fmt.Sprintf(`DROP DATABASE IF EXISTS %v`, dbName)); err != nil {
 		return err
 	}
-	if err = db.Close(); err != nil {
-		return err
-	}
-	return nil
+	return db.Close()
 }
 
 func loadTestData(db *sqlx.DB, path string) error {

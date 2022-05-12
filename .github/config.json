@@ -1,0 +1,47 @@
+{
+  "directories": [
+    "reserverates",
+    "gateway",
+    "tradelogs",
+    "tokenratefetcher",
+    "accounting",
+    "other"
+  ],
+  "services": [
+     "reserve-rates-api",
+     "reserve-rates-crawler",
+     "gateway",
+     "trade-logs-api",
+     "trade-logs-crawler",
+     "token-rate-fetcher",
+
+     "accounting-binance-trade-fetcher",
+     "accounting-binance-margin-trade-fetcher", 
+     "accounting-binance-withdrawal-fetcher",
+     "accounting-binance-frequent-trade-fetcher",
+
+     "accounting-cex-trades-api",
+     "accounting-cex-withdrawals-api", 
+     "accounting-binance-trade-post-processor",
+     "accounting-0x-trade-post-processor",
+
+     "accounting-gateway", 
+     "accounting-cex-deposits-api", 
+     "accounting-binance-deposit-fetcher",
+
+     "accounting-huobi-trade-fetcher", 
+     "accounting-huobi-withdrawal-fetcher",
+     "accounting-reserve-addresses-api",
+
+     "accounting-listed-token-fetcher",
+     "accounting-listed-tokens-api",
+
+     "accounting-reserve-rates-api", 
+     "accounting-reserve-rate-fetcher",
+
+     "accounting-reserve-transactions-api",
+     "accounting-reserve-transaction-fetcher",
+
+     "accounting-wallet-erc20-api"
+  ]
+}

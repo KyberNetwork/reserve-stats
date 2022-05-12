@@ -296,7 +296,44 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 		return result, err
 	}
 
-	endpoint := fmt.Sprintf("%s/wapi/v3/withdrawHistory.html", endpointPrefix)
+	endpoint := fmt.Sprintf("%s/sapi/v1/capital/withdraw/history", endpointPrefix)
+
+	params := map[string]string{}
+	if !fromTime.IsZero() {
+		params["startTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(fromTime), 10)
+	}
+
+	if !toTime.IsZero() {
+		params["endTime"] = strconv.FormatUint(timeutil.TimeToTimestampMs(toTime), 10)
+	}
+
+	res, err := bc.sendRequest(
+		http.MethodGet,
+		endpoint,
+		params,
+		true,
+		time.Now(),
+	)
+	if err != nil {
+		return result, err
+	}
+
+	err = json.Unmarshal(res, &result)
+	return result, err
+}
+
+// GetDepositHistory ...
+func (bc *Client) GetDepositHistory(fromTime, toTime time.Time) ([]DepositHistory, error) {
+	var (
+		result []DepositHistory
+	)
+	const weight = 1
+	//Wait before creating the request to avoid timestamp request outside the recWindow
+	if err := bc.waitN(weight); err != nil {
+		return result, err
+	}
+
+	endpoint := fmt.Sprintf("%s/sapi/v1/capital/deposit/hisrec", endpointPrefix)
 
 	params := map[string]string{}
 	if !fromTime.IsZero() {
@@ -321,9 +358,6 @@ func (bc *Client) GetWithdrawalHistory(fromTime, toTime time.Time) (WithdrawHist
 	err = json.Unmarshal(res, &result)
 	if err != nil {
 		return result, err
-	}
-	if !result.Success {
-		return result, fmt.Errorf("failed to get binance withdrawal history, reason: %s", result.Message)
 	}
 	return result, err
 }

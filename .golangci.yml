@@ -18,11 +18,9 @@ linters:
     - staticcheck
     - ineffassign
     - deadcode
-    - golint
+    - revive
     - stylecheck
-    - interfacer
     - unconvert
     - goconst
     - goimports
-    - scopelint
-    - gocritic
+    - exportloopref

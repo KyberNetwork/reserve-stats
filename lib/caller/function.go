@@ -42,7 +42,7 @@ func GetCurrentFunctionName() string {
 	return stripName(getFrame(1).Function)
 }
 
-// GetCurrentFunctionName returns the full name of the parent function call it
+// GetCallerFunctionName returns the full name of the parent function call it
 func GetCallerFunctionName() string {
 	// Skip GetCallerFunctionName and the function to get the caller of
 	return stripName(getFrame(2).Function)

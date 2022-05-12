@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +12,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/accounting/common"
 	_ "github.com/KyberNetwork/reserve-stats/accounting/common/validators" // import custom validator functions
 	huobiStorage "github.com/KyberNetwork/reserve-stats/accounting/huobi/storage/withdrawal-history"
-	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/httputil"
 	"github.com/KyberNetwork/reserve-stats/lib/huobi"
@@ -33,12 +33,24 @@ type Server struct {
 
 type queryInput struct {
 	httputil.TimeRangeQuery
-	Exchanges []string `form:"cex" binding:"dive,isValidCEXName"`
+	Exchanges []string `form:"cex"`
+}
+
+// BinanceWithdrawalResponse ...
+type BinanceWithdrawalResponse struct {
+	ID        string  `json:"id"`
+	Amount    float64 `json:"amount"`
+	Address   string  `json:"address"`
+	Asset     string  `json:"asset"`
+	TxID      string  `json:"txId"`
+	ApplyTime int64   `json:"applyTime"`
+	Status    int64   `json:"status"`
+	TxFee     float64 `json:"transactionFee"`
 }
 
 type response struct {
-	Huobi   map[string][]huobi.WithdrawHistory   `json:"huobi,omitempty"`
-	Binance map[string][]binance.WithdrawHistory `json:"binance,omitempty"`
+	Huobi   map[string][]huobi.WithdrawHistory     `json:"huobi,omitempty"`
+	Binance map[string][]BinanceWithdrawalResponse `json:"binance,omitempty"`
 }
 
 func (sv *Server) get(c *gin.Context) {
@@ -47,7 +59,7 @@ func (sv *Server) get(c *gin.Context) {
 		logger           = sv.sugar.With("func", caller.GetCurrentFunctionName())
 		huobiWithdrawals = make(map[string][]huobi.WithdrawHistory)
 		// binanceWithdrawals []binance.WithdrawHistory
-		binanceWithdrawals = make(map[string][]binance.WithdrawHistory) // map account with its trades
+		binanceResponse = make(map[string][]BinanceWithdrawalResponse)
 	)
 
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -94,7 +106,7 @@ func (sv *Server) get(c *gin.Context) {
 				return
 			}
 		case common.Binance.String():
-			binanceWithdrawals, err = sv.binanceDB.GetWithdrawHistory(from, to)
+			binanceWithdrawals, err := sv.binanceDB.GetWithdrawHistory(from, to)
 			if err != nil {
 				httputil.ResponseFailure(
 					c,
@@ -103,12 +115,46 @@ func (sv *Server) get(c *gin.Context) {
 				)
 				return
 			}
+			for account, withdrawals := range binanceWithdrawals {
+				response := []BinanceWithdrawalResponse{}
+				for _, withdrawal := range withdrawals {
+					applyTime, sErr := time.Parse("2006-01-02 15:04:05", withdrawal.ApplyTime)
+					if sErr != nil {
+						return
+					}
+					amount, err := strconv.ParseFloat(withdrawal.Amount, 64)
+					if err != nil {
+						sv.sugar.Errorw("failed to parse withdraw amount", "error", err)
+						httputil.ResponseFailure(
+							c,
+							http.StatusInternalServerError,
+							err,
+						)
+						return
+					}
+					txFee, err := strconv.ParseFloat(withdrawal.TxFee, 64)
+					if err != nil {
+						sv.sugar.Errorw("failed to parse tx fee", "error", err)
+					}
+					response = append(response, BinanceWithdrawalResponse{
+						ID:        withdrawal.ID,
+						Amount:    amount,
+						Address:   withdrawal.Address,
+						Asset:     withdrawal.Asset,
+						TxID:      withdrawal.TxID,
+						ApplyTime: applyTime.UnixMilli(),
+						Status:    withdrawal.Status,
+						TxFee:     txFee,
+					})
+				}
+				binanceResponse[account] = response
+			}
 		}
 	}
 
 	c.JSON(http.StatusOK, response{
 		Huobi:   huobiWithdrawals,
-		Binance: binanceWithdrawals,
+		Binance: binanceResponse,
 	})
 }
 

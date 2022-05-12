@@ -4,6 +4,7 @@ package common
 const (
 	DefaultCexTradesDB        = "cex_trades"
 	DefaultCexWithdrawalsDB   = "cex_withdrawals"
+	DefaultCexDepositDB       = "cex_deposit"
 	DefaultListedTokenDB      = "listed_tokens"
 	DefaultReserveRatesDB     = "reserve_rates"
 	DefaultTransactionsDB     = "transactions"

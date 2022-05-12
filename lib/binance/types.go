@@ -40,22 +40,39 @@ type AssetDetailResponse struct {
 
 //WithdrawHistory is a binance withdraw history
 type WithdrawHistory struct {
-	ID        string  `json:"id"`
-	Amount    float64 `json:"amount"`
-	Address   string  `json:"address"`
-	Asset     string  `json:"asset"`
-	TxID      string  `json:"txId"`
-	ApplyTime uint64  `json:"applyTime"`
-	Status    int64   `json:"status"`
-	TxFee     float64 `json:"transactionFee"`
+	ID             string `json:"id"`
+	Amount         string `json:"amount"`
+	Address        string `json:"address"`
+	Asset          string `json:"coin"`
+	TxID           string `json:"txId"`
+	ApplyTime      string `json:"applyTime"`
+	Status         int64  `json:"status"`
+	TxFee          string `json:"transactionFee"`
+	WithrawOrderID string `json:"withdrawOrderId"`
+	Network        string `json:"network"`
+	TransferType   int64  `json:"transferType"`
+	ConfirmNumber  int64  `json:"confirmNo"`
 }
 
 //WithdrawHistoryList is a list of binance withdraw history
-type WithdrawHistoryList struct {
-	WithdrawList []WithdrawHistory `json:"withdrawList"`
-	Success      bool              `json:"success"`
-	Message      string            `json:"msg"`
+type WithdrawHistoryList []WithdrawHistory
+
+// DepositHistory is a binance withdraw history
+type DepositHistory struct {
+	Amount       string `json:"amount"`
+	Coin         string `json:"coin"`
+	Network      string `json:"network"`
+	Status       int64  `json:"status"`
+	Address      string `json:"address"`
+	AddressTag   string `json:"addressTag"`
+	TxID         string `json:"txId"`
+	InsertTime   uint64 `json:"insertTime"`
+	TransferType int64  `json:"transferType"`
+	ConfirmTimes string `json:"confirmTimes"`
 }
+
+// DepositHistoryList ...
+type DepositHistoryList []DepositHistory
 
 //ExchangeInfo is info of binance
 type ExchangeInfo struct {

@@ -22,7 +22,7 @@ type Server struct {
 }
 
 type reserveTokenQuery struct {
-	Reserve string `form:"reserve" binding:"isAddress"`
+	Reserve string `form:"reserve"`
 }
 
 //NewServer return new server object

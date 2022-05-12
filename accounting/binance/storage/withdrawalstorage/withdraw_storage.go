@@ -1,6 +1,7 @@
 package withdrawalstorage
 
 import (
+	"database/sql"
 	"encoding/json"
 	"strconv"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/KyberNetwork/reserve-stats/lib/binance"
 	"github.com/KyberNetwork/reserve-stats/lib/caller"
 	"github.com/KyberNetwork/reserve-stats/lib/pgsql"
-	"github.com/KyberNetwork/reserve-stats/lib/timeutil"
 	"github.com/lib/pq"
 )
 
@@ -39,6 +39,14 @@ func NewDB(sugar *zap.SugaredLogger, db *sqlx.DB) (*BinanceStorage, error) {
 
 	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS account TEXT;
 	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS timestamp TIMESTAMP;
+
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS amount FLOAT;
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS address TEXT;
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS asset TEXT;
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS tx TEXT;
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS apply_time BIGINT;
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS status INTEGER;
+	ALTER TABLE binance_withdrawals ADD COLUMN IF NOT EXISTS tx_fee FLOAT;
 	`
 
 	s := &BinanceStorage{
@@ -68,18 +76,27 @@ func (bd *BinanceStorage) Close() error {
 //UpdateWithdrawHistory save withdraw history to db
 func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.WithdrawHistory, account string) (err error) {
 	var (
-		logger       = bd.sugar.With("func", caller.GetCurrentFunctionName())
-		withdrawJSON []byte
-		ids          []string
-		dataJSON     [][]byte
-		timestamps   []time.Time
+		logger                      = bd.sugar.With("func", caller.GetCurrentFunctionName())
+		withdrawJSON                []byte
+		ids, assets, addresses, txs []string
+		amounts, txFees             []float64
+		statuses, applyTimes        []int64
+		dataJSON                    [][]byte
+		timestamps                  []time.Time
 	)
-	const updateQuery = `INSERT INTO binance_withdrawals (id, data, timestamp, account)
+	const updateQuery = `INSERT INTO binance_withdrawals (id, data, timestamp, account, amount, address, asset, tx, apply_time, status, tx_fee)
 	VALUES(
 		unnest($1::TEXT[]),
 		unnest($2::JSONB[]),
 		unnest($3::TIMESTAMP[]),
-		$4
+		$4,
+		unnest($5::FLOAT[]),
+		unnest($6::TEXT[]),
+		unnest($7::TEXT[]),
+		unnest($8::TEXT[]),
+		unnest($9::BIGINT[]),
+		unnest($10::INTEGER[]),
+		unnest($11::FLOAT[])
 	) ON CONFLICT ON CONSTRAINT binance_withdrawals_pk DO UPDATE SET data = EXCLUDED.data;
 	`
 
@@ -99,22 +116,53 @@ func (bd *BinanceStorage) UpdateWithdrawHistory(withdrawHistories []binance.With
 			return
 		}
 		ids = append(ids, withdraw.ID)
-		timestamp := timeutil.TimestampMsToTime(withdraw.ApplyTime)
+		timestamp, sErr := time.Parse("2006-01-02 15:04:05", withdraw.ApplyTime)
+		if sErr != nil {
+			return
+		}
 		timestamps = append(timestamps, timestamp)
 		dataJSON = append(dataJSON, withdrawJSON)
+		assets = append(assets, withdraw.Asset)
+		addresses = append(addresses, withdraw.Address)
+		txs = append(txs, withdraw.TxID)
+		amount := float64(0)
+		if withdraw.Amount != "" {
+			amount, err = strconv.ParseFloat(withdraw.Amount, 64)
+			if err != nil {
+				return err
+			}
+		}
+		amounts = append(amounts, amount)
+		txFee := float64(0)
+		if withdraw.TxFee != "" {
+			txFee, err = strconv.ParseFloat(withdraw.TxFee, 64)
+			if err != nil {
+				return err
+			}
+		}
+		txFees = append(txFees, txFee)
+		statuses = append(statuses, withdraw.Status)
+		applyTimes = append(applyTimes, timestamp.UnixMilli())
 	}
 
-	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps), account); err != nil {
-		return
+	if _, err = tx.Exec(updateQuery, pq.Array(ids), pq.Array(dataJSON), pq.Array(timestamps), account, pq.Array(amounts), pq.Array(addresses), pq.Array(assets), pq.Array(txs), pq.Array(applyTimes), pq.Array(statuses), pq.Array(txFees)); err != nil {
+		return err
 	}
 
-	return
+	return err
 }
 
 //WithdrawRecord represent a record of binace withdraw
 type WithdrawRecord struct {
-	Account string        `db:"account"`
-	Data    pq.ByteaArray `db:"data"`
+	Account    string          `db:"account"`
+	Ids        pq.StringArray  `db:"ids"`
+	Amounts    pq.Float64Array `db:"amounts"`
+	Assets     pq.StringArray  `db:"assets"`
+	Addresses  pq.StringArray  `db:"addresses"`
+	ApplyTimes pq.Int64Array   `db:"apply_times"`
+	Txs        pq.StringArray  `db:"txs"`
+	Statuses   pq.Int64Array   `db:"statuses"`
+	TxFees     pq.Float64Array `db:"tx_fees"`
 }
 
 //GetWithdrawHistory return list of withdraw fromTime to toTime
@@ -123,25 +171,39 @@ func (bd *BinanceStorage) GetWithdrawHistory(fromTime, toTime time.Time) (map[st
 		logger   = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		result   = make(map[string][]binance.WithdrawHistory)
 		dbResult []WithdrawRecord
-		tmp      binance.WithdrawHistory
 	)
-	const selectStmt = `SELECT account, ARRAY_AGG(data) as data FROM binance_withdrawals WHERE data->>'applyTime'>=$1 AND data->>'applyTime'<=$2 GROUP BY account;`
+	const selectStmt = `SELECT account, 
+	ARRAY_AGG(id) as ids, 
+	ARRAY_AGG(asset) as assets, 
+	ARRAY_AGG(address) as addresses, 
+	ARRAY_AGG(apply_time) as apply_times, 
+	ARRAY_AGG(tx) as txs, 
+	ARRAY_AGG(tx_fee) as tx_fees, 
+	ARRAY_AGG(status) as statuses, 
+	ARRAY_AGG(amount) as amounts FROM binance_withdrawals WHERE timestamp >=$1 AND timestamp <=$2 GROUP BY account;`
 
 	logger.Debugw("querying trade history...", "query", selectStmt)
 
-	from := timeutil.TimeToTimestampMs(fromTime)
-	to := timeutil.TimeToTimestampMs(toTime)
-	if err := bd.db.Select(&dbResult, selectStmt, from, to); err != nil {
+	if err := bd.db.Select(&dbResult, selectStmt, fromTime, toTime); err != nil {
+		logger.Errorw("failed to get withdraw history", "error", err)
 		return result, err
 	}
 
 	for _, record := range dbResult {
 		arrResult := []binance.WithdrawHistory{}
-		for _, data := range record.Data {
-			if err := json.Unmarshal(data, &tmp); err != nil {
-				return result, err
-			}
-			arrResult = append(arrResult, tmp)
+		for index := range record.Ids {
+			applyTime := time.UnixMilli(record.ApplyTimes[index])
+			apTime := applyTime.Format("2006-01-02 15:04:05")
+			arrResult = append(arrResult, binance.WithdrawHistory{
+				ID:        record.Ids[index],
+				Asset:     record.Assets[index],
+				Amount:    strconv.FormatFloat(record.Amounts[index], 'f', -1, 64),
+				Address:   record.Addresses[index],
+				TxID:      record.Txs[index],
+				ApplyTime: apTime,
+				Status:    record.Statuses[index],
+				TxFee:     strconv.FormatFloat(record.TxFees[index], 'f', -1, 64),
+			})
 		}
 		result[record.Account] = arrResult
 	}
@@ -154,29 +216,30 @@ func (bd *BinanceStorage) GetLastStoredTimestamp(account string) (time.Time, err
 	var (
 		logger   = bd.sugar.With("func", caller.GetCurrentFunctionName())
 		result   = time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC)
-		dbResult uint64
+		dbResult time.Time
 		statuses = []string{strconv.Itoa(int(common.AwaitingApproval)), strconv.Itoa(int(common.Processing))}
 	)
 	const (
-		selectStmt = `SELECT COALESCE(MAX(data->>'applyTime'), '0') FROM binance_withdrawals WHERE account = $1`
+		selectStmt = `SELECT timestamp FROM binance_withdrawals WHERE account = $1 ORDER BY timestamp DESC LIMIT 1;`
 		//handle not completed withdraw
-		latestNotCompleted = `SELECT COALESCE(MIN(data->>'applyTime'), '0') FROM binance_withdrawals WHERE data->>'status' = any($1) AND account = $2`
+		latestNotCompleted = `SELECT timestamp FROM binance_withdrawals WHERE data->>'status' = any($1) AND account = $2 ORDER BY timestamp ASC LIMIT 1;`
 	)
 	logger.Debugw("querying last stored timestamp", "query", selectStmt)
 
-	if err := bd.db.Get(&dbResult, latestNotCompleted, pq.Array(statuses), account); err != nil {
+	err := bd.db.Get(&dbResult, latestNotCompleted, pq.Array(statuses), account)
+	if err != nil && err != sql.ErrNoRows {
 		return result, err
 	}
 	logger.Debugw("min processing record time", "time", dbResult)
 
-	if dbResult == 0 {
-		if err := bd.db.Get(&dbResult, selectStmt, account); err != nil {
+	if dbResult.IsZero() {
+		err := bd.db.Get(&dbResult, selectStmt, account)
+		if err != nil && err != sql.ErrNoRows {
 			return result, err
 		}
 	}
-
-	if dbResult != 0 {
-		result = timeutil.TimestampMsToTime(dbResult)
+	if !dbResult.IsZero() {
+		result = dbResult
 	}
 
 	return result, nil

@@ -12,20 +12,6 @@ func WithTradeLogURL(tradeLogsURL string) Option {
 		}
 		s.r.GET("/trade-logs", tradeLogsProxyMW)
 		s.r.GET("/trade-logs/:tx_hash", tradeLogsProxyMW)
-		s.r.GET("/burn-fee", tradeLogsProxyMW)
-		s.r.GET("/asset-volume", tradeLogsProxyMW)
-		s.r.GET("/reserve-volume", tradeLogsProxyMW)
-		s.r.GET("/monthly-volume", tradeLogsProxyMW)
-		s.r.GET("/wallet-fee", tradeLogsProxyMW)
-		s.r.GET("/user-volume", tradeLogsProxyMW)
-		s.r.GET("/user-list", tradeLogsProxyMW)
-		s.r.GET("/trade-summary", tradeLogsProxyMW)
-		s.r.GET("/wallet-stats", tradeLogsProxyMW)
-		s.r.GET("/country-stats", tradeLogsProxyMW)
-		s.r.GET("/heat-map", tradeLogsProxyMW)
-		s.r.GET("/integration-volume", tradeLogsProxyMW)
-		s.r.GET("/symbol", tradeLogsProxyMW)
-		s.r.POST("/symbol", tradeLogsProxyMW)
 		s.r.GET("/stats", tradeLogsProxyMW)
 		s.r.GET("/top-tokens", tradeLogsProxyMW)
 		s.r.GET("/top-integrations", tradeLogsProxyMW)
@@ -100,6 +86,7 @@ func WithCexTradesURL(cexTradeURL string) Option {
 		}
 		s.r.GET("/trades", cexTradeURLMW)
 		s.r.GET("/convert_to_eth_price", cexTradeURLMW)
+		s.r.GET("/convert_trades", cexTradeURLMW)
 		return nil
 	}
 }
@@ -119,7 +106,7 @@ func WithResreveAddressesURL(reserveAddressesURL string) Option {
 	}
 }
 
-//WithCexWithdrawalURL return withdraw proxy
+// WithCexWithdrawalURL return withdraw proxy
 func WithCexWithdrawalURL(cexWithdrawalURL string) Option {
 	return func(s *Server) error {
 		cexWithdrawalURLMW, err := newReverseProxyMW(cexWithdrawalURL)
@@ -127,6 +114,18 @@ func WithCexWithdrawalURL(cexWithdrawalURL string) Option {
 			return err
 		}
 		s.r.GET("/withdrawals", cexWithdrawalURLMW)
+		return nil
+	}
+}
+
+// WithCexDepositURL return withdraw proxy
+func WithCexDepositURL(cexDepositURL string) Option {
+	return func(s *Server) error {
+		cexDepositURLMW, err := newReverseProxyMW(cexDepositURL)
+		if err != nil {
+			return err
+		}
+		s.r.GET("/deposits", cexDepositURLMW)
 		return nil
 	}
 }

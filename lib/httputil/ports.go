@@ -48,4 +48,9 @@ const (
 
 	// AccountingReserveRatesPort is the port number of account-reserve-rates-api service
 	AccountingReserveRatesPort = 8015
+
+	// AccountingCEXDepositPort is the port number of accounting-listed-token service
+	AccountingCEXDepositPort = 8016
+	// Accounting0xTradesPort ...
+	Accounting0xTradesPort = 8017
 )

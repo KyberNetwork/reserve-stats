@@ -1,0 +1,350 @@
+name: "Reserve Stats CI"
+
+# accept 2 events: on push, and workflow dispatch (manual)
+on: [push, workflow_dispatch]
+
+# global environments
+env:
+  GO111MODULE: on
+
+jobs:
+  # the prepare phase prepares output variables for use
+  # in the next phases. 
+  # prepare phase will run on all branches
+  prepare:
+    runs-on: ubuntu-18.04
+    outputs:
+      current_branch: ${{ steps.current_branch.outputs.value }}
+      commit_tag: ${{ steps.commit_tag.outputs.value }}
+      version_tag: ${{ steps.version_tag.outputs.value }}
+      config: ${{ steps.config.outputs.value }}
+      excludes: ${{ steps.excludes.outputs.value }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # extract the current branch this step required checkout action
+      # the push event has 2 types `push_commit` and `push_tag` with 
+      # each type willhave 1 different refs. 
+      # push_commit: refs/heads/<ref_branch>
+      # push_tag: refs/tags/<tag_version> 
+      - name: Extract current branch
+        shell: bash
+        id: current_branch
+        run: |
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          if [[ "$GITHUB_REF" =~ refs/tags ]]; then
+            raw=$(git branch -r --contains ${{ github.ref }})
+            BRANCH=${raw/origin\/}
+          fi
+          echo "::set-output name=value::$BRANCH"
+
+      - name: Get Git Commit Tag
+        shell: bash
+        id: commit_tag
+        run: |
+          COMMIT_HASH="$(echo $GITHUB_SHA | head -c7)"
+          echo "::set-output name=value::$COMMIT_HASH"
+
+      # get version tag, if this is a push_commit 
+      # this step will return empty
+      - name: Get version tag
+        id: version_tag
+        run: |
+          [[ ! "$GITHUB_REF" =~ refs/tags ]] && exit
+          echo "::set-output name=value::${GITHUB_REF#refs/tags/}"
+
+      # read json config file and export the output
+      - name: Read config file
+        id: config
+        shell: bash
+        run: |
+          config=$(cat ./.github/config.json)
+          # the following lines are only required for multi line json
+          config="${config//'%'/'%25'}"
+          config="${config//$'\n'/'%0A'}"
+          config="${config//$'\r'/'%0D'}"
+          # end of optional handling for multi line json
+          echo "::set-output name=value::$config"
+
+      - name: Prepare exculude pattern
+        id: excludes
+        shell: bash
+        run: |
+          excludes=$(cat <<-END
+            ${{ toJSON(fromJSON(steps.config.outputs.value).directories) }} 
+          END
+          )
+          # parse JSON to bash array
+          excludes=($(echo "$excludes" | jq -r -c '.[]'))
+          # remove 'other' from exclude array
+          excludes="${excludes[*]/other}"
+          exclude_pattern=$(echo "$excludes" | sed 's/ *$//g' | sed -e 's/ /\\|/g')
+          exclude_pattern=$(printf 'github.com/KyberNetwork/reserve-stats/\(%s\)' "$exclude_pattern")
+          echo "::set-output name=value::$exclude_pattern"
+
+  # the lint phase runs lint check for the directories declared
+  # in the "directories" block (./github/config.json)
+  # make sure that the directory exists and declared
+  # by default, this phase runs on all branches 
+  # and using matrix stratedy
+  lint:
+    needs:
+      - prepare
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        dir: ${{ fromJson(needs.prepare.outputs.config).directories }}
+    env:
+      TARGET_DIR: ${{ matrix.dir }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: "1.17.x"
+
+      - name: Prepare before run lint check
+        if: matrix.dir != 'other'
+        run: |
+          # copy golangci
+          cp .golangci.yml $TARGET_DIR
+          # switch to target dir
+          cd $TARGET_DIR
+
+      # default if the directory is `other`,
+      # the step will check for directories other
+      # than those declared in the "directories" block
+      - name: Prepare excludes
+        if: matrix.dir == 'other'
+        id: exclude
+        run: |
+          exclude_pattern=" --exclude ${{ needs.prepare.outputs.excludes }}"
+          echo "::set-output name=value::$exclude_pattern"
+
+      - name: Golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        env:
+          EXCLUDE: ${{ steps.exclude.outputs.value }}
+        with:
+          version: v1.40.1
+          args: -v --config ./.golangci.yml ${{ env.EXCLUDE }}
+          skip-go-installation: true
+  
+  # similar to the lint phase, the test phase  
+  # runs tests on the directories declared in
+  # the "directories" block (.github/config.json)
+  # the test phase runs on all branches and using
+  # matrix stratedy
+  test:
+    needs:
+      - prepare
+      - lint
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        dir: ${{ fromJson(needs.prepare.outputs.config).directories }}
+    services:
+      postgres:
+        image: postgres:12-alpine
+        env:
+          POSTGRES_PASSWORD: reserve_stats
+          POSTGRES_USER: reserve_stats
+          POSTGRES_DB: reserve_stats
+        # health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # map tcp port on container to the host
+          - 5432:5432
+    env:
+      TARGET_DIR: ${{ matrix.dir }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: "1.17"
+
+      - name: Get Go cache paths
+        id: cache_paths
+        run: |
+          echo "::set-output name=go-build::$(go env GOCACHE)"
+          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+
+      - name: Go Build Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.cache_paths.outputs.go-build }}
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+
+      - name: Go Mod Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.cache_paths.outputs.go-mod }}
+          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+
+      - name: Prepare before run test
+        id: prepare
+        if: matrix.dir != 'other'
+        run: |
+          cd $TARGET_DIR
+          echo "::set-output name=packages::./..."
+
+      # if the directory is `other`, this step runs tests
+      # for directories except those declared in the "directories" block
+      - name: Run test
+        shell: bash
+        env:
+          PACKAGES: ${{ steps.prepare.outputs.packages }}
+          EXCLUDES: ${{ needs.prepare.outputs.excludes }}
+        run: |
+          # this means that we will test the excluded dirs
+          if [[ -z "$PACKAGES" ]]; then
+            go test -v -race -mod=mod  $(go list -mod=mod ./... | grep -v "$EXCLUDES")
+          else
+            go test -v -race -mod=mod $PACKAGES
+          fi
+
+  # build-api-docs only run with the 'develop' branch
+  # this phase builds and deploys API Docs to AWS S3
+  # target: apidocs, accounting/apidocs
+  build-api-docs:
+    needs:
+      - prepare
+      - test
+    if: needs.prepare.outputs.current_branch == 'develop'
+    strategy:
+      matrix:
+        include:
+          - source: apidocs/source
+            output_dir: apidocs/build
+            bucket: dev-stats-docs.knstats.com
+          - source: accounting/apidocs/source
+            output_dir: accounting/apidocs/build
+            bucket: dev-accounting-docs.knstats.com
+    env:
+      SOURCE: ${{ matrix.source }} 
+      OUTPUT_DIR: ${{ matrix.output_dir }} 
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build docs
+        run: |
+          docker run -v $PWD/$SOURCE:/slate/source:ro \
+            -v $PWD/$OUTPUT_DIR:/slate/build \
+            kybernetwork/slate:latest
+
+      - name: Upload to S3
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --acl public-read
+        env:
+          AWS_S3_BUCKET: ${{ matrix.bucket }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ap-southeast-1
+          SOURCE_DIR: ${{ matrix.output_dir }} 
+
+  # build-docker builds the images declared in the 'services' block 
+  # these services correspond to the Dockerfiles in the 'docker-files' directory
+  # the build-docker run on 'develop', 'staging', 'master' and 'github-actions' 
+  # this phase using matrix strategy
+  build-docker:
+    needs:
+      - prepare
+      - test
+    runs-on: ubuntu-18.04
+    if: contains(fromJson('["develop", "staging", "master", "github-actions"]'), needs.prepare.outputs.current_branch)
+    strategy:
+      matrix:
+        service: ${{ fromJSON(needs.prepare.outputs.config).services }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare images
+        id: images
+        shell: bash
+        env:
+          SERVICE: ${{ matrix.service }}
+          COMMIT_TAG: ${{ needs.prepare.outputs.commit_tag }}
+          VERSION_TAG: ${{ needs.prepare.outputs.version_tag }}
+          BRANCH_TAG: ${{ needs.prepare.outputs.current_branch }}
+        run: |
+          DOCKER_REPO="kybernetwork/kyber-stats-$SERVICE"
+
+          IMAGE_WITH_COMMIT_TAG="$DOCKER_REPO:$COMMIT_TAG"
+          echo "::set-output name=commit::$IMAGE_WITH_COMMIT_TAG" 
+
+          IMAGE_WITH_BRANCH_TAG="$DOCKER_REPO:$BRANCH_TAG"
+          echo "::set-output name=branch::$IMAGE_WITH_BRANCH_TAG" 
+
+          [[ -n "$VERSION_TAG" ]] || exit 0
+
+          IMAGE_WITH_VERSION_TAG="$DOCKER_REPO:$VERSION_TAG"
+          echo "::set-output name=version::$IMAGE_WITH_VERSION_TAG"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@master
+
+      - name: Docker login
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-${{ matrix.service }}-buildx
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: "docker-files/Dockerfile.${{ matrix.service }}"
+          push: true
+          labels: |
+            commit=${{ github.sha }}
+          tags: |
+            ${{ steps.images.outputs.branch }}
+            ${{ steps.images.outputs.commit }}
+            ${{ steps.images.outputs.version }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+  deploy-awx:
+    needs:
+      - prepare
+      - build-docker
+    runs-on: ubuntu-18.04
+    if: contains(fromJson('["develop", "staging"]'), needs.prepare.outputs.current_branch)
+    env:
+      BRANCH: ${{ needs.prepare.outputs.current_branch }}
+      AWX_USERNAME: ${{ secrets.AWX_USERNAME }}
+      AWX_PASSWORD: ${{ secrets.AWX_PASSWORD }}
+      AWX_DEV_URL: ${{ secrets.AWX_DEV_URL }}
+      AWX_STG_URL: ${{ secrets.AWX_STG_URL }}
+    steps:
+      - name: Notify to server
+        shell: bash
+        run: |
+          [[ "$BRANCH" == "develop" ]] && AWX_URL="$AWX_DEV_URL" || AWX_URL="$AWX_STG_URL"
+          CODE=$(curl -XPOST -o /dev/null -s -w "%{http_code}" --user "$AWX_USERNAME:$AWX_PASSWORD" $AWX_URL)
+          [[ "$CODE" == 20* ]] || exit 1

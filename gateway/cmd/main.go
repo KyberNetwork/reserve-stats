@@ -21,17 +21,15 @@ const (
 	readAccessKeyFlag  = "read-access-key"
 	readSecretKeyFlag  = "read-secret-key"
 
-	tradeLogsAPIURLFlag  = "trade-logs-url"
-	userAPIURLFlag       = "user-url"
-	priceAnalyticURLFlag = "price-analytic-url"
-	appNamesURLFlag      = "app-names-url"
+	tradeLogsAPIURLFlag = "trade-logs-url"
+	userAPIURLFlag      = "user-url"
+	appNamesURLFlag     = "app-names-url"
 )
 
 var (
-	defaultTradeLogsAPIURLValue  = fmt.Sprintf("http://127.0.0.1:%d", httputil.TradeLogsPort)
-	defaultUserAPIValue          = fmt.Sprintf("http://127.0.0.1:%d", httputil.UsersPort)
-	defaultPriceAnalyticAPIValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.PriceAnalytic)
-	defaultAppNamesAPIValue      = fmt.Sprintf("http://127.0.0.1:%d", httputil.AppNames)
+	defaultTradeLogsAPIURLValue = fmt.Sprintf("http://127.0.0.1:%d", httputil.TradeLogsPort)
+	defaultUserAPIValue         = fmt.Sprintf("http://127.0.0.1:%d", httputil.UsersPort)
+	defaultAppNamesAPIValue     = fmt.Sprintf("http://127.0.0.1:%d", httputil.AppNames)
 )
 
 func main() {
@@ -75,12 +73,6 @@ func main() {
 			EnvVar: "USER_URL",
 		},
 		cli.StringFlag{
-			Name:   priceAnalyticURLFlag,
-			Usage:  "Price analytic API URL",
-			Value:  defaultPriceAnalyticAPIValue,
-			EnvVar: "PRICE_ANALYTIC_URL",
-		},
-		cli.StringFlag{
 			Name:   appNamesURLFlag,
 			Usage:  "Integration Application Manager URL",
 			Value:  defaultAppNamesAPIValue,
@@ -115,18 +107,11 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("invalid user API URL: %s", c.String(userAPIURLFlag))
 	}
 
-	err = validation.Validate(c.String(priceAnalyticURLFlag),
-		validation.Required,
-		is.URL)
-	if err != nil {
-		return fmt.Errorf("invalid price analytic API URL: %s", c.String(priceAnalyticURLFlag))
-	}
-
 	err = validation.Validate(c.String(appNamesURLFlag),
 		validation.Required,
 		is.URL)
 	if err != nil {
-		return fmt.Errorf("app names API URL: %s", c.String(priceAnalyticURLFlag))
+		return fmt.Errorf("app names API URL: %s", c.String(appNamesURLFlag))
 	}
 
 	if err := validation.Validate(c.String(writeAccessKeyFlag), validation.Required); err != nil {
@@ -159,7 +144,6 @@ func run(c *cli.Context) error {
 		perm,
 		logger,
 		http.WithTradeLogURL(c.String(tradeLogsAPIURLFlag)),
-		http.WithPriceAnalyticURL(c.String(priceAnalyticURLFlag)),
 		http.WithUserURL(c.String(userAPIURLFlag)),
 		http.WithAppNamesURL(c.String(appNamesURLFlag)),
 	)

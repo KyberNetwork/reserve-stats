@@ -1,6 +1,5 @@
 {
   "directories": [
-    "reserverates",
     "gateway",
     "tradelogs",
     "tokenratefetcher",
@@ -8,8 +7,6 @@
     "other"
   ],
   "services": [
-     "reserve-rates-api",
-     "reserve-rates-crawler",
      "gateway",
      "trade-logs-api",
      "trade-logs-crawler",
@@ -35,9 +32,6 @@
 
      "accounting-listed-token-fetcher",
      "accounting-listed-tokens-api",
-
-     "accounting-reserve-rates-api", 
-     "accounting-reserve-rate-fetcher",
 
      "accounting-reserve-transactions-api",
      "accounting-reserve-transaction-fetcher",

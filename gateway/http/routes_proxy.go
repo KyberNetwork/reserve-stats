@@ -23,18 +23,6 @@ func WithTradeLogURL(tradeLogsURL string) Option {
 	}
 }
 
-//WithReserveRatesURL set resreve rate proxy for server
-func WithReserveRatesURL(reserveRatesURL string) Option {
-	return func(s *Server) error {
-		reserveRateProxyMW, err := newReverseProxyMW(reserveRatesURL)
-		if err != nil {
-			return err
-		}
-		s.r.GET("/reserve-rates", reserveRateProxyMW)
-		return nil
-	}
-}
-
 //WithUserURL set user proxy for server
 func WithUserURL(userURL string) Option {
 	return func(s *Server) error {

@@ -10,9 +10,6 @@ const (
 	// UsersPort is the port number of Users service.
 	UsersPort HTTPPort = 8002
 
-	// ReserveRatesPort is the port number of Reserve Rates API.
-	ReserveRatesPort HTTPPort = 8003
-
 	// TradeLogsPort is the port number of TradeLogs service.
 	TradeLogsPort HTTPPort = 8004
 
@@ -45,9 +42,6 @@ const (
 
 	//AccountingCEXWithdrawalsPort is the port number of accounting-listed-token service
 	AccountingCEXWithdrawalsPort = 8014
-
-	// AccountingReserveRatesPort is the port number of account-reserve-rates-api service
-	AccountingReserveRatesPort = 8015
 
 	// AccountingCEXDepositPort is the port number of accounting-listed-token service
 	AccountingCEXDepositPort = 8016

@@ -6,7 +6,6 @@ const (
 	DefaultCexWithdrawalsDB   = "cex_withdrawals"
 	DefaultCexDepositDB       = "cex_deposit"
 	DefaultListedTokenDB      = "listed_tokens"
-	DefaultReserveRatesDB     = "reserve_rates"
 	DefaultTransactionsDB     = "transactions"
 	DefaultReserveAddressesDB = "reserve_addresses"
 )

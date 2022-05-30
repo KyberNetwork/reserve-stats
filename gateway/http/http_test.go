@@ -158,7 +158,6 @@ func TestReverseProxy(t *testing.T) {
 	}
 	testServer, err := NewServer(testAddr, auth, perm, logger,
 		WithTradeLogURL(testURL),
-		WithReserveRatesURL(testURL),
 		WithUserURL(testURL),
 		WithPriceAnalyticURL(testURL),
 	)
